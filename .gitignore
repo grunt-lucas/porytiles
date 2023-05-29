@@ -1,5 +1,6 @@
 *.o
 .vscode
+.DS_Store
 
 tscreate.exe
 tscreate
