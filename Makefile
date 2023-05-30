@@ -22,7 +22,7 @@ endif
 all: tscreate$(EXE)
 	@:
 
-mapjson$(EXE): $(SRCS) $(HEADERS)
+tscreate$(EXE): $(SRCS) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDFLAGS) $(LIBS)
 
 clean:
