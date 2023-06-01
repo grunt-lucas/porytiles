@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <getopt.h>
+#include <png.hpp>
 
 namespace tscreate {
 const char* const PROGRAM_NAME = "tscreate";
@@ -10,6 +11,9 @@ const char* const RELEASE_DATE = "1 June 2023";
 
 bool gVerboseOutput = false;
 std::string_view gStructureFilePath;
+std::string_view gTransparentColorOpt;
+std::string_view gMasterFilePath;
+std::string_view gOutputPath;
 
 void printUsage(std::ostream& outStream) {
     using std::endl;
@@ -94,11 +98,19 @@ void parseOptions(int argc, char** argv) {
         printUsage(std::cerr);
         exit(1);
     }
+
+    gMasterFilePath = argv[optind++];
+    gOutputPath = argv[optind];
 }
 }
 
 int main(int argc, char** argv) {
     tscreate::parseOptions(argc, argv);
+    std::cout << "master file: " << tscreate::gMasterFilePath << std::endl;
+    std::cout << "output: " << tscreate::gOutputPath << std::endl;
+
+    png::image< png::rgb_pixel > image(std::string(tscreate::gMasterFilePath));
+    image.write("output.png");
 
     return 0;
 }

@@ -2,6 +2,7 @@ CXX ?= g++
 
 CXXFLAGS := -Wall -Werror -std=c++17 -O2 -DPNG_SKIP_SETJMP_CHECK
 CXXFLAGS += $(shell pkg-config --cflags libpng)
+CXXFLAGS += -Ipng++-0.2.9
 
 LIBS = -lpng -lz
 LDFLAGS += $(shell pkg-config --libs-only-L libpng)
