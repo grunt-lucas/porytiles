@@ -4,7 +4,7 @@
 
 #include <cxxopts.hpp>
 
-bool parse(int argc, const char* argv[]) {
+int main(int argc, const char* argv[]) {
     try {
         std::unique_ptr<cxxopts::Options> allocated(
             new cxxopts::Options(argv[0], "Create a pokeemerald indexed tileset from a master PNG")
@@ -22,20 +22,13 @@ bool parse(int argc, const char* argv[]) {
 
         if (result.count("help")) {
             std::cout << options.help() << std::endl;
-            exit(0);
+            exit(2);
         }
     }
     catch (const cxxopts::exceptions::exception& e) {
         std::cout << argv[0] << ": optarg error: " << e.what() << std::endl;
-        return false;
+        exit(1);
     }
 
-    return true;
-}
-
-int main(int argc, const char* argv[]) {
-    if (!parse(argc, argv)) {
-        return 1;
-    }
     return 0;
 }
