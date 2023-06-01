@@ -9,28 +9,33 @@ const char* const VERSION = "0.0.1";
 const char* const RELEASE_DATE = "1 June 2023";
 
 bool gVerboseOutput = false;
+std::string_view gStructureFilePath;
 
-void printHelp() {
-    using std::cout;
+void printUsage(std::ostream& outStream) {
     using std::endl;
-    cout << PROGRAM_NAME << ", version " << VERSION << " of " << RELEASE_DATE << endl;
-    cout << "   by grunt-lucas: https://github.com/grunt-lucas/tscreate" << endl;
-    cout << endl;
-    cout << "Convert a master PNG tilesheet and optional structure file to a pokeemerald-ready indexed" << endl;
-    cout << "tileset PNG with matching palette files." << endl;
-    cout << endl;
-    cout << "Usage:  " << PROGRAM_NAME;
-    cout << " [-hstvV] ";
-    cout << "<master.png> <output-dir>" << endl;
-    cout << endl;
-    cout << "Options:" << endl;
-    cout << "   -s, --structure-file=<file>      Specify a structure PNG file." << endl;
-    cout << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color. Defaults to 0,0,0." << endl;
-    cout << endl;
-    cout << "Help and Logging:" << endl;
-    cout << "   -h, --help     Print help message." << endl;
-    cout << "   -v, --version  Print version info." << endl;
-    cout << "   -V, --verbose  Enable verbose logging to stderr." << endl;
+    outStream << "Usage:  " << PROGRAM_NAME;
+    outStream << " [-hstvV] ";
+    outStream << "<master.png> <output-dir>" << endl;
+}
+
+void printHelp(std::ostream& outStream) {
+    using std::endl;
+    outStream << PROGRAM_NAME << ", version " << VERSION << " of " << RELEASE_DATE << endl;
+    outStream << "   by grunt-lucas: https://github.com/grunt-lucas/tscreate" << endl;
+    outStream << endl;
+    outStream << "Convert a master PNG tilesheet and optional structure file to a pokeemerald-ready indexed" << endl;
+    outStream << "tileset PNG with matching palette files." << endl;
+    outStream << endl;
+    printUsage(outStream);
+    outStream << endl;
+    outStream << "Options:" << endl;
+    outStream << "   -s, --structure-file=<file>      Specify a structure PNG file." << endl;
+    outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color. Defaults to 0,0,0." << endl;
+    outStream << endl;
+    outStream << "Help and Logging:" << endl;
+    outStream << "   -h, --help     Print help message." << endl;
+    outStream << "   -v, --version  Print version info." << endl;
+    outStream << "   -V, --verbose  Enable verbose logging to stderr." << endl;
 }
 
 void printVersion() {
@@ -38,13 +43,14 @@ void printVersion() {
     using std::endl;
     cout << PROGRAM_NAME << " " << VERSION << endl;
 }
-}
 
-int main(int argc, char** argv) {
-    const char* const shortOptions = "hvV";
+void parseOptions(int argc, char** argv) {
+    const char* const shortOptions = "hs:t:vV";
     static struct option longOptions[] =
     {
         {"help", no_argument, nullptr, 'h'},
+        {"structure-file", required_argument, nullptr, 's'},
+        {"transparent-color", required_argument, nullptr, 't'},
         {"version", no_argument, nullptr, 'v'},
         {"verbose", no_argument, nullptr, 'V'},
         {nullptr, no_argument, nullptr, 0}
@@ -57,25 +63,42 @@ int main(int argc, char** argv) {
             break;
 
         switch (opt) {
+        case 's':
+            gStructureFilePath = optarg;
+            break;
+        case 't':
+            gTransparentColorOpt = optarg;
+            break;
         case 'v':
-            tscreate::printVersion();
+            printVersion();
             exit(0);
             break;
         case 'V':
-            tscreate::gVerboseOutput = true;
+            gVerboseOutput = true;
             break;
 
         // Help message upon '-h/--help'
         case 'h':
-            tscreate::printHelp();
+            printHelp(std::cout);
             exit(0);
         // Help message on invalid or unknown options
         case '?':
         default:
-            tscreate::printHelp();
+            printHelp(std::cerr);
             exit(2);
         }
     }
+
+    const int numRequiredArgs = 2;
+    if ((argc - optind) != numRequiredArgs) {
+        printUsage(std::cerr);
+        exit(1);
+    }
+}
+}
+
+int main(int argc, char** argv) {
+    tscreate::parseOptions(argc, argv);
 
     return 0;
 }
