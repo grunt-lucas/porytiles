@@ -3,6 +3,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <png.hpp>
+#include <filesystem>
 
 namespace tscreate {
 const char* const PROGRAM_NAME = "tscreate";
@@ -14,6 +15,11 @@ std::string_view gStructureFilePath;
 std::string_view gTransparentColorOpt;
 std::string_view gMasterFilePath;
 std::string_view gOutputPath;
+
+std::string errorPrefix() {
+    std::string program(PROGRAM_NAME);
+    return program + ": error: ";
+}
 
 void printUsage(std::ostream& outStream) {
     using std::endl;
@@ -81,11 +87,11 @@ void parseOptions(int argc, char** argv) {
             gVerboseOutput = true;
             break;
 
-        // Help message upon '-h/--help'
+        // Help message upon '-h/--help' goes to stdout
         case 'h':
             printHelp(std::cout);
             exit(0);
-        // Help message on invalid or unknown options
+        // Help message on invalid or unknown options goes to stderr and gives error code
         case '?':
         default:
             printHelp(std::cerr);
@@ -105,15 +111,20 @@ void parseOptions(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
+    // Parse CLI options and args, fills out global opt vars with expected values
     tscreate::parseOptions(argc, argv);
 
     try {
-        std::string filePath(tscreate::gMasterFilePath);
-        png::image<png::rgb_pixel> image(filePath);
-        image.write("output.png");
+        std::string masterFilePath(tscreate::gMasterFilePath);
+        std::string outputPath(tscreate::gOutputPath);
+        png::image<png::rgb_pixel> image(masterFilePath);
+        std::filesystem::create_directory(outputPath);
+        std::filesystem::path parentDirectory(outputPath);
+        std::filesystem::path outputFile("output.png");
+        image.write(parentDirectory / outputFile);
     }
-    catch (png::std_error& e) {
-        std::cerr << e.what() << std::endl;
+    catch (std::exception& e) {
+        std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
         exit(1);
     }
 
