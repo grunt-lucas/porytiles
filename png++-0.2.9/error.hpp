@@ -105,7 +105,10 @@ namespace png
             return std::string(buf);
 #else
             /* GNU variant can return a pointer to static buffer instead of buf */
-            return std::string(strerror_r(errnum, buf, ERRBUF_SIZE));
+            // GNU variant broken on Mac even though _GNU_SOURCE is defined, so just do it the boring way
+            // return std::string(strerror_r(errnum, buf, ERRBUF_SIZE));
+            strerror_r(errnum, buf, ERRBUF_SIZE);
+            return std::string(buf);
 #endif
 #endif
 
