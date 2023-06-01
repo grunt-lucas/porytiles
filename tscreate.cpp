@@ -106,11 +106,16 @@ void parseOptions(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     tscreate::parseOptions(argc, argv);
-    std::cout << "master file: " << tscreate::gMasterFilePath << std::endl;
-    std::cout << "output: " << tscreate::gOutputPath << std::endl;
 
-    png::image< png::rgb_pixel > image(std::string(tscreate::gMasterFilePath));
-    image.write("output.png");
+    try {
+        std::string filePath(tscreate::gMasterFilePath);
+        png::image<png::rgb_pixel> image(filePath);
+        image.write("output.png");
+    }
+    catch (png::std_error& e) {
+        std::cerr << e.what() << std::endl;
+        exit(1);
+    }
 
     return 0;
 }
