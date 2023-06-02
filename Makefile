@@ -7,9 +7,7 @@ CXXFLAGS += -Ipng++-0.2.9 -Iinclude
 LIBS = -lpng -lz
 LDFLAGS += $(shell pkg-config --libs-only-L libpng)
 
-SRCS := src/tscreate.cpp src/init_checks.cpp
-
-HEADERS := include/tscreate.h include/tscreate.h
+SRCS := src/tscreate.cpp src/init_checks.cpp src/comparators.cpp
 
 ifeq ($(OS),Windows_NT)
 EXE := .exe
@@ -22,7 +20,7 @@ endif
 all: tscreate$(EXE)
 	@:
 
-tscreate$(EXE): $(SRCS) $(HEADERS)
+tscreate$(EXE): $(SRCS)
 	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDFLAGS) $(LIBS)
 
 clean:

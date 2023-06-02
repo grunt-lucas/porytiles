@@ -12,6 +12,9 @@ static const char* const PROGRAM_NAME = "tscreate";
 static const char* const VERSION = "0.0.1";
 static const char* const RELEASE_DATE = "1 June 2023";
 
+const png::uint_32 TILE_DIMENSION = 8;
+const png::uint_32 PAL_SIZE_4BPP = 16;
+
 // Defaults for unsupplied options
 static const char* const MAX_PALETTE_DEFAULT = "6";
 static const char* const TRANSPARENCY_DEFAULT = "0,0,0";
@@ -138,17 +141,20 @@ int main(int argc, char** argv) try {
     std::string masterPngPath(tscreate::gArgMasterPngPath);
     std::string outputPath(tscreate::gArgOutputPath);
 
-    // Checks master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
+    // Verifies that master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
     tscreate::validateMasterPngExistsAndDimensions(masterPngPath);
 
+    // Verifies that no individual tile in the master PNG has more than 16 colors
+    tscreate::validateMasterPngTilesEach16Colors(masterPngPath);
+
     // Create output directory if possible, otherwise fail
-    std::filesystem::create_directory(outputPath);
+    // std::filesystem::create_directory(outputPath);
 
     // TODO : remove this test code that simply writes the master PNG to output dir
-    std::filesystem::path parentDirectory(outputPath);
-    std::filesystem::path outputFile("output.png");
-    png::image<png::rgb_pixel> masterPng(masterPngPath);
-    masterPng.write(parentDirectory / outputFile);
+    // std::filesystem::path parentDirectory(outputPath);
+    // std::filesystem::path outputFile("output.png");
+    // png::image<png::rgb_pixel> masterPng(masterPngPath);
+    // masterPng.write(parentDirectory / outputFile);
 
     return 0;
 }
