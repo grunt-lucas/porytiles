@@ -38,4 +38,20 @@ void validateMasterPngTilesEach16Colors(const std::string& masterPngPath) {
         }
     }
 }
+
+void validateMasterPngMaxUniqueColors(const std::string& masterPngPath) {
+    png::image<png::rgb_pixel> masterPng(masterPngPath);
+    std::unordered_set<png::rgb_pixel, tscreate::rgb_pixel_hasher, tscreate::rgb_pixel_eq> uniqueRgb;
+    std::string maxPalettes(gOptMaxPalettes);
+    png::uint_32 maxAllowedColors = (stoi(maxPalettes) * 15) + 1;
+
+    for (png::uint_32 y = 0; y < masterPng.get_height(); y++) {
+        for (png::uint_32 x = 0; x < masterPng.get_width(); x++) {
+            uniqueRgb.insert(masterPng[y][x]);
+            if (uniqueRgb.size() > maxAllowedColors) {
+                throw TsException("too many unique colors in master PNG, max allowed: " + std::to_string(maxAllowedColors));
+            }
+        }
+    }
+}
 }

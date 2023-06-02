@@ -124,6 +124,8 @@ void parseOptions(int argc, char** argv) {
         gOptTransparentColor = TRANSPARENCY_DEFAULT;
     }
 
+    // TODO parse options here so global vars are already correct types
+
     const int numRequiredArgs = 2;
     if ((argc - optind) != numRequiredArgs) {
         printUsage(std::cerr);
@@ -146,6 +148,9 @@ int main(int argc, char** argv) try {
 
     // Verifies that no individual tile in the master PNG has more than 16 colors
     tscreate::validateMasterPngTilesEach16Colors(masterPngPath);
+
+    // Verifies that the master PNG does not have too many total unique colors
+    tscreate::validateMasterPngMaxUniqueColors(masterPngPath);
 
     // Create output directory if possible, otherwise fail
     // std::filesystem::create_directory(outputPath);
