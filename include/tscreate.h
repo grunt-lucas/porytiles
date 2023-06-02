@@ -5,18 +5,19 @@
 #include <png.hpp>
 
 namespace tscreate {
-// Options
-extern bool gOptVerboseOutput;
-extern std::string_view gOptStructureFilePath;
-extern std::string_view gOptTransparentColor;
-extern std::string_view gOptMaxPalettes;
-
-// Arguments (required)
-extern std::string_view gArgMasterPngPath;
-extern std::string_view gArgOutputPath;
-
 extern const png::uint_32 TILE_DIMENSION;
 extern const png::uint_32 PAL_SIZE_4BPP;
+extern const png::uint_32 NUM_BG_PALS;
+
+// Options
+extern bool gOptVerboseOutput;
+extern std::string gOptStructureFilePath;
+extern std::string gOptTransparentColor;
+extern png::uint_32 gOptMaxPalettes;
+
+// Arguments (required)
+extern std::string gArgMasterPngPath;
+extern std::string gArgOutputPath;
 
 // Generic tscreate exception class
 class TsException : public std::runtime_error

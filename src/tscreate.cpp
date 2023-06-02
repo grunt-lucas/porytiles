@@ -14,18 +14,19 @@ static const char* const RELEASE_DATE = "1 June 2023";
 
 const png::uint_32 TILE_DIMENSION = 8;
 const png::uint_32 PAL_SIZE_4BPP = 16;
+const png::uint_32 NUM_BG_PALS = 16;
 
 // Defaults for unsupplied options
-static const char* const MAX_PALETTE_DEFAULT = "6";
+static int MAX_PALETTE_DEFAULT = 6;
 static const char* const TRANSPARENCY_DEFAULT = "0,0,0";
 
 bool gOptVerboseOutput = false;
-std::string_view gOptStructureFilePath;
-std::string_view gOptTransparentColor;
-std::string_view gOptMaxPalettes;
+std::string gOptStructureFilePath;
+std::string gOptTransparentColor = TRANSPARENCY_DEFAULT;
+png::uint_32 gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 
-std::string_view gArgMasterPngPath;
-std::string_view gArgOutputPath;
+std::string gArgMasterPngPath;
+std::string gArgOutputPath;
 
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
@@ -89,12 +90,14 @@ void parseOptions(int argc, char** argv) {
 
         switch (opt) {
         case 'p':
-            gOptMaxPalettes = optarg;
+            // TODO parse in separate function that can error
+            gOptMaxPalettes = std::stoi(optarg);
             break;
         case 's':
             gOptStructureFilePath = optarg;
             break;
         case 't':
+            // TODO parse in separate function that can error
             gOptTransparentColor = optarg;
             break;
         case 'v':
@@ -116,16 +119,6 @@ void parseOptions(int argc, char** argv) {
         }
     }
 
-    // Set default values for certain options if they weren't supplied
-    if (gOptMaxPalettes.empty()) {
-        gOptMaxPalettes = MAX_PALETTE_DEFAULT;
-    }
-    if (gOptTransparentColor.empty()) {
-        gOptTransparentColor = TRANSPARENCY_DEFAULT;
-    }
-
-    // TODO parse options here so global vars are already correct types
-
     const int numRequiredArgs = 2;
     if ((argc - optind) != numRequiredArgs) {
         printUsage(std::cerr);
@@ -140,25 +133,23 @@ void parseOptions(int argc, char** argv) {
 int main(int argc, char** argv) try {
     // Parse CLI options and args, fills out global opt vars with expected values
     tscreate::parseOptions(argc, argv);
-    std::string masterPngPath(tscreate::gArgMasterPngPath);
-    std::string outputPath(tscreate::gArgOutputPath);
 
     // Verifies that master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
-    tscreate::validateMasterPngExistsAndDimensions(masterPngPath);
+    tscreate::validateMasterPngExistsAndDimensions(tscreate::gArgMasterPngPath);
 
     // Verifies that no individual tile in the master PNG has more than 16 colors
-    tscreate::validateMasterPngTilesEach16Colors(masterPngPath);
+    tscreate::validateMasterPngTilesEach16Colors(tscreate::gArgMasterPngPath);
 
     // Verifies that the master PNG does not have too many total unique colors
-    tscreate::validateMasterPngMaxUniqueColors(masterPngPath);
+    tscreate::validateMasterPngMaxUniqueColors(tscreate::gArgMasterPngPath);
 
     // Create output directory if possible, otherwise fail
-    // std::filesystem::create_directory(outputPath);
+    // std::filesystem::create_directory(tscreate::gArgOutputPath);
 
     // TODO : remove this test code that simply writes the master PNG to output dir
-    // std::filesystem::path parentDirectory(outputPath);
+    // std::filesystem::path parentDirectory(tscreate::gArgOutputPath);
     // std::filesystem::path outputFile("output.png");
-    // png::image<png::rgb_pixel> masterPng(masterPngPath);
+    // png::image<png::rgb_pixel> masterPng(tscreate::gArgMasterPngPath);
     // masterPng.write(parentDirectory / outputFile);
 
     return 0;
