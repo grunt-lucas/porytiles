@@ -1,20 +1,28 @@
 #include "tscreate.h"
 
+#include "init_checks.h"
+
 #include <iostream>
 #include <getopt.h>
 #include <png.hpp>
 #include <filesystem>
 
 namespace tscreate {
-const char* const PROGRAM_NAME = "tscreate";
-const char* const VERSION = "0.0.1";
-const char* const RELEASE_DATE = "1 June 2023";
+static const char* const PROGRAM_NAME = "tscreate";
+static const char* const VERSION = "0.0.1";
+static const char* const RELEASE_DATE = "1 June 2023";
 
-bool gVerboseOutput = false;
-std::string_view gStructureFilePath;
-std::string_view gTransparentColorOpt;
-std::string_view gMasterFilePath;
-std::string_view gOutputPath;
+// Defaults for unsupplied options
+static const char* const MAX_PALETTE_DEFAULT = "6";
+static const char* const TRANSPARENCY_DEFAULT = "0,0,0";
+
+bool gOptVerboseOutput = false;
+std::string_view gOptStructureFilePath;
+std::string_view gOptTransparentColor;
+std::string_view gOptMaxPalettes;
+
+std::string_view gArgMasterPngPath;
+std::string_view gArgOutputPath;
 
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
@@ -24,7 +32,7 @@ std::string errorPrefix() {
 void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-hstvV] ";
+    outStream << " [-hpstvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
@@ -34,13 +42,16 @@ void printHelp(std::ostream& outStream) {
     outStream << "   by grunt-lucas: https://github.com/grunt-lucas/tscreate" << endl;
     outStream << endl;
     outStream << "Convert a master PNG tilesheet and optional structure file to a pokeemerald-ready indexed" << endl;
-    outStream << "tileset PNG with matching palette files." << endl;
+    outStream << "tileset PNG with matching palette files. See the repo wiki for more detailed usage information." << endl;
     outStream << endl;
     printUsage(outStream);
     outStream << endl;
     outStream << "Options:" << endl;
-    outStream << "   -s, --structure-file=<file>      Specify a structure PNG file." << endl;
-    outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color. Defaults to 0,0,0." << endl;
+    outStream << "   -p, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed to allocate (default: "
+        << MAX_PALETTE_DEFAULT << ")." << endl;
+    outStream << "   -s, --structure-file=<file>      Specify a structure PNG file. See wiki for more info." << endl;
+    outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: "
+        << TRANSPARENCY_DEFAULT << ")." << endl;
     outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
@@ -55,10 +66,11 @@ void printVersion() {
 }
 
 void parseOptions(int argc, char** argv) {
-    const char* const shortOptions = "hs:t:vV";
+    const char* const shortOptions = "hp:s:t:vV";
     static struct option longOptions[] =
     {
         {"help", no_argument, nullptr, 'h'},
+        {"max-palettes", required_argument, nullptr, 'p'},
         {"structure-file", required_argument, nullptr, 's'},
         {"transparent-color", required_argument, nullptr, 't'},
         {"version", no_argument, nullptr, 'v'},
@@ -73,18 +85,20 @@ void parseOptions(int argc, char** argv) {
             break;
 
         switch (opt) {
+        case 'p':
+            gOptMaxPalettes = optarg;
+            break;
         case 's':
-            gStructureFilePath = optarg;
+            gOptStructureFilePath = optarg;
             break;
         case 't':
-            gTransparentColorOpt = optarg;
+            gOptTransparentColor = optarg;
             break;
         case 'v':
             printVersion();
             exit(0);
-            break;
         case 'V':
-            gVerboseOutput = true;
+            gOptVerboseOutput = true;
             break;
 
         // Help message upon '-h/--help' goes to stdout
@@ -99,34 +113,46 @@ void parseOptions(int argc, char** argv) {
         }
     }
 
+    // Set default values for certain options if they weren't supplied
+    if (gOptMaxPalettes.empty()) {
+        gOptMaxPalettes = MAX_PALETTE_DEFAULT;
+    }
+    if (gOptTransparentColor.empty()) {
+        gOptTransparentColor = TRANSPARENCY_DEFAULT;
+    }
+
     const int numRequiredArgs = 2;
     if ((argc - optind) != numRequiredArgs) {
         printUsage(std::cerr);
         exit(1);
     }
 
-    gMasterFilePath = argv[optind++];
-    gOutputPath = argv[optind];
+    gArgMasterPngPath = argv[optind++];
+    gArgOutputPath = argv[optind];
 }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) try {
     // Parse CLI options and args, fills out global opt vars with expected values
     tscreate::parseOptions(argc, argv);
+    std::string masterPngPath(tscreate::gArgMasterPngPath);
+    std::string outputPath(tscreate::gArgOutputPath);
 
-    try {
-        std::string masterFilePath(tscreate::gMasterFilePath);
-        std::string outputPath(tscreate::gOutputPath);
-        png::image<png::rgb_pixel> image(masterFilePath);
-        std::filesystem::create_directory(outputPath);
-        std::filesystem::path parentDirectory(outputPath);
-        std::filesystem::path outputFile("output.png");
-        image.write(parentDirectory / outputFile);
-    }
-    catch (std::exception& e) {
-        std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
-        exit(1);
-    }
+    // Checks master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
+    tscreate::validateMasterPngExistsAndDimensions(masterPngPath);
+
+    // Create output directory if possible, otherwise fail
+    std::filesystem::create_directory(outputPath);
+
+    // TODO : remove this test code that simply writes the master PNG to output dir
+    std::filesystem::path parentDirectory(outputPath);
+    std::filesystem::path outputFile("output.png");
+    png::image<png::rgb_pixel> masterPng(masterPngPath);
+    masterPng.write(parentDirectory / outputFile);
 
     return 0;
+}
+catch (std::exception& e) {
+    std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
+    return 1;
 }
