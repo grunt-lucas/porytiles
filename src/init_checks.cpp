@@ -2,12 +2,22 @@
 
 #include "tscreate.h"
 #include "comparators.h"
+#include "cli_parser.h"
+#include "tsexception.h"
 
 #include <unordered_set>
 
 namespace tscreate {
-void validateMasterPngExistsAndDimensions(const std::string& masterPngPath) {
-    png::image<png::rgb_pixel> masterPng(masterPngPath);
+void validateMasterPngIsAPng(const std::string& masterPngPath) {
+    try {
+        png::image<png::rgb_pixel> masterPng(masterPngPath);
+    }
+    catch (const png::error& e) {
+        throw TsException(masterPngPath + ": " + e.what());
+    }
+}
+
+void validateMasterPngDimensions(const png::image<png::rgb_pixel>& masterPng) {
     if (masterPng.get_width() % TILE_DIMENSION != 0) {
         throw TsException("master PNG width must be divisible by 8, was: " + std::to_string(masterPng.get_width()));
     }
@@ -16,8 +26,7 @@ void validateMasterPngExistsAndDimensions(const std::string& masterPngPath) {
     }
 }
 
-void validateMasterPngTilesEach16Colors(const std::string& masterPngPath) {
-    png::image<png::rgb_pixel> masterPng(masterPngPath);
+void validateMasterPngTilesEach16Colors(const png::image<png::rgb_pixel>& masterPng) {
     std::unordered_set<png::rgb_pixel, tscreate::rgb_pixel_hasher, tscreate::rgb_pixel_eq> uniqueRgb;
     png::uint_32 tilesWidth = masterPng.get_width() / TILE_DIMENSION;
     png::uint_32 tilesHeight = masterPng.get_height() / TILE_DIMENSION;
@@ -39,8 +48,7 @@ void validateMasterPngTilesEach16Colors(const std::string& masterPngPath) {
     }
 }
 
-void validateMasterPngMaxUniqueColors(const std::string& masterPngPath) {
-    png::image<png::rgb_pixel> masterPng(masterPngPath);
+void validateMasterPngMaxUniqueColors(const png::image<png::rgb_pixel>& masterPng) {
     std::unordered_set<png::rgb_pixel, tscreate::rgb_pixel_hasher, tscreate::rgb_pixel_eq> uniqueRgb;
 
     /*

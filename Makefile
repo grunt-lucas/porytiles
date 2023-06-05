@@ -7,7 +7,7 @@ CXXFLAGS += -Ipng++-0.2.9 -Iinclude
 LIBS = -lpng -lz
 LDFLAGS += $(shell pkg-config --libs-only-L libpng)
 
-SRCS := src/tscreate.cpp src/init_checks.cpp src/comparators.cpp
+SRCS := src/tscreate.cpp src/init_checks.cpp src/comparators.cpp src/cli_parser.cpp
 
 ifeq ($(OS),Windows_NT)
 EXE := .exe

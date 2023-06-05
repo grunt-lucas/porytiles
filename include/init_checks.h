@@ -4,9 +4,10 @@
 #include <png.hpp>
 
 namespace tscreate {
-void validateMasterPngExistsAndDimensions(const std::string& masterPngPath);
-void validateMasterPngTilesEach16Colors(const std::string& masterPngPath);
-void validateMasterPngMaxUniqueColors(const std::string& masterPngPath);
+void validateMasterPngIsAPng(const std::string& masterPngPath);
+void validateMasterPngDimensions(const png::image<png::rgb_pixel>& masterPng);
+void validateMasterPngTilesEach16Colors(const png::image<png::rgb_pixel>& masterPng);
+void validateMasterPngMaxUniqueColors(const png::image<png::rgb_pixel>& masterPng);
 }
 
 #endif // INIT_CHECKS_H
