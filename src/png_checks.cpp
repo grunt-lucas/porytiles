@@ -1,4 +1,4 @@
-#include "init_checks.h"
+#include "png_checks.h"
 
 #include "tscreate.h"
 #include "comparators.h"

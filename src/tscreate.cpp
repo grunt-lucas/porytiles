@@ -1,6 +1,6 @@
 #include "tscreate.h"
 
-#include "init_checks.h"
+#include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
 
@@ -54,6 +54,7 @@ catch (tscreate::TsException& e) {
     return 1;
 }
 catch (std::exception& e) {
+    // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
     std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
     return 1;
 }
