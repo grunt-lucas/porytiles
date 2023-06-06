@@ -1,5 +1,5 @@
-#ifndef COMPARATORS_H
-#define COMPARATORS_H
+#ifndef TSCREATE_COMPARATORS_H
+#define TSCREATE_COMPARATORS_H
 
 #include <png.hpp>
 
@@ -15,4 +15,4 @@ public:
 };
 }
 
-#endif // COMPARATORS_H
+#endif // TSCREATE_COMPARATORS_H

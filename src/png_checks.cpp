@@ -4,6 +4,7 @@
 #include "comparators.h"
 #include "cli_parser.h"
 #include "tsexception.h"
+#include "palette.h"
 
 #include <unordered_set>
 

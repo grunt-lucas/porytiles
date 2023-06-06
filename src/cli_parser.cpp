@@ -15,7 +15,7 @@ const char* const RELEASE_DATE = "1 June 2023";
 
 // Defaults for unsupplied options
 static bool              VERBOSE_DEFAULT      = false;
-static const char* const TRANSPARENCY_DEFAULT = "0,0,0";
+static const char* const TRANSPARENCY_DEFAULT = "251,30,228";
 static int               MAX_PALETTE_DEFAULT  = 6;
 
 // Options
@@ -48,7 +48,7 @@ static void printHelp(std::ostream& outStream) {
     outStream << "Options:" << endl;
     outStream << "   -p, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed to allocate (default: "
         << MAX_PALETTE_DEFAULT << ")." << endl;
-    outStream << "   -s, --structure-file=<file>      Specify a structure PNG file. See wiki for more info." << endl;
+    outStream << "   -s, --structure-file=<file>      Specify a PNG file for use as a structure key. See wiki for more info." << endl;
     outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: "
         << TRANSPARENCY_DEFAULT << ")." << endl;
     outStream << endl;

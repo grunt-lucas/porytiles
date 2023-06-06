@@ -1,13 +1,13 @@
 CXX ?= g++
 
-CXXFLAGS := -Wall -Werror -std=c++17 -O2 -DPNG_SKIP_SETJMP_CHECK
+CXXFLAGS := -Wall -Wpedantic -Werror -std=c++17 -O2 -DPNG_SKIP_SETJMP_CHECK
 CXXFLAGS += $(shell pkg-config --cflags libpng)
 CXXFLAGS += -Ipng++-0.2.9 -Iinclude
 
 LIBS = -lpng -lz
 LDFLAGS += $(shell pkg-config --libs-only-L libpng)
 
-SRCS := src/tscreate.cpp src/init_checks.cpp src/comparators.cpp src/cli_parser.cpp
+SRCS := src/tscreate.cpp src/png_checks.cpp src/comparators.cpp src/cli_parser.cpp src/palette.cpp
 
 ifeq ($(OS),Windows_NT)
 EXE := .exe

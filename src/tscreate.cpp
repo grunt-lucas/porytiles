@@ -3,6 +3,7 @@
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
+#include "palette.h"
 
 #include <iostream>
 #include <getopt.h>
@@ -11,7 +12,6 @@
 
 namespace tscreate {
 const png::uint_32 TILE_DIMENSION = 8;
-const png::uint_32 PAL_SIZE_4BPP = 16;
 const png::uint_32 NUM_BG_PALS = 16;
 
 std::string errorPrefix() {

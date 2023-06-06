@@ -1,5 +1,5 @@
-#ifndef PNG_CHECKS_H
-#define PNG_CHECKS_H
+#ifndef TSCREATE_PNG_CHECKS_H
+#define TSCREATE_PNG_CHECKS_H
 
 #include <png.hpp>
 
@@ -10,4 +10,4 @@ void validateMasterPngTilesEach16Colors(const png::image<png::rgb_pixel>& master
 void validateMasterPngMaxUniqueColors(const png::image<png::rgb_pixel>& masterPng);
 }
 
-#endif // PNG_CHECKS_H
+#endif // TSCREATE_PNG_CHECKS_H
