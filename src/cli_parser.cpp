@@ -134,7 +134,7 @@ void parseOptions(int argc, char** argv) {
         throw TsException{gArgMasterPngPath + ": file exists but is a directory"};
     }
 
-    if (!std::filesystem::is_directory(gArgOutputPath)) {
+    if (std::filesystem::exists(gArgOutputPath) && !std::filesystem::is_directory(gArgOutputPath)) {
         throw TsException{gArgOutputPath + ": exists but is not a directory"};
     }
 }

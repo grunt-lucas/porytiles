@@ -1,7 +1,6 @@
 #ifndef TSCREATE_PALETTE_H
 #define TSCREATE_PALETTE_H
 
-#include "pixel_comparators.h"
 #include "rgb_color.h"
 
 #include <png.hpp>

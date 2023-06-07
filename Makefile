@@ -1,6 +1,6 @@
 CXX ?= g++
 
-CXXFLAGS := -Wall -Wpedantic -Werror -std=c++17 -O2 -DPNG_SKIP_SETJMP_CHECK
+CXXFLAGS := -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g
 CXXFLAGS += $(shell pkg-config --cflags libpng)
 CXXFLAGS += -Ipng++-0.2.9 -Iinclude
 

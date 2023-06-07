@@ -2,6 +2,7 @@
 .vscode
 .idea
 .DS_Store
+*.dSYM
 
 tscreate.exe
 tscreate

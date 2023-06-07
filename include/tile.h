@@ -42,6 +42,14 @@ public:
         }
         return true;
     }
+
+    T getPixel(long row, long col) const {
+        return pixels.at(row).at(col);
+    }
+
+    void setPixel(long row, long col, T value) {
+        pixels.at(row).at(col) = value;
+    }
 };
 
 typedef Tile<tscreate::RgbColor> RgbTile;

@@ -30,11 +30,14 @@ int main(int argc, char** argv) try {
     // Verifies that master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
     tscreate::validateMasterPngDimensions(masterPng);
 
-    // Verifies that no individual tile in the master PNG has more than 16 colors
-    tscreate::validateMasterPngTilesEach16Colors(masterPng);
+    // Master PNG file is safe to tile-ize
+    tscreate::RgbTiledPng masterTiles{masterPng};
 
-    // Verifies that the master PNG does not have too many total unique colors
-    tscreate::validateMasterPngMaxUniqueColors(masterPng);
+    // Verifies that no individual tile in the master has more than 16 colors
+    tscreate::validateMasterPngTilesEach16Colors(masterTiles);
+
+    // Verifies that the master does not have too many unique colors
+    tscreate::validateMasterPngMaxUniqueColors(masterTiles);
 
     // Create output directory if possible, otherwise fail
     // std::filesystem::create_directory(tscreate::gArgOutputPath);
@@ -55,5 +58,13 @@ catch (tscreate::TsException& e) {
 catch (std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
     std::cerr << tscreate::fatalPrefix() << e.what() << std::endl;
+    std::cerr << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+              << std::endl;
+    std::cerr
+            << "This is a bug. Please file an issue here: https://github.com/grunt-lucas/tscreate/issues"
+            << std::endl;
+    std::cerr << "Be sure to include the full command you ran, as well as any accompanying input files that"
+              << std::endl;
+    std::cerr << "trigger the error. This way a maintainer can reproduce the issue." << std::endl;
     return 1;
 }

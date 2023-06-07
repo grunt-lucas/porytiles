@@ -1,30 +1,27 @@
 #include "rgb_tiled_png.h"
 
-#include "tsexception.h"
-
+#include <png.hpp>
 #include <stdexcept>
 
 namespace tscreate {
 RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
-    if (png.get_width() % TILE_DIMENSION != 0) {
-        throw TsException("PNG width must be divisible by 8, was: " + std::to_string(png.get_width()));
-    }
-    if (png.get_height() % TILE_DIMENSION != 0) {
-        throw TsException("PNG height must be divisible by 8, was: " + std::to_string(png.get_height()));
-    }
     width = png.get_width() / TILE_DIMENSION;
     height = png.get_height() / TILE_DIMENSION;
 
-    for (long tileY = 0; tileY < height; tileY++) {
-        for (long tileX = 0; tileX < width; tileX++) {
-            long pixelYStart = tileY * TILE_DIMENSION;
-            long pixelXStart = tileX * TILE_DIMENSION;
+    for (long tileRow = 0; tileRow < height; tileRow++) {
+        for (long tileCol = 0; tileCol < width; tileCol++) {
+            long pixelRowStart = tileRow * TILE_DIMENSION;
+            long pixelColStart = tileCol * TILE_DIMENSION;
             RgbTile tile{{0, 0, 0}};
-            for (long y = 0; y < TILE_DIMENSION; y++) {
-                for (long x = 0; x < TILE_DIMENSION; x++) {
-                    png[pixelYStart + y][pixelXStart + x];
+            for (long row = 0; row < TILE_DIMENSION; row++) {
+                for (long col = 0; col < TILE_DIMENSION; col++) {
+                    png::byte red = png[pixelRowStart + row][pixelColStart + col].red;
+                    png::byte blue = png[pixelRowStart + row][pixelColStart + col].blue;
+                    png::byte green = png[pixelRowStart + row][pixelColStart + col].green;
+                    tile.setPixel(row, col, RgbColor{red, blue, green});
                 }
             }
+            addTile(tile);
         }
     }
 }
@@ -36,11 +33,11 @@ void RgbTiledPng::addTile(const RgbTile& tile) {
     tiles.push_back(tile);
 }
 
-const RgbTile& RgbTiledPng::tileAt(int row, int col) const {
+const RgbTile& RgbTiledPng::tileAt(long row, long col) const {
     return tiles.at(row * width + col);
 }
 
-const RgbTile& RgbTiledPng::tileAt(int index) const {
+const RgbTile& RgbTiledPng::tileAt(long index) const {
     return tiles.at(index);
 }
 } // namespace tscreate
