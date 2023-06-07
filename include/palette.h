@@ -1,7 +1,7 @@
 #ifndef TSCREATE_PALETTE_H
 #define TSCREATE_PALETTE_H
 
-#include "comparators.h"
+#include "pixel_comparators.h"
 
 #include <png.hpp>
 #include <unordered_set>

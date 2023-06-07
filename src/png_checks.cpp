@@ -1,6 +1,6 @@
 #include "png_checks.h"
 
-#include "comparators.h"
+#include "pixel_comparators.h"
 #include "cli_parser.h"
 #include "tsexception.h"
 #include "palette.h"

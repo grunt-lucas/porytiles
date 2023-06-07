@@ -1,4 +1,4 @@
-#include "comparators.h"
+#include "pixel_comparators.h"
 
 #include <png.hpp>
 #include <cstddef>
