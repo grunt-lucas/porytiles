@@ -1,7 +1,5 @@
 #include "palette.h"
 
-#include <png.hpp>
-
 namespace tscreate {
 const int PAL_SIZE_4BPP = 16;
 
@@ -17,4 +15,4 @@ bool Palette::addColor(const tscreate::RgbColor& color) {
 auto Palette::remainingColors() const {
     return PAL_SIZE_4BPP - index.size();
 }
-}
+} // namespace tscreate

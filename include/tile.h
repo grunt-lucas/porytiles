@@ -47,13 +47,13 @@ typedef Tile<int> IndexedTile;
 } // namespace tscreate
 
 namespace std {
-    template <typename T>
-    struct std::hash<tscreate::Tile<T>> {
-        size_t operator()(const tscreate::Tile<T>& tile) const {
-            // TODO impl
-            return 0;
-        }
-    };
-}
+template<typename T>
+struct std::hash<tscreate::Tile<T>> {
+    size_t operator()(const tscreate::Tile<T>& tile) const {
+        // TODO impl
+        return 0;
+    }
+};
+} // namespace tscreate
 
 #endif // TSCREATE_TILE_H

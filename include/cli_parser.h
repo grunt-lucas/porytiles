@@ -10,16 +10,16 @@ extern const char* const VERSION;
 extern const char* const RELEASE_DATE;
 
 // Options
-extern bool         gOptVerboseOutput;
-extern std::string  gOptStructureFilePath;
-extern std::string  gOptTransparentColor;
-extern int          gOptMaxPalettes;
+extern bool gOptVerboseOutput;
+extern std::string gOptStructureFilePath;
+extern std::string gOptTransparentColor;
+extern int gOptMaxPalettes;
 
 // Arguments (required)
-extern std::string  gArgMasterPngPath;
-extern std::string  gArgOutputPath;
+extern std::string gArgMasterPngPath;
+extern std::string gArgOutputPath;
 
 extern void parseOptions(int argc, char** argv);
-}
+} // namespace tscreate
 
 #endif // TSCREATE_CLI_PARSER_H

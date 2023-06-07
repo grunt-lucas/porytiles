@@ -41,7 +41,8 @@ void validateMasterPngTilesEach16Colors(const png::image<png::rgb_pixel>& master
                 for (png::uint_32 x = 0; x < TILE_DIMENSION; x++) {
                     uniqueRgb.insert(masterPng[pixelYStart + y][pixelXStart + x]);
                     if (uniqueRgb.size() > PAL_SIZE_4BPP) {
-                        throw TsException("too many unique colors in tile: " + std::to_string(tileX) + "," + std::to_string(tileY));
+                        throw TsException("too many unique colors in tile: " + std::to_string(tileX) + "," +
+                                          std::to_string(tileY));
                     }
                 }
             }
@@ -62,9 +63,10 @@ void validateMasterPngMaxUniqueColors(const png::image<png::rgb_pixel>& masterPn
         for (png::uint_32 x = 0; x < masterPng.get_width(); x++) {
             uniqueRgb.insert(masterPng[y][x]);
             if (uniqueRgb.size() > maxAllowedColors) {
-                throw TsException("too many unique colors in master PNG, max allowed: " + std::to_string(maxAllowedColors));
+                throw TsException(
+                        "too many unique colors in master PNG, max allowed: " + std::to_string(maxAllowedColors));
             }
         }
     }
 }
-}
+} // namespace tscreate

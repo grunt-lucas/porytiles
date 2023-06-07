@@ -21,6 +21,6 @@ public:
 
     bool addPalette(const tscreate::Palette& palette);
 };
-}
+} // namespace tscreate
 
 #endif // TSCREATE_TILESET_H

@@ -8,8 +8,8 @@ namespace tscreate {
 // Generic tscreate exception class
 class TsException : public std::runtime_error {
 public:
-    TsException(const std::string& msg) : std::runtime_error{msg} {}
+    explicit TsException(const std::string& msg) : std::runtime_error{msg} {}
 };
-}
+} // namespace tscreate
 
 #endif // TSCREATE_TSEXCEPTION_H

@@ -1,7 +1,5 @@
 #include "tileset.h"
 
-#include <png.hpp>
-
 namespace tscreate {
 const int NUM_BG_PALS = 16;
 
@@ -16,4 +14,4 @@ bool Tileset::addPalette(const tscreate::Palette& palette) {
     palettes.push_back(palette);
     return true;
 }
-}
+} // namespace tscreate

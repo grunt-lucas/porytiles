@@ -1,20 +1,16 @@
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
-#include "palette.h"
-#include "tile.h"
 
 #include <iostream>
-#include <getopt.h>
 #include <png.hpp>
-#include <filesystem>
 
 namespace tscreate {
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
     return program + ": error: ";
 }
-}
+} // namespace tscreate
 
 int main(int argc, char** argv) try {
     // Parse CLI options and args, fills out global opt vars with expected values

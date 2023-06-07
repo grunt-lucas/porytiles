@@ -13,6 +13,6 @@ class rgb_pixel_hasher {
 public:
     std::size_t operator()(const png::rgb_pixel& p) const;
 };
-}
+} // namespace tscreate
 
 #endif // TSCREATE_PIXEL_COMPARATORS_H

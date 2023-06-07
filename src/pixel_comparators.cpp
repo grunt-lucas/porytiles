@@ -15,6 +15,6 @@ std::size_t rgb_pixel_hasher::operator()(const png::rgb_pixel& p) const {
 
     return ((hash<int>()(p.red)
              ^ (hash<int>()(p.green) << 1)) >> 1)
-             ^ (hash<int>()(p.blue) << 1);
+           ^ (hash<int>()(p.blue) << 1);
 }
-}
+} // namespace tscreate

@@ -16,14 +16,15 @@ class Palette {
     std::vector<tscreate::RgbColor> index;
 
 public:
-    Palette(const tscreate::RgbColor& transparencyColor) {
+    explicit Palette(const tscreate::RgbColor& transparencyColor) {
         colors.insert(transparencyColor);
         index.push_back(transparencyColor);
     }
 
     bool addColor(const tscreate::RgbColor& color);
+
     auto remainingColors() const;
 };
-}
+} // namespace tscreate
 
 #endif // TSCREATE_PALLETE_H
