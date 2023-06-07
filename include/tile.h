@@ -6,34 +6,36 @@
 #include <png.hpp>
 #include <functional>
 #include <cstddef>
+#include <array>
 
 namespace tscreate {
-extern const int TILE_DIMENSION;
+// Tiles are always 8 by 8 pixels
+constexpr int TILE_DIMENSION = 8;
 
 template<typename T>
 class Tile {
-    T pixels[8][8];
+    std::array<std::array<T, TILE_DIMENSION>, TILE_DIMENSION> pixels;
 
 public:
     explicit Tile(T defaultValue) {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < pixels.size(); i++) {
+            for (int j = 0; j < pixels[i].size(); j++) {
                 this->pixels[i][j] = defaultValue;
             }
         }
     }
 
     Tile(const Tile<T>& other) {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < pixels.size(); i++) {
+            for (int j = 0; j < pixels[i].size(); j++) {
                 this->pixels[i][j] = other.pixels[i][j];
             }
         }
     }
 
     bool operator==(const Tile<T>& other) const {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int i = 0; i < pixels.size(); i++) {
+            for (int j = 0; j < pixels[i].size(); j++) {
                 if (this->pixels[i][j] != other.pixels[i][j])
                     return false;
             }
