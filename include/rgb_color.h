@@ -7,9 +7,9 @@
 
 namespace tscreate {
 class RgbColor {
-    const png::byte red;
-    const png::byte green;
-    const png::byte blue;
+    png::byte red;
+    png::byte green;
+    png::byte blue;
 
 public:
     RgbColor() : red{0}, green{0}, blue{0} {}
@@ -17,11 +17,17 @@ public:
     RgbColor(const png::byte red, const png::byte green, const png::byte blue)
             : red{red}, green{green}, blue{blue} {}
 
-    png::byte getRed() const { return red; }
+    RgbColor(const RgbColor& other) {
+        red = other.red;
+        green = other.green;
+        blue = other.blue;
+    }
 
-    png::byte getGreen() const { return green; }
+    [[nodiscard]] png::byte getRed() const { return red; }
 
-    png::byte getBlue() const { return blue; }
+    [[nodiscard]] png::byte getGreen() const { return green; }
+
+    [[nodiscard]] png::byte getBlue() const { return blue; }
 
     bool operator==(const RgbColor& other) const;
 };
@@ -31,9 +37,6 @@ namespace std {
 template<>
 struct std::hash<tscreate::RgbColor> {
     size_t operator()(const tscreate::RgbColor& rgbColor) const {
-        using std::size_t;
-        using std::hash;
-
         return ((hash<int>()(rgbColor.getRed()) ^
                  (hash<int>()(rgbColor.getGreen()) << 1)) >> 1) ^
                (hash<int>()(rgbColor.getBlue()) << 1);

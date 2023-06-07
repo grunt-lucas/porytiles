@@ -18,24 +18,24 @@ class Tile {
 
 public:
     explicit Tile(T defaultValue) {
-        for (int i = 0; i < pixels.size(); i++) {
-            for (int j = 0; j < pixels[i].size(); j++) {
+        for (int i = 0; i < TILE_DIMENSION; i++) {
+            for (int j = 0; j < TILE_DIMENSION; j++) {
                 this->pixels[i][j] = defaultValue;
             }
         }
     }
 
     Tile(const Tile<T>& other) {
-        for (int i = 0; i < pixels.size(); i++) {
-            for (int j = 0; j < pixels[i].size(); j++) {
+        for (int i = 0; i < TILE_DIMENSION; i++) {
+            for (int j = 0; j < TILE_DIMENSION; j++) {
                 this->pixels[i][j] = other.pixels[i][j];
             }
         }
     }
 
     bool operator==(const Tile<T>& other) const {
-        for (int i = 0; i < pixels.size(); i++) {
-            for (int j = 0; j < pixels[i].size(); j++) {
+        for (int i = 0; i < TILE_DIMENSION; i++) {
+            for (int j = 0; j < TILE_DIMENSION; j++) {
                 if (this->pixels[i][j] != other.pixels[i][j])
                     return false;
             }

@@ -1,7 +1,7 @@
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
-#include "tiled_png.h"
+#include "rgb_tiled_png.h"
 
 #include <iostream>
 #include <png.hpp>
@@ -10,6 +10,11 @@ namespace tscreate {
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
     return program + ": error: ";
+}
+
+std::string fatalPrefix() {
+    std::string program(PROGRAM_NAME);
+    return program + ": fatal: ";
 }
 } // namespace tscreate
 
@@ -43,11 +48,12 @@ int main(int argc, char** argv) try {
     return 0;
 }
 catch (tscreate::TsException& e) {
+    // Catch TsException here, these are errors that can reasonably be expected due to bad input, bad files, etc
     std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
     return 1;
 }
 catch (std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
-    std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
+    std::cerr << tscreate::fatalPrefix() << e.what() << std::endl;
     return 1;
 }

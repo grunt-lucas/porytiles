@@ -23,7 +23,7 @@ public:
 
     bool addColor(const tscreate::RgbColor& color);
 
-    auto remainingColors() const;
+    [[nodiscard]] auto remainingColors() const;
 };
 } // namespace tscreate
 
