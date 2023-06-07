@@ -13,7 +13,7 @@ extern const char* const RELEASE_DATE;
 extern bool         gOptVerboseOutput;
 extern std::string  gOptStructureFilePath;
 extern std::string  gOptTransparentColor;
-extern png::uint_32 gOptMaxPalettes;
+extern int          gOptMaxPalettes;
 
 // Arguments (required)
 extern std::string  gArgMasterPngPath;

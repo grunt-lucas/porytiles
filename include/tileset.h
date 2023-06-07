@@ -8,16 +8,16 @@
 #include <vector>
 
 namespace tscreate {
-extern const png::uint_32 NUM_BG_PALS;
+extern const int NUM_BG_PALS;
 
 class Tileset {
     std::vector<IndexedTile> tiles;
-    //std::unordered_set<IndexedTile> tilesIndex;
+    std::unordered_set<IndexedTile> tilesIndex;
     std::vector<Palette> palettes;
-    png::uint_32 maxPalettes;
+    int maxPalettes;
 
 public:
-    Tileset(const png::uint_32 maxPalettes);
+    explicit Tileset(int maxPalettes);
 
     bool addPalette(const tscreate::Palette& palette);
 };

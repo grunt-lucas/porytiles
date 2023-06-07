@@ -22,7 +22,7 @@ static int               MAX_PALETTE_DEFAULT  = 6;
 bool         gOptVerboseOutput       = VERBOSE_DEFAULT;
 std::string  gOptStructureFilePath;
 std::string  gOptTransparentColor    = TRANSPARENCY_DEFAULT;
-png::uint_32 gOptMaxPalettes         = MAX_PALETTE_DEFAULT;
+int          gOptMaxPalettes         = MAX_PALETTE_DEFAULT;
 
 // Arguments (required)
 std::string  gArgMasterPngPath;

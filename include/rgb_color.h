@@ -3,12 +3,13 @@
 
 #include <png.hpp>
 #include <cstddef>
+#include <functional>
 
 namespace tscreate {
 class RgbColor {
-    png::byte red;
-    png::byte green;
-    png::byte blue;
+    const png::byte red;
+    const png::byte green;
+    const png::byte blue;
 
 public:
     RgbColor() : red{0}, green{0}, blue{0} {}
@@ -16,11 +17,25 @@ public:
     RgbColor(const png::byte red, const png::byte green, const png::byte blue)
         : red{red}, green{green}, blue{blue} {}
 
-    bool operator==(const RgbColor& other) const;
+    png::byte getRed() const { return red; }
+    png::byte getGreen() const { return green; }
+    png::byte getBlue() const { return blue; }
 
-    struct Hash {
-        std::size_t operator()(const RgbColor& rgbColor) const;
-    };
+    bool operator==(const RgbColor& other) const;
+};
+} // namespace tscreate
+
+namespace std {
+    template <>
+    struct std::hash<tscreate::RgbColor> {
+    size_t operator()(const tscreate::RgbColor& rgbColor) const {
+        using std::size_t;
+        using std::hash;
+
+        return ((hash<int>()(rgbColor.getRed()) ^
+                (hash<int>()(rgbColor.getGreen()) << 1)) >> 1) ^
+                (hash<int>()(rgbColor.getBlue()) << 1);
+    }
 };
 }
 

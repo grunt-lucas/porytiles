@@ -3,9 +3,9 @@
 #include <png.hpp>
 
 namespace tscreate {
-const png::uint_32 NUM_BG_PALS = 16;
+const int NUM_BG_PALS = 16;
 
-Tileset::Tileset(const png::uint_32 maxPalettes) : maxPalettes{maxPalettes} {
+Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
 }
 

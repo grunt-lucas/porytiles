@@ -4,5 +4,5 @@
 
 namespace tscreate {
 // Tiles are always 8x8
-const png::uint_32 TILE_DIMENSION = 8;
+const int TILE_DIMENSION = 8;
 }
