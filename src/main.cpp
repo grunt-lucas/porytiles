@@ -1,6 +1,7 @@
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
+#include "tiled_png.h"
 
 #include <iostream>
 #include <png.hpp>
