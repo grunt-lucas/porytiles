@@ -1,10 +1,10 @@
 #include "png_checks.h"
 
-#include "tscreate.h"
 #include "comparators.h"
 #include "cli_parser.h"
 #include "tsexception.h"
 #include "palette.h"
+#include "tile.h"
 
 #include <unordered_set>
 

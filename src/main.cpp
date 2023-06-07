@@ -1,9 +1,8 @@
-#include "tscreate.h"
-
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
 #include "palette.h"
+#include "tile.h"
 
 #include <iostream>
 #include <getopt.h>
@@ -11,9 +10,6 @@
 #include <filesystem>
 
 namespace tscreate {
-const png::uint_32 TILE_DIMENSION = 8;
-const png::uint_32 NUM_BG_PALS = 16;
-
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
     return program + ": error: ";
