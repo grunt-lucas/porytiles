@@ -5,14 +5,14 @@
 
 #include <png.hpp>
 #include <unordered_set>
-#include <vector>
+#include <deque>
 
 namespace tscreate {
 extern const int PAL_SIZE_4BPP;
 
 class Palette {
     std::unordered_set<tscreate::RgbColor> colors;
-    std::vector<tscreate::RgbColor> index;
+    std::deque<tscreate::RgbColor> index;
 
 public:
     explicit Palette(const tscreate::RgbColor& transparencyColor) {

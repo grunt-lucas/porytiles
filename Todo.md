@@ -2,16 +2,12 @@
 
 ## Basic Algorithm Outline
 
-+ If master PNG width/rows is not divisible by 8, fail fast
++ If master PNG width/height is not divisible by 8, fail fast
 
 + Check each tile, if any has more than 16 colors, fail fast
 
 + Count all unique colors in the master, if greater than `(numPalettes * 15) + 1` (15 since first color of each pal
   is reserved for transparency, add one for the transparency color), fail fast
-    + A note: `tscreate` is "dumb" and does not allow for some clever things like palette sharing. I.e. you can't have a
-      tile with the indexes cleverly constructed such that it is valid in multiple palettes. The vanilla game does this
-      with the center and mart roof tiles, for example. This is actually a fairly large oversight, and we may want a way
-      to do this eventually.
 
 + The next step will be to construct the palettes (for now, we will ignore our structure file). We'll need to create
   an `RgbTiledPng` from the master PNG and a `vector` of `Palette` objects sized based on the numTiles parameter

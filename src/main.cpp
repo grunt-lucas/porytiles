@@ -25,9 +25,9 @@ int main(int argc, char** argv) try {
     // Verifies that master PNG path points at a valid PNG file
     tscreate::validateMasterPngIsAPng(tscreate::gArgMasterPngPath);
 
-    png::image<png::rgb_pixel> masterPng(tscreate::gArgMasterPngPath);
+    png::image<png::rgb_pixel> masterPng{tscreate::gArgMasterPngPath};
 
-    // Verifies that master PNG exists and validates its dimensions (must be divisible by 8 to hold tiles)
+    // Validates master PNG dimensions (must be divisible by 8 to hold tiles)
     tscreate::validateMasterPngDimensions(masterPng);
 
     // Master PNG file is safe to tile-ize
@@ -39,23 +39,14 @@ int main(int argc, char** argv) try {
     // Verifies that the master does not have too many unique colors
     tscreate::validateMasterPngMaxUniqueColors(masterTiles);
 
-    // Create output directory if possible, otherwise fail
-    // std::filesystem::create_directory(tscreate::gArgOutputPath);
-
-    // TODO : remove this test code that simply writes the master PNG to output dir
-    // std::filesystem::path parentDirectory(tscreate::gArgOutputPath);
-    // std::filesystem::path outputFile("output.png");
-    // png::image<png::rgb_pixel> masterPng(tscreate::gArgMasterPngPath);
-    // masterPng.write(parentDirectory / outputFile);
-
     return 0;
 }
-catch (tscreate::TsException& e) {
+catch (const tscreate::TsException& e) {
     // Catch TsException here, these are errors that can reasonably be expected due to bad input, bad files, etc
     std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
     return 1;
 }
-catch (std::exception& e) {
+catch (const std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
     std::cerr << tscreate::fatalPrefix() << e.what() << std::endl;
     std::cerr << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
