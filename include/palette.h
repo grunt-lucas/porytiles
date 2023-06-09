@@ -27,6 +27,8 @@ public:
     RgbColor colorAt(int i);
 
     [[nodiscard]] auto remainingColors() const;
+
+    [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
 };
 } // namespace tscreate
 

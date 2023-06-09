@@ -29,7 +29,7 @@ public:
 
     [[nodiscard]] const RgbTile& tileAt(long index) const;
 
-    std::string tileDebugString(long index) const;
+    [[nodiscard]] std::string tileDebugString(long index) const;
 };
 } // namespace tscreate
 

@@ -1,5 +1,7 @@
 # Todo List
 
++ Print tiles directly to the CLI! https://github.com/eddieantonio/imgcat
+
 ## Basic Algorithm Outline
 
 + If master PNG width/height is not divisible by 8, fail fast

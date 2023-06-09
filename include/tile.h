@@ -2,6 +2,7 @@
 #define TSCREATE_TILE_H
 
 #include "rgb_color.h"
+#include "palette.h"
 
 #include <png.hpp>
 #include <functional>
@@ -9,6 +10,7 @@
 #include <array>
 #include <stdexcept>
 #include <unordered_set>
+#include <algorithm>
 
 namespace tscreate {
 // Tiles are always 8 by 8 pixels
@@ -40,7 +42,7 @@ public:
         return true;
     }
 
-    T getPixel(long row, long col) const {
+    [[nodiscard]] T getPixel(long row, long col) const {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{
                     "internal: Tile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
@@ -60,7 +62,7 @@ public:
         pixels.at(row * TILE_DIMENSION + col) = value;
     }
 
-    bool isUniformly(T value) const {
+    [[nodiscard]] bool isUniformly(T value) const {
         for (int i = 0; i < PIXEL_COUNT; i++) {
             if (pixels[i] != value)
                 return false;
@@ -68,7 +70,7 @@ public:
         return true;
     }
 
-    std::unordered_set<T> uniquePixels() const {
+    [[nodiscard]] std::unordered_set<T> uniquePixels() const {
         std::unordered_set<T> uniquePixels;
         for (int i = 0; i < PIXEL_COUNT; i++) {
             uniquePixels.insert(pixels[i]);
