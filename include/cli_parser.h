@@ -1,6 +1,8 @@
 #ifndef TSCREATE_CLI_PARSER_H
 #define TSCREATE_CLI_PARSER_H
 
+#include "rgb_color.h"
+
 #include <string>
 #include <png.hpp>
 
@@ -12,7 +14,7 @@ extern const char* const RELEASE_DATE;
 // Options
 extern bool gOptVerboseOutput;
 extern std::string gOptStructureFilePath;
-extern std::string gOptTransparentColor;
+extern RgbColor gOptTransparentColor;
 extern int gOptMaxPalettes;
 
 // Arguments (required)

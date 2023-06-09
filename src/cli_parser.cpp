@@ -1,6 +1,7 @@
 #include "cli_parser.h"
 
 #include "tsexception.h"
+#include "rgb_color.h"
 
 #include <string>
 #include <iostream>
@@ -14,13 +15,13 @@ const char* const RELEASE_DATE = "1 June 2023";
 
 // Defaults for unsupplied options
 static bool VERBOSE_DEFAULT = false;
-static const char* const TRANSPARENCY_DEFAULT = "251,30,228";
+static const RgbColor TRANSPARENCY_DEFAULT = {251, 39, 228};
 static int MAX_PALETTE_DEFAULT = 6;
 
 // Options
 bool gOptVerboseOutput = VERBOSE_DEFAULT;
 std::string gOptStructureFilePath;
-std::string gOptTransparentColor = TRANSPARENCY_DEFAULT;
+RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 
 // Arguments (required)
@@ -53,7 +54,8 @@ static void printHelp(std::ostream& outStream) {
             << "   -s, --structure-file=<file>      Specify a PNG file for use as a structure key. See wiki for more info."
             << endl;
     outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: "
-              << TRANSPARENCY_DEFAULT << ")." << endl;
+              << TRANSPARENCY_DEFAULT.prettyString() << ")."
+              << endl;
     outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
@@ -96,7 +98,8 @@ void parseOptions(int argc, char** argv) {
                 break;
             case 't':
                 // TODO parse in separate function that can error
-                gOptTransparentColor = optarg;
+                throw TsException{"TODO: --transparent-color option unimplemented"};
+                // gOptTransparentColor = optarg;
                 break;
             case 'v':
                 printVersion();

@@ -53,15 +53,20 @@ public:
 };
 
 typedef Tile<tscreate::RgbColor> RgbTile;
-typedef Tile<int> IndexedTile;
+typedef Tile<png::byte> IndexedTile;
 } // namespace tscreate
 
 namespace std {
 template<typename T>
 struct std::hash<tscreate::Tile<T>> {
     size_t operator()(const tscreate::Tile<T>& tile) const {
-        // TODO impl
-        return 0;
+        size_t result = 0;
+        for (long row = 0; row < tscreate::TILE_DIMENSION; row++) {
+            for (long col = 0; col < tscreate::TILE_DIMENSION; col++) {
+                result = result * 31 + std::hash(tile.getPixel(row, col));
+            }
+        }
+        return result;
     }
 };
 } // namespace tscreate

@@ -19,6 +19,8 @@ class Tileset {
 public:
     explicit Tileset(int maxPalettes);
 
+    [[nodiscard]] int getMaxPalettes() const { return maxPalettes; }
+
     bool addPalette(const tscreate::Palette& palette);
 };
 } // namespace tscreate

@@ -11,16 +11,20 @@ namespace tscreate {
 extern const int PAL_SIZE_4BPP;
 
 class Palette {
-    std::unordered_set<tscreate::RgbColor> colors;
-    std::deque<tscreate::RgbColor> index;
+    std::unordered_set<RgbColor> index;
+    std::deque<RgbColor> colors;
 
 public:
-    explicit Palette(const tscreate::RgbColor& transparencyColor) {
-        colors.insert(transparencyColor);
-        index.push_back(transparencyColor);
+    explicit Palette(const RgbColor& transparencyColor) {
+        index.insert(transparencyColor);
+        colors.push_back(transparencyColor);
     }
 
-    bool addColor(const tscreate::RgbColor& color);
+    bool addColorAtStart(const RgbColor& color);
+
+    bool addColorAtEnd(const RgbColor& color);
+
+    RgbColor colorAt(int i);
 
     [[nodiscard]] auto remainingColors() const;
 };

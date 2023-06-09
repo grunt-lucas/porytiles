@@ -30,6 +30,8 @@ public:
     [[nodiscard]] png::byte getBlue() const { return blue; }
 
     bool operator==(const RgbColor& other) const;
+
+    [[nodiscard]] std::string prettyString() const;
 };
 } // namespace tscreate
 

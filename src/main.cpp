@@ -2,6 +2,8 @@
 #include "cli_parser.h"
 #include "tsexception.h"
 #include "rgb_tiled_png.h"
+#include "tileset.h"
+#include "palette.h"
 
 #include <iostream>
 #include <png.hpp>
@@ -38,6 +40,11 @@ int main(int argc, char** argv) try {
 
     // Verifies that the master does not have too many unique colors
     tscreate::validateMasterPngMaxUniqueColors(masterTiles);
+
+    tscreate::Tileset tileset{tscreate::gOptMaxPalettes};
+    for (int i = 0; i < tileset.getMaxPalettes(); i++) {
+        tileset.addPalette(tscreate::Palette{tscreate::gOptTransparentColor});
+    }
 
     return 0;
 }

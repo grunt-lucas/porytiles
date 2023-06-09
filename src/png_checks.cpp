@@ -30,6 +30,7 @@ void validateMasterPngDimensions(const png::image<png::rgb_pixel>& masterPng) {
 
 void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
     std::unordered_set<RgbColor> uniqueRgb;
+    long index = 0;
 
     for (long row = 0; row < png.getHeight(); row++) {
         for (long col = 0; col < png.getWidth(); col++) {
@@ -39,11 +40,14 @@ void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
                 for (long pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
                     uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
                     if (uniqueRgb.size() > PAL_SIZE_4BPP) {
-                        throw TsException("too many unique colors in tile: " + std::to_string(col) + "," +
-                                          std::to_string(row));
+                        throw TsException(
+                                "too many unique colors in tile " + std::to_string(index) +
+                                " (" + std::to_string(col) + "," + std::to_string(row) + ")"
+                        );
                     }
                 }
             }
+            index++;
         }
     }
 }
