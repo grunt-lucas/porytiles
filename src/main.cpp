@@ -42,9 +42,7 @@ int main(int argc, char** argv) try {
     tscreate::validateMasterPngMaxUniqueColors(masterTiles);
 
     tscreate::Tileset tileset{tscreate::gOptMaxPalettes};
-    for (int i = 0; i < tileset.getMaxPalettes(); i++) {
-        tileset.addPalette(tscreate::Palette{tscreate::gOptTransparentColor});
-    }
+    tileset.buildPalettes(masterTiles);
 
     return 0;
 }

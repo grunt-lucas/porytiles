@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <string>
 
 namespace tscreate {
 class RgbTiledPng {
@@ -27,6 +28,8 @@ public:
     [[nodiscard]] const RgbTile& tileAt(long row, long col) const;
 
     [[nodiscard]] const RgbTile& tileAt(long index) const;
+
+    std::string tileDebugString(long index) const;
 };
 } // namespace tscreate
 

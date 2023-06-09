@@ -13,6 +13,7 @@
   an `RgbTiledPng` from the master PNG and a `vector` of `Palette` objects sized based on the numTiles parameter
 
 + Iterate over each `RgbTile` in our `RgbTiledPng`
+    + If this is a primer-marker tile, skip it
     + Add each `RgbColor` in the tile to an `unordered_set`
     + Compute `diff = tileColorSet - paletteColorSet` for each palette, where `-` is set difference
         + If `size(diff) == 0`, that means `paletteColorSet` fully covers `tileColorSet`, and so we can break, we have
@@ -37,7 +38,7 @@
   sub-iteration and process only other tiles that are part of this structure. Perform the same pal calculations as
   above. Once we get to the end of the image and there are no more tiles in this structure, continue iterating where we
   left off
-    + Still need to figure out the right way to handle structure tiles. There are two possibilities I have thought of
+    + Still need to figure out the right way to handle structure tiles. There are three possibilities I have thought of
       thus far:
         + Structures are keyed by color. Any tile of the same color will be considered the same "struture". This is
           highly granular and flexible, but tbh it is kinda tedious to work with. Especially because it might start to
@@ -46,6 +47,9 @@
           structure. This seems much easier to work with. The downside is users will have to make sure that different
           structures in their master PNG do not touch. That should be fairly easy though, since there is no hard limit
           to the size of the master PNG
+        + Don't have structure tiles at all: instead, encourage users to put one structure per logical "row" of their
+          master PNG. That is, the master PNG should be a very tall PNG where each coherent structure has only blank
+          tiles to its right.
 
 + At this point, our palettes should be correctly constructed. Now is the time to convert each tile from the master PNG
   into an index tile, and dedupe along the way. In fact, we could have probably done this simultaneously with allocating

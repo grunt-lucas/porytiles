@@ -13,8 +13,8 @@ extern const char* const RELEASE_DATE;
 
 // Options
 extern bool gOptVerboseOutput;
-extern std::string gOptStructureFilePath;
 extern RgbColor gOptTransparentColor;
+extern RgbColor gOptPrimerColor;
 extern int gOptMaxPalettes;
 
 // Arguments (required)

@@ -15,13 +15,14 @@ const char* const RELEASE_DATE = "1 June 2023";
 
 // Defaults for unsupplied options
 static bool VERBOSE_DEFAULT = false;
-static const RgbColor TRANSPARENCY_DEFAULT = {251, 39, 228};
+static const RgbColor TRANSPARENCY_DEFAULT = {251, 30, 228};
+static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
 static int MAX_PALETTE_DEFAULT = 6;
 
 // Options
 bool gOptVerboseOutput = VERBOSE_DEFAULT;
-std::string gOptStructureFilePath;
 RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
+RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 
 // Arguments (required)
@@ -31,37 +32,40 @@ std::string gArgOutputPath;
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-hpstvV] ";
+    outStream << " [-hpPtvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
+// @formatter:off
 static void printHelp(std::ostream& outStream) {
     using std::endl;
     outStream << PROGRAM_NAME << ", version " << VERSION << " of " << RELEASE_DATE << endl;
     outStream << "   by grunt-lucas: https://github.com/grunt-lucas/tscreate" << endl;
     outStream << endl;
-    outStream << "Convert a master PNG tilesheet and optional structure file to a pokeemerald-ready indexed" << endl;
-    outStream << "tileset PNG with matching palette files. See the repo wiki for more detailed usage information."
+    outStream << "Convert an RGB master PNG tilesheet to a pokeemerald-ready 4bpp indexed tileset PNG" << endl;
+    outStream << "with matching palette files. See the repo wiki for more detailed usage information."
               << endl;
     outStream << endl;
     printUsage(outStream);
     outStream << endl;
     outStream << "Options:" << endl;
     outStream
-            << "   -p, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed to allocate (default: "
-            << MAX_PALETTE_DEFAULT << ")." << endl;
+            << "   -p, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed" << endl
+            << "                                    to allocate (default: " << MAX_PALETTE_DEFAULT << ")." << endl;
+    outStream << endl;
     outStream
-            << "   -s, --structure-file=<file>      Specify a PNG file for use as a structure key. See wiki for more info."
-            << endl;
-    outStream << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: "
-              << TRANSPARENCY_DEFAULT.prettyString() << ")."
-              << endl;
+            << "   -P, --primer-color=<R,G,B>       Specify the tile color that marks the next tile as a primer" << endl
+            << "                                    (default: " << PRIMER_DEFAULT.prettyString() << "). See wiki for more info." << endl;
+    outStream << endl;
+    outStream
+            << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: " << TRANSPARENCY_DEFAULT.prettyString() << ")." << endl;
     outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
-    outStream << "   -v, --version  Print version info." << endl;
-    outStream << "   -V, --verbose  Enable verbose logging to stderr." << endl;
+    outStream << "   -V, --version  Print version info." << endl;
+    outStream << "   -v, --verbose  Enable verbose logging to stderr." << endl;
 }
+// @formatter:on
 
 static void printVersion() {
     using std::cout;
@@ -75,10 +79,9 @@ void parseOptions(int argc, char** argv) {
             {
                     {"help",              no_argument,       nullptr, 'h'},
                     {"max-palettes",      required_argument, nullptr, 'p'},
-                    {"structure-file",    required_argument, nullptr, 's'},
                     {"transparent-color", required_argument, nullptr, 't'},
-                    {"version",           no_argument,       nullptr, 'v'},
-                    {"verbose",           no_argument,       nullptr, 'V'},
+                    {"version",           no_argument,       nullptr, 'V'},
+                    {"verbose",           no_argument,       nullptr, 'v'},
                     {nullptr,             no_argument,       nullptr, 0}
             };
 
@@ -90,23 +93,20 @@ void parseOptions(int argc, char** argv) {
 
         switch (opt) {
             case 'p':
-                // TODO parse in separate function that can error
+                // TODO parse in separate function that can throw appropriate error if invalid arg
                 gOptMaxPalettes = std::stoi(optarg);
                 break;
-            case 's':
-                gOptStructureFilePath = optarg;
-                break;
             case 't':
-                // TODO parse in separate function that can error
+                // TODO parse in separate function that can throw appropriate error if invalid arg
                 throw TsException{"TODO: --transparent-color option unimplemented"};
                 // gOptTransparentColor = optarg;
                 break;
             case 'v':
-                printVersion();
-                exit(0);
-            case 'V':
                 gOptVerboseOutput = true;
                 break;
+            case 'V':
+                printVersion();
+                exit(0);
 
                 // Help message upon '-h/--help' goes to stdout
             case 'h':

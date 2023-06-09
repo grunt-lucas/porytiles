@@ -31,6 +31,8 @@ public:
 
     bool operator==(const RgbColor& other) const;
 
+    bool operator!=(const RgbColor& other) const;
+
     [[nodiscard]] std::string prettyString() const;
 };
 } // namespace tscreate

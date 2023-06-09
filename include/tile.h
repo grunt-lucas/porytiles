@@ -7,52 +7,77 @@
 #include <functional>
 #include <cstddef>
 #include <array>
+#include <stdexcept>
+#include <unordered_set>
 
 namespace tscreate {
 // Tiles are always 8 by 8 pixels
 constexpr int TILE_DIMENSION = 8;
+constexpr int PIXEL_COUNT = TILE_DIMENSION * TILE_DIMENSION;
 
 template<typename T>
 class Tile {
-    std::array<std::array<T, TILE_DIMENSION>, TILE_DIMENSION> pixels;
+    std::array<T, PIXEL_COUNT> pixels;
 
 public:
     explicit Tile(T defaultValue) {
-        for (int i = 0; i < TILE_DIMENSION; i++) {
-            for (int j = 0; j < TILE_DIMENSION; j++) {
-                this->pixels[i][j] = defaultValue;
-            }
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+            pixels[i] = defaultValue;
         }
     }
 
     Tile(const Tile<T>& other) {
-        for (int i = 0; i < TILE_DIMENSION; i++) {
-            for (int j = 0; j < TILE_DIMENSION; j++) {
-                this->pixels[i][j] = other.pixels[i][j];
-            }
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+            pixels[i] = other.pixels[i];
         }
     }
 
     bool operator==(const Tile<T>& other) const {
-        for (int i = 0; i < TILE_DIMENSION; i++) {
-            for (int j = 0; j < TILE_DIMENSION; j++) {
-                if (this->pixels[i][j] != other.pixels[i][j])
-                    return false;
-            }
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+            if (pixels[i] != other.pixels[i])
+                return false;
         }
         return true;
     }
 
     T getPixel(long row, long col) const {
-        return pixels.at(row).at(col);
+        if (row >= TILE_DIMENSION)
+            throw std::runtime_error{
+                    "internal: Tile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
+        if (col >= TILE_DIMENSION)
+            throw std::runtime_error{
+                    "internal: Tile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
+        return pixels.at(row * TILE_DIMENSION + col);
     }
 
     void setPixel(long row, long col, T value) {
-        pixels.at(row).at(col) = value;
+        if (row >= TILE_DIMENSION)
+            throw std::runtime_error{
+                    "internal: Tile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
+        if (col >= TILE_DIMENSION)
+            throw std::runtime_error{
+                    "internal: Tile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
+        pixels.at(row * TILE_DIMENSION + col) = value;
+    }
+
+    bool isUniformly(T value) const {
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+            if (pixels[i] != value)
+                return false;
+        }
+        return true;
+    }
+
+    std::unordered_set<T> uniquePixels() const {
+        std::unordered_set<T> uniquePixels;
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+            uniquePixels.insert(pixels[i]);
+        }
+        return uniquePixels;
     }
 };
 
-typedef Tile<tscreate::RgbColor> RgbTile;
+typedef Tile<RgbColor> RgbTile;
 typedef Tile<png::byte> IndexedTile;
 } // namespace tscreate
 

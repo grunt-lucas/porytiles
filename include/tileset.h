@@ -3,9 +3,11 @@
 
 #include "tile.h"
 #include "palette.h"
+#include "rgb_tiled_png.h"
 
 #include <png.hpp>
 #include <vector>
+#include <unordered_set>
 
 namespace tscreate {
 extern const int NUM_BG_PALS;
@@ -21,7 +23,7 @@ public:
 
     [[nodiscard]] int getMaxPalettes() const { return maxPalettes; }
 
-    bool addPalette(const tscreate::Palette& palette);
+    void buildPalettes(const RgbTiledPng& masterTiles);
 };
 } // namespace tscreate
 

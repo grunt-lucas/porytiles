@@ -42,7 +42,7 @@ void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
                     if (uniqueRgb.size() > PAL_SIZE_4BPP) {
                         throw TsException(
                                 "too many unique colors in tile " + std::to_string(index) +
-                                " (" + std::to_string(col) + "," + std::to_string(row) + ")"
+                                " (row " + std::to_string(row) + ", col " + std::to_string(col) + ")"
                         );
                     }
                 }
