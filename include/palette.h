@@ -8,7 +8,7 @@
 #include <deque>
 
 namespace tscreate {
-extern const int PAL_SIZE_4BPP;
+constexpr int PAL_SIZE_4BPP = 16;
 
 class Palette {
     std::unordered_set<RgbColor> index;
@@ -26,7 +26,7 @@ public:
 
     RgbColor colorAt(int i);
 
-    [[nodiscard]] auto remainingColors() const;
+    [[nodiscard]] size_t remainingColors() const;
 
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
 };

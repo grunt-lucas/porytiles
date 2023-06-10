@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 namespace tscreate {
-extern const int NUM_BG_PALS;
+constexpr int NUM_BG_PALS = 12;
 
 class Tileset {
     std::vector<IndexedTile> tiles;

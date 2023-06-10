@@ -1,5 +1,6 @@
 #include "cli_parser.h"
 
+#include "tileset.h"
 #include "tsexception.h"
 #include "rgb_color.h"
 
@@ -79,6 +80,7 @@ void parseOptions(int argc, char** argv) {
             {
                     {"help",              no_argument,       nullptr, 'h'},
                     {"max-palettes",      required_argument, nullptr, 'p'},
+                    {"primer-color",      required_argument, nullptr, 'P'},
                     {"transparent-color", required_argument, nullptr, 't'},
                     {"version",           no_argument,       nullptr, 'V'},
                     {"verbose",           no_argument,       nullptr, 'v'},
@@ -95,12 +97,21 @@ void parseOptions(int argc, char** argv) {
             case 'p':
                 // TODO parse in separate function that can throw appropriate error if invalid arg
                 gOptMaxPalettes = std::stoi(optarg);
+                if (gOptMaxPalettes > NUM_BG_PALS) {
+                    throw TsException{"requested " + std::to_string(gOptMaxPalettes) +
+                                      " palettes, max allowed: " + std::to_string(NUM_BG_PALS)};
+                }
                 break;
+            case 'P':
+                // TODO parse in separate function that can throw appropriate error if invalid arg
+                throw TsException{"TODO: --primer-color option unimplemented"};
+                // gOptPrimerColor = optarg;
+                // break;
             case 't':
                 // TODO parse in separate function that can throw appropriate error if invalid arg
                 throw TsException{"TODO: --transparent-color option unimplemented"};
                 // gOptTransparentColor = optarg;
-                break;
+                // break;
             case 'v':
                 gOptVerboseOutput = true;
                 break;

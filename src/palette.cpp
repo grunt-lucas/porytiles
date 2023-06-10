@@ -3,8 +3,6 @@
 #include "rgb_color.h"
 
 namespace tscreate {
-const int PAL_SIZE_4BPP = 16;
-
 bool Palette::addColorAtStart(const RgbColor& color) {
     if (colors.size() >= PAL_SIZE_4BPP) {
         return false;
@@ -29,7 +27,7 @@ RgbColor Palette::colorAt(int i) {
     return colors.at(i);
 }
 
-auto Palette::remainingColors() const {
+size_t Palette::remainingColors() const {
     return PAL_SIZE_4BPP - colors.size();
 }
 } // namespace tscreate
