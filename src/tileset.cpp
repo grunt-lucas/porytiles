@@ -4,11 +4,12 @@
 #include "tsoutput.h"
 #include "tile.h"
 #include "palette.h"
+#include "tsexception.h"
 
 namespace tscreate {
 namespace {
 std::unordered_set<RgbColor> pixelsNotInPalette(const RgbTile& tile, const Palette& palette) {
-    std::unordered_set<RgbColor> uniquePixels = tile.uniquePixels();
+    std::unordered_set<RgbColor> uniquePixels = tile.uniquePixels(gOptTransparentColor);
     std::unordered_set<RgbColor> paletteIndex = palette.getIndex();
     std::unordered_set<RgbColor> pixelsNotInPalette;
     std::copy_if(uniquePixels.begin(), uniquePixels.end(),
@@ -19,13 +20,13 @@ std::unordered_set<RgbColor> pixelsNotInPalette(const RgbTile& tile, const Palet
 
 int paletteWithFewestColors(const std::vector<Palette>& palettes) {
     int indexOfMin = 0;
-    // Palettes can only have 16 colors, so 1000 will work fine.
+    // Palettes can only have 16 colors, so 1000 will work fine as a starting value
     size_t minColors = 1000;
     for (int i = 0; i < palettes.size(); i++) {
-        auto remainingColors = palettes.at(i).remainingColors();
-        if (remainingColors < minColors) {
+        auto size = palettes.at(i).size();
+        if (size < minColors) {
             indexOfMin = i;
-            minColors = remainingColors;
+            minColors = size;
         }
     }
     return indexOfMin;
@@ -39,8 +40,35 @@ bool areAllTileColorsUnseen(std::unordered_set<RgbColor> uniqueTileColors,
                        });
 }
 
-void processTile(const RgbTiledPng& masterTiles, int tileIndex, const std::vector<Palette>& palettes) {
+int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes,
+                              std::vector<std::unordered_set<RgbColor>> unseenTileColors) {
+    int indexOfClosestPalette = -1;
+    // Palettes can only have 16 colors, so 1000 will work fine as a starting value
+    size_t missingColorCount = 1000;
+    for (int i = 0; i < unseenTileColors.size(); i++) {
+        if (unseenTileColors[i].size() < missingColorCount &&
+            unseenTileColors[i].size() < palettes[i].remainingColors()) {
+            missingColorCount = unseenTileColors[i].size();
+            indexOfClosestPalette = i;
+        }
+    }
+    if (indexOfClosestPalette == -1) {
+        // This happens when no palette has room
+        throw TsException{masterTiles.tileDebugString(tileIndex) + ": not enough palettes to allocate this tile"};
+    }
+    return indexOfClosestPalette;
+}
+
+void processTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes) {
     const RgbTile& tile = masterTiles.tileAt(tileIndex);
+
+    /*
+     * If this is a total transparent tile, skip it.
+     */
+    if (tile.isUniformly(gOptTransparentColor)) {
+        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
+        return;
+    }
 
     /*
      * If this is a primer-marker tile, skip it.
@@ -53,7 +81,7 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, const std::vecto
     /*
      * Add each RgbColor in the tile to an unordered_set, `uniqueTileColors`
      */
-    std::unordered_set<RgbColor> uniqueTileColors = tile.uniquePixels();
+    std::unordered_set<RgbColor> uniqueTileColors = tile.uniquePixels(gOptTransparentColor);
     std::string logString = masterTiles.tileDebugString(tileIndex) + ": " +
                             std::to_string(uniqueTileColors.size()) + " unique color(s): [";
     for (const auto& color: uniqueTileColors) {
@@ -103,28 +131,43 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, const std::vecto
      */
     bool tileColorsAllUnseen = areAllTileColorsUnseen(uniqueTileColors, unseenTileColors);
     if (tileColorsAllUnseen) {
-        logString = masterTiles.tileDebugString(tileIndex) + ": all colors are unseen";
+        int palWithFewestColors = paletteWithFewestColors(palettes);
+        if (uniqueTileColors.size() > palettes[palWithFewestColors].remainingColors()) {
+            throw TsException{masterTiles.tileDebugString(tileIndex) + ": not enough palettes to allocate this tile"};
+        }
+        for (const auto& color: uniqueTileColors) {
+            palettes[palWithFewestColors].addColorAtEnd(color);
+        }
+        logString = masterTiles.tileDebugString(tileIndex) + ": all colors were unseen, added to palette " +
+                    std::to_string(palWithFewestColors) + ", " +
+                    std::to_string(palettes[palWithFewestColors].remainingColors()) + " colors remaining";
         verboseLog(logString);
         logString.clear();
-        int palWithFewestColors = paletteWithFewestColors(palettes);
-        palettes[palWithFewestColors];
-        // add colors to palWithFewest
         return;
     }
 
     /*
-     * If `size(unseenTileColors) > 0`, `uniqueTileColors` shares some, but not all, colors with this palette. Save off
-     * how many. Do this for each palette, we'll want to use the palette that is the closest match. If the closest match
-     * palette doesn't have room for the new colors, try the next closest match. If no palette has room, fail the whole
-     * program
+     * If `size(unseenTileColors[i]) > 0`, `uniqueTileColors` shares some, but not all, colors with `palette[i]`. Save
+     * off how many. Do this for each palette, we'll want to use the palette that is the closest match. If the closest
+     * match palette doesn't have room for the new colors, try the next closest match. If no palette has room, fail the
+     * whole program
      */
+    int closestPalWithRoom = getClosestPaletteWithRoom(masterTiles, tileIndex, palettes, unseenTileColors);
+    for (const auto& color: unseenTileColors[closestPalWithRoom]) {
+        palettes[closestPalWithRoom].addColorAtEnd(color);
+    }
+    logString = masterTiles.tileDebugString(tileIndex) + ": contained some new colors, added to palette " +
+                std::to_string(closestPalWithRoom) + ", " +
+                std::to_string(palettes[closestPalWithRoom].remainingColors()) + " colors remaining";
+    verboseLog(logString);
+    logString.clear();
 }
 } // namespace (anonymous)
 
 Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
     for (int i = 0; i < getMaxPalettes(); i++) {
-        // prefill palette vector with `maxPalettes' of empty palettes
+        // prefill palette vector with empty palettes
         palettes.emplace_back();
     }
 }

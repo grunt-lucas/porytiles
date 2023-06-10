@@ -31,6 +31,8 @@ public:
 
     RgbColor colorAt(int i);
 
+    [[nodiscard]] size_t size() const;
+
     [[nodiscard]] size_t remainingColors() const;
 
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }

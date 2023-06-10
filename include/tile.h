@@ -70,11 +70,11 @@ public:
         return true;
     }
 
-    [[nodiscard]] std::unordered_set<T> uniquePixels() const {
-        // TODO : we don't want to count transparency here
+    [[nodiscard]] std::unordered_set<T> uniquePixels(T transparencyColor) const {
         std::unordered_set<T> uniquePixels;
         for (int i = 0; i < PIXEL_COUNT; i++) {
-            uniquePixels.insert(pixels[i]);
+            if (pixels[i] != transparencyColor)
+                uniquePixels.insert(pixels[i]);
         }
         return uniquePixels;
     }

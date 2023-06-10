@@ -25,6 +25,10 @@ RgbColor Palette::colorAt(int i) {
     return colors.at(i);
 }
 
+[[nodiscard]] size_t Palette::size() const {
+    return colors.size();
+}
+
 size_t Palette::remainingColors() const {
     return PAL_SIZE_4BPP - colors.size();
 }
