@@ -16,6 +16,7 @@ class Palette {
 
 public:
     explicit Palette(const RgbColor& transparencyColor) {
+        // TODO : we should not add this until the very end, will require code change in many places
         index.insert(transparencyColor);
         colors.push_back(transparencyColor);
     }
