@@ -39,4 +39,4 @@ public:
 };
 } // namespace tscreate
 
-#endif // TSCREATE_PALLETE_H
+#endif // TSCREATE_PALETTE_H

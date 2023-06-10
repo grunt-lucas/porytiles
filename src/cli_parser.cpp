@@ -18,12 +18,14 @@ const char* const RELEASE_DATE = "1 June 2023";
 static bool VERBOSE_DEFAULT = false;
 static const RgbColor TRANSPARENCY_DEFAULT = {251, 30, 228};
 static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
+static const RgbColor SIBLING_DEFAULT = {255, 255, 255};
 static int MAX_PALETTE_DEFAULT = 6;
 
 // Options
 bool gOptVerboseOutput = VERBOSE_DEFAULT;
 RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
+RgbColor gOptSiblingColor = SIBLING_DEFAULT;
 int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 
 // Arguments (required)
@@ -33,7 +35,7 @@ std::string gArgOutputPath;
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-hpPtvV] ";
+    outStream << " [-hnpstvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
@@ -51,12 +53,16 @@ static void printHelp(std::ostream& outStream) {
     outStream << endl;
     outStream << "Options:" << endl;
     outStream
-            << "   -p, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed" << endl
+            << "   -n, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed" << endl
             << "                                    to allocate (default: " << MAX_PALETTE_DEFAULT << ")." << endl;
     outStream << endl;
     outStream
-            << "   -P, --primer-color=<R,G,B>       Specify the tile color that marks the next tile as a primer" << endl
+            << "   -p, --primer-color=<R,G,B>       Specify the tile color for the primer control tile" << endl
             << "                                    (default: " << PRIMER_DEFAULT.prettyString() << "). See wiki for more info." << endl;
+    outStream << endl;
+    outStream
+            << "   -s, --sibling-color=<R,G,B>      Specify the tile color for the sibling control tile" << endl
+            << "                                    (default: " << SIBLING_DEFAULT.prettyString() << "). See wiki for more info." << endl;
     outStream << endl;
     outStream
             << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: " << TRANSPARENCY_DEFAULT.prettyString() << ")." << endl;
@@ -75,15 +81,16 @@ static void printVersion() {
 }
 
 void parseOptions(int argc, char** argv) {
-    const char* const shortOptions = "hp:s:t:vV";
+    const char* const shortOptions = "hn:p:s:t:vV";
     static struct option longOptions[] =
             {
                     {"help",              no_argument,       nullptr, 'h'},
-                    {"max-palettes",      required_argument, nullptr, 'p'},
-                    {"primer-color",      required_argument, nullptr, 'P'},
+                    {"max-palettes",      required_argument, nullptr, 'n'},
+                    {"primer-color",      required_argument, nullptr, 'p'},
+                    {"sibling-color",     required_argument, nullptr, 's'},
                     {"transparent-color", required_argument, nullptr, 't'},
-                    {"version",           no_argument,       nullptr, 'V'},
                     {"verbose",           no_argument,       nullptr, 'v'},
+                    {"version",           no_argument,       nullptr, 'V'},
                     {nullptr,             no_argument,       nullptr, 0}
             };
 
@@ -94,7 +101,7 @@ void parseOptions(int argc, char** argv) {
             break;
 
         switch (opt) {
-            case 'p':
+            case 'n':
                 // TODO parse in separate function that can throw appropriate error if invalid arg
                 gOptMaxPalettes = std::stoi(optarg);
                 if (gOptMaxPalettes > NUM_BG_PALS) {
@@ -102,10 +109,15 @@ void parseOptions(int argc, char** argv) {
                                       " palettes, max allowed: " + std::to_string(NUM_BG_PALS)};
                 }
                 break;
-            case 'P':
+            case 'p':
                 // TODO parse in separate function that can throw appropriate error if invalid arg
                 throw TsException{"TODO: --primer-color option unimplemented"};
                 // gOptPrimerColor = optarg;
+                // break;
+            case 's':
+                // TODO parse in separate function that can throw appropriate error if invalid arg
+                throw TsException{"TODO: --sibling-color option unimplemented"};
+                // gOptSiblingColor = optarg;
                 // break;
             case 't':
                 // TODO parse in separate function that can throw appropriate error if invalid arg

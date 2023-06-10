@@ -82,6 +82,8 @@
     + sibling_tiles.txt can hold comma separated lines for sibling tiles: e.g. `12,45,32`
     + Or, instead of a text file, have a sibling_tile_start color: then each tile encountered is considered a sibling
       until we see a sibling_tile_end color
+    + We should allow sibling tiles to be primer tiles at the same time, that way users can just line up all colors they
+      want aligned and be done with it
     + the palette allocation algorithm will need to allocate colors for sibling tiles first
         + each sibling tile must use its own palette, but the color indices must match
         + we can ensure this by picking the least populated N palettes and push_front

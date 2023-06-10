@@ -15,6 +15,7 @@ extern const char* const RELEASE_DATE;
 extern bool gOptVerboseOutput;
 extern RgbColor gOptTransparentColor;
 extern RgbColor gOptPrimerColor;
+extern RgbColor gOptSiblingColor;
 extern int gOptMaxPalettes;
 
 // Arguments (required)

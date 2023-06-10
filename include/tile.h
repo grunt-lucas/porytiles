@@ -3,6 +3,7 @@
 
 #include "rgb_color.h"
 #include "palette.h"
+#include "cli_parser.h"
 
 #include <png.hpp>
 #include <functional>
@@ -33,6 +34,8 @@ public:
             pixels[i] = other.pixels[i];
         }
     }
+
+    virtual ~Tile() = default;
 
     bool operator==(const Tile<T>& other) const {
         for (int i = 0; i < PIXEL_COUNT; i++) {
@@ -78,10 +81,27 @@ public:
         }
         return uniquePixels;
     }
+
+    virtual bool isControlTile() const;
+
+    virtual std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 
 typedef Tile<RgbColor> RgbTile;
+
+template<>
+bool RgbTile::isControlTile() const;
+
+template<>
+std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const;
+
 typedef Tile<png::byte> IndexedTile;
+
+template<>
+bool IndexedTile::isControlTile() const;
+
+template<>
+std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const;
 } // namespace tscreate
 
 namespace std {

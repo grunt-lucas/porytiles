@@ -23,7 +23,11 @@ public:
 
     [[nodiscard]] int getMaxPalettes() const { return maxPalettes; }
 
+    void alignSiblings(const RgbTiledPng& masterTiles);
+
     void buildPalettes(const RgbTiledPng& masterTiles);
+
+    void indexTiles(const RgbTiledPng& masterTiles);
 };
 } // namespace tscreate
 

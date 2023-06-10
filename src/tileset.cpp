@@ -6,21 +6,13 @@
 #include "palette.h"
 #include "tsexception.h"
 
+#include <iostream>
+
 namespace tscreate {
 namespace {
-std::unordered_set<RgbColor> pixelsNotInPalette(const RgbTile& tile, const Palette& palette) {
-    std::unordered_set<RgbColor> uniquePixels = tile.uniquePixels(gOptTransparentColor);
-    std::unordered_set<RgbColor> paletteIndex = palette.getIndex();
-    std::unordered_set<RgbColor> pixelsNotInPalette;
-    std::copy_if(uniquePixels.begin(), uniquePixels.end(),
-                 std::inserter(pixelsNotInPalette, pixelsNotInPalette.begin()),
-                 [&paletteIndex](const RgbColor& needle) { return paletteIndex.find(needle) == paletteIndex.end(); });
-    return pixelsNotInPalette;
-}
-
 int paletteWithFewestColors(const std::vector<Palette>& palettes) {
     int indexOfMin = 0;
-    // Palettes can only have 16 colors, so 1000 will work fine as a starting value
+    // Palettes can only have 15 colors, so 1000 will work fine as a starting value
     size_t minColors = 1000;
     for (int i = 0; i < palettes.size(); i++) {
         auto size = palettes.at(i).size();
@@ -43,11 +35,16 @@ bool areAllTileColorsUnseen(std::unordered_set<RgbColor> uniqueTileColors,
 int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes,
                               std::vector<std::unordered_set<RgbColor>> unseenTileColors) {
     int indexOfClosestPalette = -1;
-    // Palettes can only have 16 colors, so 1000 will work fine as a starting value
+    // Palettes can only have 15 colors, so 1000 will work fine as a starting value
     size_t missingColorCount = 1000;
     for (int i = 0; i < unseenTileColors.size(); i++) {
         if (unseenTileColors[i].size() < missingColorCount &&
-            unseenTileColors[i].size() < palettes[i].remainingColors()) {
+            unseenTileColors[i].size() <= palettes[i].remainingColors()) {
+            /*
+             * TODO : do we also want to condition this on palette size? Right now: if two (or more) palettes are
+             * equally close, and each indeed has room, we just return the first palette that satisfies both conditions.
+             * Do we also want to make sure we return the smaller of the two (or more)?
+             */
             missingColorCount = unseenTileColors[i].size();
             indexOfClosestPalette = i;
         }
@@ -59,7 +56,7 @@ int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std
     return indexOfClosestPalette;
 }
 
-void processTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes) {
+void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes) {
     const RgbTile& tile = masterTiles.tileAt(tileIndex);
 
     /*
@@ -98,10 +95,10 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Pale
     unseenTileColors.reserve(palettes.size());
     for (int j = 0; j < palettes.size(); j++) {
         const Palette& palette = palettes.at(j);
-        unseenTileColors.push_back(pixelsNotInPalette(tile, palette));
+        unseenTileColors.push_back(tile.pixelsNotInPalette(palette));
         logString = masterTiles.tileDebugString(tileIndex) + ": " +
                     std::to_string(unseenTileColors[j].size()) + " color(s) not in palette " +
-                    std::to_string(j) + ": [";
+                    std::to_string(j) + "(s=" + std::to_string(palettes[j].size()) + "): [";
         for (const auto& color: unseenTileColors[j]) {
             logString += color.prettyString() + "; ";
         }
@@ -162,6 +159,29 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Pale
     verboseLog(logString);
     logString.clear();
 }
+
+void
+indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes,
+          std::vector<IndexedTile>& tiles,
+          std::unordered_set<IndexedTile>& tilesIndex) {
+    const RgbTile& tile = masterTiles.tileAt(tileIndex);
+
+    /*
+     * If this is a total transparent tile, skip it.
+     */
+    if (tile.isUniformly(gOptTransparentColor)) {
+        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
+        return;
+    }
+
+    /*
+     * If this is a sibling control tile, skip it.
+     */
+    if (tile.isUniformly(gOptSiblingColor)) {
+        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
+        return;
+    }
+}
 } // namespace (anonymous)
 
 Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
@@ -172,14 +192,38 @@ Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
     }
 }
 
-void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
+void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
     /*
      * TODO : before the main tile scan, we can do a sibling tile scan to pre-build palettes with matching indices that
      * support sibling tiles
      */
+    verboseLog("--------------- ALIGNING SIBLINGS ---------------");
+}
 
+void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
+    verboseLog("--------------- BUILDING PALETTES ---------------");
     for (int i = 0; i < masterTiles.size(); i++) {
-        processTile(masterTiles, i, palettes);
+        assignTileToPalette(masterTiles, i, palettes);
+    }
+}
+
+void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
+    bool inPrimerBlock = false;
+    std::string logString;
+
+    verboseLog("--------------- INDEXING TILES ---------------");
+    for (int i = 0; i < masterTiles.size(); i++) {
+        if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
+            inPrimerBlock = !inPrimerBlock;
+            logString = inPrimerBlock ? "entered" : "exited";
+            logString += " primer block " + masterTiles.tileDebugString(i);
+            verboseLog(logString);
+            logString.clear();
+            continue;
+        }
+
+        if (!inPrimerBlock)
+            indexTile(masterTiles, i, palettes, tiles, tilesIndex);
     }
 }
 } // namespace tscreate

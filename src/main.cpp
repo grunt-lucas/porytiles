@@ -21,28 +21,30 @@ std::string fatalPrefix() {
 } // namespace tscreate
 
 int main(int argc, char** argv) try {
-    // Parse CLI options and args, fills out global opt vars with expected values
+    // Parse CLI options and args, fill out global opt vars with expected values
     tscreate::parseOptions(argc, argv);
 
-    // Verifies that master PNG path points at a valid PNG file
+    // Verify that master PNG path points at a valid PNG file
     tscreate::validateMasterPngIsAPng(tscreate::gArgMasterPngPath);
 
+    // Validate master PNG dimensions (must be divisible by 8 to hold tiles)
     png::image<png::rgb_pixel> masterPng{tscreate::gArgMasterPngPath};
-
-    // Validates master PNG dimensions (must be divisible by 8 to hold tiles)
     tscreate::validateMasterPngDimensions(masterPng);
 
     // Master PNG file is safe to tile-ize
     tscreate::RgbTiledPng masterTiles{masterPng};
 
-    // Verifies that no individual tile in the master has more than 16 colors
+    // Verify that no individual tile in the master has more than 16 colors
     tscreate::validateMasterPngTilesEach16Colors(masterTiles);
 
-    // Verifies that the master does not have too many unique colors
+    // Verify that the master does not have too many unique colors
     tscreate::validateMasterPngMaxUniqueColors(masterTiles);
 
+    // Build the tileset
     tscreate::Tileset tileset{tscreate::gOptMaxPalettes};
+    tileset.alignSiblings(masterTiles);
     tileset.buildPalettes(masterTiles);
+    tileset.indexTiles(masterTiles);
 
     return 0;
 }
