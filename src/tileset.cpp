@@ -51,7 +51,7 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, const std::vecto
     }
 
     /*
-     * Add each RgbColor in the tile to an unordered_set, `uniqueTileColors'
+     * Add each RgbColor in the tile to an unordered_set, `uniqueTileColors`
      */
     std::unordered_set<RgbColor> uniqueTileColors = tile.uniquePixels();
     std::string logString = masterTiles.tileDebugString(tileIndex) + ": " +
@@ -124,7 +124,8 @@ void processTile(const RgbTiledPng& masterTiles, int tileIndex, const std::vecto
 Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
     for (int i = 0; i < getMaxPalettes(); i++) {
-        palettes.emplace_back(gOptTransparentColor);
+        // prefill palette vector with `maxPalettes' of empty palettes
+        palettes.emplace_back();
     }
 }
 

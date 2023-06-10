@@ -38,7 +38,9 @@ void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
             const RgbTile& tile = png.tileAt(row, col);
             for (long pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
                 for (long pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
-                    uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
+                    if (tile.getPixel(pixelRow, pixelCol) != gOptTransparentColor) {
+                        uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
+                    }
                     if (uniqueRgb.size() > PAL_SIZE_4BPP) {
                         throw TsException(
                                 "too many unique colors in tile " + std::to_string(index) +
@@ -56,16 +58,18 @@ void validateMasterPngMaxUniqueColors(const RgbTiledPng& png) {
     std::unordered_set<RgbColor> uniqueRgb;
 
     /*
-     * 15 since first color of each 16 color pal is reserved for transparency, add 1 at the end for the transparency color.
-     * The transparency color is shared across all palettes.
+     * 15 since first color of each 16 color pal is reserved for transparency. We are ignoring the transparency color in
+     * our processing here.
      */
-    long maxAllowedColors = (gOptMaxPalettes * 15) + 1;
+    long maxAllowedColors = (gOptMaxPalettes * 15);
 
     for (long index = 0; index < png.size(); index++) {
         const RgbTile& tile = png.tileAt(index);
         for (long pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
             for (long pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
-                uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
+                if (tile.getPixel(pixelRow, pixelCol) != gOptTransparentColor) {
+                    uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
+                }
                 if (uniqueRgb.size() > maxAllowedColors) {
                     throw TsException(
                             "too many unique colors in master PNG, max allowed: " +

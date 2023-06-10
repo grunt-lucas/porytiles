@@ -8,17 +8,21 @@
 #include <deque>
 
 namespace tscreate {
-constexpr int PAL_SIZE_4BPP = 16;
+/*
+ * Why is this 15, not 16? Since we already know every palette will have the same transparency color at index 0, when
+ * allocating colors we really only have 15 available slots. Therefore, all logic checking against this can check
+ * against 15, since we will simply push_front the transparency color on each palette before actually allocating
+ * tile indices in the final build step.
+ */
+constexpr int PAL_SIZE_4BPP = 15;
 
 class Palette {
     std::unordered_set<RgbColor> index;
     std::deque<RgbColor> colors;
 
 public:
-    explicit Palette(const RgbColor& transparencyColor) {
-        // TODO : we should not add this until the very end, will require code change in many places
-        index.insert(transparencyColor);
-        colors.push_back(transparencyColor);
+    Palette() {
+        index.reserve(PAL_SIZE_4BPP + 1);
     }
 
     bool addColorAtStart(const RgbColor& color);

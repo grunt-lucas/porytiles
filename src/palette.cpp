@@ -8,9 +8,7 @@ bool Palette::addColorAtStart(const RgbColor& color) {
         return false;
     }
     index.insert(color);
-    RgbColor transparent = colors.at(0);
-    colors.at(0) = color;
-    colors.push_front(transparent);
+    colors.push_front(color);
     return true;
 }
 

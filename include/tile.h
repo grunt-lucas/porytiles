@@ -71,6 +71,7 @@ public:
     }
 
     [[nodiscard]] std::unordered_set<T> uniquePixels() const {
+        // TODO : we don't want to count transparency here
         std::unordered_set<T> uniquePixels;
         for (int i = 0; i < PIXEL_COUNT; i++) {
             uniquePixels.insert(pixels[i]);
