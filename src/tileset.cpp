@@ -1,5 +1,6 @@
 #include "tileset.h"
 
+#include "rgb_color.h"
 #include "cli_parser.h"
 #include "tsoutput.h"
 #include "tile.h"
@@ -216,13 +217,14 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
         idx++;
     }
 
-    const IndexedTile verticalFlip = indexedTile.getVerticalFlip();
+//    const IndexedTile verticalFlip = indexedTile.getVerticalFlip();
 //    IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
 //    IndexedTile bothFlip = indexedTile.getVerticalFlip().getHorizontalFlip();
 
-    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
-        return;
-    }
+// TODO : arghhhh why is this broken, stupid templates
+//    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
+//        return;
+//    }
 }
 } // namespace (anonymous)
 
