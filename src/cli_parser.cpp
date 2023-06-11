@@ -20,6 +20,7 @@ static const RgbColor TRANSPARENCY_DEFAULT = {251, 30, 228};
 static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
 static const RgbColor SIBLING_DEFAULT = {255, 255, 255};
 static int MAX_PALETTE_DEFAULT = 6;
+static int MAX_TILES_DEFAULT = 512;
 
 // Options
 bool gOptVerboseOutput = VERBOSE_DEFAULT;
@@ -27,6 +28,7 @@ RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 RgbColor gOptSiblingColor = SIBLING_DEFAULT;
 int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
+int gOptMaxTiles = MAX_TILES_DEFAULT;
 
 // Arguments (required)
 std::string gArgMasterPngPath;
@@ -35,7 +37,7 @@ std::string gArgOutputPath;
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-hnpstvV] ";
+    outStream << " [-hnpstTvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
@@ -67,6 +69,10 @@ static void printHelp(std::ostream& outStream) {
     outStream
             << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: " << TRANSPARENCY_DEFAULT.prettyString() << ")." << endl;
     outStream << endl;
+    outStream
+            << "   -T, --max-tiles=<num>            Specify the maximum number of tiles porytiles is allowed" << endl
+            <<"                                     to generate (default: " << MAX_TILES_DEFAULT << ")." << endl;
+    outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
     outStream << "   -V, --version  Print version info." << endl;
@@ -81,7 +87,7 @@ static void printVersion() {
 }
 
 void parseOptions(int argc, char** argv) {
-    const char* const shortOptions = "hn:p:s:t:vV";
+    const char* const shortOptions = "hn:p:s:t:T:vV";
     static struct option longOptions[] =
             {
                     {"help",              no_argument,       nullptr, 'h'},
@@ -89,6 +95,7 @@ void parseOptions(int argc, char** argv) {
                     {"primer-color",      required_argument, nullptr, 'p'},
                     {"sibling-color",     required_argument, nullptr, 's'},
                     {"transparent-color", required_argument, nullptr, 't'},
+                    {"max-tiles",         required_argument, nullptr, 'T'},
                     {"verbose",           no_argument,       nullptr, 'v'},
                     {"version",           no_argument,       nullptr, 'V'},
                     {nullptr,             no_argument,       nullptr, 0}
@@ -123,6 +130,11 @@ void parseOptions(int argc, char** argv) {
                 // TODO parse in separate function that can throw appropriate error if invalid arg
                 throw TsException{"TODO: --transparent-color option unimplemented"};
                 // gOptTransparentColor = optarg;
+                // break;
+            case 'T':
+                // TODO parse in separate function that can throw appropriate error if invalid arg
+                throw TsException{"TODO: --max-tiles option unimplemented"};
+                // gOptMaxTiles = optarg;
                 // break;
             case 'v':
                 gOptVerboseOutput = true;

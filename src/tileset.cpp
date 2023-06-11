@@ -7,7 +7,7 @@
 #include "palette.h"
 #include "tsexception.h"
 
-#include <iostream>
+#include <filesystem>
 
 namespace porytiles {
 namespace {
@@ -242,6 +242,14 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
 
     tiles.push_back(indexedTile);
     tilesIndex.insert(indexedTile);
+
+    if (tiles.size() > gOptMaxTiles - 1) {
+        /*
+         * -1 to account for the transparent tile, which will be inserted at the beginning of the tile vector after all
+         * other tiles have processed.
+         */
+        throw TsException{"requested tile limit (" + std::to_string(gOptMaxTiles) + ") was exceeded"};
+    }
 }
 } // namespace (anonymous)
 
@@ -292,5 +300,19 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         if (!inPrimerBlock)
             indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesIndex);
     }
+
+    // Insert transparent tile at the start
+    IndexedTile transparent{0};
+    tiles.insert(tiles.begin(), transparent);
+    tilesIndex.insert(transparent);
+}
+
+void Tileset::writeTileset() {
+    std::filesystem::path outputPath(gArgOutputPath);
+    std::filesystem::path palettesDir("palettes");
+    if (std::filesystem::exists(outputPath / palettesDir) && !std::filesystem::is_directory(outputPath / palettesDir)) {
+        throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a file"};
+    }
+    std::filesystem::create_directories(outputPath / palettesDir);
 }
 } // namespace porytiles

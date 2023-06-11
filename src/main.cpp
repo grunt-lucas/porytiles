@@ -40,11 +40,12 @@ int main(int argc, char** argv) try {
     // Verify that the master does not have too many unique colors
     porytiles::validateMasterPngMaxUniqueColors(masterTiles);
 
-    // Build the tileset
+    // Build the tileset and write it out to disk
     porytiles::Tileset tileset{porytiles::gOptMaxPalettes};
     tileset.alignSiblings(masterTiles);
     tileset.buildPalettes(masterTiles);
     tileset.indexTiles(masterTiles);
+    tileset.writeTileset();
 
     return 0;
 }

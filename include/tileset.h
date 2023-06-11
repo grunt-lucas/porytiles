@@ -28,6 +28,8 @@ public:
     void buildPalettes(const RgbTiledPng& masterTiles);
 
     void indexTiles(const RgbTiledPng& masterTiles);
+
+    void writeTileset();
 };
 } // namespace porytiles
 
