@@ -124,6 +124,12 @@ public:
         return flippedTile;
     }
 
+    [[nodiscard]] Tile<T> getDiagonalFlip() const {
+        Tile<T> flippedTile;
+        flippedTile = this->getHorizontalFlip().getVerticalFlip();
+        return flippedTile;
+    }
+
     [[nodiscard]] bool isControlTile() const;
 
     [[nodiscard]] std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;

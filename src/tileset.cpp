@@ -217,14 +217,31 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
         idx++;
     }
 
-//    const IndexedTile verticalFlip = indexedTile.getVerticalFlip();
-//    IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
-//    IndexedTile bothFlip = indexedTile.getVerticalFlip().getHorizontalFlip();
+    const IndexedTile verticalFlip = indexedTile.getVerticalFlip();
+    const IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
+    const IndexedTile diagonalFlip = indexedTile.getDiagonalFlip();
 
-// TODO : arghhhh why is this broken, stupid templates
-//    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
-//        return;
-//    }
+    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: vertical flip already present";
+        verboseLog(logString);
+        logString.clear();
+        return;
+    }
+    if (tilesIndex.find(horizontalFlip) != tilesIndex.end()) {
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: horizontal flip already present";
+        verboseLog(logString);
+        logString.clear();
+        return;
+    }
+    if (tilesIndex.find(diagonalFlip) != tilesIndex.end()) {
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: diagonal flip already present";
+        verboseLog(logString);
+        logString.clear();
+        return;
+    }
+
+    tiles.push_back(indexedTile);
+    tilesIndex.insert(indexedTile);
 }
 } // namespace (anonymous)
 
@@ -256,6 +273,12 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     std::string logString;
 
     verboseLog("--------------- INDEXING TILES ---------------");
+    // Add transparent color to first entry in each palette
+    for (auto& palette: palettes) {
+        palette.addColorAtStart(gOptTransparentColor);
+    }
+
+    // Iterate over each tile and assign it, skipping primer tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
         if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptPrimerColor)) {
             inPrimerBlock = !inPrimerBlock;
