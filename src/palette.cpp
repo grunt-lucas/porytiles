@@ -1,5 +1,6 @@
 #include "palette.h"
 
+#include "cli_parser.h"
 #include "rgb_color.h"
 
 namespace porytiles {
@@ -35,7 +36,12 @@ size_t Palette::indexOf(const RgbColor& color) const {
     throw std::runtime_error{"internal: color " + color.prettyString() + " not found in palette"};
 }
 
-[[nodiscard]] size_t Palette::size() const {
+void Palette::pushTransparencyColor() {
+    index.insert(gOptTransparentColor);
+    colors.push_front(gOptTransparentColor);
+}
+
+size_t Palette::size() const {
     return colors.size();
 }
 

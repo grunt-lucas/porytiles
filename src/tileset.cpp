@@ -7,7 +7,9 @@
 #include "palette.h"
 #include "tsexception.h"
 
+#include <algorithm>
 #include <filesystem>
+#include <png.hpp>
 
 namespace porytiles {
 namespace {
@@ -283,7 +285,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     verboseLog("--------------- INDEXING TILES ---------------");
     // Add transparent color to first entry in each palette
     for (auto& palette: palettes) {
-        palette.addColorAtStart(gOptTransparentColor);
+        palette.pushTransparencyColor();
     }
 
     // Iterate over each tile and assign it, skipping primer tiles
@@ -310,9 +312,54 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
 void Tileset::writeTileset() {
     std::filesystem::path outputPath(gArgOutputPath);
     std::filesystem::path palettesDir("palettes");
+    std::filesystem::path tilesetFile("tiles.png");
+    std::filesystem::path tilesetPath = gArgOutputPath / tilesetFile;
     if (std::filesystem::exists(outputPath / palettesDir) && !std::filesystem::is_directory(outputPath / palettesDir)) {
-        throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a file"};
+        throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
+    }
+    if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
+        throw TsException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
     }
     std::filesystem::create_directories(outputPath / palettesDir);
+
+    /*
+     * Set final tileset PNG dimensions based on the tile vector. We'll also set it to use a simple greyscale palette.
+     */
+    // Images must be 16 tiles wide
+    constexpr size_t tileWidth = 16;
+    const size_t imageWidth = TILE_DIMENSION * tileWidth;
+    const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / tileWidth) + 1);
+    png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
+                                            static_cast<png::uint_32>(imageHeight)};
+    png::palette pal(16);
+    for (size_t i = 0; i < pal.size(); i++) {
+        int color = i == 0 ? 0 : (static_cast<int>(i) * 16) - 1;
+        pal[15 - i] = png::color(color, color, color);
+    }
+    tilesetPng.set_palette(pal);
+
+    /*
+     * Set the tileset PNG based on tiles.
+     */
+    png::uint_32 tilesetPngTilesWidth = tilesetPng.get_width() / TILE_DIMENSION;
+    png::uint_32 tilesetPngTilesHeight = tilesetPng.get_height() / TILE_DIMENSION;
+    size_t tileIndex = 0;
+    for (png::uint_32 tileRow = 0; tileRow < tilesetPngTilesHeight; tileRow++) {
+        for (png::uint_32 tileCol = 0; tileCol < tilesetPngTilesWidth; tileCol++) {
+            png::uint_32 pixelRowStart = tileRow * TILE_DIMENSION;
+            png::uint_32 pixelColStart = tileCol * TILE_DIMENSION;
+            for (png::uint_32 row = 0; row < TILE_DIMENSION; row++) {
+                for (png::uint_32 col = 0; col < TILE_DIMENSION; col++) {
+                    if (tileIndex < tiles.size()) {
+                        tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(tileIndex).getPixel(row, col);
+                    } else {
+                        tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(0).getPixel(row, col);
+                    }
+                }
+            }
+            tileIndex++;
+        }
+    }
+    tilesetPng.write(tilesetPath);
 }
 } // namespace porytiles

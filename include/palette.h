@@ -29,15 +29,19 @@ public:
 
     bool addColorAtEnd(const RgbColor& color);
 
-    RgbColor colorAt(int i);
+    [[nodiscard]] RgbColor colorAt(int i);
 
-    size_t indexOf(const RgbColor& color) const;
+    [[nodiscard]] size_t indexOf(const RgbColor& color) const;
+
+    void pushTransparencyColor();
 
     [[nodiscard]] size_t size() const;
 
     [[nodiscard]] size_t remainingColors() const;
 
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
+
+    [[nodiscard]] const std::deque<RgbColor>& getColors() const { return colors; }
 };
 } // namespace porytiles
 
