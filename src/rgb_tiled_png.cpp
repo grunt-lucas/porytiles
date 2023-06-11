@@ -53,7 +53,7 @@ const RgbTile& RgbTiledPng::tileAt(size_t index) const {
 
 std::string RgbTiledPng::tileDebugString(size_t index) const {
     return "tile " + std::to_string(index) +
-           " (row " + std::to_string(index / width) +
-           ", col " + std::to_string(index % width) + ")";
+           " (col " + std::to_string(index % width) +
+           ", row " + std::to_string(index / width) + ")";
 }
 } // namespace porytiles

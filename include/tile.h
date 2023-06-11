@@ -23,6 +23,8 @@ class Tile {
     std::array<T, PIXEL_COUNT> pixels;
 
 public:
+    Tile();
+
     explicit Tile(T defaultValue) {
         for (size_t i = 0; i < PIXEL_COUNT; i++) {
             pixels[i] = defaultValue;
@@ -34,8 +36,6 @@ public:
             pixels[i] = other.pixels[i];
         }
     }
-
-    virtual ~Tile() = default;
 
     bool operator==(const Tile<T>& other) const {
         for (size_t i = 0; i < PIXEL_COUNT; i++) {
@@ -55,6 +55,13 @@ public:
         return pixels.at(row * TILE_DIMENSION + col);
     }
 
+    [[nodiscard]] T getPixel(size_t index) const {
+        if (index >= PIXEL_COUNT)
+            throw std::runtime_error{
+                    "internal: Tile::getPixel index argument out of bounds (" + std::to_string(index) + ")"};
+        return pixels.at(index);
+    }
+
     void setPixel(size_t row, size_t col, T value) {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{
@@ -63,6 +70,13 @@ public:
             throw std::runtime_error{
                     "internal: Tile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
         pixels.at(row * TILE_DIMENSION + col) = value;
+    }
+
+    void setPixel(size_t index, T value) {
+        if (index >= PIXEL_COUNT)
+            throw std::runtime_error{
+                    "internal: Tile::setPixel index argument out of bounds (" + std::to_string(index) + ")"};
+        pixels.at(index) = value;
     }
 
     [[nodiscard]] bool isUniformly(T value) const {
@@ -82,26 +96,37 @@ public:
         return uniquePixels;
     }
 
-    [[nodiscard]] virtual bool isControlTile() const;
+    [[nodiscard]] Tile<T> getHorizontalFlip() const {
+        Tile<T> flippedTile;
+        for (size_t row = 0; row < TILE_DIMENSION; row++) {
+            for (size_t col = 0; col < TILE_DIMENSION / 2; col++) {
+                size_t colInverted = TILE_DIMENSION - 1 - col;
+                flippedTile.setPixel(row, col, this->getPixel(row, colInverted));
+                flippedTile.setPixel(row, colInverted, this->getPixel(row, col));
+            }
+        }
+        return flippedTile;
+    }
 
-    [[nodiscard]] virtual std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
+    [[nodiscard]] Tile<T> getVerticalFlip() const {
+        Tile<T> flippedTile;
+        for (size_t col = 0; col < TILE_DIMENSION; col++) {
+            for (size_t row = 0; row < TILE_DIMENSION / 2; row++) {
+                size_t rowInverted = TILE_DIMENSION - 1 - row;
+                flippedTile.setPixel(row, col, this->getPixel(rowInverted, col));
+                flippedTile.setPixel(rowInverted, col, this->getPixel(row, col));
+            }
+        }
+        return flippedTile;
+    }
+
+    [[nodiscard]] bool isControlTile() const;
+
+    [[nodiscard]] std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 
 typedef Tile<RgbColor> RgbTile;
-
-template<>
-[[nodiscard]] bool RgbTile::isControlTile() const;
-
-template<>
-[[nodiscard]] std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const;
-
 typedef Tile<png::byte> IndexedTile;
-
-template<>
-[[nodiscard]] bool IndexedTile::isControlTile() const;
-
-template<>
-[[nodiscard]] std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const;
 } // namespace porytiles
 
 namespace std {

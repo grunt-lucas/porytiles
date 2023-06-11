@@ -26,4 +26,18 @@ template<>
 std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const {
     throw std::runtime_error{"internal: invalid operation IndexedTile::pixelsNotInPalette"};
 }
+
+template<>
+RgbTile::Tile() {
+    for (size_t i = 0; i < PIXEL_COUNT; i++) {
+        pixels[i] = RgbColor{0, 0, 0};
+    }
+}
+
+template<>
+IndexedTile::Tile() {
+    for (size_t i = 0; i < PIXEL_COUNT; i++) {
+        pixels[i] = 0;
+    }
+}
 } // namespace porytiles
