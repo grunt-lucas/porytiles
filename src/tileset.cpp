@@ -166,6 +166,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
           std::unordered_set<IndexedTile>& tilesIndex) {
     std::string logString;
     const RgbTile& tile = masterTiles.tileAt(tileIndex);
+    IndexedTile indexedTile;
 
     /*
      * If this is a total transparent tile, skip it.
@@ -183,18 +184,44 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
         return;
     }
 
+    /*
+     * Find the first matching palette for this tile. The previous palette construction step guarantees that one exists.
+     * If for some reason one cannot be found, throw a fatal error and exit.
+     */
+    size_t matchingPaletteIndex = 0;
     for (size_t j = 0; j < palettes.size(); j++) {
         const Palette& palette = palettes.at(j);
         if (tile.pixelsNotInPalette(palette).empty()) {
+            matchingPaletteIndex = j;
             logString = masterTiles.tileDebugString(tileIndex) + ": matched palette " + std::to_string(j);
             verboseLog(logString);
             logString.clear();
             break;
         }
         if (j == palettes.size() - 1) {
-            // If we made it here without triggering the above, there's a problem
+            // If we made it here without triggering a palette assignment above, there's a problem
             throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIndex)};
         }
+    }
+
+    /*
+     * When we find the palette for this tile, construct an indexed tile by comparing each `RgbColor` in the tile to
+     * those in the palette vector and choosing the matches. Finally, check each transform of this `IndexedTile`: if it
+     * is already in the tileset (flip X, flip Y, flip X and Y). If it is, skip. Otherwise, add it!
+     */
+    size_t idx = 0;
+    for (const auto& color: tile.getPixels()) {
+        size_t indexInPalette = palettes[matchingPaletteIndex].indexOf(color);
+        indexedTile.setPixel(idx, indexInPalette);
+        idx++;
+    }
+
+    const IndexedTile verticalFlip = indexedTile.getVerticalFlip();
+//    IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
+//    IndexedTile bothFlip = indexedTile.getVerticalFlip().getHorizontalFlip();
+
+    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
+        return;
     }
 }
 } // namespace (anonymous)

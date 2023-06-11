@@ -62,6 +62,10 @@ public:
         return pixels.at(index);
     }
 
+    [[nodiscard]] const std::array<T, PIXEL_COUNT>& getPixels() const {
+        return pixels;
+    }
+
     void setPixel(size_t row, size_t col, T value) {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{

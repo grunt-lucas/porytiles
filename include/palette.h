@@ -31,6 +31,8 @@ public:
 
     RgbColor colorAt(int i);
 
+    size_t indexOf(const RgbColor& color) const;
+
     [[nodiscard]] size_t size() const;
 
     [[nodiscard]] size_t remainingColors() const;

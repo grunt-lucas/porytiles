@@ -1,4 +1,5 @@
 CXX ?= g++
+#CXX = /opt/homebrew/bin/g++-13
 
 # TODO : set optimization to O2 and remove debug for final build
 CXXFLAGS := -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g

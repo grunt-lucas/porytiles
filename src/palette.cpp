@@ -25,6 +25,16 @@ RgbColor Palette::colorAt(int i) {
     return colors.at(i);
 }
 
+size_t Palette::indexOf(const RgbColor& color) const {
+    size_t idx = 0;
+    for (const auto& iterColor: colors) {
+        if (iterColor == color)
+            return idx;
+        idx++;
+    }
+    throw std::runtime_error{"internal: color " + color.prettyString() + " not found in palette"};
+}
+
 [[nodiscard]] size_t Palette::size() const {
     return colors.size();
 }
