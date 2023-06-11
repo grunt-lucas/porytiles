@@ -59,7 +59,7 @@ catch (const std::exception& e) {
     std::cerr << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
               << std::endl;
     std::cerr
-            << "This is a bug. Please file an issue here: https://github.com/grunt-lucas/tscreate/issues"
+            << "This is a bug. Please file an issue here: https://github.com/grunt-lucas/porytiles/issues"
             << std::endl;
     std::cerr << "Be sure to include the full command you ran, as well as any accompanying input files that"
               << std::endl;

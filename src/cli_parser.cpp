@@ -43,7 +43,7 @@ static void printUsage(std::ostream& outStream) {
 static void printHelp(std::ostream& outStream) {
     using std::endl;
     outStream << PROGRAM_NAME << ", version " << VERSION << " of " << RELEASE_DATE << endl;
-    outStream << "   by grunt-lucas: https://github.com/grunt-lucas/tscreate" << endl;
+    outStream << "   by grunt-lucas: https://github.com/grunt-lucas/porytiles" << endl;
     outStream << endl;
     outStream << "Convert an RGB master PNG tilesheet to a pokeemerald-ready 4bpp indexed tileset PNG" << endl;
     outStream << "with matching palette files. See the repo wiki for more detailed usage information."
@@ -53,7 +53,7 @@ static void printHelp(std::ostream& outStream) {
     outStream << endl;
     outStream << "Options:" << endl;
     outStream
-            << "   -n, --max-palettes=<num>         Specify the maximum number of palettes tscreate is allowed" << endl
+            << "   -n, --max-palettes=<num>         Specify the maximum number of palettes porytiles is allowed" << endl
             << "                                    to allocate (default: " << MAX_PALETTE_DEFAULT << ")." << endl;
     outStream << endl;
     outStream

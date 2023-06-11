@@ -164,6 +164,7 @@ void
 indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes,
           std::vector<IndexedTile>& tiles,
           std::unordered_set<IndexedTile>& tilesIndex) {
+    std::string logString;
     const RgbTile& tile = masterTiles.tileAt(tileIndex);
 
     /*
@@ -180,6 +181,20 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
     if (tile.isUniformly(gOptSiblingColor)) {
         verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
         return;
+    }
+
+    for (size_t j = 0; j < palettes.size(); j++) {
+        const Palette& palette = palettes.at(j);
+        if (tile.pixelsNotInPalette(palette).empty()) {
+            logString = masterTiles.tileDebugString(tileIndex) + ": matched palette " + std::to_string(j);
+            verboseLog(logString);
+            logString.clear();
+            break;
+        }
+        if (j == palettes.size() - 1) {
+            // If we made it here without triggering the above, there's a problem
+            throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIndex)};
+        }
     }
 }
 } // namespace (anonymous)
