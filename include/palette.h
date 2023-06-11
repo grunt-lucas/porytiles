@@ -1,5 +1,5 @@
-#ifndef TSCREATE_PALETTE_H
-#define TSCREATE_PALETTE_H
+#ifndef PORYTILES_PALETTE_H
+#define PORYTILES_PALETTE_H
 
 #include "rgb_color.h"
 
@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <deque>
 
-namespace tscreate {
+namespace porytiles {
 /*
  * Why is this 15, not 16? Since we already know every palette will have the same transparency color at index 0, when
  * allocating colors we really only have 15 available slots. Therefore, all logic checking against this can check
@@ -37,6 +37,6 @@ public:
 
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
 };
-} // namespace tscreate
+} // namespace porytiles
 
-#endif // TSCREATE_PALETTE_H
+#endif // PORYTILES_PALETTE_H

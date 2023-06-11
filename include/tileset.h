@@ -1,5 +1,5 @@
-#ifndef TSCREATE_TILESET_H
-#define TSCREATE_TILESET_H
+#ifndef PORYTILES_TILESET_H
+#define PORYTILES_TILESET_H
 
 #include "tile.h"
 #include "palette.h"
@@ -9,7 +9,7 @@
 #include <vector>
 #include <unordered_set>
 
-namespace tscreate {
+namespace porytiles {
 constexpr int NUM_BG_PALS = 12;
 
 class Tileset {
@@ -29,6 +29,6 @@ public:
 
     void indexTiles(const RgbTiledPng& masterTiles);
 };
-} // namespace tscreate
+} // namespace porytiles
 
-#endif // TSCREATE_TILESET_H
+#endif // PORYTILES_TILESET_H

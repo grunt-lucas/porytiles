@@ -1,12 +1,12 @@
-#ifndef TSCREATE_CLI_PARSER_H
-#define TSCREATE_CLI_PARSER_H
+#ifndef PORYTILES_CLI_PARSER_H
+#define PORYTILES_CLI_PARSER_H
 
 #include "rgb_color.h"
 
 #include <string>
 #include <png.hpp>
 
-namespace tscreate {
+namespace porytiles {
 extern const char* const PROGRAM_NAME;
 extern const char* const VERSION;
 extern const char* const RELEASE_DATE;
@@ -23,6 +23,6 @@ extern std::string gArgMasterPngPath;
 extern std::string gArgOutputPath;
 
 extern void parseOptions(int argc, char** argv);
-} // namespace tscreate
+} // namespace porytiles
 
-#endif // TSCREATE_CLI_PARSER_H
+#endif // PORYTILES_CLI_PARSER_H

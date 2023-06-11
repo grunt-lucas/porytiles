@@ -1,5 +1,5 @@
-#ifndef TSCREATE_TILE_H
-#define TSCREATE_TILE_H
+#ifndef PORYTILES_TILE_H
+#define PORYTILES_TILE_H
 
 #include "rgb_color.h"
 #include "palette.h"
@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <algorithm>
 
-namespace tscreate {
+namespace porytiles {
 // Tiles are always 8 by 8 pixels
 constexpr int TILE_DIMENSION = 8;
 constexpr int PIXEL_COUNT = TILE_DIMENSION * TILE_DIMENSION;
@@ -82,41 +82,41 @@ public:
         return uniquePixels;
     }
 
-    virtual bool isControlTile() const;
+    [[nodiscard]] virtual bool isControlTile() const;
 
-    virtual std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
+    [[nodiscard]] virtual std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 
 typedef Tile<RgbColor> RgbTile;
 
 template<>
-bool RgbTile::isControlTile() const;
+[[nodiscard]] bool RgbTile::isControlTile() const;
 
 template<>
-std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const;
+[[nodiscard]] std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const;
 
 typedef Tile<png::byte> IndexedTile;
 
 template<>
-bool IndexedTile::isControlTile() const;
+[[nodiscard]] bool IndexedTile::isControlTile() const;
 
 template<>
-std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const;
-} // namespace tscreate
+[[nodiscard]] std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const;
+} // namespace porytiles
 
 namespace std {
 template<typename T>
-struct std::hash<tscreate::Tile<T>> {
-    size_t operator()(const tscreate::Tile<T>& tile) const {
+struct std::hash<porytiles::Tile<T>> {
+    size_t operator()(const porytiles::Tile<T>& tile) const {
         size_t result = 0;
-        for (long row = 0; row < tscreate::TILE_DIMENSION; row++) {
-            for (long col = 0; col < tscreate::TILE_DIMENSION; col++) {
+        for (long row = 0; row < porytiles::TILE_DIMENSION; row++) {
+            for (long col = 0; col < porytiles::TILE_DIMENSION; col++) {
                 result = result * 31 + std::hash(tile.getPixel(row, col));
             }
         }
         return result;
     }
 };
-} // namespace tscreate
+} // namespace std
 
-#endif // TSCREATE_TILE_H
+#endif // PORYTILES_TILE_H

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <png.hpp>
 
-namespace tscreate {
+namespace porytiles {
 std::string errorPrefix() {
     std::string program(PROGRAM_NAME);
     return program + ": error: ";
@@ -18,44 +18,44 @@ std::string fatalPrefix() {
     std::string program(PROGRAM_NAME);
     return program + ": fatal: ";
 }
-} // namespace tscreate
+} // namespace porytiles
 
 int main(int argc, char** argv) try {
     // Parse CLI options and args, fill out global opt vars with expected values
-    tscreate::parseOptions(argc, argv);
+    porytiles::parseOptions(argc, argv);
 
     // Verify that master PNG path points at a valid PNG file
-    tscreate::validateMasterPngIsAPng(tscreate::gArgMasterPngPath);
+    porytiles::validateMasterPngIsAPng(porytiles::gArgMasterPngPath);
 
     // Validate master PNG dimensions (must be divisible by 8 to hold tiles)
-    png::image<png::rgb_pixel> masterPng{tscreate::gArgMasterPngPath};
-    tscreate::validateMasterPngDimensions(masterPng);
+    png::image<png::rgb_pixel> masterPng{porytiles::gArgMasterPngPath};
+    porytiles::validateMasterPngDimensions(masterPng);
 
     // Master PNG file is safe to tile-ize
-    tscreate::RgbTiledPng masterTiles{masterPng};
+    porytiles::RgbTiledPng masterTiles{masterPng};
 
     // Verify that no individual tile in the master has more than 16 colors
-    tscreate::validateMasterPngTilesEach16Colors(masterTiles);
+    porytiles::validateMasterPngTilesEach16Colors(masterTiles);
 
     // Verify that the master does not have too many unique colors
-    tscreate::validateMasterPngMaxUniqueColors(masterTiles);
+    porytiles::validateMasterPngMaxUniqueColors(masterTiles);
 
     // Build the tileset
-    tscreate::Tileset tileset{tscreate::gOptMaxPalettes};
+    porytiles::Tileset tileset{porytiles::gOptMaxPalettes};
     tileset.alignSiblings(masterTiles);
     tileset.buildPalettes(masterTiles);
     tileset.indexTiles(masterTiles);
 
     return 0;
 }
-catch (const tscreate::TsException& e) {
+catch (const porytiles::TsException& e) {
     // Catch TsException here, these are errors that can reasonably be expected due to bad input, bad files, etc
-    std::cerr << tscreate::errorPrefix() << e.what() << std::endl;
+    std::cerr << porytiles::errorPrefix() << e.what() << std::endl;
     return 1;
 }
 catch (const std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
-    std::cerr << tscreate::fatalPrefix() << e.what() << std::endl;
+    std::cerr << porytiles::fatalPrefix() << e.what() << std::endl;
     std::cerr << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
               << std::endl;
     std::cerr

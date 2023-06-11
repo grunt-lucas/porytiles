@@ -17,11 +17,11 @@ endif
 
 .PHONY: all clean
 
-all: tscreate$(EXE)
+all: porytiles$(EXE)
 	@:
 
-tscreate$(EXE): $(SRCS)
+porytiles$(EXE): $(SRCS)
 	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDFLAGS) $(LIBS)
 
 clean:
-	$(RM) tscreate tscreate.exe
+	$(RM) porytiles porytiles.exe

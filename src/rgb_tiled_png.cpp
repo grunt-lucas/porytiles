@@ -3,7 +3,7 @@
 #include <png.hpp>
 #include <stdexcept>
 
-namespace tscreate {
+namespace porytiles {
 RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     width = png.get_width() / TILE_DIMENSION;
     height = png.get_height() / TILE_DIMENSION;
@@ -56,4 +56,4 @@ std::string RgbTiledPng::tileDebugString(long index) const {
            " (row " + std::to_string(index / width) +
            ", col " + std::to_string(index % width) + ")";
 }
-} // namespace tscreate
+} // namespace porytiles

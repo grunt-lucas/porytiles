@@ -1,6 +1,6 @@
 #include "tile.h"
 
-namespace tscreate {
+namespace porytiles {
 template<>
 bool RgbTile::isControlTile() const {
     return isUniformly(gOptTransparentColor) || isUniformly(gOptPrimerColor);
@@ -26,4 +26,4 @@ template<>
 std::unordered_set<png::byte> IndexedTile::pixelsNotInPalette(const Palette& palette) const {
     throw std::runtime_error{"internal: invalid operation IndexedTile::pixelsNotInPalette"};
 }
-}
+} // namespace porytiles

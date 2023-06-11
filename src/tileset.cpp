@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-namespace tscreate {
+namespace porytiles {
 namespace {
 int paletteWithFewestColors(const std::vector<Palette>& palettes) {
     int indexOfMin = 0;
@@ -226,4 +226,4 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
             indexTile(masterTiles, i, palettes, tiles, tilesIndex);
     }
 }
-} // namespace tscreate
+} // namespace porytiles

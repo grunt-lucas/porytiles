@@ -9,8 +9,8 @@
 #include <getopt.h>
 #include <filesystem>
 
-namespace tscreate {
-const char* const PROGRAM_NAME = "tscreate";
+namespace porytiles {
+const char* const PROGRAM_NAME = "porytiles";
 const char* const VERSION = "0.0.1";
 const char* const RELEASE_DATE = "1 June 2023";
 
@@ -164,4 +164,4 @@ void parseOptions(int argc, char** argv) {
         throw TsException{gArgOutputPath + ": exists but is not a directory"};
     }
 }
-} // namespace tscreate
+} // namespace porytiles

@@ -1,11 +1,11 @@
-#ifndef TSCREATE_RGB_COLOR_H
-#define TSCREATE_RGB_COLOR_H
+#ifndef PORYTILES_RGB_COLOR_H
+#define PORYTILES_RGB_COLOR_H
 
 #include <png.hpp>
 #include <cstddef>
 #include <functional>
 
-namespace tscreate {
+namespace porytiles {
 class RgbColor {
     png::byte red;
     png::byte green;
@@ -35,17 +35,17 @@ public:
 
     [[nodiscard]] std::string prettyString() const;
 };
-} // namespace tscreate
+} // namespace porytiles
 
 namespace std {
 template<>
-struct std::hash<tscreate::RgbColor> {
-    size_t operator()(const tscreate::RgbColor& rgbColor) const {
+struct std::hash<porytiles::RgbColor> {
+    size_t operator()(const porytiles::RgbColor& rgbColor) const {
         return ((hash<int>()(rgbColor.getRed()) ^
                  (hash<int>()(rgbColor.getGreen()) << 1)) >> 1) ^
                (hash<int>()(rgbColor.getBlue()) << 1);
     }
 };
-} // namespace tscreate
+} // namespace std
 
-#endif // TSCREATE_RGB_COLOR_H
+#endif // PORYTILES_RGB_COLOR_H

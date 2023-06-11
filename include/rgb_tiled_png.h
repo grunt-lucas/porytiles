@@ -1,5 +1,5 @@
-#ifndef TSCREATE_RGB_TILED_PNG_H
-#define TSCREATE_RGB_TILED_PNG_H
+#ifndef PORYTILES_RGB_TILED_PNG_H
+#define PORYTILES_RGB_TILED_PNG_H
 
 #include "tile.h"
 #include "rgb_color.h"
@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <string>
 
-namespace tscreate {
+namespace porytiles {
 class RgbTiledPng {
     long width;
     long height;
@@ -31,6 +31,6 @@ public:
 
     [[nodiscard]] std::string tileDebugString(long index) const;
 };
-} // namespace tscreate
+} // namespace porytiles
 
-#endif // TSCREATE_RGB_TILED_PNG_H
+#endif // PORYTILES_RGB_TILED_PNG_H

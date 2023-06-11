@@ -2,7 +2,7 @@
 
 #include "rgb_color.h"
 
-namespace tscreate {
+namespace porytiles {
 bool Palette::addColorAtStart(const RgbColor& color) {
     if (colors.size() >= PAL_SIZE_4BPP) {
         return false;
@@ -32,4 +32,4 @@ RgbColor Palette::colorAt(int i) {
 size_t Palette::remainingColors() const {
     return PAL_SIZE_4BPP - colors.size();
 }
-} // namespace tscreate
+} // namespace porytiles

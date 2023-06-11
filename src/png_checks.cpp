@@ -9,7 +9,7 @@
 
 #include <unordered_set>
 
-namespace tscreate {
+namespace porytiles {
 void validateMasterPngIsAPng(const std::string& masterPngPath) {
     try {
         png::image<png::rgb_pixel> masterPng(masterPngPath);
@@ -79,4 +79,4 @@ void validateMasterPngMaxUniqueColors(const RgbTiledPng& png) {
         }
     }
 }
-} // namespace tscreate
+} // namespace porytiles
