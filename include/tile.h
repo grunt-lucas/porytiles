@@ -140,7 +140,7 @@ struct hash<porytiles::Tile<T>> {
         size_t result = 0;
         for (size_t row = 0; row < porytiles::TILE_DIMENSION; row++) {
             for (size_t col = 0; col < porytiles::TILE_DIMENSION; col++) {
-                result = result * 31 + std::hash(tile.getPixel(row, col));
+                result = result * 31 + std::hash<T>()(tile.getPixel(row, col));
             }
         }
         return result;
