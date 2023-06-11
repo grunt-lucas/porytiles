@@ -17,5 +17,5 @@ jobs:
       run: sudo apt-get install zlib1g-dev
     - name: Install LibPNG
       run: sudo apt-get install libpng-dev
-    - name: Build Porymoves
+    - name: Build Porytiles
       run: make
