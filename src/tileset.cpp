@@ -14,10 +14,10 @@ int paletteWithFewestColors(const std::vector<Palette>& palettes) {
     int indexOfMin = 0;
     // Palettes can only have 15 colors, so 1000 will work fine as a starting value
     size_t minColors = 1000;
-    for (int i = 0; i < palettes.size(); i++) {
+    for (size_t i = 0; i < palettes.size(); i++) {
         auto size = palettes.at(i).size();
         if (size < minColors) {
-            indexOfMin = i;
+            indexOfMin = static_cast<int>(i);
             minColors = size;
         }
     }
@@ -37,7 +37,7 @@ int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std
     int indexOfClosestPalette = -1;
     // Palettes can only have 15 colors, so 1000 will work fine as a starting value
     size_t missingColorCount = 1000;
-    for (int i = 0; i < unseenTileColors.size(); i++) {
+    for (size_t i = 0; i < unseenTileColors.size(); i++) {
         if (unseenTileColors[i].size() < missingColorCount &&
             unseenTileColors[i].size() <= palettes[i].remainingColors()) {
             /*
@@ -46,7 +46,7 @@ int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std
              * Do we also want to make sure we return the smaller of the two (or more)?
              */
             missingColorCount = unseenTileColors[i].size();
-            indexOfClosestPalette = i;
+            indexOfClosestPalette = static_cast<int>(i);
         }
     }
     if (indexOfClosestPalette == -1) {
@@ -93,7 +93,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
      */
     std::vector<std::unordered_set<RgbColor>> unseenTileColors;
     unseenTileColors.reserve(palettes.size());
-    for (int j = 0; j < palettes.size(); j++) {
+    for (size_t j = 0; j < palettes.size(); j++) {
         const Palette& palette = palettes.at(j);
         unseenTileColors.push_back(tile.pixelsNotInPalette(palette));
         logString = masterTiles.tileDebugString(tileIndex) + ": " +
@@ -111,7 +111,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
      * If `size(unseenTileColors[i]) == 0`, that means `palette[i]` fully covers `uniqueTileColors`, and so we can
      * return, we have found a palette that will work for this tile.
      */
-    for (int j = 0; j < unseenTileColors.size(); j++) {
+    for (size_t j = 0; j < unseenTileColors.size(); j++) {
         const std::unordered_set<RgbColor>& diff = unseenTileColors[j];
         if (diff.empty()) {
             logString = masterTiles.tileDebugString(tileIndex) + ": matched palette " + std::to_string(j);
@@ -202,8 +202,8 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
 
 void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
     verboseLog("--------------- BUILDING PALETTES ---------------");
-    for (int i = 0; i < masterTiles.size(); i++) {
-        assignTileToPalette(masterTiles, i, palettes);
+    for (size_t i = 0; i < masterTiles.size(); i++) {
+        assignTileToPalette(masterTiles, static_cast<int>(i), palettes);
     }
 }
 
@@ -212,8 +212,8 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     std::string logString;
 
     verboseLog("--------------- INDEXING TILES ---------------");
-    for (int i = 0; i < masterTiles.size(); i++) {
-        if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
+    for (size_t i = 0; i < masterTiles.size(); i++) {
+        if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptPrimerColor)) {
             inPrimerBlock = !inPrimerBlock;
             logString = inPrimerBlock ? "entered" : "exited";
             logString += " primer block " + masterTiles.tileDebugString(i);
@@ -223,7 +223,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         }
 
         if (!inPrimerBlock)
-            indexTile(masterTiles, i, palettes, tiles, tilesIndex);
+            indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesIndex);
     }
 }
 } // namespace porytiles

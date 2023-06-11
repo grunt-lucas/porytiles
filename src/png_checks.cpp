@@ -30,14 +30,14 @@ void validateMasterPngDimensions(const png::image<png::rgb_pixel>& masterPng) {
 
 void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
     std::unordered_set<RgbColor> uniqueRgb;
-    long index = 0;
+    size_t index = 0;
 
-    for (long row = 0; row < png.getHeight(); row++) {
-        for (long col = 0; col < png.getWidth(); col++) {
+    for (size_t row = 0; row < png.getHeight(); row++) {
+        for (size_t col = 0; col < png.getWidth(); col++) {
             uniqueRgb.clear();
             const RgbTile& tile = png.tileAt(row, col);
-            for (long pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
-                for (long pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
+            for (size_t pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
+                for (size_t pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
                     if (tile.getPixel(pixelRow, pixelCol) != gOptTransparentColor) {
                         uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
                     }
@@ -61,12 +61,12 @@ void validateMasterPngMaxUniqueColors(const RgbTiledPng& png) {
      * 15 since first color of each 16 color pal is reserved for transparency. We are ignoring the transparency color in
      * our processing here.
      */
-    long maxAllowedColors = (gOptMaxPalettes * 15);
+    size_t maxAllowedColors = (gOptMaxPalettes * 15);
 
-    for (long index = 0; index < png.size(); index++) {
+    for (size_t index = 0; index < png.size(); index++) {
         const RgbTile& tile = png.tileAt(index);
-        for (long pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
-            for (long pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
+        for (size_t pixelRow = 0; pixelRow < TILE_DIMENSION; pixelRow++) {
+            for (size_t pixelCol = 0; pixelCol < TILE_DIMENSION; pixelCol++) {
                 if (tile.getPixel(pixelRow, pixelCol) != gOptTransparentColor) {
                     uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
                 }

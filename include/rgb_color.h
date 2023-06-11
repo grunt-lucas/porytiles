@@ -39,7 +39,7 @@ public:
 
 namespace std {
 template<>
-struct std::hash<porytiles::RgbColor> {
+struct hash<porytiles::RgbColor> {
     size_t operator()(const porytiles::RgbColor& rgbColor) const {
         return ((hash<int>()(rgbColor.getRed()) ^
                  (hash<int>()(rgbColor.getGreen()) << 1)) >> 1) ^

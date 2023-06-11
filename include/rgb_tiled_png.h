@@ -10,8 +10,8 @@
 
 namespace porytiles {
 class RgbTiledPng {
-    long width;
-    long height;
+    size_t width;
+    size_t height;
     std::vector<RgbTile> tiles;
 
 public:
@@ -19,17 +19,17 @@ public:
 
     [[nodiscard]] size_t size() const { return tiles.size(); }
 
-    [[nodiscard]] long getWidth() const { return width; }
+    [[nodiscard]] size_t getWidth() const { return width; }
 
-    [[nodiscard]] long getHeight() const { return height; }
+    [[nodiscard]] size_t getHeight() const { return height; }
 
     void addTile(const RgbTile& tile);
 
-    [[nodiscard]] const RgbTile& tileAt(long row, long col) const;
+    [[nodiscard]] const RgbTile& tileAt(size_t row, size_t col) const;
 
-    [[nodiscard]] const RgbTile& tileAt(long index) const;
+    [[nodiscard]] const RgbTile& tileAt(size_t index) const;
 
-    [[nodiscard]] std::string tileDebugString(long index) const;
+    [[nodiscard]] std::string tileDebugString(size_t index) const;
 };
 } // namespace porytiles
 

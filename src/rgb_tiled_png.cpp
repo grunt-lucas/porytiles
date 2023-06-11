@@ -8,13 +8,13 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     width = png.get_width() / TILE_DIMENSION;
     height = png.get_height() / TILE_DIMENSION;
 
-    for (long tileRow = 0; tileRow < height; tileRow++) {
-        for (long tileCol = 0; tileCol < width; tileCol++) {
+    for (size_t tileRow = 0; tileRow < height; tileRow++) {
+        for (size_t tileCol = 0; tileCol < width; tileCol++) {
             long pixelRowStart = tileRow * TILE_DIMENSION;
             long pixelColStart = tileCol * TILE_DIMENSION;
             RgbTile tile{{0, 0, 0}};
-            for (long row = 0; row < TILE_DIMENSION; row++) {
-                for (long col = 0; col < TILE_DIMENSION; col++) {
+            for (size_t row = 0; row < TILE_DIMENSION; row++) {
+                for (size_t col = 0; col < TILE_DIMENSION; col++) {
                     png::byte red = png[pixelRowStart + row][pixelColStart + col].red;
                     png::byte green = png[pixelRowStart + row][pixelColStart + col].green;
                     png::byte blue = png[pixelRowStart + row][pixelColStart + col].blue;
@@ -33,7 +33,7 @@ void RgbTiledPng::addTile(const RgbTile& tile) {
     tiles.push_back(tile);
 }
 
-const RgbTile& RgbTiledPng::tileAt(long row, long col) const {
+const RgbTile& RgbTiledPng::tileAt(size_t row, size_t col) const {
     if (row >= height)
         throw std::runtime_error{
                 "internal: RgbTiledPng::tileAt row argument out of bounds (" + std::to_string(row) + ")"};
@@ -43,7 +43,7 @@ const RgbTile& RgbTiledPng::tileAt(long row, long col) const {
     return tiles.at(row * width + col);
 }
 
-const RgbTile& RgbTiledPng::tileAt(long index) const {
+const RgbTile& RgbTiledPng::tileAt(size_t index) const {
     if (index >= width * height) {
         throw std::runtime_error{"internal: TiledPng::tileAt tried to reference index beyond image dimensions: " +
                                  std::to_string(index)};
@@ -51,7 +51,7 @@ const RgbTile& RgbTiledPng::tileAt(long index) const {
     return tiles.at(index);
 }
 
-std::string RgbTiledPng::tileDebugString(long index) const {
+std::string RgbTiledPng::tileDebugString(size_t index) const {
     return "tile " + std::to_string(index) +
            " (row " + std::to_string(index / width) +
            ", col " + std::to_string(index % width) + ")";

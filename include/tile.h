@@ -15,8 +15,8 @@
 
 namespace porytiles {
 // Tiles are always 8 by 8 pixels
-constexpr int TILE_DIMENSION = 8;
-constexpr int PIXEL_COUNT = TILE_DIMENSION * TILE_DIMENSION;
+constexpr size_t TILE_DIMENSION = 8;
+constexpr size_t PIXEL_COUNT = TILE_DIMENSION * TILE_DIMENSION;
 
 template<typename T>
 class Tile {
@@ -24,13 +24,13 @@ class Tile {
 
 public:
     explicit Tile(T defaultValue) {
-        for (int i = 0; i < PIXEL_COUNT; i++) {
+        for (size_t i = 0; i < PIXEL_COUNT; i++) {
             pixels[i] = defaultValue;
         }
     }
 
     Tile(const Tile<T>& other) {
-        for (int i = 0; i < PIXEL_COUNT; i++) {
+        for (size_t i = 0; i < PIXEL_COUNT; i++) {
             pixels[i] = other.pixels[i];
         }
     }
@@ -38,14 +38,14 @@ public:
     virtual ~Tile() = default;
 
     bool operator==(const Tile<T>& other) const {
-        for (int i = 0; i < PIXEL_COUNT; i++) {
+        for (size_t i = 0; i < PIXEL_COUNT; i++) {
             if (pixels[i] != other.pixels[i])
                 return false;
         }
         return true;
     }
 
-    [[nodiscard]] T getPixel(long row, long col) const {
+    [[nodiscard]] T getPixel(size_t row, size_t col) const {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{
                     "internal: Tile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
@@ -55,7 +55,7 @@ public:
         return pixels.at(row * TILE_DIMENSION + col);
     }
 
-    void setPixel(long row, long col, T value) {
+    void setPixel(size_t row, size_t col, T value) {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{
                     "internal: Tile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
@@ -66,7 +66,7 @@ public:
     }
 
     [[nodiscard]] bool isUniformly(T value) const {
-        for (int i = 0; i < PIXEL_COUNT; i++) {
+        for (size_t i = 0; i < PIXEL_COUNT; i++) {
             if (pixels[i] != value)
                 return false;
         }
@@ -75,7 +75,7 @@ public:
 
     [[nodiscard]] std::unordered_set<T> uniquePixels(T transparencyColor) const {
         std::unordered_set<T> uniquePixels;
-        for (int i = 0; i < PIXEL_COUNT; i++) {
+        for (size_t i = 0; i < PIXEL_COUNT; i++) {
             if (pixels[i] != transparencyColor)
                 uniquePixels.insert(pixels[i]);
         }
@@ -106,11 +106,11 @@ template<>
 
 namespace std {
 template<typename T>
-struct std::hash<porytiles::Tile<T>> {
+struct hash<porytiles::Tile<T>> {
     size_t operator()(const porytiles::Tile<T>& tile) const {
         size_t result = 0;
-        for (long row = 0; row < porytiles::TILE_DIMENSION; row++) {
-            for (long col = 0; col < porytiles::TILE_DIMENSION; col++) {
+        for (size_t row = 0; row < porytiles::TILE_DIMENSION; row++) {
+            for (size_t col = 0; col < porytiles::TILE_DIMENSION; col++) {
                 result = result * 31 + std::hash(tile.getPixel(row, col));
             }
         }
