@@ -7,12 +7,24 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-ubuntu-gcc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build
+      - name: Build Ubuntu GCC
         run: |
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
+          make
+
+  build-mac-clang:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Mac Clang
+        run: |
+          brew update
+          brew install zlib
+          brew install libpng
+          brew upgrade
           make
