@@ -64,11 +64,11 @@ For much more detailed usage information, please check the wiki!
 Porytiles generates "stable" tilesets. That is:
 
 1. For the same input `master.png`, Porytiles will always generate the exact same `tiles.png` and palette files.
-2. Porytiles reads the input `master.png` left-to-right, top-to-bottom. If you add new tiles at the bottom of
-   the `master.png`, this won't disturb the final tile and palette ordering for the older tiles above. E.g. say you
-   decide you want to add a new building to a tileset that you are already generating using Porytiles. If you add the
-   new building at the bottom of the `master.png`, any new tiles will be added to the end of the output `tiles.png`, and
-   any new colors will be allocated to whatever free slots remain in your palettes.
+2. Porytiles reads the input `master.png` left-to-right, top-to-bottom. If you add new tiles at the bottom of the
+   `master.png`, this won't disturb the final tile and palette ordering for the older tiles above. E.g. say you want
+   to add a new building to a tileset for which you have already used Porytiles to generate a `tiles.png`. If you put
+   the new building at the bottom of the `master.png`, any new tiles will be added to the end of the output `tiles.png`,
+   and any new colors will be allocated to whatever free slots remain in your palettes.
 
 Stability is a nice property: adding new tiles to the `master.png` won't break any existing metatiles you created from
 the tileset in Porymap.
