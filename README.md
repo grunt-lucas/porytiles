@@ -2,42 +2,43 @@
 
 [![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Build%20Porytiles/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
 
-Create an indexed tileset from a master RGB PNG tilesheet. For use with
+Porytiles creates an indexed tileset and corresponding pal files from a master RGB PNG tilesheet. For use with
 the [`pokeruby`](https://github.com/pret/pokeruby), [`pokeemerald`](https://github.com/pret/pokeemerald), and
 [`pokefirered`](https://github.com/pret/pokefirered) Pokémon Generation 3 decompilation
 projects.
 
-`porytiles` generates "stable" tilesets. That is:
+Porytiles generates "stable" tilesets. That is:
 
-1. For the same input `master.png`, `porytiles` will always generate the exact same `tiles.png` and palette files.
-2. `porytiles` reads the input `master.png` left-to-right, top-to-bottom. If you make sure to add new tiles at the
-   bottom of the master sheet, this will not disturb palettes and tiles allocated for a previous version of
-   your `master.png`. So e.g. say you decide you want to add a new tree type to a tileset that you are already
-   generating using `porytiles`, and that you are already using for metatiles in Porymap. If you make sure to add the
-   new tree at the bottom of the `master.png`, it is guaranteed to not break your metatiles. You just need to make sure
-   you aren't adding so many new colors that the palette allocation fails.
+1. For the same input `master.png`, Porytiles will always generate the exact same `tiles.png` and palette files.
+2. Porytiles reads the input `master.png` left-to-right, top-to-bottom. If you add new tiles at the bottom of
+   the `master.png`, this won't disturb the final tile and palette ordering for the older tiles above. E.g. say you
+   decide you want to add a new building to a tileset that you are already generating using Porytiles. If you add the
+   new building at the bottom of the `master.png`, any new tiles will be added to the end of the output `tiles.png`, and
+   any new colors will be allocated to whatever free slots remain in your palettes.
+
+Stability is a nice property: adding new tiles to the `master.png` won't break any existing metatiles you created from
+the tileset in Porymap.
 
 ## Limitations - PLEASE READ FIRST
 
-This is an early release of `porytiles`. I cannot guarantee there are no bugs. The palette allocation is also a
+This is an early release of Porytiles. I cannot guarantee there are no bugs. The palette allocation is also a
 first-attempt algorithm, so sometimes it may behave in an unintuitive way. I am working on some additional features to
 help with these issues.
 
-Also: while `porytiles` does aim to guarantee stability of your final `tiles.png`, since this is an early release I
+Also: while Porytiles does aim to guarantee stability of your final `tiles.png`, since this is an early release I
 cannot guarantee I won't break that stability with future releases. So any tilesets you create may have broken metatiles
-when you upgrade to future versions of `porytiles`. Upon official release, I will have more stringent stability
-guarantees
-in place so that you never have to worry about `porytiles` updates breaking your metatiles.
+when you upgrade to future versions of Porytiles. Upon official release, I will have more stringent stability
+guarantees in place so that you never have to worry about Porytiles updates breaking your metatiles.
 
 ## Who Is This For?
 
-`porytiles` is not intended for tileset pros who know all the ins-and-outs of palette selection, PNG indexing, and tile
+Porytiles is not intended for tileset pros who know all the ins-and-outs of palette allocation, PNG indexing, and tile
 layout. If you are able to allocate palettes with ease and lay out your `tiles.png` with your preferred editor, then
-`porytiles` is probably not for you.
+Porytiles is probably not for you.
 
 However, if you are someone who loves [Porymap](https://github.com/huderlem/porymap) but is overwhelmed at the
-prospect of creating a completely new tileset from scratch, `porytiles` can smooth things over! All you have to do is
-draw (or copy-paste 😜) your art however you like onto an RGB tilesheet PNG. Then let `porytiles` figure out how to
+prospect of creating a completely new tileset from scratch, Porytiles can smooth things over! All you have to do is
+draw (or copy-paste 😜) your art however you like onto an RGB tilesheet PNG. Then let Porytiles figure out how to
 construct your palettes and dedupe/transform your tiles.
 
 ## Getting Started
@@ -63,6 +64,6 @@ To build your first tileset with some sensible defaults, go ahead and run:
 ```
 
 where `mytiles.png` is an RGB PNG tilesheet, and `folder` is the folder where you want the output. If `folder` does not
-already exist, `porytiles` will create it for you.
+already exist, Porytiles will create it for you.
 
 For much more detailed usage information, please check the wiki!
