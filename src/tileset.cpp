@@ -276,7 +276,9 @@ void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const P
     fileName += ".pal";
     const size_t maxPalSize = PAL_SIZE_4BPP + 1;
 
-    std::ofstream outfile{basePath / fileName};
+    verboseLog("writing palette " + fileName);
+    std::string outpath = basePath / fileName;
+    std::ofstream outfile{outpath};
     outfile << "JASC-PAL" << std::endl;
     outfile << "0100" << std::endl;
     outfile << "16" << std::endl;
@@ -398,6 +400,7 @@ void Tileset::writeTileset() {
             tileIndex++;
         }
     }
+    verboseLog("writing tileset " + tilesetFile.string());
     tilesetPng.write(tilesetPath);
 
     /*
