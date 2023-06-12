@@ -28,7 +28,7 @@ RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 RgbColor gOptSiblingColor = SIBLING_DEFAULT;
 int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
-int gOptMaxTiles = MAX_TILES_DEFAULT;
+size_t gOptMaxTiles = MAX_TILES_DEFAULT;
 
 // Arguments (required)
 std::string gArgMasterPngPath;

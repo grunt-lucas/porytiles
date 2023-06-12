@@ -17,7 +17,7 @@ extern RgbColor gOptTransparentColor;
 extern RgbColor gOptPrimerColor;
 extern RgbColor gOptSiblingColor;
 extern int gOptMaxPalettes;
-extern int gOptMaxTiles;
+extern size_t gOptMaxTiles;
 
 // Arguments (required)
 extern std::string gArgMasterPngPath;
