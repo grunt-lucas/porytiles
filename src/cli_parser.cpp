@@ -27,7 +27,7 @@ bool gOptVerboseOutput = VERBOSE_DEFAULT;
 RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 RgbColor gOptSiblingColor = SIBLING_DEFAULT;
-int gOptMaxPalettes = MAX_PALETTE_DEFAULT;
+size_t gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 size_t gOptMaxTiles = MAX_TILES_DEFAULT;
 
 // Arguments (required)
@@ -86,6 +86,21 @@ static void printVersion() {
     cout << PROGRAM_NAME << " " << VERSION << endl;
 }
 
+static size_t parseSizeOption(const std::string& optionName, const char* optarg) {
+    try {
+        size_t pos;
+        size_t arg = std::stoi(optarg, &pos);
+        if (std::string{optarg}.size() != pos) {
+            throw TsException{"option argument was not a valid integral type"};
+        }
+        return arg;
+    }
+    catch (const std::exception& e) {
+        throw TsException{
+                "invalid argument `" + std::string{optarg} + "' for option `" + optionName + "': " + e.what()};
+    }
+}
+
 void parseOptions(int argc, char** argv) {
     const char* const shortOptions = "hn:p:s:t:T:vV";
     static struct option longOptions[] =
@@ -109,8 +124,7 @@ void parseOptions(int argc, char** argv) {
 
         switch (opt) {
             case 'n':
-                // TODO parse in separate function that can throw appropriate error if invalid arg
-                gOptMaxPalettes = std::stoi(optarg);
+                gOptMaxPalettes = parseSizeOption("-n, --max-palettes", optarg);
                 if (gOptMaxPalettes > NUM_BG_PALS) {
                     throw TsException{"requested " + std::to_string(gOptMaxPalettes) +
                                       " palettes, max allowed: " + std::to_string(NUM_BG_PALS)};
@@ -132,8 +146,7 @@ void parseOptions(int argc, char** argv) {
                 // gOptTransparentColor = optarg;
                 // break;
             case 'T':
-                // TODO parse in separate function that can throw appropriate error if invalid arg
-                gOptMaxTiles = std::stoi(optarg);
+                gOptMaxTiles = parseSizeOption("-T, --max-tiles", optarg);
                 break;
             case 'v':
                 gOptVerboseOutput = true;

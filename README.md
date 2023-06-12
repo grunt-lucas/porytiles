@@ -25,7 +25,8 @@ help with these issues.
 
 Also: while `porytiles` does aim to guarantee stability of your final `tiles.png`, since this is an early release I
 cannot guarantee I won't break that stability with future releases. So any tilesets you create may have broken metatiles
-when you upgrade to future versions of porytiles. Upon official release, I will have more stringent stability guarantees
+when you upgrade to future versions of `porytiles`. Upon official release, I will have more stringent stability
+guarantees
 in place so that you never have to worry about `porytiles` updates breaking your metatiles.
 
 ## Who Is This For?

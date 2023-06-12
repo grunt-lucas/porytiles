@@ -291,7 +291,7 @@ void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const P
 }
 } // namespace (anonymous)
 
-Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
+Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
     for (int i = 0; i < getMaxPalettes(); i++) {
         // prefill palette vector with empty palettes

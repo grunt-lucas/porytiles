@@ -16,7 +16,7 @@ extern bool gOptVerboseOutput;
 extern RgbColor gOptTransparentColor;
 extern RgbColor gOptPrimerColor;
 extern RgbColor gOptSiblingColor;
-extern int gOptMaxPalettes;
+extern size_t gOptMaxPalettes;
 extern size_t gOptMaxTiles;
 
 // Arguments (required)

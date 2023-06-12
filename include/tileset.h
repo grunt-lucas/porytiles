@@ -18,12 +18,12 @@ class Tileset {
     std::vector<IndexedTile> tiles;
     std::unordered_set<IndexedTile> tilesIndex;
     std::vector<Palette> palettes;
-    int maxPalettes;
+    size_t maxPalettes;
 
 public:
-    explicit Tileset(int maxPalettes);
+    explicit Tileset(const size_t maxPalettes);
 
-    [[nodiscard]] int getMaxPalettes() const { return maxPalettes; }
+    [[nodiscard]] size_t getMaxPalettes() const { return maxPalettes; }
 
     void alignSiblings(const RgbTiledPng& masterTiles);
 
