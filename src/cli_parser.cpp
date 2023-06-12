@@ -71,7 +71,7 @@ static void printHelp(std::ostream& outStream) {
     outStream << endl;
     outStream
             << "   -T, --max-tiles=<num>            Specify the maximum number of tiles porytiles is allowed" << endl
-            <<"                                     to generate (default: " << MAX_TILES_DEFAULT << ")." << endl;
+            << "                                    to generate (default: " << MAX_TILES_DEFAULT << ")." << endl;
     outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
@@ -133,9 +133,8 @@ void parseOptions(int argc, char** argv) {
                 // break;
             case 'T':
                 // TODO parse in separate function that can throw appropriate error if invalid arg
-                throw TsException{"TODO: --max-tiles option unimplemented"};
-                // gOptMaxTiles = optarg;
-                // break;
+                gOptMaxTiles = std::stoi(optarg);
+                break;
             case 'v':
                 gOptVerboseOutput = true;
                 break;
