@@ -8,14 +8,11 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-      - name: Install zlib
-        run: sudo apt-get install zlib1g-dev
-      - name: Install LibPNG
-        run: sudo apt-get install libpng-dev
       - name: Build
-        run: make
+        run: |
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          make
