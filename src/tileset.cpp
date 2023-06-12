@@ -318,6 +318,7 @@ void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
 
 void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     bool inPrimerBlock = false;
+    bool inSiblingBlock = false;
     std::string logString;
 
     verboseLog("--------------- INDEXING TILES ---------------");
@@ -331,9 +332,13 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     tiles.push_back(transparent);
     tilesIndex.insert(transparent);
 
-    // Iterate over each tile and assign it, skipping primer tiles
+    // Iterate over each tile and assign it, skipping primer and sibling tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
         if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptPrimerColor)) {
+            if (inSiblingBlock) {
+                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest primer block within sibling block"};
+            }
+
             inPrimerBlock = !inPrimerBlock;
             logString = inPrimerBlock ? "entered" : "exited";
             logString += " primer block " + masterTiles.tileDebugString(i);
@@ -341,9 +346,29 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
             logString.clear();
             continue;
         }
+        if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptSiblingColor)) {
+            if (inPrimerBlock) {
+                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest sibling block within primer block"};
+            }
 
-        if (!inPrimerBlock)
+            inSiblingBlock = !inSiblingBlock;
+            logString = inSiblingBlock ? "entered" : "exited";
+            logString += " sibling block " + masterTiles.tileDebugString(i);
+            verboseLog(logString);
+            logString.clear();
+            continue;
+        }
+
+        if (!inPrimerBlock && !inSiblingBlock)
             indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesIndex);
+    }
+
+    // If we reach end of tiles without closing a block, throw an error since this is probably a mistake
+    if (inPrimerBlock) {
+        throw TsException{"reached end of tiles with open primer block"};
+    }
+    if (inSiblingBlock) {
+        throw TsException{"reached end of tiles with open sibling block"};
     }
 }
 
