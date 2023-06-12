@@ -12,7 +12,7 @@
 namespace porytiles {
 const char* const PROGRAM_NAME = "porytiles";
 const char* const VERSION = "0.0.1";
-const char* const RELEASE_DATE = "1 June 2023";
+const char* const RELEASE_DATE = "12 June 2023";
 
 // Defaults for unsupplied options
 static bool VERBOSE_DEFAULT = false;
