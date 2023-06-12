@@ -14,4 +14,8 @@ bool RgbColor::operator!=(const RgbColor& other) const {
 std::string RgbColor::prettyString() const {
     return std::to_string(red) + "," + std::to_string(green) + "," + std::to_string(blue);
 }
+
+std::string RgbColor::jascString() const {
+    return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
+}
 } // namespace porytiles

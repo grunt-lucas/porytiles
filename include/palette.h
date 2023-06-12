@@ -29,7 +29,7 @@ public:
 
     bool addColorAtEnd(const RgbColor& color);
 
-    [[nodiscard]] RgbColor colorAt(int i);
+    [[nodiscard]] RgbColor colorAt(size_t i) const;
 
     [[nodiscard]] size_t indexOf(const RgbColor& color) const;
 

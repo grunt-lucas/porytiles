@@ -270,6 +270,25 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
         throw TsException{"requested tile limit (" + std::to_string(gOptMaxTiles) + ") was exceeded"};
     }
 }
+
+void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const Palette& palette) {
+    std::string fileName = palIndex < 10 ? "0" + std::to_string(palIndex) : std::to_string(palIndex);
+    fileName += ".pal";
+    const size_t maxPalSize = PAL_SIZE_4BPP + 1;
+
+    std::ofstream outfile{basePath / fileName};
+    outfile << "JASC-PAL" << std::endl;
+    outfile << "0100" << std::endl;
+    outfile << "16" << std::endl;
+    size_t i;
+    for (i = 0; i < palette.size(); i++) {
+        outfile << palette.colorAt(i).jascString() << std::endl;
+    }
+    for (size_t j = i; j < maxPalSize; j++) {
+        outfile << RgbColor{0, 0, 0}.jascString() << std::endl;
+    }
+    outfile.close();
+}
 } // namespace (anonymous)
 
 Tileset::Tileset(const int maxPalettes) : maxPalettes{maxPalettes} {
@@ -331,24 +350,23 @@ void Tileset::writeTileset() {
     std::filesystem::path palettesDir("palettes");
     std::filesystem::path tilesetFile("tiles.png");
     std::filesystem::path tilesetPath = gArgOutputPath / tilesetFile;
+    std::filesystem::path palettesPath = gArgOutputPath / palettesDir;
 
-    verboseLog("--------------- WRITING TILES ---------------");
+    verboseLog("--------------- WRITING FILES ---------------");
 
-    if (std::filesystem::exists(outputPath / palettesDir) && !std::filesystem::is_directory(outputPath / palettesDir)) {
-        throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
-    }
     if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
         throw TsException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
     }
-    std::filesystem::create_directories(outputPath / palettesDir);
+    if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
+        throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
+    }
+    std::filesystem::create_directories(palettesPath);
 
     /*
      * Set final tileset PNG dimensions based on the tile vector. We'll also set it to use a simple greyscale palette.
      */
-    // Images must be 16 tiles wide
-    constexpr size_t tileWidth = 16;
-    const size_t imageWidth = TILE_DIMENSION * tileWidth;
-    const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / tileWidth) + 1);
+    const size_t imageWidth = TILE_DIMENSION * IMAGE_WIDTH_IN_TILES;
+    const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / IMAGE_WIDTH_IN_TILES) + 1);
     png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
                                             static_cast<png::uint_32>(imageHeight)};
     png::palette pal(16);
@@ -359,7 +377,7 @@ void Tileset::writeTileset() {
     tilesetPng.set_palette(pal);
 
     /*
-     * Set the tileset PNG based on tiles.
+     * Set up the tileset PNG based on the tiles list and then write it to `tiles.png`.
      */
     png::uint_32 tilesetPngTilesWidth = tilesetPng.get_width() / TILE_DIMENSION;
     png::uint_32 tilesetPngTilesHeight = tilesetPng.get_height() / TILE_DIMENSION;
@@ -381,5 +399,12 @@ void Tileset::writeTileset() {
         }
     }
     tilesetPng.write(tilesetPath);
+
+    /*
+     * Finally, write the pal files.
+     */
+    for (size_t i = 0; i < palettes.size(); i++) {
+        emitPalette(i, palettesPath, palettes[i]);
+    }
 }
 } // namespace porytiles

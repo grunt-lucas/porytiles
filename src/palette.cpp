@@ -22,7 +22,7 @@ bool Palette::addColorAtEnd(const RgbColor& color) {
     return true;
 }
 
-RgbColor Palette::colorAt(int i) {
+RgbColor Palette::colorAt(size_t i) const {
     return colors.at(i);
 }
 

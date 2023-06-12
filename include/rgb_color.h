@@ -34,6 +34,8 @@ public:
     bool operator!=(const RgbColor& other) const;
 
     [[nodiscard]] std::string prettyString() const;
+
+    [[nodiscard]] std::string jascString() const;
 };
 } // namespace porytiles
 

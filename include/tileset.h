@@ -10,6 +10,8 @@
 #include <unordered_set>
 
 namespace porytiles {
+// Tileset images will be 16 tiles wide to match vanilla
+constexpr size_t IMAGE_WIDTH_IN_TILES = 16;
 constexpr int NUM_BG_PALS = 12;
 
 class Tileset {
