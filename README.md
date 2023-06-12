@@ -7,19 +7,10 @@ the [`pokeruby`](https://github.com/pret/pokeruby), [`pokeemerald`](https://gith
 [`pokefirered`](https://github.com/pret/pokefirered) Pokémon Generation 3 decompilation
 projects.
 
-Porytiles generates "stable" tilesets. That is:
+Check out the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out
+the `trunk` branch for upcoming changes.
 
-1. For the same input `master.png`, Porytiles will always generate the exact same `tiles.png` and palette files.
-2. Porytiles reads the input `master.png` left-to-right, top-to-bottom. If you add new tiles at the bottom of
-   the `master.png`, this won't disturb the final tile and palette ordering for the older tiles above. E.g. say you
-   decide you want to add a new building to a tileset that you are already generating using Porytiles. If you add the
-   new building at the bottom of the `master.png`, any new tiles will be added to the end of the output `tiles.png`, and
-   any new colors will be allocated to whatever free slots remain in your palettes.
-
-Stability is a nice property: adding new tiles to the `master.png` won't break any existing metatiles you created from
-the tileset in Porymap.
-
-## Limitations - PLEASE READ FIRST
+## Limitations - Please Read First
 
 This is an early release of Porytiles. I cannot guarantee there are no bugs. The palette allocation is also a
 first-attempt algorithm, so sometimes it may behave in an unintuitive way. I am working on some additional features to
@@ -67,3 +58,17 @@ where `mytiles.png` is an RGB PNG tilesheet, and `folder` is the folder where yo
 already exist, Porytiles will create it for you.
 
 For much more detailed usage information, please check the wiki!
+
+## Stability
+
+Porytiles generates "stable" tilesets. That is:
+
+1. For the same input `master.png`, Porytiles will always generate the exact same `tiles.png` and palette files.
+2. Porytiles reads the input `master.png` left-to-right, top-to-bottom. If you add new tiles at the bottom of
+   the `master.png`, this won't disturb the final tile and palette ordering for the older tiles above. E.g. say you
+   decide you want to add a new building to a tileset that you are already generating using Porytiles. If you add the
+   new building at the bottom of the `master.png`, any new tiles will be added to the end of the output `tiles.png`, and
+   any new colors will be allocated to whatever free slots remain in your palettes.
+
+Stability is a nice property: adding new tiles to the `master.png` won't break any existing metatiles you created from
+the tileset in Porymap.
