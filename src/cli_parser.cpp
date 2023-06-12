@@ -16,7 +16,7 @@ const char* const RELEASE_DATE = "12 June 2023";
 
 // Defaults for unsupplied options
 static bool VERBOSE_DEFAULT = false;
-static const RgbColor TRANSPARENCY_DEFAULT = {251, 30, 228};
+static const RgbColor TRANSPARENCY_DEFAULT = {255, 0, 255};
 static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
 static const RgbColor SIBLING_DEFAULT = {255, 255, 255};
 static int MAX_PALETTE_DEFAULT = 6;
