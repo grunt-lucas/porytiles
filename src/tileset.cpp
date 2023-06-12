@@ -8,6 +8,7 @@
 #include "tsexception.h"
 
 #include <algorithm>
+#include <sstream>
 #include <filesystem>
 #include <png.hpp>
 
@@ -164,18 +165,18 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
 }
 
 void
-indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& palettes,
+indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& palettes,
           std::vector<IndexedTile>& tiles,
           std::unordered_set<IndexedTile>& tilesIndex) {
     std::string logString;
-    const RgbTile& tile = masterTiles.tileAt(tileIndex);
+    const RgbTile& tile = masterTiles.tileAt(tileIdx);
     IndexedTile indexedTile;
 
     /*
      * If this is a total transparent tile, skip it.
      */
     if (tile.isUniformly(gOptTransparentColor)) {
-        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
+        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIdx));
         return;
     }
 
@@ -183,7 +184,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
      * If this is a sibling control tile, skip it.
      */
     if (tile.isUniformly(gOptSiblingColor)) {
-        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
+        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIdx));
         return;
     }
 
@@ -196,14 +197,14 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
         const Palette& palette = palettes.at(j);
         if (tile.pixelsNotInPalette(palette).empty()) {
             matchingPaletteIndex = j;
-            logString = masterTiles.tileDebugString(tileIndex) + ": matched palette " + std::to_string(j);
+            logString = masterTiles.tileDebugString(tileIdx) + ": matched palette " + std::to_string(j);
             verboseLog(logString);
             logString.clear();
             break;
         }
         if (j == palettes.size() - 1) {
             // If we made it here without triggering a palette assignment above, there's a problem
-            throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIndex)};
+            throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIdx)};
         }
     }
 
@@ -223,20 +224,27 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
     const IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
     const IndexedTile diagonalFlip = indexedTile.getDiagonalFlip();
 
+    if (tilesIndex.find(indexedTile) != tilesIndex.end()) {
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: tile already present";
+        verboseLog(logString);
+        logString.clear();
+        return;
+    }
+
     if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: vertical flip already present";
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: vertical flip already present";
         verboseLog(logString);
         logString.clear();
         return;
     }
     if (tilesIndex.find(horizontalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: horizontal flip already present";
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: horizontal flip already present";
         verboseLog(logString);
         logString.clear();
         return;
     }
     if (tilesIndex.find(diagonalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: diagonal flip already present";
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: diagonal flip already present";
         verboseLog(logString);
         logString.clear();
         return;
@@ -244,6 +252,15 @@ indexTile(const RgbTiledPng& masterTiles, int tileIndex, std::vector<Palette>& p
 
     tiles.push_back(indexedTile);
     tilesIndex.insert(indexedTile);
+    logString = masterTiles.tileDebugString(tileIdx) + ": mapped to final tile: 0x";
+    size_t finalTileIdx = tiles.size() - 1;
+    // convert tile index to hex
+    std::stringstream sstream;
+    sstream << std::hex << finalTileIdx;
+    logString += sstream.str();
+    logString += " (" + std::to_string(finalTileIdx % 16) + ", " + std::to_string(finalTileIdx / 16) + ")";
+    verboseLog(logString);
+    logString.clear();
 
     if (tiles.size() > gOptMaxTiles - 1) {
         /*
@@ -288,6 +305,11 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         palette.pushTransparencyColor();
     }
 
+    // Insert transparent tile at the start
+    IndexedTile transparent{0};
+    tiles.push_back(transparent);
+    tilesIndex.insert(transparent);
+
     // Iterate over each tile and assign it, skipping primer tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
         if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptPrimerColor)) {
@@ -302,11 +324,6 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         if (!inPrimerBlock)
             indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesIndex);
     }
-
-    // Insert transparent tile at the start
-    IndexedTile transparent{0};
-    tiles.insert(tiles.begin(), transparent);
-    tilesIndex.insert(transparent);
 }
 
 void Tileset::writeTileset() {
@@ -314,6 +331,9 @@ void Tileset::writeTileset() {
     std::filesystem::path palettesDir("palettes");
     std::filesystem::path tilesetFile("tiles.png");
     std::filesystem::path tilesetPath = gArgOutputPath / tilesetFile;
+
+    verboseLog("--------------- WRITING TILES ---------------");
+
     if (std::filesystem::exists(outputPath / palettesDir) && !std::filesystem::is_directory(outputPath / palettesDir)) {
         throw TsException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
     }
