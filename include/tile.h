@@ -45,6 +45,10 @@ public:
         return true;
     }
 
+    bool operator!=(const Tile<T>& other) const {
+        return !(*this == other);
+    }
+
     [[nodiscard]] T getPixel(size_t row, size_t col) const {
         if (row >= TILE_DIMENSION)
             throw std::runtime_error{
