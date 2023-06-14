@@ -59,6 +59,10 @@ static void printHelp(std::ostream& outStream) {
             << "                                    to allocate (default: " << MAX_PALETTE_DEFAULT << ")." << endl;
     outStream << endl;
     outStream
+            << "   -T, --max-tiles=<num>            Specify the maximum number of tiles porytiles is allowed" << endl
+            << "                                    to generate (default: " << MAX_TILES_DEFAULT << ")." << endl;
+    outStream << endl;
+    outStream
             << "   -p, --primer-color=<R,G,B>       Specify the tile color for the primer control tile" << endl
             << "                                    (default: " << PRIMER_DEFAULT.prettyString() << "). See wiki for more info." << endl;
     outStream << endl;
@@ -69,14 +73,10 @@ static void printHelp(std::ostream& outStream) {
     outStream
             << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: " << TRANSPARENCY_DEFAULT.prettyString() << ")." << endl;
     outStream << endl;
-    outStream
-            << "   -T, --max-tiles=<num>            Specify the maximum number of tiles porytiles is allowed" << endl
-            << "                                    to generate (default: " << MAX_TILES_DEFAULT << ")." << endl;
-    outStream << endl;
     outStream << "Help and Logging:" << endl;
     outStream << "   -h, --help     Print help message." << endl;
+    outStream << "   -v, --verbose  Enable verbose logging to stdout." << endl;
     outStream << "   -V, --version  Print version info." << endl;
-    outStream << "   -v, --verbose  Enable verbose logging to stderr." << endl;
 }
 // @formatter:on
 
