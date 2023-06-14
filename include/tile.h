@@ -20,6 +20,7 @@ constexpr size_t PIXEL_COUNT = TILE_DIMENSION * TILE_DIMENSION;
 
 template<typename T>
 class Tile {
+    // TODO make this a vector for better move semantics
     std::array<T, PIXEL_COUNT> pixels;
 
 public:
@@ -36,6 +37,8 @@ public:
             pixels[i] = other.pixels[i];
         }
     }
+
+    // TODO we defined a copy ctor so we should follow Rule of 5: if we switch class to use vector, we can just use defaults
 
     bool operator==(const Tile<T>& other) const {
         for (size_t i = 0; i < PIXEL_COUNT; i++) {
