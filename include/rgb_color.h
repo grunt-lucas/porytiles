@@ -17,11 +17,15 @@ public:
     RgbColor(const png::byte red, const png::byte green, const png::byte blue)
             : red{red}, green{green}, blue{blue} {}
 
-    RgbColor(const RgbColor& other) {
-        red = other.red;
-        green = other.green;
-        blue = other.blue;
-    }
+    ~RgbColor() = default;
+
+    RgbColor(const RgbColor& other) = default;
+
+    RgbColor& operator=(const RgbColor& that) = default;
+
+    RgbColor(RgbColor&& other) = default;
+
+    RgbColor& operator=(RgbColor&& that) = default;
 
     [[nodiscard]] png::byte getRed() const { return red; }
 
