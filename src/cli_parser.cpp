@@ -34,6 +34,57 @@ size_t gOptMaxTiles = MAX_TILES_DEFAULT;
 std::string gArgMasterPngPath;
 std::string gArgOutputPath;
 
+template<typename T>
+static T parseIntegralOption(const std::string& optionName, const char* optarg) {
+    try {
+        size_t pos;
+        T arg = std::stoi(optarg, &pos);
+        if (std::string{optarg}.size() != pos) {
+            throw TsException{"option argument was not a valid integral type"};
+        }
+        return arg;
+    }
+    catch (const std::exception& e) {
+        throw TsException{
+                "invalid argument `" + std::string{optarg} + "' for option `" + optionName + "': " + e.what()};
+    }
+}
+
+static std::vector<std::string> split(std::string input, const std::string& delimiter) {
+    std::vector<std::string> result;
+    size_t pos;
+    std::string token;
+    while ((pos = input.find(delimiter)) != std::string::npos) {
+        token = input.substr(0, pos);
+        result.push_back(token);
+        input.erase(0, pos + delimiter.length());
+    }
+    result.push_back(input);
+    return result;
+}
+
+static RgbColor parseRgbColor(const std::string& colorString) {
+    std::vector<std::string> colorComponents = split(colorString, ",");
+    if (colorComponents.size() != 3) {
+        throw TsException{"RGB color string `" + colorString + "' must have three components"};
+    }
+    int red = parseIntegralOption<int>(colorString, colorComponents[0].c_str());
+    int green = parseIntegralOption<int>(colorString, colorComponents[1].c_str());
+    int blue = parseIntegralOption<int>(colorString, colorComponents[2].c_str());
+
+    if (red < 0 || red > 255) {
+        throw TsException{"invalid range for red component, must be 0 < red <  256"};
+    }
+    if (green < 0 || green > 255) {
+        throw TsException{"invalid range for green component, must be 0 < red <  256"};
+    }
+    if (blue < 0 || blue > 255) {
+        throw TsException{"invalid range for blue component, must be 0 < red <  256"};
+    }
+
+    return RgbColor{static_cast<png::byte>(red), static_cast<png::byte>(green), static_cast<png::byte>(blue)};
+}
+
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
@@ -86,21 +137,6 @@ static void printVersion() {
     cout << PROGRAM_NAME << " " << VERSION << endl;
 }
 
-static size_t parseSizeOption(const std::string& optionName, const char* optarg) {
-    try {
-        size_t pos;
-        size_t arg = std::stoi(optarg, &pos);
-        if (std::string{optarg}.size() != pos) {
-            throw TsException{"option argument was not a valid integral type"};
-        }
-        return arg;
-    }
-    catch (const std::exception& e) {
-        throw TsException{
-                "invalid argument `" + std::string{optarg} + "' for option `" + optionName + "': " + e.what()};
-    }
-}
-
 void parseOptions(int argc, char** argv) {
     const char* const shortOptions = "hn:p:s:t:T:vV";
     static struct option longOptions[] =
@@ -124,29 +160,23 @@ void parseOptions(int argc, char** argv) {
 
         switch (opt) {
             case 'n':
-                gOptMaxPalettes = parseSizeOption("-n, --max-palettes", optarg);
+                gOptMaxPalettes = parseIntegralOption<size_t>("-n, --max-palettes", optarg);
                 if (gOptMaxPalettes > NUM_BG_PALS) {
                     throw TsException{"requested " + std::to_string(gOptMaxPalettes) +
                                       " palettes, max allowed: " + std::to_string(NUM_BG_PALS)};
                 }
                 break;
             case 'p':
-                // TODO parse in separate function that can throw appropriate error if invalid arg
-                throw TsException{"TODO: --primer-color option unimplemented"};
-                // gOptPrimerColor = optarg;
-                // break;
+                gOptPrimerColor = parseRgbColor(optarg);
+                break;
             case 's':
-                // TODO parse in separate function that can throw appropriate error if invalid arg
-                throw TsException{"TODO: --sibling-color option unimplemented"};
-                // gOptSiblingColor = optarg;
-                // break;
+                gOptSiblingColor = parseRgbColor(optarg);
+                break;
             case 't':
-                // TODO parse in separate function that can throw appropriate error if invalid arg
-                throw TsException{"TODO: --transparent-color option unimplemented"};
-                // gOptTransparentColor = optarg;
-                // break;
+                gOptTransparentColor = parseRgbColor(optarg);
+                break;
             case 'T':
-                gOptMaxTiles = parseSizeOption("-T, --max-tiles", optarg);
+                gOptMaxTiles = parseIntegralOption<size_t>("-T, --max-tiles", optarg);
                 break;
             case 'v':
                 gOptVerboseOutput = true;
@@ -165,6 +195,15 @@ void parseOptions(int argc, char** argv) {
                 printHelp(std::cerr);
                 exit(2);
         }
+    }
+
+    // Throw an error if primer, sibling, and transparent colors overlap
+    std::unordered_set<RgbColor> colors;
+    colors.insert(gOptPrimerColor);
+    colors.insert(gOptSiblingColor);
+    colors.insert(gOptTransparentColor);
+    if (colors.size() != 3) {
+        throw TsException{"primer, sibling, and transparent tile colors must be specified uniquely"};
     }
 
     const int numRequiredArgs = 2;
