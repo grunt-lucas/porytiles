@@ -14,7 +14,10 @@ namespace porytiles {
  * against 15, since we will simply push_front the transparency color on each palette before actually allocating
  * tile indices in the final build step.
  */
+// TODO : change this to PAL_SIZE_4BPP_MINUS_TRANSPARENCY
 constexpr int PAL_SIZE_4BPP = 15;
+
+// TODO : add a true PAL_SIZE_4BPP that is 16
 
 class Palette {
     std::unordered_set<RgbColor> index;

@@ -42,6 +42,7 @@ int main(int argc, char** argv) try {
 
     // Build the tileset and write it out to disk
     porytiles::Tileset tileset{porytiles::gOptMaxPalettes};
+    tileset.validateControlTileLayout(masterTiles);
     tileset.alignSiblings(masterTiles);
     tileset.buildPalettes(masterTiles);
     tileset.indexTiles(masterTiles);

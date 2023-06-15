@@ -58,10 +58,18 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
     }
 
     /*
-     * If this is a primer-marker tile, skip it.
+     * If this is a primer control tile, skip it.
      */
     if (tile.isUniformly(gOptPrimerColor)) {
-        verboseLog("skipping primer marker " + masterTiles.tileDebugString(tileIndex));
+        verboseLog("skipping primer control " + masterTiles.tileDebugString(tileIndex));
+        return;
+    }
+
+    /*
+     * If this is a sibling control tile, skip it.
+     */
+    if (tile.isUniformly(gOptSiblingColor)) {
+        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
         return;
     }
 
@@ -244,7 +252,8 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
     std::stringstream sstream;
     sstream << std::hex << finalTileIdx;
     logString += sstream.str();
-    logString += " (" + std::to_string(finalTileIdx % 16) + ", " + std::to_string(finalTileIdx / 16) + ")";
+    logString += " (" + std::to_string(finalTileIdx % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
+                 std::to_string(finalTileIdx / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
     verboseLog(logString);
     logString.clear();
 
@@ -287,11 +296,12 @@ Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
     }
 }
 
+void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
+    // TODO implement
+}
+
 void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
-    /*
-     * TODO : before the main tile scan, we can do a sibling tile scan to pre-build palettes with matching indices that
-     * support sibling tiles
-     */
+    std::string logString;
     verboseLog("--------------- ALIGNING SIBLINGS ---------------");
 
     // Sibling control tile must appear as the first tile in the PNG, otherwise
@@ -300,14 +310,48 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
         return;
     }
 
-    for (size_t i = 0; i < masterTiles.size(); i++) {
+    size_t tileIndex = 1;
+    while (!masterTiles.tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
+        size_t paletteIndex = tileIndex - 1;
+        if (paletteIndex >= gOptMaxPalettes) {
+            throw TsException{
+                    "too many sibling tiles, count cannot exceed max palettes (" +
+                    std::to_string(gOptMaxPalettes) + ")"};
+        }
 
+        logString += masterTiles.tileDebugString(tileIndex);
+        logString += ": sibling tile detected";
+        verboseLog(logString);
+        logString.clear();
+
+        std::unordered_set<RgbColor> pixelColors;
+        for (size_t pixelIndex = 0; pixelIndex < PIXEL_COUNT; pixelIndex++) {
+            RgbColor colorAt = masterTiles.tileAt(tileIndex).getPixel(pixelIndex);
+            if (colorAt == gOptTransparentColor) {
+                continue;
+            }
+            if (pixelColors.find(colorAt) != pixelColors.end()) {
+                throw TsException{
+                        masterTiles.tileDebugString(tileIndex) + ": sibling tile contained duplicate color at pixel " +
+                        std::to_string(pixelIndex)};
+            }
+            palettes.at(paletteIndex).addColorAtEnd(colorAt);
+            pixelColors.insert(colorAt);
+
+            logString += masterTiles.tileDebugString(tileIndex);
+            logString += ": pixel " + std::to_string(pixelIndex) + ": ";
+            logString += "pushed color " + colorAt.prettyString();
+            verboseLog(logString);
+            logString.clear();
+        }
+        tileIndex++;
     }
 }
 
 void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
     verboseLog("--------------- BUILDING PALETTES ---------------");
     for (size_t i = 0; i < masterTiles.size(); i++) {
+        // TODO : skip sibling tiles here, not necessary and makes logs confusing
         assignTileToPalette(masterTiles, static_cast<int>(i), palettes);
     }
 }
@@ -388,8 +432,8 @@ void Tileset::writeTileset() {
     /*
      * Set final tileset PNG dimensions based on the tile vector. We'll also set it to use a simple greyscale palette.
      */
-    const size_t imageWidth = TILE_DIMENSION * IMAGE_WIDTH_IN_TILES;
-    const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / IMAGE_WIDTH_IN_TILES) + 1);
+    const size_t imageWidth = TILE_DIMENSION * FINAL_IMAGE_WIDTH_IN_TILES;
+    const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / FINAL_IMAGE_WIDTH_IN_TILES) + 1);
     png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
                                             static_cast<png::uint_32>(imageHeight)};
     png::palette pal(16);

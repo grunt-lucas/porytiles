@@ -13,10 +13,6 @@
   selector, and then the bottom four pixels will select into the palette as normal. We'll need to modify the `Tile`
   class so that tiles can store which palettes they are part of. Maybe a final tile that was generated from multiple
   siblings can be greyscale?
-+ Implement sibling control tiles properly
-    + sibling control tiles will be like primer control tiles, but users can line up multiple colors to make sure they
-      share indexes
-    + sibling control block must be the first thing in the file, there can only be one
 + Implement structure control tiles properly
     + four corners
     + palette allocation passes should also follow structure rules, so users get consistent results
