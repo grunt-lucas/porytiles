@@ -7,6 +7,15 @@
 + Count all unique colors in the master, if greater than `(numPalettes * 15) + 1` (15 since first color of each pal
   is reserved for transparency, add one for the transparency color), fail fast
 
++ First, we prefill some palettes based on the user's sibling control tiles, if present. Sibling control tiles allow
+  users to implement the common shared-tile technique, where one tile is valid in multiple palettes. This is common in
+  e.g. PokeCenter and PokeMart roof tiles, which have the same pattern but different colors.
+    + iterate over each sibling tile, up to `numPalettes`
+        + iterate over the tile pixels in order and push_back to the corresponding palettes for each unique color
+        + if we see a duplicate color, fail fast
+        + we are guaranteed not to exceed the unique color limit since at this point, all palettes are empty and we have
+          already verified that no tile has more than 15 unique colors (not counting transparency)
+
 + The next step will be to construct the palettes (for now, we will ignore our structure file). We'll need to create
   an `RgbTiledPng` from the master PNG and a `vector` of `Palette` objects sized based on the numTiles parameter
 
@@ -32,23 +41,6 @@
       allocation algorithm decided to do. The downside is now you have to have some forethought about palette layout,
       however it is still easier than free-styling.
 
-+ If we encounter a "structured" tile (given by checking the current pos in the structure map), then we do a
-  sub-iteration and process only other tiles that are part of this structure. Perform the same pal calculations as
-  above. Once we get to the end of the image and there are no more tiles in this structure, continue iterating where we
-  left off
-    + Still need to figure out the right way to handle structure tiles. There are three possibilities I have thought of
-      thus far:
-        + Structures are keyed by color. Any tile of the same color will be considered the same "struture". This is
-          highly granular and flexible, but tbh it is kinda tedious to work with. Especially because it might start to
-          be hard to find colors that are visually distinct
-        + Structures are keyed on one pre-chosen color, and we count any touching tiles to be part of the same
-          structure. This seems much easier to work with. The downside is users will have to make sure that different
-          structures in their master PNG do not touch. That should be fairly easy though, since there is no hard limit
-          to the size of the master PNG
-        + Don't have structure tiles at all: instead, encourage users to put one structure per logical "row" of their
-          master PNG. That is, the master PNG should be a very tall PNG where each coherent structure has only blank
-          tiles to its right.
-
 + At this point, our palettes should be correctly constructed. Now is the time to convert each tile from the master PNG
   into an index tile, and dedupe along the way. In fact, we could have probably done this simultaneously with allocating
   the palettes. So why didn't we? Because in the future I may want to improve the palette allocation algorithm by having
@@ -68,20 +60,27 @@
       already in the tileset (flip X, flip Y, flip X and Y). If it is, skip. Otherwise, add it!
     + When we exhaust the `RgbTiledPng` we're done!
 
++ If at any point in the palette alloc or tile index steps, we encounter a "structured" tile (given by checking the
+  current pos in the structure map), then we do a sub-iteration and process only other tiles that are part of this
+  structure. Perform the same pal calculations as above. Once we get to the end of the image and there are no more tiles
+  in this structure, continue iterating where we left off
+    + Still need to figure out the right way to handle structure tiles. There are three possibilities I have thought of
+      thus far:
+        + Structures are keyed by color. Any tile of the same color will be considered the same "structure". This is
+          highly granular and flexible, but tbh it is kinda tedious to work with. Especially because it might start to
+          be hard to find colors that are visually distinct
+        + Structures are keyed on one pre-chosen color, and we count any touching tiles to be part of the same
+          structure. This seems much easier to work with. The downside is users will have to make sure that different
+          structures in their master PNG do not touch. That should be fairly easy though, since there is no hard limit
+          to the size of the master PNG
+        + Don't have structure tiles at all: instead, encourage users to put one structure per logical "row" of their
+          master PNG. That is, the master PNG should be a very tall PNG where each coherent structure has only blank
+          tiles to its right.
+        + Structure tiles are one color, but require the user to mark the "four corners" of each structure. This will
+          give well defined boundaries for each structure and allow us to do a prescan "syntax" check that makes sure
+          everything is valid
+
 + Last step is to save the final `IndexedTile` vector and palettes to the output directory in the appropriate format.
     + We will need to make sure we make the indexed PNG have the right width, properly padding it out if the final row
       is not completely filled
     + If the final `IndexedTile` vector is too big, we fail with a message saying "max num tiles exceeded" or something
-
-+ How to handle the very common shared-tile technique? I.e. where one tile is valid across multiple palettes, think the
-  center/mart roof tiles in emerald
-    + sibling_tiles.txt can hold comma separated lines for sibling tiles: e.g. `12,45,32`
-    + Or, instead of a text file, have a sibling_tile_start color: then each tile encountered is considered a sibling
-      until we see a sibling_tile_end color
-    + We should allow sibling tiles to be primer tiles at the same time, that way users can just line up all colors they
-      want aligned and be done with it
-    + the palette allocation algorithm will need to allocate colors for sibling tiles first
-        + each sibling tile must use its own palette, but the color indices must match
-        + we can ensure this by picking the least populated N palettes and push_front
-            + iterate over the tile pixels in order and push_front to the corresponding palettes for each unique color
-            + if we run out of colors, fail fast
