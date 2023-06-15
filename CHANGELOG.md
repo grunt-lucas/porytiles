@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Sibling tile support
+- Sibling tile support: can now specify cross-palette colors that should share indexes, allowing for tiles that are
+  shared across palettes
+
+### Changed
+
+- Better tile indexing logging: logs are super greppable so you can easily figure out where `porytiles` put your tile on
+  the final sheet
+- Output tileset PNG now uses 8bpp indexes to display true colors based on the palettes: `gbagfx` will just truncate
+  the top 4 bits so it works as intended
+
+### Fixed
+
+- Properly parse color-related CLI options
 
 ## [0.0.1] - 2023-06-12
 
