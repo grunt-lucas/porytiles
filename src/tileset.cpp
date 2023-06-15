@@ -307,6 +307,16 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
      * support sibling tiles
      */
     verboseLog("--------------- ALIGNING SIBLINGS ---------------");
+
+    // Sibling control tile must appear as the first tile in the PNG, otherwise
+    if (!masterTiles.tileAt(0).isUniformly(gOptSiblingColor)) {
+        verboseLog("no sibling tiles present, skipping ahead to build palettes");
+        return;
+    }
+
+    for (size_t i = 0; i < masterTiles.size(); i++) {
+
+    }
 }
 
 void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {

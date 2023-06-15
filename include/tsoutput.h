@@ -9,7 +9,7 @@
 namespace porytiles {
 inline void verboseLog(const std::string& message) {
     if (gOptVerboseOutput)
-        std::cout << PROGRAM_NAME << ": info: " << message << std::endl;
+        std::cout << PROGRAM_NAME << ": " << message << std::endl;
 }
 } // namespace porytiles
 
