@@ -453,18 +453,35 @@ void Tileset::writeTileset() {
     std::filesystem::create_directories(palettesPath);
 
     /*
-     * Set final tileset PNG dimensions based on the tile vector. We'll also set it to use a simple greyscale palette.
+     * Set final tileset PNG dimensions based on the tile vector.
      */
     const size_t imageWidth = TILE_DIMENSION * FINAL_IMAGE_WIDTH_IN_TILES;
     const size_t imageHeight = TILE_DIMENSION * ((tiles.size() / FINAL_IMAGE_WIDTH_IN_TILES) + 1);
     png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
                                             static_cast<png::uint_32>(imageHeight)};
-    png::palette pal(16);
-    for (size_t i = 0; i < pal.size(); i++) {
-        int color = i == 0 ? 0 : (static_cast<int>(i) * 16) - 1;
-        pal[15 - i] = png::color(color, color, color);
+
+    /*
+     * Pad out each palette's unused slots with 0s
+     */
+    for (auto& palette: palettes) {
+        for (size_t j = palette.size(); j < PAL_SIZE_4BPP + 1; j++) {
+            palette.pushZeroColor();
+        }
     }
-    tilesetPng.set_palette(pal);
+
+    /*
+     * For the palette, we'll pack all the tileset palettes into the final PNG. Since gbagfx ignores the top 4 bits of
+     * an 8bpp PNG, we can use those bits to select between the various tileset palettes. That way, the final tileset
+     * PNG will visually show all the correct colors while also being properly 4bpp indexed.
+     */
+    // 0 initial length here since we will push_back our colors in-order
+    png::palette pngPal(0);
+    for (const auto& palette: palettes) {
+        for (const auto& color: palette.getColors()) {
+            pngPal.push_back(png::color{color.getRed(), color.getGreen(), color.getBlue()});
+        }
+    }
+    tilesetPng.set_palette(pngPal);
 
     /*
      * Set up the tileset PNG based on the tiles list and then write it to `tiles.png`.
@@ -479,8 +496,12 @@ void Tileset::writeTileset() {
             for (png::uint_32 row = 0; row < TILE_DIMENSION; row++) {
                 for (png::uint_32 col = 0; col < TILE_DIMENSION; col++) {
                     if (tileIndex < tiles.size()) {
-                        tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(tileIndex).getPixel(row, col);
+                        IndexedTile& tile = tiles.at(tileIndex);
+                        png::byte paletteIndex = tilesData[tile].second;
+                        png::byte indexInPalette = tile.getPixel(row, col);
+                        tilesetPng[pixelRowStart + row][pixelColStart + col] = (paletteIndex << 4) | indexInPalette;
                     } else {
+                        // transparent tile can be on any palette, top 4 bits here are 0 (i.e. palette 0), so that works fine
                         tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(0).getPixel(row, col);
                     }
                 }

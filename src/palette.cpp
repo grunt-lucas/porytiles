@@ -41,6 +41,11 @@ void Palette::pushTransparencyColor() {
     colors.push_front(gOptTransparentColor);
 }
 
+void Palette::pushZeroColor() {
+    index.insert(RgbColor{0, 0, 0});
+    colors.emplace_back(0, 0, 0);
+}
+
 size_t Palette::size() const {
     return colors.size();
 }

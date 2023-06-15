@@ -38,6 +38,8 @@ public:
 
     void pushTransparencyColor();
 
+    void pushZeroColor();
+
     [[nodiscard]] size_t size() const;
 
     [[nodiscard]] size_t remainingColors() const;

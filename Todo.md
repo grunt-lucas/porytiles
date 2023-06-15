@@ -8,11 +8,6 @@
         + calculate this by taking the `Number Unique Colors / Number Slots In Use`
     + what else?
 + Set up more CI builds for Windows, Clang on Mac, etc
-+ MGriffin tip: `gbagfx` ignores the top 4 bits in 8bpp images. So, we can make the final tiles.png 8bpp and construct
-  the PNG palette such that all the colors look correct to human eyes! Basically, use the top 4 pixels as a palette
-  selector, and then the bottom four pixels will select into the palette as normal. We'll need to modify the `Tile`
-  class so that tiles can store which palettes they are part of. Maybe a final tile that was generated from multiple
-  siblings can be greyscale?
 + Implement structure control tiles properly
     + four corners
     + palette allocation passes should also follow structure rules, so users get consistent results
