@@ -8,6 +8,7 @@
 #include <png.hpp>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace porytiles {
 // Tileset images will be 16 tiles wide to match vanilla
@@ -16,12 +17,14 @@ constexpr int NUM_BG_PALS = 12;
 
 class Tileset {
     std::vector<IndexedTile> tiles;
-    std::unordered_set<IndexedTile> tilesIndex;
+    // std::pair is finalTilesetIndex,paletteIndex
+    std::unordered_map<IndexedTile, std::pair<size_t, size_t>> tilesData;
+    //std::unordered_set<IndexedTile> tilesIndex;
     std::vector<Palette> palettes;
     size_t maxPalettes;
 
 public:
-    explicit Tileset(const size_t maxPalettes);
+    explicit Tileset(size_t maxPalettes);
 
     [[nodiscard]] size_t getMaxPalettes() const { return maxPalettes; }
 

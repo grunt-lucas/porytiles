@@ -14,6 +14,15 @@
 
 namespace porytiles {
 namespace {
+std::string asHexString(size_t number) {
+    // TODO : make this a template function?
+    std::string log;
+    std::stringstream sstream;
+    sstream << std::hex << number;
+    log += sstream.str();
+    return log;
+}
+
 bool areAllTileColorsUnseen(std::unordered_set<RgbColor> uniqueTileColors,
                             std::vector<std::unordered_set<RgbColor>> unseenTileColors) {
     return std::all_of(unseenTileColors.begin(), unseenTileColors.end(),
@@ -161,7 +170,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
 void
 indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& palettes,
           std::vector<IndexedTile>& tiles,
-          std::unordered_set<IndexedTile>& tilesIndex) {
+          std::unordered_map<IndexedTile, std::pair<size_t, size_t>>& tilesData) {
     std::string logString;
     const RgbTile& tile = masterTiles.tileAt(tileIdx);
     IndexedTile indexedTile;
@@ -218,44 +227,58 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
     const IndexedTile horizontalFlip = indexedTile.getHorizontalFlip();
     const IndexedTile diagonalFlip = indexedTile.getDiagonalFlip();
 
-    if (tilesIndex.find(indexedTile) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: tile already present";
+    if (tilesData.find(indexedTile) != tilesData.end()) {
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: tile already mapped to 0x";
+        size_t mappedIndex = tilesData[indexedTile].first;
+        logString += porytiles::asHexString(mappedIndex);
+        logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
+                     std::to_string(mappedIndex / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
         verboseLog(logString);
         logString.clear();
         return;
     }
 
-    if (tilesIndex.find(verticalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: vertical flip already present";
+    if (tilesData.find(verticalFlip) != tilesData.end()) {
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: vertical flip already mapped to 0x";
+        size_t mappedIndex = tilesData[verticalFlip].first;
+        logString += porytiles::asHexString(mappedIndex);
+        logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
+                     std::to_string(mappedIndex / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
         verboseLog(logString);
         logString.clear();
         return;
     }
-    if (tilesIndex.find(horizontalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: horizontal flip already present";
+    if (tilesData.find(horizontalFlip) != tilesData.end()) {
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: horizontal flip already mapped to 0x";
+        size_t mappedIndex = tilesData[horizontalFlip].first;
+        logString += porytiles::asHexString(mappedIndex);
+        logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
+                     std::to_string(mappedIndex / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
         verboseLog(logString);
         logString.clear();
         return;
     }
-    if (tilesIndex.find(diagonalFlip) != tilesIndex.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: diagonal flip already present";
+    if (tilesData.find(diagonalFlip) != tilesData.end()) {
+        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: diagonal flip already mapped to 0x";
+        size_t mappedIndex = tilesData[diagonalFlip].first;
+        logString += porytiles::asHexString(mappedIndex);
+        logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
+                     std::to_string(mappedIndex / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
         verboseLog(logString);
         logString.clear();
         return;
     }
 
-    tiles.push_back(indexedTile);
-    tilesIndex.insert(indexedTile);
     logString = masterTiles.tileDebugString(tileIdx) + ": mapped to final tile: 0x";
     size_t finalTileIdx = tiles.size() - 1;
-    // convert tile index to hex
-    std::stringstream sstream;
-    sstream << std::hex << finalTileIdx;
-    logString += sstream.str();
+    logString += porytiles::asHexString(finalTileIdx);
     logString += " (" + std::to_string(finalTileIdx % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
                  std::to_string(finalTileIdx / FINAL_IMAGE_WIDTH_IN_TILES) + ")";
     verboseLog(logString);
     logString.clear();
+
+    tiles.push_back(indexedTile);
+    tilesData[indexedTile] = std::pair{finalTileIdx, matchingPaletteIndex};
 
     if (tiles.size() > gOptMaxTiles - 1) {
         /*
@@ -370,7 +393,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     // Insert transparent tile at the start
     IndexedTile transparent{0};
     tiles.push_back(transparent);
-    tilesIndex.insert(transparent);
+    tilesData[transparent] = std::pair{0, 0};
 
     // Iterate over each tile and assign it, skipping primer and sibling tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
@@ -400,7 +423,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         }
 
         if (!inPrimerBlock && !inSiblingBlock)
-            indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesIndex);
+            indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesData);
     }
 
     // If we reach end of tiles without closing a block, throw an error since this is probably a mistake

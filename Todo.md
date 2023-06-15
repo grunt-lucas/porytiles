@@ -18,8 +18,6 @@
     + palette allocation passes should also follow structure rules, so users get consistent results
 + `--verbose` should have filter modes:
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc
-+ print final tile index even if tile was already present: we can do this by changing the `tilesIndex`
-  in `Tileset` class from `unorderd_set` to `unordered_map` where the value is the final tile index
 + output path should be optional: if excluded then the program will run but won't write anything, can be useful for
   querying logs without actually writing anything out to disk
 
