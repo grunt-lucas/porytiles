@@ -30,3 +30,16 @@
     + then simply write the metatile based on all this info!
         + since we enforced the master PNGs to be 128 pix wide, the metatile picker in Porymap should exactly match the
           layout of the master PNGs
+    + One important question: how do we handle the ability of secondary tilesets to borrow tiles from their paired
+      primary set when creating metatiles?
+        + one solution would be to have a `--primary / --secondary` option, when you specify `--secondary` you must also
+          specify:
+            + a `tiles.png` from the primary tileset
+            + pal files from the primary tileset
+            + the code would then construct a `Tileset` object that represents the primary tileset, and code logic must
+              be changed
+                + e.g. when looking at a tile on a given layer in the secondary tileset, we have to first check the
+                  primary tileset to see if this tile exists under any of the primary palettes
+                    + this won't handle cross-tileset siblings properly: e.g. suppose you want to have a secondary tile
+                      that borrows the shape of one of the primary tiles but uses a secondary palette, this would be
+                      pretty hard to support, but maybe that is OK since that is a very niche use-case
