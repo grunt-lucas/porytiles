@@ -48,4 +48,18 @@ size_t Palette::size() const {
 size_t Palette::remainingColors() const {
     return PAL_SIZE_4BPP - colors.size();
 }
+
+int Palette::paletteWithFewestColors(const std::vector<Palette>& palettes) {
+    int indexOfMin = 0;
+    // Palettes can only have 15 colors, so 1000 will work fine as a starting value
+    size_t minColors = 1000;
+    for (size_t i = 0; i < palettes.size(); i++) {
+        auto size = palettes.at(i).size();
+        if (size < minColors) {
+            indexOfMin = static_cast<int>(i);
+            minColors = size;
+        }
+    }
+    return indexOfMin;
+}
 } // namespace porytiles

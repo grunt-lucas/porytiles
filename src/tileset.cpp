@@ -14,20 +14,6 @@
 
 namespace porytiles {
 namespace {
-int paletteWithFewestColors(const std::vector<Palette>& palettes) {
-    int indexOfMin = 0;
-    // Palettes can only have 15 colors, so 1000 will work fine as a starting value
-    size_t minColors = 1000;
-    for (size_t i = 0; i < palettes.size(); i++) {
-        auto size = palettes.at(i).size();
-        if (size < minColors) {
-            indexOfMin = static_cast<int>(i);
-            minColors = size;
-        }
-    }
-    return indexOfMin;
-}
-
 bool areAllTileColorsUnseen(std::unordered_set<RgbColor> uniqueTileColors,
                             std::vector<std::unordered_set<RgbColor>> unseenTileColors) {
     return std::all_of(unseenTileColors.begin(), unseenTileColors.end(),
@@ -132,7 +118,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
      */
     bool tileColorsAllUnseen = areAllTileColorsUnseen(uniqueTileColors, unseenTileColors);
     if (tileColorsAllUnseen) {
-        int palWithFewestColors = paletteWithFewestColors(palettes);
+        int palWithFewestColors = Palette::paletteWithFewestColors(palettes);
         if (uniqueTileColors.size() > palettes[palWithFewestColors].remainingColors()) {
             throw TsException{masterTiles.tileDebugString(tileIndex) + ": not enough palettes to allocate this tile"};
         }

@@ -42,6 +42,8 @@ public:
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
 
     [[nodiscard]] const std::deque<RgbColor>& getColors() const { return colors; }
+
+    [[nodiscard]] static int paletteWithFewestColors(const std::vector<Palette>& palettes);
 };
 } // namespace porytiles
 
