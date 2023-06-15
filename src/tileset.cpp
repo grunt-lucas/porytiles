@@ -62,7 +62,8 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
      * If this is a total transparent tile, skip it.
      */
     if (tile.isUniformly(gOptTransparentColor)) {
-        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
+        // TODO : should we log these? having bazillions of 'skipping transparent' doesn't seem to add value
+        // verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
         return;
     }
 
@@ -179,7 +180,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
      * If this is a total transparent tile, skip it.
      */
     if (tile.isUniformly(gOptTransparentColor)) {
-        verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIdx));
+        // verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIdx));
         return;
     }
 
