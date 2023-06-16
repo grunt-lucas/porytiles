@@ -327,7 +327,7 @@ Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
 void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
     bool inPrimerBlock = false;
     bool inSiblingBlock = false;
-    bool inStructureBlock = false;
+    //bool inStructureBlock = false;
     std::string logString;
     std::unordered_set<size_t> processedIndexes;
 

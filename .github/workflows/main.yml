@@ -2,9 +2,9 @@ name: Build Porytiles
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "trunk" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "trunk" ]
 
 jobs:
   build-ubuntu-gcc:
