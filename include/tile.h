@@ -137,8 +137,6 @@ public:
         return flippedTile;
     }
 
-    [[nodiscard]] bool isControlTile() const;
-
     [[nodiscard]] std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 

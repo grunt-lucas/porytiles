@@ -169,11 +169,11 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
 }
 
 void
-indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& palettes,
+indexTile(const RgbTiledPng& masterTiles, size_t tileIndex, std::vector<Palette>& palettes,
           std::vector<IndexedTile>& tiles,
           std::unordered_map<IndexedTile, std::pair<size_t, size_t>>& tilesData) {
     std::string logString;
-    const RgbTile& tile = masterTiles.tileAt(tileIdx);
+    const RgbTile& tile = masterTiles.tileAt(tileIndex);
     IndexedTile indexedTile;
 
     /*
@@ -188,7 +188,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
      * If this is a sibling control tile, skip it.
      */
     if (tile.isUniformly(gOptSiblingColor)) {
-        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIdx));
+        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
         return;
     }
 
@@ -201,14 +201,14 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
         const Palette& palette = palettes.at(j);
         if (tile.pixelsNotInPalette(palette).empty()) {
             matchingPaletteIndex = j;
-            logString = masterTiles.tileDebugString(tileIdx) + ": matched palette " + std::to_string(j);
+            logString = masterTiles.tileDebugString(tileIndex) + ": matched palette " + std::to_string(j);
             verboseLog(logString);
             logString.clear();
             break;
         }
         if (j == palettes.size() - 1) {
             // If we made it here without triggering a palette assignment above, there's a problem
-            throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIdx)};
+            throw std::runtime_error{"internal: could not allocate palette for tile " + std::to_string(tileIndex)};
         }
     }
 
@@ -229,7 +229,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
     const IndexedTile diagonalFlip = indexedTile.getDiagonalFlip();
 
     if (tilesData.find(indexedTile) != tilesData.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: tile already mapped to 0x";
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: tile already mapped to 0x";
         size_t mappedIndex = tilesData[indexedTile].first;
         logString += porytiles::asHexString(mappedIndex);
         logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
@@ -240,7 +240,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
     }
 
     if (tilesData.find(verticalFlip) != tilesData.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: vertical flip already mapped to 0x";
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: vertical flip already mapped to 0x";
         size_t mappedIndex = tilesData[verticalFlip].first;
         logString += porytiles::asHexString(mappedIndex);
         logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
@@ -250,7 +250,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
         return;
     }
     if (tilesData.find(horizontalFlip) != tilesData.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: horizontal flip already mapped to 0x";
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: horizontal flip already mapped to 0x";
         size_t mappedIndex = tilesData[horizontalFlip].first;
         logString += porytiles::asHexString(mappedIndex);
         logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
@@ -260,7 +260,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
         return;
     }
     if (tilesData.find(diagonalFlip) != tilesData.end()) {
-        logString = masterTiles.tileDebugString(tileIdx) + ": skipping: diagonal flip already mapped to 0x";
+        logString = masterTiles.tileDebugString(tileIndex) + ": skipping: diagonal flip already mapped to 0x";
         size_t mappedIndex = tilesData[diagonalFlip].first;
         logString += porytiles::asHexString(mappedIndex);
         logString += " (" + std::to_string(mappedIndex % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
@@ -270,7 +270,7 @@ indexTile(const RgbTiledPng& masterTiles, int tileIdx, std::vector<Palette>& pal
         return;
     }
 
-    logString = masterTiles.tileDebugString(tileIdx) + ": mapped to final tile: 0x";
+    logString = masterTiles.tileDebugString(tileIndex) + ": mapped to final tile: 0x";
     size_t finalTileIdx = tiles.size() - 1;
     logString += porytiles::asHexString(finalTileIdx);
     logString += " (" + std::to_string(finalTileIdx % FINAL_IMAGE_WIDTH_IN_TILES) + "," +
@@ -310,6 +310,10 @@ void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const P
     }
     outfile.close();
 }
+
+void startStructureValidationAt(size_t i, std::unordered_set<size_t>& processedIndexes) {
+    // TODO : impl
+}
 } // namespace (anonymous)
 
 Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
@@ -321,7 +325,57 @@ Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
 }
 
 void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
-    // TODO implement
+    bool inPrimerBlock = false;
+    bool inSiblingBlock = false;
+    bool inStructureBlock = false;
+    std::string logString;
+    std::unordered_set<size_t> processedIndexes;
+
+    verboseLog("--------------- VALIDATING CONTROL TILE LAYOUT ---------------");
+
+    for (size_t i = 0; i < masterTiles.size(); i++) {
+        if (processedIndexes.find(i) != processedIndexes.end()) {
+            continue;
+        }
+        if (masterTiles.tileAt(i).isUniformly(gOptStructureColor)) {
+            startStructureValidationAt(i, processedIndexes);
+        }
+    }
+
+    for (size_t i = 0; i < masterTiles.size(); i++) {
+        if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
+            if (inSiblingBlock) {
+                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest primer block within sibling block"};
+            }
+
+            inPrimerBlock = !inPrimerBlock;
+            logString = inPrimerBlock ? "entered" : "exited";
+            logString += " primer block " + masterTiles.tileDebugString(i);
+            verboseLog(logString);
+            logString.clear();
+            continue;
+        }
+        if (masterTiles.tileAt(i).isUniformly(gOptSiblingColor)) {
+            if (inPrimerBlock) {
+                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest sibling block within primer block"};
+            }
+
+            inSiblingBlock = !inSiblingBlock;
+            logString = inSiblingBlock ? "entered" : "exited";
+            logString += " sibling block " + masterTiles.tileDebugString(i);
+            verboseLog(logString);
+            logString.clear();
+            continue;
+        }
+    }
+
+    // If we reach end of tiles without closing a block, throw an error since this is probably a mistake
+    if (inPrimerBlock) {
+        throw TsException{"reached end of tiles with open primer block"};
+    }
+    if (inSiblingBlock) {
+        throw TsException{"reached end of tiles with open sibling block"};
+    }
 }
 
 void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
@@ -398,11 +452,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
 
     // Iterate over each tile and assign it, skipping primer and sibling tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
-        if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptPrimerColor)) {
-            if (inSiblingBlock) {
-                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest primer block within sibling block"};
-            }
-
+        if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
             inPrimerBlock = !inPrimerBlock;
             logString = inPrimerBlock ? "entered" : "exited";
             logString += " primer block " + masterTiles.tileDebugString(i);
@@ -410,11 +460,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
             logString.clear();
             continue;
         }
-        if (masterTiles.tileAt(static_cast<int>(i)).isUniformly(gOptSiblingColor)) {
-            if (inPrimerBlock) {
-                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest sibling block within primer block"};
-            }
-
+        if (masterTiles.tileAt(i).isUniformly(gOptSiblingColor)) {
             inSiblingBlock = !inSiblingBlock;
             logString = inSiblingBlock ? "entered" : "exited";
             logString += " sibling block " + masterTiles.tileDebugString(i);
@@ -424,15 +470,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         }
 
         if (!inPrimerBlock && !inSiblingBlock)
-            indexTile(masterTiles, static_cast<int>(i), palettes, tiles, tilesData);
-    }
-
-    // If we reach end of tiles without closing a block, throw an error since this is probably a mistake
-    if (inPrimerBlock) {
-        throw TsException{"reached end of tiles with open primer block"};
-    }
-    if (inSiblingBlock) {
-        throw TsException{"reached end of tiles with open sibling block"};
+            indexTile(masterTiles, i, palettes, tiles, tilesData);
     }
 }
 

@@ -2,16 +2,6 @@
 
 namespace porytiles {
 template<>
-bool RgbTile::isControlTile() const {
-    return isUniformly(gOptTransparentColor) || isUniformly(gOptPrimerColor);
-}
-
-template<>
-bool IndexedTile::isControlTile() const {
-    throw std::runtime_error{"internal: invalid operation IndexedTile::isControlTile"};
-}
-
-template<>
 std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const {
     std::unordered_set<RgbColor> uniquePixels = this->uniquePixels(gOptTransparentColor);
     std::unordered_set<RgbColor> paletteIndex = palette.getIndex();

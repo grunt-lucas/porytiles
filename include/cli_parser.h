@@ -17,6 +17,7 @@ extern bool gOpt8bppOutput;
 extern RgbColor gOptTransparentColor;
 extern RgbColor gOptPrimerColor;
 extern RgbColor gOptSiblingColor;
+extern RgbColor gOptStructureColor;
 extern size_t gOptMaxPalettes;
 extern size_t gOptMaxTiles;
 

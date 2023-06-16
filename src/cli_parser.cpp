@@ -20,6 +20,7 @@ static constexpr bool X8BPP_DEFAULT = false;
 static const RgbColor TRANSPARENCY_DEFAULT = {255, 0, 255};
 static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
 static const RgbColor SIBLING_DEFAULT = {255, 255, 255};
+static const RgbColor STRUCTURE_DEFAULT = {0, 255, 0};
 static constexpr int MAX_PALETTE_DEFAULT = 6;
 static constexpr int MAX_TILES_DEFAULT = 512;
 
@@ -29,6 +30,7 @@ bool gOpt8bppOutput = X8BPP_DEFAULT;
 RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 RgbColor gOptSiblingColor = SIBLING_DEFAULT;
+RgbColor gOptStructureColor = STRUCTURE_DEFAULT;
 size_t gOptMaxPalettes = MAX_PALETTE_DEFAULT;
 size_t gOptMaxTiles = MAX_TILES_DEFAULT;
 
@@ -90,7 +92,7 @@ static RgbColor parseRgbColor(const std::string& colorString) {
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-8hnpstTvV] ";
+    outStream << " [-8hnpsStTvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
@@ -129,6 +131,10 @@ static void printHelp(std::ostream& outStream) {
             << "                                    (default: " << SIBLING_DEFAULT.prettyString() << "). See wiki for more info." << endl;
     outStream << endl;
     outStream
+            << "   -S, --structure-color=<R,G,B>    Specify the tile color for the structure control tile" << endl
+            << "                                    (default: " << STRUCTURE_DEFAULT.prettyString() << "). See wiki for more info." << endl;
+    outStream << endl;
+    outStream
             << "   -t, --transparent-color=<R,G,B>  Specify the global transparent color (default: " << TRANSPARENCY_DEFAULT.prettyString() << ")." << endl;
     outStream << endl;
     outStream << "Help and Logging:" << endl;
@@ -145,7 +151,7 @@ static void printVersion() {
 }
 
 void parseOptions(int argc, char** argv) {
-    const char* const shortOptions = "8hn:p:s:t:T:vV";
+    const char* const shortOptions = "8hn:p:s:S:t:T:vV";
     static struct option longOptions[] =
             {
                     {"8bpp-output",       no_argument,       nullptr, '8'},
@@ -153,6 +159,7 @@ void parseOptions(int argc, char** argv) {
                     {"max-palettes",      required_argument, nullptr, 'n'},
                     {"primer-color",      required_argument, nullptr, 'p'},
                     {"sibling-color",     required_argument, nullptr, 's'},
+                    {"structure-color",   required_argument, nullptr, 'S'},
                     {"transparent-color", required_argument, nullptr, 't'},
                     {"max-tiles",         required_argument, nullptr, 'T'},
                     {"verbose",           no_argument,       nullptr, 'v'},
@@ -183,6 +190,9 @@ void parseOptions(int argc, char** argv) {
             case 's':
                 gOptSiblingColor = parseRgbColor(optarg);
                 break;
+            case 'S':
+                gOptStructureColor = parseRgbColor(optarg);
+                break;
             case 't':
                 gOptTransparentColor = parseRgbColor(optarg);
                 break;
@@ -208,13 +218,14 @@ void parseOptions(int argc, char** argv) {
         }
     }
 
-    // Throw an error if primer, sibling, and transparent colors overlap
+    // Throw an error if transparent, primer, sibling, or structure colors overlap
     std::unordered_set<RgbColor> colors;
+    colors.insert(gOptTransparentColor);
     colors.insert(gOptPrimerColor);
     colors.insert(gOptSiblingColor);
-    colors.insert(gOptTransparentColor);
-    if (colors.size() != 3) {
-        throw TsException{"primer, sibling, and transparent tile colors must be specified uniquely"};
+    colors.insert(gOptStructureColor);
+    if (colors.size() != 4) {
+        throw TsException{"transparent, primer, sibling, and structure tile colors must be specified uniquely"};
     }
 
     const int numRequiredArgs = 2;
