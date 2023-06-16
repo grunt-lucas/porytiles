@@ -310,10 +310,6 @@ void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const P
     }
     outfile.close();
 }
-
-void startStructureValidationAt(size_t i, std::unordered_set<size_t>& processedIndexes) {
-    // TODO : impl
-}
 } // namespace (anonymous)
 
 Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
@@ -333,12 +329,17 @@ void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
 
     verboseLog("--------------- VALIDATING CONTROL TILE LAYOUT ---------------");
 
-    for (size_t i = 0; i < masterTiles.size(); i++) {
-        if (processedIndexes.find(i) != processedIndexes.end()) {
+    for (size_t tileIndex = 0; tileIndex < masterTiles.size(); tileIndex++) {
+        if (processedIndexes.find(tileIndex) != processedIndexes.end()) {
             continue;
         }
-        if (masterTiles.tileAt(i).isUniformly(gOptStructureColor)) {
-            startStructureValidationAt(i, processedIndexes);
+        if (masterTiles.tileAt(tileIndex).isUniformly(gOptStructureColor)) {
+            StructureRegion structure = masterTiles.getStructureStartingAt(tileIndex);
+            for (size_t row = structure.topRow; row <= structure.bottomRow; row++) {
+                for (size_t col = structure.leftCol; col <= structure.rightCol; col++) {
+                    processedIndexes.insert(masterTiles.rowColToIndex(row, col));
+                }
+            }
         }
     }
 
@@ -541,7 +542,8 @@ void Tileset::writeTileset() {
                         tilesetPng[pixelRowStart + row][pixelColStart + col] = gOpt8bppOutput ? (paletteIndex << 4) |
                                                                                                 indexInPalette
                                                                                               : indexInPalette;
-                    } else {
+                    }
+                    else {
                         // transparent tile can be on any palette, top 4 bits here are 0 (i.e. palette 0), so that works fine
                         tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(0).getPixel(row, col);
                     }

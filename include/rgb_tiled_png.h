@@ -9,6 +9,13 @@
 #include <string>
 
 namespace porytiles {
+struct StructureRegion {
+    size_t topRow;
+    size_t bottomRow;
+    size_t leftCol;
+    size_t rightCol;
+};
+
 class RgbTiledPng {
     size_t width;
     size_t height;
@@ -28,6 +35,12 @@ public:
     [[nodiscard]] const RgbTile& tileAt(size_t row, size_t col) const;
 
     [[nodiscard]] const RgbTile& tileAt(size_t index) const;
+
+    [[nodiscard]] std::pair<size_t, size_t> indexToRowCol(size_t index) const;
+
+    [[nodiscard]] size_t rowColToIndex(size_t row, size_t col) const;
+
+    [[nodiscard]] StructureRegion getStructureStartingAt(size_t index) const;
 
     [[nodiscard]] std::string tileDebugString(size_t index) const;
 };

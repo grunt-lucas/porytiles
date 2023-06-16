@@ -1,4 +1,5 @@
 #include "rgb_tiled_png.h"
+#include "tsexception.h"
 
 #include <png.hpp>
 #include <stdexcept>
@@ -49,6 +50,102 @@ const RgbTile& RgbTiledPng::tileAt(size_t index) const {
                                  std::to_string(index)};
     }
     return tiles.at(index);
+}
+
+std::pair<size_t, size_t> RgbTiledPng::indexToRowCol(size_t index) const {
+    if (index >= tiles.size()) {
+        throw std::runtime_error{
+                "index (" + std::to_string(index) + ") was >= tiles.size() = " + std::to_string(tiles.size())};
+    }
+    size_t row = index / width;
+    size_t col = index % width;
+    return std::pair{row, col};
+}
+
+size_t RgbTiledPng::rowColToIndex(size_t row, size_t col) const {
+    size_t index = row * width;
+    index += col;
+    return index;
+}
+
+StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
+    if (index >= tiles.size()) {
+        throw std::runtime_error{
+                "index (" + std::to_string(index) + ") was >= tiles.size() = " + std::to_string(tiles.size())};
+    }
+    if (!tiles.at(index).isUniformly(gOptStructureColor)) {
+        throw std::runtime_error{
+                "index (" + std::to_string(index) + ") was not a structure control tile"};
+    }
+
+    auto [topRow, leftCol] = indexToRowCol(index);
+
+    size_t rightCol = leftCol;
+    while (rightCol < width) {
+        if (tileAt(topRow, rightCol).isUniformly(gOptStructureColor)) {
+            rightCol++;
+        }
+        else if (tileAt(topRow, rightCol).isUniformly(gOptPrimerColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had unexpected primer control tile at (" +
+                              std::to_string(rightCol) + "," + std::to_string(topRow) + ")"};
+        }
+        else if (tileAt(topRow, rightCol).isUniformly(gOptSiblingColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had unexpected sibling control tile at (" +
+                              std::to_string(rightCol) + "," + std::to_string(topRow) + ")"};
+        }
+        else if (tileAt(topRow, rightCol).isUniformly(gOptTransparentColor)) {
+            rightCol--;
+            break;
+        }
+    }
+    if (rightCol == width) {
+        // Went off the right side without hitting transparent tile, decrement back and end
+        rightCol--;
+    }
+    // rightCol must allow at least one tile of gap from leftCol, otherwise fail
+    if (rightCol <= leftCol + 1) {
+        throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                          std::to_string(topRow) + ") must have width of at least 3"};
+    }
+
+    size_t bottomRow = topRow;
+    while (bottomRow < height) {
+        if (tileAt(bottomRow, leftCol).isUniformly(gOptStructureColor)) {
+            bottomRow++;
+        }
+        else if (tileAt(bottomRow, leftCol).isUniformly(gOptPrimerColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had unexpected primer control tile at (" +
+                              std::to_string(rightCol) + "," + std::to_string(topRow) + ")"};
+        }
+        else if (tileAt(bottomRow, leftCol).isUniformly(gOptSiblingColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had unexpected sibling control tile at (" +
+                              std::to_string(rightCol) + "," + std::to_string(topRow) + ")"};
+        }
+        else if (tileAt(bottomRow, rightCol).isUniformly(gOptTransparentColor)) {
+            bottomRow--;
+            break;
+        }
+    }
+    if (bottomRow == height) {
+        // Went off the bottom without hitting transparent tile, decrement back and end
+        bottomRow--;
+    }
+    // bottomRow must allow at least one tile of gap from topRow, otherwise fail
+    if (bottomRow <= topRow + 1) {
+        throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                          std::to_string(topRow) + ") must have height of at least 3"};
+    }
+
+    // We've computed the four corners, but let's still validate that the user drew a complete square
+    // TODO : fill in validation code here
+
+    // TODO : REMOVE debug print
+    std::cout << "returning: " << topRow << "," << bottomRow << "," << leftCol << "," << rightCol << std::endl;
+    return {topRow, bottomRow, leftCol, rightCol};
 }
 
 std::string RgbTiledPng::tileDebugString(size_t index) const {
