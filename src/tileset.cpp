@@ -498,11 +498,11 @@ void Tileset::writeTileset() {
                 for (png::uint_32 col = 0; col < TILE_DIMENSION; col++) {
                     if (tileIndex < tiles.size()) {
                         IndexedTile& tile = tiles.at(tileIndex);
-                        // png::byte paletteIndex = tilesData[tile].second;
+                        png::byte paletteIndex = tilesData[tile].second;
                         png::byte indexInPalette = tile.getPixel(row, col);
-                        // TODO : why is this looking broken in Porymap?
-                        // tilesetPng[pixelRowStart + row][pixelColStart + col] = (paletteIndex << 4) | indexInPalette;
-                        tilesetPng[pixelRowStart + row][pixelColStart + col] = indexInPalette;
+                        tilesetPng[pixelRowStart + row][pixelColStart + col] = gOpt8bppOutput ? (paletteIndex << 4) |
+                                                                                                indexInPalette
+                                                                                              : indexInPalette;
                     } else {
                         // transparent tile can be on any palette, top 4 bits here are 0 (i.e. palette 0), so that works fine
                         tilesetPng[pixelRowStart + row][pixelColStart + col] = tiles.at(0).getPixel(row, col);

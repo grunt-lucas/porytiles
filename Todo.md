@@ -15,6 +15,7 @@
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc
 + output path should be optional: if excluded then the program will run but won't write anything, can be useful for
   querying logs without actually writing anything out to disk
++ Remove `--8bpp-output` option and make it default once Porymap properly supports
 
 ## Big Feature Ideas
 

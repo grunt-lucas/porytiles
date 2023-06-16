@@ -15,15 +15,17 @@ const char* const VERSION = "0.0.1";
 const char* const RELEASE_DATE = "12 June 2023";
 
 // Defaults for unsupplied options
-static bool VERBOSE_DEFAULT = false;
+static constexpr bool VERBOSE_DEFAULT = false;
+static constexpr bool X8BPP_DEFAULT = false;
 static const RgbColor TRANSPARENCY_DEFAULT = {255, 0, 255};
 static const RgbColor PRIMER_DEFAULT = {0, 0, 0};
 static const RgbColor SIBLING_DEFAULT = {255, 255, 255};
-static int MAX_PALETTE_DEFAULT = 6;
-static int MAX_TILES_DEFAULT = 512;
+static constexpr int MAX_PALETTE_DEFAULT = 6;
+static constexpr int MAX_TILES_DEFAULT = 512;
 
 // Options
 bool gOptVerboseOutput = VERBOSE_DEFAULT;
+bool gOpt8bppOutput = X8BPP_DEFAULT;
 RgbColor gOptTransparentColor = TRANSPARENCY_DEFAULT;
 RgbColor gOptPrimerColor = PRIMER_DEFAULT;
 RgbColor gOptSiblingColor = SIBLING_DEFAULT;
@@ -88,7 +90,7 @@ static RgbColor parseRgbColor(const std::string& colorString) {
 static void printUsage(std::ostream& outStream) {
     using std::endl;
     outStream << "Usage:  " << PROGRAM_NAME;
-    outStream << " [-hnpstTvV] ";
+    outStream << " [-8hnpstTvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
 
@@ -105,6 +107,11 @@ static void printHelp(std::ostream& outStream) {
     printUsage(outStream);
     outStream << endl;
     outStream << "Options:" << endl;
+    outStream
+            << "   -8, --8bpp-output                Output the final tileset PNG as a specially constructed 8bpp image" << endl
+            << "                                    to allow for accurate color representation in most image editors." << endl
+            << "                                    Please see wiki for some disclaimers." << endl;
+    outStream << endl;
     outStream
             << "   -n, --max-palettes=<num>         Specify the maximum number of palettes porytiles is allowed" << endl
             << "                                    to allocate (default: " << MAX_PALETTE_DEFAULT << ")." << endl;
@@ -138,9 +145,10 @@ static void printVersion() {
 }
 
 void parseOptions(int argc, char** argv) {
-    const char* const shortOptions = "hn:p:s:t:T:vV";
+    const char* const shortOptions = "8hn:p:s:t:T:vV";
     static struct option longOptions[] =
             {
+                    {"8bpp-output",       no_argument,       nullptr, '8'},
                     {"help",              no_argument,       nullptr, 'h'},
                     {"max-palettes",      required_argument, nullptr, 'n'},
                     {"primer-color",      required_argument, nullptr, 'p'},
@@ -159,6 +167,9 @@ void parseOptions(int argc, char** argv) {
             break;
 
         switch (opt) {
+            case '8':
+                gOpt8bppOutput = true;
+                break;
             case 'n':
                 gOptMaxPalettes = parseIntegralOption<size_t>("-n, --max-palettes", optarg);
                 if (gOptMaxPalettes > NUM_BG_PALS) {

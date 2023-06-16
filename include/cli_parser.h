@@ -13,6 +13,7 @@ extern const char* const RELEASE_DATE;
 
 // Options
 extern bool gOptVerboseOutput;
+extern bool gOpt8bppOutput;
 extern RgbColor gOptTransparentColor;
 extern RgbColor gOptPrimerColor;
 extern RgbColor gOptSiblingColor;
