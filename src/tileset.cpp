@@ -318,7 +318,7 @@ void startStructureValidationAt(size_t i, std::unordered_set<size_t>& processedI
 
 Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
-    for (int i = 0; i < getMaxPalettes(); i++) {
+    for (size_t i = 0; i < getMaxPalettes(); i++) {
         // prefill palette vector with empty palettes
         palettes.emplace_back();
     }
