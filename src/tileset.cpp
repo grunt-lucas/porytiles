@@ -512,7 +512,11 @@ void Tileset::writeTileset() {
             tileIndex++;
         }
     }
-    verboseLog("writing tileset " + tilesetFile.string());
+    std::string logString = "writing tileset " + tilesetFile.string();
+    logString += gOpt8bppOutput ? " with 8bpp enhancement" : " as standard 4bpp image";
+    verboseLog(logString);
+    logString.clear();
+
     tilesetPng.write(tilesetPath);
 
     /*
