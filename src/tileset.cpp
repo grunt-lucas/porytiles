@@ -187,14 +187,6 @@ indexTile(const RgbTiledPng& masterTiles, size_t tileIndex, std::vector<Palette>
     }
 
     /*
-     * If this is a sibling control tile, skip it.
-     */
-    if (tile.isUniformly(gOptSiblingColor)) {
-        verboseLog("skipping sibling control " + masterTiles.tileDebugString(tileIndex));
-        return;
-    }
-
-    /*
      * Find the first matching palette for this tile. The previous palette construction step guarantees that one exists.
      * If for some reason one cannot be found, throw a fatal error and exit.
      */
@@ -460,8 +452,16 @@ void Tileset::writeTileset() {
      */
     // 0 initial length here since we will push_back our colors in-order
     png::palette pngPal(0);
-    for (const auto& palette: palettes) {
-        for (const auto& color: palette.getColors()) {
+    if (gOpt8bppOutput) {
+        for (const auto& palette: palettes) {
+            for (const auto& color: palette.getColors()) {
+                pngPal.push_back(png::color{color.getRed(), color.getGreen(), color.getBlue()});
+            }
+        }
+    }
+    else {
+        // TODO : provide user option for greyscale output?
+        for (const auto& color: palettes[0].getColors()) {
             pngPal.push_back(png::color{color.getRed(), color.getGreen(), color.getBlue()});
         }
     }
