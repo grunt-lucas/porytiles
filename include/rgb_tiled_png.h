@@ -20,6 +20,7 @@ struct LinearRegion {
     // LinearRegion is for primer or sibling regions
     const size_t startIndex;
     const size_t endIndex;
+    const size_t size;
 };
 
 class RgbTiledPng {

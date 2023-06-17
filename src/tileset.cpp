@@ -319,21 +319,21 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
     std::string logString;
     verboseLog("--------------- ALIGNING SIBLINGS ---------------");
 
-    // Sibling control tile must appear as the first tile in the PNG, otherwise
-    if (!masterTiles.tileAt(0).isUniformly(gOptSiblingColor)) {
+    if (masterTiles.getSiblings().empty()) {
         verboseLog("no sibling tiles present, skipping ahead to build palettes");
         return;
     }
 
-    size_t tileIndex = 1;
-    while (!masterTiles.tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
-        size_t paletteIndex = tileIndex - 1;
-        if (paletteIndex >= gOptMaxPalettes) {
-            throw TsException{
-                    "too many sibling tiles, count cannot exceed max palettes (" +
-                    std::to_string(gOptMaxPalettes) + ")"};
-        }
+    // Sibling block size cannot exceed gOptMaxPalettes
+    if (masterTiles.getSiblings().at(0).size > gOptMaxPalettes) {
+        throw TsException{
+                "too many sibling tiles, count cannot exceed max palettes (" +
+                std::to_string(gOptMaxPalettes) + ")"};
+    }
 
+    size_t tileIndex = masterTiles.getSiblings().at(0).startIndex;
+    size_t paletteIndex = 0;
+    while (!masterTiles.tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
         logString += masterTiles.tileDebugString(tileIndex);
         logString += ": sibling tile detected";
         verboseLog(logString);
@@ -360,6 +360,7 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
             logString.clear();
         }
         tileIndex++;
+        paletteIndex++;
     }
 }
 

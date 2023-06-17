@@ -118,11 +118,14 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
 
             if (inSiblingBlock) {
                 // Just entered sibling block
+                if (tileIndex != 0) {
+                    throw TsException{"sibling block must start at the first tile"};
+                }
                 tmpStart = tileIndex;
             }
             else {
                 // Exited sibling block
-                siblings.push_back({tmpStart, tileIndex});
+                siblings.push_back({tmpStart, tileIndex, tileIndex - tmpStart - 1});
             }
             continue;
         }
