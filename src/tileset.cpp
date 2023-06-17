@@ -331,7 +331,7 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
                 std::to_string(gOptMaxPalettes) + ")"};
     }
 
-    size_t tileIndex = masterTiles.getSiblings().at(0).startIndex;
+    size_t tileIndex = masterTiles.getSiblings().at(0).startIndex + 1;
     size_t paletteIndex = 0;
     while (!masterTiles.tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
         logString += masterTiles.tileDebugString(tileIndex);
