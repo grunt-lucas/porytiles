@@ -57,7 +57,7 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
                     tile.setPixel(row, col, RgbColor{red, green, blue});
                 }
             }
-            addTile(tile);
+            pushTile(tile);
         }
     }
 
@@ -82,6 +82,7 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     bool inSiblingBlock = false;
     std::string logString;
     // Set up primer and sibling regions
+    // TODO : this code allows zero-length primer/sibling blocks, we don't want this, should throw
     size_t tmpStart;
     for (size_t tileIndex = 0; tileIndex < tiles.size(); tileIndex++) {
         if (tileAt(tileIndex).isUniformly(gOptPrimerColor)) {
@@ -139,9 +140,9 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     }
 }
 
-void RgbTiledPng::addTile(const RgbTile& tile) {
+void RgbTiledPng::pushTile(const RgbTile& tile) {
     if (tiles.size() >= width * height) {
-        throw std::runtime_error{"internal: TiledPng::addTile tried to add beyond image dimensions"};
+        throw std::runtime_error{"internal: TiledPng::pushTile tried to add beyond image dimensions"};
     }
     tiles.push_back(tile);
 }
@@ -175,6 +176,12 @@ std::pair<size_t, size_t> RgbTiledPng::indexToRowCol(size_t index) const {
 }
 
 size_t RgbTiledPng::rowColToIndex(size_t row, size_t col) const {
+    if (row >= height)
+        throw std::runtime_error{
+                "internal: RgbTiledPng::rowColToIndex row argument out of bounds (" + std::to_string(row) + ")"};
+    if (col >= width)
+        throw std::runtime_error{
+                "internal: RgbTiledPng::rowColToIndex col argument out of bounds (" + std::to_string(col) + ")"};
     size_t index = row * width;
     index += col;
     return index;
@@ -192,6 +199,7 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
 
     auto [topRow, leftCol] = indexToRowCol(index);
 
+    // Find the right-side border
     size_t rightCol = leftCol;
     while (rightCol < width) {
         if (tileAt(topRow, rightCol).isUniformly(gOptStructureColor)) {
@@ -222,6 +230,7 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
                           std::to_string(topRow) + ") must have width of at least 3"};
     }
 
+    // Find the bottom border
     size_t bottomRow = topRow;
     while (bottomRow < height) {
         if (tileAt(bottomRow, leftCol).isUniformly(gOptStructureColor)) {

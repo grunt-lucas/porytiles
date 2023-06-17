@@ -40,7 +40,7 @@ public:
 
     [[nodiscard]] size_t getHeight() const { return height; }
 
-    void addTile(const RgbTile& tile);
+    void pushTile(const RgbTile& tile);
 
     [[nodiscard]] const RgbTile& tileAt(size_t row, size_t col) const;
 
