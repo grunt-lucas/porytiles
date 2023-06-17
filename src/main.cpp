@@ -1,6 +1,7 @@
 #include "png_checks.h"
 #include "cli_parser.h"
 #include "tsexception.h"
+#include "tsoutput.h"
 #include "rgb_tiled_png.h"
 #include "tileset.h"
 #include "palette.h"
@@ -32,6 +33,7 @@ int main(int argc, char** argv) try {
     porytiles::validateMasterPngDimensions(masterPng);
 
     // Master PNG file is safe to tile-ize
+    porytiles::verboseLog("--------------- IMPORTING MASTER PNG ---------------");
     porytiles::RgbTiledPng masterTiles{masterPng};
 
     // Verify that no individual tile in the master has more than 16 colors
@@ -42,7 +44,6 @@ int main(int argc, char** argv) try {
 
     // Build the tileset and write it out to disk
     porytiles::Tileset tileset{porytiles::gOptMaxPalettes};
-    tileset.validateControlTileLayout(masterTiles);
     tileset.alignSiblings(masterTiles);
     tileset.buildPalettes(masterTiles);
     tileset.indexTiles(masterTiles);

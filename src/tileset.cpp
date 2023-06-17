@@ -13,6 +13,8 @@
 #include <png.hpp>
 
 namespace porytiles {
+
+// Private helper methods
 namespace {
 std::string asHexString(size_t number) {
     // TODO : make this a template function?
@@ -311,72 +313,13 @@ void emitPalette(size_t palIndex, const std::filesystem::path& basePath, const P
     outfile.close();
 }
 } // namespace (anonymous)
+// END Private helper methods
 
 Tileset::Tileset(const size_t maxPalettes) : maxPalettes{maxPalettes} {
     palettes.reserve(this->maxPalettes);
     for (size_t i = 0; i < getMaxPalettes(); i++) {
         // prefill palette vector with empty palettes
         palettes.emplace_back();
-    }
-}
-
-void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
-    bool inPrimerBlock = false;
-    bool inSiblingBlock = false;
-    //bool inStructureBlock = false;
-    std::string logString;
-    std::unordered_set<size_t> processedIndexes;
-
-    verboseLog("--------------- VALIDATING CONTROL TILE LAYOUT ---------------");
-
-    for (size_t tileIndex = 0; tileIndex < masterTiles.size(); tileIndex++) {
-        if (processedIndexes.find(tileIndex) != processedIndexes.end()) {
-            continue;
-        }
-        if (masterTiles.tileAt(tileIndex).isUniformly(gOptStructureColor)) {
-            StructureRegion structure = masterTiles.getStructureStartingAt(tileIndex);
-            // TODO : move structure find logic into RgbTilePng, have rgbTiledPng.getAllStructures() which returns a vector<StructureRegion>
-            for (size_t row = structure.topRow; row <= structure.bottomRow; row++) {
-                for (size_t col = structure.leftCol; col <= structure.rightCol; col++) {
-                    processedIndexes.insert(masterTiles.rowColToIndex(row, col));
-                }
-            }
-        }
-    }
-
-    for (size_t i = 0; i < masterTiles.size(); i++) {
-        if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
-            if (inSiblingBlock) {
-                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest primer block within sibling block"};
-            }
-
-            inPrimerBlock = !inPrimerBlock;
-            logString = inPrimerBlock ? "entered" : "exited";
-            logString += " primer block " + masterTiles.tileDebugString(i);
-            verboseLog(logString);
-            logString.clear();
-            continue;
-        }
-        if (masterTiles.tileAt(i).isUniformly(gOptSiblingColor)) {
-            if (inPrimerBlock) {
-                throw TsException{masterTiles.tileDebugString(i) + ": cannot nest sibling block within primer block"};
-            }
-
-            inSiblingBlock = !inSiblingBlock;
-            logString = inSiblingBlock ? "entered" : "exited";
-            logString += " sibling block " + masterTiles.tileDebugString(i);
-            verboseLog(logString);
-            logString.clear();
-            continue;
-        }
-    }
-
-    // If we reach end of tiles without closing a block, throw an error since this is probably a mistake
-    if (inPrimerBlock) {
-        throw TsException{"reached end of tiles with open primer block"};
-    }
-    if (inSiblingBlock) {
-        throw TsException{"reached end of tiles with open sibling block"};
     }
 }
 

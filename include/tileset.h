@@ -28,8 +28,6 @@ public:
 
     [[nodiscard]] size_t getMaxPalettes() const { return maxPalettes; }
 
-    void validateControlTileLayout(const RgbTiledPng& masterTiles) const;
-
     void alignSiblings(const RgbTiledPng& masterTiles);
 
     void buildPalettes(const RgbTiledPng& masterTiles);

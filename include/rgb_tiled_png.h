@@ -10,16 +10,25 @@
 
 namespace porytiles {
 struct StructureRegion {
-    size_t topRow;
-    size_t bottomRow;
-    size_t leftCol;
-    size_t rightCol;
+    const size_t topRow;
+    const size_t bottomRow;
+    const size_t leftCol;
+    const size_t rightCol;
+};
+
+struct LinearRegion {
+    // LinearRegion is for primer or sibling regions
+    const size_t startIndex;
+    const size_t endIndex;
 };
 
 class RgbTiledPng {
     size_t width;
     size_t height;
     std::vector<RgbTile> tiles;
+    std::vector<StructureRegion> structures;
+    std::vector<LinearRegion> primers;
+    std::vector<LinearRegion> siblings;
 
 public:
     explicit RgbTiledPng(const png::image<png::rgb_pixel>& png);
@@ -41,6 +50,12 @@ public:
     [[nodiscard]] size_t rowColToIndex(size_t row, size_t col) const;
 
     [[nodiscard]] StructureRegion getStructureStartingAt(size_t index) const;
+
+    [[nodiscard]] const std::vector<LinearRegion>& getPrimers() const;
+
+    [[nodiscard]] const std::vector<LinearRegion>& getSiblings() const;
+
+    [[nodiscard]] const std::vector<StructureRegion>& getStructures() const;
 
     [[nodiscard]] std::string tileDebugString(size_t index) const;
 };
