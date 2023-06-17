@@ -335,6 +335,7 @@ void Tileset::validateControlTileLayout(const RgbTiledPng& masterTiles) const {
         }
         if (masterTiles.tileAt(tileIndex).isUniformly(gOptStructureColor)) {
             StructureRegion structure = masterTiles.getStructureStartingAt(tileIndex);
+            // TODO : move structure find logic into RgbTilePng, have rgbTiledPng.getAllStructures() which returns a vector<StructureRegion>
             for (size_t row = structure.topRow; row <= structure.bottomRow; row++) {
                 for (size_t col = structure.leftCol; col <= structure.rightCol; col++) {
                     processedIndexes.insert(masterTiles.rowColToIndex(row, col));

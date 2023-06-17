@@ -5,6 +5,25 @@
 #include <stdexcept>
 
 namespace porytiles {
+namespace {
+void throwIfStructureContainsControlTiles(const StructureRegion& structure, const RgbTiledPng& png) {
+    for (size_t row = structure.topRow; row <= structure.bottomRow; row++) {
+        for (size_t col = structure.leftCol; col <= structure.rightCol; col++) {
+            if (png.tileAt(row, col).isUniformly(gOptPrimerColor)) {
+                throw TsException{"structure starting at tile (" + std::to_string(structure.leftCol) + "," +
+                                  std::to_string(structure.topRow) + ") had unexpected primer control tile at (" +
+                                  std::to_string(col) + "," + std::to_string(row) + ")"};
+            }
+            if (png.tileAt(row, col).isUniformly(gOptSiblingColor)) {
+                throw TsException{"structure starting at tile (" + std::to_string(structure.leftCol) + "," +
+                                  std::to_string(structure.topRow) + ") had unexpected sibling control tile at (" +
+                                  std::to_string(col) + "," + std::to_string(row) + ")"};
+            }
+        }
+    }
+}
+}
+
 RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     width = png.get_width() / TILE_DIMENSION;
     height = png.get_height() / TILE_DIMENSION;
@@ -125,7 +144,7 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
                               std::to_string(topRow) + ") had unexpected sibling control tile at (" +
                               std::to_string(rightCol) + "," + std::to_string(topRow) + ")"};
         }
-        else if (tileAt(bottomRow, rightCol).isUniformly(gOptTransparentColor)) {
+        else if (tileAt(bottomRow, leftCol).isUniformly(gOptTransparentColor)) {
             bottomRow--;
             break;
         }
@@ -141,11 +160,30 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
     }
 
     // We've computed the four corners, but let's still validate that the user drew a complete square
-    // TODO : fill in validation code here
+    size_t rowColIter = topRow;
+    while (rowColIter <= bottomRow) {
+        // Throw if the right-side border is broken
+        if (!tileAt(rowColIter, rightCol).isUniformly(gOptStructureColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had broken border at (" + std::to_string(rightCol) + "," +
+                              std::to_string(rowColIter) + ")"};
+        }
+        rowColIter++;
+    }
+    rowColIter = leftCol;
+    while (rowColIter <= rightCol) {
+        // Throw if the bottom border is broken
+        if (!tileAt(bottomRow, rowColIter).isUniformly(gOptStructureColor)) {
+            throw TsException{"structure starting at tile (" + std::to_string(leftCol) + "," +
+                              std::to_string(topRow) + ") had broken border at (" + std::to_string(rowColIter) + "," +
+                              std::to_string(bottomRow) + ")"};
+        }
+        rowColIter++;
+    }
 
-    // TODO : REMOVE debug print
-    std::cout << "returning: " << topRow << "," << bottomRow << "," << leftCol << "," << rightCol << std::endl;
-    return {topRow, bottomRow, leftCol, rightCol};
+    StructureRegion structure{topRow, bottomRow, leftCol, rightCol};
+    throwIfStructureContainsControlTiles(structure, *this);
+    return structure;
 }
 
 std::string RgbTiledPng::tileDebugString(size_t index) const {
