@@ -102,7 +102,11 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
             }
             else {
                 // Exited primer block
-                primers.push_back({tmpStart, tileIndex});
+                if (tileIndex == tmpStart + 1) {
+                    // Primer block had no content, throw
+                    throw TsException{tileDebugString(tmpStart) + ": primer block opened here had length 0"};
+                }
+                primers.push_back({tmpStart + 1, tileIndex - tmpStart - 1});
             }
             continue;
         }
@@ -125,8 +129,12 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
                 tmpStart = tileIndex;
             }
             else {
+                if (tileIndex == tmpStart + 1) {
+                    // Primer block had no content, throw
+                    throw TsException{tileDebugString(tmpStart) + ": sibling block opened here had length 0"};
+                }
                 // Exited sibling block
-                siblings.push_back({tmpStart, tileIndex, tileIndex - tmpStart - 1});
+                siblings.push_back({tmpStart + 1, tileIndex - tmpStart - 1});
             }
             continue;
         }
@@ -288,15 +296,15 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
     return structure;
 }
 
-const std::vector<LinearRegion>& RgbTiledPng::getPrimers() const {
+const std::vector<LinearRegion>& RgbTiledPng::getPrimerRegions() const {
     return primers;
 }
 
-const std::vector<LinearRegion>& RgbTiledPng::getSiblings() const {
+const std::vector<LinearRegion>& RgbTiledPng::getSiblingRegions() const {
     return siblings;
 }
 
-const std::vector<StructureRegion>& RgbTiledPng::getStructures() const {
+const std::vector<StructureRegion>& RgbTiledPng::getStructureRegions() const {
     return structures;
 }
 

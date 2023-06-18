@@ -319,19 +319,19 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
     std::string logString;
     verboseLog("--------------- ALIGNING SIBLINGS ---------------");
 
-    if (masterTiles.getSiblings().empty()) {
+    if (masterTiles.getSiblingRegions().empty()) {
         verboseLog("no sibling tiles present, skipping ahead to build palettes");
         return;
     }
 
     // Sibling block size cannot exceed gOptMaxPalettes
-    if (masterTiles.getSiblings().at(0).size > gOptMaxPalettes) {
+    if (masterTiles.getSiblingRegions().at(0).size > gOptMaxPalettes) {
         throw TsException{
                 "too many sibling tiles, count cannot exceed max palettes (" +
                 std::to_string(gOptMaxPalettes) + ")"};
     }
 
-    size_t tileIndex = masterTiles.getSiblings().at(0).startIndex + 1;
+    size_t tileIndex = masterTiles.getSiblingRegions().at(0).startIndex;
     size_t paletteIndex = 0;
     while (!masterTiles.tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
         logString += masterTiles.tileDebugString(tileIndex);

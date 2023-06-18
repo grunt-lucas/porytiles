@@ -18,8 +18,10 @@ struct StructureRegion {
 
 struct LinearRegion {
     // LinearRegion is for primer or sibling regions
+
+    // startIndex indicates the start of actual content, does not include the opening/closing control tiles
     const size_t startIndex;
-    const size_t endIndex;
+    // size indicates the actual size of content, does not include the opening/closing control tiles
     const size_t size;
 };
 
@@ -52,11 +54,11 @@ public:
 
     [[nodiscard]] StructureRegion getStructureStartingAt(size_t index) const;
 
-    [[nodiscard]] const std::vector<LinearRegion>& getPrimers() const;
+    [[nodiscard]] const std::vector<LinearRegion>& getPrimerRegions() const;
 
-    [[nodiscard]] const std::vector<LinearRegion>& getSiblings() const;
+    [[nodiscard]] const std::vector<LinearRegion>& getSiblingRegions() const;
 
-    [[nodiscard]] const std::vector<StructureRegion>& getStructures() const;
+    [[nodiscard]] const std::vector<StructureRegion>& getStructureRegions() const;
 
     [[nodiscard]] std::string tileDebugString(size_t index) const;
 };
