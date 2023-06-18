@@ -78,73 +78,72 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
         }
     }
 
-    bool inPrimerBlock = false;
-    bool inSiblingBlock = false;
+    bool inPrimerRegion = false;
+    bool inSiblingRegion = false;
     std::string logString;
     // Set up primer and sibling regions
-    // TODO : this code allows zero-length primer/sibling blocks, we don't want this, should throw
     size_t tmpStart;
     for (size_t tileIndex = 0; tileIndex < tiles.size(); tileIndex++) {
         if (tileAt(tileIndex).isUniformly(gOptPrimerColor)) {
-            if (inSiblingBlock) {
-                throw TsException{tileDebugString(tileIndex) + ": cannot nest primer block within sibling block"};
+            if (inSiblingRegion) {
+                throw TsException{tileDebugString(tileIndex) + ": cannot nest primer region within sibling region"};
             }
 
-            inPrimerBlock = !inPrimerBlock;
-            logString = inPrimerBlock ? "entered" : "exited";
-            logString += " primer block " + tileDebugString(tileIndex);
+            inPrimerRegion = !inPrimerRegion;
+            logString = inPrimerRegion ? "entered" : "exited";
+            logString += " primer region " + tileDebugString(tileIndex);
             verboseLog(logString);
             logString.clear();
 
-            if (inPrimerBlock) {
-                // Just entered primer block
+            if (inPrimerRegion) {
+                // Just entered primer region
                 tmpStart = tileIndex;
             }
             else {
-                // Exited primer block
+                // Exited primer region
                 if (tileIndex == tmpStart + 1) {
-                    // Primer block had no content, throw
-                    throw TsException{tileDebugString(tmpStart) + ": primer block opened here had length 0"};
+                    // Primer region had no content, throw
+                    throw TsException{tileDebugString(tmpStart) + ": primer region opened here had length 0"};
                 }
                 primers.push_back({tmpStart + 1, tileIndex - tmpStart - 1});
             }
             continue;
         }
         if (tileAt(tileIndex).isUniformly(gOptSiblingColor)) {
-            if (inPrimerBlock) {
-                throw TsException{tileDebugString(tileIndex) + ": cannot nest sibling block within primer block"};
+            if (inPrimerRegion) {
+                throw TsException{tileDebugString(tileIndex) + ": cannot nest sibling region within primer region"};
             }
 
-            inSiblingBlock = !inSiblingBlock;
-            logString = inSiblingBlock ? "entered" : "exited";
-            logString += " sibling block " + tileDebugString(tileIndex);
+            inSiblingRegion = !inSiblingRegion;
+            logString = inSiblingRegion ? "entered" : "exited";
+            logString += " sibling region " + tileDebugString(tileIndex);
             verboseLog(logString);
             logString.clear();
 
-            if (inSiblingBlock) {
-                // Just entered sibling block
+            if (inSiblingRegion) {
+                // Just entered sibling region
                 if (tileIndex != 0) {
-                    throw TsException{"sibling block must start at the first tile"};
+                    throw TsException{"sibling region must start at the first tile"};
                 }
                 tmpStart = tileIndex;
             }
             else {
                 if (tileIndex == tmpStart + 1) {
-                    // Primer block had no content, throw
-                    throw TsException{tileDebugString(tmpStart) + ": sibling block opened here had length 0"};
+                    // Primer region had no content, throw
+                    throw TsException{tileDebugString(tmpStart) + ": sibling region opened here had length 0"};
                 }
-                // Exited sibling block
+                // Exited sibling region
                 siblings.push_back({tmpStart + 1, tileIndex - tmpStart - 1});
             }
             continue;
         }
     }
-    // If we reach end of tiles without closing a block, throw an error since this is probably a mistake
-    if (inPrimerBlock) {
-        throw TsException{"reached end of tiles with open primer block"};
+    // If we reach end of tiles without closing a region, throw an error since this is probably a mistake
+    if (inPrimerRegion) {
+        throw TsException{"reached end of tiles with open primer region"};
     }
-    if (inSiblingBlock) {
-        throw TsException{"reached end of tiles with open sibling block"};
+    if (inSiblingRegion) {
+        throw TsException{"reached end of tiles with open sibling region"};
     }
 }
 

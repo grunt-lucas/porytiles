@@ -324,7 +324,7 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
         return;
     }
 
-    // Sibling block size cannot exceed gOptMaxPalettes
+    // Sibling region size cannot exceed gOptMaxPalettes
     if (masterTiles.getSiblingRegions().at(0).size > gOptMaxPalettes) {
         throw TsException{
                 "too many sibling tiles, count cannot exceed max palettes (" +
@@ -373,8 +373,8 @@ void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
 }
 
 void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
-    bool inPrimerBlock = false;
-    bool inSiblingBlock = false;
+    bool inPrimerRegion = false;
+    bool inSiblingRegion = false;
     std::string logString;
 
     verboseLog("--------------- INDEXING TILES ---------------");
@@ -391,23 +391,23 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     // Iterate over each tile and assign it, skipping primer and sibling tiles
     for (size_t i = 0; i < masterTiles.size(); i++) {
         if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
-            inPrimerBlock = !inPrimerBlock;
-            logString = inPrimerBlock ? "entered" : "exited";
-            logString += " primer block " + masterTiles.tileDebugString(i);
+            inPrimerRegion = !inPrimerRegion;
+            logString = inPrimerRegion ? "entered" : "exited";
+            logString += " primer region " + masterTiles.tileDebugString(i);
             verboseLog(logString);
             logString.clear();
             continue;
         }
         if (masterTiles.tileAt(i).isUniformly(gOptSiblingColor)) {
-            inSiblingBlock = !inSiblingBlock;
-            logString = inSiblingBlock ? "entered" : "exited";
-            logString += " sibling block " + masterTiles.tileDebugString(i);
+            inSiblingRegion = !inSiblingRegion;
+            logString = inSiblingRegion ? "entered" : "exited";
+            logString += " sibling region " + masterTiles.tileDebugString(i);
             verboseLog(logString);
             logString.clear();
             continue;
         }
 
-        if (!inPrimerBlock && !inSiblingBlock)
+        if (!inPrimerRegion && !inSiblingRegion)
             indexTile(masterTiles, i, palettes, tiles, tilesData);
     }
 }
