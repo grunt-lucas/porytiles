@@ -36,12 +36,12 @@ size_t Palette::indexOf(const RgbColor& color) const {
     throw std::runtime_error{"internal: color " + color.prettyString() + " not found in palette"};
 }
 
-void Palette::pushTransparencyColor() {
+void Palette::pushFrontTransparencyColor() {
     index.insert(gOptTransparentColor);
     colors.push_front(gOptTransparentColor);
 }
 
-void Palette::pushZeroColor() {
+void Palette::pushBackZeroedColor() {
     index.insert(RgbColor{0, 0, 0});
     colors.emplace_back(0, 0, 0);
 }
@@ -50,7 +50,7 @@ size_t Palette::size() const {
     return colors.size();
 }
 
-size_t Palette::remainingColors() const {
+size_t Palette::unusedColorsCount() const {
     return PAL_SIZE_4BPP - colors.size();
 }
 

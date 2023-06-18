@@ -40,7 +40,7 @@ int getClosestPaletteWithRoom(const RgbTiledPng& masterTiles, int tileIndex, std
     size_t missingColorCount = 1000;
     for (size_t i = 0; i < unseenTileColors.size(); i++) {
         if (unseenTileColors[i].size() < missingColorCount &&
-            unseenTileColors[i].size() <= palettes[i].remainingColors()) {
+            unseenTileColors[i].size() <= palettes[i].unusedColorsCount()) {
             /*
              * TODO : do we also want to condition this on palette size? Right now: if two (or more) palettes are
              * equally close, and each indeed has room, we just return the first palette that satisfies both conditions.
@@ -140,7 +140,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
     bool tileColorsAllUnseen = areAllTileColorsUnseen(uniqueTileColors, unseenTileColors);
     if (tileColorsAllUnseen) {
         int palWithFewestColors = Palette::paletteWithFewestColors(palettes);
-        if (uniqueTileColors.size() > palettes[palWithFewestColors].remainingColors()) {
+        if (uniqueTileColors.size() > palettes[palWithFewestColors].unusedColorsCount()) {
             throw TsException{masterTiles.tileDebugString(tileIndex) + ": not enough palettes to allocate this tile"};
         }
         for (const auto& color: uniqueTileColors) {
@@ -148,7 +148,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
         }
         logString = masterTiles.tileDebugString(tileIndex) + ": all colors were unseen, added to palette " +
                     std::to_string(palWithFewestColors) + ", " +
-                    std::to_string(palettes[palWithFewestColors].remainingColors()) + " colors remaining";
+                    std::to_string(palettes[palWithFewestColors].unusedColorsCount()) + " colors remaining";
         verboseLog(logString);
         logString.clear();
         return;
@@ -166,7 +166,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
     }
     logString = masterTiles.tileDebugString(tileIndex) + ": contained some new colors, added to palette " +
                 std::to_string(closestPalWithRoom) + ", " +
-                std::to_string(palettes[closestPalWithRoom].remainingColors()) + " colors remaining";
+                std::to_string(palettes[closestPalWithRoom].unusedColorsCount()) + " colors remaining";
     verboseLog(logString);
     logString.clear();
 }
@@ -388,7 +388,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     verboseLog("--------------- INDEXING TILES ---------------");
     // Add transparent color to first entry in each palette
     for (auto& palette: palettes) {
-        palette.pushTransparencyColor();
+        palette.pushFrontTransparencyColor();
     }
 
     // Insert transparent tile at the start
@@ -450,7 +450,7 @@ void Tileset::writeTileset() {
      */
     for (auto& palette: palettes) {
         for (size_t j = palette.size(); j < PAL_SIZE_4BPP + 1; j++) {
-            palette.pushZeroColor();
+            palette.pushBackZeroedColor();
         }
     }
 

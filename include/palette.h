@@ -36,13 +36,13 @@ public:
 
     [[nodiscard]] size_t indexOf(const RgbColor& color) const;
 
-    void pushTransparencyColor();
+    void pushFrontTransparencyColor();
 
-    void pushZeroColor();
+    void pushBackZeroedColor();
 
     [[nodiscard]] size_t size() const;
 
-    [[nodiscard]] size_t remainingColors() const;
+    [[nodiscard]] size_t unusedColorsCount() const;
 
     [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
 
