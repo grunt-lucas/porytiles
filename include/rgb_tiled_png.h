@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstddef>
 #include <string>
+#include <optional>
 
 namespace porytiles {
 struct StructureRegion {
