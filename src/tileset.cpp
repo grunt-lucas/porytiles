@@ -406,7 +406,7 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
         startIndex = siblingRegion->startIndex + siblingRegion->size + 1;
     }
 
-    // Iterate over each tile and assign it, skipping primer and sibling tiles
+    // Iterate over each tile and assign it, skipping primer control and region tiles
     for (size_t i = startIndex; i < masterTiles.size(); i++) {
         inPrimerRegion = false;
 
