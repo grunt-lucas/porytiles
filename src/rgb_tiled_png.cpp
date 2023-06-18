@@ -203,8 +203,8 @@ StructureRegion RgbTiledPng::getStructureStartingAt(size_t index) const {
         throw std::runtime_error{
                 "index (" + std::to_string(index) + ") was not a structure control tile"};
     }
-
-    auto [topRow, leftCol] = indexToRowCol(index);
+    size_t topRow = indexToRowCol(index).first;
+    size_t leftCol = indexToRowCol(index).second;
 
     // Find the right-side border
     size_t rightCol = leftCol;
