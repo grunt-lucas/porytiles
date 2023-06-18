@@ -65,6 +65,7 @@ void assignTileToPalette(const RgbTiledPng& masterTiles, int tileIndex, std::vec
      */
     if (tile.isUniformly(gOptTransparentColor)) {
         // TODO : should we log these? having bazillions of 'skipping transparent' doesn't seem to add value
+        // maybe just put these in the 'transparent' log channel once we have logging channels set up
         // verboseLog("skipping transparent " + masterTiles.tileDebugString(tileIndex));
         return;
     }
@@ -367,8 +368,14 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
 
 void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
     verboseLog("--------------- BUILDING PALETTES ---------------");
-    for (size_t i = 0; i < masterTiles.size(); i++) {
-        // TODO : skip sibling tiles here, not necessary and makes logs confusing
+    size_t startIndex = 0;
+    auto siblingRegion = masterTiles.getSiblingRegion();
+    if (siblingRegion) {
+        verboseLog("skipping opening sibling region...");
+        startIndex = siblingRegion->startIndex + siblingRegion->size + 1;
+    }
+
+    for (size_t i = startIndex; i < masterTiles.size(); i++) {
         assignTileToPalette(masterTiles, static_cast<int>(i), palettes);
     }
 }
