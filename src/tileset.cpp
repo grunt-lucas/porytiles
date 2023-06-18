@@ -382,10 +382,10 @@ void Tileset::buildPalettes(const RgbTiledPng& masterTiles) {
 
 void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     bool inPrimerRegion = false;
-    bool inSiblingRegion = false;
     std::string logString;
 
     verboseLog("--------------- INDEXING TILES ---------------");
+
     // Add transparent color to first entry in each palette
     for (auto& palette: palettes) {
         palette.pushFrontTransparencyColor();
@@ -396,26 +396,32 @@ void Tileset::indexTiles(const RgbTiledPng& masterTiles) {
     tiles.push_back(transparent);
     tilesData[transparent] = std::pair{0, 0};
 
+    // Get primer tile regions
+    const std::vector<LinearRegion>& primerRegions = masterTiles.getPrimerRegions();
+
+    // Compute start index for loop, allowing us to skip the sibling region if present
+    size_t startIndex = 0;
+    auto siblingRegion = masterTiles.getSiblingRegion();
+    if (siblingRegion) {
+        startIndex = siblingRegion->startIndex + siblingRegion->size + 1;
+    }
+
     // Iterate over each tile and assign it, skipping primer and sibling tiles
-    for (size_t i = 0; i < masterTiles.size(); i++) {
+    for (size_t i = startIndex; i < masterTiles.size(); i++) {
+        inPrimerRegion = false;
+
         if (masterTiles.tileAt(i).isUniformly(gOptPrimerColor)) {
-            inPrimerRegion = !inPrimerRegion;
-            logString = inPrimerRegion ? "entered" : "exited";
-            logString += " primer region " + masterTiles.tileDebugString(i);
-            verboseLog(logString);
-            logString.clear();
+            verboseLog("skipping primer control tile " + masterTiles.tileDebugString(i));
             continue;
         }
-        if (masterTiles.tileAt(i).isUniformly(gOptSiblingColor)) {
-            inSiblingRegion = !inSiblingRegion;
-            logString = inSiblingRegion ? "entered" : "exited";
-            logString += " sibling region " + masterTiles.tileDebugString(i);
-            verboseLog(logString);
-            logString.clear();
-            continue;
+        for (const auto& primerRegion: primerRegions) {
+            if (i >= primerRegion.startIndex && i < primerRegion.startIndex + primerRegion.size) {
+                verboseLog("skipping primer region tile " + masterTiles.tileDebugString(i));
+                inPrimerRegion = true;
+            }
         }
 
-        if (!inPrimerRegion && !inSiblingRegion)
+        if (!inPrimerRegion)
             indexTile(masterTiles, i, palettes, tiles, tilesData);
     }
 }
@@ -460,7 +466,7 @@ void Tileset::writeTileset() {
      * PNG will visually show all the correct colors while also being properly 4bpp indexed.
      */
     // 0 initial length here since we will push_back our colors in-order
-    png::palette pngPal(0);
+    png::palette pngPal{0};
     if (gOpt8bppOutput) {
         for (const auto& palette: palettes) {
             for (const auto& color: palette.getColors()) {
