@@ -56,8 +56,7 @@ public:
 
     [[nodiscard]] const std::vector<LinearRegion>& getPrimerRegions() const;
 
-    // TODO : since there can only be one sibling region, should this be some kind of optional type?
-    [[nodiscard]] const std::vector<LinearRegion>& getSiblingRegions() const;
+    [[nodiscard]] std::optional<LinearRegion> getSiblingRegion() const;
 
     [[nodiscard]] const std::vector<StructureRegion>& getStructureRegions() const;
 

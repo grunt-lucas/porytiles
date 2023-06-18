@@ -5,6 +5,7 @@
 
 #include <png.hpp>
 #include <stdexcept>
+#include <optional>
 
 namespace porytiles {
 
@@ -299,8 +300,11 @@ const std::vector<LinearRegion>& RgbTiledPng::getPrimerRegions() const {
     return primers;
 }
 
-const std::vector<LinearRegion>& RgbTiledPng::getSiblingRegions() const {
-    return siblings;
+std::optional<LinearRegion> RgbTiledPng::getSiblingRegion() const {
+    if (!siblings.empty()) {
+        return {siblings.at(0)};
+    }
+    return std::nullopt;
 }
 
 const std::vector<StructureRegion>& RgbTiledPng::getStructureRegions() const {
