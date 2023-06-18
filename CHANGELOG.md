@@ -10,18 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Sibling tile support: can now specify cross-palette colors that should share indexes, allowing for tiles that are
-  shared across palettes
+  shared across palettes (e.g. in vanilla pokeemerald, the mart and center roofs share tiles but use different palettes)
 
 ### Changed
 
 - Better tile indexing logging: logs are super greppable so you can easily figure out where Porytiles put your tile on
   the final sheet
-- Output tileset PNG now uses 8bpp indexes to display true colors based on the palettes: `gbagfx` will just truncate
-  the top 4 bits so it works as intended
+- Output tileset defaults to colors from palette 0 instead of greyscale
+- Output tileset PNG now can optionally use 8bpp indexes to display true colors based on the palettes: `gbagfx` will
+  just truncate the top 4 bits so it works as intended. Unforunately this feature is not yet supported by Porymap.
 
 ### Fixed
 
-- Properly parse color-related CLI options
+- Properly parse color and tile CLI options
 
 ## [0.0.1] - 2023-06-12
 
