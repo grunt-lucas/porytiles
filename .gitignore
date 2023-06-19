@@ -1,9 +1,10 @@
-*.o
 .vscode
 .idea
 .DS_Store
+
+build/**
 *.dSYM
-
-porytiles.exe
 porytiles
-
+porytiles.exe
+porytiles-tests
+porytiles-tests.exe

@@ -2,28 +2,44 @@ CXX ?= g++
 #CXX = /opt/homebrew/bin/g++-13
 
 # TODO : set optimization to O2 and remove debug for final build
-CXXFLAGS := -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g
-CXXFLAGS += $(shell pkg-config --cflags libpng)
-CXXFLAGS += -Ipng++-0.2.9 -Iinclude
-
-LIBS = -lpng -lz
-LDFLAGS += $(shell pkg-config --libs-only-L libpng)
-
-SRCS = $(shell find src -type f -name *.cpp)
-
+CXXFLAGS   := -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g
+CXXFLAGS   += $(shell pkg-config --cflags libpng)
+CXXFLAGS   += -Ipng++-0.2.9 -Iinclude
+SRCDIR      = src
+BUILDDIR    = build
+SRCS        = $(shell find $(SRCDIR) -type f -name *.cpp)
+OBJS        = $(filter-out $(BUILDDIR)/main.o $(BUILDDIR)/tests.o, $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SRCS:.cpp=.o)))
+LDFLAGS    += $(shell pkg-config --libs-only-L libpng) -lpng -lz
 ifeq ($(OS),Windows_NT)
-EXE := .exe
+EXE        := .exe
 else
-EXE :=
+EXE        :=
 endif
+PROGRAM     = porytiles
+TARGET      = $(PROGRAM)$(EXE)
+TEST_TARGET = $(PROGRAM)-tests$(EXE)
 
-.PHONY: all clean
+$(TARGET): $(OBJS) $(BUILDDIR)/main.o
+	@echo "Linking application..."
+	@$(CXX) $^ -o $(TARGET) $(LDFLAGS)
 
-all: porytiles$(EXE)
+$(TEST_TARGET): $(OBJS) $(BUILDDIR)/tests.o
+	@echo "Linking tests..."
+	@$(CXX) $^ -o $(TEST_TARGET) $(LDFLAGS)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(BUILDDIR)
+	@echo "Compiling ($(CXX)) $<..."
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+.PHONY: all check clean
+all: clean $(TARGET) $(TEST_TARGET)
 	@:
 
-porytiles$(EXE): $(SRCS)
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $@ $(LDFLAGS) $(LIBS)
+check: all
+	@echo "Running tests..."
+	@./$(TEST_TARGET)
 
 clean:
-	$(RM) porytiles porytiles.exe
+	$(RM) $(TARGET) $(TEST_TARGET) $(PROGRAM).dSYM
+	$(RM) -r $(BUILDDIR)
