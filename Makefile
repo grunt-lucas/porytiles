@@ -4,7 +4,7 @@ CXX ?= g++
 # TODO : set optimization to O2 and remove debug for final build
 CXXFLAGS   := -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g
 CXXFLAGS   += $(shell pkg-config --cflags libpng)
-CXXFLAGS   += -Ipng++-0.2.9 -Iinclude
+CXXFLAGS   += -Idoctest-2.4.11 -Ipng++-0.2.9 -Iinclude
 SRCDIR      = src
 BUILDDIR    = build
 SRCS        = $(shell find $(SRCDIR) -type f -name *.cpp)
@@ -36,7 +36,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 all: clean $(TARGET) $(TEST_TARGET)
 	@:
 
-check: all
+check: $(TEST_TARGET)
 	@echo "Running tests..."
 	@./$(TEST_TARGET)
 
