@@ -5,6 +5,7 @@
 #include "palette.h"
 #include "cli_parser.h"
 
+#include <doctest.h>
 #include <png.hpp>
 #include <functional>
 #include <cstddef>
@@ -54,17 +55,17 @@ public:
 
     [[nodiscard]] T getPixel(size_t row, size_t col) const {
         if (row >= TILE_DIMENSION)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
         if (col >= TILE_DIMENSION)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
         return pixels.at(row * TILE_DIMENSION + col);
     }
 
     [[nodiscard]] T getPixel(size_t index) const {
         if (index >= PIXEL_COUNT)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::getPixel index argument out of bounds (" + std::to_string(index) + ")"};
         return pixels.at(index);
     }
@@ -75,17 +76,17 @@ public:
 
     void setPixel(size_t row, size_t col, T value) {
         if (row >= TILE_DIMENSION)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
         if (col >= TILE_DIMENSION)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
         pixels.at(row * TILE_DIMENSION + col) = value;
     }
 
     void setPixel(size_t index, T value) {
         if (index >= PIXEL_COUNT)
-            throw std::runtime_error{
+            throw std::out_of_range{
                     "internal: Tile::setPixel index argument out of bounds (" + std::to_string(index) + ")"};
         pixels.at(index) = value;
     }
@@ -140,6 +141,12 @@ public:
     [[nodiscard]] std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 
+template<typename T>
+doctest::String toString(const Tile<T>& value) {
+    // TODO : IMPLEMENT
+    return "foo";
+}
+
 typedef Tile<RgbColor> RgbTile;
 typedef Tile<png::byte> IndexedTile;
 } // namespace porytiles
@@ -158,5 +165,71 @@ struct hash<porytiles::Tile<T>> {
     }
 };
 } // namespace std
+
+/*
+ * Doctest Test Cases:
+ */
+TEST_CASE("Logically equivalent Tile<T> objects should be equivalent under op==") {
+    SUBCASE("Logically equivalent RgbTiles should match") {
+        porytiles::RgbTile tile1{{0, 0, 0}};
+        porytiles::RgbTile tile2{{0, 0, 0}};
+        CHECK(tile1 == tile2);
+    }
+    SUBCASE("Logically divergent RgbTiles should not match") {
+        porytiles::RgbTile tile1{{0, 0, 0}};
+        porytiles::RgbTile tile2{{1, 1, 1}};
+        CHECK(tile1 != tile2);
+    }
+    SUBCASE("Logically equivalent IndexedTiles should match") {
+        porytiles::IndexedTile tile1{0};
+        porytiles::IndexedTile tile2{0};
+        CHECK(tile1 == tile2);
+    }
+    SUBCASE("Logically divergent IndexedTiles should not match") {
+        porytiles::IndexedTile tile1{0};
+        porytiles::IndexedTile tile2{1};
+        CHECK(tile1 != tile2);
+    }
+}
+
+TEST_CASE("Tile<T> copy ctor should create a copy that is equivalent under op==") {
+    SUBCASE("It should work for RgbTile") {
+        porytiles::RgbTile tile1{{0, 0, 0}};
+        porytiles::RgbTile tile2{tile1};
+        CHECK(tile1 == tile2);
+    }
+    SUBCASE("It should work for IndexedTile") {
+        porytiles::IndexedTile tile1{12};
+        porytiles::IndexedTile tile2{tile1};
+        CHECK(tile1 == tile2);
+    }
+}
+
+TEST_CASE("Tile<T> getPixel should either return the requested pixel or throw on out-of-bounds") {
+    porytiles::RgbTile zeroRgbTile{{0, 0, 0}};
+
+    SUBCASE("It should return {0,0,0} for pixel row=0,col=0") {
+        CHECK(zeroRgbTile.getPixel(0, 0) == porytiles::RgbColor{0, 0, 0});
+    }
+    SUBCASE("It should return {0,0,0} for pixel index=10") {
+        CHECK(zeroRgbTile.getPixel(10) == porytiles::RgbColor{0, 0, 0});
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel index=1000") {
+        porytiles::RgbColor dummy;
+        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(1000), const std::out_of_range&);
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=1000,col=0") {
+        porytiles::RgbColor dummy;
+        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(1000, 0), const std::out_of_range&);
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=0,col=1000") {
+        porytiles::RgbColor dummy;
+        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(0, 1000), const std::out_of_range&);
+    }
+}
+
+TEST_CASE("Tile<T> getPixel should either return the requested pixel or throw on out-of-bounds") {
+    // TODO : IMPLEMENT
+}
 
 #endif // PORYTILES_TILE_H

@@ -20,11 +20,11 @@ TARGET      = $(PROGRAM)$(EXE)
 TEST_TARGET = $(PROGRAM)-tests$(EXE)
 
 $(TARGET): $(OBJS) $(BUILDDIR)/main.o
-	@echo "Linking application..."
+	@echo "Linking ($(CXX)) $@..."
 	@$(CXX) $^ -o $(TARGET) $(LDFLAGS)
 
 $(TEST_TARGET): $(OBJS) $(BUILDDIR)/tests.o
-	@echo "Linking tests..."
+	@echo "Linking ($(CXX)) $@..."
 	@$(CXX) $^ -o $(TEST_TARGET) $(LDFLAGS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp

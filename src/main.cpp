@@ -4,10 +4,12 @@
 #include "tsoutput.h"
 #include "rgb_tiled_png.h"
 #include "tileset.h"
-#include "palette.h"
 
 #include <iostream>
 #include <png.hpp>
+
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest.h>
 
 namespace porytiles {
 std::string errorPrefix() {
