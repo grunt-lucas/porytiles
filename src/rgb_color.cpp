@@ -25,3 +25,30 @@ doctest::String toString(const RgbColor& color) {
     return colorString.c_str();
 }
 } // namespace porytiles
+
+/*
+ * Test Cases
+ */
+TEST_CASE("Logically equivalent RgbColor objects should be equivalent under op==") {
+    SUBCASE("Logically equivalent RgbColors should match") {
+        porytiles::RgbColor color1{255, 0, 0};
+        porytiles::RgbColor color2{255, 0, 0};
+        CHECK(color1 == color2);
+    }
+    SUBCASE("Logically divergent RgbColors should not match") {
+        porytiles::RgbColor color1{255, 0, 0};
+        porytiles::RgbColor color2{0, 255, 0};
+        CHECK(color1 != color2);
+    }
+}
+
+TEST_CASE("RgbColor string-ify methods should yield expected values") {
+    SUBCASE("RgbColor prettyString should yield expected result") {
+        porytiles::RgbColor white{255, 255, 255};
+        CHECK(white.prettyString() == "255,255,255");
+    }
+    SUBCASE("RgbColor jascString should yield expected result") {
+        porytiles::RgbColor white{255, 255, 255};
+        CHECK(white.jascString() == "255 255 255");
+    }
+}
