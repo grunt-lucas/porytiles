@@ -42,7 +42,7 @@ public:
 
     [[nodiscard]] size_t unusedColorsCount() const;
 
-    [[nodiscard]] const std::unordered_set<RgbColor>& getIndex() const { return index; }
+    [[nodiscard]] const std::unordered_set<RgbColor>& getColorsAsSet() const { return index; }
 
     [[nodiscard]] const std::deque<RgbColor>& getColors() const { return colors; }
 

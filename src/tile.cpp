@@ -18,7 +18,7 @@ IndexedTile::Tile() {
 template<>
 std::unordered_set<RgbColor> RgbTile::pixelsNotInPalette(const Palette& palette) const {
     std::unordered_set<RgbColor> uniquePixels = this->uniquePixels(gOptTransparentColor);
-    std::unordered_set<RgbColor> paletteIndex = palette.getIndex();
+    std::unordered_set<RgbColor> paletteIndex = palette.getColorsAsSet();
     std::unordered_set<RgbColor> pixelsNotInPalette;
     std::copy_if(uniquePixels.begin(), uniquePixels.end(),
                  std::inserter(pixelsNotInPalette, pixelsNotInPalette.begin()),
@@ -41,6 +41,24 @@ doctest::String toString(const IndexedTile& tile) {
     std::string tileString = "Tile<png::byte>{" + std::to_string(tile.getPixel(0)) + "..." +
                              std::to_string(tile.getPixel(PIXEL_COUNT - 1)) + "}";
     return tileString.c_str();
+}
+
+doctest::String toString(const std::unordered_set<RgbColor>& colorSet) {
+    std::string setString = "{";
+    for (const auto& color: colorSet) {
+        setString += color.prettyString() + "; ";
+    }
+    setString += "}";
+    return setString.c_str();
+}
+
+doctest::String toString(const std::unordered_set<png::byte>& indexSet) {
+    std::string setString = "{";
+    for (const auto& index: indexSet) {
+        setString += std::to_string(index) + ", ";
+    }
+    setString += "}";
+    return setString.c_str();
 }
 } // namespace porytiles
 

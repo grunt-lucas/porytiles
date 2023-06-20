@@ -150,6 +150,10 @@ doctest::String toString(const RgbTile& tile);
 
 doctest::String toString(const IndexedTile& tile);
 
+doctest::String toString(const std::unordered_set<RgbColor>& colorSet);
+
+doctest::String toString(const std::unordered_set<png::byte>& indexSet);
+
 } // namespace porytiles
 
 namespace std {
