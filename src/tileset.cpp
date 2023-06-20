@@ -352,6 +352,7 @@ void Tileset::alignSiblings(const RgbTiledPng& masterTiles) {
                         masterTiles.tileDebugString(tileIndex) + ": sibling tile contained duplicate color at pixel " +
                         std::to_string(pixelIndex)};
             }
+            // TODO : this will throw an internal error if too many colors are added, check for that case here
             palettes.at(paletteIndex).addColorAtEnd(colorAt);
             pixelColors.insert(colorAt);
 

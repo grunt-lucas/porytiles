@@ -93,19 +93,25 @@ TEST_CASE("Tile<T> getPixel should either return the requested pixel or throw on
         CHECK(zeroRgbTile.getPixel(10) == porytiles::RgbColor{0, 0, 0});
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel index=1000") {
-        porytiles::RgbColor dummy;
-        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(1000),
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(zeroRgbTile.getPixel(1000),
                              "internal: Tile::getPixel index argument out of bounds (1000)", const std::out_of_range&);
+#pragma GCC diagnostic pop
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=1000,col=0") {
-        porytiles::RgbColor dummy;
-        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(1000, 0),
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(zeroRgbTile.getPixel(1000, 0),
                              "internal: Tile::getPixel row argument out of bounds (1000)", const std::out_of_range&);
+#pragma GCC diagnostic pop
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=0,col=1000") {
-        porytiles::RgbColor dummy;
-        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(0, 1000),
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(zeroRgbTile.getPixel(0, 1000),
                              "internal: Tile::getPixel col argument out of bounds (1000)", const std::out_of_range&);
+#pragma GCC diagnostic pop
     }
 }
 
@@ -151,8 +157,7 @@ TEST_CASE("Tile<T> isUniformly should only be true if entire tile is the request
 TEST_CASE("Tile<T> uniquePixels should show all unique colors not including the supplied transparency color") {
     porytiles::RgbColor red = {255, 0, 0};
     porytiles::RgbColor green = {0, 255, 0};
-    porytiles::RgbColor blue = {0, 0, 255};
-    porytiles::RgbColor transparent = {255, 0, 255};
+    porytiles::RgbColor transparent = porytiles::gOptTransparentColor;
 
     SUBCASE("It should return a set of size 2 containing red and blue") {
         porytiles::RgbTile tile{red};
@@ -230,13 +235,13 @@ TEST_CASE("RgbTile pixelsNotInPalette should return the pixels from this tile th
     porytiles::RgbColor blue = {0, 0, 255};
     porytiles::RgbColor white = {255, 255, 255};
     porytiles::RgbColor black = {0, 0, 0};
-    porytiles::RgbColor magenta = {255, 0, 255};
+    porytiles::RgbColor transparent = porytiles::gOptTransparentColor;
     porytiles::Palette palette{};
     palette.addColorAtEnd(red);
     palette.addColorAtEnd(green);
     palette.addColorAtEnd(blue);
     palette.pushFrontTransparencyColor();
-    porytiles::RgbTile tile{magenta};
+    porytiles::RgbTile tile{transparent};
 
     SUBCASE("It should return a set of size 2 with colors black and white") {
         tile.setPixel(0, red);

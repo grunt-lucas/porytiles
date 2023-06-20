@@ -42,6 +42,7 @@ void validateMasterPngTilesEach16Colors(const RgbTiledPng& png) {
                         uniqueRgb.insert(tile.getPixel(pixelRow, pixelCol));
                     }
                     if (uniqueRgb.size() > PAL_SIZE_4BPP) {
+                        // TODO : this is bugged, logic right now will break if a tile has transparent color + 15 other unique colors
                         throw TsException(
                                 "too many unique colors in tile " + std::to_string(index) +
                                 " (row " + std::to_string(row) + ", col " + std::to_string(col) + ")"

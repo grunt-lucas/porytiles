@@ -28,9 +28,7 @@ public:
         index.reserve(PAL_SIZE_4BPP + 1);
     }
 
-    bool addColorAtStart(const RgbColor& color);
-
-    bool addColorAtEnd(const RgbColor& color);
+    void addColorAtEnd(const RgbColor& color);
 
     [[nodiscard]] RgbColor colorAt(size_t i) const;
 
