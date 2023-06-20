@@ -12,7 +12,7 @@ void validateMasterPngDimensions(const png::image<png::rgb_pixel>& masterPng);
 
 void validateMasterPngTilesEach16Colors(const RgbTiledPng& png);
 
-void validateMasterPngMaxUniqueColors(const RgbTiledPng& png);
+void validateMasterPngMaxUniqueColors(const RgbTiledPng& png, size_t maxPalettes);
 } // namespace porytiles
 
 #endif // PORYTILES_PNG_CHECKS_H

@@ -42,7 +42,7 @@ int main(int argc, char** argv) try {
     porytiles::validateMasterPngTilesEach16Colors(masterTiles);
 
     // Verify that the master does not have too many unique colors
-    porytiles::validateMasterPngMaxUniqueColors(masterTiles);
+    porytiles::validateMasterPngMaxUniqueColors(masterTiles, porytiles::gOptMaxPalettes);
 
     // Build the tileset and write it out to disk
     porytiles::Tileset tileset{porytiles::gOptMaxPalettes};
