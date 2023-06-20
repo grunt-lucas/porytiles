@@ -141,14 +141,13 @@ public:
     [[nodiscard]] std::unordered_set<T> pixelsNotInPalette(const Palette& palette) const;
 };
 
-template<typename T>
-doctest::String toString(const Tile<T>& value) {
-    // TODO : IMPLEMENT
-    return "foo";
-}
-
 typedef Tile<RgbColor> RgbTile;
 typedef Tile<png::byte> IndexedTile;
+
+doctest::String toString(const RgbTile& tile);
+
+doctest::String toString(const IndexedTile& tile);
+
 } // namespace porytiles
 
 namespace std {
@@ -167,7 +166,7 @@ struct hash<porytiles::Tile<T>> {
 } // namespace std
 
 /*
- * Doctest Test Cases:
+ * Test Cases
  */
 TEST_CASE("Logically equivalent Tile<T> objects should be equivalent under op==") {
     SUBCASE("Logically equivalent RgbTiles should match") {
@@ -216,20 +215,44 @@ TEST_CASE("Tile<T> getPixel should either return the requested pixel or throw on
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel index=1000") {
         porytiles::RgbColor dummy;
-        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(1000), const std::out_of_range&);
+        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(1000),
+                             "internal: Tile::getPixel index argument out of bounds (1000)", const std::out_of_range&);
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=1000,col=0") {
         porytiles::RgbColor dummy;
-        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(1000, 0), const std::out_of_range&);
+        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(1000, 0),
+                             "internal: Tile::getPixel row argument out of bounds (1000)", const std::out_of_range&);
     }
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=0,col=1000") {
         porytiles::RgbColor dummy;
-        CHECK_THROWS_AS(dummy = zeroRgbTile.getPixel(0, 1000), const std::out_of_range&);
+        CHECK_THROWS_WITH_AS(dummy = zeroRgbTile.getPixel(0, 1000),
+                             "internal: Tile::getPixel col argument out of bounds (1000)", const std::out_of_range&);
     }
 }
 
-TEST_CASE("Tile<T> getPixel should either return the requested pixel or throw on out-of-bounds") {
-    // TODO : IMPLEMENT
+TEST_CASE("Tile<T> setPixel should either return the requested pixel or throw on out-of-bounds") {
+    porytiles::IndexedTile zeroIndexedTile{0};
+
+    SUBCASE("It should set pixel row=1,col=0 to value 1") {
+        zeroIndexedTile.setPixel(1, 0, 1);
+        CHECK(zeroIndexedTile.getPixel(1, 0) == 1);
+    }
+    SUBCASE("It should set pixel index=22 to value 12") {
+        zeroIndexedTile.setPixel(22, 12);
+        CHECK(zeroIndexedTile.getPixel(22) == 12);
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel index=1000") {
+        CHECK_THROWS_WITH_AS(zeroIndexedTile.setPixel(1000, 0),
+                             "internal: Tile::setPixel index argument out of bounds (1000)", const std::out_of_range&);
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=1000,col=0") {
+        CHECK_THROWS_WITH_AS(zeroIndexedTile.setPixel(1000, 0, 0),
+                             "internal: Tile::setPixel row argument out of bounds (1000)", const std::out_of_range&);
+    }
+    SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=0,col=1000") {
+        CHECK_THROWS_WITH_AS(zeroIndexedTile.setPixel(0, 1000, 0),
+                             "internal: Tile::setPixel col argument out of bounds (1000)", const std::out_of_range&);
+    }
 }
 
 #endif // PORYTILES_TILE_H

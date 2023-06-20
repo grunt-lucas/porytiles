@@ -1,6 +1,7 @@
 #ifndef PORYTILES_RGB_COLOR_H
 #define PORYTILES_RGB_COLOR_H
 
+#include <doctest.h>
 #include <png.hpp>
 #include <cstddef>
 #include <functional>
@@ -41,6 +42,8 @@ public:
 
     [[nodiscard]] std::string jascString() const;
 };
+
+doctest::String toString(const RgbColor& color);
 } // namespace porytiles
 
 namespace std {

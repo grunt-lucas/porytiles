@@ -18,4 +18,10 @@ std::string RgbColor::prettyString() const {
 std::string RgbColor::jascString() const {
     return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
 }
+
+doctest::String toString(const RgbColor& color) {
+    std::string colorString = "RgbColor{" + std::to_string(color.getRed()) + "," +
+                              std::to_string(color.getGreen()) + "," + std::to_string(color.getBlue()) + "}";
+    return colorString.c_str();
+}
 } // namespace porytiles
