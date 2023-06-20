@@ -43,3 +43,41 @@ doctest::String toString(const IndexedTile& tile) {
     return tileString.c_str();
 }
 } // namespace porytiles
+
+/*
+ * Test Cases
+ */
+TEST_CASE("RgbTile pixelsNotInPalette should return the pixels from this tile that are not in the supplied palette") {
+    porytiles::RgbColor red = {255, 0, 0};
+    porytiles::RgbColor green = {0, 255, 0};
+    porytiles::RgbColor blue = {0, 0, 255};
+    porytiles::RgbColor white = {255, 255, 255};
+    porytiles::RgbColor black = {0, 0, 0};
+    porytiles::RgbColor magenta = {255, 0, 255};
+    porytiles::Palette palette{};
+    palette.addColorAtEnd(red);
+    palette.addColorAtEnd(green);
+    palette.addColorAtEnd(blue);
+    palette.pushFrontTransparencyColor();
+    porytiles::RgbTile tile{magenta};
+
+    SUBCASE("It should return a set of size 2 with colors black and white") {
+        tile.setPixel(0, red);
+        tile.setPixel(1, green);
+        tile.setPixel(2, blue);
+        tile.setPixel(3, black);
+        tile.setPixel(4, white);
+
+        std::unordered_set<porytiles::RgbColor> pixelsNotInPalette = tile.pixelsNotInPalette(palette);
+        CHECK(pixelsNotInPalette.size() == 2);
+        CHECK(pixelsNotInPalette.find(black) != pixelsNotInPalette.end());
+        CHECK(pixelsNotInPalette.find(white) != pixelsNotInPalette.end());
+    }
+    SUBCASE("It should return a set of size 0") {
+        tile.setPixel(0, red);
+        tile.setPixel(1, green);
+        tile.setPixel(2, blue);
+        std::unordered_set<porytiles::RgbColor> pixelsNotInPalette = tile.pixelsNotInPalette(palette);
+        CHECK(pixelsNotInPalette.empty());
+    }
+}

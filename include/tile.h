@@ -74,7 +74,7 @@ public:
         return pixels;
     }
 
-    void setPixel(size_t row, size_t col, T value) {
+    void setPixel(size_t row, size_t col, const T& value) {
         if (row >= TILE_DIMENSION)
             throw std::out_of_range{
                     "internal: Tile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
@@ -84,26 +84,28 @@ public:
         pixels.at(row * TILE_DIMENSION + col) = value;
     }
 
-    void setPixel(size_t index, T value) {
+    void setPixel(size_t index, const T& value) {
         if (index >= PIXEL_COUNT)
             throw std::out_of_range{
                     "internal: Tile::setPixel index argument out of bounds (" + std::to_string(index) + ")"};
         pixels.at(index) = value;
     }
 
-    [[nodiscard]] bool isUniformly(T value) const {
+    [[nodiscard]] bool isUniformly(const T& value) const {
         for (size_t i = 0; i < PIXEL_COUNT; i++) {
-            if (pixels[i] != value)
+            if (pixels[i] != value) {
                 return false;
+            }
         }
         return true;
     }
 
-    [[nodiscard]] std::unordered_set<T> uniquePixels(T transparencyColor) const {
+    [[nodiscard]] std::unordered_set<T> uniquePixels(const T& transparencyColor) const {
         std::unordered_set<T> uniquePixels;
         for (size_t i = 0; i < PIXEL_COUNT; i++) {
-            if (pixels[i] != transparencyColor)
+            if (pixels[i] != transparencyColor) {
                 uniquePixels.insert(pixels[i]);
+            }
         }
         return uniquePixels;
     }
@@ -252,6 +254,96 @@ TEST_CASE("Tile<T> setPixel should either return the requested pixel or throw on
     SUBCASE("It should throw a std::out_of_range for out-of-bounds pixel row=0,col=1000") {
         CHECK_THROWS_WITH_AS(zeroIndexedTile.setPixel(0, 1000, 0),
                              "internal: Tile::setPixel col argument out of bounds (1000)", const std::out_of_range&);
+    }
+}
+
+TEST_CASE("Tile<T> isUniformly should only be true if entire tile is the requested color") {
+    porytiles::RgbColor red = {255, 0, 0};
+    porytiles::RgbTile redTile{red};
+
+    SUBCASE("It should detect that the tile is uniformly red") {
+        CHECK(redTile.isUniformly(red));
+    }
+    SUBCASE("It should detect that the tile has a non-red pixel") {
+        porytiles::RgbColor green = {0, 255, 0};
+        redTile.setPixel(12, green);
+        CHECK(!redTile.isUniformly(red));
+    }
+}
+
+TEST_CASE("Tile<T> uniquePixels should show all unique colors not including the supplied transparency color") {
+    porytiles::RgbColor red = {255, 0, 0};
+    porytiles::RgbColor green = {0, 255, 0};
+    porytiles::RgbColor blue = {0, 0, 255};
+    porytiles::RgbColor transparent = {255, 0, 255};
+
+    SUBCASE("It should return a set of size 2 containing red and blue") {
+        porytiles::RgbTile tile{red};
+        for (size_t row = 0; row < porytiles::TILE_DIMENSION; row++) {
+            for (size_t col = 0; col < porytiles::TILE_DIMENSION; col++) {
+                if (row % 2 == 0 && col % 2 == 0) {
+                    tile.setPixel(row, col, green);
+                }
+            }
+        }
+        tile.setPixel(12, transparent);
+        std::unordered_set<porytiles::RgbColor> uniqueColors = tile.uniquePixels(transparent);
+
+        CHECK(uniqueColors.size() == 2);
+        CHECK(uniqueColors.find(red) != uniqueColors.end());
+        CHECK(uniqueColors.find(green) != uniqueColors.end());
+    }
+    SUBCASE("It should return a set of size 0 since tile was uniformly transparent") {
+        porytiles::RgbTile tile{transparent};
+        std::unordered_set<porytiles::RgbColor> uniqueColors = tile.uniquePixels(transparent);
+        CHECK(uniqueColors.size() == 0);
+    }
+}
+
+TEST_CASE("Tile<T> flip functions should correctly flip tile pixels across horizontal, vertical, or diagonal axes") {
+    porytiles::IndexedTile tile{0};
+    for (size_t index = 0; index < porytiles::PIXEL_COUNT; index++) {
+        tile.setPixel(index, index);
+    }
+
+    SUBCASE("It should correctly flip the tile horizontally") {
+        porytiles::IndexedTile horizontalFlip = tile.getHorizontalFlip();
+        size_t counter = 0;
+        for (size_t row = 0; row < porytiles::TILE_DIMENSION; row++) {
+            for (int col = porytiles::TILE_DIMENSION - 1; col >= 0; col--) {
+                CHECK(horizontalFlip.getPixel(row, static_cast<size_t>(col)) == counter);
+                counter++;
+            }
+        }
+    }
+    SUBCASE("It should correctly flip the tile vertically") {
+        porytiles::IndexedTile verticalFlip = tile.getVerticalFlip();
+        size_t counter = 0;
+        for (int row = porytiles::TILE_DIMENSION - 1; row >= 0; row--) {
+            for (size_t col = 0; col < porytiles::TILE_DIMENSION; col++) {
+                CHECK(verticalFlip.getPixel(static_cast<size_t>(row), col) == counter);
+                counter++;
+            }
+        }
+    }
+    SUBCASE("It should correctly flip the tile diagonally") {
+        porytiles::IndexedTile diagonalFlip = tile.getDiagonalFlip();
+        size_t counter = 0;
+        for (int row = porytiles::TILE_DIMENSION - 1; row >= 0; row--) {
+            for (int col = porytiles::TILE_DIMENSION - 1; col >= 0; col--) {
+                CHECK(diagonalFlip.getPixel(static_cast<size_t>(row), static_cast<size_t>(col)) == counter);
+                counter++;
+            }
+        }
+    }
+    SUBCASE("Flipping tiles horizontally and vertically should be commutative") {
+        porytiles::IndexedTile diagonalFlip1 = tile.getHorizontalFlip().getVerticalFlip();
+        porytiles::IndexedTile diagonalFlip2 = tile.getVerticalFlip().getHorizontalFlip();
+        porytiles::IndexedTile diagonalFlip3 = tile.getDiagonalFlip();
+
+        CHECK(diagonalFlip1 == diagonalFlip2);
+        CHECK(diagonalFlip2 == diagonalFlip3);
+        CHECK(diagonalFlip3 == diagonalFlip1);
     }
 }
 

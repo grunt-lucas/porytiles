@@ -41,5 +41,6 @@ check: $(TEST_TARGET)
 	@./$(TEST_TARGET)
 
 clean:
-	$(RM) $(TARGET) $(TEST_TARGET) $(PROGRAM).dSYM
+	$(RM) $(TARGET) $(TEST_TARGET)
 	$(RM) -r $(BUILDDIR)
+	$(RM) -r $(PROGRAM).dSYM
