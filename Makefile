@@ -32,12 +32,16 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo "Compiling ($(CXX)) $<..."
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-.PHONY: all check clean
-all: clean $(TARGET) $(TEST_TARGET)
+.PHONY: all target tests check clean
+all: $(TARGET) $(TEST_TARGET)
 	@:
 
-check: $(TEST_TARGET)
-	@echo "Running tests..."
+target: $(TARGET)
+	@:
+
+tests: $(TEST_TARGET))
+
+check: tests
 	@./$(TEST_TARGET)
 
 clean:
