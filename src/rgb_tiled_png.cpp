@@ -350,3 +350,34 @@ TEST_CASE("RgbTiledPng pushTile should throw when adding past the set image dime
     CHECK_THROWS_WITH_AS(tiledPng.pushTile(transparentTile),
                          "internal: TiledPng::pushTile tried to add beyond image dimensions", const std::length_error&);
 }
+
+TEST_CASE("RgbTiledPng tileAt variations should correctly return the requested tile") {
+    REQUIRE(std::filesystem::exists("res/tests/control_tiles_test_1.png"));
+    png::image<png::rgb_pixel> png{"res/tests/control_tiles_test_1.png"};
+    porytiles::RgbTiledPng tiledPng{png};
+
+    SUBCASE("tileAt(row, col) should return the correct tile") {
+        CHECK(tiledPng.tileAt(2, 0).isUniformly(porytiles::gOptTransparentColor));
+        CHECK(tiledPng.tileAt(7, 3).isUniformly(porytiles::gOptTransparentColor));
+    }
+    SUBCASE("tileAt(index) should return the correct tile") {
+        CHECK(tiledPng.tileAt(16).isUniformly(porytiles::gOptTransparentColor));
+        CHECK(tiledPng.tileAt(48).isUniformly(porytiles::gOptTransparentColor));
+    }
+    SUBCASE("tileAt(row, col) should equal tileAt(index) for corresponding (row,col) and index") {
+        CHECK(tiledPng.tileAt(1, 0) == tiledPng.tileAt(8));
+        CHECK(tiledPng.tileAt(4, 2) == tiledPng.tileAt(34));
+    }
+}
+
+TEST_CASE("RgbTiledPng indexToRowCol should return the correct row,col for the given index") {
+    REQUIRE(std::filesystem::exists("res/tests/control_tiles_test_1.png"));
+    png::image<png::rgb_pixel> png{"res/tests/control_tiles_test_1.png"};
+    porytiles::RgbTiledPng tiledPng{png};
+
+    CHECK(tiledPng.tileAt(tiledPng.indexToRowCol(8).first, tiledPng.indexToRowCol(8).second) == tiledPng.tileAt(8));
+    CHECK(tiledPng.tileAt(tiledPng.indexToRowCol(9).first, tiledPng.indexToRowCol(9).second) == tiledPng.tileAt(9));
+    CHECK(tiledPng.tileAt(tiledPng.indexToRowCol(10).first, tiledPng.indexToRowCol(10).second) == tiledPng.tileAt(10));
+    CHECK(tiledPng.tileAt(tiledPng.indexToRowCol(33).first, tiledPng.indexToRowCol(33).second) == tiledPng.tileAt(33));
+    CHECK(tiledPng.tileAt(tiledPng.indexToRowCol(34).first, tiledPng.indexToRowCol(34).second) == tiledPng.tileAt(34));
+}
