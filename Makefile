@@ -39,7 +39,7 @@ all: $(TARGET) $(TEST_TARGET)
 target: $(TARGET)
 	@:
 
-tests: $(TEST_TARGET))
+tests: $(TEST_TARGET)
 
 check: tests
 	@./$(TEST_TARGET)
