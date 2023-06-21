@@ -1,13 +1,13 @@
 #ifndef PORYTILES_RGB_TILED_PNG_H
 #define PORYTILES_RGB_TILED_PNG_H
 
-#include "tile.h"
-#include "rgb_color.h"
-
 #include <vector>
 #include <cstddef>
 #include <string>
 #include <optional>
+
+#include "tile.h"
+#include "rgb_color.h"
 
 namespace porytiles {
 struct StructureRegion {

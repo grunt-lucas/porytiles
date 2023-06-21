@@ -1,14 +1,15 @@
 #include "rgb_tiled_png.h"
 
-#include "tsexception.h"
-#include "tsoutput.h"
-
+#include <doctest.h>
 #include <png.hpp>
 #include <stdexcept>
 #include <optional>
+#include <filesystem>
+
+#include "tsexception.h"
+#include "tsoutput.h"
 
 namespace porytiles {
-
 // Private helper methods
 namespace {
 void throwIfStructureContainsControlTiles(const StructureRegion& structure, const RgbTiledPng& png) {
@@ -150,7 +151,7 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
 
 void RgbTiledPng::pushTile(const RgbTile& tile) {
     if (tiles.size() >= width * height) {
-        throw std::runtime_error{"internal: TiledPng::pushTile tried to add beyond image dimensions"};
+        throw std::length_error{"internal: TiledPng::pushTile tried to add beyond image dimensions"};
     }
     tiles.push_back(tile);
 }
@@ -317,3 +318,35 @@ std::string RgbTiledPng::tileDebugString(size_t index) const {
            "," + std::to_string(index / width) + ")";
 }
 } // namespace porytiles
+
+/*
+ * Test Cases
+ */
+TEST_CASE("RgbTiledPng basic metadata methods should return correct results") {
+    REQUIRE(std::filesystem::exists("res/tests/control_tiles_test_1.png"));
+    png::image<png::rgb_pixel> png{"res/tests/control_tiles_test_1.png"};
+    porytiles::RgbTiledPng tiledPng{png};
+
+    SUBCASE("RgbTiledPng size method should return the number of tiles") {
+        CHECK(tiledPng.size() == 64);
+    }
+    SUBCASE("RgbTiledPng getWidth method should return the width in tiles") {
+        CHECK(tiledPng.getWidth() == 8);
+    }
+    SUBCASE("RgbTiledPng getHeight method should return the height in tiles") {
+        CHECK(tiledPng.getHeight() == 8);
+    }
+}
+
+TEST_CASE("RgbTiledPng pushTile should throw when adding past the set image dimensions") {
+    REQUIRE(std::filesystem::exists("res/tests/control_tiles_test_1.png"));
+    png::image<png::rgb_pixel> png{"res/tests/control_tiles_test_1.png"};
+    porytiles::RgbTiledPng tiledPng{png};
+
+    CHECK(tiledPng.size() == 64);
+
+    porytiles::RgbTile transparentTile{porytiles::gOptTransparentColor};
+
+    CHECK_THROWS_WITH_AS(tiledPng.pushTile(transparentTile),
+                         "internal: TiledPng::pushTile tried to add beyond image dimensions", const std::length_error&);
+}
