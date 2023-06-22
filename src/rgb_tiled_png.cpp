@@ -442,6 +442,9 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
     REQUIRE(std::filesystem::exists("res/tests/invalid_structure_sibling_tile_in_left.png"));
     REQUIRE(std::filesystem::exists("res/tests/invalid_structure_broken_right_border.png"));
     REQUIRE(std::filesystem::exists("res/tests/invalid_structure_broken_bottom_border.png"));
+    REQUIRE(std::filesystem::exists("res/tests/invalid_structure_contains_primer_tile.png"));
+    REQUIRE(std::filesystem::exists("res/tests/invalid_structure_contains_sibling_tile.png"));
+    REQUIRE(std::filesystem::exists("res/tests/invalid_structure_contains_structure_tile.png"));
 
     SUBCASE("It should find the structure region and return the correct coordinates") {
         png::image<png::rgb_pixel> png{"res/tests/control_tiles_test_1.png"};
@@ -453,12 +456,14 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
         CHECK(structureRegions.at(0).bottomRow == 7);
         CHECK(structureRegions.at(0).rightCol == 7);
     }
+
     SUBCASE("It should not find any structure regions") {
         png::image<png::rgb_pixel> png{"res/tests/15_colors_in_tile_plus_transparency.png"};
         porytiles::RgbTiledPng tiledPng{png};
         const std::vector<porytiles::StructureRegion>& structureRegions = tiledPng.getStructureRegions();
         CHECK(structureRegions.size() == 0);
     }
+
     SUBCASE("It should find an invalid structure region due to width < 3") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_width_less_than_3.png"};
 #pragma GCC diagnostic push
@@ -468,6 +473,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to height < 3") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_height_less_than_3.png"};
 #pragma GCC diagnostic push
@@ -477,6 +483,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to primer tile in top border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_primer_tile_in_top.png"};
 #pragma GCC diagnostic push
@@ -486,6 +493,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to primer tile in left border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_primer_tile_in_left.png"};
 #pragma GCC diagnostic push
@@ -495,6 +503,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to sibling tile in top border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_sibling_tile_in_top.png"};
 #pragma GCC diagnostic push
@@ -504,6 +513,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to sibling tile in left border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_sibling_tile_in_left.png"};
 #pragma GCC diagnostic push
@@ -513,6 +523,7 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to broken right border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_broken_right_border.png"};
 #pragma GCC diagnostic push
@@ -522,12 +533,43 @@ TEST_CASE("RgbTiledPng getStructureRegions should return the correct structure r
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
+
     SUBCASE("It should find an invalid structure region due to broken bottom border") {
         png::image<png::rgb_pixel> png{"res/tests/invalid_structure_broken_bottom_border.png"};
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
         CHECK_THROWS_WITH_AS(porytiles::RgbTiledPng tiledPng{png},
                              "structure starting at tile (1,1) had broken border at (3,5)",
+                             const porytiles::TsException&);
+#pragma GCC diagnostic pop
+    }
+
+    SUBCASE("It should find an invalid structure region due to region containing primer tile") {
+        png::image<png::rgb_pixel> png{"res/tests/invalid_structure_contains_primer_tile.png"};
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(porytiles::RgbTiledPng tiledPng{png},
+                             "structure starting at tile (1,1) had unexpected primer control tile at (3,2)",
+                             const porytiles::TsException&);
+#pragma GCC diagnostic pop
+    }
+
+    SUBCASE("It should find an invalid structure region due to region containing sibling tile") {
+        png::image<png::rgb_pixel> png{"res/tests/invalid_structure_contains_sibling_tile.png"};
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(porytiles::RgbTiledPng tiledPng{png},
+                             "structure starting at tile (1,1) had unexpected sibling control tile at (4,3)",
+                             const porytiles::TsException&);
+#pragma GCC diagnostic pop
+    }
+
+    SUBCASE("It should find an invalid structure region due to region containing structure tile") {
+        png::image<png::rgb_pixel> png{"res/tests/invalid_structure_contains_structure_tile.png"};
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        CHECK_THROWS_WITH_AS(porytiles::RgbTiledPng tiledPng{png},
+                             "structure starting at tile (1,1) had unexpected structure control tile at (2,3)",
                              const porytiles::TsException&);
 #pragma GCC diagnostic pop
     }
