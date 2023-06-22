@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sibling tile support: can now specify cross-palette colors that should share indexes, allowing for tiles that are
   shared across palettes (e.g. in vanilla pokeemerald, the mart and center roofs share tiles but use different palettes)
+- In-file unit tests
+- Basic coverage support using `llvm-cov` the `coverage-report` and `coverage-show` Makefile targets
 
 ### Changed
 
