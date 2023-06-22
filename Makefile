@@ -1,6 +1,8 @@
 CXX ?= clang++
 
 # TODO : set optimization to O2 and remove debug for final build
+# TODO : this makefile is broken with gcc due to the CXXCOV option here
+
 CXXCOV      = -fprofile-instr-generate -fcoverage-mapping
 CXXFLAGS    = -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g $(CXXCOV)
 CXXFLAGS   += $(shell pkg-config --cflags libpng)
