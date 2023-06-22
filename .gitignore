@@ -1,10 +1,16 @@
+# IDE and filesystem metadata
 .vscode
 .idea
 .DS_Store
 
+# Build artifacts and executables
 build/**
 *.dSYM
 porytiles
 porytiles.exe
 porytiles-tests
 porytiles-tests.exe
+
+# LLVM coverage files
+default.profraw
+testcov.profdata

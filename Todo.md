@@ -4,14 +4,18 @@
     + https://github.com/eddieantonio/imgcat
 + Use the `{fmt}` C++ library for colors and better output?
     + https://github.com/fmtlib/fmt
-+ Add in-file unit tests
++ Continue to create more in-file unit tests
     + https://github.com/doctest/doctest/tree/master (progress on this is going well)
-    + Add a way to compute test coverage?
++ Add a way to compute test coverage to the make system
+    + https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+    + https://alastairs-place.net/blog/2016/05/20/code-coverage-from-the-command-line-with-clang/
 + Add a `--report` option that prints out various statistics
     + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
         + calculate this by taking the `Number Unique Colors / Number Slots In Use`
     + what else?
-+ Set up more CI builds for Windows, Clang on Mac, etc
++ Set up more CI builds
+    + Windows MSVC
+    + Clang on MacOS
 + Implement structure control tiles properly
     + four corners
     + palette allocation passes should also follow structure rules, so users get consistent results
