@@ -53,8 +53,6 @@ public:
 
     [[nodiscard]] size_t rowColToIndex(size_t row, size_t col) const;
 
-    [[nodiscard]] StructureRegion getStructureStartingAt(size_t index) const;
-
     [[nodiscard]] const std::vector<LinearRegion>& getPrimerRegions() const;
 
     [[nodiscard]] std::optional<LinearRegion> getSiblingRegion() const;
@@ -62,6 +60,9 @@ public:
     [[nodiscard]] const std::vector<StructureRegion>& getStructureRegions() const;
 
     [[nodiscard]] std::string tileDebugString(size_t index) const;
+
+private:
+    [[nodiscard]] StructureRegion getStructureStartingAt(size_t index) const;
 };
 } // namespace porytiles
 

@@ -5,7 +5,8 @@
 + Use the `{fmt}` C++ library for colors and better output?
     + https://github.com/fmtlib/fmt
 + Add in-file unit tests
-    + https://github.com/doctest/doctest/tree/master
+    + https://github.com/doctest/doctest/tree/master (progress on this is going well)
+    + Add a way to compute test coverage?
 + Add a `--report` option that prints out various statistics
     + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
         + calculate this by taking the `Number Unique Colors / Number Slots In Use`
