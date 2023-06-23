@@ -52,6 +52,10 @@ ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
   $(eval $(RUN_ARGS):;@:)
 endif
 
+ifeq ($(strip $(RUN_ARGS)),)
+$(error arguments must be supplied to coverage command)
+endif
+
 .PHONY: clean all target tests check
 
 clean:
