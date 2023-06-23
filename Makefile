@@ -53,7 +53,8 @@ ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
 endif
 
 ifeq ($(strip $(RUN_ARGS)),)
-$(error arguments must be supplied to coverage command)
+# TODO : this doesn't work because it will trigger on non-coverage targets
+#$(error arguments must be supplied to coverage command)
 endif
 
 .PHONY: clean all target tests check
