@@ -43,6 +43,9 @@ ifeq (coverage-show,$(firstword $(MAKECMDGOALS)))
   RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   # ...and turn them into do-nothing targets
   $(eval $(RUN_ARGS):;@:)
+  ifeq ($(strip $(RUN_ARGS)),)
+  $(error file arguments must be supplied to coverage-show target)
+  endif
 endif
 # If the first argument is "coverage-report"...
 ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
@@ -50,19 +53,9 @@ ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
   RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   # ...and turn them into do-nothing targets
   $(eval $(RUN_ARGS):;@:)
-endif
-
-# Error out if we ran coverage-show without an arg
-ifeq (coverage-show,$(MAKECMDGOALS))
-ifeq ($(strip $(RUN_ARGS)),)
-$(error file arguments must be supplied to coverage-show target)
-endif
-endif
-# Error out if we ran coverage-report without an arg
-ifeq (coverage-report,$(MAKECMDGOALS))
-ifeq ($(strip $(RUN_ARGS)),)
-$(error file arguments must be supplied to coverage-report target)
-endif
+  ifeq ($(strip $(RUN_ARGS)),)
+  $(error file arguments must be supplied to coverage-report target)
+  endif
 endif
 
 .PHONY: clean all target tests check
