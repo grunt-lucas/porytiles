@@ -52,9 +52,17 @@ ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
   $(eval $(RUN_ARGS):;@:)
 endif
 
+# Error out if we ran coverage-show without an arg
+ifeq (coverage-show,$(MAKECMDGOALS))
 ifeq ($(strip $(RUN_ARGS)),)
-# TODO : this doesn't work because it will trigger on non-coverage targets
-#$(error arguments must be supplied to coverage command)
+$(error file arguments must be supplied to coverage-show target)
+endif
+endif
+# Error out if we ran coverage-report without an arg
+ifeq (coverage-report,$(MAKECMDGOALS))
+ifeq ($(strip $(RUN_ARGS)),)
+$(error file arguments must be supplied to coverage-report target)
+endif
 endif
 
 .PHONY: clean all target tests check
