@@ -34,13 +34,9 @@ DEBUG_OBJ_FILES       = $(filter-out $(DEBUG_BUILD)/$(MAIN_OBJ) $(DEBUG_BUILD)/$
 ### Compiler and linker flags ###
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
     CXXFLAGS_COVERAGE := -fprofile-instr-generate -fcoverage-mapping
-else
-    CXXFLAGS_COVERAGE :=
-endif
-
-ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
     LDFLAGS_COVERAGE  := --coverage
 else
+    CXXFLAGS_COVERAGE :=
     LDFLAGS_COVERAGE  :=
 endif
 

@@ -7,7 +7,7 @@ on:
     branches: [ "trunk" ]
 
 jobs:
-  build-ubuntu-gcc:
+  build-ubuntu-gcc-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,7 +18,7 @@ jobs:
           make
           make check
 
-  build-ubuntu-clang:
+  build-ubuntu-clang-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,6 +28,28 @@ jobs:
           sudo apt-get install libpng-dev
           CXX=clang++ make
           CXX=clang++ make check
+
+  build-ubuntu-gcc-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Ubuntu GCC
+        run: |
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          make debug
+          make debug-check
+
+  build-ubuntu-clang-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Ubuntu Clang
+        run: |
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          CXX=clang++ make debug
+          CXX=clang++ make debug-check
 
 #  build-mac-clang:
 #    runs-on: macos-latest
