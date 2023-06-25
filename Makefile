@@ -33,15 +33,15 @@ DEBUG_OBJ_FILES       = $(filter-out $(DEBUG_BUILD)/$(MAIN_OBJ) $(DEBUG_BUILD)/$
 
 ### Compiler and linker flags ###
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
-    CXXFLAGS_COVERAGE    := -fprofile-instr-generate -fcoverage-mapping
+    CXXFLAGS_COVERAGE := -fprofile-instr-generate -fcoverage-mapping
 else
-    CXXFLAGS_COVERAGE    :=
+    CXXFLAGS_COVERAGE :=
 endif
 
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
-    LDFLAGS_COVERAGE     := --coverage
+    LDFLAGS_COVERAGE  := --coverage
 else
-    LDFLAGS_COVERAGE     :=
+    LDFLAGS_COVERAGE  :=
 endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
