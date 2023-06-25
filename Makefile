@@ -1,5 +1,7 @@
 CXX ?= clang++
 
+# TODO : have an option somewhere to define DOCTEST_CONFIG_DISABLE to remove test code from binary
+
 ### Use this to detect if CXX is Clang or GCC ###
 COMPILER_VERSION     := $(shell $(CXX) --version)
 
