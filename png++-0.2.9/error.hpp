@@ -107,7 +107,10 @@ namespace png
             /* GNU variant can return a pointer to static buffer instead of buf */
             // GNU variant broken on Mac even though _GNU_SOURCE is defined, so just do it the boring way
             // return std::string(strerror_r(errnum, buf, ERRBUF_SIZE));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
             strerror_r(errnum, buf, ERRBUF_SIZE);
+#pragma GCC diagnostic pop
             return std::string(buf);
 #endif
 #endif
