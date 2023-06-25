@@ -5,6 +5,8 @@
 
 # Build artifacts and executables
 build/**
+release/**
+debug/**
 *.dSYM
 porytiles
 porytiles.exe

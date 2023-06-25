@@ -1,86 +1,112 @@
 CXX ?= clang++
 
-# TODO : set optimization to O2 and remove debug for final build
-# TODO : this makefile is broken with gcc due to the CXXCOV option here
+### Use this to detect if CXX is Clang or GCC ###
+COMPILER_VERSION     := $(shell $(CXX) --version)
 
-CXXCOV      = -fprofile-instr-generate -fcoverage-mapping
-CXXFLAGS    = -Wall -Wpedantic -Werror -std=c++17 -O0 -DPNG_SKIP_SETJMP_CHECK -g $(CXXCOV)
-CXXFLAGS   += $(shell pkg-config --cflags libpng)
-CXXFLAGS   += -Idoctest-2.4.11 -Ipng++-0.2.9 -Iinclude
-SRCDIR      = src
-BUILDDIR    = build
-SRCS        = $(shell find $(SRCDIR) -type f -name *.cpp)
-MAINOBJ     = main.o
-TESTSOBJ    = tests.o
-OBJS        = $(filter-out $(BUILDDIR)/$(MAINOBJ) $(BUILDDIR)/$(TESTSOBJ), $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SRCS:.cpp=.o)))
-LDCOV       = --coverage
-LDFLAGS    += $(shell pkg-config --libs-only-L libpng) -lpng -lz $(LDCOV)
-ifeq ($(OS),Windows_NT)
-EXE        := .exe
+
+### Define the targets ###
+RELEASE              := release
+DEBUG                := debug
+BIN                  := bin
+
+PROGRAM              := porytiles
+TARGET               := $(PROGRAM)
+TEST_TARGET          := $(PROGRAM)-tests
+
+RELEASE_TARGET       := $(RELEASE)/$(BIN)/$(TARGET)
+RELEASE_TEST_TARGET  := $(RELEASE)/$(BIN)/$(TEST_TARGET)
+DEBUG_TARGET         := $(DEBUG)/$(BIN)/$(TARGET)
+DEBUG_TEST_TARGET    := $(DEBUG)/$(BIN)/$(TEST_TARGET)
+
+
+### Source and build folders ###
+SRC                  := src
+BUILD                := build
+RELEASE_BUILD        := $(RELEASE)/$(BUILD)
+DEBUG_BUILD          := $(DEBUG)/$(BUILD)
+SRC_FILES             = $(shell find $(SRC) -type f -name *.cpp)
+MAIN_OBJ             := main.o
+TESTS_OBJ            := tests.o
+RELEASE_OBJ_FILES     = $(filter-out $(RELEASE_BUILD)/$(MAIN_OBJ) $(RELEASE_BUILD)/$(TESTS_OBJ), $(patsubst $(SRC)/%, $(RELEASE_BUILD)/%, $(SRC_FILES:.cpp=.o)))
+DEBUG_OBJ_FILES       = $(filter-out $(DEBUG_BUILD)/$(MAIN_OBJ) $(DEBUG_BUILD)/$(TESTS_OBJ), $(patsubst $(SRC)/%, $(DEBUG_BUILD)/%, $(SRC_FILES:.cpp=.o)))
+
+
+### Compiler and linker flags ###
+ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
+    CXXFLAGS_COVERAGE    := -fprofile-instr-generate -fcoverage-mapping
 else
-EXE        :=
-endif
-PROGRAM     = porytiles
-TARGET      = $(PROGRAM)$(EXE)
-TEST_TARGET = $(PROGRAM)-tests$(EXE)
-
-$(TARGET): $(OBJS) $(BUILDDIR)/$(MAINOBJ)
-	@echo "Linking ($(CXX)) $@..."
-	@$(CXX) $^ -o $(TARGET) $(LDFLAGS)
-
-$(TEST_TARGET): $(OBJS) $(BUILDDIR)/$(TESTSOBJ)
-	@echo "Linking ($(CXX)) $@..."
-	@$(CXX) $^ -o $(TEST_TARGET) $(LDFLAGS)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
-	@mkdir -p $(BUILDDIR)
-	@echo "Compiling ($(CXX)) $<..."
-	@$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-# If the first argument is "coverage-show"...
-ifeq (coverage-show,$(firstword $(MAKECMDGOALS)))
-  # use the rest as arguments for "coverage-show"
-  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # ...and turn them into do-nothing targets
-  $(eval $(RUN_ARGS):;@:)
-  ifeq ($(strip $(RUN_ARGS)),)
-  $(error file arguments must be supplied to coverage-show target)
-  endif
-endif
-# If the first argument is "coverage-report"...
-ifeq (coverage-report,$(firstword $(MAKECMDGOALS)))
-  # use the rest as arguments for "coverage-report"
-  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  # ...and turn them into do-nothing targets
-  $(eval $(RUN_ARGS):;@:)
-  ifeq ($(strip $(RUN_ARGS)),)
-  $(error file arguments must be supplied to coverage-report target)
-  endif
+    CXXFLAGS_COVERAGE    :=
 endif
 
-.PHONY: clean all target tests check
+ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
+    LDFLAGS_COVERAGE    := --coverage
+else
+    LDFLAGS_COVERAGE    :=
+endif
+
+# TODO : include -Wextra, broken right now due to issue in png++ lib
+CXXFLAGS             := -Wall -Wpedantic -Werror -std=c++17 -DPNG_SKIP_SETJMP_CHECK
+CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
+CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
+CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
+
+LDFLAGS              := $(shell pkg-config --libs-only-L libpng) -lpng -lz
+LDFLAGS_RELEASE      := $(LDFLAGS)
+LDFLAGS_DEBUG        := $(LDFLAGS) $(LDFLAGS_COVERAGE)
+
+
+### Build rules ###
+$(RELEASE_TARGET): $(RELEASE_OBJ_FILES) $(RELEASE_BUILD)/$(MAIN_OBJ)
+	@echo "Release: linking ($(CXX)) target..."
+	@mkdir -p $(RELEASE)/$(BIN)
+	@$(CXX) $^ -o $(RELEASE_TARGET) $(LDFLAGS_RELEASE)
+
+$(RELEASE_TEST_TARGET): $(RELEASE_OBJ_FILES) $(RELEASE_BUILD)/$(TESTS_OBJ)
+	@echo "Release: linking ($(CXX)) tests..."
+	@mkdir -p $(RELEASE)/$(BIN)
+	@$(CXX) $^ -o $(RELEASE_TEST_TARGET) $(LDFLAGS_RELEASE)
+
+$(RELEASE_BUILD)/%.o: $(SRC)/%.cpp
+	@echo "Release: compiling ($(CXX)) $<..."
+	@mkdir -p $(RELEASE_BUILD)
+	@$(CXX) $(CXXFLAGS_RELEASE) -c -o $@ $<
+
+$(DEBUG_TARGET): $(DEBUG_OBJ_FILES) $(DEBUG_BUILD)/$(MAIN_OBJ)
+	@echo "Debug: linking ($(CXX)) target..."
+	@mkdir -p $(DEBUG)/$(BIN)
+	@$(CXX) $^ -o $(DEBUG_TARGET) $(LDFLAGS_DEBUG)
+
+$(DEBUG_TEST_TARGET): $(DEBUG_OBJ_FILES) $(DEBUG_BUILD)/$(TESTS_OBJ)
+	@echo "Debug: linking ($(CXX)) tests..."
+	@mkdir -p $(DEBUG)/$(BIN)
+	@$(CXX) $^ -o $(DEBUG_TEST_TARGET) $(LDFLAGS_DEBUG)
+
+$(DEBUG_BUILD)/%.o: $(SRC)/%.cpp
+	@echo "Debug: compiling ($(CXX)) $<..."
+	@mkdir -p $(DEBUG_BUILD)
+	@$(CXX) $(CXXFLAGS_DEBUG) -c -o $@ $<
+
+.PHONY: clean release debug all check release-check debug-check
 
 clean:
-	$(RM) $(TARGET) $(TEST_TARGET)
-	$(RM) -r $(BUILDDIR)
-	$(RM) -r $(PROGRAM).dSYM
+	$(RM) -r $(RELEASE) $(DEBUG)
 	$(RM) default.profraw testcov.profdata
 
-all: $(TARGET) $(TEST_TARGET)
+release: $(RELEASE_TARGET) $(RELEASE_TEST_TARGET)
 	@:
 
-target: $(TARGET)
+debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
 	@:
 
-tests: $(TEST_TARGET)
+all: release debug
+	@:
 
-check: tests
-	@./$(TEST_TARGET)
+check: release
+	@./$(RELEASE_TEST_TARGET)
 
-coverage-show: check
-	@xcrun llvm-profdata merge -o testcov.profdata default.profraw
-	@xcrun llvm-cov show ./$(TEST_TARGET) -instr-profile=testcov.profdata $(RUN_ARGS)
+release-check: check
+	# Just an alias for check, for consistency
+	@:
 
-coverage-report: check
-	@xcrun llvm-profdata merge -o testcov.profdata default.profraw
-	@xcrun llvm-cov report ./$(TEST_TARGET) -instr-profile=testcov.profdata $(RUN_ARGS)
+debug-check: debug
+	@./$(DEBUG_TEST_TARGET) -s

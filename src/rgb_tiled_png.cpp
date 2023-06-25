@@ -84,7 +84,7 @@ RgbTiledPng::RgbTiledPng(const png::image<png::rgb_pixel>& png) {
     bool inSiblingRegion = false;
     std::string logString;
     // Set up primer and sibling regions
-    size_t tmpStart;
+    size_t tmpStart = 0;
     for (size_t tileIndex = 0; tileIndex < tiles.size(); tileIndex++) {
         if (tileAt(tileIndex).isUniformly(gOptPrimerColor)) {
             if (inSiblingRegion) {

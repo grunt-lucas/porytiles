@@ -91,7 +91,7 @@ static RgbColor parseRgbColor(const std::string& colorString) {
 
 static void printUsage(std::ostream& outStream) {
     using std::endl;
-    outStream << "Usage:  " << PROGRAM_NAME;
+    outStream << "Usage: " << PROGRAM_NAME;
     outStream << " [-8hnpsStTvV] ";
     outStream << "<master.png> <output-dir>" << endl;
 }
