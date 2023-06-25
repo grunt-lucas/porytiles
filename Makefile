@@ -39,9 +39,9 @@ else
 endif
 
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
-    LDFLAGS_COVERAGE    := --coverage
+    LDFLAGS_COVERAGE     := --coverage
 else
-    LDFLAGS_COVERAGE    :=
+    LDFLAGS_COVERAGE     :=
 endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
