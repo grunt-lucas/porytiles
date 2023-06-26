@@ -6,10 +6,13 @@ CXX ?= clang++
 COMPILER_VERSION     := $(shell $(CXX) --version)
 
 
-### Define the targets ###
+### Define the targets, source, and build folders ###
+SRC                  := src
+BUILD                := build
+BIN                  := bin
+
 RELEASE              := release
 DEBUG                := debug
-BIN                  := bin
 
 PROGRAM              := porytiles
 TARGET               := $(PROGRAM)
@@ -20,10 +23,6 @@ RELEASE_TEST_TARGET  := $(RELEASE)/$(BIN)/$(TEST_TARGET)
 DEBUG_TARGET         := $(DEBUG)/$(BIN)/$(TARGET)
 DEBUG_TEST_TARGET    := $(DEBUG)/$(BIN)/$(TEST_TARGET)
 
-
-### Source and build folders ###
-SRC                  := src
-BUILD                := build
 RELEASE_BUILD        := $(RELEASE)/$(BUILD)
 DEBUG_BUILD          := $(DEBUG)/$(BUILD)
 SRC_FILES             = $(shell find $(SRC) -type f -name *.cpp)
