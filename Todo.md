@@ -31,8 +31,11 @@
         + this will also start writing the palettes at index `num-pals-in-primary`, and write blank palettes for the
           first N
     + these changes will be very helpful once we start working on metatile generation
++ How could we improve the palette allocation algorithm to remove the need for primer tiles?
+    + right now, the algo is greedy and so can generate suboptimal palettes
+    + we'd need some kind of backtracking mechanism to do this correctly
 
-## Big Feature Ideas
+# Big Feature Ideas
 
 + metatile generation:
     + this could be done by taking three PNGs as input, one for each layer
