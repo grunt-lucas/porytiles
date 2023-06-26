@@ -34,6 +34,13 @@
 + How could we improve the palette allocation algorithm to remove the need for primer tiles?
     + right now, the algo is greedy and so can generate suboptimal palettes
     + we'd need some kind of backtracking mechanism to do this correctly
+    + mrgriffin suggested the following improved greedy approach:
+        + I think you could fix that particular problem with only a minor tweak: build the tile palette sets, but defer
+          picking a hardware palette until all tiles have been processed. At this point you can ensure that any tile
+          palette which is a subset of another tile palette should go to the same hardware palette. (Probably achievable
+          by iterating your tile palettes in a particular order—say largest to smallest)
+        + (The largest to smallest ordering should work because by definition a [strict] subset must contain fewer
+          elements than its superset, so if there was a superset of this tile's colors, it will already be allocated)
 
 # Big Feature Ideas
 
