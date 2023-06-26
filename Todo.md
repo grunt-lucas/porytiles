@@ -2,27 +2,37 @@
 
 + Print tiles directly to the CLI!
     + https://github.com/eddieantonio/imgcat
+
 + Use the `{fmt}` C++ library for colors and better output?
     + https://github.com/fmtlib/fmt
+
 + Continue to create more in-file unit tests that maximize coverage
     + https://github.com/doctest/doctest/tree/master (progress on this is going well)
+
 + Add a `--report` option that prints out various statistics
     + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
         + calculate this by taking the `Number Unique Colors / Number Slots In Use`
     + what else?
+
 + Set up more CI builds
     + Windows MSVC
     + Clang on MacOS
+
 + Implement structure control tiles properly
     + four corners
     + palette allocation passes should also follow structure rules, so users get consistent results
+    + tbh not sure if this feature is really necessary -- with proper metatile generation probably nobody will use this
+
 + `--verbose` should have filter modes:
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc
+
 + output path should be optional: if excluded then the program will run but won't write anything, can be useful for
   querying logs without actually writing anything out to disk
+
 + Remove `--8bpp-output` option and make it default once Porymap properly supports
     + add a `--out-palette=<index>` to output the PNG 4bpp with the given palette
     + add a `--out-palette-greyscale` to output with 4bpp greyscale
+
 + Change the palette writing code so it always writes 12 palettes (for easier importing and makefile integration)
     + `--num-pals-in-primary=<num>` will default to `6`, but will allow user to adjust
     + porytiles will default to generating a primary tileset, so the `max-palettes` option will basically be replaced
@@ -31,6 +41,7 @@
         + this will also start writing the palettes at index `num-pals-in-primary`, and write blank palettes for the
           first N
     + these changes will be very helpful once we start working on metatile generation
+
 + How could we improve the palette allocation algorithm to remove the need for primer tiles?
     + right now, the algo is greedy and so can generate suboptimal palettes
     + we'd need some kind of backtracking mechanism to do this correctly
