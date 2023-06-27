@@ -53,6 +53,8 @@
         + (The largest to smallest ordering should work because by definition a [strict] subset must contain fewer
           elements than its superset, so if there was a superset of this tile's colors, it will already be allocated)
 
++ Test
+
 # Big Feature Ideas
 
 + metatile generation:
