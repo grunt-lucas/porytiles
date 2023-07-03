@@ -18,10 +18,8 @@
     + Windows MSVC
     + Clang on MacOS
 
-+ Implement structure control tiles properly
-    + four corners
-    + palette allocation passes should also follow structure rules, so users get consistent results
-    + tbh not sure if this feature is really necessary -- with proper metatile generation probably nobody will use this
++ Remove code for structure control tiles
+    + these overcomplicate things, won't really be necessary once metatile generation is in place
 
 + `--verbose` should have filter modes:
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc
@@ -52,6 +50,8 @@
           by iterating your tile palettes in a particular order—say largest to smallest)
         + (The largest to smallest ordering should work because by definition a [strict] subset must contain fewer
           elements than its superset, so if there was a superset of this tile's colors, it will already be allocated)
+    + See mgriffin's work in the `normalize` branch
+    + Once we include these improvements, we can remove primer (and possibly also sibling) control tiles
 
 + Test
 
