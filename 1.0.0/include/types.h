@@ -6,10 +6,10 @@
 #include <compare>
 #include <array>
 
-constexpr size_t TILE_ROWS = 8;
-constexpr size_t TILE_COLS = 8;
-constexpr size_t TILE_SIZE = TILE_ROWS * TILE_COLS;
-constexpr size_t PAL_SIZE = 16;
+constexpr std::size_t TILE_ROWS = 8;
+constexpr std::size_t TILE_COLS = 8;
+constexpr std::size_t TILE_SIZE = TILE_ROWS * TILE_COLS;
+constexpr std::size_t PAL_SIZE = 16;
 
 struct Config {
     std::size_t numTilesInPrimary;
