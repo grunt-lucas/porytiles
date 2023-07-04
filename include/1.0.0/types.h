@@ -9,8 +9,6 @@ struct RGBA32 {
     std::uint8_t green;
     std::uint8_t blue;
     std::uint8_t alpha;
-
-    auto operator<=>(const RGBA32&) const = default;
 };
 
 #endif
