@@ -7,7 +7,7 @@ COMPILER_VERSION     := $(shell $(CXX) --version)
 
 
 ### Define the targets, source, and build folders ###
-SRC                  := 1.0.0/src
+SRC                  := src
 BUILD                := build
 BIN                  := bin
 
@@ -43,7 +43,7 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             := -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -I1.0.0/include $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
+CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
 CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
@@ -65,7 +65,7 @@ $(RELEASE_TEST_TARGET): $(RELEASE_OBJ_FILES) $(RELEASE_BUILD)/$(TESTS_OBJ)
 
 $(RELEASE_BUILD)/%.o: $(SRC)/%.cpp
 	@echo "Release: compiling ($(CXX)) $<..."
-	@mkdir -p $(RELEASE_BUILD)/1.0.0
+	@mkdir -p $(RELEASE_BUILD)
 	@$(CXX) $(CXXFLAGS_RELEASE) -c -o $@ $<
 
 $(DEBUG_TARGET): $(DEBUG_OBJ_FILES) $(DEBUG_BUILD)/$(MAIN_OBJ)
@@ -80,7 +80,7 @@ $(DEBUG_TEST_TARGET): $(DEBUG_OBJ_FILES) $(DEBUG_BUILD)/$(TESTS_OBJ)
 
 $(DEBUG_BUILD)/%.o: $(SRC)/%.cpp
 	@echo "Debug: compiling ($(CXX)) $<..."
-	@mkdir -p $(DEBUG_BUILD)/1.0.0
+	@mkdir -p $(DEBUG_BUILD)
 	@$(CXX) $(CXXFLAGS_DEBUG) -c -o $@ $<
 
 .PHONY: clean release debug all check release-check debug-check
