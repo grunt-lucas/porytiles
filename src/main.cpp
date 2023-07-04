@@ -60,6 +60,7 @@ catch (const porytiles::TsException& e) {
 }
 catch (const std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
+    // New C++23 features may allow this at some point: https://github.com/TylerGlaiel/Crashlogs
     std::cerr << porytiles::fatalPrefix() << e.what() << std::endl;
     std::cerr << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
               << std::endl;
