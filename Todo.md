@@ -1,3 +1,7 @@
+# 1.0.0 Specific Notes
+
++ Foo
+
 # Todo List
 
 + Print tiles directly to the CLI!
