@@ -17,10 +17,7 @@ struct RGBA32 {
     auto operator<=>(const RGBA32&) const = default;
 };
 
-std::ostream& operator<<(std::ostream& os, const RGBA32& myRgba) {
-    os << "RGBA32{" << std::to_string(myRgba.red) << "," << std::to_string(myRgba.green) << "," << std::to_string(myRgba.blue) << "," << std::to_string(myRgba.alpha) << "}";
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, const RGBA32& myRgba);
 
 TEST_CASE("RGBA32 should be ordered component-wise") {
     RGBA32 rgb1 = {0, 1, 2, 3};
