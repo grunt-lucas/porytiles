@@ -115,6 +115,12 @@ Normalized candidate(RGBATile const& rgba, bool hFlip, bool vFlip)
   normalized.hFlip = hFlip;
   normalized.vFlip = vFlip;
 
+  /*
+   * TODO : mgriffin confirmed this is bugged, the loop here should be accounting for the hFlip and vFlip params. So
+   * depending on those params, the loop order should change so that the final ordering of pixels reflects the flip
+   * params.
+   */
+
   for (std::size_t i = 0; i < rgba.pixels.size(); i += 2) {
     std::uint8_t paletteIndexPair = 0;
     paletteIndexPair |= insertRGBA(normalized.palette, rgba.pixels[i + 0]);
@@ -238,6 +244,9 @@ Compiled compile(Config const& config, Decompiled const& decompiled)
     assignState_.assigned[assignState.assignTo] |= unassigned[assignState.assigning];
     assignState_.assigning++;
     assignState_.assignTo = 0;
+
+    // TODO : this push wasn't originally included, but mgriffing confirmed it should be here
+    assignStates.push(assignState_);
   }
 
   // XXX: Actually populate compiled.palettes.
