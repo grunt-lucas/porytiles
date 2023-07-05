@@ -6,16 +6,9 @@
 #include <vector>
 
 #include "constants.h"
-#include "rgba32.h"
-#include "bgr15.h"
+#include "types.h"
 
 namespace porytiles {
-struct RGBATile {
-    std::array<RGBA32, TILE_SIZE> pixels;
-};
 
-struct Decompiled {
-    std::vector<RGBATile> tiles;
-};
 }
 #endif
