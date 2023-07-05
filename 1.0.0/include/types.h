@@ -46,14 +46,14 @@ std::ostream& operator<<(std::ostream&, const RGBA32&);
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
-    std::array<RGBA32, TILE_SIZE> pixels;
+    std::array<RGBA32, TILE_NUM_PIX> pixels;
 };
 
 /*
  * A tile of palette indexes.
  */
 struct GBATile {
-    std::array<std::uint8_t, TILE_SIZE> paletteIndexes;
+    std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
 
 #if defined(__GNUG__) && !defined(__clang__)
     auto operator<=>(GBATile const&) const = default;
@@ -94,16 +94,16 @@ struct Assignment {
  * tileset. The assignments vector contains the actual tile palette assignments and flips which can be used to construct
  * the final metatiles.
  */
-struct Compiled {
+struct CompiledTileset {
     std::vector<GBATile> tiles;
     std::vector<GBAPalette> palettes;
     std::vector<Assignment> assignments;
 };
 
 /*
- * A decompiled tileset, which is just a vector of RGBATiles.
+ * A precompiled tileset, which is just a vector of RGBATiles.
  */
-struct Decompiled {
+struct PrecompiledTileset {
     std::vector<RGBATile> tiles;
 };
 

@@ -4,9 +4,9 @@
 #include <limits>
 
 namespace porytiles {
-constexpr std::size_t TILE_ROWS = 8;
-constexpr std::size_t TILE_COLS = 8;
-constexpr std::size_t TILE_SIZE = TILE_ROWS * TILE_COLS;
+// Tiles must be squares
+constexpr std::size_t TILE_SIDE_LENGTH = 8;
+constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
 constexpr std::size_t PAL_SIZE = 16;
 }
 #endif
