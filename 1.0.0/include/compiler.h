@@ -9,6 +9,6 @@
 #include "types.h"
 
 namespace porytiles {
-PrecompiledTileset precompiledTilesFromPng(const png::image<png::rgb_pixel>& png);
+DecompiledTileset decompiledTilesFromPng(const png::image<png::rgb_pixel>& png);
 }
 #endif

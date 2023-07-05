@@ -3,8 +3,8 @@
 #include "constants.h"
 
 namespace porytiles {
-PrecompiledTileset precompiledTilesFromPng(const png::image<png::rgb_pixel>& png) {
-    PrecompiledTileset precompiledTiles;
+DecompiledTileset decompiledTilesFromPng(const png::image<png::rgb_pixel>& png) {
+    DecompiledTileset decompiledTiles;
 
     // TODO : this won't work if width/height not divisible by 8, enforce somewhere, ideally just force 128 pix width
     std::size_t width = png.get_width() / TILE_SIDE_LENGTH;

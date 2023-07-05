@@ -101,9 +101,9 @@ struct CompiledTileset {
 };
 
 /*
- * A precompiled tileset, which is just a vector of RGBATiles.
+ * A decompiled tileset, which is just a vector of RGBATiles.
  */
-struct PrecompiledTileset {
+struct DecompiledTileset {
     std::vector<RGBATile> tiles;
 };
 
