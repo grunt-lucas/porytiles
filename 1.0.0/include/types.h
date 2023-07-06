@@ -11,13 +11,17 @@
 #include "doctest.h"
 #include "constants.h"
 
+/**
+ * TODO : fill in doc comment for this header
+ */
+
 namespace porytiles {
 
 // --------------------
 // |    DATA TYPES    |
 // --------------------
 
-/*
+/**
  * BGR15 color format. 5 bits per color with blue in most significant bits. Top bit unused.
  */
 struct BGR15 {
@@ -28,7 +32,7 @@ struct BGR15 {
 
 std::ostream& operator<<(std::ostream&, const BGR15&);
 
-/*
+/**
  * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
  */
 struct RGBA32 {
@@ -51,14 +55,33 @@ extern const RGBA32 RGBA_MAGENTA;
 extern const RGBA32 RGBA_CYAN;
 extern const RGBA32 RGBA_WHITE;
 
-/*
+/**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
     std::array<RGBA32, TILE_NUM_PIX> pixels;
+
+#if defined(__GNUG__) && !defined(__clang__)
+    auto operator<=>(RGBATile const&) const = default;
+#else
+    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+    auto operator<=>(RGBATile const&) const = delete;
+#endif
 };
 
-/*
+std::ostream& operator<<(std::ostream&, const RGBATile&);
+
+extern const RGBATile RGBA_TILE_BLACK;
+extern const RGBATile RGBA_TILE_RED;
+extern const RGBATile RGBA_TILE_GREEN;
+extern const RGBATile RGBA_TILE_BLUE;
+extern const RGBATile RGBA_TILE_YELLOW;
+extern const RGBATile RGBA_TILE_MAGENTA;
+extern const RGBATile RGBA_TILE_CYAN;
+extern const RGBATile RGBA_TILE_WHITE;
+
+/**
  * A tile of palette indexes.
  */
 struct GBATile {
@@ -67,12 +90,13 @@ struct GBATile {
 #if defined(__GNUG__) && !defined(__clang__)
     auto operator<=>(GBATile const&) const = default;
 #else
-    // TODO : manually implement for clang, not yet supported by libc++
+    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+    auto operator<=>(RGBATile const&) const = delete;
 #endif
 };
 
-/*
+/**
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
 struct GBAPalette {
@@ -81,12 +105,13 @@ struct GBAPalette {
 #if defined(__GNUG__) && !defined(__clang__)
     auto operator<=>(GBAPalette const&) const = default;
 #else
-    // TODO : manually implement for clang, not yet supported by libc++
+    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+    auto operator<=>(RGBATile const&) const = delete;
 #endif
 };
 
-/*
+/**
  * A tile assignment, i.e. the representation of a tile within a metatile. Maps a given tile index to a hardware palette
  * index and the corresponding flips.
  */
@@ -97,7 +122,7 @@ struct Assignment {
     bool vFlip;
 };
 
-/*
+/**
  * A compiled tileset. The tiles here are normalized. The palettes here are hardware palettes, i.e. there should be
  * numPalsInPrimary palettes for a primary tileset, or numPalettesTotal - numPalsInPrimary palettes for a secondary
  * tileset. The assignments vector contains the actual tile palette assignments and flips which can be used to construct
@@ -109,7 +134,7 @@ struct CompiledTileset {
     std::vector<Assignment> assignments;
 };
 
-/*
+/**
  * A decompiled tileset, which is just a vector of RGBATiles.
  */
 struct DecompiledTileset {

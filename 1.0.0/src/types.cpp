@@ -2,7 +2,7 @@
 
 namespace porytiles {
 std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
-    os << "bgr{" << std::to_string(bgr.bgr) << "}";
+    os << std::to_string(bgr.bgr);
     return os;
 }
 
@@ -17,37 +17,69 @@ constexpr RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, 255};
 
 std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
     // For debugging purposes, print the solid colors with names rather than int values
-    std::string rgbString = "rgb";
     if (rgba == RGBA_BLACK) {
-        os << rgbString << "{black}";
+        os << "black";
     }
     else if (rgba == RGBA_RED) {
-        os << rgbString << "{red}";
+        os << "red";
     }
     else if (rgba == RGBA_GREEN) {
-        os << rgbString << "{green}";
+        os << "green";
     }
     else if (rgba == RGBA_BLUE) {
-        os << rgbString << "{blue}";
+        os << "blue";
     }
     else if (rgba == RGBA_YELLOW) {
-        os << rgbString << "{yellow}";
+        os << "yellow";
     }
     else if (rgba == RGBA_MAGENTA) {
-        os << rgbString << "{magenta}";
+        os << "magenta";
     }
     else if (rgba == RGBA_CYAN) {
-        os << rgbString << "{cyan}";
+        os << "cyan";
     }
     else if (rgba == RGBA_WHITE) {
-        os << rgbString << "{white}";
+        os << "white";
     }
     else {
-        os << rgbString << "{" << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << ","
-           << std::to_string(rgba.blue) << "," << std::to_string(rgba.alpha) << "}";
+        os << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << ","
+           << std::to_string(rgba.blue);
+        if (rgba.alpha != 255) {
+            // Only show alpha if not opaque
+            os << "," << std::to_string(rgba.alpha);
+        }
     }
     return os;
 }
+
+std::ostream& operator<<(std::ostream& os, const RGBATile& tile) {
+    os << "{";
+    for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
+        if (i % TILE_SIDE_LENGTH == 0) {
+            os << "[" << i / 8 << "]=";
+        }
+        os << tile.pixels[i] << ";";
+    }
+    os << "}";
+    return os;
+}
+
+consteval RGBATile uniformTile(const RGBA32& color) {
+    RGBATile tile{};
+    for (size_t i = 0; i < TILE_NUM_PIX; i++) {
+        tile.pixels[i] = color;
+    }
+    return tile;
+}
+
+constexpr RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
+constexpr RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
+constexpr RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
+constexpr RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
+constexpr RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
+constexpr RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
+constexpr RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
+constexpr RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
 
 BGR15 rgbaToBGR(const RGBA32& rgba) {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position

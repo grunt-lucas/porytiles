@@ -3,7 +3,14 @@
 
 #include <limits>
 
+/**
+ * TODO : fill in doc comment for this header
+ */
+
 namespace porytiles {
+/**
+ * TODO : fill in doc comment
+ */
 struct Config {
     std::size_t numTilesInPrimary;
     std::size_t numTilesTotal;
