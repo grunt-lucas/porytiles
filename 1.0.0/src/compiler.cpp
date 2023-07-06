@@ -35,9 +35,22 @@ static int insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 r
     throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 TEST_CASE("TODO : name this test") {
+    Config config;
+    config.transparencyColor = RGBA_MAGENTA;
+
     NormalizedPalette palette1;
     palette1.size = 1;
     palette1.colors = {};
+
+    CHECK(insertRGBA(config, palette1, RGBA_BLACK) == 1);
+    CHECK(insertRGBA(config, palette1, RGBA_WHITE) == 2);
+    CHECK(insertRGBA(config, palette1, RGBA_RED) == 3);
+    CHECK(insertRGBA(config, palette1, RGBA_BLACK) == 1);
+    CHECK(insertRGBA(config, palette1, RGBA_MAGENTA) == 0);
+    CHECK(insertRGBA(config, palette1, RGBA32{0, 0, 0, 0}) == 0);
+    CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, RGBA32{0, 0, 0, 12}),
+                             "invalid alpha value: 12",
+                             const PtException&);
 }
 
 }
