@@ -5,7 +5,7 @@
 #include "types.h"
 
 namespace porytiles {
-DecompiledTileset decompiledTilesFromPng(const png::image<png::rgb_pixel>& png) {
+DecompiledTileset decompiledTilesFrom(const png::image<png::rgb_pixel>& png) {
     /*
      * Preconditions:
      * 1) png width is 128 pixels
