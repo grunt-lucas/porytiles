@@ -42,6 +42,15 @@ struct RGBA32 {
 
 std::ostream& operator<<(std::ostream&, const RGBA32&);
 
+extern const RGBA32 RGBA_BLACK;
+extern const RGBA32 RGBA_RED;
+extern const RGBA32 RGBA_GREEN;
+extern const RGBA32 RGBA_BLUE;
+extern const RGBA32 RGBA_YELLOW;
+extern const RGBA32 RGBA_MAGENTA;
+extern const RGBA32 RGBA_CYAN;
+extern const RGBA32 RGBA_WHITE;
+
 /*
  * A tile of RGBA32 colors.
  */

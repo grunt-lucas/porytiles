@@ -2,13 +2,50 @@
 
 namespace porytiles {
 std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
-    os << "BGR15{" << std::to_string(bgr.bgr) << "}";
+    os << "bgr{" << std::to_string(bgr.bgr) << "}";
     return os;
 }
 
+constexpr RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, 255};
+constexpr RGBA32 RGBA_RED = RGBA32{255, 0, 0, 255};
+constexpr RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, 255};
+constexpr RGBA32 RGBA_BLUE = RGBA32{0, 0, 255, 255};
+constexpr RGBA32 RGBA_YELLOW = RGBA32{255, 255, 0, 255};
+constexpr RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, 255};
+constexpr RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, 255};
+constexpr RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, 255};
+
 std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
-    os << "RGBA32{" << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << ","
-       << std::to_string(rgba.blue) << "," << std::to_string(rgba.alpha) << "}";
+    // For debugging purposes, print the solid colors with names rather than int values
+    std::string rgbString = "rgb";
+    if (rgba == RGBA_BLACK) {
+        os << rgbString << "{black}";
+    }
+    else if (rgba == RGBA_RED) {
+        os << rgbString << "{red}";
+    }
+    else if (rgba == RGBA_GREEN) {
+        os << rgbString << "{green}";
+    }
+    else if (rgba == RGBA_BLUE) {
+        os << rgbString << "{blue}";
+    }
+    else if (rgba == RGBA_YELLOW) {
+        os << rgbString << "{yellow}";
+    }
+    else if (rgba == RGBA_MAGENTA) {
+        os << rgbString << "{magenta}";
+    }
+    else if (rgba == RGBA_CYAN) {
+        os << rgbString << "{cyan}";
+    }
+    else if (rgba == RGBA_WHITE) {
+        os << rgbString << "{white}";
+    }
+    else {
+        os << rgbString << "{" << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << ","
+           << std::to_string(rgba.blue) << "," << std::to_string(rgba.alpha) << "}";
+    }
     return os;
 }
 
