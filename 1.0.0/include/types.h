@@ -161,6 +161,7 @@ struct hash<porytiles::BGR15> {
         return hash<uint16_t>{}(bgr.bgr);
     }
 };
+
 }
 
 #endif // PORYTILES_TYPES_H

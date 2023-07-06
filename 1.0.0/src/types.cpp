@@ -1,6 +1,7 @@
 #include "types.h"
 
 namespace porytiles {
+
 std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
     os << std::to_string(bgr.bgr);
     return os;
@@ -113,4 +114,5 @@ TEST_CASE("RGBA32 should be ordered component-wise") {
     CHECK(rgb1 < rgb2);
     CHECK(rgb2 < rgb3);
 }
+
 }
