@@ -3,11 +3,14 @@
 
 #include <limits>
 
+#include "types.h"
+
 /**
  * TODO : fill in doc comment for this header
  */
 
 namespace porytiles {
+
 /**
  * TODO : fill in doc comment
  */
@@ -18,6 +21,9 @@ struct Config {
     std::size_t numMetatilesTotal;
     std::size_t numPalettesInPrimary;
     std::size_t numPalettesTotal;
+
+    RGBA32 transparencyColor;
 };
+
 }
 #endif

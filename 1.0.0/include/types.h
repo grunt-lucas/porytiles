@@ -141,6 +141,42 @@ struct DecompiledTileset {
     std::vector<RGBATile> tiles;
 };
 
+/*
+ * Normalized types
+ */
+
+/**
+ * TODO : fill in doc comment
+ */
+struct NormalizedPixels {
+  std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
+
+  auto operator<=>(const NormalizedPixels&) const = default;
+};
+
+/**
+ * TODO : fill in doc comment
+ */
+struct NormalizedPalette {
+  int size;
+  std::array<BGR15, PAL_SIZE> colors;
+
+  auto operator<=>(const NormalizedPalette&) const = default;
+};
+
+/**
+ * TODO : fill in doc comment
+ */
+struct NormalizedTile {
+  NormalizedPixels pixels;
+  NormalizedPalette palette;
+  bool hFlip;
+  bool vFlip;
+
+  bool transparent() const { return palette.size == 1; }
+  auto operator<=>(const NormalizedTile&) const = default;
+};
+
 
 // --------------------
 // |    FUNCTIONS     |
