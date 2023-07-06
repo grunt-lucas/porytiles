@@ -1,5 +1,6 @@
 #include "png_frontend.h"
 
+#include <filesystem>
 #include <png.hpp>
 
 #include "types.h"
