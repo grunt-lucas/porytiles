@@ -82,7 +82,7 @@ constexpr RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
 constexpr RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 constexpr RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
 constexpr RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
-constexpr RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
+//constexpr RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
 
 BGR15 rgbaToBgr(const RGBA32& rgba) {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position
