@@ -1,6 +1,7 @@
 #include "compiler.h"
 
 #include <png.hpp>
+#include <unordered_map>
 
 #include "doctest.h"
 #include "config.h"
@@ -9,7 +10,12 @@
 #include "types.h"
 #include "png_frontend.h"
 
+/*
+ * Some of the types we need are extremely verbose and confusing, so here let's define some better names to make the
+ * code a bit more readable.
+ */
 using DecompiledIndex = std::size_t;
+using NormalizedTileIndexed = std::pair<porytiles::NormalizedTile, DecompiledIndex>;
 
 namespace porytiles {
 
@@ -82,11 +88,11 @@ static NormalizedTile normalize(const Config& config, const RGBATile& rgba) {
     return **normalizedTile;
 }
 
-static std::vector<std::pair<NormalizedTile, DecompiledIndex>> normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset) {
+static std::vector<NormalizedTileIndexed> normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset) {
     /*
      * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
      */
-    std::vector<std::pair<NormalizedTile, DecompiledIndex>> normalizedTiles;
+    std::vector<NormalizedTileIndexed> normalizedTiles;
     DecompiledIndex decompiledIndex = 0;
     for (auto const& tile : decompiledTileset.tiles) {
         auto normalized = normalize(config, tile);
@@ -95,11 +101,33 @@ static std::vector<std::pair<NormalizedTile, DecompiledIndex>> normalizeDecompTi
     return normalizedTiles;
 }
 
+static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& config, const std::vector<NormalizedTileIndexed>& normalizedTiles) {
+    std::unordered_map<BGR15, std::size_t> colorIndexes;
+    std::size_t colorIndex = 0;
+    for (const auto& [normalized, _] : normalizedTiles) {
+        for (int i = 1; i < normalized.palette.size; i++) {
+            bool inserted = colorIndexes.insert(std::pair{normalized.palette.colors[i], colorIndex}).second;
+            if (inserted) {
+                colorIndex++;
+            }
+        }
+    }
+    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
+    if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
+        throw "too many unique colors";
+    }
+
+    return colorIndexes;
+}
+
 CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
     compiled.palettes.resize(config.numPalettesInPrimary);
     compiled.assignments.resize(decompiledTileset.tiles.size());
+
+    std::vector<NormalizedTileIndexed> normalizedDecompTiles = normalizeDecompTiles(config, decompiledTileset);
+    std::unordered_map<BGR15, std::size_t> colorIndexes = buildColorIndexMap(config, normalizedDecompTiles);
 
     return compiled;
 }
@@ -295,6 +323,10 @@ TEST_CASE("normalize should return the normal form of the given tile") {
     CHECK(normalized.pixels.paletteIndexes[63] == 5);
 }
 
-TEST_CASE("normalizeDecompTiles correctly normalize all tiles in the decomp tileset") {
+TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
+    // TODO : fill in test case
+}
+
+TEST_CASE("buildColorIndexMap should build a map of all unique colors in the decomp tileset") {
     // TODO : fill in test case
 }

@@ -136,10 +136,16 @@ struct Assignment {
 };
 
 /**
- * A compiled tileset. The tiles here are normalized. The palettes here are hardware palettes, i.e. there should be
- * numPalsInPrimary palettes for a primary tileset, or numPalettesTotal - numPalsInPrimary palettes for a secondary
- * tileset. The assignments vector contains the actual tile palette assignments and flips which can be used to construct
- * the final metatiles.
+ * A compiled tileset.
+ *
+ * The `tiles' field contains the normalized tiles from the input tilesheets. This field can be directly written out to
+ * `tiles.png'.
+ *
+ * The `palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
+ * `numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
+ *
+ * The `assignments' vector contains the actual tile palette assignments and flips which can be used to construct the
+ * final metatiles.
  */
 struct CompiledTileset {
     std::vector<GBATile> tiles;
