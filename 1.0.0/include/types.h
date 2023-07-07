@@ -199,7 +199,7 @@ struct NormalizedPalette {
  * TODO : fill in doc comment
  */
 struct NormalizedTile {
-    // TODO : can we collapse these types into NormalizedTile
+    // TODO : can we collapse these types into NormalizedTile?
     NormalizedPixels pixels;
     NormalizedPalette palette;
     bool hFlip;
