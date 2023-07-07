@@ -62,6 +62,24 @@ static NormalizedTile candidate(const Config& config, const RGBATile& rgba, bool
     return candidateTile;
 }
 
+static NormalizedTile normalize(const Config& config, const RGBATile& rgba) {
+    auto noFlipsTile = candidate(config, rgba, false, false);
+
+    // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
+    if (noFlipsTile.transparent()) {
+        return noFlipsTile;
+    }
+
+    auto hFlipTile = candidate(config, rgba, true, false);
+    auto vFlipTile = candidate(config, rgba, false, true);
+    auto bothFlipsTile = candidate(config, rgba, true, true);
+
+    std::array<const NormalizedTile*, 4> candidates = { &noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile };
+    auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
+                                [](auto tile1, auto tile2) { return tile1->pixels < tile2->pixels; });
+    return **normalizedTile;
+}
+
 }
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
@@ -224,4 +242,31 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
         CHECK(candidate.pixels.paletteIndexes[56] == 7);
         CHECK(candidate.pixels.paletteIndexes[63] == 5);
     }
+}
+
+TEST_CASE("normalize should return the normal form of the given tile") {
+    porytiles::Config config;
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+
+    REQUIRE(std::filesystem::exists("res/tests/corners.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::RGBATile tile = tiles.tiles[0];
+
+    porytiles::NormalizedTile normalized = porytiles::normalize(config, tile);
+    CHECK(normalized.palette.size == 9);
+    CHECK_FALSE(normalized.hFlip);
+    CHECK_FALSE(normalized.vFlip);
+    CHECK(normalized.pixels.paletteIndexes[0] == 1);
+    CHECK(normalized.pixels.paletteIndexes[7] == 2);
+    CHECK(normalized.pixels.paletteIndexes[9] == 3);
+    CHECK(normalized.pixels.paletteIndexes[14] == 4);
+    CHECK(normalized.pixels.paletteIndexes[18] == 2);
+    CHECK(normalized.pixels.paletteIndexes[21] == 5);
+    CHECK(normalized.pixels.paletteIndexes[42] == 3);
+    CHECK(normalized.pixels.paletteIndexes[45] == 1);
+    CHECK(normalized.pixels.paletteIndexes[49] == 6);
+    CHECK(normalized.pixels.paletteIndexes[54] == 7);
+    CHECK(normalized.pixels.paletteIndexes[56] == 8);
+    CHECK(normalized.pixels.paletteIndexes[63] == 5);
 }
