@@ -148,31 +148,80 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
     }
 
     SUBCASE("case: hFlip") {
-        // TODO : fill in test
-        // porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, true, false);
-        // CHECK(candidate.palette.size == 9);
-        // CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-        // CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
-        // CHECK(candidate.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
-        // CHECK(candidate.palette.colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
-        // CHECK(candidate.palette.colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
-        // CHECK(candidate.palette.colors[5] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-        // CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
-        // CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
-        // CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
-        // CHECK(candidate.pixels.paletteIndexes[0] == 1);
-        // CHECK(candidate.pixels.paletteIndexes[7] == 2);
-        // CHECK(candidate.pixels.paletteIndexes[9] == 3);
-        // CHECK(candidate.pixels.paletteIndexes[14] == 4);
-        // CHECK(candidate.pixels.paletteIndexes[18] == 2);
-        // CHECK(candidate.pixels.paletteIndexes[21] == 5);
-        // CHECK(candidate.pixels.paletteIndexes[42] == 3);
-        // CHECK(candidate.pixels.paletteIndexes[45] == 1);
-        // CHECK(candidate.pixels.paletteIndexes[49] == 6);
-        // CHECK(candidate.pixels.paletteIndexes[54] == 7);
-        // CHECK(candidate.pixels.paletteIndexes[56] == 8);
-        // CHECK(candidate.pixels.paletteIndexes[63] == 5);
+        porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, true, false);
+        CHECK(candidate.palette.size == 9);
+        CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+        CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
+        CHECK(candidate.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+        CHECK(candidate.palette.colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
+        CHECK(candidate.palette.colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+        CHECK(candidate.palette.colors[5] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+        CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+        CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
+        CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
+        CHECK(candidate.pixels.paletteIndexes[0] == 1);
+        CHECK(candidate.pixels.paletteIndexes[7] == 2);
+        CHECK(candidate.pixels.paletteIndexes[9] == 3);
+        CHECK(candidate.pixels.paletteIndexes[14] == 4);
+        CHECK(candidate.pixels.paletteIndexes[18] == 5);
+        CHECK(candidate.pixels.paletteIndexes[21] == 1);
+        CHECK(candidate.pixels.paletteIndexes[42] == 2);
+        CHECK(candidate.pixels.paletteIndexes[45] == 4);
+        CHECK(candidate.pixels.paletteIndexes[49] == 6);
+        CHECK(candidate.pixels.paletteIndexes[54] == 7);
+        CHECK(candidate.pixels.paletteIndexes[56] == 5);
+        CHECK(candidate.pixels.paletteIndexes[63] == 8);
     }
 
-    // TODO : fill in other subcases
+    SUBCASE("case: vFlip") {
+        porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, false, true);
+        CHECK(candidate.palette.size == 9);
+        CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+        CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
+        CHECK(candidate.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+        CHECK(candidate.palette.colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
+        CHECK(candidate.palette.colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+        CHECK(candidate.palette.colors[5] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+        CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+        CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
+        CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
+        CHECK(candidate.pixels.paletteIndexes[0] == 1);
+        CHECK(candidate.pixels.paletteIndexes[7] == 2);
+        CHECK(candidate.pixels.paletteIndexes[9] == 3);
+        CHECK(candidate.pixels.paletteIndexes[14] == 4);
+        CHECK(candidate.pixels.paletteIndexes[18] == 5);
+        CHECK(candidate.pixels.paletteIndexes[21] == 6);
+        CHECK(candidate.pixels.paletteIndexes[42] == 7);
+        CHECK(candidate.pixels.paletteIndexes[45] == 2);
+        CHECK(candidate.pixels.paletteIndexes[49] == 5);
+        CHECK(candidate.pixels.paletteIndexes[54] == 8);
+        CHECK(candidate.pixels.paletteIndexes[56] == 6);
+        CHECK(candidate.pixels.paletteIndexes[63] == 7);
+    }
+
+    SUBCASE("case: hFlip and vFlip") {
+        porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, true, true);
+        CHECK(candidate.palette.size == 9);
+        CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+        CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+        CHECK(candidate.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
+        CHECK(candidate.palette.colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+        CHECK(candidate.palette.colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
+        CHECK(candidate.palette.colors[5] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+        CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+        CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
+        CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
+        CHECK(candidate.pixels.paletteIndexes[0] == 1);
+        CHECK(candidate.pixels.paletteIndexes[7] == 2);
+        CHECK(candidate.pixels.paletteIndexes[9] == 3);
+        CHECK(candidate.pixels.paletteIndexes[14] == 4);
+        CHECK(candidate.pixels.paletteIndexes[18] == 5);
+        CHECK(candidate.pixels.paletteIndexes[21] == 6);
+        CHECK(candidate.pixels.paletteIndexes[42] == 1);
+        CHECK(candidate.pixels.paletteIndexes[45] == 7);
+        CHECK(candidate.pixels.paletteIndexes[49] == 8);
+        CHECK(candidate.pixels.paletteIndexes[54] == 6);
+        CHECK(candidate.pixels.paletteIndexes[56] == 7);
+        CHECK(candidate.pixels.paletteIndexes[63] == 5);
+    }
 }
