@@ -324,7 +324,24 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 }
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
-    // TODO : fill in test case
+    porytiles::Config config;
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+
+    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_1.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+
+    std::vector<NormalizedTileIndexed> normalizedTiles = normalizeDecompTiles(config, tiles);
+
+    CHECK(normalizedTiles.size() == 4);
+
+    // First tile normal form is hFlipped, palette should have 2 colors
+    CHECK(normalizedTiles[0].first.palette.size == 2);
+    CHECK(normalizedTiles[0].first.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(normalizedTiles[0].first.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(normalizedTiles[0].first.hFlip);
+    CHECK_FALSE(normalizedTiles[0].first.vFlip);
+    CHECK(normalizedTiles[0].second == 0);
 }
 
 TEST_CASE("buildColorIndexMap should build a map of all unique colors in the decomp tileset") {
