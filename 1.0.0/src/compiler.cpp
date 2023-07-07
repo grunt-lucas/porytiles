@@ -9,6 +9,8 @@
 #include "types.h"
 #include "png_frontend.h"
 
+using DecompiledIndex = std::size_t;
+
 namespace porytiles {
 
 // TODO : change this to receive CompilerContext once I have made that type available
@@ -20,7 +22,7 @@ static int insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 r
         /*
          * TODO : we lose color precision here, it would be nice to warn the user if two distinct RGBA colors they used
          * in the master sheet are going to collapse to one BGR color on the GBA. This should default fail the build,
-         * but a compiler flag '--allow-color-precision-loss' would disable this warning
+         * but a compiler flag '--ignore-color-precision-loss' would disable this warning
          */
         auto bgr = rgbaToBgr(rgba);
         auto itrAtBgr = std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, bgr);
@@ -29,7 +31,7 @@ static int insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 r
             // palette size will grow as we add to it
             if (palette.size == PAL_SIZE) {
                 // TODO : better error context
-                throw PtException{"too many colors"};
+                throw PtException{"too many unique colors in tile"};
             }
             palette.colors[palette.size++] = bgr;
         }
@@ -80,6 +82,28 @@ static NormalizedTile normalize(const Config& config, const RGBATile& rgba) {
     return **normalizedTile;
 }
 
+static std::vector<std::pair<NormalizedTile, DecompiledIndex>> normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset) {
+    /*
+     * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
+     */
+    std::vector<std::pair<NormalizedTile, DecompiledIndex>> normalizedTiles;
+    DecompiledIndex decompiledIndex = 0;
+    for (auto const& tile : decompiledTileset.tiles) {
+        auto normalized = normalize(config, tile);
+        normalizedTiles.push_back(std::pair{normalized, decompiledIndex++});
+    }
+    return normalizedTiles;
+}
+
+CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
+    CompiledTileset compiled;
+    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
+    compiled.palettes.resize(config.numPalettesInPrimary);
+    compiled.assignments.resize(decompiledTileset.tiles.size());
+
+    return compiled;
+}
+
 }
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
@@ -126,7 +150,7 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 
     // Should throw, palette full
     CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, porytiles::RGBA_CYAN),
-                            "too many colors",
+                            "too many unique colors in tile",
                             const porytiles::PtException&);
 }
 
@@ -269,4 +293,8 @@ TEST_CASE("normalize should return the normal form of the given tile") {
     CHECK(normalized.pixels.paletteIndexes[54] == 7);
     CHECK(normalized.pixels.paletteIndexes[56] == 8);
     CHECK(normalized.pixels.paletteIndexes[63] == 5);
+}
+
+TEST_CASE("normalizeDecompTiles correctly normalize all tiles in the decomp tileset") {
+    // TODO : fill in test case
 }
