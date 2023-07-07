@@ -235,10 +235,61 @@ BGR15 rgbaToBgr(const RGBA32& rgba);
 // -------------------------
 
 namespace std {
+
 template<>
 struct hash<porytiles::BGR15> {
-    size_t operator()(porytiles::BGR15 const& bgr) const noexcept {
+    size_t operator()(const porytiles::BGR15& bgr) const noexcept {
         return hash<uint16_t>{}(bgr.bgr);
+    }
+};
+
+template<>
+struct hash<porytiles::GBATile> {
+    size_t operator()(const porytiles::GBATile& tile) const noexcept {
+        // TODO : better hash function.
+        size_t hashValue = 0;
+        for (auto index : tile.paletteIndexes) {
+            hashValue ^= hash<uint8_t>{}(index);
+        }
+        return hashValue;
+    }
+};
+
+template<>
+struct hash<porytiles::NormalizedPixels> {
+    size_t operator()(const porytiles::NormalizedPixels& pixels) const noexcept {
+        // TODO : better hash function.
+        size_t hashValue = 0;
+        for (auto pixel : pixels.paletteIndexes) {
+            hashValue ^= hash<uint8_t>{}(pixel);
+        }
+        return hashValue;
+    }
+};
+
+template<>
+struct hash<porytiles::NormalizedPalette> {
+    size_t operator()(const porytiles::NormalizedPalette& palette) const noexcept {
+        // TODO : better hash function.
+        size_t hashValue = 0;
+        hashValue ^= hash<int>{}(palette.size);
+        for (auto color : palette.colors) {
+            hashValue ^= hash<porytiles::BGR15>{}(color);
+        }
+        return hashValue;
+    }
+};
+
+template<>
+struct hash<porytiles::NormalizedTile> {
+    size_t operator()(const porytiles::NormalizedTile& tile) const noexcept {
+        // TODO : better hash function.
+        size_t hashValue = 0;
+        hashValue ^= hash<porytiles::NormalizedPixels>{}(tile.pixels);
+        hashValue ^= hash<porytiles::NormalizedPalette>{}(tile.palette);
+        hashValue ^= hash<bool>{}(tile.hFlip);
+        hashValue ^= hash<bool>{}(tile.vFlip);
+        return hashValue;
     }
 };
 
