@@ -54,12 +54,25 @@ extern const RGBA32 RGBA_YELLOW;
 extern const RGBA32 RGBA_MAGENTA;
 extern const RGBA32 RGBA_CYAN;
 extern const RGBA32 RGBA_WHITE;
+extern const RGBA32 RGBA_GREY;
 
 /**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
     std::array<RGBA32, TILE_NUM_PIX> pixels;
+
+    RGBA32 getPixel(size_t row, size_t col) const {
+        if (row >= TILE_SIDE_LENGTH) {
+            throw std::out_of_range{
+                    "internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
+        }
+        if (col >= TILE_SIDE_LENGTH) {
+            throw std::out_of_range{
+                    "internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
+        }
+        return pixels[row * TILE_SIDE_LENGTH + col];
+    }
 
 #if defined(__GNUG__) && !defined(__clang__)
     auto operator<=>(RGBATile const&) const = default;
@@ -149,32 +162,46 @@ struct DecompiledTileset {
  * TODO : fill in doc comment
  */
 struct NormalizedPixels {
-  std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
+    std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
 
-  auto operator<=>(const NormalizedPixels&) const = default;
+    auto operator<=>(const NormalizedPixels&) const = default;
 };
 
 /**
  * TODO : fill in doc comment
  */
 struct NormalizedPalette {
-  int size;
-  std::array<BGR15, PAL_SIZE> colors;
+    int size;
+    std::array<BGR15, PAL_SIZE> colors;
 
-  auto operator<=>(const NormalizedPalette&) const = default;
+    auto operator<=>(const NormalizedPalette&) const = default;
 };
 
 /**
  * TODO : fill in doc comment
  */
 struct NormalizedTile {
-  NormalizedPixels pixels;
-  NormalizedPalette palette;
-  bool hFlip;
-  bool vFlip;
+    // TODO : can we collapse these types into NormalizedTile
+    NormalizedPixels pixels;
+    NormalizedPalette palette;
+    bool hFlip;
+    bool vFlip;
 
-  bool transparent() const { return palette.size == 1; }
-  auto operator<=>(const NormalizedTile&) const = default;
+    bool transparent() const { return palette.size == 1; }
+
+    auto operator<=>(const NormalizedTile&) const = default;
+
+    void setPixel(size_t row, size_t col, uint8_t value) {
+        if (row >= TILE_SIDE_LENGTH) {
+            throw std::out_of_range{
+                    "internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
+        }
+        if (col >= TILE_SIDE_LENGTH) {
+            throw std::out_of_range{
+                    "internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
+        }
+        pixels.paletteIndexes[row * TILE_SIDE_LENGTH + col] = value;
+    }
 };
 
 
@@ -182,7 +209,7 @@ struct NormalizedTile {
 // |    FUNCTIONS     |
 // --------------------
 
-BGR15 rgbaToBGR(const RGBA32& rgba);
+BGR15 rgbaToBgr(const RGBA32& rgba);
 }
 
 

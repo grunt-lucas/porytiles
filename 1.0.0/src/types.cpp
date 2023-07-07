@@ -7,14 +7,15 @@ std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
     return os;
 }
 
-constexpr RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, 255};
-constexpr RGBA32 RGBA_RED = RGBA32{255, 0, 0, 255};
-constexpr RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, 255};
-constexpr RGBA32 RGBA_BLUE = RGBA32{0, 0, 255, 255};
-constexpr RGBA32 RGBA_YELLOW = RGBA32{255, 255, 0, 255};
-constexpr RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, 255};
-constexpr RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, 255};
-constexpr RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, 255};
+constexpr RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_RED = RGBA32{255, 0, 0, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_BLUE = RGBA32{0, 0, 255, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_YELLOW = RGBA32{255, 255, 0, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, ALPHA_OPAQUE};
+constexpr RGBA32 RGBA_GREY = RGBA32{128, 128, 128, ALPHA_OPAQUE};
 
 std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
     // For debugging purposes, print the solid colors with names rather than int values
@@ -81,38 +82,38 @@ constexpr RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
 constexpr RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 constexpr RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
 constexpr RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
+constexpr RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
 
-BGR15 rgbaToBGR(const RGBA32& rgba) {
+BGR15 rgbaToBgr(const RGBA32& rgba) {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position
     return {std::uint16_t(((rgba.blue / 8) << 10) | ((rgba.green / 8) << 5) | (rgba.red / 8))};
 }
 
+}
 
 // --------------------
 // |    TEST CASES    |
 // --------------------
 
 TEST_CASE("RGBA32 to BGR15 should lose precision") {
-    RGBA32 rgb1 = {0, 1, 2, 3};
-    RGBA32 rgb2 = {255, 255, 255, 255};
+    porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
+    porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
 
-    BGR15 bgr1 = rgbaToBGR(rgb1);
-    BGR15 bgr2 = rgbaToBGR(rgb2);
+    porytiles::BGR15 bgr1 = rgbaToBgr(rgb1);
+    porytiles::BGR15 bgr2 = rgbaToBgr(rgb2);
 
-    CHECK(bgr1 == BGR15{0});
-    CHECK(bgr2 == BGR15{32767}); // this value is uint16 max divided by two, i.e. 15 bits are set
+    CHECK(bgr1 == porytiles::BGR15{0});
+    CHECK(bgr2 == porytiles::BGR15{32767}); // this value is uint16 max divided by two, i.e. 15 bits are set
 }
 
 TEST_CASE("RGBA32 should be ordered component-wise") {
-    RGBA32 rgb1 = {0, 1, 2, 3};
-    RGBA32 rgb2 = {1, 2, 3, 4};
-    RGBA32 rgb3 = {2, 3, 4, 5};
-    RGBA32 zeros = {0, 0, 0, 0};
+    porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
+    porytiles::RGBA32 rgb2 = {1, 2, 3, 4};
+    porytiles::RGBA32 rgb3 = {2, 3, 4, 5};
+    porytiles::RGBA32 zeros = {0, 0, 0, 0};
 
     CHECK(zeros == zeros);
     CHECK(zeros < rgb1);
     CHECK(rgb1 < rgb2);
     CHECK(rgb2 < rgb3);
-}
-
 }
