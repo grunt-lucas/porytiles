@@ -51,6 +51,7 @@ static int insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 r
         }
         return bgrPosInPalette;
     }
+    // TODO : better error context
     throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 
@@ -131,10 +132,8 @@ static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& c
     }
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
     if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
-        std::cout << "colorIndex: " << colorIndex << std::endl;
-        std::cout << "PALSIZE: " << PAL_SIZE << std::endl;
-        std::cout << "numpalsInPrim: " << config.numPalettesInPrimary << std::endl;
-        throw "too many unique colors";
+        // TODO : better error context
+        throw PtException{"too many unique colors"};
     }
 
     return colorIndexes;
@@ -416,6 +415,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 TEST_CASE("buildColorIndexMap should build a map of all unique colors in the decomp tileset") {
     porytiles::Config config;
     config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
