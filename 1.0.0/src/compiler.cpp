@@ -22,7 +22,7 @@ using ColorSet = std::bitset<240>;
 namespace porytiles {
 
 // TODO : change this to receive CompilerContext once I have made that type available
-static int insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 rgba) {
+static size_t insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 rgba) {
     /*
      * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
      * and possibly deduped (depending on user settings). Transparent alpha pixels will be treated as transparent, as
@@ -60,7 +60,7 @@ static NormalizedTile candidate(const Config& config, const RGBATile& rgba, bool
      * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
      * form). We'll use this to generate candidates to find the true normal form.
      */
-    NormalizedTile candidateTile;
+    NormalizedTile candidateTile{};
     // Size is 1 to account for eventual transparent color in first palette slot
     candidateTile.palette.size = 1;
     // TODO : same color precision note as above in insertRGBA
@@ -72,7 +72,8 @@ static NormalizedTile candidate(const Config& config, const RGBATile& rgba, bool
         for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
             std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
             std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
-            candidateTile.setPixel(row, col, insertRGBA(config, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
+            candidateTile.setPixel(row, col,
+                                   insertRGBA(config, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
         }
     }
 
@@ -95,33 +96,35 @@ static NormalizedTile normalize(const Config& config, const RGBATile& rgba) {
     auto vFlipTile = candidate(config, rgba, false, true);
     auto bothFlipsTile = candidate(config, rgba, true, true);
 
-    std::array<const NormalizedTile*, 4> candidates = { &noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile };
+    std::array<const NormalizedTile*, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
     auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
-                                [](auto tile1, auto tile2) { return tile1->pixels < tile2->pixels; });
+                                           [](auto tile1, auto tile2) { return tile1->pixels < tile2->pixels; });
     return **normalizedTile;
 }
 
-static std::vector<NormalizedTileIndexed> normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset) {
+static std::vector<NormalizedTileIndexed>
+normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset) {
     /*
      * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
      */
     std::vector<NormalizedTileIndexed> normalizedTiles;
     DecompiledIndex decompiledIndex = 0;
-    for (auto const& tile : decompiledTileset.tiles) {
+    for (auto const& tile: decompiledTileset.tiles) {
         auto normalized = normalize(config, tile);
-        normalizedTiles.push_back(std::pair{normalized, decompiledIndex++});
+        normalizedTiles.emplace_back(normalized, decompiledIndex++);
     }
     return normalizedTiles;
 }
 
-static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& config, const std::vector<NormalizedTileIndexed>& normalizedTiles) {
+static std::unordered_map<BGR15, std::size_t>
+buildColorIndexMap(const Config& config, const std::vector<NormalizedTileIndexed>& normalizedTiles) {
     /*
      * Iterate over every color in each tile's NormalizedPalette, adding it to the map if not already present. We end up
      * with a map of colors to unique indexes.
      */
     std::unordered_map<BGR15, std::size_t> colorIndexes;
     std::size_t colorIndex = 0;
-    for (const auto& [normalized, _] : normalizedTiles) {
+    for (const auto& [normalized, _]: normalizedTiles) {
         // i starts at 1, since first color in each palette is the transparency color
         for (int i = 1; i < normalized.palette.size; i++) {
             bool inserted = colorIndexes.insert(std::pair{normalized.palette.colors[i], colorIndex}).second;
@@ -139,7 +142,8 @@ static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& c
     return colorIndexes;
 }
 
-static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const NormalizedPalette& palette) {
+static ColorSet
+toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const NormalizedPalette& palette) {
     /*
      * Set a color set based on a given palette. Each bit in the ColorSet represents if the color at the given index in
      * the supplied color map was present in the palette. E.g. suppose the color map has 12 unique colors. The supplied
@@ -149,7 +153,7 @@ static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIn
     ColorSet colorSet;
     // starts at 1, skip the transparent color at slot 0 in the normalized palette
     for (int i = 1; i < palette.size; i++) {
-      colorSet.set(colorIndexMap.at(palette.colors[i]));
+        colorSet.set(colorIndexMap.at(palette.colors[i]));
     }
     return colorSet;
 }
@@ -169,18 +173,18 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
 }
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
-    porytiles::Config config;
+    porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
 
-    porytiles::NormalizedPalette palette1;
+    porytiles::NormalizedPalette palette1{};
     palette1.size = 1;
     palette1.colors = {};
 
     // invalid alpha value, must be opaque or transparent
     CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, porytiles::RGBA32{0, 0, 0, 12}),
-                            "invalid alpha value: 12",
-                            const porytiles::PtException&);
+                         "invalid alpha value: 12",
+                         const porytiles::PtException&);
 
     // Transparent should return 0
     CHECK(insertRGBA(config, palette1, porytiles::RGBA_MAGENTA) == 0);
@@ -213,12 +217,12 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 
     // Should throw, palette full
     CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, porytiles::RGBA_CYAN),
-                            "too many unique colors in tile",
-                            const porytiles::PtException&);
+                         "too many unique colors in tile",
+                         const porytiles::PtException&);
 }
 
 TEST_CASE("candidate should return the NormalizedTile with requested flips") {
-    porytiles::Config config;
+    porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
 
@@ -333,7 +337,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
 }
 
 TEST_CASE("normalize should return the normal form of the given tile") {
-    porytiles::Config config;
+    porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
 
@@ -361,7 +365,7 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 }
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
-    porytiles::Config config;
+    porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
 
@@ -428,7 +432,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 }
 
 TEST_CASE("buildColorIndexMap should build a map of all unique colors in the decomp tileset") {
-    porytiles::Config config;
+    porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
 
@@ -437,7 +441,8 @@ TEST_CASE("buildColorIndexMap should build a map of all unique colors in the dec
     porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
     std::vector<NormalizedTileIndexed> normalizedTiles = normalizeDecompTiles(config, tiles);
 
-    std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config, normalizedTiles);
+    std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
+                                                                                                    normalizedTiles);
 
     CHECK(colorIndexMap.size() == 4);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -448,15 +453,15 @@ TEST_CASE("buildColorIndexMap should build a map of all unique colors in the dec
 
 TEST_CASE("toColorSet should return the correct bitset based on the supplied palette") {
     std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = {
-        {porytiles::rgbaToBgr(porytiles::RGBA_BLUE), 0},
-        {porytiles::rgbaToBgr(porytiles::RGBA_RED), 1},
-        {porytiles::rgbaToBgr(porytiles::RGBA_GREEN), 2},
-        {porytiles::rgbaToBgr(porytiles::RGBA_CYAN), 3},
-        {porytiles::rgbaToBgr(porytiles::RGBA_YELLOW), 4},
+            {porytiles::rgbaToBgr(porytiles::RGBA_BLUE),   0},
+            {porytiles::rgbaToBgr(porytiles::RGBA_RED),    1},
+            {porytiles::rgbaToBgr(porytiles::RGBA_GREEN),  2},
+            {porytiles::rgbaToBgr(porytiles::RGBA_CYAN),   3},
+            {porytiles::rgbaToBgr(porytiles::RGBA_YELLOW), 4},
     };
 
     SUBCASE("palette 1") {
-        porytiles::NormalizedPalette palette;
+        porytiles::NormalizedPalette palette{};
         palette.size = 2;
         palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
         palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
@@ -467,7 +472,7 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
     }
 
     SUBCASE("palette 2") {
-        porytiles::NormalizedPalette palette;
+        porytiles::NormalizedPalette palette{};
         palette.size = 4;
         palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
         palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_YELLOW);
