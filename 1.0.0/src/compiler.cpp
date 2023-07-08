@@ -154,6 +154,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
     porytiles::Config config;
     config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
 
     porytiles::NormalizedPalette palette1;
     palette1.size = 1;
@@ -202,6 +203,7 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 TEST_CASE("candidate should return the NormalizedTile with requested flips") {
     porytiles::Config config;
     config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -316,6 +318,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
 TEST_CASE("normalize should return the normal form of the given tile") {
     porytiles::Config config;
     config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -343,6 +346,7 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
     porytiles::Config config;
     config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
