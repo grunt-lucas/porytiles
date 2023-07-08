@@ -25,5 +25,7 @@ struct Config {
     RGBA32 transparencyColor;
 };
 
+// TODO : add method to get a good default config for unit tests
+
 }
 #endif
