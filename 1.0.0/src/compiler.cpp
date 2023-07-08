@@ -139,6 +139,21 @@ static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& c
     return colorIndexes;
 }
 
+static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const NormalizedPalette& palette) {
+    /*
+     * Set a color set based on a given palette. Each bit in the ColorSet represents if the color at the given index in
+     * the supplied color map was present in the palette. E.g. suppose the color map has 12 unique colors. The supplied
+     * palette has two colors in it, which correspond to index 2 and index 11. The ColorSet bitset would be:
+     * 0010 0000 0001
+     */
+    ColorSet colorSet;
+    // starts at 1, skip the transparent color at slot 0 in the normalized palette
+    for (int i = 1; i < palette.size; i++) {
+      colorSet.set(colorIndexMap.at(palette.colors[i]));
+    }
+    return colorSet;
+}
+
 CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
@@ -429,4 +444,40 @@ TEST_CASE("buildColorIndexMap should build a map of all unique colors in the dec
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 1);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 3);
+}
+
+TEST_CASE("toColorSet should return the correct bitset based on the supplied palette") {
+    std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = {
+        {porytiles::rgbaToBgr(porytiles::RGBA_BLUE), 0},
+        {porytiles::rgbaToBgr(porytiles::RGBA_RED), 1},
+        {porytiles::rgbaToBgr(porytiles::RGBA_GREEN), 2},
+        {porytiles::rgbaToBgr(porytiles::RGBA_CYAN), 3},
+        {porytiles::rgbaToBgr(porytiles::RGBA_YELLOW), 4},
+    };
+
+    SUBCASE("palette 1") {
+        porytiles::NormalizedPalette palette;
+        palette.size = 2;
+        palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
+        palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
+
+        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, palette);
+        CHECK(colorSet.count() == 1);
+        CHECK(colorSet.test(1));
+    }
+
+    SUBCASE("palette 2") {
+        porytiles::NormalizedPalette palette;
+        palette.size = 4;
+        palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
+        palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_YELLOW);
+        palette.colors[2] = porytiles::rgbaToBgr(porytiles::RGBA_GREEN);
+        palette.colors[3] = porytiles::rgbaToBgr(porytiles::RGBA_CYAN);
+
+        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, palette);
+        CHECK(colorSet.count() == 3);
+        CHECK(colorSet.test(4));
+        CHECK(colorSet.test(2));
+        CHECK(colorSet.test(3));
+    }
 }
