@@ -131,6 +131,9 @@ static std::unordered_map<BGR15, std::size_t> buildColorIndexMap(const Config& c
     }
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
     if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
+        std::cout << "colorIndex: " << colorIndex << std::endl;
+        std::cout << "PALSIZE: " << PAL_SIZE << std::endl;
+        std::cout << "numpalsInPrim: " << config.numPalettesInPrimary << std::endl;
         throw "too many unique colors";
     }
 
