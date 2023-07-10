@@ -1,3 +1,48 @@
+# 1.0.0 Notes
+
+## Palette Assignment Algorithm
+```C++
+// This is pseudocode
+
+struct AssignState {
+  // one color set for each hardware palette, bits in color set will indicate which colors this HW will have
+  // size of vector should be fixed to maxPalettes
+  vector<ColorSet> hardwarePalettes;
+
+  // All the ColorSets from the normalization process, there is one for each normalized tile
+  vector<ColorSet> unassigned;
+}
+
+// This assign function probably won't finish quickly due to combinatorial explosion
+boolean assign(AssignState state) {
+  if (state.unassigned.isEmpty) {
+    // no tiles left to assign, found a solution!
+    // here we can return the hardwarePalettes ColorSet vector from this stack frame's state struct, it is the solution
+    return true;
+  }
+
+  if (allColorSetsFull(hardwarePalettes)) {
+    // ran out of palette slots, too many unique BGR colors
+    // even though we checked for too many unique colors earlier, we might hit this case
+    // if we have some color duplication happening in the allocation
+    return false;
+  }
+
+  // we will try to assign the last element to one of the 6 hw palettes
+  ColorSet toAssign = state.unassigned.last;
+
+  // Iterate over palettes in order and try each one
+  // If palette is unassignable (too many colors already), skip it (other skip heuristics would help reduce number of search branches)
+  // Recursive call assign with copy and updated state:
+  // TODO fill in:
+  //  OR
+  //  
+
+  // no solution found
+  return false;
+}
+```
+
 # Basic Algorithm Outline
 
 + If master PNG width/height is not divisible by 8, fail fast

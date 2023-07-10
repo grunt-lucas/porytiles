@@ -98,6 +98,7 @@ debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
 all: release debug
 	@:
 
+# /opt/homebrew/opt/llvm/bin/clang-tidy -checks=cert-* --warnings-as-errors=* 1.0.0/src/compiler.cpp -- --std=c++20 -I1.0.0/include $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
 check: release
 	@./$(RELEASE_TEST_TARGET)
 
