@@ -2,7 +2,7 @@
 
 ## Palette Assignment Algorithm
 ```C++
-// This is pseudocode
+// This is pseudo-C++ to get the point across
 
 struct AssignState {
   // one color set for each hardware palette, bits in color set will indicate which colors this HW will have
@@ -18,25 +18,45 @@ boolean assign(AssignState state) {
   if (state.unassigned.isEmpty) {
     // no tiles left to assign, found a solution!
     // here we can return the hardwarePalettes ColorSet vector from this stack frame's state struct, it is the solution
-    return true;
-  }
 
-  if (allColorSetsFull(hardwarePalettes)) {
-    // ran out of palette slots, too many unique BGR colors
-    // even though we checked for too many unique colors earlier, we might hit this case
-    // if we have some color duplication happening in the allocation
-    return false;
+    // One way to return the solution here more easily would be to have assign take a `vector<ColorSet>& soln' that we
+    // update here with state.hardwarePalettes. Since the only time we hit this branch is when a solution is found, at
+    // the callsite we know that vector will contain a valid solution
+    return true;
   }
 
   // we will try to assign the last element to one of the 6 hw palettes
   ColorSet toAssign = state.unassigned.last;
 
-  // Iterate over palettes in order and try each one
-  // If palette is unassignable (too many colors already), skip it (other skip heuristics would help reduce number of search branches)
+  // For this next step, we want to sort the hw palettes before we try iterating.
+  // Sort them by the size of their intersection with the toAssign ColorSet. Effectively, this means that we will
+  // always first try branching into an assignment that re-uses hw palettes more effectively. We can also secondarily
+  // sort by total palette size as a tie breaker. E.g. if two different palettes have an intersection size of 1 with
+  // toAssign, then choose the palette with the fewest number of assignments.
+  sort(state.hardwarePalettes, [&toAssign](const auto& pal1, const auto& pal2){
+    
+  });
+
+  // Once we have the sort, iterate over them in order and try each one, making a recursive call.
+  // If palette is unassignable (too many colors already), skip it.
   // Recursive call assign with copy and updated state:
-  // TODO fill in:
-  //  OR
-  //  
+  for (auto& palette : state.hardwarePalettes) {
+    // > 15 because we need to save a slot for transparency
+    if ((palette | toAssign).count() > 15) {
+      // Skip this palette, cannot assign
+      // If we end up skipping all of them that means the palettes are all too full and we cannot assign this tile
+      continue;
+    }
+    // We need to do all of this without modifying the current callstack's state variable
+    // So this pseudocode is not exactly correct, but it's the gist
+    vector<ColorSet> newUnassigned = state.unassigned;
+    newUnassigned.removeLast();
+    palette |= toAssign;
+    AssignState newState = {state.hardwarePalettes, newUnassigned};
+    if (assign(newState)) {
+      return true;
+    }
+  }
 
   // no solution found
   return false;
