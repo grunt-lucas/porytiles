@@ -24,7 +24,8 @@ boolean assign(AssignState state) {
     return true;
   }
 
-  // we will try to assign the last element to one of the 6 hw palettes
+  // we will try to assign the last element to one of the 6 hw palettes, last because it is a vector so
+  // easier to add/remove from the end
   ColorSet toAssign = state.unassigned.last;
 
   // For this next step, we want to sort the hw palettes before we try iterating.
@@ -58,12 +59,12 @@ boolean assign(AssignState state) {
       // If we end up skipping all of them that means the palettes are all too full and we cannot assign this tile
       continue;
     }
-    // We need to do all of this without modifying the current callstack's state variable
-    // So this pseudocode is not exactly correct, but it's the gist
-    vector<ColorSet> newUnassigned = state.unassigned;
-    newUnassigned.removeLast();
-    palette |= toAssign;
-    AssignState newState = {state.hardwarePalettes, newUnassigned};
+    // We need to do all of this without modifying the current callstack's state variable, so make copies
+    vector<ColorSet> unassignedCopy = makeCopy(state.unassigned);
+    unassignedCopy.removeLast();
+    hardwarePalettesUpdatedCopy = makeCopy(state.hardwarePalettes);
+    hardwarePalettesUpdatedCopy[i] |= toAssign; // no i variable in this loop, translate to regular for loop
+    AssignState newState = {hardwarePalettesUpdatedCopy, unassignedCopy};
     if (assign(newState)) {
       return true;
     }
