@@ -79,7 +79,7 @@ struct RGBATile {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     auto operator<=>(const RGBATile&) const = delete;
 #endif
-friend std::ostream& operator<<(std::ostream&, const RGBATile&);
+    friend std::ostream& operator<<(std::ostream&, const RGBATile&);
 };
 
 extern const RGBATile RGBA_TILE_BLACK;
