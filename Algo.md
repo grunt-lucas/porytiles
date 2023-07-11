@@ -13,7 +13,6 @@ struct AssignState {
   vector<ColorSet> unassigned;
 }
 
-// This assign function probably won't finish quickly due to combinatorial explosion
 boolean assign(AssignState state) {
   if (state.unassigned.isEmpty) {
     // no tiles left to assign, found a solution!
@@ -34,7 +33,19 @@ boolean assign(AssignState state) {
   // sort by total palette size as a tie breaker. E.g. if two different palettes have an intersection size of 1 with
   // toAssign, then choose the palette with the fewest number of assignments.
   sort(state.hardwarePalettes, [&toAssign](const auto& pal1, const auto& pal2){
-    
+    int pal1IntersectSize = (pal1 | toAssign).count();
+    int pal2IntersectSize = (pal2 | toAssign).count();
+
+    // Instead of just using palette count, maybe can we check for color distance here and try to choose the palette
+    // that has the "closest" colors to our toAssign palette? That might be a good heuristic for attempting to keep
+    // similar colors in the same palette. I.e. especially in cases where there are no palette intersections, it may
+    // be better to first try placing the new colors into a palette with similar colors rather than into the smallest
+    // palette
+    if (pal1IntersectSize == pal2IntersectSize) {
+      return pal1.count() < pal2.count();
+    }
+
+    return pal1IntersectSize > pal2IntersectSize;
   });
 
   // Once we have the sort, iterate over them in order and try each one, making a recursive call.
