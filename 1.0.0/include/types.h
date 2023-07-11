@@ -28,9 +28,8 @@ struct BGR15 {
     std::uint16_t bgr;
 
     auto operator<=>(const BGR15&) const = default;
+    friend std::ostream& operator<<(std::ostream&, const BGR15&);
 };
-
-std::ostream& operator<<(std::ostream&, const BGR15&);
 
 /**
  * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
@@ -42,9 +41,8 @@ struct RGBA32 {
     std::uint8_t alpha;
 
     auto operator<=>(const RGBA32&) const = default;
+    friend std::ostream& operator<<(std::ostream&, const RGBA32&);
 };
-
-std::ostream& operator<<(std::ostream&, const RGBA32&);
 
 extern const RGBA32 RGBA_BLACK;
 extern const RGBA32 RGBA_RED;
@@ -81,9 +79,8 @@ struct RGBATile {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     auto operator<=>(const RGBATile&) const = delete;
 #endif
+friend std::ostream& operator<<(std::ostream&, const RGBATile&);
 };
-
-std::ostream& operator<<(std::ostream&, const RGBATile&);
 
 extern const RGBATile RGBA_TILE_BLACK;
 extern const RGBATile RGBA_TILE_RED;
