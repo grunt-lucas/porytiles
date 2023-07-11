@@ -77,7 +77,9 @@ struct RGBATile {
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    auto operator<=>(const RGBATile&) const = delete;
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const RGBATile&) const = default;
 #endif
     friend std::ostream& operator<<(std::ostream&, const RGBATile&);
 };
@@ -102,7 +104,9 @@ struct GBATile {
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    auto operator<=>(const GBATile&) const = delete;
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const GBATile&) const = default;
 #endif
 };
 
@@ -117,7 +121,9 @@ struct GBAPalette {
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    auto operator<=>(const GBAPalette&) const = delete;
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const GBAPalette&) const = default;
 #endif
 };
 
@@ -172,7 +178,9 @@ struct NormalizedPixels {
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    auto operator<=>(const NormalizedPixels&) const = delete;
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const NormalizedPixels&) const = default;
 #endif
 };
 
@@ -188,7 +196,9 @@ struct NormalizedPalette {
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    auto operator<=>(const NormalizedPalette&) const = delete;
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const NormalizedPalette&) const = default;
 #endif
 };
 
@@ -207,8 +217,11 @@ struct NormalizedTile {
 #if defined(__GNUG__) && !defined(__clang__)
     auto operator<=>(const NormalizedTile&) const = default;
 #else
-    // TODO : remove the #if here once we have spaceship operators defined for the other Normalized* types
-    auto operator<=>(const NormalizedTile&) const = delete;
+    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+    // https://reviews.llvm.org/D132265
+    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+    auto operator<=>(const NormalizedTile&) const = default;
 #endif
 
     void setPixel(size_t row, size_t col, uint8_t value) {

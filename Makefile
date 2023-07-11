@@ -1,4 +1,5 @@
 CXX ?= clang++
+#CXX = /opt/homebrew/opt/llvm/bin/clang++
 
 # TODO : have an option somewhere to define DOCTEST_CONFIG_DISABLE to remove test code from binary
 
@@ -35,7 +36,7 @@ DEBUG_OBJ_FILES       = $(filter-out $(DEBUG_BUILD)/$(MAIN_OBJ) $(DEBUG_BUILD)/$
 ### Compiler and linker flags ###
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
     CXXFLAGS_COVERAGE := -fprofile-instr-generate -fcoverage-mapping
-    LDFLAGS_COVERAGE  := --coverage
+    LDFLAGS_COVERAGE  := --coverage #-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++
 else
     CXXFLAGS_COVERAGE :=
     LDFLAGS_COVERAGE  :=
@@ -43,7 +44,7 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             := -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -I1.0.0/include $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
+CXXFLAGS             += -I1.0.0/include $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 #-I/opt/homebrew/opt/llvm/include/c++/v1
 CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
