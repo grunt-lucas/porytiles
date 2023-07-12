@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <bitset>
 #include <tuple>
+#include <algorithm>
 
 #include "doctest.h"
 #include "config.h"
@@ -174,6 +175,27 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& color
     return std::pair{indexedNormTilesWithColorSets, colorSets};
 }
 
+struct AssignState {
+    /*
+     * One color set for each hardware palette, bits in color set will indicate which colors this HW palette will have.
+     * The size of the vector should be fixed to maxPalettes.
+     */
+    std::vector<ColorSet> hardwarePalettes;
+
+    // The unique color sets from the NormalizedTiles
+    std::vector<ColorSet> unassigned;
+};
+
+static bool assign(AssignState state, std::vector<ColorSet>& solution) {
+    if (state.unassigned.empty()) {
+        // No tiles left to assign, found a solution!
+        std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
+        return true;
+    }
+
+    return false;
+}
+
 CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
@@ -188,6 +210,10 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
 }
 
 }
+
+// --------------------
+// |    TEST CASES    |
+// --------------------
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
     porytiles::Config config{};

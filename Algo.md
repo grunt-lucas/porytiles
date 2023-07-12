@@ -13,7 +13,7 @@ struct AssignState {
   vector<ColorSet> unassigned;
 }
 
-boolean assign(AssignState state) {
+bool assign(AssignState state) {
   if (state.unassigned.isEmpty) {
     // no tiles left to assign, found a solution!
     // here we can return the hardwarePalettes ColorSet vector from this stack frame's state struct, it is the solution
