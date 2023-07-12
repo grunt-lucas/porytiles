@@ -60,7 +60,7 @@ extern const RGBA32 RGBA_GREY;
 struct RGBATile {
     std::array<RGBA32, TILE_NUM_PIX> pixels;
 
-    RGBA32 getPixel(size_t row, size_t col) const {
+    [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const {
         if (row >= TILE_SIDE_LENGTH) {
             throw std::out_of_range{
                     "internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
@@ -79,8 +79,22 @@ struct RGBATile {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const RGBATile&) const = default;
+    // auto operator<=>(const RGBATile&) const = default;
+    auto operator<=>(const RGBATile& other) const {
+        if (this->pixels == other.pixels) {
+            return 0;
+        }
+        else if (this->pixels < other.pixels) {
+            return -1;
+        }
+        return 1;
+    }
+
+    auto operator==(const RGBATile& other) const {
+        return this->pixels == other.pixels;
+    }
 #endif
+
     friend std::ostream& operator<<(std::ostream&, const RGBATile&);
 };
 
@@ -106,7 +120,20 @@ struct GBATile {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const GBATile&) const = default;
+    // auto operator<=>(const GBATile&) const = default;
+    auto operator<=>(const GBATile& other) const {
+        if (this->paletteIndexes == other.paletteIndexes) {
+            return 0;
+        }
+        else if (this->paletteIndexes < other.paletteIndexes) {
+            return -1;
+        }
+        return 1;
+    }
+
+    auto operator==(const GBATile& other) const {
+        return this->paletteIndexes == other.paletteIndexes;
+    }
 #endif
 };
 
@@ -123,7 +150,20 @@ struct GBAPalette {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const GBAPalette&) const = default;
+    // auto operator<=>(const GBAPalette&) const = default;
+    auto operator<=>(const GBAPalette& other) const {
+        if (this->colors == other.colors) {
+            return 0;
+        }
+        else if (this->colors < other.colors) {
+            return -1;
+        }
+        return 1;
+    }
+
+    auto operator==(const GBAPalette& other) const {
+        return this->colors == other.colors;
+    }
 #endif
 };
 
@@ -180,7 +220,20 @@ struct NormalizedPixels {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const NormalizedPixels&) const = default;
+    // auto operator<=>(const NormalizedPixels&) const = default;
+    auto operator<=>(const NormalizedPixels& other) const {
+        if (this->paletteIndexes == other.paletteIndexes) {
+            return 0;
+        }
+        else if (this->paletteIndexes < other.paletteIndexes) {
+            return -1;
+        }
+        return 1;
+    }
+
+    auto operator==(const NormalizedPixels& other) const {
+        return this->paletteIndexes == other.paletteIndexes;
+    }
 #endif
 };
 
@@ -198,7 +251,20 @@ struct NormalizedPalette {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const NormalizedPalette&) const = default;
+    // auto operator<=>(const NormalizedPalette&) const = default;
+    auto operator<=>(const NormalizedPalette& other) const {
+        if (this->colors == other.colors) {
+            return 0;
+        }
+        else if (this->colors < other.colors) {
+            return -1;
+        }
+        return 1;
+    }
+
+    auto operator==(const NormalizedPalette& other) const {
+        return this->colors == other.colors;
+    }
 #endif
 };
 
@@ -215,13 +281,13 @@ struct NormalizedTile {
     bool transparent() const { return palette.size == 1; }
 
 #if defined(__GNUG__) && !defined(__clang__)
-    auto operator<=>(const NormalizedTile&) const = default;
+    // auto operator<=>(const NormalizedTile&) const = default;
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    auto operator<=>(const NormalizedTile&) const = default;
+    // auto operator<=>(const NormalizedTile&) const = default;
 #endif
 
     void setPixel(size_t row, size_t col, uint8_t value) {
@@ -264,7 +330,7 @@ struct hash<porytiles::GBATile> {
     size_t operator()(const porytiles::GBATile& tile) const noexcept {
         // TODO : better hash function.
         size_t hashValue = 0;
-        for (auto index : tile.paletteIndexes) {
+        for (auto index: tile.paletteIndexes) {
             hashValue ^= hash<uint8_t>{}(index);
         }
         return hashValue;
@@ -276,7 +342,7 @@ struct hash<porytiles::NormalizedPixels> {
     size_t operator()(const porytiles::NormalizedPixels& pixels) const noexcept {
         // TODO : better hash function.
         size_t hashValue = 0;
-        for (auto pixel : pixels.paletteIndexes) {
+        for (auto pixel: pixels.paletteIndexes) {
             hashValue ^= hash<uint8_t>{}(pixel);
         }
         return hashValue;
@@ -289,7 +355,7 @@ struct hash<porytiles::NormalizedPalette> {
         // TODO : better hash function.
         size_t hashValue = 0;
         hashValue ^= hash<int>{}(palette.size);
-        for (auto color : palette.colors) {
+        for (auto color: palette.colors) {
             hashValue ^= hash<porytiles::BGR15>{}(color);
         }
         return hashValue;
