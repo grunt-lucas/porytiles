@@ -7,6 +7,10 @@
 namespace porytiles {
 
 DecompiledTileset importTilesFrom(const png::image<png::rgba_pixel>& png) {
+    /*
+     * TODO : this should throw if the input PNG is not formatted properly, e.g. the height is not divisible by 8, or
+     * the width is wrong, etc
+     */
     DecompiledTileset decompiledTiles;
 
     std::size_t pngWidthInTiles = png.get_width() / TILE_SIDE_LENGTH;

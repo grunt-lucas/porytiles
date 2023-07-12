@@ -692,35 +692,73 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[3])));
 }
 
-TEST_CASE("assignTest TODO : test name") {
+TEST_CASE("assignTest should correctly assign all normalized palettes or fail if impossible") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
 
-    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
-    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
-    std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
-    std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
-                                                                                                    indexedNormTiles);
-    auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorIndexMap, indexedNormTiles);
+    SUBCASE("It should successfully allocate a simple 2x2 tileset png") {
+        constexpr int SOLUTION_SIZE = 2;
+        config.numPalettesInPrimary = SOLUTION_SIZE;
+        REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+        porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+        std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
+        std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
+                                                                                                        indexedNormTiles);
+        auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorIndexMap, indexedNormTiles);
 
-    // Set up the state struct
-    std::vector<ColorSet> solution;
-    solution.reserve(2);
-    std::vector<ColorSet> hardwarePalettes;
-    hardwarePalettes.reserve(2);
-    hardwarePalettes.emplace_back();
-    hardwarePalettes.emplace_back();
-    std::vector<ColorSet> unassigned;
-    std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
-    std::sort(std::begin(unassigned), std::end(unassigned),
-              [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
-    porytiles::AssignState state = {hardwarePalettes, unassigned};
+        // Set up the state struct
+        std::vector<ColorSet> solution;
+        solution.reserve(SOLUTION_SIZE);
+        std::vector<ColorSet> hardwarePalettes;
+        hardwarePalettes.reserve(SOLUTION_SIZE);
+        hardwarePalettes.emplace_back();
+        hardwarePalettes.emplace_back();
+        std::vector<ColorSet> unassigned;
+        std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+        std::sort(std::begin(unassigned), std::end(unassigned),
+                  [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+        porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    CHECK(porytiles::assign(state, solution));
-    CHECK(solution.size() == 2);
-    // TODO : fill in more tests
-    for (auto& pal: solution)
-        std::cout << pal << std::endl;
+        CHECK(porytiles::assign(state, solution));
+        CHECK(solution.size() == SOLUTION_SIZE);
+        CHECK(solution.at(0).test(0));
+        CHECK(solution.at(1).test(1));
+        CHECK(solution.at(1).test(2));
+        CHECK(solution.at(1).test(3));
+    }
+
+    SUBCASE("It should successfully allocate a large, complex PNG") {
+        constexpr int SOLUTION_SIZE = 5;
+        config.numPalettesInPrimary = SOLUTION_SIZE;
+        REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+        porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+        std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
+        std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
+                                                                                                        indexedNormTiles);
+        auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorIndexMap, indexedNormTiles);
+
+        // Set up the state struct
+        std::vector<ColorSet> solution;
+        solution.reserve(SOLUTION_SIZE);
+        std::vector<ColorSet> hardwarePalettes;
+        hardwarePalettes.reserve(SOLUTION_SIZE);
+        hardwarePalettes.emplace_back();
+        hardwarePalettes.emplace_back();
+        hardwarePalettes.emplace_back();
+        hardwarePalettes.emplace_back();
+        hardwarePalettes.emplace_back();
+        std::vector<ColorSet> unassigned;
+        std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+        std::sort(std::begin(unassigned), std::end(unassigned),
+                  [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+        porytiles::AssignState state = {hardwarePalettes, unassigned};
+
+        CHECK(porytiles::assign(state, solution));
+        CHECK(solution.size() == SOLUTION_SIZE);
+        // TODO : fill in more CHECKs
+        for (auto& pal: solution)
+            std::cout << pal << std::endl;
+    }
 }
