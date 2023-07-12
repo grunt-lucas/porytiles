@@ -296,7 +296,10 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         throw PtException{"failed to allocate palettes"};
     }
 
-    // TODO : populate compiled.palettes
+    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
+    for (std::size_t i = 0; i < config.numPalettesInPrimary; i++) {
+
+    }
 
     return compiled;
 }
