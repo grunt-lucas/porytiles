@@ -6,6 +6,7 @@
 #include <bitset>
 #include <tuple>
 #include <algorithm>
+#include <iostream>
 
 #include "doctest.h"
 #include "config.h"
@@ -163,13 +164,14 @@ toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const No
 }
 
 static std::pair<std::vector<IndexedNormTileWithColorSet>, std::unordered_set<ColorSet>>
-matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const std::vector<IndexedNormTile>& indexedNormalizedTiles) {
+matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
+                             const std::vector<IndexedNormTile>& indexedNormalizedTiles) {
     std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets;
     std::unordered_set<ColorSet> colorSets;
-    for (const auto& [index, normalizedTile] : indexedNormalizedTiles) {
+    for (const auto& [index, normalizedTile]: indexedNormalizedTiles) {
         // Compute the ColorSet for this normalized tile, then add it to our indexes
         auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
-        indexedNormTilesWithColorSets.push_back({index, normalizedTile, colorSet});
+        indexedNormTilesWithColorSets.emplace_back(index, normalizedTile, colorSet);
         colorSets.insert(colorSet);
     }
     return std::pair{indexedNormTilesWithColorSets, colorSets};
@@ -193,6 +195,65 @@ static bool assign(AssignState state, std::vector<ColorSet>& solution) {
         return true;
     }
 
+    /*
+     * We will try to assign the last element to one of the 6 hw palettes, last because it is a vector so easier to
+     * add/remove from the end.
+     */
+    ColorSet& toAssign = state.unassigned.back();
+
+    /*
+     * For this next step, we want to sort the hw palettes before we try iterating. Sort them by the size of their
+     * intersection with the toAssign ColorSet. Effectively, this means that we will always first try branching into an
+     * assignment that re-uses hw palettes more effectively. We also have a tie-breaker heuristic for cases where two
+     * palettes have the same intersect size. Right now we just use palette size, but in the future we may want to look
+     * at color distances so we can pick a palette with more similar colors.
+     */
+    std::sort(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+              [&toAssign](const auto& pal1, const auto& pal2) {
+                  std::size_t pal1IntersectSize = (pal1 & toAssign).count();
+                  std::size_t pal2IntersectSize = (pal2 & toAssign).count();
+
+                  /*
+                   * TODO : Instead of just using palette count, maybe can we check for color distance here and try to choose the
+                   * palette that has the "closest" colors to our toAssign palette? That might be a good heuristic for attempting
+                   * to keep similar colors in the same palette. I.e. especially in cases where there are no palette
+                   * intersections, it may be better to first try placing the new colors into a palette with similar colors rather
+                   * than into the smallest palette
+                   */
+                  if (pal1IntersectSize == pal2IntersectSize) {
+                      return pal1.count() < pal2.count();
+                  }
+
+                  return pal1IntersectSize > pal2IntersectSize;
+              });
+
+    for (size_t i = 0; i < state.hardwarePalettes.size(); i++) {
+        ColorSet& palette = state.hardwarePalettes.at(i);
+
+        // > PAL_SIZE - 1 because we need to save a slot for transparency
+        if ((palette | toAssign).count() > PAL_SIZE - 1) {
+            /*
+             *  Skip this palette, cannot assign because there is not enough room in the palette. If we end up skipping
+             * all of them that means the palettes are all too full and we cannot assign this tile.
+             */
+            continue;
+        }
+
+        std::vector<ColorSet> unassignedCopy;
+        std::copy(std::begin(state.unassigned), std::end(state.unassigned), std::back_inserter(unassignedCopy));
+        std::vector<ColorSet> hardwarePalettesCopy;
+        std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+                  std::back_inserter(hardwarePalettesCopy));
+        unassignedCopy.pop_back();
+        hardwarePalettesCopy[i] |= toAssign;
+        AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
+
+        if (assign(updatedState, solution)) {
+            return true;
+        }
+    }
+
+    // No solution found
     return false;
 }
 
@@ -541,7 +602,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
     std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
                                                                                                     indexedNormTiles);
-                                                                                                    CHECK(colorIndexMap.size() == 4);
+
+    CHECK(colorIndexMap.size() == 4);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 1);
     CHECK(colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
@@ -561,8 +623,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
         CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[i] == 1);
     }
     CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.size == 2);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[0]).hFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).vFlip);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).count() == 1);
@@ -577,8 +641,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[62] == 1);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[63] == 2);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.size == 3);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
     CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).hFlip);
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).vFlip);
@@ -594,9 +660,12 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[56] == 1);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[63] == 2);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.size == 3);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[2] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[2]).vFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).hFlip);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).count() == 2);
@@ -612,11 +681,46 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
         CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[i] == 1);
     }
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.size == 2);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).hFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).vFlip);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).count() == 1);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).test(0));
     CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[3])));
+}
+
+TEST_CASE("assignTest TODO : test name") {
+    porytiles::Config config{};
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 6;
+
+    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
+    std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = porytiles::buildColorIndexMap(config,
+                                                                                                    indexedNormTiles);
+    auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorIndexMap, indexedNormTiles);
+
+    // Set up the state struct
+    std::vector<ColorSet> solution;
+    solution.reserve(2);
+    std::vector<ColorSet> hardwarePalettes;
+    hardwarePalettes.reserve(2);
+    hardwarePalettes.emplace_back();
+    hardwarePalettes.emplace_back();
+    std::vector<ColorSet> unassigned;
+    std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+    std::sort(std::begin(unassigned), std::end(unassigned),
+              [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+    porytiles::AssignState state = {hardwarePalettes, unassigned};
+
+    CHECK(porytiles::assign(state, solution));
+    CHECK(solution.size() == 2);
+    // TODO : fill in more tests
+    for (auto& pal: solution)
+        std::cout << pal << std::endl;
 }
