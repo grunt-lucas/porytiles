@@ -20,7 +20,7 @@
 using ColorSet = std::bitset<240>;
 using DecompiledIndex = std::size_t;
 using IndexedNormTile = std::pair<DecompiledIndex, porytiles::NormalizedTile>;
-using IndexedNormTileWithColorSet = std::tuple<porytiles::NormalizedTile, ColorSet, DecompiledIndex>;
+using IndexedNormTileWithColorSet = std::tuple<DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
 
 namespace porytiles {
 
@@ -168,7 +168,7 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& color
     for (const auto& [index, normalizedTile] : indexedNormalizedTiles) {
         // Compute the ColorSet for this normalized tile, then add it to our indexes
         auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
-        indexedNormTilesWithColorSets.push_back({normalizedTile, colorSet, index});
+        indexedNormTilesWithColorSets.push_back({index, normalizedTile, colorSet});
         colorSets.insert(colorSet);
     }
     return std::pair{indexedNormTilesWithColorSets, colorSets};
@@ -528,69 +528,69 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(colorSets.size() == 3);
 
     // First tile has 1 non-transparent color, color should be BLUE
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[0] == 0);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[7] == 1);
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]) == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[7] == 1);
     for (int i = 56; i <= 63; i++) {
-        CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[i] == 1);
+        CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[i] == 1);
     }
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).palette.size == 2);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-    CHECK_FALSE(std::get<0>(indexedNormTilesWithColorSets[0]).hFlip);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]) == 0);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).count() == 1);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).test(0));
-    CHECK(colorSets.contains(std::get<1>(indexedNormTilesWithColorSets[0])));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.size == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[0]).hFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).test(0));
+    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[0])));
 
     // Second tile has two non-transparent colors, RED and GREEN
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[0] == 0);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[54] == 1);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[55] == 1);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[62] == 1);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[63] == 2);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).palette.size == 3);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
-    CHECK_FALSE(std::get<0>(indexedNormTilesWithColorSets[1]).hFlip);
-    CHECK_FALSE(std::get<0>(indexedNormTilesWithColorSets[1]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]) == 1);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).count() == 2);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).test(1));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).test(2));
-    CHECK(colorSets.contains(std::get<1>(indexedNormTilesWithColorSets[1])));
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]) == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[54] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[55] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[62] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[63] == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.size == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).hFlip);
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(2));
+    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[1])));
 
     // Third tile has two non-transparent colors, CYAN and GREEN
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[0] == 0);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[7] == 1);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[56] == 1);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[63] == 2);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).palette.size == 3);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
-    CHECK_FALSE(std::get<0>(indexedNormTilesWithColorSets[2]).vFlip);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).hFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]) == 2);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).count() == 2);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).test(1));
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).test(3));
-    CHECK(colorSets.contains(std::get<1>(indexedNormTilesWithColorSets[2])));
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]) == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[7] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[56] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[63] == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.size == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[2]).vFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).hFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(3));
+    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[2])));
 
     // Fourth tile has 1 non-transparent color, color should be BLUE
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[0] == 0);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[7] == 1);
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]) == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[7] == 1);
     for (int i = 56; i <= 63; i++) {
-        CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[i] == 1);
+        CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[i] == 1);
     }
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).palette.size == 2);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).hFlip);
-    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]) == 3);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).count() == 1);
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).test(0));
-    CHECK(colorSets.contains(std::get<1>(indexedNormTilesWithColorSets[3])));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.size == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).hFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).test(0));
+    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[3])));
 }
