@@ -332,8 +332,31 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     }
 
     /*
-     *
+     * Build the tile assignments.
      */
+    std::unordered_map<GBATile, std::size_t> tileIndexes;
+    for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
+        auto index = std::get<0>(indexedNormTile);
+        auto& normTile = std::get<1>(indexedNormTile);
+        auto& colorSet = std::get<2>(indexedNormTile);
+        auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
+                               [&colorSet](const auto& assignedPal) {
+                                   // Find which of the assignedSolution palettes this tile belongs to
+                                   return (colorSet & ~assignedPal).none();
+                               });
+        if (it == std::end(assignedPalsSolution)) {
+            // TODO : better error context
+            throw std::runtime_error{"internal error"};
+        }
+        std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
+        auto gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
+        if (inserted.second) {
+            compiled.tiles.push_back(gbaTile);
+        }
+        std::size_t tileIndex = inserted.first->second;
+        compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
+    }
 
     return compiled;
 }
@@ -835,43 +858,43 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
-    porytiles::GBATile tile1 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles.palettes[0]);
+    porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles.palettes[0]);
     CHECK_FALSE(indexedNormTiles[0].second.hFlip);
     CHECK(indexedNormTiles[0].second.vFlip);
-    CHECK(tile1.paletteIndexes[0] == 0);
-    CHECK(tile1.paletteIndexes[7] == 1);
+    CHECK(tile0.paletteIndexes[0] == 0);
+    CHECK(tile0.paletteIndexes[7] == 1);
     for (size_t i = 56; i < 64; i++) {
-        CHECK(tile1.paletteIndexes[i] == 1);
+        CHECK(tile0.paletteIndexes[i] == 1);
     }
 
-    porytiles::GBATile tile2 = porytiles::makeTile(indexedNormTiles[1].second, compiledTiles.palettes[1]);
+    porytiles::GBATile tile1 = porytiles::makeTile(indexedNormTiles[1].second, compiledTiles.palettes[1]);
     CHECK_FALSE(indexedNormTiles[1].second.hFlip);
     CHECK_FALSE(indexedNormTiles[1].second.vFlip);
-    CHECK(tile2.paletteIndexes[0] == 0);
-    CHECK(tile2.paletteIndexes[54] == 1);
-    CHECK(tile2.paletteIndexes[55] == 1);
-    CHECK(tile2.paletteIndexes[62] == 1);
-    CHECK(tile2.paletteIndexes[63] == 2);
+    CHECK(tile1.paletteIndexes[0] == 0);
+    CHECK(tile1.paletteIndexes[54] == 1);
+    CHECK(tile1.paletteIndexes[55] == 1);
+    CHECK(tile1.paletteIndexes[62] == 1);
+    CHECK(tile1.paletteIndexes[63] == 2);
 
-    porytiles::GBATile tile3 = porytiles::makeTile(indexedNormTiles[2].second, compiledTiles.palettes[1]);
+    porytiles::GBATile tile2 = porytiles::makeTile(indexedNormTiles[2].second, compiledTiles.palettes[1]);
     CHECK(indexedNormTiles[2].second.hFlip);
     CHECK_FALSE(indexedNormTiles[2].second.vFlip);
-    CHECK(tile3.paletteIndexes[0] == 0);
-    CHECK(tile3.paletteIndexes[7] == 3);
-    CHECK(tile3.paletteIndexes[56] == 3);
-    CHECK(tile3.paletteIndexes[63] == 1);
+    CHECK(tile2.paletteIndexes[0] == 0);
+    CHECK(tile2.paletteIndexes[7] == 3);
+    CHECK(tile2.paletteIndexes[56] == 3);
+    CHECK(tile2.paletteIndexes[63] == 1);
 
-    porytiles::GBATile tile4 = porytiles::makeTile(indexedNormTiles[3].second, compiledTiles.palettes[0]);
+    porytiles::GBATile tile3 = porytiles::makeTile(indexedNormTiles[3].second, compiledTiles.palettes[0]);
     CHECK(indexedNormTiles[3].second.hFlip);
     CHECK(indexedNormTiles[3].second.vFlip);
-    CHECK(tile4.paletteIndexes[0] == 0);
-    CHECK(tile4.paletteIndexes[7] == 1);
+    CHECK(tile3.paletteIndexes[0] == 0);
+    CHECK(tile3.paletteIndexes[7] == 1);
     for (size_t i = 56; i < 64; i++) {
-        CHECK(tile4.paletteIndexes[i] == 1);
+        CHECK(tile3.paletteIndexes[i] == 1);
     }
 }
 
-TEST_CASE("compile function should assign the expected colors to the expected hardware palette slots") {
+TEST_CASE("compile function should assign all tiles as expected") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
@@ -881,10 +904,59 @@ TEST_CASE("compile function should assign the expected colors to the expected ha
     porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
 
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+
+    // Check that compiled palettes are as expected
     CHECK(compiledTiles.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
     CHECK(compiledTiles.palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
     CHECK(compiledTiles.palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
     CHECK(compiledTiles.palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
     CHECK(compiledTiles.palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
     CHECK(compiledTiles.palettes.at(1).colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+
+    /*
+     * Check that compiled GBATiles have expected index values, there are only 3 in final tileset since two of the
+     * original tiles are flips of each other.
+     */
+    porytiles::GBATile& tile0 = compiledTiles.tiles[0];
+    CHECK(tile0.paletteIndexes[0] == 0);
+    CHECK(tile0.paletteIndexes[7] == 1);
+    for (size_t i = 56; i < 64; i++) {
+        CHECK(tile0.paletteIndexes[i] == 1);
+    }
+
+    porytiles::GBATile tile1 = compiledTiles.tiles[1];
+    CHECK(tile1.paletteIndexes[0] == 0);
+    CHECK(tile1.paletteIndexes[54] == 1);
+    CHECK(tile1.paletteIndexes[55] == 1);
+    CHECK(tile1.paletteIndexes[62] == 1);
+    CHECK(tile1.paletteIndexes[63] == 2);
+
+    porytiles::GBATile tile2 = compiledTiles.tiles[2];
+    CHECK(tile2.paletteIndexes[0] == 0);
+    CHECK(tile2.paletteIndexes[7] == 3);
+    CHECK(tile2.paletteIndexes[56] == 3);
+    CHECK(tile2.paletteIndexes[63] == 1);
+
+    /*
+     * Check that all the assignments are correct.
+     */
+    CHECK(compiledTiles.assignments[0].tileIndex == 0);
+    CHECK(compiledTiles.assignments[0].paletteIndex == 0);
+    CHECK_FALSE(compiledTiles.assignments[0].hFlip);
+    CHECK(compiledTiles.assignments[0].vFlip);
+
+    CHECK(compiledTiles.assignments[1].tileIndex == 1);
+    CHECK(compiledTiles.assignments[1].paletteIndex == 1);
+    CHECK_FALSE(compiledTiles.assignments[1].hFlip);
+    CHECK_FALSE(compiledTiles.assignments[1].vFlip);
+
+    CHECK(compiledTiles.assignments[2].tileIndex == 2);
+    CHECK(compiledTiles.assignments[2].paletteIndex == 1);
+    CHECK(compiledTiles.assignments[2].hFlip);
+    CHECK_FALSE(compiledTiles.assignments[2].vFlip);
+
+    CHECK(compiledTiles.assignments[3].tileIndex == 0);
+    CHECK(compiledTiles.assignments[3].paletteIndex == 0);
+    CHECK(compiledTiles.assignments[3].hFlip);
+    CHECK(compiledTiles.assignments[3].vFlip);
 }
