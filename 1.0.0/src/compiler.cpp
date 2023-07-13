@@ -12,7 +12,6 @@
 #include "doctest.h"
 #include "config.h"
 #include "ptexception.h"
-#include "constants.h"
 #include "types.h"
 #include "png_frontend.h"
 

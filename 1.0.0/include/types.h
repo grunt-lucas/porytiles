@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "doctest.h"
-#include "constants.h"
 
 /**
  * TODO : fill in doc comment for this header
@@ -32,6 +31,16 @@ struct BGR15 {
     friend std::ostream& operator<<(std::ostream&, const BGR15&);
 };
 
+extern const BGR15 BGR_BLACK;
+extern const BGR15 BGR_RED;
+extern const BGR15 BGR_GREEN;
+extern const BGR15 BGR_BLUE;
+extern const BGR15 BGR_YELLOW;
+extern const BGR15 BGR_MAGENTA;
+extern const BGR15 BGR_CYAN;
+extern const BGR15 BGR_WHITE;
+extern const BGR15 BGR_GREY;
+
 /**
  * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
  */
@@ -46,9 +55,24 @@ struct RGBA32 {
     friend std::ostream& operator<<(std::ostream&, const RGBA32&);
 };
 
+constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
+constexpr std::uint8_t ALPHA_OPAQUE = 255;
+
+extern const RGBA32 RGBA_BLACK;
+extern const RGBA32 RGBA_RED;
+extern const RGBA32 RGBA_GREEN;
+extern const RGBA32 RGBA_BLUE;
+extern const RGBA32 RGBA_YELLOW;
+extern const RGBA32 RGBA_MAGENTA;
+extern const RGBA32 RGBA_CYAN;
+extern const RGBA32 RGBA_WHITE;
+extern const RGBA32 RGBA_GREY;
+
 /**
  * A tile of RGBA32 colors.
  */
+constexpr std::size_t TILE_SIDE_LENGTH = 8;
+constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
 struct RGBATile {
     std::array<RGBA32, TILE_NUM_PIX> pixels;
 
@@ -136,6 +160,8 @@ struct GBATile {
 /**
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
+constexpr std::size_t PAL_SIZE = 16;
+constexpr std::size_t MAX_BG_PALETTES = 16;
 struct GBAPalette {
     std::array<BGR15, PAL_SIZE> colors;
 
@@ -306,33 +332,14 @@ struct NormalizedTile {
 };
 
 
-// ----------------------------------
-// |    FUNCTIONS AND CONSTANTS     |
-// ----------------------------------
+// -------------------
+// |    FUNCTIONS    |
+// -------------------
 
 BGR15 rgbaToBgr(const RGBA32& rgba);
 
 RGBA32 bgrToRgba(const BGR15& bgr);
 
-extern const RGBA32 RGBA_BLACK;
-extern const RGBA32 RGBA_RED;
-extern const RGBA32 RGBA_GREEN;
-extern const RGBA32 RGBA_BLUE;
-extern const RGBA32 RGBA_YELLOW;
-extern const RGBA32 RGBA_MAGENTA;
-extern const RGBA32 RGBA_CYAN;
-extern const RGBA32 RGBA_WHITE;
-extern const RGBA32 RGBA_GREY;
-
-extern const BGR15 BGR_BLACK;
-extern const BGR15 BGR_RED;
-extern const BGR15 BGR_GREEN;
-extern const BGR15 BGR_BLUE;
-extern const BGR15 BGR_YELLOW;
-extern const BGR15 BGR_MAGENTA;
-extern const BGR15 BGR_CYAN;
-extern const BGR15 BGR_WHITE;
-extern const BGR15 BGR_GREY;
 }
 
 

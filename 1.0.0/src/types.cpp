@@ -2,9 +2,12 @@
 
 namespace porytiles {
 
-std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
-    os << std::to_string(bgr.bgr);
-    return os;
+static RGBATile uniformTile(const RGBA32& color) {
+    RGBATile tile{};
+    for (size_t i = 0; i < TILE_NUM_PIX; i++) {
+        tile.pixels[i] = color;
+    }
+    return tile;
 }
 
 const RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, ALPHA_OPAQUE};
@@ -26,6 +29,21 @@ const BGR15 BGR_MAGENTA = rgbaToBgr(RGBA_MAGENTA);
 const BGR15 BGR_CYAN = rgbaToBgr(RGBA_CYAN);
 const BGR15 BGR_WHITE = rgbaToBgr(RGBA_WHITE);
 const BGR15 BGR_GREY = rgbaToBgr(RGBA_GREY);
+
+const RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
+const RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
+const RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
+const RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
+const RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
+const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
+const RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
+const RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
+const RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
+
+std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
+    os << std::to_string(bgr.bgr);
+    return os;
+}
 
 std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
     // For debugging purposes, print the solid colors with names rather than int values
@@ -75,24 +93,6 @@ std::ostream& operator<<(std::ostream& os, const RGBATile& tile) {
     os << "}";
     return os;
 }
-
-static RGBATile uniformTile(const RGBA32& color) {
-    RGBATile tile{};
-    for (size_t i = 0; i < TILE_NUM_PIX; i++) {
-        tile.pixels[i] = color;
-    }
-    return tile;
-}
-
-const RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
-const RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
-const RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
-const RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
-const RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
-const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
-const RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
-const RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
-const RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
 
 BGR15 rgbaToBgr(const RGBA32& rgba) {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position
