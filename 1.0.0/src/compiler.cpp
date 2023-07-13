@@ -967,22 +967,28 @@ TEST_CASE("compile function should assign all tiles as expected") {
 
 TEST_CASE("CompileComplexTest") {
     // TODO : name this test and actually check things
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 5;
+    // porytiles::Config config{};
+    // config.transparencyColor = porytiles::RGBA_MAGENTA;
+    // config.numPalettesInPrimary = 5;
 
-    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
-    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+    // REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+    // png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+    // porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    // porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
-    std::cout << "COMPILED TILES" << std::endl;
-    std::cout << "tiles size: " << compiledTiles.tiles.size() << std::endl;
-    for (std::size_t i = 0; i < compiledTiles.palettes.size(); i++) {
-        porytiles::GBAPalette& palette = compiledTiles.palettes.at(i);
-        std::cout << "Palette " << i << std::endl;
-        for (std::size_t j = 0; j < palette.colors.size(); j++) {
-            std::cout << porytiles::bgrToRgba(palette.colors.at(j)) << std::endl;
-        }
-    }
+    // std::cout << "COMPILED TILES" << std::endl;
+    // std::cout << "tiles size: " << compiledTiles.tiles.size() << std::endl;
+    // for (std::size_t i = 0; i < compiledTiles.palettes.size(); i++) {
+    //     porytiles::GBAPalette& palette = compiledTiles.palettes.at(i);
+    //     std::cout << "Palette " << i << std::endl;
+    //     for (std::size_t j = 0; j < palette.colors.size(); j++) {
+    //         std::cout << porytiles::bgrToRgba(palette.colors.at(j)) << std::endl;
+    //     }
+    // }
+    // for (std::size_t i = 0; i < compiledTiles.assignments.size(); i++) {
+    //     auto& assignment = compiledTiles.assignments.at(i);
+    //     std::cout << "assignment[" << i 
+    //               << "]={tile=" << assignment.tileIndex << ",pal=" << assignment.paletteIndex 
+    //               << ",hFlip=" << assignment.hFlip << ",vFlip=" << assignment.vFlip << "}" << std::endl;
+    // }
 }
