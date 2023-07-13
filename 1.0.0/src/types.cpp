@@ -7,40 +7,50 @@ std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
     return os;
 }
 
-constexpr RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_RED = RGBA32{255, 0, 0, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_BLUE = RGBA32{0, 0, 255, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_YELLOW = RGBA32{255, 255, 0, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, ALPHA_OPAQUE};
-constexpr RGBA32 RGBA_GREY = RGBA32{128, 128, 128, ALPHA_OPAQUE};
+const RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, ALPHA_OPAQUE};
+const RGBA32 RGBA_RED = RGBA32{255, 0, 0, ALPHA_OPAQUE};
+const RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, ALPHA_OPAQUE};
+const RGBA32 RGBA_BLUE = RGBA32{0, 0, 255, ALPHA_OPAQUE};
+const RGBA32 RGBA_YELLOW = RGBA32{255, 255, 0, ALPHA_OPAQUE};
+const RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, ALPHA_OPAQUE};
+const RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, ALPHA_OPAQUE};
+const RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, ALPHA_OPAQUE};
+const RGBA32 RGBA_GREY = RGBA32{128, 128, 128, ALPHA_OPAQUE};
+
+const BGR15 BGR_BLACK = rgbaToBgr(RGBA_BLACK);
+const BGR15 BGR_RED = rgbaToBgr(RGBA_RED);
+const BGR15 BGR_GREEN = rgbaToBgr(RGBA_GREEN);
+const BGR15 BGR_BLUE = rgbaToBgr(RGBA_BLUE);
+const BGR15 BGR_YELLOW = rgbaToBgr(RGBA_YELLOW);
+const BGR15 BGR_MAGENTA = rgbaToBgr(RGBA_MAGENTA);
+const BGR15 BGR_CYAN = rgbaToBgr(RGBA_CYAN);
+const BGR15 BGR_WHITE = rgbaToBgr(RGBA_WHITE);
+const BGR15 BGR_GREY = rgbaToBgr(RGBA_GREY);
 
 std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
     // For debugging purposes, print the solid colors with names rather than int values
-    if (rgba == RGBA_BLACK) {
+    if (rgba == RGBA_BLACK || rgba == bgrToRgba(BGR_BLACK)) {
         os << "black";
     }
-    else if (rgba == RGBA_RED) {
+    else if (rgba == RGBA_RED || rgba == bgrToRgba(BGR_RED)) {
         os << "red";
     }
-    else if (rgba == RGBA_GREEN) {
+    else if (rgba == RGBA_GREEN || rgba == bgrToRgba(BGR_GREEN)) {
         os << "green";
     }
-    else if (rgba == RGBA_BLUE) {
+    else if (rgba == RGBA_BLUE || rgba == bgrToRgba(BGR_BLUE)) {
         os << "blue";
     }
-    else if (rgba == RGBA_YELLOW) {
+    else if (rgba == RGBA_YELLOW || rgba == bgrToRgba(BGR_YELLOW)) {
         os << "yellow";
     }
-    else if (rgba == RGBA_MAGENTA) {
+    else if (rgba == RGBA_MAGENTA || rgba == bgrToRgba(BGR_MAGENTA)) {
         os << "magenta";
     }
-    else if (rgba == RGBA_CYAN) {
+    else if (rgba == RGBA_CYAN || rgba == bgrToRgba(BGR_CYAN)) {
         os << "cyan";
     }
-    else if (rgba == RGBA_WHITE) {
+    else if (rgba == RGBA_WHITE || rgba == bgrToRgba(BGR_WHITE)) {
         os << "white";
     }
     else {
@@ -66,7 +76,7 @@ std::ostream& operator<<(std::ostream& os, const RGBATile& tile) {
     return os;
 }
 
-consteval RGBATile uniformTile(const RGBA32& color) {
+static RGBATile uniformTile(const RGBA32& color) {
     RGBATile tile{};
     for (size_t i = 0; i < TILE_NUM_PIX; i++) {
         tile.pixels[i] = color;
@@ -74,15 +84,15 @@ consteval RGBATile uniformTile(const RGBA32& color) {
     return tile;
 }
 
-constexpr RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
-constexpr RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
-constexpr RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
-constexpr RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
-constexpr RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
-constexpr RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
-constexpr RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
-constexpr RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
-//constexpr RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
+const RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
+const RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
+const RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
+const RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
+const RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
+const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
+const RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
+const RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
+const RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
 
 BGR15 rgbaToBgr(const RGBA32& rgba) {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position

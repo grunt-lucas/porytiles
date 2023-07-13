@@ -7,6 +7,7 @@
 #include <tuple>
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
 
 #include "doctest.h"
 #include "config.h"
@@ -262,6 +263,10 @@ static bool assign(AssignState state, std::vector<ColorSet>& solution) {
         }
     }
 
+    /*
+     * TODO : for any reasonably sized tileset, reaching this state takes AGES. We need some heuristics that abort the
+     * search early if we are fairly confident there is no solution.
+     */
     // No solution found
     return false;
 }
@@ -902,7 +907,6 @@ TEST_CASE("compile function should assign all tiles as expected") {
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
-
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
     // Check that compiled palettes are as expected
@@ -959,4 +963,26 @@ TEST_CASE("compile function should assign all tiles as expected") {
     CHECK(compiledTiles.assignments[3].paletteIndex == 0);
     CHECK(compiledTiles.assignments[3].hFlip);
     CHECK(compiledTiles.assignments[3].vFlip);
+}
+
+TEST_CASE("CompileComplexTest") {
+    // TODO : name this test and actually check things
+    porytiles::Config config{};
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 5;
+
+    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+
+    std::cout << "COMPILED TILES" << std::endl;
+    std::cout << "tiles size: " << compiledTiles.tiles.size() << std::endl;
+    for (std::size_t i = 0; i < compiledTiles.palettes.size(); i++) {
+        porytiles::GBAPalette& palette = compiledTiles.palettes.at(i);
+        std::cout << "Palette " << i << std::endl;
+        for (std::size_t j = 0; j < palette.colors.size(); j++) {
+            std::cout << porytiles::bgrToRgba(palette.colors.at(j)) << std::endl;
+        }
+    }
 }

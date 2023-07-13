@@ -46,16 +46,6 @@ struct RGBA32 {
     friend std::ostream& operator<<(std::ostream&, const RGBA32&);
 };
 
-extern const RGBA32 RGBA_BLACK;
-extern const RGBA32 RGBA_RED;
-extern const RGBA32 RGBA_GREEN;
-extern const RGBA32 RGBA_BLUE;
-extern const RGBA32 RGBA_YELLOW;
-extern const RGBA32 RGBA_MAGENTA;
-extern const RGBA32 RGBA_CYAN;
-extern const RGBA32 RGBA_WHITE;
-extern const RGBA32 RGBA_GREY;
-
 /**
  * A tile of RGBA32 colors.
  */
@@ -316,13 +306,33 @@ struct NormalizedTile {
 };
 
 
-// --------------------
-// |    FUNCTIONS     |
-// --------------------
+// ----------------------------------
+// |    FUNCTIONS AND CONSTANTS     |
+// ----------------------------------
 
 BGR15 rgbaToBgr(const RGBA32& rgba);
 
 RGBA32 bgrToRgba(const BGR15& bgr);
+
+extern const RGBA32 RGBA_BLACK;
+extern const RGBA32 RGBA_RED;
+extern const RGBA32 RGBA_GREEN;
+extern const RGBA32 RGBA_BLUE;
+extern const RGBA32 RGBA_YELLOW;
+extern const RGBA32 RGBA_MAGENTA;
+extern const RGBA32 RGBA_CYAN;
+extern const RGBA32 RGBA_WHITE;
+extern const RGBA32 RGBA_GREY;
+
+extern const BGR15 BGR_BLACK;
+extern const BGR15 BGR_RED;
+extern const BGR15 BGR_GREEN;
+extern const BGR15 BGR_BLUE;
+extern const BGR15 BGR_YELLOW;
+extern const BGR15 BGR_MAGENTA;
+extern const BGR15 BGR_CYAN;
+extern const BGR15 BGR_WHITE;
+extern const BGR15 BGR_GREY;
 }
 
 
