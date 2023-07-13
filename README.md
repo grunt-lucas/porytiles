@@ -14,6 +14,9 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 
 ## Why Would I Use This?
 
-Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. For more info, please
-see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
+Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
+Porytiles is to tileset files (`metatiles.bin`, `tiles.png`, `palettes/*.pal`) what Poryscript is to `.inc` script files.
+
+For more info, please see
+[this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
