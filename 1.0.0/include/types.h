@@ -28,6 +28,7 @@ struct BGR15 {
     std::uint16_t bgr;
 
     auto operator<=>(const BGR15&) const = default;
+
     friend std::ostream& operator<<(std::ostream&, const BGR15&);
 };
 
@@ -41,6 +42,7 @@ struct RGBA32 {
     std::uint8_t alpha;
 
     auto operator<=>(const RGBA32&) const = default;
+
     friend std::ostream& operator<<(std::ostream&, const RGBA32&);
 };
 
@@ -73,7 +75,9 @@ struct RGBATile {
     }
 
 #if defined(__GNUG__) && !defined(__clang__)
+
     auto operator<=>(const RGBATile&) const = default;
+
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
@@ -114,7 +118,9 @@ struct GBATile {
     std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
 
 #if defined(__GNUG__) && !defined(__clang__)
+
     auto operator<=>(const GBATile&) const = default;
+
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
@@ -144,7 +150,9 @@ struct GBAPalette {
     std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)
+
     auto operator<=>(const GBAPalette&) const = default;
+
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
@@ -214,7 +222,9 @@ struct NormalizedPixels {
     std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
 
 #if defined(__GNUG__) && !defined(__clang__)
+
     auto operator<=>(const NormalizedPixels&) const = default;
+
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
@@ -245,7 +255,9 @@ struct NormalizedPalette {
     std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)
+
     auto operator<=>(const NormalizedPalette&) const = default;
+
 #else
     // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
@@ -309,6 +321,8 @@ struct NormalizedTile {
 // --------------------
 
 BGR15 rgbaToBgr(const RGBA32& rgba);
+
+RGBA32 bgrToRgba(const BGR15& bgr);
 }
 
 

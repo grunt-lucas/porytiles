@@ -287,7 +287,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     std::vector<ColorSet> unassignedNormPalettes;
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
     std::sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
-                [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+              [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
     AssignState state = {logicalPalettes, unassignedNormPalettes};
     bool assignSuccessful = assign(state, assignedPalsSolution);
 
@@ -296,9 +296,21 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         throw PtException{"failed to allocate palettes"};
     }
 
+    /*
+     * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
+     * and so we may need to do something fancier here so that the colors align correctly.
+     */
     // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
     for (std::size_t i = 0; i < config.numPalettesInPrimary; i++) {
-
+        ColorSet palAssignments = assignedPalsSolution.at(i);
+        compiled.palettes[i].colors[0] = rgbaToBgr(config.transparencyColor);
+        std::size_t colorIndex = 1;
+        for (std::size_t j = 0; j < palAssignments.size(); j++) {
+            if (palAssignments.test(j)) {
+                compiled.palettes[i].colors[colorIndex] = indexToColor.at(j);
+                colorIndex++;
+            }
+        }
     }
 
     return compiled;
@@ -788,4 +800,22 @@ TEST_CASE("assignTest should correctly assign all normalized palettes or fail if
         CHECK(solution.at(3).count() == 15);
         CHECK(solution.at(4).count() == 15);
     }
+}
+
+TEST_CASE("compile function should assign the expected colors to the expected hardware palette slots") {
+    porytiles::Config config{};
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+    config.numPalettesInPrimary = 2;
+
+    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+
+    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+    CHECK(compiledTiles.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledTiles.palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(compiledTiles.palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledTiles.palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(compiledTiles.palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+    CHECK(compiledTiles.palettes.at(1).colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
 }

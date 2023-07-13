@@ -89,6 +89,15 @@ BGR15 rgbaToBgr(const RGBA32& rgba) {
     return {std::uint16_t(((rgba.blue / 8) << 10) | ((rgba.green / 8) << 5) | (rgba.red / 8))};
 }
 
+RGBA32 bgrToRgba(const BGR15& bgr) {
+    RGBA32 rgba{};
+    rgba.red = (bgr.bgr & 0x1f) * 8;
+    rgba.green = ((bgr.bgr >> 5) & 0x1f) * 8;
+    rgba.blue = ((bgr.bgr >> 10) & 0x1f) * 8;
+    rgba.alpha = 255;
+    return rgba;
+}
+
 }
 
 // --------------------
@@ -116,4 +125,18 @@ TEST_CASE("RGBA32 should be ordered component-wise") {
     CHECK(zeros < rgb1);
     CHECK(rgb1 < rgb2);
     CHECK(rgb2 < rgb3);
+}
+
+TEST_CASE("BGR15 to RGBA should upconvert RGB channels to multiples of 8") {
+    porytiles::RGBA32 rgb1 = {0, 8, 80, 255};
+    porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
+    porytiles::RGBA32 rgb3 = {2, 165, 96, 255};
+
+    porytiles::BGR15 bgr1 = rgbaToBgr(rgb1);
+    porytiles::BGR15 bgr2 = rgbaToBgr(rgb2);
+    porytiles::BGR15 bgr3 = rgbaToBgr(rgb3);
+
+    CHECK(porytiles::bgrToRgba(bgr1) == porytiles::RGBA32{0, 8, 80, 255});
+    CHECK(porytiles::bgrToRgba(bgr2) == porytiles::RGBA32{248, 248, 248, 255});
+    CHECK(porytiles::bgrToRgba(bgr3) == porytiles::RGBA32{0, 160, 96, 255});
 }
