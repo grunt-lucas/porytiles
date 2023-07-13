@@ -349,7 +349,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
             throw std::runtime_error{"internal error"};
         }
         std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
-        auto gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
         auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
         if (inserted.second) {
             compiled.tiles.push_back(gbaTile);
