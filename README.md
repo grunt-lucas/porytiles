@@ -15,9 +15,9 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 ## Why Would I Use This?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
-just like Poryscript takes a `.script` file and generates a corresponding `.inc` file as part of your build, Porytiles
-takes an RGBA `top.png`, `middle.png`, and `bottom.png` and generates a `metatiles.bin`, `tiles.png`, and `palettes/*.pal`
-as part of your build!
+just like [Poryscript](https://github.com/huderlem/poryscript) takes a `.script` file and generates a corresponding `.inc`
+file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and `bottom.png` and generates a `metatiles.bin`,
+`tiles.png`, and `palettes/*.pal` as part of your build!
 
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
