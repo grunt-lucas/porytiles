@@ -3,12 +3,17 @@
 [![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Build%20Porytiles%20GCC/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
 [![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Build%20Porytiles%20Clang/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
 
-Given an RGBA PNG tilesheet, Porytiles generates [Porymap](https://github.com/huderlem/porymap)-ready `metatiles.bin`,
-`tiles.png`, and `palettes/*.pal` files that correspond to the input tilesheet. Check out the wiki for all the details.
+Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret/pokeruby),
+[`pokeemerald`](https://github.com/pret/pokeemerald), and [`pokefirered`](https://github.com/pret/pokefirered) Pokémon
+Generation 3 decompilation projects. Builds [Porymap](https://github.com/huderlem/porymap)-ready tilesets from an RGBA
+tilesheet.
 
-For use with the [`pokeruby`](https://github.com/pret/pokeruby), [`pokeemerald`](https://github.com/pret/pokeemerald), and
-[`pokefirered`](https://github.com/pret/pokefirered) Pokémon Generation 3 decompilation
-projects.
+Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out
+the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get the upcoming changes listed in the
+[changelog](https://github.com/grunt-lucas/porytiles/blob/trunk/CHANGELOG.md).
 
-Check out the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out
-the `trunk` branch for upcoming changes.
+## Why Would I Use This?
+
+Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. For more info, please
+see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
+
