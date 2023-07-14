@@ -22,18 +22,17 @@
     + Windows MSVC
     + Clang on MacOS
 
-+ Remove code for structure control tiles
-    + these overcomplicate things, won't really be necessary once metatile generation is in place
-
 + `--verbose` should have filter modes:
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc
 
-+ output path should be optional: if excluded then the program will run but won't write anything, can be useful for
-  querying logs without actually writing anything out to disk
++ output path should be optional
+  + by default generate everything in CWD
+  + -o option to specify output location
 
-+ Remove `--8bpp-output` option and make it default once Porymap properly supports
-    + add a `--out-palette=<index>` to output the PNG 4bpp with the given palette
-    + add a `--out-palette-greyscale` to output with 4bpp greyscale
++ Palette output options
+  + `-f8bpp-tiles` and `-fno-8bpp-tiles` to output `tiles.png` with the 8bpp trick, defaults to no for now until Porymap supports fully
+  + `-fgreyscale-tiles` outputs `tiles.png` in greyscale
+  + have an option for 4bpp output where user can choose which palette is used
 
 + Change the palette writing code so it always writes 12 palettes (for easier importing and makefile integration)
     + `--num-pals-in-primary=<num>` will default to `6`, but will allow user to adjust
@@ -44,20 +43,6 @@
           first N
     + these changes will be very helpful once we start working on metatile generation
 
-+ How could we improve the palette allocation algorithm to remove the need for primer tiles?
-    + right now, the algo is greedy and so can generate suboptimal palettes
-    + we'd need some kind of backtracking mechanism to do this correctly
-    + mrgriffin suggested the following improved greedy approach:
-        + I think you could fix that particular problem with only a minor tweak: build the tile palette sets, but defer
-          picking a hardware palette until all tiles have been processed. At this point you can ensure that any tile
-          palette which is a subset of another tile palette should go to the same hardware palette. (Probably achievable
-          by iterating your tile palettes in a particular order—say largest to smallest)
-        + (The largest to smallest ordering should work because by definition a [strict] subset must contain fewer
-          elements than its superset, so if there was a superset of this tile's colors, it will already be allocated)
-    + See mgriffin's work in the `normalize` branch
-    + Once we include these improvements, we can remove primer (and possibly also sibling) control tiles
-
-+ Test
 
 # Big Feature Ideas
 
