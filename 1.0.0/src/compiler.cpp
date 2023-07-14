@@ -13,7 +13,7 @@
 #include "config.h"
 #include "ptexception.h"
 #include "types.h"
-#include "png_frontend.h"
+#include "input_png.h"
 
 /*
  * Some of the types we need are extremely verbose and confusing, so here let's define some better names to make the
@@ -428,7 +428,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     porytiles::RGBATile tile = tiles.tiles[0];
 
     SUBCASE("case: no flips") {
@@ -543,7 +543,7 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     porytiles::RGBATile tile = tiles.tiles[0];
 
     porytiles::NormalizedTile normalizedTile = porytiles::normalize(config, tile);
@@ -571,7 +571,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
 
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
 
@@ -638,7 +638,7 @@ TEST_CASE("buildColorIndexMap should build a map of all unique colors in the dec
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     std::vector<IndexedNormTile> normalizedTiles = normalizeDecompTiles(config, tiles);
 
     auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, normalizedTiles);
@@ -693,7 +693,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
     auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
 
@@ -795,7 +795,7 @@ TEST_CASE("assignTest should correctly assign all normalized palettes or fail if
         config.numPalettesInPrimary = SOLUTION_SIZE;
         REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
         png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-        porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+        porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
         std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
         auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
         auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
@@ -868,7 +868,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
@@ -915,7 +915,7 @@ TEST_CASE("compile function should assign all tiles as expected") {
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
     // Check that compiled palettes are as expected

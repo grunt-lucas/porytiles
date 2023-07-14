@@ -1,4 +1,4 @@
-#include "png_frontend.h"
+#include "input_png.h"
 
 #include <png.hpp>
 
@@ -6,7 +6,7 @@
 
 namespace porytiles {
 
-DecompiledTileset importTilesFrom(const png::image<png::rgba_pixel>& png) {
+DecompiledTileset importRawTilesFrom(const png::image<png::rgba_pixel>& png) {
     /*
      * TODO : this should throw if the input PNG is not formatted properly, e.g. the height is not divisible by 8, or
      * the width is wrong, etc
@@ -38,7 +38,7 @@ TEST_CASE("png_frontend::decompiledTilesFrom should read an RGBA PNG into a Deco
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_1.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
 
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
 
     // Tile 0 should have blue stripe from top left to bottom right
     CHECK(tiles.tiles[0].pixels[0] == porytiles::RGBA_BLUE);
