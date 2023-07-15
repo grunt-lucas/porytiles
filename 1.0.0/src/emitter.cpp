@@ -7,7 +7,9 @@
 
 namespace porytiles {
 
-void emitGBAPalette(std::ostream& out, const GBAPalette& palette) {
+// constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
+
+void emitPalette(const Config& config, std::ostream& out, const GBAPalette& palette) {
     out << "JASC-PAL" << std::endl;
     out << "0100" << std::endl;
     out << "16" << std::endl;
@@ -18,6 +20,11 @@ void emitGBAPalette(std::ostream& out, const GBAPalette& palette) {
     }
 }
 
+void emitTilesPng(const Config& config, const png::image<png::rgba_pixel>& out, const CompiledTileset& tileset) {
+    // const size_t imageWidth = TILE_SIDE_LENGTH * TILES_PNG_WIDTH_IN_TILES;
+    // const size_t imageHeight = TILE_SIDE_LENGTH * (tileset.tiles.size() / TILES_PNG_WIDTH_IN_TILES);
+}
+
 }
 
 // --------------------
@@ -25,6 +32,7 @@ void emitGBAPalette(std::ostream& out, const GBAPalette& palette) {
 // --------------------
 
 TEST_CASE("emitGBAPalette should write the expected JASC pal to the output stream") {
+    porytiles::Config config{};
     porytiles::GBAPalette palette{};
     palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
     palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
@@ -54,7 +62,7 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
         "0 0 0\n";
 
     std::stringstream outputStream;
-    porytiles::emitGBAPalette(outputStream, palette);
+    porytiles::emitPalette(config, outputStream, palette);
 
     CHECK(outputStream.str() == expectedOutput);
 }

@@ -339,6 +339,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     /*
      * Build the tile assignments.
      */
+    // TODO : here we should force first tile to be transparent
     std::unordered_map<GBATile, std::size_t> tileIndexes;
     for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
         auto index = std::get<0>(indexedNormTile);
