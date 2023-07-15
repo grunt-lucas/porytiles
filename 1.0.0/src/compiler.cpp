@@ -835,7 +835,7 @@ TEST_CASE("assignTest should correctly assign all normalized palettes or fail if
         // config.numPalettesInPrimary = SOLUTION_SIZE;
         // REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
         // png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-        // porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+        // porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
         // std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
         // auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
         // auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
@@ -982,7 +982,7 @@ TEST_CASE("CompileComplexTest") {
 
 //    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
 //    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-//    porytiles::DecompiledTileset tiles = porytiles::importTilesFrom(png1);
+//    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFrom(png1);
 //    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
 //    std::cout << "COMPILED TILES" << std::endl;
