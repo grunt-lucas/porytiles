@@ -73,6 +73,10 @@ extern const RGBA32 RGBA_CYAN;
 extern const RGBA32 RGBA_WHITE;
 extern const RGBA32 RGBA_GREY;
 
+BGR15 rgbaToBgr(const RGBA32& rgba);
+
+RGBA32 bgrToRgba(const BGR15& bgr);
+
 /**
  * A tile of RGBA32 colors.
  */
@@ -311,6 +315,11 @@ struct NormalizedTile {
     bool hFlip;
     bool vFlip;
 
+    NormalizedTile(RGBA32 transparency) {
+        palette.size = 1;
+        palette.colors[0] = rgbaToBgr(transparency);
+    }
+
     bool transparent() const { return palette.size == 1; }
 
 #if defined(__GNUG__) && !defined(__clang__)
@@ -335,15 +344,6 @@ struct NormalizedTile {
         pixels.paletteIndexes[row * TILE_SIDE_LENGTH + col] = value;
     }
 };
-
-
-// -------------------
-// |    FUNCTIONS    |
-// -------------------
-
-BGR15 rgbaToBgr(const RGBA32& rgba);
-
-RGBA32 bgrToRgba(const BGR15& bgr);
 
 }
 

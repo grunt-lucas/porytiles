@@ -67,11 +67,8 @@ static NormalizedTile candidate(const Config& config, const RGBATile& rgba, bool
      * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
      * form). We'll use this to generate candidates to find the true normal form.
      */
-    NormalizedTile candidateTile{};
-    // Size is 1 to account for transparent color in first palette slot
-    candidateTile.palette.size = 1;
     // TODO : same color precision note as above in insertRGBA
-    candidateTile.palette.colors[0] = rgbaToBgr(config.transparencyColor);
+    NormalizedTile candidateTile{config.transparencyColor};
     candidateTile.hFlip = hFlip;
     candidateTile.vFlip = vFlip;
 
