@@ -13,11 +13,11 @@
 
 namespace porytiles {
 
-DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png);
-/**<
+/**
  * Build a DecompiledTileset from a single input PNG. This tileset is considered "raw", that is, it has no layering.
  * The importer will simply scan the PNG tiles left-to-right, top-to-bottom and put them into the DecompiledTileset.
  */
+DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png);
 
 }
 

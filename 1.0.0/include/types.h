@@ -7,6 +7,7 @@
 #include <compare>
 #include <array>
 #include <vector>
+#include <string>
 
 #include "doctest.h"
 
@@ -49,6 +50,10 @@ struct RGBA32 {
     std::uint8_t green;
     std::uint8_t blue;
     std::uint8_t alpha;
+
+    std::string jasc() const {
+        return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
+    }
 
     auto operator<=>(const RGBA32&) const = default;
 
