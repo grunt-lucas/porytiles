@@ -100,12 +100,12 @@ struct RGBATile {
     // auto operator<=>(const RGBATile&) const = default;
     auto operator<=>(const RGBATile& other) const {
         if (this->pixels == other.pixels) {
-            return 0;
+            return std::strong_ordering::equal;
         }
         else if (this->pixels < other.pixels) {
-            return -1;
+            return std::strong_ordering::less;
         }
-        return 1;
+        return std::strong_ordering::greater;
     }
 
     auto operator==(const RGBATile& other) const {
@@ -143,12 +143,12 @@ struct GBATile {
     // auto operator<=>(const GBATile&) const = default;
     auto operator<=>(const GBATile& other) const {
         if (this->paletteIndexes == other.paletteIndexes) {
-            return 0;
+            return std::strong_ordering::equal;
         }
         else if (this->paletteIndexes < other.paletteIndexes) {
-            return -1;
+            return std::strong_ordering::less;
         }
-        return 1;
+        return std::strong_ordering::greater;
     }
 
     auto operator==(const GBATile& other) const {
@@ -177,12 +177,12 @@ struct GBAPalette {
     // auto operator<=>(const GBAPalette&) const = default;
     auto operator<=>(const GBAPalette& other) const {
         if (this->colors == other.colors) {
-            return 0;
+            return std::strong_ordering::equal;
         }
         else if (this->colors < other.colors) {
-            return -1;
+            return std::strong_ordering::less;
         }
-        return 1;
+        return std::strong_ordering::greater;
     }
 
     auto operator==(const GBAPalette& other) const {
@@ -249,12 +249,12 @@ struct NormalizedPixels {
     // auto operator<=>(const NormalizedPixels&) const = default;
     auto operator<=>(const NormalizedPixels& other) const {
         if (this->paletteIndexes == other.paletteIndexes) {
-            return 0;
+            return std::strong_ordering::equal;
         }
         else if (this->paletteIndexes < other.paletteIndexes) {
-            return -1;
+            return std::strong_ordering::less;
         }
-        return 1;
+        return std::strong_ordering::greater;
     }
 
     auto operator==(const NormalizedPixels& other) const {
@@ -282,12 +282,12 @@ struct NormalizedPalette {
     // auto operator<=>(const NormalizedPalette&) const = default;
     auto operator<=>(const NormalizedPalette& other) const {
         if (this->colors == other.colors) {
-            return 0;
+            return std::strong_ordering::equal;
         }
         else if (this->colors < other.colors) {
-            return -1;
+            return std::strong_ordering::less;
         }
-        return 1;
+        return std::strong_ordering::greater;
     }
 
     auto operator==(const NormalizedPalette& other) const {
