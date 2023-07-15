@@ -21,6 +21,7 @@
 + Set up more CI builds
     + Windows MSVC
     + Clang on MacOS
+    + set up package caches so installs don't have to run every time
 
 + `--verbose` should have filter modes:
     + e.g. `--verbose=index` to only print messages relate to tile indexing, `--verbose=all` for all logs, etc

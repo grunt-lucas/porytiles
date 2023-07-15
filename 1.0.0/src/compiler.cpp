@@ -3,6 +3,7 @@
 #include <png.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include <bitset>
 #include <tuple>
 #include <algorithm>
@@ -166,16 +167,20 @@ toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const No
     return colorSet;
 }
 
-static std::pair<std::vector<IndexedNormTileWithColorSet>, std::unordered_set<ColorSet>>
+static std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
 matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
                              const std::vector<IndexedNormTile>& indexedNormalizedTiles) {
     std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets;
-    std::unordered_set<ColorSet> colorSets;
+    std::unordered_set<ColorSet> uniqueColorSets;
+    std::vector<ColorSet> colorSets;
     for (const auto& [index, normalizedTile]: indexedNormalizedTiles) {
         // Compute the ColorSet for this normalized tile, then add it to our indexes
         auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
         indexedNormTilesWithColorSets.emplace_back(index, normalizedTile, colorSet);
-        colorSets.insert(colorSet);
+        if (!uniqueColorSets.contains(colorSet)) {
+            colorSets.push_back(colorSet);
+            uniqueColorSets.insert(colorSet);
+        }
     }
     return std::pair{indexedNormTilesWithColorSets, colorSets};
 }
@@ -211,7 +216,7 @@ static bool assign(AssignState state, std::vector<ColorSet>& solution) {
      * palettes have the same intersect size. Right now we just use palette size, but in the future we may want to look
      * at color distances so we can pick a palette with more similar colors.
      */
-    std::sort(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+    std::stable_sort(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
               [&toAssign](const auto& pal1, const auto& pal2) {
                   std::size_t pal1IntersectSize = (pal1 & toAssign).count();
                   std::size_t pal2IntersectSize = (pal2 & toAssign).count();
@@ -309,7 +314,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     logicalPalettes.resize(config.numPalettesInPrimary);
     std::vector<ColorSet> unassignedNormPalettes;
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
-    std::sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
+    std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
               [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
     AssignState state = {logicalPalettes, unassignedNormPalettes};
     bool assignSuccessful = assign(state, assignedPalsSolution);
@@ -726,7 +731,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).vFlip);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).count() == 1);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).test(0));
-    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[0])));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[0])) != colorSets.end());
 
     // Second tile has two non-transparent colors, RED and GREEN
     CHECK(std::get<0>(indexedNormTilesWithColorSets[1]) == 1);
@@ -746,7 +751,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).count() == 2);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(1));
     CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(2));
-    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[1])));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[1])) != colorSets.end());
 
     // Third tile has two non-transparent colors, CYAN and GREEN
     CHECK(std::get<0>(indexedNormTilesWithColorSets[2]) == 2);
@@ -766,7 +771,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).count() == 2);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(1));
     CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(3));
-    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[2])));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[2])) != colorSets.end());
 
     // Fourth tile has 1 non-transparent color, color should be BLUE
     CHECK(std::get<0>(indexedNormTilesWithColorSets[3]) == 3);
@@ -784,7 +789,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).vFlip);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).count() == 1);
     CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).test(0));
-    CHECK(colorSets.contains(std::get<2>(indexedNormTilesWithColorSets[3])));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[3])) != colorSets.end());
 }
 
 TEST_CASE("assignTest should correctly assign all normalized palettes or fail if impossible") {
@@ -808,7 +813,7 @@ TEST_CASE("assignTest should correctly assign all normalized palettes or fail if
         hardwarePalettes.resize(SOLUTION_SIZE);
         std::vector<ColorSet> unassigned;
         std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
-        std::sort(std::begin(unassigned), std::end(unassigned),
+        std::stable_sort(std::begin(unassigned), std::end(unassigned),
                   [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
         porytiles::AssignState state = {hardwarePalettes, unassigned};
 
@@ -822,43 +827,34 @@ TEST_CASE("assignTest should correctly assign all normalized palettes or fail if
         CHECK(solution.at(1).test(3));
     }
 
-    /*
-     * TODO : this subcase fails CI right now. Currently, it only passes locally with Clang. Locally it fails with GCC
-     * and in CI it fails with GCC and Clang. This is probably because of the custom spaceship operator I have for local
-     * Clang. As far as I can tell, local GCC gives the exact same result as CI GCC and CI Clang. Also, the difference
-     * in final tileset size is likely because Local/CI GCC and CI Clang are able to accidentally make use of sibling
-     * tiles. It will be eaiser to see what is happening once I can write out palette files and a tiles.png, so let's
-     * return to this issue later. Ideally, Clang will finally support <=> and then we don't have to roll our own crap
-     * custom operator
-     */
     SUBCASE("It should successfully allocate a large, complex PNG") {
-        // constexpr int SOLUTION_SIZE = 5;
-        // config.numPalettesInPrimary = SOLUTION_SIZE;
-        // REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-        // png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-        // porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-        // std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
-        // auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
-        // auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+        constexpr int SOLUTION_SIZE = 5;
+        config.numPalettesInPrimary = SOLUTION_SIZE;
+        REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+        porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+        std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
+        auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
+        auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
-        // // Set up the state struct
-        // std::vector<ColorSet> solution;
-        // solution.reserve(SOLUTION_SIZE);
-        // std::vector<ColorSet> hardwarePalettes;
-        // hardwarePalettes.resize(SOLUTION_SIZE);
-        // std::vector<ColorSet> unassigned;
-        // std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
-        // std::sort(std::begin(unassigned), std::end(unassigned),
-        //           [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
-        // porytiles::AssignState state = {hardwarePalettes, unassigned};
+        // Set up the state struct
+        std::vector<ColorSet> solution;
+        solution.reserve(SOLUTION_SIZE);
+        std::vector<ColorSet> hardwarePalettes;
+        hardwarePalettes.resize(SOLUTION_SIZE);
+        std::vector<ColorSet> unassigned;
+        std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+        std::stable_sort(std::begin(unassigned), std::end(unassigned),
+                  [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+        porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-        // CHECK(porytiles::assign(state, solution));
-        // CHECK(solution.size() == SOLUTION_SIZE);
-        // CHECK(solution.at(0).count() == 12);
-        // CHECK(solution.at(1).count() == 12);
-        // CHECK(solution.at(2).count() == 13);
-        // CHECK(solution.at(3).count() == 14);
-        // CHECK(solution.at(4).count() == 15);
+        CHECK(porytiles::assign(state, solution));
+        CHECK(solution.size() == SOLUTION_SIZE);
+        CHECK(solution.at(0).count() == 11);
+        CHECK(solution.at(1).count() == 12);
+        CHECK(solution.at(2).count() == 14);
+        CHECK(solution.at(3).count() == 14);
+        CHECK(solution.at(4).count() == 15);
     }
 }
 
