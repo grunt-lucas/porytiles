@@ -14,8 +14,8 @@ jobs:
           sudo apt-get update
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 12
-          sudo apt-get install libc++-12-dev libc++abi-12-dev
+          sudo ./llvm.sh 16
+          sudo apt-get install libc++-16-dev libc++abi-16-dev
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
           clang++ --version
@@ -30,8 +30,8 @@ jobs:
           sudo apt-get update
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 12
-          sudo apt-get install libc++-12-dev libc++abi-12-dev
+          sudo ./llvm.sh 16
+          sudo apt-get install libc++-16-dev libc++abi-16-dev
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
           clang++ --version
