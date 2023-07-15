@@ -13,6 +13,7 @@ jobs:
         run: |
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
+          clang++ --version
           CXX=clang++ make
           CXX=clang++ make check
   build-ubuntu-clang-debug:
@@ -23,6 +24,7 @@ jobs:
         run: |
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
+          clang++ --version
           CXX=clang++ make debug
           CXX=clang++ make debug-check
 

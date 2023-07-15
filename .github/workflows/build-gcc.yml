@@ -13,8 +13,9 @@ jobs:
         run: |
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          make
-          make check
+          g++-13 --version
+          CXX=g++-13 make
+          CXX=g++-13 make check
   build-ubuntu-gcc-debug:
     runs-on: ubuntu-latest
     steps:
@@ -23,5 +24,6 @@ jobs:
         run: |
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          make debug
-          make debug-check
+          g++-13 --version
+          CXX=g++-13 make debug
+          CXX=g++-13 make debug-check
