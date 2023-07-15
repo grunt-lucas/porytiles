@@ -145,20 +145,20 @@ struct GBATile {
     // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
     // https://reviews.llvm.org/D132265
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const GBATile&) const = default;
-    auto operator<=>(const GBATile& other) const {
-        if (this->paletteIndexes == other.paletteIndexes) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->paletteIndexes < other.paletteIndexes) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
-    }
+    auto operator<=>(const GBATile&) const = default;
+    // auto operator<=>(const GBATile& other) const {
+    //     if (this->paletteIndexes == other.paletteIndexes) {
+    //         return std::strong_ordering::equal;
+    //     }
+    //     else if (this->paletteIndexes < other.paletteIndexes) {
+    //         return std::strong_ordering::less;
+    //     }
+    //     return std::strong_ordering::greater;
+    // }
 
-    auto operator==(const GBATile& other) const {
-        return this->paletteIndexes == other.paletteIndexes;
-    }
+    // auto operator==(const GBATile& other) const {
+    //     return this->paletteIndexes == other.paletteIndexes;
+    // }
 #endif
 };
 
