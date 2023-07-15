@@ -18,9 +18,9 @@ jobs:
           sudo apt-get install libc++-16-dev libc++abi-16-dev
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          clang++ --version
-          CXX=clang++ make
-          CXX=clang++ make check
+          clang++-16 --version
+          CXX=clang++-16 make
+          CXX=clang++-16 make check
   build-ubuntu-clang-debug:
     runs-on: ubuntu-latest
     steps:
@@ -34,9 +34,9 @@ jobs:
           sudo apt-get install libc++-16-dev libc++abi-16-dev
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          clang++ --version
-          CXX=clang++ make debug
-          CXX=clang++ make debug-check
+          clang++-16 --version
+          CXX=clang++-16 make debug
+          CXX=clang++-16 make debug-check
 
 #  build-mac-clang:
 #    runs-on: macos-latest
