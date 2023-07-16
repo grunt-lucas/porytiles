@@ -31,9 +31,9 @@
   + -o option to specify output location
 
 + Palette output options
-  + `-f8bpp-tiles` and `-fno-8bpp-tiles` to output `tiles.png` with the 8bpp trick, defaults to no for now until Porymap supports fully
-  + `-fgreyscale-tiles` outputs `tiles.png` in greyscale
-  + have an option for 4bpp output where user can choose which palette is used
+  + `-ftiles-png-palette` with 3 options `greyscale`, `full-color`, `<N>`, defaults to greyscale
+    + https://github.com/huderlem/porymap/pull/536 : once this is merged and in a Porymap release, we can change default to full-color
+    + `<N>` indicates which output palette we will use
 
 + Change the palette writing code so it always writes 12 palettes (for easier importing and makefile integration)
     + `--num-pals-in-primary=<num>` will default to `6`, but will allow user to adjust

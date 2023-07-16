@@ -23,6 +23,8 @@ struct Config {
     std::size_t numPalettesTotal;
 
     RGBA32 transparencyColor;
+
+    bool tilesPng8bpp;
 };
 
 // TODO : add method to get a good default config for unit tests

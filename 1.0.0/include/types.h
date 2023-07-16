@@ -140,6 +140,14 @@ extern const RGBATile RGBA_TILE_WHITE;
 struct GBATile {
     std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
 
+    [[nodiscard]] std::uint8_t getPixel(size_t index) const {
+        if (index >= TILE_NUM_PIX) {
+            throw std::out_of_range{
+                    "internal: GBATile::getPixel index argument out of bounds (" + std::to_string(index) + ")"};
+        }
+        return paletteIndexes.at(index);
+    }
+
 #if defined(__GNUG__) && !defined(__clang__)
 
     auto operator<=>(const GBATile&) const = default;
@@ -219,6 +227,8 @@ struct Assignment {
  * The `tiles' field contains the normalized tiles from the input tilesheets. This field can be directly written out to
  * `tiles.png'.
  *
+ * The `paletteIndexes' contains the palette index (into the `palettes' field) for each corresponding GBATile in `tiles'.
+ *
  * The `palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
  * `numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
  *
@@ -227,6 +237,7 @@ struct Assignment {
  */
 struct CompiledTileset {
     std::vector<GBATile> tiles;
+    std::vector<std::size_t> paletteIndexes;
     std::vector<GBAPalette> palettes;
     std::vector<Assignment> assignments;
 };

@@ -363,6 +363,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
         if (inserted.second) {
             compiled.tiles.push_back(gbaTile);
+            compiled.paletteIndexes.push_back(paletteIndex);
         }
         std::size_t tileIndex = inserted.first->second;
         compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
