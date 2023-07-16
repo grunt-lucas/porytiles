@@ -1,31 +1,17 @@
 #ifndef PORYTILES_CLI_PARSER_H
 #define PORYTILES_CLI_PARSER_H
 
-#include "rgb_color.h"
+#include "config.h"
+#include "types.h"
 
-#include <string>
-#include <png.hpp>
+/**
+ * TODO : fill in doc comment
+ */
 
 namespace porytiles {
-extern const char* const PROGRAM_NAME;
-extern const char* const VERSION;
-extern const char* const RELEASE_DATE;
 
-// Options
-extern bool gOptVerboseOutput;
-extern bool gOpt8bppOutput;
-extern RgbColor gOptTransparentColor;
-extern RgbColor gOptPrimerColor;
-extern RgbColor gOptSiblingColor;
-extern RgbColor gOptStructureColor;
-extern size_t gOptMaxPalettes;
-extern size_t gOptMaxTiles;
+void parseOptions(Config& config, int argc, char** argv);
 
-// Arguments (required)
-extern std::string gArgMasterPngPath;
-extern std::string gArgOutputPath;
+}
 
-extern void parseOptions(int argc, char** argv);
-} // namespace porytiles
-
-#endif // PORYTILES_CLI_PARSER_H
+#endif
