@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <iterator>
 #include <getopt.h>
 
 namespace porytiles {
