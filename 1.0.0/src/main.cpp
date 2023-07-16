@@ -3,10 +3,12 @@
 
 #include <iostream>
 
+#include "config.h"
 #include "cli_parser.h"
 
 int main(int argc, char** argv) {
-    porytiles::parseOptions(argc, argv);
+    porytiles::Config config;
+    porytiles::parseOptions(config, argc, argv);
 
     return 0;
 }

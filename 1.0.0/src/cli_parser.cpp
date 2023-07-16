@@ -38,7 +38,7 @@ const std::string COMPILE_COMMAND = "compile";
 //constexpr int TRIPLE_LAYER = 1000;
 
 
-void parseOptions(int argc, char** argv) {
+void parseOptions(Config& config, int argc, char** argv) {
     std::ostringstream implodedGlobalShorts;
     std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(),
            std::ostream_iterator<std::string>(implodedGlobalShorts, ""));
