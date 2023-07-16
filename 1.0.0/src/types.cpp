@@ -10,6 +10,14 @@ static RGBATile uniformTile(const RGBA32& color) {
     return tile;
 }
 
+static GBATile uniformTile(const uint8_t& index) {
+    GBATile tile{};
+    for (size_t i = 0; i < TILE_NUM_PIX; i++) {
+        tile.paletteIndexes[i] = index;
+    }
+    return tile;
+}
+
 const RGBA32 RGBA_BLACK = RGBA32{0, 0, 0, ALPHA_OPAQUE};
 const RGBA32 RGBA_RED = RGBA32{255, 0, 0, ALPHA_OPAQUE};
 const RGBA32 RGBA_GREEN = RGBA32{0, 255, 0, ALPHA_OPAQUE};
@@ -39,6 +47,8 @@ const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 const RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
 const RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
 const RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
+
+const GBATile GBA_TILE_TRANSPARENT = uniformTile(0);
 
 std::ostream& operator<<(std::ostream& os, const BGR15& bgr) {
     os << std::to_string(bgr.bgr);

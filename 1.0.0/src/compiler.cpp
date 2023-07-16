@@ -341,8 +341,9 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     /*
      * Build the tile assignments.
      */
-    // TODO : here we should force first tile to be transparent
     std::unordered_map<GBATile, std::size_t> tileIndexes;
+    // force tile 0 to be transparent
+    tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});
     for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
         auto index = std::get<0>(indexedNormTile);
         auto& normTile = std::get<1>(indexedNormTile);
@@ -358,6 +359,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         }
         std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
         GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        // insert only updates the map if the key is not already present
         auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
         if (inserted.second) {
             compiled.tiles.push_back(gbaTile);
@@ -789,7 +791,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[3])) != colorSets.end());
 }
 
-TEST_CASE("assignTest should correctly assign all normalized palettes or fail if impossible") {
+TEST_CASE("assign should correctly assign all normalized palettes or fail if impossible") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
 

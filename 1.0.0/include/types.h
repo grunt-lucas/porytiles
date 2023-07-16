@@ -166,6 +166,8 @@ struct GBATile {
 #endif
 };
 
+extern const GBATile GBA_TILE_TRANSPARENT;
+
 /**
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
