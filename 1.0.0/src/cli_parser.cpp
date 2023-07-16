@@ -50,8 +50,10 @@ void parseOptions(int argc, char** argv) {
                     {nullptr,                        no_argument,       nullptr, 0}
             };
 
+    // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
+    std::string globalOptions = "+" + globalShortOptions;
     while (true) {
-        const auto opt = getopt_long_only(argc, argv, globalShortOptions.c_str(), globalLongOptions, nullptr);
+        const auto opt = getopt_long_only(argc, argv, globalOptions.c_str(), globalLongOptions, nullptr);
 
         if (opt == -1)
             break;
@@ -76,9 +78,10 @@ void parseOptions(int argc, char** argv) {
         }
     }
 
-    std::cout << optind << std::endl;
+    std::cout << "argc " << argc << std::endl;
+    std::cout << "optind " << optind << std::endl;
 
-    if ((argc - optind) != 1) {
+    if ((argc - optind) == 0) {
         std::cout << "subcommand required" << std::endl;
         exit(1);
     }
