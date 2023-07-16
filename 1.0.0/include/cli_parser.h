@@ -10,6 +10,7 @@
 
 namespace porytiles {
 
+void parseOptions(int argc, char** argv);
 
 }
 

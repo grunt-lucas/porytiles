@@ -9,7 +9,7 @@
 
 namespace porytiles {
 
-constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
+//constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
 void emitPalette(const Config& config, std::ostream& out, const GBAPalette& palette) {
     out << "JASC-PAL" << std::endl;
