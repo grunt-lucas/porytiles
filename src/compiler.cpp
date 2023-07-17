@@ -139,8 +139,8 @@ buildColorIndexMaps(const Config& config, const std::vector<IndexedNormTile>& no
             }
         }
     }
-    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
-    if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
+
+    if (colorIndex > (PAL_SIZE - 1) * config.maxPalettes()) {
         // TODO : better error context
         throw PtException{"too many unique colors"};
     }
@@ -293,8 +293,7 @@ static GBATile makeTile(const NormalizedTile& normalizedTile, GBAPalette palette
 
 CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
-    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
-    compiled.palettes.resize(config.numPalettesInPrimary);
+    compiled.palettes.resize(config.maxPalettes());
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
     // Build helper data structures for the assignments
@@ -303,12 +302,11 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
     // Run palette assignment
-    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
     // assignedPalsSolution is an out param that the assign function will populate when it finds a solution
     std::vector<ColorSet> assignedPalsSolution;
-    assignedPalsSolution.reserve(config.numPalettesInPrimary);
+    assignedPalsSolution.reserve(config.maxPalettes());
     std::vector<ColorSet> logicalPalettes;
-    logicalPalettes.resize(config.numPalettesInPrimary);
+    logicalPalettes.resize(config.maxPalettes());
     std::vector<ColorSet> unassignedNormPalettes;
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
     std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
@@ -325,8 +323,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
      * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
      * and so we may need to do something fancier here so that the colors align correctly.
      */
-    // TODO : this needs to take into account secondary tilesets, so `numPalettesTotal - numPalettesInPrimary'
-    for (std::size_t i = 0; i < config.numPalettesInPrimary; i++) {
+    for (std::size_t i = 0; i < config.maxPalettes(); i++) {
         ColorSet palAssignments = assignedPalsSolution.at(i);
         compiled.palettes[i].colors[0] = rgbaToBgr(config.transparencyColor);
         std::size_t colorIndex = 1;
@@ -384,6 +381,7 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     porytiles::NormalizedPalette palette1{};
     palette1.size = 1;
@@ -433,6 +431,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -548,6 +547,7 @@ TEST_CASE("normalize should return the normal form of the given tile") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -576,6 +576,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -643,6 +644,7 @@ TEST_CASE("buildColorIndexMap should build a map of all unique colors in the dec
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -698,6 +700,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 6;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -801,6 +804,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     SUBCASE("It should successfully allocate a simple 2x2 tileset png") {
         constexpr int SOLUTION_SIZE = 2;
         config.numPalettesInPrimary = SOLUTION_SIZE;
+        config.secondary = false;
+
         REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
         png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
         porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
@@ -832,6 +837,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     SUBCASE("It should successfully allocate a large, complex PNG") {
         constexpr int SOLUTION_SIZE = 5;
         config.numPalettesInPrimary = SOLUTION_SIZE;
+        config.secondary = false;
+
         REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
         png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
         porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
@@ -864,6 +871,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -911,6 +919,7 @@ TEST_CASE("compile function should assign all tiles as expected") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
+    config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -983,6 +992,7 @@ TEST_CASE("CompileComplexTest") {
 //    porytiles::Config config{};
 //    config.transparencyColor = porytiles::RGBA_MAGENTA;
 //    config.numPalettesInPrimary = 5;
+//    config.secondary = false;
 
 //    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
 //    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};

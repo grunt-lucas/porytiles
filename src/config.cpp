@@ -12,10 +12,13 @@ Config defaultConfig() {
     config.numPalettesInPrimary = 6;
     config.numPalettesTotal = 13;
     config.numTilesPerMetatile = 8;
+    config.secondary = false;
 
     config.transparencyColor = RGBA_MAGENTA;
 
     config.tilesPngPalette = GREYSCALE;
+
+    config.subcommand = COMPILE_RAW;
 
     return config;
 }

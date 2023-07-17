@@ -7,7 +7,7 @@
 #include "cli_parser.h"
 
 int main(int argc, char** argv) {
-    porytiles::Config config;
+    porytiles::Config config = porytiles::defaultConfig();
     porytiles::parseOptions(config, argc, argv);
 
     return 0;

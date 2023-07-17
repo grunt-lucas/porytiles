@@ -34,6 +34,7 @@ struct Config {
     std::size_t numPalettesInPrimary;
     std::size_t numPalettesTotal;
     std::size_t numTilesPerMetatile;
+    bool secondary;
 
     // Input PNG params
     RGBA32 transparencyColor;
@@ -42,6 +43,10 @@ struct Config {
     TilesPngPalette tilesPngPalette;
 
     Subcommand subcommand;
+
+    std::size_t maxPalettes() const {
+        return secondary ? numPalettesTotal - numPalettesInPrimary : numPalettesInPrimary;
+    }
 };
 
 // TODO : add method to get a good default config for unit tests
