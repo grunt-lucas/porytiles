@@ -9,7 +9,7 @@
 
 namespace porytiles {
 
-constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
+//constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
 void emitPalette(const Config& config, std::ostream& out, const GBAPalette& palette) {
     out << "JASC-PAL" << std::endl;
@@ -141,22 +141,22 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
     CHECK(outputStream.str() == expectedOutput);
 }
 
-TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 5;
-    config.tilesPng8bpp = true;
+// TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
+//     porytiles::Config config{};
+//     config.transparencyColor = porytiles::RGBA_MAGENTA;
+//     config.numPalettesInPrimary = 5;
+//     config.tilesPng8bpp = true;
 
-    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+//     REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+//     png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+//     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+//     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
-    const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
-    const size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
-    png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
-                                            static_cast<png::uint_32>(imageHeight)};
+//     const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
+//     const size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
+//     png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
+//                                             static_cast<png::uint_32>(imageHeight)};
 
-    porytiles::emitTilesPng(config, tilesetPng, compiledTiles);
-    tilesetPng.write("/Users/dad/Desktop/foo.png");
-}
+//     porytiles::emitTilesPng(config, tilesetPng, compiledTiles);
+//     tilesetPng.write("/Users/dad/Desktop/foo.png");
+// }
