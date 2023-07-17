@@ -37,15 +37,16 @@ jobs:
           clang++-16 --version
           CXX=clang++-16 make debug
           CXX=clang++-16 make debug-check
-
-#  build-mac-clang:
-#    runs-on: macos-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - name: Build Mac Clang
-#        run: |
-#          brew update
-#          brew install zlib
-#          brew install libpng
-#          brew upgrade
-#          make
+  build-mac-clang:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Mac Clang
+        run: |
+          brew update
+          brew install zlib
+          brew install libpng
+          brew install llvm@16
+          clang++-16 --version
+          CXX=clang++-16 make
+          CXX=clang++-16 make check
