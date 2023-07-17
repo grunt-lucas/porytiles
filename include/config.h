@@ -47,6 +47,14 @@ struct Config {
     std::size_t maxPalettes() const {
         return secondary ? numPalettesTotal - numPalettesInPrimary : numPalettesInPrimary;
     }
+
+    std::size_t maxTiles() const {
+        return secondary ? numTilesTotal - numTilesInPrimary : numTilesInPrimary;
+    }
+
+    std::size_t maxMetatiles() const {
+        return secondary ? numMetatilesTotal - numMetatilesInPrimary : numMetatilesInPrimary;
+    }
 };
 
 // TODO : add method to get a good default config for unit tests

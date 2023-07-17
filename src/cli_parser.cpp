@@ -140,6 +140,13 @@ static void parseSubcommand(Config& config, int argc, char** argv) {
 }
 
 
+// ------------------------
+// |    SHARED OPTIONS    |
+// ------------------------
+
+
+
+
 // -----------------------------
 // |    COMPILE-RAW COMMAND    |
 // -----------------------------

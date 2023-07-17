@@ -294,6 +294,7 @@ static GBATile makeTile(const NormalizedTile& normalizedTile, GBAPalette palette
 CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     compiled.palettes.resize(config.maxPalettes());
+    // TODO : we should compute the number of metatiles here and throw if the user tilesheet exceeds the max
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
     // Build helper data structures for the assignments
@@ -362,6 +363,10 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
         if (inserted.second) {
             compiled.tiles.push_back(gbaTile);
+            if (compiled.tiles.size() > config.maxTiles()) {
+                // TODO : better error context
+                throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(config.maxTiles())};
+            }
             compiled.paletteIndexes.push_back(paletteIndex);
         }
         std::size_t tileIndex = inserted.first->second;
@@ -871,6 +876,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
+    config.numTilesInPrimary = 4;
     config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -919,6 +925,7 @@ TEST_CASE("compile function should assign all tiles as expected") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
+    config.numTilesInPrimary = 4;
     config.secondary = false;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -989,10 +996,7 @@ TEST_CASE("compile function should assign all tiles as expected") {
 
 TEST_CASE("CompileComplexTest") {
     // TODO : name this test and actually check things
-//    porytiles::Config config{};
-//    config.transparencyColor = porytiles::RGBA_MAGENTA;
-//    config.numPalettesInPrimary = 5;
-//    config.secondary = false;
+//    porytiles::Config config = porytiles::defaultConfig();
 
 //    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
 //    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};

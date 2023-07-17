@@ -151,9 +151,7 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
 }
 
 // TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
-//     porytiles::Config config{};
-//     config.transparencyColor = porytiles::RGBA_MAGENTA;
-//     config.numPalettesInPrimary = 5;
+//     porytiles::Config config = porytiles::defaultConfig();
 //     config.tilesPngPalette = porytiles::TilesPngPalette::_8BPP;
 
 //     REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
