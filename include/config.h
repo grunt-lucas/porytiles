@@ -11,6 +11,13 @@
 
 namespace porytiles {
 
+
+enum TilesPngPalette {
+    _4BPP,
+    _8BPP,
+    GREYSCALE
+};
+
 enum Subcommand {
     COMPILE_RAW
 };
@@ -32,7 +39,7 @@ struct Config {
     RGBA32 transparencyColor;
 
     // Output PNG params
-    bool tilesPng8bpp;
+    TilesPngPalette tilesPngPalette;
 
     Subcommand subcommand;
 };

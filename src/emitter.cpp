@@ -46,17 +46,22 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
      * For the PNG palette, we'll pack all the tileset palettes into the final PNG. Since gbagfx ignores the top 4 bits
      * of an 8bpp PNG, we can use those bits to select between the various tileset palettes. That way, the final tileset
      * PNG will visually show all the correct colors while also being properly 4bpp indexed. Alternatively, we will just
-     * use the colors from one of the final palettes for the whole PNG. It doesn't matter since as long as the indexes
-     * are correct, it will work in-game.
+     * use the colors from one of the final palettes for the whole PNG. It doesn't matter since as long as the least
+     * significant 4 bit indexes are correct, it will work in-game.
      */
     // 0 initial length here since we will push_back our colors in-order
     png::palette pngPal{0};
-    if (config.tilesPng8bpp) {
+    if (config.tilesPngPalette == _8BPP) {
         for (const auto& palette: tileset.palettes) {
             for (const auto& color: palette.colors) {
                 RGBA32 rgbaColor = bgrToRgba(color);
                 pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
             }
+        }
+    }
+    else if (config.tilesPngPalette == GREYSCALE) {
+        for (const auto& color: greyscalePalette) {
+            pngPal.push_back(png::color{color.red, color.green, color.blue});
         }
     }
     else {
@@ -65,9 +70,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
         //     RGBA32 rgbaColor = bgrToRgba(color);
         //     pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
         // }
-        for (const auto& color: greyscalePalette) {
-            pngPal.push_back(png::color{color.red, color.green, color.blue});
-        }
+        throw std::runtime_error{"_4BPP option not yet supported"};
     }
     out.set_palette(pngPal);
 
@@ -87,8 +90,14 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
                 const GBATile& tile = tileset.tiles[tilesetTileIndex];
                 png::byte paletteIndex = tileset.paletteIndexes[tilesetTileIndex];
                 png::byte indexInPalette = tile.getPixel(pixelIndex);
-                out[pixelRow][pixelCol] = config.tilesPng8bpp ? (paletteIndex << 4) | indexInPalette :
-                                                                 indexInPalette;
+                switch(config.tilesPngPalette) {
+                    case _4BPP:
+                    case GREYSCALE:
+                        out[pixelRow][pixelCol] = indexInPalette;
+                        break;
+                    case _8BPP:
+                        out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
+                }
             }
             else {
                 // Pad out transparent tiles at end of last tiles.png row
@@ -145,7 +154,7 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
 //     porytiles::Config config{};
 //     config.transparencyColor = porytiles::RGBA_MAGENTA;
 //     config.numPalettesInPrimary = 5;
-//     config.tilesPng8bpp = true;
+//     config.tilesPngPalette = porytiles::TilesPngPalette::_8BPP;
 
 //     REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
 //     png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};

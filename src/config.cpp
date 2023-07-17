@@ -13,6 +13,10 @@ Config defaultConfig() {
     config.numPalettesTotal = 13;
     config.numTilesPerMetatile = 8;
 
+    config.transparencyColor = RGBA_MAGENTA;
+
+    config.tilesPngPalette = GREYSCALE;
+
     return config;
 }
 
