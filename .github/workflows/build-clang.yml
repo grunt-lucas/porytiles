@@ -47,6 +47,6 @@ jobs:
           brew install zlib
           brew install libpng
           brew install llvm@16
-          clang++-16 --version
-          CXX=clang++-16 make
-          CXX=clang++-16 make check
+          clang++ --version
+          CXX=clang++ make
+          CXX=clang++ make check
