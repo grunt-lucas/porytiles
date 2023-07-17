@@ -47,6 +47,6 @@ jobs:
           brew install zlib
           brew install libpng
           brew install llvm@16
-          clang++ --version
-          CXX=clang++ make
-          CXX=clang++ make check
+          /usr/local/opt/llvm/bin/clang++ --version
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
