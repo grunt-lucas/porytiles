@@ -19,8 +19,7 @@
     + what else?
 
 + Set up more CI builds
-    + Windows MSVC
-    + Clang on MacOS
+    + Windows MSVC?
     + set up package caches so installs don't have to run every time
 
 + `--verbose` should have filter modes:
