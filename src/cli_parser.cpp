@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <filesystem>
 #include <getopt.h>
 
 #include "ptexception.h"
@@ -30,23 +31,123 @@ void parseOptions(Config& config, int argc, char** argv) {
     }
 }
 
+template<typename T>
+static T parseIntegralOption(const std::string& optionName, const char* optarg) {
+    try {
+        size_t pos;
+        T arg = std::stoi(optarg, &pos);
+        if (std::string{optarg}.size() != pos) {
+            throw PtException{"option argument was not a valid integral type"};
+        }
+        return arg;
+    }
+    catch (const std::exception& e) {
+        throw PtException{
+                "invalid argument `" + std::string{optarg} + "' for option `" + optionName + "': " + e.what()};
+    }
+}
+
+static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string& optionName, const char* optarg) {
+    std::string optargString{optarg};
+    if (optargString == "pal0") {
+        return TilesPngPaletteMode::PAL0;
+    }
+    else if (optargString == "true-color") {
+        return TilesPngPaletteMode::TRUE_COLOR;
+    }
+    else if (optargString == "greyscale") {
+        return TilesPngPaletteMode::GREYSCALE;
+    }
+    else {
+        throw PtException{"invalid argument `" + optargString + "' for option `" + optionName + "'"};
+    }
+}
+
 /*
  * TODO : everything here is very preliminary and should be hardened for a better user experience
  */
 
 
-// -------------------------
-// |    GLOBAL OPTIONS     |
-// -------------------------
-
+// ----------------------------
+// |    OPTION DEFINITIONS    |
+// ----------------------------
+/*
+ * We'll define all the options and help strings here to reduce code repetition. Some options will be shared between
+ * subcommands so we want to avoid duplicating message strings, etc.
+ */
 const std::string HELP_LONG = "help";
-const std::string HELP_SHORT = "h";
-const std::string VERBOSE_LONG = "verbose";
-const std::string VERBOSE_SHORT = "v";
-const std::string VERSION_LONG = "version";
-const std::string VERSION_SHORT = "V";
-const std::vector<std::string> GLOBAL_SHORTS = {HELP_SHORT, VERBOSE_SHORT, VERSION_SHORT};
+constexpr char HELP_SHORT = "h"[0];
+const std::string HELP_DESCRIPTION =
+"    -" + std::string{HELP_SHORT} + ", --" + HELP_LONG + "\n"
+"        Print help message.\n";
 
+const std::string VERBOSE_LONG = "verbose";
+constexpr char VERBOSE_SHORT = "v"[0];
+const std::string VERBOSE_DESCRIPTION =
+"    -" + std::string{VERBOSE_SHORT} + ", --" + VERBOSE_LONG + "\n"
+"        Enable verbose logging to stdout.\n";
+
+const std::string VERSION_LONG = "version";
+constexpr char VERSION_SHORT = "V"[0];
+const std::string VERSION_DESCRIPTION =
+"    -" + std::string{VERSION_SHORT} + ", --" + VERSION_LONG + "\n"
+"        Print version info.\n";
+
+const std::string OUTPUT_LONG = "output";
+constexpr char OUTPUT_SHORT = "o"[0];
+const std::string OUTPUT_DESCRIPTION =
+"    -" + std::string{OUTPUT_SHORT} + ", --" + OUTPUT_LONG + "=<PATH>\n"
+"        Output build files to the directory specified by PATH. If any element\n"
+"        of PATH does not exist, it will be created. Defaults to the current\n"
+"        working directory (i.e. `.').\n";
+
+const std::string NUM_TILES_IN_PRIMARY_LONG = "num-tiles-primary";
+const std::string NUM_TILES_IN_PRIMARY_DESCRIPTION =
+"    --" + NUM_TILES_IN_PRIMARY_LONG + "=<N>\n"
+"        Set the number of tiles in a primary set to N. This value should match\n"
+"        the corresponding value in your project's `include/fieldmap.h'.\n"
+"        Defaults to 512 (the pokeemerald default).\n";
+const int NUM_TILES_IN_PRIMARY_VAL = 1000;
+
+const std::string NUM_TILES_TOTAL_LONG = "num-tiles-total";
+const std::string NUM_TILES_TOTAL_DESCRIPTION =
+"    --" + NUM_TILES_TOTAL_LONG + "=<N>\n"
+"        Set the total number of tiles (primary + secondary) to N. This value\n"
+"        should match the corresponding value in your project's\n"
+"        `include/fieldmap.h'. Defaults to 1024 (the pokeemerald default).\n";
+const int NUM_TILES_TOTAL_VAL = 1001;
+
+const std::string NUM_PALETTES_IN_PRIMARY_LONG = "num-pals-primary";
+const std::string NUM_PALETTES_IN_PRIMARY_DESCRIPTION =
+"    --" + NUM_PALETTES_IN_PRIMARY_LONG + "=<N>\n"
+"        Set the number of palettes in a primary set to N. This value should\n"
+"        match the corresponding value in your project's `include/fieldmap.h'.\n"
+"        Defaults to 6 (the pokeemerald default).\n";
+const int NUM_PALETTES_IN_PRIMARY_VAL = 1002;
+
+const std::string NUM_PALETTES_TOTAL_LONG = "num-pals-total";
+const std::string NUM_PALETTES_TOTAL_DESCRIPTION =
+"    --" + NUM_PALETTES_TOTAL_LONG + "=<N>\n"
+"        Set the total number of palettes (primary + secondary) to N. This\n"
+"        value should match the corresponding value in your project's\n"
+"        `include/fieldmap.h'. Defaults to 13 (the pokeemerald default).\n";
+const int NUM_PALETTES_TOTAL_VAL = 1003;
+
+const std::string TILES_PNG_PALETTE_MODE_LONG = "tiles-png-pal-mode";
+const std::string TILES_PNG_PALETTE_MODE_DESCRIPTION =
+"    --" + TILES_PNG_PALETTE_MODE_LONG + "=<MODE>\n"
+"        Set the palette mode for the output `tiles.png'. Valid settings are\n"
+"        `pal0', `true-color', or `greyscale'. These settings are for human\n"
+"        visual purposes only and have no effect on the final in-game tiles.\n"
+"        Default value is `greyscale'.\n";
+const int TILES_PNG_PALETTE_MODE_VAL = 1004;
+
+
+// --------------------------------
+// |    GLOBAL OPTION PARSING     |
+// --------------------------------
+
+const std::vector<std::string> GLOBAL_SHORTS = {std::string{HELP_SHORT}, std::string{VERBOSE_SHORT}, std::string{VERSION_SHORT}};
 const std::string GLOBAL_HELP =
 "porytiles " + VERSION + " " + RELEASE_DATE + "\n"
 "grunt-lucas <grunt.lucas@yahoo.com>\n"
@@ -63,15 +164,16 @@ const std::string GLOBAL_HELP =
 "    porytiles --help\n"
 "    porytiles --version\n"
 "\n"
-"Options:\n"
-"    -h, --help        Print help message.\n"
-"\n"
-"    -v, --verbose     Enable verbose logging to stdout.\n"
-"\n"
-"    -V, --version     Print version info.\n"
+"Options:\n" +
+HELP_DESCRIPTION +
+"\n" +
+VERBOSE_DESCRIPTION +
+"\n" +
+VERSION_DESCRIPTION +
 "\n"
 "Commands:\n"
-"    compile-raw       Compile a raw tilesheet. Won't generate a `metatiles.bin'.\n"
+"    compile-raw\n"
+"        Compile a raw tilesheet. Won't generate a `metatiles.bin'.\n"
 "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
@@ -86,9 +188,9 @@ static void parseGlobalOptions(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),              no_argument,       nullptr, HELP_SHORT[0]},
-                    {VERBOSE_LONG.c_str(),           no_argument,       nullptr, VERBOSE_SHORT[0]},
-                    {VERSION_LONG.c_str(),           no_argument,       nullptr, VERSION_SHORT[0]},
+                    {HELP_LONG.c_str(),              no_argument,       nullptr, HELP_SHORT},
+                    {VERBOSE_LONG.c_str(),           no_argument,       nullptr, VERBOSE_SHORT},
+                    {VERSION_LONG.c_str(),           no_argument,       nullptr, VERSION_SHORT},
                     {nullptr,                        no_argument,       nullptr, 0}
             };
 
@@ -99,15 +201,15 @@ static void parseGlobalOptions(Config& config, int argc, char** argv) {
             break;
 
         switch (opt) {
-            case 'v':
+            case VERBOSE_SHORT:
                 std::cout << "verbose mode activated" << std::endl;
                 break;
-            case 'V':
+            case VERSION_SHORT:
                 std::cout << PROGRAM_NAME << " " << VERSION << " " << RELEASE_DATE << std::endl;
                 exit(0);
 
                 // Help message upon '-h/--help' goes to stdout
-            case 'h':
+            case HELP_SHORT:
                 std::cout << GLOBAL_HELP << std::endl;
                 exit(0);
                 // Help message on invalid or unknown options goes to stderr and gives error code
@@ -140,18 +242,11 @@ static void parseSubcommand(Config& config, int argc, char** argv) {
 }
 
 
-// ------------------------
-// |    SHARED OPTIONS    |
-// ------------------------
-
-
-
-
 // -----------------------------
 // |    COMPILE-RAW COMMAND    |
 // -----------------------------
 
-const std::vector<std::string> COMPILE_RAW_SHORTS = {HELP_SHORT};
+const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_RAW_HELP =
 "Usage:\n"
 "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] TILES\n"
@@ -163,8 +258,18 @@ const std::string COMPILE_RAW_HELP =
 "    <TILES>\n"
 "        An RGBA PNG tilesheet containing pixel art to be tile-ized.\n"
 "\n"
-"Options:\n"
-"    --foo        Some random option TODO : remove\n"
+"Options:\n" +
+OUTPUT_DESCRIPTION +
+"\n" +
+NUM_TILES_IN_PRIMARY_DESCRIPTION +
+"\n" +
+NUM_TILES_TOTAL_DESCRIPTION +
+"\n" +
+NUM_PALETTES_IN_PRIMARY_DESCRIPTION +
+"\n" +
+NUM_PALETTES_TOTAL_DESCRIPTION +
+"\n" +
+TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n";
 
 static void parseCompileRaw(Config& config, int argc, char** argv) {
@@ -175,8 +280,14 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),              no_argument,       nullptr, HELP_SHORT[0]},
-                    {nullptr,                        no_argument,       nullptr, 0}
+                    {HELP_LONG.c_str(),                    no_argument,       nullptr, HELP_SHORT},
+                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+                    {NUM_PALETTES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),    required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+                    {NUM_TILES_TOTAL_LONG.c_str(),         required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+                    {OUTPUT_LONG.c_str(),                  required_argument, nullptr, OUTPUT_SHORT},
+                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),  required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {nullptr,                              no_argument,       nullptr, 0}
             };
 
     while (true) {
@@ -186,8 +297,30 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
             break;
 
         switch (opt) {
+            case OUTPUT_SHORT:
+                config.rawTilesheetPath = optarg;
+                if (std::filesystem::exists(config.rawTilesheetPath) && !std::filesystem::is_directory(config.rawTilesheetPath)) {
+                    throw PtException{config.rawTilesheetPath + ": exists but is not a directory"};
+                }
+                break;
+            case NUM_PALETTES_IN_PRIMARY_VAL:
+                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_PALETTES_TOTAL_VAL:
+                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+                break;
+            case NUM_TILES_IN_PRIMARY_VAL:
+                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_TILES_TOTAL_VAL:
+                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+                break;
+            case TILES_PNG_PALETTE_MODE_VAL:
+                config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+                break;
+
             // Help message upon '-h/--help' goes to stdout
-            case 'h':
+            case HELP_SHORT:
                 std::cout << COMPILE_RAW_HELP << std::endl;
                 exit(0);
             // Help message on invalid or unknown options goes to stderr and gives error code
@@ -196,6 +329,19 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
                 std::cout << COMPILE_RAW_HELP << std::endl;
                 exit(2);
         }
+    }
+
+    if ((argc - optind) != 1) {
+        throw PtException{"must specify exactly 1 TILES arg, see `porytiles compile-raw --help'"};
+    }
+
+    config.rawTilesheetPath = argv[optind++];
+
+    if (!std::filesystem::exists(config.rawTilesheetPath)) {
+        throw PtException{config.rawTilesheetPath + ": file does not exist"};
+    }
+    if (!std::filesystem::is_regular_file(config.rawTilesheetPath)) {
+        throw PtException{config.rawTilesheetPath + ": exists but was not a regular file"};
     }
 }
 

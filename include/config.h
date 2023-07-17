@@ -12,9 +12,9 @@
 namespace porytiles {
 
 
-enum TilesPngPalette {
-    _4BPP,
-    _8BPP,
+enum TilesPngPaletteMode {
+    PAL0,
+    TRUE_COLOR,
     GREYSCALE
 };
 
@@ -38,9 +38,10 @@ struct Config {
 
     // Input PNG params
     RGBA32 transparencyColor;
+    std::string rawTilesheetPath;
 
     // Output PNG params
-    TilesPngPalette tilesPngPalette;
+    TilesPngPaletteMode tilesPngPaletteMode;
 
     Subcommand subcommand;
 

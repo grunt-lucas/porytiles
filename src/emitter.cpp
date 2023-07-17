@@ -51,7 +51,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
      */
     // 0 initial length here since we will push_back our colors in-order
     png::palette pngPal{0};
-    if (config.tilesPngPalette == _8BPP) {
+    if (config.tilesPngPaletteMode == TRUE_COLOR) {
         for (const auto& palette: tileset.palettes) {
             for (const auto& color: palette.colors) {
                 RGBA32 rgbaColor = bgrToRgba(color);
@@ -59,7 +59,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
             }
         }
     }
-    else if (config.tilesPngPalette == GREYSCALE) {
+    else if (config.tilesPngPaletteMode == GREYSCALE) {
         for (const auto& color: greyscalePalette) {
             pngPal.push_back(png::color{color.red, color.green, color.blue});
         }
@@ -70,7 +70,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
         //     RGBA32 rgbaColor = bgrToRgba(color);
         //     pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
         // }
-        throw std::runtime_error{"_4BPP option not yet supported"};
+        throw std::runtime_error{"PAL0 option not yet supported"};
     }
     out.set_palette(pngPal);
 
@@ -90,12 +90,12 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
                 const GBATile& tile = tileset.tiles[tilesetTileIndex];
                 png::byte paletteIndex = tileset.paletteIndexes[tilesetTileIndex];
                 png::byte indexInPalette = tile.getPixel(pixelIndex);
-                switch(config.tilesPngPalette) {
-                    case _4BPP:
+                switch(config.tilesPngPaletteMode) {
+                    case PAL0:
                     case GREYSCALE:
                         out[pixelRow][pixelCol] = indexInPalette;
                         break;
-                    case _8BPP:
+                    case TRUE_COLOR:
                         out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
                 }
             }
@@ -152,7 +152,7 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
 
 // TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
 //     porytiles::Config config = porytiles::defaultConfig();
-//     config.tilesPngPalette = porytiles::TilesPngPalette::_8BPP;
+//     config.tilesPngPaletteMode = porytiles::TilesPngPaletteMode::TRUE_COLOR;
 
 //     REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
 //     png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};

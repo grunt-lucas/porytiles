@@ -16,7 +16,7 @@ Config defaultConfig() {
 
     config.transparencyColor = RGBA_MAGENTA;
 
-    config.tilesPngPalette = GREYSCALE;
+    config.tilesPngPaletteMode = GREYSCALE;
 
     config.subcommand = COMPILE_RAW;
 
