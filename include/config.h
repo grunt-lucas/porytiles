@@ -26,6 +26,7 @@ struct Config {
     std::size_t numMetatilesTotal;
     std::size_t numPalettesInPrimary;
     std::size_t numPalettesTotal;
+    std::size_t numTilesPerMetatile;
 
     // Input PNG params
     RGBA32 transparencyColor;
@@ -37,6 +38,7 @@ struct Config {
 };
 
 // TODO : add method to get a good default config for unit tests
+Config defaultConfig();
 
 }
 #endif
