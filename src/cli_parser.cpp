@@ -229,7 +229,7 @@ static void parseGlobalOptions(Config& config, int argc, char** argv) {
 const std::string COMPILE_RAW_COMMAND = "compile-raw";
 static void parseSubcommand(Config& config, int argc, char** argv) {
     if ((argc - optind) == 0) {
-        throw PtException{"missing required subcommand"};
+        throw PtException{"missing required subcommand, try `porytiles --help' for usage information"};
     }
 
     std::string subcommand = argv[optind++];
