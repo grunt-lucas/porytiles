@@ -7,7 +7,7 @@
 #include "types.h"
 
 /**
- * Utility functions for reading compiler input from PNG files. Provides utilities for reading a layered or raw
+ * Utility functions for reading input from various file types. Provides utilities for reading a layered or raw
  * tilesheet.
  */
 
@@ -18,6 +18,9 @@ namespace porytiles {
  * The importer will simply scan the PNG tiles left-to-right, top-to-bottom and put them into the DecompiledTileset.
  */
 DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png);
+
+DecompiledTileset
+importLayeredTilesFromPngs(const png::image<png::rgba_pixel>& bottom, const png::image<png::rgba_pixel>& middle, const png::image<png::rgba_pixel>& top);
 
 }
 

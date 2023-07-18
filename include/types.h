@@ -77,11 +77,16 @@ BGR15 rgbaToBgr(const RGBA32& rgba);
 
 RGBA32 bgrToRgba(const BGR15& bgr);
 
+constexpr std::size_t TILE_SIDE_LENGTH = 8;
+constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
+constexpr std::size_t METATILE_TILE_SIDE_LENGTH = 2;
+constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+constexpr std::size_t PAL_SIZE = 16;
+constexpr std::size_t MAX_BG_PALETTES = 16;
+
 /**
  * A tile of RGBA32 colors.
  */
-constexpr std::size_t TILE_SIDE_LENGTH = 8;
-constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
 struct RGBATile {
     std::array<RGBA32, TILE_NUM_PIX> pixels;
 
@@ -179,8 +184,6 @@ extern const GBATile GBA_TILE_TRANSPARENT;
 /**
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
-constexpr std::size_t PAL_SIZE = 16;
-constexpr std::size_t MAX_BG_PALETTES = 16;
 struct GBAPalette {
     std::array<BGR15, PAL_SIZE> colors;
 
