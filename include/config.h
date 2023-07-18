@@ -19,7 +19,8 @@ enum TilesPngPaletteMode {
 };
 
 enum Subcommand {
-    COMPILE_RAW
+    COMPILE_RAW,
+    COMPILE
 };
 
 /**
@@ -39,6 +40,9 @@ struct Config {
     // Input params
     RGBA32 transparencyColor;
     std::string rawTilesheetPath;
+    std::string bottomTilesheetPath;
+    std::string middleTilesheetPath;
+    std::string topTilesheetPath;
 
     // Output params
     TilesPngPaletteMode tilesPngPaletteMode;

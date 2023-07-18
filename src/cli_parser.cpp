@@ -19,6 +19,7 @@ const std::string RELEASE_DATE = "---";
 static void parseGlobalOptions(Config& config, int argc, char** argv);
 static void parseSubcommand(Config& config, int argc, char** argv);
 static void parseCompileRaw(Config& config, int argc, char** argv);
+static void parseCompile(Config& config, int argc, char** argv);
 
 void parseOptions(Config& config, int argc, char** argv) {
     parseGlobalOptions(config, argc, argv);
@@ -27,6 +28,9 @@ void parseOptions(Config& config, int argc, char** argv) {
     switch(config.subcommand) {
     case COMPILE_RAW:
         parseCompileRaw(config, argc, argv);
+        break;
+    case COMPILE:
+        parseCompile(config, argc, argv);
         break;
     }
 }
@@ -175,6 +179,9 @@ VERSION_DESCRIPTION +
 "    compile-raw\n"
 "        Compile a raw tilesheet. Won't generate a `metatiles.bin'.\n"
 "\n"
+"    compile\n"
+"        Compile three layer RGBA PNGs into a complete tileset.\n"
+"\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
 "To get more help with porytiles, check out the guides at:\n"
@@ -227,6 +234,7 @@ static void parseGlobalOptions(Config& config, int argc, char** argv) {
 // ----------------------------
 
 const std::string COMPILE_RAW_COMMAND = "compile-raw";
+const std::string COMPILE_COMMAND = "compile";
 static void parseSubcommand(Config& config, int argc, char** argv) {
     if ((argc - optind) == 0) {
         throw PtException{"missing required subcommand, try `porytiles --help' for usage information"};
@@ -235,6 +243,9 @@ static void parseSubcommand(Config& config, int argc, char** argv) {
     std::string subcommand = argv[optind++];
     if (subcommand == COMPILE_RAW_COMMAND) {
         config.subcommand = Subcommand::COMPILE_RAW;
+    }
+    else if (subcommand == COMPILE_COMMAND) {
+        config.subcommand = Subcommand::COMPILE;
     }
     else {
         throw PtException{"unrecognized subcommand: " + subcommand};
@@ -333,6 +344,109 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     }
 
     config.rawTilesheetPath = argv[optind++];
+}
+
+
+// -------------------------
+// |    COMPILE COMMAND    |
+// -------------------------
+
+const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
+const std::string COMPILE_HELP =
+"Usage:\n"
+"    porytiles " + COMPILE_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP\n"
+"\n"
+"Compile a bottom, middle, and top tilesheet into a complete tileset. This\n"
+"command will generate a `metatiles.bin' file along with `tiles.png' and the\n"
+"pal files.\n"
+"\n"
+"Args:\n"
+"    <BOTTOM>\n"
+"        An RGBA PNG tilesheet containing the bottom metatile layer.\n"
+"\n"
+"    <MIDDLE>\n"
+"        An RGBA PNG tilesheet containing the middle metatile layer.\n"
+"\n"
+"    <TOP>\n"
+"        An RGBA PNG tilesheet containing the top metatile layer.\n"
+"\n"
+"Options:\n" +
+OUTPUT_DESCRIPTION +
+"\n" +
+NUM_TILES_IN_PRIMARY_DESCRIPTION +
+"\n" +
+NUM_TILES_TOTAL_DESCRIPTION +
+"\n" +
+NUM_PALETTES_IN_PRIMARY_DESCRIPTION +
+"\n" +
+NUM_PALETTES_TOTAL_DESCRIPTION +
+"\n" +
+TILES_PNG_PALETTE_MODE_DESCRIPTION +
+"\n";
+
+static void parseCompile(Config& config, int argc, char** argv) {
+    std::ostringstream implodedShorts;
+    std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(),
+           std::ostream_iterator<std::string>(implodedShorts, ""));
+    // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
+    std::string shortOptions = "+" + implodedShorts.str();
+    static struct option longOptions[] =
+            {
+                    {HELP_LONG.c_str(),                    no_argument,       nullptr, HELP_SHORT},
+                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+                    {NUM_PALETTES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),    required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+                    {NUM_TILES_TOTAL_LONG.c_str(),         required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+                    {OUTPUT_LONG.c_str(),                  required_argument, nullptr, OUTPUT_SHORT},
+                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),  required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {nullptr,                              no_argument,       nullptr, 0}
+            };
+
+    while (true) {
+        const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
+
+        if (opt == -1)
+            break;
+
+        switch (opt) {
+            case OUTPUT_SHORT:
+                config.outputPath = optarg;
+                break;
+            case NUM_PALETTES_IN_PRIMARY_VAL:
+                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_PALETTES_TOTAL_VAL:
+                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+                break;
+            case NUM_TILES_IN_PRIMARY_VAL:
+                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_TILES_TOTAL_VAL:
+                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+                break;
+            case TILES_PNG_PALETTE_MODE_VAL:
+                config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+                break;
+
+            // Help message upon '-h/--help' goes to stdout
+            case HELP_SHORT:
+                std::cout << COMPILE_HELP << std::endl;
+                exit(0);
+            // Help message on invalid or unknown options goes to stderr and gives error code
+            case '?':
+            default:
+                std::cout << COMPILE_HELP << std::endl;
+                exit(2);
+        }
+    }
+
+    if ((argc - optind) != 3) {
+        throw PtException{"must specify exactly 3 layer args, see `porytiles compile --help'"};
+    }
+
+    config.bottomTilesheetPath = argv[optind++];
+    config.middleTilesheetPath = argv[optind++];
+    config.topTilesheetPath = argv[optind++];
 }
 
 }
