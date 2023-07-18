@@ -298,10 +298,7 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
 
         switch (opt) {
             case OUTPUT_SHORT:
-                config.rawTilesheetPath = optarg;
-                if (std::filesystem::exists(config.rawTilesheetPath) && !std::filesystem::is_directory(config.rawTilesheetPath)) {
-                    throw PtException{config.rawTilesheetPath + ": exists but is not a directory"};
-                }
+                config.outputPath = optarg;
                 break;
             case NUM_PALETTES_IN_PRIMARY_VAL:
                 config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
@@ -336,13 +333,6 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     }
 
     config.rawTilesheetPath = argv[optind++];
-
-    if (!std::filesystem::exists(config.rawTilesheetPath)) {
-        throw PtException{config.rawTilesheetPath + ": file does not exist"};
-    }
-    if (!std::filesystem::is_regular_file(config.rawTilesheetPath)) {
-        throw PtException{config.rawTilesheetPath + ": exists but was not a regular file"};
-    }
 }
 
 }

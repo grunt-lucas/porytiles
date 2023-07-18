@@ -9,7 +9,7 @@
 
 namespace porytiles {
 
-//constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
+constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
 void emitPalette(const Config& config, std::ostream& out, const GBAPalette& palette) {
     out << "JASC-PAL" << std::endl;
@@ -20,6 +20,12 @@ void emitPalette(const Config& config, std::ostream& out, const GBAPalette& pale
         RGBA32 color = bgrToRgba(palette.colors.at(i));
         out << color.jasc() << std::endl;
     }
+}
+
+void emitZeroedPalette(const Config& config, std::ostream& out) {
+    GBAPalette palette{};
+    palette.colors[0] = rgbaToBgr(config.transparencyColor);
+    emitPalette(config, out, palette);
 }
 
 void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const CompiledTileset& tileset) {

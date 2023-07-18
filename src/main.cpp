@@ -2,15 +2,17 @@
 #include <doctest.h>
 
 #include <iostream>
+#include <exception>
 
 #include "config.h"
+#include "driver.h"
 #include "cli_parser.h"
 #include "ptexception.h"
 
 int main(int argc, char** argv) try {
     porytiles::Config config = porytiles::defaultConfig();
     porytiles::parseOptions(config, argc, argv);
-
+    porytiles::drive(config);
     return 0;
 }
 catch (const porytiles::PtException& e) {

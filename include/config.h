@@ -36,12 +36,13 @@ struct Config {
     std::size_t numTilesPerMetatile;
     bool secondary;
 
-    // Input PNG params
+    // Input params
     RGBA32 transparencyColor;
     std::string rawTilesheetPath;
 
-    // Output PNG params
+    // Output params
     TilesPngPaletteMode tilesPngPaletteMode;
+    std::string outputPath;
 
     Subcommand subcommand;
 

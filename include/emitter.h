@@ -13,6 +13,8 @@
 
 namespace porytiles {
 
+extern const std::size_t TILES_PNG_WIDTH_IN_TILES;
+
 /**
  * TODO : fill in doc comment
  */
@@ -21,7 +23,12 @@ void emitPalette(const Config& config, std::ostream& out, const GBAPalette& pale
 /**
  * TODO : fill in doc comment
  */
-void emitTilesPng(const Config& config, png::image<png::rgba_pixel>& out, const CompiledTileset& tileset);
+void emitZeroedPalette(const Config& config, std::ostream& out);
+
+/**
+ * TODO : fill in doc comment
+ */
+void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const CompiledTileset& tileset);
 
 /**
  * TODO : fill in doc comment
