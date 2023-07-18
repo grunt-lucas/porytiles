@@ -178,7 +178,7 @@ VERSION_DESCRIPTION +
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
 "To get more help with porytiles, check out the guides at:\n"
-"    https://github.com/grunt-lucas/porytiles/wiki\n";
+"    https://github.com/grunt-lucas/porytiles/wiki/Porytiles-Homepage\n";
 
 static void parseGlobalOptions(Config& config, int argc, char** argv) {
     std::ostringstream implodedShorts;
