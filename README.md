@@ -27,10 +27,10 @@ For more info, please see
 First, clone and build Porytiles like so. You must have a version of Clang or GCC that supports C++20 features.
 
 ```
-$ git clone https://github.com/grunt-lucas/porytiles.git
-$ cd porytiles
-$ make
-$ ./release/bin/porytiles --help
+git clone https://github.com/grunt-lucas/porytiles.git
+cd porytiles
+make
+./release/bin/porytiles --help
 ```
 
 Once you've cloned and built Porytiles, try the following little demo:
