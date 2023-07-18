@@ -51,6 +51,7 @@ corresponding to the inputs from `res/tests/primary_set.png`. Porytiles will soo
 | Generate `palettes/*.pal`   | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Generate `metatiles.bin`    | ❌ |  |
 | Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ❌ |  |
+| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
 | Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
 | Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
 | Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
