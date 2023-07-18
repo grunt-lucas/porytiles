@@ -2,10 +2,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 
 #include "types.h"
 #include "importer.h"
 #include "compiler.h"
+#include "tmpfiles.h"
 
 namespace porytiles {
 
@@ -120,7 +122,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
 // |    TEST CASES    |
 // --------------------
 
-TEST_CASE("emitGBAPalette should write the expected JASC pal to the output stream") {
+TEST_CASE("emitPalette should write the expected JASC pal to the output stream") {
     porytiles::Config config{};
     porytiles::GBAPalette palette{};
     palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
@@ -156,20 +158,63 @@ TEST_CASE("emitGBAPalette should write the expected JASC pal to the output strea
     CHECK(outputStream.str() == expectedOutput);
 }
 
-// TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
-//     porytiles::Config config = porytiles::defaultConfig();
-//     config.tilesPngPaletteMode = porytiles::TilesPngPaletteMode::TRUE_COLOR;
+TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output stream") {
+    porytiles::Config config = porytiles::defaultConfig();
 
-//     REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-//     png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
-//     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-//     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+    std::string expectedOutput =
+        "JASC-PAL\n"
+        "0100\n"
+        "16\n"
+        "248 0 248\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n"
+        "0 0 0\n";
 
-//     const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
-//     const size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
-//     png::image<png::index_pixel> tilesetPng{static_cast<png::uint_32>(imageWidth),
-//                                             static_cast<png::uint_32>(imageHeight)};
+    std::stringstream outputStream;
+    porytiles::emitZeroedPalette(config, outputStream);
 
-//     porytiles::emitTilesPng(config, tilesetPng, compiledTiles);
-//     tilesetPng.write("/Users/dad/Desktop/foo.png");
-// }
+    CHECK(outputStream.str() == expectedOutput);
+}
+
+TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
+    porytiles::Config config = porytiles::defaultConfig();
+    config.tilesPngPaletteMode = porytiles::TilesPngPaletteMode::TRUE_COLOR;
+
+    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+
+    const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
+    const size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
+    png::image<png::index_pixel> outPng{static_cast<png::uint_32>(imageWidth),
+                                            static_cast<png::uint_32>(imageHeight)};
+
+    porytiles::emitTilesPng(config, outPng, compiledTiles);
+    std::filesystem::path pngTmpPath = porytiles::getTmpfilePath("emitTilesPngTest.png");
+    outPng.write(pngTmpPath);
+
+    png::image<png::index_pixel> tilesetPng{pngTmpPath};
+    // Check that image dimensions are correct, and that first tile is transparent
+    CHECK(tilesetPng.get_width() == imageWidth);
+    CHECK(tilesetPng.get_height() == imageHeight);
+    for (std::size_t pixelX = 0; pixelX < porytiles::TILE_SIDE_LENGTH; pixelX++) {
+        for (std::size_t pixelY = 0; pixelY < porytiles::TILE_SIDE_LENGTH; pixelY++) {
+            CHECK(tilesetPng[pixelX][pixelY] == 0);
+        }
+    }
+
+    std::filesystem::remove(pngTmpPath);
+}
