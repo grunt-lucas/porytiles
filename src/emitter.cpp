@@ -116,6 +116,21 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
     }
 }
 
+void emitMetatilesBin(const Config& config, std::ostream& out, const CompiledTileset& tileset) {
+    for(std::size_t i = 0; i < tileset.assignments.size(); i++) {
+        auto& assignment = tileset.assignments.at(i);
+        uint16_t tileValue = static_cast<uint16_t>(
+               (assignment.tileIndex & 0x3FF)
+            | ((assignment.hFlip & 1) << 10)
+            | ((assignment.vFlip & 1) << 11)
+            | ((assignment.paletteIndex & 0xF) << 12)
+        );
+        out << static_cast<char>(tileValue);
+        out << static_cast<char>(tileValue >> 8);
+    }
+    out.flush();
+}
+
 }
 
 // --------------------
@@ -217,4 +232,55 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
     }
 
     std::filesystem::remove(pngTmpPath);
+}
+
+TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings") {
+    porytiles::Config config = porytiles::defaultConfig();
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/top.png"));
+
+    png::image<png::rgba_pixel> bottom{"res/tests/simple_metatiles_1/bottom.png"};
+    png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
+    png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
+
+    porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
+    porytiles::CompiledTileset compiled = porytiles::compile(config, decompiled);
+
+    std::filesystem::path tmpPath = porytiles::getTmpfilePath("emitMetatilesBin_test.bin");
+    std::ofstream outFile{tmpPath};
+    porytiles::emitMetatilesBin(config, outFile, compiled);
+    outFile.close();
+
+    std::ifstream input(tmpPath, std::ios::binary);
+    std::vector<char> bytes(
+         (std::istreambuf_iterator<char>(input)),
+         (std::istreambuf_iterator<char>()));
+    input.close();
+
+    CHECK(bytes[0] == 1);
+    CHECK(bytes[1] == 32);
+    CHECK(bytes[2] == 0);
+    CHECK(bytes[3] == 0);
+    CHECK(bytes[4] == 0);
+    CHECK(bytes[5] == 0);
+    CHECK(bytes[6] == 1);
+    CHECK(bytes[7] == 48);
+    CHECK(bytes[8] == 0);
+    CHECK(bytes[9] == 0);
+    CHECK(bytes[10] == 0);
+    CHECK(bytes[11] == 0);
+    CHECK(bytes[12] == 1);
+    CHECK(bytes[13] == 64);
+    CHECK(bytes[14] == 0);
+    CHECK(bytes[15] == 0);
+    CHECK(bytes[16] == 0);
+    CHECK(bytes[17] == 0);
+    CHECK(bytes[18] == 1);
+    CHECK(bytes[19] == 80);
+    for (int i = 20; i < bytes.size(); i++) {
+        CHECK(bytes[i] == 0);
+    }
+
+    std::filesystem::remove(tmpPath);
 }

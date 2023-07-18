@@ -136,7 +136,9 @@ static void driveCompile(const Config& config) {
     std::filesystem::path outputPath(config.outputPath);
     std::filesystem::path palettesDir("palettes");
     std::filesystem::path tilesetFile("tiles.png");
+    std::filesystem::path metatilesFile("metatiles.bin");
     std::filesystem::path tilesetPath = config.outputPath / tilesetFile;
+    std::filesystem::path metatilesPath = config.outputPath / metatilesFile;
     std::filesystem::path palettesPath = config.outputPath / palettesDir;
 
     if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
@@ -149,6 +151,10 @@ static void driveCompile(const Config& config) {
 
     emitPalettes(config, compiledTiles, palettesPath);
     emitTilesPng(config, compiledTiles, tilesetPath);
+
+    std::ofstream outMetatiles{metatilesPath.string()};
+    emitMetatilesBin(config, outMetatiles, compiledTiles);
+    outMetatiles.close();
 }
 
 void drive(const Config& config) {
