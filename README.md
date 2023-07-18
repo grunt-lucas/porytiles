@@ -22,6 +22,18 @@ file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
+## Basic Usage
+
+Once you've cloned and build Porytiles, try the following little demo:
+
+```
+./release/bin/porytiles compile-raw -o ./output --tiles-png-pal-mode=true-color res/tests/primary_set.png
+```
+
+This should create an `output` folder in the current working directory containing a `tiles.png` and pal files
+corresponding to the inputs from `res/tests/primary_set.png`. Porytiles will soon support generation of
+`metatiles.bin` as well.
+
 ## Planned Features
 
 |  Feature  |  Completed?  |  Links  |
