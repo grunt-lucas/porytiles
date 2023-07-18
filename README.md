@@ -53,6 +53,7 @@ corresponding to the inputs from `res/tests/primary_set.png`. Porytiles will soo
 | Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ❌ |  |
 | Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
 | Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
+| Support `.ora` files as input to compile command   | ❌ |  |
 | Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
 | Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
 

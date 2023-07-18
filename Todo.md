@@ -43,6 +43,9 @@
           first N
     + these changes will be very helpful once we start working on metatile generation
 
++ Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
+  + https://github.com/tfussell/miniz-cpp
+
 
 # Big Feature Ideas
 
