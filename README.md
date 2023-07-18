@@ -22,9 +22,18 @@ file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
-## Basic Usage
+## Getting Started
 
-Once you've cloned and build Porytiles, try the following little demo:
+First, clone and build Porytiles like so. You must have a version of Clang or GCC that supports C++20 features.
+
+```
+$ git clone https://github.com/grunt-lucas/porytiles.git
+$ cd porytiles
+$ make
+$ ./release/bin/porytiles --help
+```
+
+Once you've cloned and built Porytiles, try the following little demo:
 
 ```
 ./release/bin/porytiles compile-raw -o ./output --tiles-png-pal-mode=true-color res/tests/primary_set.png
