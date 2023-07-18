@@ -22,3 +22,14 @@ file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
+## Planned Features
+
+|  Feature  |  Completed?  |  Links  |
+|-----------|--------------|---------|
+| Generate `tiles.png`        | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
+| Generate `palettes/*.pal`   | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
+| Generate `metatiles.bin`    | ❌ |  |
+| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
+| Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
+| Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
+
