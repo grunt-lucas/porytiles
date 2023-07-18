@@ -383,10 +383,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
 // --------------------
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     porytiles::NormalizedPalette palette1{};
     palette1.size = 1;
@@ -433,10 +430,7 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 }
 
 TEST_CASE("candidate should return the NormalizedTile with requested flips") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -549,10 +543,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
 }
 
 TEST_CASE("normalize should return the normal form of the given tile") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/corners.png"));
     png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -578,10 +569,7 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 }
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -646,10 +634,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 }
 
 TEST_CASE("buildColorIndexMap should build a map of all unique colors in the decomp tileset") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -702,10 +687,7 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 }
 
 TEST_CASE("matchNormalizedWithColorSets should return the expected data structures") {
-    porytiles::Config config{};
-    config.transparencyColor = porytiles::RGBA_MAGENTA;
-    config.numPalettesInPrimary = 6;
-    config.secondary = false;
+    porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
