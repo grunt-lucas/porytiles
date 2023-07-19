@@ -33,15 +33,35 @@ make
 ./release/bin/porytiles --help
 ```
 
-Once you've cloned and built Porytiles, try the following little demo:
+Once you've cloned and built Porytiles, try the following little demo.
+
+1. Open a pokeemerald project in Porymap, one that has triple-layer metatiles enabled. Porytiles requires that you use
+   triple layer metatiles. If you don't know what this is or how to enable, please see here:
+   https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles
+
+2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesTest`.
+
+3. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary
+   tileset, select `gTileset_PorytilesTest`.
+
+4. Run the following command:
 
 ```
-./release/bin/porytiles compile-raw -o ./output --tiles-png-pal-mode=true-color res/tests/primary_set.png
+./release/bin/porytiles compile \
+-o path/to/project/data/tilesets/primary/porytiles_test \
+res/examples/basic_primary_set/bottom.png \
+res/examples/basic_primary_set/middle.png \
+res/examples/basic_primary_set/top.png
 ```
 
-This should create an `output` folder in the current working directory containing a `tiles.png` and pal files
-corresponding to the inputs from `res/tests/primary_set.png`. Porytiles will soon support generation of
-`metatiles.bin` as well.
+5. In Porymap, select `File -> Reload Project`.
+
+6. The metatile picker on the right should now show a basic tileset! Start mapping on your new map, and then save.
+
+7. Open one of the layer PNGs in `res/examples/basic_primary_set` and edit it. Re-run the command from Step 4, and then
+   reload Porymap again like in Step 5. You should see your changes reflected in both the map and the metatile picker.
+
+8. Enjoy!
 
 ## Planned Features
 
@@ -49,7 +69,7 @@ corresponding to the inputs from `res/tests/primary_set.png`. Porytiles will soo
 |-----------|--------------|---------|
 | Generate `tiles.png`        | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Generate `palettes/*.pal`   | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
-| Generate `metatiles.bin`    | ❌ |  |
+| Generate `metatiles.bin`    | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ❌ |  |
 | Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
 | Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
