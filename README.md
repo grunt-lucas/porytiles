@@ -67,13 +67,12 @@ res/examples/basic_primary_set/top.png
 
 |  Feature  |  Completed?  |  Links  |
 |-----------|--------------|---------|
-| Generate `tiles.png`        | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Generate `palettes/*.pal`   | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
+| Generate `tiles.png`        | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Generate `metatiles.bin`    | ✅ | [unreleased in trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
 | Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ❌ |  |
-| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
-| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
-| Support `.ora` files as input to compile command   | ❌ |  |
 | Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
 | Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
-
+| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
+| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
+| Support `.ora` files as input to compile command   | ❌ |  |
