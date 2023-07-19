@@ -1,0 +1,118 @@
+name: Build Porytiles
+on:
+  push:
+    branches: [ "trunk" ]
+    tags: '*'
+  pull_request:
+    branches: [ "trunk" ]
+
+jobs:
+  build-linux:
+    name: Build on ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GCC 13
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install g++-13
+          g++-13 --version
+
+      - name: Build debug executable
+        uses: actions/checkout@v3
+        run: |
+          CXX=g++-13 make debug
+
+      - name: Run tests
+        run: |
+          CXX=g++-13 make debug-check
+      
+      - name: Build release executable
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          CXX=g++-13 make release
+
+      - name: Run release tests
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          CXX=g++-13 make check
+
+      - name: Prep release directory
+        if: startsWith(github.ref, 'refs/tags/')
+        run : |
+          mkdir porytiles-linux
+          cp release/bin/porytiles porytiles-linux
+          cp CHANGELOG.md porytiles-linux
+          cp README.md porytiles-linux
+          cp LICENSE porytiles-linux
+          cp -r res porytiles-linux
+
+      - name: Bundle release directory
+        uses: montudor/action-zip@v0.1.0
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          args: zip -r porytiles-linux.zip porytiles-linux
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: porytiles-linux.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    name: Build on macos-latest
+    runs-on: macos-latest
+    steps:
+      - name: Install LLVM 16 and dependencies
+        run: |
+          brew update
+          brew install zlib
+          brew install libpng
+          brew install llvm@16
+          /usr/local/opt/llvm/bin/clang++ --version
+
+      - name: Build debug executable
+        uses: actions/checkout@v3
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make debug
+
+      - name: Run tests
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make debug-check
+      
+      - name: Build release executable
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release
+
+      - name: Run release tests
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+
+      - name: Prep release directory
+        if: startsWith(github.ref, 'refs/tags/')
+        run : |
+          mkdir porytiles-macos
+          cp release/bin/porytiles porytiles-macos
+          cp CHANGELOG.md porytiles-macos
+          cp README.md porytiles-macos
+          cp LICENSE porytiles-macos
+          cp -r res porytiles-macos
+
+      - name: Bundle release directory
+        uses: montudor/action-zip@v0.1.0
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          args: zip -r porytiles-macos.zip porytiles-macos
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: porytiles-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
