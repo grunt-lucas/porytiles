@@ -278,7 +278,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     CHECK(bytes[17] == 0);
     CHECK(bytes[18] == 1);
     CHECK(bytes[19] == 80);
-    for (int i = 20; i < bytes.size(); i++) {
+    for (std::size_t i = 20; i < bytes.size(); i++) {
         CHECK(bytes[i] == 0);
     }
 
