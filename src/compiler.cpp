@@ -193,7 +193,15 @@ struct AssignState {
     std::vector<ColorSet> unassigned;
 };
 
-static bool assign(AssignState state, std::vector<ColorSet>& solution) {
+static std::size_t recurseCount = 0;
+static bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solution) {
+    recurseCount++;
+    // TODO : this is a horrible hack avert your eyes
+    if (recurseCount > config.maxRecurseCount) {
+        // TODO : better error context
+        throw PtException{"too many assignment recurses"};
+    }
+
     if (state.unassigned.empty()) {
         // No tiles left to assign, found a solution!
         std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
@@ -260,7 +268,7 @@ static bool assign(AssignState state, std::vector<ColorSet>& solution) {
         hardwarePalettesCopy[i] |= toAssign;
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assign(updatedState, solution)) {
+        if (assign(config, updatedState, solution)) {
             return true;
         }
     }
@@ -313,7 +321,8 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
               [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
     AssignState state = {logicalPalettes, unassignedNormPalettes};
-    bool assignSuccessful = assign(state, assignedPalsSolution);
+    recurseCount = 0;
+    bool assignSuccessful = assign(config, state, assignedPalsSolution);
 
     if (!assignSuccessful) {
         // TODO : better error context
@@ -792,6 +801,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         constexpr int SOLUTION_SIZE = 2;
         config.numPalettesInPrimary = SOLUTION_SIZE;
         config.secondary = false;
+        config.maxRecurseCount = 20;
 
         REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
         png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -811,7 +821,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                   [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
         porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-        CHECK(porytiles::assign(state, solution));
+        porytiles::recurseCount = 0;
+        CHECK(porytiles::assign(config, state, solution));
         CHECK(solution.size() == SOLUTION_SIZE);
         CHECK(solution.at(0).count() == 1);
         CHECK(solution.at(1).count() == 3);
@@ -825,6 +836,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         constexpr int SOLUTION_SIZE = 5;
         config.numPalettesInPrimary = SOLUTION_SIZE;
         config.secondary = false;
+        config.maxRecurseCount = 200;
 
         REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
         png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
@@ -844,7 +856,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                   [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
         porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-        CHECK(porytiles::assign(state, solution));
+        porytiles::recurseCount = 0;
+        CHECK(porytiles::assign(config, state, solution));
         CHECK(solution.size() == SOLUTION_SIZE);
         CHECK(solution.at(0).count() == 11);
         CHECK(solution.at(1).count() == 12);
@@ -860,6 +873,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     config.numPalettesInPrimary = 2;
     config.numTilesInPrimary = 4;
     config.secondary = false;
+    config.maxRecurseCount = 5;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -909,6 +923,7 @@ TEST_CASE("compile function should assign all tiles as expected") {
     config.numPalettesInPrimary = 2;
     config.numTilesInPrimary = 4;
     config.secondary = false;
+    config.maxRecurseCount = 5;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};

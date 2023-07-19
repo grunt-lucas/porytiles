@@ -43,6 +43,7 @@ struct Config {
     std::string bottomTilesheetPath;
     std::string middleTilesheetPath;
     std::string topTilesheetPath;
+    std::size_t maxRecurseCount;
 
     // Output params
     TilesPngPaletteMode tilesPngPaletteMode;

@@ -17,6 +17,7 @@ Config defaultConfig() {
     config.transparencyColor = RGBA_MAGENTA;
 
     config.tilesPngPaletteMode = GREYSCALE;
+    config.maxRecurseCount = 2000000;
 
     config.subcommand = COMPILE_RAW;
 
