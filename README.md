@@ -44,7 +44,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 3. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary
    tileset, select `gTileset_PorytilesTest`.
 
-4. Run the following command:
+4. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
 ./release/bin/porytiles compile \
