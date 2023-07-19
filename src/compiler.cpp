@@ -273,10 +273,6 @@ static bool assign(const Config& config, AssignState state, std::vector<ColorSet
         }
     }
 
-    /*
-     * TODO : for any reasonably sized tileset, reaching this state takes AGES. We need some heuristics that abort the
-     * search early if we are fairly confident there is no solution.
-     */
     // No solution found
     return false;
 }
