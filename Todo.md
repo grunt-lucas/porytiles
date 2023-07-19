@@ -14,6 +14,8 @@
 + Set up more CI builds
     + Windows MSVC?
     + set up package caches so installs don't have to run every time
+    + universal MacOS binary?
+      + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
 
 + Add `--verbose` logs to stdout
     + each log should have a category tag for easier grep filtering
