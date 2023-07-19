@@ -4,6 +4,7 @@
 #include <png.hpp>
 
 #include "types.h"
+#include "ptexception.h"
 
 namespace porytiles {
 
@@ -36,10 +37,30 @@ DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png) 
 
 DecompiledTileset
 importLayeredTilesFromPngs(const png::image<png::rgba_pixel>& bottom, const png::image<png::rgba_pixel>& middle, const png::image<png::rgba_pixel>& top) {
-    /*
-     * TODO : this should throw if any input PNGs are not formatted properly, e.g. the height is not divisible by 8, or
-     * the width is not exactly 128, etc. It should also throw if layers do not all have identical heights
-     */
+    if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
+        throw PtException{"bottom layer input PNG height `" + std::to_string(bottom.get_height()) + "' is not divisible by 16"};
+    }
+    if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
+        throw PtException{"middle layer input PNG height `" + std::to_string(middle.get_height()) + "' is not divisible by 16"};
+    }
+    if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
+        throw PtException{"top layer input PNG height `" + std::to_string(top.get_height()) + "' is not divisible by 16"};
+    }
+    if (bottom.get_width() != METATILE_SIDE_LENGTH * 8) {
+        throw PtException{"bottom layer input PNG width `" + std::to_string(bottom.get_width()) + "' was not 128"};
+    }
+    if (middle.get_width() != METATILE_SIDE_LENGTH * 8) {
+        throw PtException{"middle layer input PNG width `" + std::to_string(middle.get_width()) + "' was not 128"};
+    }
+    if (top.get_width() != METATILE_SIDE_LENGTH * 8) {
+        throw PtException{"top layer input PNG width `" + std::to_string(top.get_width()) + "' was not 128"};
+    }
+    if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
+        throw PtException{"layer input PNG heights `" + std::to_string(bottom.get_height()) + "," +
+                                                        std::to_string(middle.get_height()) + "," +
+                                                        std::to_string(top.get_height()) + "' must be equivalent"};
+    }
+
     DecompiledTileset decompiledTiles;
 
     // Since all widths and heights are the same, we can just read the bottom layer's width and height
