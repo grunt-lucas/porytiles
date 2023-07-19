@@ -14,8 +14,6 @@
 + Set up more CI builds
     + Windows MSVC?
     + set up package caches so installs don't have to run every time
-    + Get Actions to publish artifacts in releases
-      + see: https://github.com/huderlem/poryscript/blob/master/.github/workflows/go-dev.yml https://github.com/softprops/action-gh-release
 
 + Add `--verbose` logs to stdout
     + each log should have a category tag for easier grep filtering
