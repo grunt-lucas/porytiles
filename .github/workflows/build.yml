@@ -19,8 +19,10 @@ jobs:
           sudo apt-get install g++-13
           g++-13 --version
 
-      - name: Build debug executable
+      - name: Checkout porytiles
         uses: actions/checkout@v3
+
+      - name: Build debug executable
         run: |
           CXX=g++-13 make debug
 
@@ -74,8 +76,10 @@ jobs:
           brew install llvm@16
           /usr/local/opt/llvm/bin/clang++ --version
 
-      - name: Build debug executable
+      - name: Checkout porytiles
         uses: actions/checkout@v3
+
+      - name: Build debug executable
         run: |
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make debug
 
