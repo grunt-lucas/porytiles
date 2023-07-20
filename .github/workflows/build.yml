@@ -108,10 +108,9 @@ jobs:
           cp -r res porytiles-macos
 
       - name: Bundle release directory
-        uses: montudor/action-zip@v0.1.0
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          args: zip -r porytiles-macos.zip porytiles-macos
+        run: |
+          zip -r porytiles-macos.zip porytiles-macos
 
       - name: Create release
         uses: softprops/action-gh-release@v1
