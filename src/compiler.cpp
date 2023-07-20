@@ -377,6 +377,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
         std::size_t tileIndex = inserted.first->second;
         compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
     }
+    compiled.tileIndexes = tileIndexes;
 
     return compiled;
 }
