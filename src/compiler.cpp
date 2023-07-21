@@ -834,8 +834,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         config.secondary = false;
         config.maxRecurseCount = 200;
 
-        REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-        png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+        REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
         porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
         std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
         auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles);
@@ -991,8 +991,8 @@ TEST_CASE("CompileComplexTest") {
     // TODO : name this test and actually check things
 //    porytiles::Config config = porytiles::defaultConfig();
 
-//    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-//    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+//    REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+//    png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
 //    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
 //    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 

@@ -205,10 +205,9 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 
 TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
     porytiles::Config config = porytiles::defaultConfig();
-    config.tilesPngPaletteMode = porytiles::TilesPngPaletteMode::TRUE_COLOR;
 
-    REQUIRE(std::filesystem::exists("res/tests/primary_set.png"));
-    png::image<png::rgba_pixel> png1{"res/tests/primary_set.png"};
+    REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
 
@@ -222,12 +221,13 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
     outPng.write(pngTmpPath);
 
     png::image<png::index_pixel> tilesetPng{pngTmpPath};
-    // Check that image dimensions are correct, and that first tile is transparent
-    CHECK(tilesetPng.get_width() == imageWidth);
-    CHECK(tilesetPng.get_height() == imageHeight);
-    for (std::size_t pixelX = 0; pixelX < porytiles::TILE_SIDE_LENGTH; pixelX++) {
-        for (std::size_t pixelY = 0; pixelY < porytiles::TILE_SIDE_LENGTH; pixelY++) {
-            CHECK(tilesetPng[pixelX][pixelY] == 0);
+    png::image<png::index_pixel> expectedPng{"res/tests/compile_raw_set_1/expected.png"};
+
+    CHECK(tilesetPng.get_width() == expectedPng.get_width());
+    CHECK(tilesetPng.get_height() == expectedPng.get_height());
+    for (std::size_t pixelRow = 0; pixelRow < tilesetPng.get_height(); pixelRow++) {
+        for (std::size_t pixelCol = 0; pixelCol < tilesetPng.get_width(); pixelCol++) {
+            CHECK(tilesetPng[pixelRow][pixelCol] == expectedPng[pixelRow][pixelCol]);
         }
     }
 
@@ -258,6 +258,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
          (std::istreambuf_iterator<char>()));
     input.close();
 
+    // Check metatiles.bin bytes are as expected
     CHECK(bytes[0] == 1);
     CHECK(bytes[1] == 32);
     CHECK(bytes[2] == 0);
