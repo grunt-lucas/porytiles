@@ -217,7 +217,7 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
                                             static_cast<png::uint_32>(imageHeight)};
 
     porytiles::emitTilesPng(config, outPng, compiledTiles);
-    std::filesystem::path pngTmpPath = porytiles::getTmpfilePath("emitTilesPngTest.png");
+    std::filesystem::path pngTmpPath = porytiles::getTmpfilePath("emitTilesPng_test.png");
     outPng.write(pngTmpPath);
 
     png::image<png::index_pixel> tilesetPng{pngTmpPath};
