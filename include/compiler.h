@@ -22,4 +22,4 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
 
 }
 
-#endif
+#endif // PORYTILES_COMPILER_H

@@ -37,4 +37,4 @@ void emitMetatilesBin(const Config& config, std::ostream& out, const CompiledTil
 
 }
 
-#endif
+#endif // PORYTILES_EMITTER_H

@@ -10,4 +10,4 @@ std::filesystem::path getTmpfilePath(std::string fileName);
 
 }
 
-#endif
+#endif // PORYTILES_TMPFILES_H

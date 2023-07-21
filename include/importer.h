@@ -24,4 +24,4 @@ importLayeredTilesFromPngs(const png::image<png::rgba_pixel>& bottom, const png:
 
 }
 
-#endif
+#endif // PORYTILES_IMPORTER_H

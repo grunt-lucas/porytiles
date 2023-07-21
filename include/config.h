@@ -68,4 +68,4 @@ struct Config {
 Config defaultConfig();
 
 }
-#endif
+#endif // PORYTILES_CONFIG_H
