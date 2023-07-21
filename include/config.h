@@ -51,15 +51,16 @@ struct Config {
 
     Subcommand subcommand;
 
-    std::size_t maxPalettes() const {
-        return secondary ? numPalettesTotal - numPalettesInPrimary : numPalettesInPrimary;
+    std::size_t numPalettesInSecondary() const {
+        return numPalettesTotal - numPalettesInPrimary;
     }
 
-    std::size_t maxTiles() const {
-        return secondary ? numTilesTotal - numTilesInPrimary : numTilesInPrimary;
+    std::size_t numTilesInSecondary() const {
+        return numTilesTotal - numTilesInPrimary;
     }
 
     std::size_t maxMetatiles() const {
+        // TODO : remove in favor of *InPrimary/Secondary paradigm like above
         return secondary ? numMetatilesTotal - numMetatilesInPrimary : numMetatilesInPrimary;
     }
 };
