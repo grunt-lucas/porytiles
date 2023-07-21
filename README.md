@@ -48,9 +48,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 ```
 ./release/bin/porytiles compile \
 -o path/to/project/data/tilesets/primary/porytiles_test \
-res/examples/basic_primary_set/bottom.png \
-res/examples/basic_primary_set/middle.png \
-res/examples/basic_primary_set/top.png
+res/examples/basic_primary_set/{bottom,middle,top}.png
 ```
 
 5. In Porymap, select `File -> Reload Project`.
