@@ -65,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
-    name: Build on macos-latest
+    name: Build on macos-latest-x86_64
     runs-on: macos-latest
     steps:
       - name: Install LLVM 16 and dependencies
@@ -100,22 +100,22 @@ jobs:
       - name: Prep release directory
         if: startsWith(github.ref, 'refs/tags/')
         run : |
-          mkdir porytiles-macos
-          cp release/bin/porytiles porytiles-macos
-          cp CHANGELOG.md porytiles-macos
-          cp README.md porytiles-macos
-          cp LICENSE porytiles-macos
-          cp -r res porytiles-macos
+          mkdir porytiles-macos-x86_64
+          cp release/bin/porytiles porytiles-macos-x86_64
+          cp CHANGELOG.md porytiles-macos-x86_64
+          cp README.md porytiles-macos-x86_64
+          cp LICENSE porytiles-macos-x86_64
+          cp -r res porytiles-macos-x86_64
 
       - name: Bundle release directory
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          zip -r porytiles-macos.zip porytiles-macos
+          zip -r porytiles-macos-x86_64.zip porytiles-macos-x86_64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: porytiles-macos.zip
+          files: porytiles-macos-x86_64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
