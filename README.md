@@ -62,7 +62,7 @@ res/examples/basic_primary_set/{bottom,middle,top}.png
 
 ## Planned Features
 
-|  Feature  |  Completed?  |  Links  |
+|  Feature  |  Completed?  |  Available In Version:  |
 |-----------|--------------|---------|
 | Generate `palettes/*.pal`   | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
 | Generate `tiles.png`        | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
