@@ -178,6 +178,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
                 colorIndex++;
             }
         }
+        compiled.palettes[i].palSize = colorIndex;
     }
 
     /*
@@ -202,9 +203,9 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
         }
         std::size_t paletteIndex = it - std::begin(allColorSets);
         GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
-        if (compiled.tileIndexes.find(gbaTile) != compiled.tileIndexes.end()) {
+        if (primaryTileset.tileIndexes.find(gbaTile) != primaryTileset.tileIndexes.end()) {
             // Tile was in the primary set
-            compiled.assignments[index] = {compiled.tileIndexes.at(gbaTile), paletteIndex,
+            compiled.assignments[index] = {primaryTileset.tileIndexes.at(gbaTile), paletteIndex,
                                            normTile.hFlip, normTile.vFlip};
         }
         else {
