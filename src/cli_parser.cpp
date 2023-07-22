@@ -471,7 +471,7 @@ static void parseCompile(Config& config, int argc, char** argv) {
     if (config.secondary && (argc - optind) != 6) {
         throw PtException{"secondary mode must specify exactly 6 layer args, see `porytiles compile --help'"};
     }
-    else if ((argc - optind) != 3) {
+    else if (!config.secondary && (argc - optind) != 3) {
         throw PtException{"primary mdoe must specify exactly 3 layer args, see `porytiles compile --help'"};
     }
 
