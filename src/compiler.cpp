@@ -114,7 +114,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     }
 
     CompiledTileset compiled;
-    compiled.palettes.resize(config.numPalettesInSecondary());
+    compiled.palettes.resize(config.numPalettesTotal);
     // TODO : we should compute the number of metatiles here and throw if the user tilesheet exceeds the max
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
@@ -158,8 +158,14 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
      * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
      * and so we may need to do something fancier here so that the colors align correctly.
      */
-    for (std::size_t i = 0; i < config.numPalettesInSecondary(); i++) {
-        ColorSet palAssignments = assignedPalsSolution.at(i);
+    for (std::size_t i = 0; i < config.numPalettesInPrimary; i++) {
+        // Copy the primary set's palettes into this tileset so tiles can use them
+        for (std::size_t j = 0; j < PAL_SIZE; j++) {
+            compiled.palettes[i].colors[j] = primaryTileset.palettes[i].colors[j];
+        }
+    }
+    for (std::size_t i = config.numPalettesInPrimary; i < config.numPalettesTotal; i++) {
+        ColorSet palAssignments = assignedPalsSolution.at(i - config.numPalettesInPrimary);
         compiled.palettes[i].colors[0] = rgbaToBgr(config.transparencyColor);
         std::size_t colorIndex = 1;
         for (std::size_t j = 0; j < palAssignments.size(); j++) {
@@ -173,10 +179,33 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     /*
      * Build the tile assignments.
      */
-    // TODO : fill in the code here
-    // std::unordered_map<GBATile, std::size_t> tileIndexes;
-    // for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
-    // }
+    std::vector<ColorSet> allColorSets{};
+    allColorSets.insert(allColorSets.end(), primaryPaletteColorSets.begin(), primaryPaletteColorSets.end());
+    allColorSets.insert(allColorSets.end(), assignedPalsSolution.begin(), assignedPalsSolution.end());
+    std::unordered_map<GBATile, std::size_t> tileIndexes;
+    for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
+        auto index = std::get<0>(indexedNormTile);
+        auto& normTile = std::get<1>(indexedNormTile);
+        auto& colorSet = std::get<2>(indexedNormTile);
+        auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets),
+                               [&colorSet](const auto& assignedPal) {
+                                   // Find which of the allColorSets palettes this tile belongs to
+                                   return (colorSet & ~assignedPal).none();
+                               });
+        if (it == std::end(allColorSets)) {
+            // TODO : better error context
+            throw std::runtime_error{"internal error"};
+        }
+        std::size_t paletteIndex = it - std::begin(allColorSets);
+        GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        if (compiled.tileIndexes.find(gbaTile) != compiled.tileIndexes.end()) {
+            // Tile was in the primary set
+            compiled.assignments[index] = {compiled.tileIndexes.at(gbaTile), paletteIndex, normTile.hFlip, normTile.vFlip};
+        }
+        else {
+            throw std::runtime_error{"TODO implement this case"};
+        }
+    }
 
     return compiled;
 }
@@ -258,6 +287,28 @@ TEST_CASE("compile function should assign all tiles as expected") {
     CHECK(compiledTiles.assignments[3].paletteIndex == 0);
     CHECK(compiledTiles.assignments[3].hFlip);
     CHECK(compiledTiles.assignments[3].vFlip);
+}
+
+TEST_CASE("compileSecondary function should assign all tiles as expected") {
+    porytiles::Config config = porytiles::defaultConfig();
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top.png"));
+    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/top.png"};
+    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
+    porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_secondary.png"));
+    png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_2/bottom_secondary.png"};
+    png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_2/middle_secondary.png"};
+    png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_2/top_secondary.png"};
+    porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(bottomSecondary, middleSecondary, topSecondary);
+    porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(config, decompiledSecondary, compiledPrimary);
 }
 
 TEST_CASE("CompileComplexTest") {
