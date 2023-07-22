@@ -35,6 +35,7 @@ struct Config {
     std::size_t numPalettesInPrimary;
     std::size_t numPalettesTotal;
     std::size_t numTilesPerMetatile;
+    // TODO : remove this field
     bool secondary;
 
     // Input params

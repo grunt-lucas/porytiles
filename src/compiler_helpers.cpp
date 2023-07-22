@@ -1,6 +1,7 @@
 #include "compiler_helpers.h"
 
 #include <vector>
+#include <unordered_set>
 #include <bitset>
 #include <tuple>
 #include <utility>
@@ -104,6 +105,46 @@ std::vector<IndexedNormTile> normalizeDecompTiles(const Config& config, const De
     return normalizedTiles;
 }
 
+std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
+buildColorIndexMaps(const Config& config, const std::vector<IndexedNormTile>& normalizedTiles, const std::unordered_map<BGR15, std::size_t>& primaryIndexMap) {
+    /*
+     * Iterate over every color in each tile's NormalizedPalette, adding it to the map if not already present. We end up
+     * with a map of colors to unique indexes. Optionally, we will populate the map with colors from the paired primary
+     * set so that secondary tiles can possibly make use of these palettes without doubling up colors.
+     */
+    std::unordered_map<BGR15, std::size_t> colorIndexes;
+    std::unordered_map<std::size_t, BGR15> indexesToColors;
+    if (!primaryIndexMap.empty()) {
+        for (const auto& [color, index] : primaryIndexMap) {
+            auto [insertedValue, wasInserted] = colorIndexes.insert({color, index});
+            if (!wasInserted) {
+                // TODO : better error context
+                throw std::runtime_error{"double inserted a color from primary set"};
+            }
+            indexesToColors.insert(std::pair{index, color});
+            // TODO : throw here if insert fails?
+        }
+    }
+    std::size_t colorIndex = primaryIndexMap.size();
+    for (const auto& [_, normalizedTile]: normalizedTiles) {
+        // i starts at 1, since first color in each palette is the transparency color
+        for (int i = 1; i < normalizedTile.palette.size; i++) {
+            const BGR15& color = normalizedTile.palette.colors[i];
+            bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
+            if (inserted) {
+                indexesToColors.insert(std::pair{colorIndex, color});
+                colorIndex++;
+            }
+        }
+    }
+
+    if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
+        // TODO : better error context
+        throw PtException{"too many unique colors"};
+    }
+
+    return {colorIndexes, indexesToColors};
+}
 
 ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const NormalizedPalette& palette) {
     /*
@@ -118,6 +159,24 @@ ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
         colorSet.set(colorIndexMap.at(palette.colors[i]));
     }
     return colorSet;
+}
+
+std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
+matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
+                             const std::vector<IndexedNormTile>& indexedNormalizedTiles) {
+    std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets;
+    std::unordered_set<ColorSet> uniqueColorSets;
+    std::vector<ColorSet> colorSets;
+    for (const auto& [index, normalizedTile]: indexedNormalizedTiles) {
+        // Compute the ColorSet for this normalized tile, then add it to our indexes
+        auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
+        indexedNormTilesWithColorSets.emplace_back(index, normalizedTile, colorSet);
+        if (!uniqueColorSets.contains(colorSet)) {
+            colorSets.push_back(colorSet);
+            uniqueColorSets.insert(colorSet);
+        }
+    }
+    return std::pair{indexedNormTilesWithColorSets, colorSets};
 }
 
 std::size_t gRecurseCount = 0;
@@ -507,6 +566,23 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
     CHECK(indexedNormTiles[3].first == 3);
 }
 
+TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset") {
+    porytiles::Config config = porytiles::defaultConfig();
+
+    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+    std::vector<IndexedNormTile> normalizedTiles = porytiles::normalizeDecompTiles(config, tiles);
+
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, normalizedTiles, {});
+
+    CHECK(colorToIndex.size() == 4);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 1);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 3);
+}
+
 TEST_CASE("toColorSet should return the correct bitset based on the supplied palette") {
     std::unordered_map<porytiles::BGR15, std::size_t> colorIndexMap = {
             {porytiles::rgbaToBgr(porytiles::RGBA_BLUE),   0},
@@ -540,6 +616,178 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
         CHECK(colorSet.test(4));
         CHECK(colorSet.test(2));
         CHECK(colorSet.test(3));
+    }
+}
+
+TEST_CASE("matchNormalizedWithColorSets should return the expected data structures") {
+    porytiles::Config config = porytiles::defaultConfig();
+
+    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+    png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+
+    CHECK(colorToIndex.size() == 4);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 1);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
+    CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 3);
+
+    auto [indexedNormTilesWithColorSets, colorSets] = porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+
+    CHECK(indexedNormTilesWithColorSets.size() == 4);
+    // colorSets size is 3 because first and fourth tiles have the same palette
+    CHECK(colorSets.size() == 3);
+
+    // First tile has 1 non-transparent color, color should be BLUE
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[0]) == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[7] == 1);
+    for (int i = 56; i <= 63; i++) {
+        CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.paletteIndexes[i] == 1);
+    }
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.size == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[0]).hFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).test(0));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[0])) != colorSets.end());
+
+    // Second tile has two non-transparent colors, RED and GREEN
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[1]) == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[54] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[55] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[62] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.paletteIndexes[63] == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.size == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).hFlip);
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(2));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[1])) != colorSets.end());
+
+    // Third tile has two non-transparent colors, CYAN and GREEN
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[2]) == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[7] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[56] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.paletteIndexes[63] == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.size == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[2] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[2]).vFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).hFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(3));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[2])) != colorSets.end());
+
+    // Fourth tile has 1 non-transparent color, color should be BLUE
+    CHECK(std::get<0>(indexedNormTilesWithColorSets[3]) == 3);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[0] == 0);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[7] == 1);
+    for (int i = 56; i <= 63; i++) {
+        CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.paletteIndexes[i] == 1);
+    }
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.size == 2);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[0] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[1] ==
+          porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).hFlip);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).vFlip);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).test(0));
+    CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[3])) != colorSets.end());
+}
+
+TEST_CASE("assign should correctly assign all normalized palettes or fail if impossible") {
+    porytiles::Config config{};
+    config.transparencyColor = porytiles::RGBA_MAGENTA;
+
+    SUBCASE("It should successfully allocate a simple 2x2 tileset png") {
+        constexpr int SOLUTION_SIZE = 2;
+        config.numPalettesInPrimary = SOLUTION_SIZE;
+        config.secondary = false;
+        config.maxRecurseCount = 20;
+
+        REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
+        porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+        std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
+        auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+        auto [indexedNormTilesWithColorSets, colorSets] = porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+
+        // Set up the state struct
+        std::vector<ColorSet> solution;
+        solution.reserve(SOLUTION_SIZE);
+        std::vector<ColorSet> hardwarePalettes;
+        hardwarePalettes.resize(SOLUTION_SIZE);
+        std::vector<ColorSet> unassigned;
+        std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+        std::stable_sort(std::begin(unassigned), std::end(unassigned),
+                  [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+        porytiles::AssignState state = {hardwarePalettes, unassigned};
+
+        porytiles::gRecurseCount = 0;
+        CHECK(porytiles::assign(config, state, solution, {}));
+        CHECK(solution.size() == SOLUTION_SIZE);
+        CHECK(solution.at(0).count() == 1);
+        CHECK(solution.at(1).count() == 3);
+        CHECK(solution.at(0).test(0));
+        CHECK(solution.at(1).test(1));
+        CHECK(solution.at(1).test(2));
+        CHECK(solution.at(1).test(3));
+    }
+
+    SUBCASE("It should successfully allocate a large, complex PNG") {
+        constexpr int SOLUTION_SIZE = 5;
+        config.numPalettesInPrimary = SOLUTION_SIZE;
+        config.secondary = false;
+        config.maxRecurseCount = 200;
+
+        REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+        png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
+        porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+        std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
+        auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+        auto [indexedNormTilesWithColorSets, colorSets] = porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+
+        // Set up the state struct
+        std::vector<ColorSet> solution;
+        solution.reserve(SOLUTION_SIZE);
+        std::vector<ColorSet> hardwarePalettes;
+        hardwarePalettes.resize(SOLUTION_SIZE);
+        std::vector<ColorSet> unassigned;
+        std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
+        std::stable_sort(std::begin(unassigned), std::end(unassigned),
+                  [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+        porytiles::AssignState state = {hardwarePalettes, unassigned};
+
+        porytiles::gRecurseCount = 0;
+        CHECK(porytiles::assign(config, state, solution, {}));
+        CHECK(solution.size() == SOLUTION_SIZE);
+        CHECK(solution.at(0).count() == 11);
+        CHECK(solution.at(1).count() == 12);
+        CHECK(solution.at(2).count() == 14);
+        CHECK(solution.at(3).count() == 14);
+        CHECK(solution.at(4).count() == 15);
     }
 }
 

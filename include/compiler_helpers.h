@@ -32,7 +32,14 @@ NormalizedTile normalize(const Config& config, const RGBATile& rgba);
 
 std::vector<IndexedNormTile> normalizeDecompTiles(const Config& config, const DecompiledTileset& decompiledTileset);
 
+std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
+buildColorIndexMaps(const Config& config, const std::vector<IndexedNormTile>& normalizedTiles, const std::unordered_map<BGR15, std::size_t>& primaryIndexMap);
+
 ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap, const NormalizedPalette& palette);
+
+std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
+matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
+                             const std::vector<IndexedNormTile>& indexedNormalizedTiles);
 
 struct AssignState {
     /*

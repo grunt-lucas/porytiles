@@ -266,6 +266,7 @@ struct CompiledTileset {
     std::vector<std::size_t> paletteIndexes;
     std::vector<GBAPalette> palettes;
     std::vector<Assignment> assignments;
+    std::unordered_map<BGR15, std::size_t> colorIndexMap;
     std::unordered_map<GBATile, std::size_t> tileIndexes;
 };
 
