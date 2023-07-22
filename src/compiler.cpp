@@ -144,16 +144,12 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     primaryPaletteColorSets.reserve(primaryTileset.palettes.size());
     for (std::size_t i = 0; i < primaryTileset.palettes.size(); i++) {
         const auto& gbaPalette = primaryTileset.palettes[i];
+        primaryPaletteColorSets.emplace_back();
         for (std::size_t j = 1; j < gbaPalette.palSize; j++) {
             primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[j]));
         }
     }
-//    for (const auto& gbaPalette: primaryTileset.palettes) {
-//        // starts at 1, skip the transparent color at slot 0 in the palette
-//        for (std::size_t i = 1; i < gbaPalette.palSize; i++) {
-//            primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[i]));
-//        }
-//    }
+
     gRecurseCount = 0;
     bool assignSuccessful = assign(config, state, assignedPalsSolution, primaryPaletteColorSets);
 

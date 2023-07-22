@@ -205,7 +205,7 @@ bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solu
      * constraints for this particular tile. That way we can just use the primary palette, since those are available for
      * secondary tiles to freely use.
      */
-    if (primaryPalettes.size() != 0) {
+    if (!primaryPalettes.empty()) {
         for (size_t i = 0; i < primaryPalettes.size(); i++) {
             const ColorSet& palette = primaryPalettes.at(i);
             if ((palette | toAssign).count() == palette.count()) {
