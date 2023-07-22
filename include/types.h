@@ -208,6 +208,7 @@ namespace porytiles {
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
 struct GBAPalette {
+    std::size_t palSize;
     std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)

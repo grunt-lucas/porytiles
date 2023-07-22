@@ -64,6 +64,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
                 colorIndex++;
             }
         }
+        compiled.palettes[i].palSize = colorIndex;
     }
 
     /*
@@ -132,7 +133,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     std::vector<ColorSet> unassignedNormPalettes;
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
     std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
-              [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+                     [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
     AssignState state = {logicalPalettes, unassignedNormPalettes};
     /*
      * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
@@ -140,12 +141,19 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
      * palettes.
      */
     std::vector<ColorSet> primaryPaletteColorSets{};
-    for (const auto& gbaPalette : primaryTileset.palettes) {
-        // starts at 1, skip the transparent color at slot 0 in the palette
-        for (std::size_t i = 1; i < gbaPalette.colors.size(); i++) {
-            primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[i]));
+    primaryPaletteColorSets.reserve(primaryTileset.palettes.size());
+    for (std::size_t i = 0; i < primaryTileset.palettes.size(); i++) {
+        const auto& gbaPalette = primaryTileset.palettes[i];
+        for (std::size_t j = 1; j < gbaPalette.palSize; j++) {
+            primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[j]));
         }
     }
+//    for (const auto& gbaPalette: primaryTileset.palettes) {
+//        // starts at 1, skip the transparent color at slot 0 in the palette
+//        for (std::size_t i = 1; i < gbaPalette.palSize; i++) {
+//            primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[i]));
+//        }
+//    }
     gRecurseCount = 0;
     bool assignSuccessful = assign(config, state, assignedPalsSolution, primaryPaletteColorSets);
 
@@ -200,7 +208,8 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
         GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
         if (compiled.tileIndexes.find(gbaTile) != compiled.tileIndexes.end()) {
             // Tile was in the primary set
-            compiled.assignments[index] = {compiled.tileIndexes.at(gbaTile), paletteIndex, normTile.hFlip, normTile.vFlip};
+            compiled.assignments[index] = {compiled.tileIndexes.at(gbaTile), paletteIndex,
+                                           normTile.hFlip, normTile.vFlip};
         }
         else {
             throw std::runtime_error{"TODO implement this case"};
