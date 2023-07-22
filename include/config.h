@@ -44,6 +44,9 @@ struct Config {
     std::string bottomTilesheetPath;
     std::string middleTilesheetPath;
     std::string topTilesheetPath;
+    std::string bottomPrimaryTilesheetPath;
+    std::string middlePrimaryTilesheetPath;
+    std::string topPrimaryTilesheetPath;
     std::size_t maxRecurseCount;
 
     // Output params

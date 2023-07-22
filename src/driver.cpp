@@ -104,6 +104,26 @@ static void driveCompile(const Config& config) {
     if (!std::filesystem::is_regular_file(config.topTilesheetPath)) {
         throw PtException{config.topTilesheetPath + ": exists but was not a regular file"};
     }
+    if (config.secondary) {
+        if (!std::filesystem::exists(config.bottomPrimaryTilesheetPath)) {
+        throw PtException{config.bottomPrimaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.bottomPrimaryTilesheetPath)) {
+            throw PtException{config.bottomPrimaryTilesheetPath + ": exists but was not a regular file"};
+        }
+        if (!std::filesystem::exists(config.middlePrimaryTilesheetPath)) {
+            throw PtException{config.middlePrimaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.middlePrimaryTilesheetPath)) {
+            throw PtException{config.middlePrimaryTilesheetPath + ": exists but was not a regular file"};
+        }
+        if (!std::filesystem::exists(config.topPrimaryTilesheetPath)) {
+            throw PtException{config.topPrimaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.topPrimaryTilesheetPath)) {
+            throw PtException{config.topPrimaryTilesheetPath + ": exists but was not a regular file"};
+        }
+    }
 
     try {
         // We do this here so if the input is not a PNG, we can catch and give a better error
@@ -126,12 +146,51 @@ static void driveCompile(const Config& config) {
     catch(const std::exception& exception) {
         throw PtException{config.topTilesheetPath + " is not a valid PNG file"};
     }
+    if (config.secondary) {
+        try {
+            // We do this here so if the input is not a PNG, we can catch and give a better error
+            png::image<png::rgba_pixel> tilesheetPng{config.bottomPrimaryTilesheetPath};
+        }
+        catch(const std::exception& exception) {
+            throw PtException{config.bottomPrimaryTilesheetPath + " is not a valid PNG file"};
+        }
+        try {
+            // We do this here so if the input is not a PNG, we can catch and give a better error
+            png::image<png::rgba_pixel> tilesheetPng{config.middlePrimaryTilesheetPath};
+        }
+        catch(const std::exception& exception) {
+            throw PtException{config.middlePrimaryTilesheetPath + " is not a valid PNG file"};
+        }
+        try {
+            // We do this here so if the input is not a PNG, we can catch and give a better error
+            png::image<png::rgba_pixel> tilesheetPng{config.topPrimaryTilesheetPath};
+        }
+        catch(const std::exception& exception) {
+            throw PtException{config.topPrimaryTilesheetPath + " is not a valid PNG file"};
+        }
+    }
 
-    png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
-    png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
-    png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
-    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-    CompiledTileset compiledTiles = compile(config, decompiledTiles);
+    CompiledTileset compiledTiles{};
+    if (config.secondary) {
+        png::image<png::rgba_pixel> bottomPrimaryPng{config.bottomPrimaryTilesheetPath};
+        png::image<png::rgba_pixel> middlePrimaryPng{config.middlePrimaryTilesheetPath};
+        png::image<png::rgba_pixel> topPrimaryPng{config.topPrimaryTilesheetPath};
+        DecompiledTileset decompiledPrimaryTiles = importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
+        CompiledTileset compiledPrimaryTiles = compile(config, decompiledPrimaryTiles);
+
+        png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
+        png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
+        png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
+        DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
+        compiledTiles = compileSecondary(config, decompiledTiles, compiledPrimaryTiles);
+    }
+    else {
+        png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
+        png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
+        png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
+        DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
+        compiledTiles = compile(config, decompiledTiles);
+    }
 
     std::filesystem::path outputPath(config.outputPath);
     std::filesystem::path palettesDir("palettes");

@@ -146,6 +146,15 @@ const std::string TILES_PNG_PALETTE_MODE_DESCRIPTION =
 "        Default value is `greyscale'.\n";
 const int TILES_PNG_PALETTE_MODE_VAL = 1004;
 
+const std::string SECONDARY_LONG = "secondary";
+const std::string SECONDARY_DESCRIPTION =
+"    --" + SECONDARY_LONG + "\n"
+"        Specify that this tileset should be treated as a secondary tileset.\n"
+"        Secondary tilesets are able to reuse tiles and palettes from their\n"
+"        paired primary tileset. Note: the paired primary tileset must be\n"
+"        a Porytiles-handled tileset.\n";
+const int SECONDARY_VAL = 1005;
+
 
 // --------------------------------
 // |    GLOBAL OPTION PARSING     |
@@ -355,6 +364,7 @@ const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::s
 const std::string COMPILE_HELP =
 "Usage:\n"
 "    porytiles " + COMPILE_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP\n"
+"    porytiles " + COMPILE_COMMAND + " [OPTIONS] --secondary BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
 "\n"
 "Compile a bottom, middle, and top tilesheet into a complete tileset. This\n"
 "command will generate a `metatiles.bin' file along with `tiles.png' and the\n"
@@ -370,6 +380,18 @@ const std::string COMPILE_HELP =
 "    <TOP>\n"
 "        An RGBA PNG tilesheet containing the top metatile layer.\n"
 "\n"
+"    <BOTTOM-PRIMARY>\n"
+"        In `--secondary' mode, an RGBA PNG tilesheet containing the bottom\n"
+"        metatile layer for the corresponding primary set.\n"
+"\n"
+"    <MIDDLE-PRIMARY>\n"
+"        In `--secondary' mode, an RGBA PNG tilesheet containing the middle\n"
+"        metatile layer for the corresponding primary set.\n"
+"\n"
+"    <TOP-PRIMARY>\n"
+"        In `--secondary' mode, an RGBA PNG tilesheet containing the top\n"
+"        metatile layer for the corresponding primary set.\n"
+"\n"
 "Options:\n" +
 OUTPUT_DESCRIPTION +
 "\n" +
@@ -382,6 +404,8 @@ NUM_PALETTES_IN_PRIMARY_DESCRIPTION +
 NUM_PALETTES_TOTAL_DESCRIPTION +
 "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION +
+"\n" +
+SECONDARY_DESCRIPTION +
 "\n";
 
 static void parseCompile(Config& config, int argc, char** argv) {
@@ -399,6 +423,7 @@ static void parseCompile(Config& config, int argc, char** argv) {
                     {NUM_TILES_TOTAL_LONG.c_str(),         required_argument, nullptr, NUM_TILES_TOTAL_VAL},
                     {OUTPUT_LONG.c_str(),                  required_argument, nullptr, OUTPUT_SHORT},
                     {TILES_PNG_PALETTE_MODE_LONG.c_str(),  required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {SECONDARY_LONG.c_str(),               no_argument,       nullptr, SECONDARY_VAL},
                     {nullptr,                              no_argument,       nullptr, 0}
             };
 
@@ -427,6 +452,9 @@ static void parseCompile(Config& config, int argc, char** argv) {
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
                 break;
+            case SECONDARY_VAL:
+                config.secondary = true;
+                break;
 
             // Help message upon '-h/--help' goes to stdout
             case HELP_SHORT:
@@ -440,13 +468,22 @@ static void parseCompile(Config& config, int argc, char** argv) {
         }
     }
 
-    if ((argc - optind) != 3) {
-        throw PtException{"must specify exactly 3 layer args, see `porytiles compile --help'"};
+    if (config.secondary && (argc - optind) != 6) {
+        throw PtException{"secondary mode must specify exactly 6 layer args, see `porytiles compile --help'"};
+    }
+    else if ((argc - optind) != 3) {
+        throw PtException{"primary mdoe must specify exactly 3 layer args, see `porytiles compile --help'"};
     }
 
     config.bottomTilesheetPath = argv[optind++];
     config.middleTilesheetPath = argv[optind++];
     config.topTilesheetPath = argv[optind++];
+
+    if (config.secondary) {
+        config.bottomPrimaryTilesheetPath = argv[optind++];
+        config.middlePrimaryTilesheetPath = argv[optind++];
+        config.topPrimaryTilesheetPath = argv[optind++];
+    }
 }
 
 }

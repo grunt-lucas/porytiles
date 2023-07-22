@@ -209,7 +209,19 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
                                            normTile.hFlip, normTile.vFlip};
         }
         else {
-            throw std::runtime_error{"TODO implement this case"};
+            // Tile was in the secondary set
+            auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
+            if (inserted.second) {
+                compiled.tiles.push_back(gbaTile);
+                if (compiled.tiles.size() > config.numTilesInPrimary) {
+                    // TODO : better error context
+                    throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(config.numTilesInPrimary)};
+                }
+                compiled.paletteIndexes.push_back(paletteIndex);
+            }
+            std::size_t tileIndex = inserted.first->second;
+            // TODO : the 512 here is the VRAM offset for secondary tiles, maybe do a named constant here?
+            compiled.assignments[index] = {tileIndex + 512, paletteIndex, normTile.hFlip, normTile.vFlip};
         }
     }
 
@@ -298,12 +310,12 @@ TEST_CASE("compile function should assign all tiles as expected") {
 TEST_CASE("compileSecondary function should assign all tiles as expected") {
     porytiles::Config config = porytiles::defaultConfig();
 
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top.png"));
-    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/top.png"};
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_primary.png"));
+    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/bottom_primary.png"};
+    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/middle_primary.png"};
+    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/top_primary.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
     porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
 
