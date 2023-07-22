@@ -271,6 +271,8 @@ struct CompiledTileset {
     std::unordered_map<GBATile, std::size_t> tileIndexes;
 };
 
+constexpr std::size_t SECONDARY_TILESET_VRAM_OFFSET = 512;
+
 /**
  * A decompiled tileset, which is just a vector of RGBATiles.
  */

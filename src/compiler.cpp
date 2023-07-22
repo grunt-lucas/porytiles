@@ -220,8 +220,9 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
                 compiled.paletteIndexes.push_back(paletteIndex);
             }
             std::size_t tileIndex = inserted.first->second;
-            // TODO : the 512 here is the VRAM offset for secondary tiles, maybe do a named constant here?
-            compiled.assignments[index] = {tileIndex + 512, paletteIndex, normTile.hFlip, normTile.vFlip};
+            // Offset the tile index by the secondary tileset VRAM location, this is "hardcoded" by pokeemerald
+            // TODO : pokefirered uses 640 for this offset, so we'll need a way to configure that from the CLI
+            compiled.assignments[index] = {tileIndex + SECONDARY_TILESET_VRAM_OFFSET, paletteIndex, normTile.hFlip, normTile.vFlip};
         }
     }
 
@@ -327,30 +328,4 @@ TEST_CASE("compileSecondary function should assign all tiles as expected") {
     png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_2/top_secondary.png"};
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(bottomSecondary, middleSecondary, topSecondary);
     porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(config, decompiledSecondary, compiledPrimary);
-}
-
-TEST_CASE("CompileComplexTest") {
-    // TODO : name this test and actually check things
-//    porytiles::Config config = porytiles::defaultConfig();
-
-//    REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
-//    png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
-//    porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-//    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
-
-//    std::cout << "COMPILED TILES" << std::endl;
-//    std::cout << "tiles size: " << compiledTiles.tiles.size() << std::endl;
-//    for (std::size_t i = 0; i < compiledTiles.palettes.size(); i++) {
-//        porytiles::GBAPalette& palette = compiledTiles.palettes.at(i);
-//        std::cout << "Palette " << i << std::endl;
-//        for (std::size_t j = 0; j < palette.colors.size(); j++) {
-//            std::cout << porytiles::bgrToRgba(palette.colors.at(j)) << std::endl;
-//        }
-//    }
-//    for (std::size_t i = 0; i < compiledTiles.assignments.size(); i++) {
-//        auto& assignment = compiledTiles.assignments.at(i);
-//        std::cout << "assignment[" << i
-//                  << "]={tile=" << assignment.tileIndex << ",pal=" << assignment.paletteIndex
-//                  << ",hFlip=" << assignment.hFlip << ",vFlip=" << assignment.vFlip << "}" << std::endl;
-//    }
 }
