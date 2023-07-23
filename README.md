@@ -23,7 +23,10 @@ For more info, please see
 
 ## Getting Started
 
-First, clone and build Porytiles like so. You must have a version of Clang or GCC that supports C++20 features.
+First, clone and build Porytiles like so. You must have a version of Clang or GCC that supports C++20 features. The
+project CI pipeline uses GCC 13 and LLVM 16, so try those if older versions give you trouble. Alternatively, you can
+skip the build step by downloading a release binary from the [Releases](https://github.com/grunt-lucas/porytiles/releases)
+tab.
 
 ```
 git clone https://github.com/grunt-lucas/porytiles.git
@@ -46,9 +49,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 4. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
-./release/bin/porytiles compile \
--o path/to/project/data/tilesets/primary/porytiles_test \
-res/examples/basic_primary_set/{bottom,middle,top}.png
+./release/bin/porytiles compile -o path/to/project/data/tilesets/primary/porytiles_test res/examples/basic_primary_set/bottom.png res/examples/basic_primary_set/middle.png res/examples/basic_primary_set/top.png
 ```
 
 5. In Porymap, select `File -> Reload Project`.
