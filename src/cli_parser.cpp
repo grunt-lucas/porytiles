@@ -13,8 +13,8 @@
 namespace porytiles {
 
 const std::string PROGRAM_NAME = "porytiles";
-const std::string VERSION = "1.0.0-SNAPSHOT";
-const std::string RELEASE_DATE = "---";
+const std::string VERSION = "0.0.3";
+const std::string RELEASE_DATE = "23 Jul 2023";
 
 static void parseGlobalOptions(Config& config, int argc, char** argv);
 static void parseSubcommand(Config& config, int argc, char** argv);
