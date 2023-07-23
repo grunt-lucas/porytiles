@@ -31,7 +31,7 @@ tab.
 ```
 git clone https://github.com/grunt-lucas/porytiles.git
 cd porytiles
-make
+make check
 ./release/bin/porytiles --help
 ```
 
