@@ -37,8 +37,9 @@ make check
 
 Once you've cloned and built Porytiles, try the following little demo.
 
-1. Open a pokeemerald project in Porymap, one that has triple-layer metatiles enabled. Porytiles requires that you use
-   triple layer metatiles. If you don't know what this is or how to enable, please see here:
+1. Open a pokeemerald (pokefirered and pokeruby support is coming!) project in Porymap, one that has triple-layer
+   metatiles enabled. Porytiles requires that you use triple layer metatiles. If you don't know what this is or how to
+   enable, please see here:
    https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles
 
 2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesTest`.
