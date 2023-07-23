@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2023-07-23
+
+### Added
+
+- Support for secondary tilesets using the `--secondary` flag. Secondary tilesets must consume the layer PNGs for their
+  paired primary set, but then the compiler can use that information to take advantage of all the typical secondary
+  tilset optimizations (like sharing palettes and tiles)
+
 ## [0.0.2] - 2023-07-19
 
 ### Added
@@ -28,7 +36,9 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.2...HEAD
+[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.3...HEAD
+
+[0.0.3]: https://github.com/grunt-lucas/porytiles/compare/0.0.2...0.0.3
 
 [0.0.2]: https://github.com/grunt-lucas/porytiles/compare/0.0.1...0.0.2
 

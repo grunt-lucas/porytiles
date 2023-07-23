@@ -67,7 +67,7 @@ res/examples/basic_primary_set/{bottom,middle,top}.png
 | Generate `palettes/*.pal`   | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
 | Generate `tiles.png`        | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
 | Generate `metatiles.bin`    | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
+| Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [0.0.3](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.3) |
 | Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
 | Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
 | Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
