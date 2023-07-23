@@ -11,7 +11,7 @@ Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for
 the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get the upcoming changes listed in the
 [changelog](https://github.com/grunt-lucas/porytiles/blob/trunk/CHANGELOG.md).
 
-## Why Would I Use This?
+## Why Should I Use This Tool?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
 just like [Poryscript](https://github.com/huderlem/poryscript) takes a `.script` file and generates a corresponding `.inc`
