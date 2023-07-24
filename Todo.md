@@ -20,8 +20,6 @@
 + Add `--verbose` logs to stdout
     + each log should have a category tag for easier grep filtering
 
-+ Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)
-
 + Support for animated tiles, i.e. stable placement in `tiles.png`
 
 + Decompile compiled tilesets back into three layer PNGs
