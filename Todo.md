@@ -4,21 +4,25 @@
     + https://github.com/fmtlib/fmt
 
 + Continue to create more in-file unit tests that maximize coverage
-    + https://github.com/doctest/doctest/tree/master (progress on this is going well)
+  + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
 + Add a `--report` option that prints out various statistics
-    + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
-        + calculate this by taking the `Number Unique Colors / Number Slots In Use`
-    + dump pal files and tile.png to CLI using: https://github.com/eddieantonio/imgcat
+  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
+    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
+  + dump pal files and tile.png to CLI using: https://github.com/eddieantonio/imgcat
 
 + Set up more CI builds
-    + Windows MSVC?
-    + set up package caches so installs don't have to run every time
-    + universal MacOS binary?
-      + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
+  + Windows MSVC?
+  + set up package caches so installs don't have to run every time
+  + universal MacOS binary?
+    + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
+
++ Implement some preset flags for the tileset params
+  + `--preset-emerald`, `--preset-firered`, `--preset-ruby` uses the `fieldmap.h` and VRAM offset presets for the given
+    game
 
 + Add `--verbose` logs to stdout
-    + each log should have a category tag for easier grep filtering
+  + each log should have a category tag for easier grep filtering
 
 + Support for animated tiles, i.e. stable placement in `tiles.png`
 
