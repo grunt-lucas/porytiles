@@ -67,7 +67,7 @@ struct RGBA32 {
     std::uint8_t blue;
     std::uint8_t alpha;
 
-    std::string jasc() const {
+    [[nodiscard]] std::string jasc() const {
         return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
     }
 
@@ -88,10 +88,12 @@ extern const RGBA32 RGBA_MAGENTA;
 extern const RGBA32 RGBA_CYAN;
 extern const RGBA32 RGBA_WHITE;
 extern const RGBA32 RGBA_GREY;
+extern const RGBA32 RGBA_PURPLE;
+extern const RGBA32 RGBA_LIME;
 
-BGR15 rgbaToBgr(const RGBA32& rgba);
+BGR15 rgbaToBgr(const RGBA32& rgba) noexcept;
 
-RGBA32 bgrToRgba(const BGR15& bgr);
+RGBA32 bgrToRgba(const BGR15& bgr) noexcept;
 
 /**
  * A tile of RGBA32 colors.
@@ -194,7 +196,7 @@ extern const GBATile GBA_TILE_TRANSPARENT;
 template<>
 struct std::hash<porytiles::GBATile> {
     std::size_t operator()(const porytiles::GBATile& tile) const noexcept {
-        // TODO : better hash function.
+        // TODO : better hash function
         std::size_t hashValue = 0;
         for (auto index: tile.paletteIndexes) {
             hashValue ^= std::hash<uint8_t>{}(index);
@@ -208,7 +210,7 @@ namespace porytiles {
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
 struct GBAPalette {
-    std::size_t palSize;
+    std::size_t size;
     std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)
@@ -271,6 +273,7 @@ struct CompiledTileset {
     std::unordered_map<GBATile, std::size_t> tileIndexes;
 };
 
+// TODO : remove this in favor of using config.numTilesInPrimary
 constexpr std::size_t SECONDARY_TILESET_VRAM_OFFSET = 512;
 
 /**
@@ -320,7 +323,7 @@ struct NormalizedPixels {
 template<>
 struct std::hash<porytiles::NormalizedPixels> {
     std::size_t operator()(const porytiles::NormalizedPixels& pixels) const noexcept {
-        // TODO : better hash function.
+        // TODO : better hash function
         std::size_t hashValue = 0;
         for (auto pixel: pixels.paletteIndexes) {
             hashValue ^= std::hash<uint8_t>{}(pixel);
@@ -367,7 +370,7 @@ struct NormalizedPalette {
 template<>
 struct std::hash<porytiles::NormalizedPalette> {
     std::size_t operator()(const porytiles::NormalizedPalette& palette) const noexcept {
-        // TODO : better hash function.
+        // TODO : better hash function
         std::size_t hashValue = 0;
         hashValue ^= std::hash<int>{}(palette.size);
         for (auto color: palette.colors) {
@@ -388,12 +391,12 @@ struct NormalizedTile {
     bool hFlip;
     bool vFlip;
 
-    NormalizedTile(RGBA32 transparency) {
+    explicit NormalizedTile(RGBA32 transparency) : pixels{}, palette{}, hFlip{}, vFlip{} {
         palette.size = 1;
         palette.colors[0] = rgbaToBgr(transparency);
     }
 
-    bool transparent() const { return palette.size == 1; }
+    [[nodiscard]] bool transparent() const { return palette.size == 1; }
 
 #if defined(__GNUG__) && !defined(__clang__)
     // auto operator<=>(const NormalizedTile&) const = default;
@@ -422,7 +425,7 @@ struct NormalizedTile {
 template<>
 struct std::hash<porytiles::NormalizedTile> {
     std::size_t operator()(const porytiles::NormalizedTile& tile) const noexcept {
-        // TODO : better hash function.
+        // TODO : better hash function
         std::size_t hashValue = 0;
         hashValue ^= std::hash<porytiles::NormalizedPixels>{}(tile.pixels);
         hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);

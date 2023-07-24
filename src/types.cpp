@@ -2,7 +2,7 @@
 
 namespace porytiles {
 
-static RGBATile uniformTile(const RGBA32& color) {
+static RGBATile uniformTile(const RGBA32& color) noexcept {
     RGBATile tile{};
     for (size_t i = 0; i < TILE_NUM_PIX; i++) {
         tile.pixels[i] = color;
@@ -10,7 +10,7 @@ static RGBATile uniformTile(const RGBA32& color) {
     return tile;
 }
 
-static GBATile uniformTile(const uint8_t& index) {
+static GBATile uniformTile(const uint8_t& index) noexcept {
     GBATile tile{};
     for (size_t i = 0; i < TILE_NUM_PIX; i++) {
         tile.paletteIndexes[i] = index;
@@ -27,6 +27,8 @@ const RGBA32 RGBA_MAGENTA = RGBA32{255, 0, 255, ALPHA_OPAQUE};
 const RGBA32 RGBA_CYAN = RGBA32{0, 255, 255, ALPHA_OPAQUE};
 const RGBA32 RGBA_WHITE = RGBA32{255, 255, 255, ALPHA_OPAQUE};
 const RGBA32 RGBA_GREY = RGBA32{128, 128, 128, ALPHA_OPAQUE};
+const RGBA32 RGBA_PURPLE = RGBA32{128, 0, 255, ALPHA_OPAQUE};
+const RGBA32 RGBA_LIME = RGBA32{128, 255, 128, ALPHA_OPAQUE};
 
 const BGR15 BGR_BLACK = rgbaToBgr(RGBA_BLACK);
 const BGR15 BGR_RED = rgbaToBgr(RGBA_RED);
@@ -37,16 +39,14 @@ const BGR15 BGR_MAGENTA = rgbaToBgr(RGBA_MAGENTA);
 const BGR15 BGR_CYAN = rgbaToBgr(RGBA_CYAN);
 const BGR15 BGR_WHITE = rgbaToBgr(RGBA_WHITE);
 const BGR15 BGR_GREY = rgbaToBgr(RGBA_GREY);
+const BGR15 BGR_PURPLE = rgbaToBgr(RGBA_PURPLE);
+const BGR15 BGR_LIME = rgbaToBgr(RGBA_LIME);
 
-const RGBATile RGBA_TILE_BLACK = uniformTile(RGBA_BLACK);
 const RGBATile RGBA_TILE_RED = uniformTile(RGBA_RED);
 const RGBATile RGBA_TILE_GREEN = uniformTile(RGBA_GREEN);
 const RGBATile RGBA_TILE_BLUE = uniformTile(RGBA_BLUE);
 const RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
 const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
-const RGBATile RGBA_TILE_CYAN = uniformTile(RGBA_CYAN);
-const RGBATile RGBA_TILE_WHITE = uniformTile(RGBA_WHITE);
-const RGBATile RGBA_TILE_GREY = uniformTile(RGBA_GREY);
 
 const GBATile GBA_TILE_TRANSPARENT = uniformTile(0);
 
@@ -81,6 +81,15 @@ std::ostream& operator<<(std::ostream& os, const RGBA32& rgba) {
     else if (rgba == RGBA_WHITE || rgba == bgrToRgba(BGR_WHITE)) {
         os << "white";
     }
+    else if (rgba == RGBA_GREY || rgba == bgrToRgba(BGR_GREY)) {
+        os << "grey";
+    }
+    else if (rgba == RGBA_PURPLE || rgba == bgrToRgba(BGR_PURPLE)) {
+        os << "purple";
+    }
+    else if (rgba == RGBA_LIME || rgba == bgrToRgba(BGR_LIME)) {
+        os << "lime";
+    }
     else {
         os << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << ","
            << std::to_string(rgba.blue);
@@ -104,12 +113,12 @@ std::ostream& operator<<(std::ostream& os, const RGBATile& tile) {
     return os;
 }
 
-BGR15 rgbaToBgr(const RGBA32& rgba) {
+BGR15 rgbaToBgr(const RGBA32& rgba) noexcept {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position
     return {std::uint16_t(((rgba.blue / 8) << 10) | ((rgba.green / 8) << 5) | (rgba.red / 8))};
 }
 
-RGBA32 bgrToRgba(const BGR15& bgr) {
+RGBA32 bgrToRgba(const BGR15& bgr) noexcept {
     RGBA32 rgba{};
     rgba.red = (bgr.bgr & 0x1f) * 8;
     rgba.green = ((bgr.bgr >> 5) & 0x1f) * 8;

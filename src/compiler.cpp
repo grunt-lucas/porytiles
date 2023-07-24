@@ -64,7 +64,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
                 colorIndex++;
             }
         }
-        compiled.palettes[i].palSize = colorIndex;
+        compiled.palettes[i].size = colorIndex;
     }
 
     /*
@@ -145,7 +145,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     for (std::size_t i = 0; i < primaryTileset.palettes.size(); i++) {
         const auto& gbaPalette = primaryTileset.palettes[i];
         primaryPaletteColorSets.emplace_back();
-        for (std::size_t j = 1; j < gbaPalette.palSize; j++) {
+        for (std::size_t j = 1; j < gbaPalette.size; j++) {
             primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[j]));
         }
     }
@@ -178,7 +178,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
                 colorIndex++;
             }
         }
-        compiled.palettes[i].palSize = colorIndex;
+        compiled.palettes[i].size = colorIndex;
     }
 
     /*
@@ -310,22 +310,46 @@ TEST_CASE("compile function should assign all tiles as expected") {
 
 TEST_CASE("compileSecondary function should assign all tiles as expected") {
     porytiles::Config config = porytiles::defaultConfig();
+    config.numPalettesInPrimary = 3;
+    config.numPalettesTotal = 6;
 
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_primary.png"));
-    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/bottom_primary.png"};
-    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/middle_primary.png"};
-    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/top_primary.png"};
-    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_primary.png"));
+    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/bottom_primary.png"};
+    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
+    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
+    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
+                                                                                           topPrimary);
     porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
 
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_secondary.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_secondary.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_secondary.png"));
-    png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_2/bottom_secondary.png"};
-    png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_2/middle_secondary.png"};
-    png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_2/top_secondary.png"};
-    porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(bottomSecondary, middleSecondary, topSecondary);
-    porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(config, decompiledSecondary, compiledPrimary);
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_secondary.png"));
+    png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_3/bottom_secondary.png"};
+    png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/middle_secondary.png"};
+    png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/top_secondary.png"};
+    porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(bottomSecondary,
+                                                                                             middleSecondary,
+                                                                                             topSecondary);
+    porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(config, decompiledSecondary,
+                                                                               compiledPrimary);
+
+    // Check that compiled palettes are as expected
+    CHECK(compiledSecondary.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
+    CHECK(compiledSecondary.palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(compiledSecondary.palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(compiledSecondary.palettes.at(2).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(2).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+    CHECK(compiledSecondary.palettes.at(2).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
+    CHECK(compiledSecondary.palettes.at(3).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(3).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(compiledSecondary.palettes.at(3).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
+    CHECK(compiledSecondary.palettes.at(3).colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_PURPLE));
+    CHECK(compiledSecondary.palettes.at(3).colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_LIME));
+    CHECK(compiledSecondary.palettes.at(4).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(5).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledSecondary.palettes.at(5).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
 }

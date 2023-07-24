@@ -218,7 +218,7 @@ bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solu
                 std::copy(std::begin(state.unassigned), std::end(state.unassigned), std::back_inserter(unassignedCopy));
                 std::vector<ColorSet> hardwarePalettesCopy;
                 std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
-                        std::back_inserter(hardwarePalettesCopy));
+                          std::back_inserter(hardwarePalettesCopy));
                 unassignedCopy.pop_back();
                 AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
