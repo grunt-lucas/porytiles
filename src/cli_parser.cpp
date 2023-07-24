@@ -79,6 +79,7 @@ static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string& optionNam
  * We'll define all the options and help strings here to reduce code repetition. Some options will be shared between
  * subcommands so we want to avoid duplicating message strings, etc.
  */
+// @formatter:off
 const std::string HELP_LONG = "help";
 constexpr char HELP_SHORT = "h"[0];
 const std::string HELP_DESCRIPTION =
@@ -186,15 +187,17 @@ VERSION_DESCRIPTION +
 "\n"
 "Commands:\n"
 "    compile-raw\n"
-"        Compile a raw tilesheet. Won't generate a `metatiles.bin'.\n"
+"        Compile one RGBA PNG layer into palettes and tiles. Won't generate\n"
+"        a `metatiles.bin' file.\n"
 "\n"
 "    compile\n"
-"        Compile three layer RGBA PNGs into a complete tileset.\n"
+"        Compile three RGBA PNG layers into a complete tileset.\n"
 "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
 "To get more help with porytiles, check out the guides at:\n"
 "    https://github.com/grunt-lucas/porytiles/wiki/Porytiles-Homepage\n";
+// @formatter:on
 
 static void parseGlobalOptions(Config& config, int argc, char** argv) {
     std::ostringstream implodedShorts;
@@ -265,7 +268,7 @@ static void parseSubcommand(Config& config, int argc, char** argv) {
 // -----------------------------
 // |    COMPILE-RAW COMMAND    |
 // -----------------------------
-
+// @formatter:off
 const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_RAW_HELP =
 "Usage:\n"
@@ -291,6 +294,7 @@ NUM_PALETTES_TOTAL_DESCRIPTION +
 "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n";
+// @formatter:on
 
 static void parseCompileRaw(Config& config, int argc, char** argv) {
     std::ostringstream implodedShorts;
@@ -359,7 +363,7 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
 // -------------------------
 // |    COMPILE COMMAND    |
 // -------------------------
-
+// @formatter:off
 const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_HELP =
 "Usage:\n"
@@ -407,7 +411,7 @@ TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n" +
 SECONDARY_DESCRIPTION +
 "\n";
-
+// @formatter:on
 static void parseCompile(Config& config, int argc, char** argv) {
     std::ostringstream implodedShorts;
     std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(),
