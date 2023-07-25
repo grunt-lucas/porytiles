@@ -20,7 +20,7 @@ int main(int argc, char** argv) try {
 catch (const porytiles::PtException& e) {
     // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
     fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
-                 fmt::styled("error:", fmt::emphasis::bold | fg(fmt::color::red)), e.what());
+                 fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)), e.what());
     return 1;
 }
 catch (const std::exception& e) {
@@ -28,7 +28,7 @@ catch (const std::exception& e) {
     // New C++23 features may allow this at some point: https://github.com/TylerGlaiel/Crashlogs
     // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
     fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
-                 fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::color::red)), e.what());
+                 fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::terminal_color::red)), e.what());
     fmt::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     fmt::println("This is a bug. Please file an issue here: https://github.com/grunt-lucas/porytiles/issues");
     fmt::println("Be sure to include the full command you ran, as well as any accompanying input files that");
