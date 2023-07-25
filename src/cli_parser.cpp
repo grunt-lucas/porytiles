@@ -170,21 +170,21 @@ const std::string SECONDARY_DESCRIPTION =
 "        a Porytiles-handled tileset.\n";
 const int SECONDARY_VAL = 1007;
 
-const std::string PRESET_POKEEMERALD_LONG = "preset-pokeemerald";
+const std::string PRESET_POKEEMERALD_LONG = "preset-emerald";
 const std::string PRESET_POKEEMERALD_DESCRIPTION =
 "    --" + PRESET_POKEEMERALD_LONG + "\n"
 "        Set the fieldmap parameters to match those of `pokeemerald'. These\n"
 "        can be found in `include/fieldmap.h'. This is the default preset.\n";
 const int PRESET_POKEEMERALD_VAL = 1008;
 
-const std::string PRESET_POKEFIRERED_LONG = "preset-pokefirered";
+const std::string PRESET_POKEFIRERED_LONG = "preset-firered";
 const std::string PRESET_POKEFIRERED_DESCRIPTION =
 "    --" + PRESET_POKEFIRERED_LONG + "\n"
 "        Set the fieldmap parameters to match those of `pokefirered'. These\n"
 "        can be found in `include/fieldmap.h'.\n";
 const int PRESET_POKEFIRERED_VAL = 1009;
 
-const std::string PRESET_POKERUBY_LONG = "preset-pokeruby";
+const std::string PRESET_POKERUBY_LONG = "preset-ruby";
 const std::string PRESET_POKERUBY_DESCRIPTION =
 "    --" + PRESET_POKERUBY_LONG + "\n"
 "        Set the fieldmap parameters to match those of `pokeruby'. These\n"
@@ -340,6 +340,8 @@ NUM_PALETTES_TOTAL_DESCRIPTION +
 // @formatter:on
 
 static void parseCompileRaw(Config& config, int argc, char** argv) {
+    bool specifiedPreset = false;
+    bool specifiedFieldmap = false;
     std::ostringstream implodedShorts;
     std::copy(COMPILE_RAW_SHORTS.begin(), COMPILE_RAW_SHORTS.end(),
            std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -347,16 +349,16 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
-                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),     required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-                    {NUM_TILES_TOTAL_LONG.c_str(),          required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(),  required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-                    {NUM_PALETTES_TOTAL_LONG.c_str(),       required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
                     {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
                     {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
                     {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
                     {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
                     {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
+                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),     required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+                    {NUM_TILES_TOTAL_LONG.c_str(),          required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(),  required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+                    {NUM_PALETTES_TOTAL_LONG.c_str(),       required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
                     {nullptr,                               no_argument,       nullptr, 0}
             };
 
@@ -370,28 +372,35 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
             case OUTPUT_SHORT:
                 config.outputPath = optarg;
                 break;
-            case NUM_PALETTES_IN_PRIMARY_VAL:
-                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
-                break;
-            case NUM_PALETTES_TOTAL_VAL:
-                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
-                break;
-            case NUM_TILES_IN_PRIMARY_VAL:
-                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
-                break;
-            case NUM_TILES_TOTAL_VAL:
-                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
-                break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
                 break;
+            case NUM_PALETTES_IN_PRIMARY_VAL:
+                specifiedFieldmap = true;
+                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_PALETTES_TOTAL_VAL:
+                specifiedFieldmap = true;
+                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+                break;
+            case NUM_TILES_IN_PRIMARY_VAL:
+                specifiedFieldmap = true;
+                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_TILES_TOTAL_VAL:
+                specifiedFieldmap = true;
+                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+                break;
             case PRESET_POKEEMERALD_VAL:
+                specifiedPreset = true;
                 setPokeemeraldDefaultTilesetParams(config);
                 break;
             case PRESET_POKEFIRERED_VAL:
+                specifiedPreset = true;
                 setPokefireredDefaultTilesetParams(config);
                 break;
             case PRESET_POKERUBY_VAL:
+                specifiedPreset = true;
                 setPokerubyDefaultTilesetParams(config);
                 break;
 
@@ -409,6 +418,10 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
 
     if ((argc - optind) != 1) {
         throw PtException{"must specify exactly 1 TILES arg, see `porytiles compile-raw --help'"};
+    }
+
+    if (specifiedFieldmap && specifiedPreset) {
+        throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
     }
 
     config.rawTilesheetPath = argv[optind++];
@@ -480,6 +493,8 @@ NUM_PALETTES_TOTAL_DESCRIPTION +
 "\n";
 // @formatter:on
 static void parseCompile(Config& config, int argc, char** argv) {
+    bool specifiedPreset = false;
+    bool specifiedFieldmap = false;
     std::ostringstream implodedShorts;
     std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(),
            std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -487,19 +502,19 @@ static void parseCompile(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
+                    {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
+                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
+                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
+                    {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
+                    {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
                     {NUM_TILES_IN_PRIMARY_LONG.c_str(),     required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
                     {NUM_TILES_TOTAL_LONG.c_str(),          required_argument, nullptr, NUM_TILES_TOTAL_VAL},
                     {NUM_METATILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_METATILES_IN_PRIMARY_VAL},
                     {NUM_METATILES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_METATILES_TOTAL_VAL},
                     {NUM_PALETTES_IN_PRIMARY_LONG.c_str(),  required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
                     {NUM_PALETTES_TOTAL_LONG.c_str(),       required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-                    {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
-                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
-                    {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
-                    {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
-                    {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
+                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
                     {nullptr,                               no_argument,       nullptr, 0}
             };
 
@@ -516,34 +531,43 @@ static void parseCompile(Config& config, int argc, char** argv) {
             case SECONDARY_VAL:
                 config.secondary = true;
                 break;
-            case NUM_TILES_IN_PRIMARY_VAL:
-                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
-                break;
-            case NUM_TILES_TOTAL_VAL:
-                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
-                break;
-            case NUM_METATILES_IN_PRIMARY_VAL:
-                config.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
-                break;
-            case NUM_METATILES_TOTAL_VAL:
-                config.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
-                break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
                 break;
+            case NUM_TILES_IN_PRIMARY_VAL:
+                specifiedFieldmap = true;
+                config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_TILES_TOTAL_VAL:
+                specifiedFieldmap = true;
+                config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+                break;
+            case NUM_METATILES_IN_PRIMARY_VAL:
+                specifiedFieldmap = true;
+                config.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_METATILES_TOTAL_VAL:
+                specifiedFieldmap = true;
+                config.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
+                break;
             case NUM_PALETTES_IN_PRIMARY_VAL:
+                specifiedFieldmap = true;
                 config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_PALETTES_TOTAL_VAL:
+                specifiedFieldmap = true;
                 config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
                 break;
             case PRESET_POKEEMERALD_VAL:
+                specifiedPreset = true;
                 setPokeemeraldDefaultTilesetParams(config);
                 break;
             case PRESET_POKEFIRERED_VAL:
+                specifiedPreset = true;
                 setPokefireredDefaultTilesetParams(config);
                 break;
             case PRESET_POKERUBY_VAL:
+                specifiedPreset = true;
                 setPokerubyDefaultTilesetParams(config);
                 break;
 
@@ -564,6 +588,10 @@ static void parseCompile(Config& config, int argc, char** argv) {
     }
     else if (!config.secondary && (argc - optind) != 3) {
         throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile --help'"};
+    }
+
+    if (specifiedFieldmap && specifiedPreset) {
+        throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
     }
 
     config.bottomTilesheetPath = argv[optind++];
