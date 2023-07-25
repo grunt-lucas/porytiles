@@ -96,7 +96,7 @@ void emitTilesPng(const Config& config, png::image<png::index_pixel>& out, const
             size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
             if (tileIndex < tileset.tiles.size()) {
                 const GBATile& tile = tileset.tiles[tilesetTileIndex];
-                png::byte paletteIndex = tileset.paletteIndexes[tilesetTileIndex];
+                png::byte paletteIndex = tileset.paletteIndexesOfTile[tilesetTileIndex];
                 png::byte indexInPalette = tile.getPixel(pixelIndex);
                 switch(config.tilesPngPaletteMode) {
                     case PAL0:
@@ -207,6 +207,8 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
     porytiles::Config config = porytiles::defaultConfig();
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+    REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/expected.png"));
+
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
     porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);

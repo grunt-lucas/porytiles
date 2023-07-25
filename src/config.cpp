@@ -11,7 +11,7 @@ Config defaultConfig() {
     config.numMetatilesTotal = 1024;
     config.numPalettesInPrimary = 6;
     config.numPalettesTotal = 13;
-    config.numTilesPerMetatile = 8;
+    config.numTilesPerMetatile = 12;
     config.secondary = false;
 
     config.transparencyColor = RGBA_MAGENTA;

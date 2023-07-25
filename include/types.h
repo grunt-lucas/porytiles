@@ -21,6 +21,7 @@ constexpr std::size_t TILE_SIDE_LENGTH = 8;
 constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
 constexpr std::size_t METATILE_TILE_SIDE_LENGTH = 2;
 constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+constexpr std::size_t METATILES_IN_ROW = 8;
 constexpr std::size_t PAL_SIZE = 16;
 constexpr std::size_t MAX_BG_PALETTES = 16;
 
@@ -154,14 +155,14 @@ extern const RGBATile RGBA_TILE_WHITE;
  * A tile of palette indexes.
  */
 struct GBATile {
-    std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
+    std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
     [[nodiscard]] std::uint8_t getPixel(size_t index) const {
         if (index >= TILE_NUM_PIX) {
             throw std::out_of_range{
                     "internal: GBATile::getPixel index argument out of bounds (" + std::to_string(index) + ")"};
         }
-        return paletteIndexes.at(index);
+        return colorIndexes.at(index);
     }
 
 #if defined(__GNUG__) && !defined(__clang__)
@@ -175,17 +176,17 @@ struct GBATile {
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
     // auto operator<=>(const GBATile&) const = default;
     auto operator<=>(const GBATile& other) const {
-        if (this->paletteIndexes == other.paletteIndexes) {
+        if (this->colorIndexes == other.colorIndexes) {
             return std::strong_ordering::equal;
         }
-        else if (this->paletteIndexes < other.paletteIndexes) {
+        else if (this->colorIndexes < other.colorIndexes) {
             return std::strong_ordering::less;
         }
         return std::strong_ordering::greater;
     }
 
     auto operator==(const GBATile& other) const {
-        return this->paletteIndexes == other.paletteIndexes;
+        return this->colorIndexes == other.colorIndexes;
     }
 #endif
 };
@@ -198,7 +199,7 @@ struct std::hash<porytiles::GBATile> {
     std::size_t operator()(const porytiles::GBATile& tile) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
-        for (auto index: tile.paletteIndexes) {
+        for (auto index: tile.colorIndexes) {
             hashValue ^= std::hash<uint8_t>{}(index);
         }
         return hashValue;
@@ -266,7 +267,7 @@ struct Assignment {
  */
 struct CompiledTileset {
     std::vector<GBATile> tiles;
-    std::vector<std::size_t> paletteIndexes;
+    std::vector<std::size_t> paletteIndexesOfTile;
     std::vector<GBAPalette> palettes;
     std::vector<Assignment> assignments;
     std::unordered_map<BGR15, std::size_t> colorIndexMap;
@@ -291,7 +292,7 @@ struct DecompiledTileset {
  * TODO : fill in doc comment
  */
 struct NormalizedPixels {
-    std::array<std::uint8_t, TILE_NUM_PIX> paletteIndexes;
+    std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
 #if defined(__GNUG__) && !defined(__clang__)
 
@@ -304,17 +305,17 @@ struct NormalizedPixels {
     // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
     // auto operator<=>(const NormalizedPixels&) const = default;
     auto operator<=>(const NormalizedPixels& other) const {
-        if (this->paletteIndexes == other.paletteIndexes) {
+        if (this->colorIndexes == other.colorIndexes) {
             return std::strong_ordering::equal;
         }
-        else if (this->paletteIndexes < other.paletteIndexes) {
+        else if (this->colorIndexes < other.colorIndexes) {
             return std::strong_ordering::less;
         }
         return std::strong_ordering::greater;
     }
 
     auto operator==(const NormalizedPixels& other) const {
-        return this->paletteIndexes == other.paletteIndexes;
+        return this->colorIndexes == other.colorIndexes;
     }
 #endif
 };
@@ -325,7 +326,7 @@ struct std::hash<porytiles::NormalizedPixels> {
     std::size_t operator()(const porytiles::NormalizedPixels& pixels) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
-        for (auto pixel: pixels.paletteIndexes) {
+        for (auto pixel: pixels.colorIndexes) {
             hashValue ^= std::hash<uint8_t>{}(pixel);
         }
         return hashValue;
@@ -417,7 +418,7 @@ struct NormalizedTile {
             throw std::out_of_range{
                     "internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
         }
-        pixels.paletteIndexes[row * TILE_SIDE_LENGTH + col] = value;
+        pixels.colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
     }
 };
 }

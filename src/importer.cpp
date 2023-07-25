@@ -9,10 +9,13 @@
 namespace porytiles {
 
 DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png) {
-    /*
-     * TODO : this should throw if the input PNG is not formatted properly, e.g. the height is not divisible by 8, or
-     * the width is wrong, etc
-     */
+    if (png.get_height() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG height `" + std::to_string(png.get_height()) + "' is not divisible by 8"};
+    }
+    if (png.get_width() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG width `" + std::to_string(png.get_width()) + "' is not divisible by 8"};
+    }
+
     DecompiledTileset decompiledTiles;
 
     std::size_t pngWidthInTiles = png.get_width() / TILE_SIDE_LENGTH;
@@ -46,13 +49,13 @@ importLayeredTilesFromPngs(const png::image<png::rgba_pixel>& bottom, const png:
     if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
         throw PtException{"top layer input PNG height `" + std::to_string(top.get_height()) + "' is not divisible by 16"};
     }
-    if (bottom.get_width() != METATILE_SIDE_LENGTH * 8) {
+    if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
         throw PtException{"bottom layer input PNG width `" + std::to_string(bottom.get_width()) + "' was not 128"};
     }
-    if (middle.get_width() != METATILE_SIDE_LENGTH * 8) {
+    if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
         throw PtException{"middle layer input PNG width `" + std::to_string(middle.get_width()) + "' was not 128"};
     }
-    if (top.get_width() != METATILE_SIDE_LENGTH * 8) {
+    if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
         throw PtException{"top layer input PNG width `" + std::to_string(top.get_width()) + "' was not 128"};
     }
     if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {

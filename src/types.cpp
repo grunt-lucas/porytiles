@@ -13,7 +13,7 @@ static RGBATile uniformTile(const RGBA32& color) noexcept {
 static GBATile uniformTile(const uint8_t& index) noexcept {
     GBATile tile{};
     for (size_t i = 0; i < TILE_NUM_PIX; i++) {
-        tile.paletteIndexes[i] = index;
+        tile.colorIndexes[i] = index;
     }
     return tile;
 }

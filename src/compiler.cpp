@@ -74,7 +74,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
     // force tile 0 to be a transparent tile that uses palette 0
     tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});
     compiled.tiles.push_back(GBA_TILE_TRANSPARENT);
-    compiled.paletteIndexes.push_back(0);
+    compiled.paletteIndexesOfTile.push_back(0);
     for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
         auto index = std::get<0>(indexedNormTile);
         auto& normTile = std::get<1>(indexedNormTile);
@@ -98,7 +98,7 @@ CompiledTileset compile(const Config& config, const DecompiledTileset& decompile
                 // TODO : better error context
                 throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(config.numTilesInPrimary)};
             }
-            compiled.paletteIndexes.push_back(paletteIndex);
+            compiled.paletteIndexesOfTile.push_back(paletteIndex);
         }
         std::size_t tileIndex = inserted.first->second;
         compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
@@ -122,6 +122,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
     // Build helper data structures for the assignments
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, decompiledTileset);
     auto [colorToIndex, indexToColor] = buildColorIndexMaps(config, indexedNormTiles, primaryTileset.colorIndexMap);
+    compiled.colorIndexMap = colorToIndex;
     auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
     // Run palette assignment
@@ -217,14 +218,14 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
                     // TODO : better error context
                     throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(config.numTilesInPrimary)};
                 }
-                compiled.paletteIndexes.push_back(paletteIndex);
+                compiled.paletteIndexesOfTile.push_back(paletteIndex);
             }
             std::size_t tileIndex = inserted.first->second;
-            // Offset the tile index by the secondary tileset VRAM location, this is "hardcoded" by pokeemerald
-            // TODO : pokefirered uses 640 for this offset, so we'll need a way to configure that from the CLI
-            compiled.assignments[index] = {tileIndex + SECONDARY_TILESET_VRAM_OFFSET, paletteIndex, normTile.hFlip, normTile.vFlip};
+            // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
+            compiled.assignments[index] = {tileIndex + config.numTilesInPrimary, paletteIndex, normTile.hFlip, normTile.vFlip};
         }
     }
+    compiled.tileIndexes = tileIndexes;
 
     return compiled;
 }
@@ -234,7 +235,7 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
 // |    TEST CASES    |
 // --------------------
 
-TEST_CASE("compile function should assign all tiles as expected") {
+TEST_CASE("compile simple example should perform as expected") {
     porytiles::Config config{};
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
@@ -261,28 +262,28 @@ TEST_CASE("compile function should assign all tiles as expected") {
      */
     porytiles::GBATile& tile0 = compiledTiles.tiles[0];
     for (size_t i = 0; i < 64; i++) {
-        CHECK(tile0.paletteIndexes[i] == 0);
+        CHECK(tile0.colorIndexes[i] == 0);
     }
 
     porytiles::GBATile& tile1 = compiledTiles.tiles[1];
-    CHECK(tile1.paletteIndexes[0] == 0);
-    CHECK(tile1.paletteIndexes[7] == 1);
+    CHECK(tile1.colorIndexes[0] == 0);
+    CHECK(tile1.colorIndexes[7] == 1);
     for (size_t i = 56; i < 64; i++) {
-        CHECK(tile1.paletteIndexes[i] == 1);
+        CHECK(tile1.colorIndexes[i] == 1);
     }
 
     porytiles::GBATile tile2 = compiledTiles.tiles[2];
-    CHECK(tile2.paletteIndexes[0] == 0);
-    CHECK(tile2.paletteIndexes[54] == 1);
-    CHECK(tile2.paletteIndexes[55] == 1);
-    CHECK(tile2.paletteIndexes[62] == 1);
-    CHECK(tile2.paletteIndexes[63] == 2);
+    CHECK(tile2.colorIndexes[0] == 0);
+    CHECK(tile2.colorIndexes[54] == 1);
+    CHECK(tile2.colorIndexes[55] == 1);
+    CHECK(tile2.colorIndexes[62] == 1);
+    CHECK(tile2.colorIndexes[63] == 2);
 
     porytiles::GBATile tile3 = compiledTiles.tiles[3];
-    CHECK(tile3.paletteIndexes[0] == 0);
-    CHECK(tile3.paletteIndexes[7] == 3);
-    CHECK(tile3.paletteIndexes[56] == 3);
-    CHECK(tile3.paletteIndexes[63] == 1);
+    CHECK(tile3.colorIndexes[0] == 0);
+    CHECK(tile3.colorIndexes[7] == 3);
+    CHECK(tile3.colorIndexes[56] == 3);
+    CHECK(tile3.colorIndexes[63] == 1);
 
     /*
      * Check that all the assignments are correct.
@@ -308,7 +309,142 @@ TEST_CASE("compile function should assign all tiles as expected") {
     CHECK(compiledTiles.assignments[3].vFlip);
 }
 
-TEST_CASE("compileSecondary function should assign all tiles as expected") {
+TEST_CASE("compile function should fill out CompiledTileset struct with expected values") {
+    porytiles::Config config = porytiles::defaultConfig();
+    config.numPalettesInPrimary = 3;
+    config.numPalettesTotal = 6;
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_primary.png"));
+    png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/bottom_primary.png"};
+    png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
+    png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
+    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
+                                                                                           topPrimary);
+    porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
+
+    // Check that tiles are as expected
+    CHECK(compiledPrimary.tiles.size() == 5);
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary_expected_tiles.png"));
+    png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary_expected_tiles.png"};
+    for (std::size_t tileIndex = 0; tileIndex < compiledPrimary.tiles.size(); tileIndex++) {
+        for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
+            for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
+                CHECK(
+                    compiledPrimary.tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
+                    expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]
+                );
+            }
+        }
+    }
+
+    // Check that paletteIndexesOfTile are correct
+    CHECK(compiledPrimary.paletteIndexesOfTile.size() == 5);
+    CHECK(compiledPrimary.paletteIndexesOfTile[0] == 0);
+    CHECK(compiledPrimary.paletteIndexesOfTile[1] == 2);
+    CHECK(compiledPrimary.paletteIndexesOfTile[2] == 1);
+    CHECK(compiledPrimary.paletteIndexesOfTile[3] == 1);
+    CHECK(compiledPrimary.paletteIndexesOfTile[4] == 0);
+
+    // Check that compiled palettes are as expected
+    CHECK(compiledPrimary.palettes.size() == config.numPalettesInPrimary);
+    CHECK(compiledPrimary.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledPrimary.palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
+    CHECK(compiledPrimary.palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledPrimary.palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
+    CHECK(compiledPrimary.palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
+    CHECK(compiledPrimary.palettes.at(2).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+    CHECK(compiledPrimary.palettes.at(2).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
+    CHECK(compiledPrimary.palettes.at(2).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
+
+    // Check that all assignments are correct
+    CHECK(compiledPrimary.assignments.size() == porytiles::METATILES_IN_ROW * config.numTilesPerMetatile);
+
+    CHECK(compiledPrimary.assignments[0].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[0].vFlip);
+    CHECK(compiledPrimary.assignments[0].tileIndex == 1);
+    CHECK(compiledPrimary.assignments[0].paletteIndex == 2);
+
+    CHECK_FALSE(compiledPrimary.assignments[1].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[1].vFlip);
+    CHECK(compiledPrimary.assignments[1].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[1].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[2].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[2].vFlip);
+    CHECK(compiledPrimary.assignments[2].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[2].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[3].hFlip);
+    CHECK(compiledPrimary.assignments[3].vFlip);
+    CHECK(compiledPrimary.assignments[3].tileIndex == 2);
+    CHECK(compiledPrimary.assignments[3].paletteIndex == 1);
+
+    CHECK_FALSE(compiledPrimary.assignments[4].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[4].vFlip);
+    CHECK(compiledPrimary.assignments[4].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[4].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[5].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[5].vFlip);
+    CHECK(compiledPrimary.assignments[5].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[5].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[6].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[6].vFlip);
+    CHECK(compiledPrimary.assignments[6].tileIndex == 3);
+    CHECK(compiledPrimary.assignments[6].paletteIndex == 1);
+
+    CHECK_FALSE(compiledPrimary.assignments[7].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[7].vFlip);
+    CHECK(compiledPrimary.assignments[7].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[7].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[8].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[8].vFlip);
+    CHECK(compiledPrimary.assignments[8].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[8].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[9].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[9].vFlip);
+    CHECK(compiledPrimary.assignments[9].tileIndex == 4);
+    CHECK(compiledPrimary.assignments[9].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[10].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[10].vFlip);
+    CHECK(compiledPrimary.assignments[10].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[10].paletteIndex == 0);
+
+    CHECK_FALSE(compiledPrimary.assignments[11].hFlip);
+    CHECK_FALSE(compiledPrimary.assignments[11].vFlip);
+    CHECK(compiledPrimary.assignments[11].tileIndex == 0);
+    CHECK(compiledPrimary.assignments[11].paletteIndex == 0);
+
+    for (std::size_t index = config.numTilesPerMetatile; index < porytiles::METATILES_IN_ROW * config.numTilesPerMetatile; index++) {
+        CHECK_FALSE(compiledPrimary.assignments[index].hFlip);
+        CHECK_FALSE(compiledPrimary.assignments[index].vFlip);
+        CHECK(compiledPrimary.assignments[index].tileIndex == 0);
+        CHECK(compiledPrimary.assignments[index].paletteIndex == 0);
+    }
+
+    // Check that colorIndexMap is correct
+    CHECK(compiledPrimary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 0);
+    CHECK(compiledPrimary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_YELLOW)] == 1);
+    CHECK(compiledPrimary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 2);
+    CHECK(compiledPrimary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 3);
+    CHECK(compiledPrimary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_WHITE)] == 4);
+
+    // Check that tileIndexes is correct
+    CHECK(compiledPrimary.tileIndexes.size() == compiledPrimary.tiles.size());
+    CHECK(compiledPrimary.tileIndexes[compiledPrimary.tiles[0]] == 0);
+    CHECK(compiledPrimary.tileIndexes[compiledPrimary.tiles[1]] == 1);
+    CHECK(compiledPrimary.tileIndexes[compiledPrimary.tiles[2]] == 2);
+    CHECK(compiledPrimary.tileIndexes[compiledPrimary.tiles[3]] == 3);
+    CHECK(compiledPrimary.tileIndexes[compiledPrimary.tiles[4]] == 4);
+}
+
+TEST_CASE("compileSecondary function should fill out CompiledTileset struct with expected values") {
     porytiles::Config config = porytiles::defaultConfig();
     config.numPalettesInPrimary = 3;
     config.numPalettesTotal = 6;
@@ -335,6 +471,28 @@ TEST_CASE("compileSecondary function should assign all tiles as expected") {
     porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(config, decompiledSecondary,
                                                                                compiledPrimary);
 
+    // Check that tiles are as expected
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary_expected_tiles.png"));
+    png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/secondary_expected_tiles.png"};
+    for (std::size_t tileIndex = 0; tileIndex < compiledSecondary.tiles.size(); tileIndex++) {
+        for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
+            for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
+                CHECK(
+                    compiledSecondary.tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
+                    expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]
+                );
+            }
+        }
+    }
+
+    // Check that paletteIndexesOfTile are correct
+    CHECK(compiledSecondary.paletteIndexesOfTile[0] == 2);
+    CHECK(compiledSecondary.paletteIndexesOfTile[1] == 3);
+    CHECK(compiledSecondary.paletteIndexesOfTile[2] == 3);
+    CHECK(compiledSecondary.paletteIndexesOfTile[3] == 3);
+    CHECK(compiledSecondary.paletteIndexesOfTile[4] == 3);
+    CHECK(compiledSecondary.paletteIndexesOfTile[5] == 5);
+
     // Check that compiled palettes are as expected
     CHECK(compiledSecondary.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
     CHECK(compiledSecondary.palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
@@ -352,4 +510,94 @@ TEST_CASE("compileSecondary function should assign all tiles as expected") {
     CHECK(compiledSecondary.palettes.at(4).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
     CHECK(compiledSecondary.palettes.at(5).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
     CHECK(compiledSecondary.palettes.at(5).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
+
+    // Check that all assignments are correct
+    CHECK(compiledSecondary.assignments.size() == porytiles::METATILES_IN_ROW * config.numTilesPerMetatile);
+
+    CHECK_FALSE(compiledSecondary.assignments[0].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[0].vFlip);
+    CHECK(compiledSecondary.assignments[0].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[0].paletteIndex == 0);
+
+    CHECK_FALSE(compiledSecondary.assignments[1].hFlip);
+    CHECK(compiledSecondary.assignments[1].vFlip);
+    CHECK(compiledSecondary.assignments[1].tileIndex == 0 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[1].paletteIndex == 2);
+
+    CHECK_FALSE(compiledSecondary.assignments[2].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[2].vFlip);
+    CHECK(compiledSecondary.assignments[2].tileIndex == 1 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[2].paletteIndex == 3);
+
+    CHECK_FALSE(compiledSecondary.assignments[3].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[3].vFlip);
+    CHECK(compiledSecondary.assignments[3].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[3].paletteIndex == 0);
+
+    CHECK_FALSE(compiledSecondary.assignments[4].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[4].vFlip);
+    CHECK(compiledSecondary.assignments[4].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[4].paletteIndex == 0);
+
+    CHECK_FALSE(compiledSecondary.assignments[5].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[5].vFlip);
+    CHECK(compiledSecondary.assignments[5].tileIndex == 2 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[5].paletteIndex == 3);
+
+    CHECK_FALSE(compiledSecondary.assignments[6].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[6].vFlip);
+    CHECK(compiledSecondary.assignments[6].tileIndex == 3 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[6].paletteIndex == 3);
+
+    CHECK_FALSE(compiledSecondary.assignments[7].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[7].vFlip);
+    CHECK(compiledSecondary.assignments[7].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[7].paletteIndex == 0);
+
+    CHECK_FALSE(compiledSecondary.assignments[8].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[8].vFlip);
+    CHECK(compiledSecondary.assignments[8].tileIndex == 4 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[8].paletteIndex == 3);
+
+    CHECK_FALSE(compiledSecondary.assignments[9].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[9].vFlip);
+    CHECK(compiledSecondary.assignments[9].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[9].paletteIndex == 0);
+
+    CHECK_FALSE(compiledSecondary.assignments[10].hFlip);
+    CHECK_FALSE(compiledSecondary.assignments[10].vFlip);
+    CHECK(compiledSecondary.assignments[10].tileIndex == 0);
+    CHECK(compiledSecondary.assignments[10].paletteIndex == 0);
+
+    CHECK(compiledSecondary.assignments[11].hFlip);
+    CHECK(compiledSecondary.assignments[11].vFlip);
+    CHECK(compiledSecondary.assignments[11].tileIndex == 5 + config.numTilesInPrimary);
+    CHECK(compiledSecondary.assignments[11].paletteIndex == 5);
+
+    for (std::size_t index = config.numTilesPerMetatile; index < porytiles::METATILES_IN_ROW * config.numTilesPerMetatile; index++) {
+        CHECK_FALSE(compiledSecondary.assignments[index].hFlip);
+        CHECK_FALSE(compiledSecondary.assignments[index].vFlip);
+        CHECK(compiledSecondary.assignments[index].tileIndex == 0);
+        CHECK(compiledSecondary.assignments[index].paletteIndex == 0);
+    }
+
+    // Check that colorIndexMap is correct
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 0);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_YELLOW)] == 1);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREEN)] == 2);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 3);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_WHITE)] == 4);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 5);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_PURPLE)] == 6);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_LIME)] == 7);
+    CHECK(compiledSecondary.colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREY)] == 8);
+
+    // Check that tileIndexes is correct
+    CHECK(compiledSecondary.tileIndexes.size() == compiledSecondary.tiles.size());
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[0]] == 0);
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[1]] == 1);
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[2]] == 2);
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[3]] == 3);
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[4]] == 4);
+    CHECK(compiledSecondary.tileIndexes[compiledSecondary.tiles[5]] == 5);
 }

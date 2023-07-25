@@ -62,11 +62,6 @@ struct Config {
     std::size_t numTilesInSecondary() const {
         return numTilesTotal - numTilesInPrimary;
     }
-
-    std::size_t maxMetatiles() const {
-        // TODO : remove in favor of *InPrimary/Secondary paradigm like above
-        return secondary ? numMetatilesTotal - numMetatilesInPrimary : numMetatilesInPrimary;
-    }
 };
 
 // TODO : add method to get a good default config for unit tests
