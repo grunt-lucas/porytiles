@@ -471,10 +471,10 @@ static void parseCompile(Config& config, int argc, char** argv) {
     }
 
     if (config.secondary && (argc - optind) != 6) {
-        throw PtException{"due to `--secondary', must specify exactly 6 layer args, see `porytiles compile --help'"};
+        throw PtException{"must specify BOTTOM, MIDDLE, TOP, BOTTOM_PRIMARY, MIDDLE_PRIMARY, TOP_PRIMARY layer args, see `porytiles compile --help'"};
     }
     else if (!config.secondary && (argc - optind) != 3) {
-        throw PtException{"must specify exactly 3 layer args, see `porytiles compile --help'"};
+        throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile --help'"};
     }
 
     config.bottomTilesheetPath = argv[optind++];
