@@ -44,7 +44,7 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 #-I/opt/homebrew/opt/llvm/include/c++/v1
+CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include #-I/opt/homebrew/opt/llvm/include/c++/v1
 CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 

@@ -4,8 +4,10 @@
 #include <sstream>
 #include <string>
 #include <iterator>
-#include <filesystem>
 #include <getopt.h>
+
+#define FMT_HEADER_ONLY
+#include "fmt/format.h"
 
 #include "ptexception.h"
 #include "config.h"
@@ -66,10 +68,6 @@ static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string& optionNam
         throw PtException{"invalid argument `" + optargString + "' for option `" + optionName + "'"};
     }
 }
-
-/*
- * TODO : everything here is very preliminary and should be hardened for a better user experience
- */
 
 
 // ----------------------------
@@ -221,20 +219,19 @@ static void parseGlobalOptions(Config& config, int argc, char** argv) {
 
         switch (opt) {
             case VERBOSE_SHORT:
-                std::cout << "verbose mode activated" << std::endl;
                 break;
             case VERSION_SHORT:
-                std::cout << PROGRAM_NAME << " " << VERSION << " " << RELEASE_DATE << std::endl;
+                fmt::println("{} {} {}", PROGRAM_NAME, VERSION, RELEASE_DATE);
                 exit(0);
 
                 // Help message upon '-h/--help' goes to stdout
             case HELP_SHORT:
-                std::cout << GLOBAL_HELP << std::endl;
+                fmt::println("{}", GLOBAL_HELP);
                 exit(0);
                 // Help message on invalid or unknown options goes to stderr and gives error code
             case '?':
             default:
-                std::cout << GLOBAL_HELP << std::endl;
+                fmt::println(stderr, "{}", GLOBAL_HELP);;
                 exit(2);
         }
     }
@@ -343,12 +340,12 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
 
             // Help message upon '-h/--help' goes to stdout
             case HELP_SHORT:
-                std::cout << COMPILE_RAW_HELP << std::endl;
+                fmt::println("{}", COMPILE_RAW_HELP);
                 exit(0);
             // Help message on invalid or unknown options goes to stderr and gives error code
             case '?':
             default:
-                std::cout << COMPILE_RAW_HELP << std::endl;
+                fmt::println(stderr, "{}", COMPILE_RAW_HELP);
                 exit(2);
         }
     }
@@ -463,12 +460,12 @@ static void parseCompile(Config& config, int argc, char** argv) {
 
             // Help message upon '-h/--help' goes to stdout
             case HELP_SHORT:
-                std::cout << COMPILE_HELP << std::endl;
+                fmt::println("{}", COMPILE_HELP);
                 exit(0);
             // Help message on invalid or unknown options goes to stderr and gives error code
             case '?':
             default:
-                std::cout << COMPILE_HELP << std::endl;
+                fmt::println(stderr, "{}", COMPILE_HELP);
                 exit(2);
         }
     }

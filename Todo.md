@@ -1,8 +1,5 @@
 # Todo List
 
-+ Use the `{fmt}` C++ library for colors and better output?
-    + https://github.com/fmtlib/fmt
-
 + Continue to create more in-file unit tests that maximize coverage
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
