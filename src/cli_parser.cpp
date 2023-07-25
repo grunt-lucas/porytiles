@@ -513,11 +513,8 @@ static void parseCompile(Config& config, int argc, char** argv) {
             case OUTPUT_SHORT:
                 config.outputPath = optarg;
                 break;
-            case NUM_PALETTES_IN_PRIMARY_VAL:
-                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
-                break;
-            case NUM_PALETTES_TOTAL_VAL:
-                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+            case SECONDARY_VAL:
+                config.secondary = true;
                 break;
             case NUM_TILES_IN_PRIMARY_VAL:
                 config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
@@ -525,11 +522,20 @@ static void parseCompile(Config& config, int argc, char** argv) {
             case NUM_TILES_TOTAL_VAL:
                 config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
                 break;
+            case NUM_METATILES_IN_PRIMARY_VAL:
+                config.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_METATILES_TOTAL_VAL:
+                config.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
+                break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
                 break;
-            case SECONDARY_VAL:
-                config.secondary = true;
+            case NUM_PALETTES_IN_PRIMARY_VAL:
+                config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+                break;
+            case NUM_PALETTES_TOTAL_VAL:
+                config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
                 break;
             case PRESET_POKEEMERALD_VAL:
                 setPokeemeraldDefaultTilesetParams(config);
