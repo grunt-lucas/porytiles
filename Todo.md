@@ -14,10 +14,6 @@
   + universal MacOS binary?
     + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
 
-+ Implement some preset flags for the tileset params
-  + `--preset-emerald`, `--preset-firered`, `--preset-ruby` uses the `fieldmap.h` and VRAM offset presets for the given
-    game
-
 + Add `--verbose` logs to stdout
   + each log should have a category tag for easier grep filtering
 

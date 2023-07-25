@@ -120,13 +120,29 @@ const std::string NUM_TILES_TOTAL_DESCRIPTION =
 "        `include/fieldmap.h'. Defaults to 1024 (the pokeemerald default).\n";
 const int NUM_TILES_TOTAL_VAL = 1001;
 
+const std::string NUM_METATILES_IN_PRIMARY_LONG = "num-metatiles-primary";
+const std::string NUM_METATILES_IN_PRIMARY_DESCRIPTION =
+"    --" + NUM_METATILES_IN_PRIMARY_LONG + "=<N>\n"
+"        Set the number of metatiles in a primary set to N. This value should\n"
+"        match the corresponding value in your project's `include/fieldmap.h'.\n"
+"        Defaults to 512 (the pokeemerald default).\n";
+const int NUM_METATILES_IN_PRIMARY_VAL = 1002;
+
+const std::string NUM_METATILES_TOTAL_LONG = "num-metatiles-total";
+const std::string NUM_METATILES_TOTAL_DESCRIPTION =
+"    --" + NUM_METATILES_TOTAL_LONG + "=<N>\n"
+"        Set the total number of metatiles (primary + secondary) to N. This\n"
+"        value should match the corresponding value in your project's\n"
+"        `include/fieldmap.h'. Defaults to 1024 (the pokeemerald default).\n";
+const int NUM_METATILES_TOTAL_VAL = 1003;
+
 const std::string NUM_PALETTES_IN_PRIMARY_LONG = "num-pals-primary";
 const std::string NUM_PALETTES_IN_PRIMARY_DESCRIPTION =
 "    --" + NUM_PALETTES_IN_PRIMARY_LONG + "=<N>\n"
 "        Set the number of palettes in a primary set to N. This value should\n"
 "        match the corresponding value in your project's `include/fieldmap.h'.\n"
 "        Defaults to 6 (the pokeemerald default).\n";
-const int NUM_PALETTES_IN_PRIMARY_VAL = 1002;
+const int NUM_PALETTES_IN_PRIMARY_VAL = 1004;
 
 const std::string NUM_PALETTES_TOTAL_LONG = "num-pals-total";
 const std::string NUM_PALETTES_TOTAL_DESCRIPTION =
@@ -134,7 +150,7 @@ const std::string NUM_PALETTES_TOTAL_DESCRIPTION =
 "        Set the total number of palettes (primary + secondary) to N. This\n"
 "        value should match the corresponding value in your project's\n"
 "        `include/fieldmap.h'. Defaults to 13 (the pokeemerald default).\n";
-const int NUM_PALETTES_TOTAL_VAL = 1003;
+const int NUM_PALETTES_TOTAL_VAL = 1005;
 
 const std::string TILES_PNG_PALETTE_MODE_LONG = "tiles-png-pal-mode";
 const std::string TILES_PNG_PALETTE_MODE_DESCRIPTION =
@@ -143,7 +159,7 @@ const std::string TILES_PNG_PALETTE_MODE_DESCRIPTION =
 "        `pal0', `true-color', or `greyscale'. These settings are for human\n"
 "        visual purposes only and have no effect on the final in-game tiles.\n"
 "        Default value is `greyscale'.\n";
-const int TILES_PNG_PALETTE_MODE_VAL = 1004;
+const int TILES_PNG_PALETTE_MODE_VAL = 1006;
 
 const std::string SECONDARY_LONG = "secondary";
 const std::string SECONDARY_DESCRIPTION =
@@ -152,7 +168,28 @@ const std::string SECONDARY_DESCRIPTION =
 "        Secondary tilesets are able to reuse tiles and palettes from their\n"
 "        paired primary tileset. Note: the paired primary tileset must be\n"
 "        a Porytiles-handled tileset.\n";
-const int SECONDARY_VAL = 1005;
+const int SECONDARY_VAL = 1007;
+
+const std::string PRESET_POKEEMERALD_LONG = "preset-pokeemerald";
+const std::string PRESET_POKEEMERALD_DESCRIPTION =
+"    --" + PRESET_POKEEMERALD_LONG + "\n"
+"        Set the fieldmap parameters to match those of `pokeemerald'. These\n"
+"        can be found in `include/fieldmap.h'. This is the default preset.\n";
+const int PRESET_POKEEMERALD_VAL = 1008;
+
+const std::string PRESET_POKEFIRERED_LONG = "preset-pokefirered";
+const std::string PRESET_POKEFIRERED_DESCRIPTION =
+"    --" + PRESET_POKEFIRERED_LONG + "\n"
+"        Set the fieldmap parameters to match those of `pokefirered'. These\n"
+"        can be found in `include/fieldmap.h'.\n";
+const int PRESET_POKEFIRERED_VAL = 1009;
+
+const std::string PRESET_POKERUBY_LONG = "preset-pokeruby";
+const std::string PRESET_POKERUBY_DESCRIPTION =
+"    --" + PRESET_POKERUBY_LONG + "\n"
+"        Set the fieldmap parameters to match those of `pokeruby'. These\n"
+"        can be found in `include/fieldmap.h'.\n";
+const int PRESET_POKERUBY_VAL = 1010;
 
 
 // --------------------------------
@@ -282,6 +319,16 @@ const std::string COMPILE_RAW_HELP =
 "Options:\n" +
 OUTPUT_DESCRIPTION +
 "\n" +
+TILES_PNG_PALETTE_MODE_DESCRIPTION +
+"\n" +
+"Per-Game Fieldmap Preset Options:\n" +
+PRESET_POKEEMERALD_DESCRIPTION +
+"\n" +
+PRESET_POKEFIRERED_DESCRIPTION +
+"\n" +
+PRESET_POKERUBY_DESCRIPTION +
+"\n" +
+"Fieldmap Options:\n" +
 NUM_TILES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_TILES_TOTAL_DESCRIPTION +
@@ -289,8 +336,6 @@ NUM_TILES_TOTAL_DESCRIPTION +
 NUM_PALETTES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_PALETTES_TOTAL_DESCRIPTION +
-"\n" +
-TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n";
 // @formatter:on
 
@@ -302,14 +347,17 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),                    no_argument,       nullptr, HELP_SHORT},
-                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-                    {NUM_PALETTES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),    required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-                    {NUM_TILES_TOTAL_LONG.c_str(),         required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-                    {OUTPUT_LONG.c_str(),                  required_argument, nullptr, OUTPUT_SHORT},
-                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),  required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-                    {nullptr,                              no_argument,       nullptr, 0}
+                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
+                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),     required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+                    {NUM_TILES_TOTAL_LONG.c_str(),          required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(),  required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+                    {NUM_PALETTES_TOTAL_LONG.c_str(),       required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+                    {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
+                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
+                    {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
+                    {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
+                    {nullptr,                               no_argument,       nullptr, 0}
             };
 
     while (true) {
@@ -336,6 +384,15 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
                 break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+                break;
+            case PRESET_POKEEMERALD_VAL:
+                setPokeemeraldDefaultTilesetParams(config);
+                break;
+            case PRESET_POKEFIRERED_VAL:
+                setPokefireredDefaultTilesetParams(config);
+                break;
+            case PRESET_POKERUBY_VAL:
+                setPokerubyDefaultTilesetParams(config);
                 break;
 
             // Help message upon '-h/--help' goes to stdout
@@ -397,17 +454,29 @@ const std::string COMPILE_HELP =
 "Options:\n" +
 OUTPUT_DESCRIPTION +
 "\n" +
+TILES_PNG_PALETTE_MODE_DESCRIPTION +
+"\n" +
+SECONDARY_DESCRIPTION +
+"\n" +
+"Per-Game Fieldmap Preset Options:\n" +
+PRESET_POKEEMERALD_DESCRIPTION +
+"\n" +
+PRESET_POKEFIRERED_DESCRIPTION +
+"\n" +
+PRESET_POKERUBY_DESCRIPTION +
+"\n" +
+"Fieldmap Options:\n" +
 NUM_TILES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_TILES_TOTAL_DESCRIPTION +
 "\n" +
+NUM_METATILES_IN_PRIMARY_DESCRIPTION +
+"\n" +
+NUM_METATILES_TOTAL_DESCRIPTION +
+"\n" +
 NUM_PALETTES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_PALETTES_TOTAL_DESCRIPTION +
-"\n" +
-TILES_PNG_PALETTE_MODE_DESCRIPTION +
-"\n" +
-SECONDARY_DESCRIPTION +
 "\n";
 // @formatter:on
 static void parseCompile(Config& config, int argc, char** argv) {
@@ -418,15 +487,20 @@ static void parseCompile(Config& config, int argc, char** argv) {
     std::string shortOptions = "+" + implodedShorts.str();
     static struct option longOptions[] =
             {
-                    {HELP_LONG.c_str(),                    no_argument,       nullptr, HELP_SHORT},
-                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-                    {NUM_PALETTES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),    required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-                    {NUM_TILES_TOTAL_LONG.c_str(),         required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-                    {OUTPUT_LONG.c_str(),                  required_argument, nullptr, OUTPUT_SHORT},
-                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),  required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-                    {SECONDARY_LONG.c_str(),               no_argument,       nullptr, SECONDARY_VAL},
-                    {nullptr,                              no_argument,       nullptr, 0}
+                    {HELP_LONG.c_str(),                     no_argument,       nullptr, HELP_SHORT},
+                    {NUM_TILES_IN_PRIMARY_LONG.c_str(),     required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+                    {NUM_TILES_TOTAL_LONG.c_str(),          required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+                    {NUM_METATILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_METATILES_IN_PRIMARY_VAL},
+                    {NUM_METATILES_TOTAL_LONG.c_str(),      required_argument, nullptr, NUM_METATILES_TOTAL_VAL},
+                    {NUM_PALETTES_IN_PRIMARY_LONG.c_str(),  required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+                    {NUM_PALETTES_TOTAL_LONG.c_str(),       required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+                    {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
+                    {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
+                    {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
+                    {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
+                    {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
+                    {nullptr,                               no_argument,       nullptr, 0}
             };
 
     while (true) {
@@ -456,6 +530,15 @@ static void parseCompile(Config& config, int argc, char** argv) {
                 break;
             case SECONDARY_VAL:
                 config.secondary = true;
+                break;
+            case PRESET_POKEEMERALD_VAL:
+                setPokeemeraldDefaultTilesetParams(config);
+                break;
+            case PRESET_POKEFIRERED_VAL:
+                setPokefireredDefaultTilesetParams(config);
+                break;
+            case PRESET_POKERUBY_VAL:
+                setPokerubyDefaultTilesetParams(config);
                 break;
 
             // Help message upon '-h/--help' goes to stdout

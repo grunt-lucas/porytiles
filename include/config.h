@@ -64,8 +64,10 @@ struct Config {
     }
 };
 
-// TODO : add method to get a good default config for unit tests
 Config defaultConfig();
+void setPokeemeraldDefaultTilesetParams(Config& config);
+void setPokefireredDefaultTilesetParams(Config& config);
+void setPokerubyDefaultTilesetParams(Config& config);
 
 }
 #endif // PORYTILES_CONFIG_H
