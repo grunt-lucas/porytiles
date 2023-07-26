@@ -718,13 +718,12 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 }
 
 TEST_CASE("assign should correctly assign all normalized palettes or fail if impossible") {
-    porytiles::Config config{};
+    porytiles::Config config = porytiles::defaultConfig();
     config.transparencyColor = porytiles::RGBA_MAGENTA;
 
     SUBCASE("It should successfully allocate a simple 2x2 tileset png") {
         constexpr int SOLUTION_SIZE = 2;
         config.numPalettesInPrimary = SOLUTION_SIZE;
-        config.secondary = false;
         config.maxRecurseCount = 20;
 
         REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -792,7 +791,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
 }
 
 TEST_CASE("makeTile should create the expected GBATile from the given NormalizedTile and GBAPalette") {
-    porytiles::Config config{};
+    porytiles::Config config = porytiles::defaultConfig();
     config.transparencyColor = porytiles::RGBA_MAGENTA;
     config.numPalettesInPrimary = 2;
     config.numTilesInPrimary = 4;
