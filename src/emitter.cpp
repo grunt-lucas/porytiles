@@ -138,7 +138,7 @@ void emitMetatilesBin(const Config& config, std::ostream& out, const CompiledTil
 // --------------------
 
 TEST_CASE("emitPalette should write the expected JASC pal to the output stream") {
-    porytiles::Config config{};
+    porytiles::Config config = porytiles::defaultConfig();
     porytiles::GBAPalette palette{};
     palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
     palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
