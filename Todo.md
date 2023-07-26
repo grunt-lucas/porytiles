@@ -19,7 +19,7 @@
 
 + Support for animated tiles, i.e. stable placement in `tiles.png`
 
-+ Decompile compiled tilesets back into three layer PNGs
++ Decompile compiled tilesets back into three layer PNGs + animated sets
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
 
