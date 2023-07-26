@@ -10,6 +10,7 @@
 #include "driver.h"
 #include "cli_parser.h"
 #include "ptexception.h"
+#include "program_name.h"
 
 int main(int argc, char** argv) try {
     porytiles::Config config = porytiles::defaultConfig();

@@ -11,12 +11,9 @@
 
 #include "ptexception.h"
 #include "config.h"
+#include "program_name.h"
 
 namespace porytiles {
-
-const std::string PROGRAM_NAME = "porytiles";
-const std::string VERSION = "1.0.0-SNAPSHOT";
-const std::string RELEASE_DATE = "---";
 
 static void parseGlobalOptions(Config& config, int argc, char** argv);
 static void parseSubcommand(Config& config, int argc, char** argv);
