@@ -223,9 +223,10 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
             auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
             if (inserted.second) {
                 compiled.tiles.push_back(gbaTile);
-                if (compiled.tiles.size() > config.numTilesInPrimary) {
+                if (compiled.tiles.size() > config.numTilesInSecondary()) {
                     // TODO : better error context
-                    throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(config.numTilesInPrimary)};
+                    throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
+                                      std::to_string(config.numTilesInSecondary())};
                 }
                 compiled.paletteIndexesOfTile.push_back(paletteIndex);
             }
