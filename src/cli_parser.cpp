@@ -321,14 +321,14 @@ OUTPUT_DESCRIPTION +
 "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n" +
-"Per-Game Fieldmap Preset Options:\n" +
+"Per-Game Fieldmap Presets:\n" +
 PRESET_POKEEMERALD_DESCRIPTION +
 "\n" +
 PRESET_POKEFIRERED_DESCRIPTION +
 "\n" +
 PRESET_POKERUBY_DESCRIPTION +
 "\n" +
-"Fieldmap Options:\n" +
+"Individual Fieldmap Options:\n" +
 NUM_TILES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_TILES_TOTAL_DESCRIPTION +
@@ -473,14 +473,14 @@ TILES_PNG_PALETTE_MODE_DESCRIPTION +
 "\n" +
 SECONDARY_DESCRIPTION +
 "\n" +
-"Per-Game Fieldmap Preset Options:\n" +
+"Per-Game Fieldmap Presets:\n" +
 PRESET_POKEEMERALD_DESCRIPTION +
 "\n" +
 PRESET_POKEFIRERED_DESCRIPTION +
 "\n" +
 PRESET_POKERUBY_DESCRIPTION +
 "\n" +
-"Fieldmap Options:\n" +
+"Individual Fieldmap Options:\n" +
 NUM_TILES_IN_PRIMARY_DESCRIPTION +
 "\n" +
 NUM_TILES_TOTAL_DESCRIPTION +
