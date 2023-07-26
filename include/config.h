@@ -4,6 +4,7 @@
 #include <limits>
 
 #include "types.h"
+#include "ptexception.h"
 
 /**
  * TODO : fill in doc comment for this header
@@ -61,6 +62,23 @@ struct Config {
 
     std::size_t numTilesInSecondary() const {
         return numTilesTotal - numTilesInPrimary;
+    }
+
+    std::size_t numMetatilesInSecondary() const {
+        return numMetatilesTotal - numMetatilesInPrimary;
+    }
+
+    void validate() const {
+        if (numTilesInPrimary > numTilesTotal) {
+            // TODO : display values here
+            throw PtException{"fieldmap parameter `numTilesInPrimary' exceeded `numTilesTotal'"};
+        }
+        if (numMetatilesInPrimary > numMetatilesTotal) {
+            throw PtException{"fieldmap parameter `numMetatilesInPrimary' exceeded `numMetatilesTotal'"};
+        }
+        if (numPalettesInPrimary > numPalettesTotal) {
+            throw PtException{"fieldmap parameter `numPalettesInPrimary' exceeded `numPalettesTotal'"};
+        }
     }
 };
 

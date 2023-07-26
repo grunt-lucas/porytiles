@@ -62,7 +62,7 @@ static void driveCompileRaw(const Config& config) {
     // confirmed image was a PNG, open it again
     png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
     DecompiledTileset decompiledTiles = importRawTilesFromPng(tilesheetPng);
-    CompiledTileset compiledTiles = compile(config, decompiledTiles);
+    CompiledTileset compiledTiles = compilePrimary(config, decompiledTiles);
 
     std::filesystem::path outputPath(config.outputPath);
     std::filesystem::path palettesDir("palettes");
@@ -176,7 +176,7 @@ static void driveCompile(const Config& config) {
         png::image<png::rgba_pixel> middlePrimaryPng{config.middlePrimaryTilesheetPath};
         png::image<png::rgba_pixel> topPrimaryPng{config.topPrimaryTilesheetPath};
         DecompiledTileset decompiledPrimaryTiles = importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-        CompiledTileset compiledPrimaryTiles = compile(config, decompiledPrimaryTiles);
+        CompiledTileset compiledPrimaryTiles = compilePrimary(config, decompiledPrimaryTiles);
 
         png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
         png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
@@ -189,7 +189,7 @@ static void driveCompile(const Config& config) {
         png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
         png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-        compiledTiles = compile(config, decompiledTiles);
+        compiledTiles = compilePrimary(config, decompiledTiles);
     }
 
     std::filesystem::path outputPath(config.outputPath);

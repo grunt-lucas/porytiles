@@ -803,7 +803,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
-    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(config, tiles);
 
     porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles.palettes[0]);
     CHECK_FALSE(indexedNormTiles[0].second.hFlip);

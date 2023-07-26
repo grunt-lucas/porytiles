@@ -19,10 +19,15 @@
 #include "compiler_helpers.h"
 
 namespace porytiles {
-CompiledTileset compile(const Config& config, const DecompiledTileset& decompiledTileset) {
+CompiledTileset compilePrimary(const Config& config, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     compiled.palettes.resize(config.numPalettesInPrimary);
-    // TODO : we should compute the number of metatiles here and throw if the user tilesheet exceeds the max
+    // TODO : if we are in raw mode, we don't need to do this calculation because metatiles are irrelevant
+    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / config.numTilesPerMetatile);
+    if (inputMetatileCount > config.numMetatilesInPrimary) {
+        throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
+            ") exceeded primary metatile limit (" + std::to_string(config.numMetatilesInPrimary) + ")"};
+    }
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
     // Build helper data structures for the assignments
@@ -116,7 +121,11 @@ CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& 
 
     CompiledTileset compiled;
     compiled.palettes.resize(config.numPalettesTotal);
-    // TODO : we should compute the number of metatiles here and throw if the user tilesheet exceeds the max
+    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / config.numTilesPerMetatile);
+    if (inputMetatileCount > config.numMetatilesInPrimary) {
+        throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
+            ") exceeded secondary metatile limit (" + std::to_string(config.numMetatilesInSecondary()) + ")"};
+    }
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
     // Build helper data structures for the assignments
@@ -246,7 +255,7 @@ TEST_CASE("compile simple example should perform as expected") {
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    porytiles::CompiledTileset compiledTiles = porytiles::compile(config, tiles);
+    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(config, tiles);
 
     // Check that compiled palettes are as expected
     CHECK(compiledTiles.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
@@ -322,7 +331,7 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
     png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
                                                                                            topPrimary);
-    porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
+    porytiles::CompiledTileset compiledPrimary = porytiles::compilePrimary(config, decompiledPrimary);
 
     // Check that tiles are as expected
     CHECK(compiledPrimary.tiles.size() == 5);
@@ -457,7 +466,7 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
     png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
                                                                                            topPrimary);
-    porytiles::CompiledTileset compiledPrimary = porytiles::compile(config, decompiledPrimary);
+    porytiles::CompiledTileset compiledPrimary = porytiles::compilePrimary(config, decompiledPrimary);
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_secondary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_secondary.png"));

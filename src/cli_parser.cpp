@@ -425,6 +425,8 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     }
 
     config.rawTilesheetPath = argv[optind++];
+
+    config.validate();
 }
 
 
@@ -603,6 +605,8 @@ static void parseCompile(Config& config, int argc, char** argv) {
         config.middlePrimaryTilesheetPath = argv[optind++];
         config.topPrimaryTilesheetPath = argv[optind++];
     }
+
+    config.validate();
 }
 
 }
