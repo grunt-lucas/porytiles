@@ -10,11 +10,6 @@
 
 namespace porytiles {
 
-/*
- * TODO : add a CompilerContext struct that contains a Config struct member as well as fields so that various compiler
- * functions can give good error messages with lots of context about what/where went wrong
- */
-
 /**
  * TODO : fill in doc comments
  */
