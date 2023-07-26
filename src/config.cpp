@@ -5,16 +5,21 @@ namespace porytiles {
 Config defaultConfig() {
     Config config;
 
+    // Fieldmap params
     setPokeemeraldDefaultTilesetParams(config);
     config.numTilesPerMetatile = 12;
     config.secondary = false;
 
+    // Input params
     config.transparencyColor = RGBA_MAGENTA;
-
-    config.tilesPngPaletteMode = GREYSCALE;
     config.maxRecurseCount = 2000000;
 
+    // Output params
+    config.tilesPngPaletteMode = GREYSCALE;
+
+    // Command params
     config.subcommand = COMPILE_RAW;
+    config.verbose = false;
 
     return config;
 }

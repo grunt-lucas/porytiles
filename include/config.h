@@ -28,7 +28,7 @@ enum Subcommand {
  * TODO : fill in doc comment
  */
 struct Config {
-    // Tileset params
+    // Fieldmap params
     std::size_t numTilesInPrimary;
     std::size_t numTilesTotal;
     std::size_t numMetatilesInPrimary;
@@ -54,7 +54,9 @@ struct Config {
     TilesPngPaletteMode tilesPngPaletteMode;
     std::string outputPath;
 
+    // Command params
     Subcommand subcommand;
+    bool verbose;
 
     [[nodiscard]] std::size_t numPalettesInSecondary() const {
         return numPalettesTotal - numPalettesInPrimary;

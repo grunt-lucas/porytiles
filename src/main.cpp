@@ -19,6 +19,7 @@ int main(int argc, char** argv) try {
     return 0;
 }
 catch (const porytiles::PtException& e) {
+    // TODO : move away from this paradigm, and just print error messages in place and then std::exit(1)
     // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
     fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
                  fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)), e.what());
@@ -28,11 +29,21 @@ catch (const std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
     // New C++23 features may allow this at some point: https://github.com/TylerGlaiel/Crashlogs
     // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
-    fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
-                 fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::terminal_color::red)), e.what());
-    fmt::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    fmt::println("This is a bug. Please file an issue here: https://github.com/grunt-lucas/porytiles/issues");
-    fmt::println("Be sure to include the full command you ran, as well as any accompanying input files that");
-    fmt::println("trigger the error. This way a maintainer can reproduce the issue.");
+    fmt::println(stderr, "{}: {} internal compiler error", porytiles::PROGRAM_NAME,
+                 fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)));
+    fmt::println(stderr, "{}", e.what());
+    fmt::println(stderr, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    fmt::println(stderr, "This is a bug. Please file an issue here:");
+    fmt::println(stderr, "https://github.com/grunt-lucas/porytiles/issues");
+    fmt::println(stderr, "");
+    fmt::println(stderr, "In the issue body, please include the following info:");
+    fmt::println(stderr, "  - the above error message");
+    fmt::println(stderr, "  - the full command line you ran");
+    fmt::println(stderr, "  - any relevant input files");
+    fmt::println(stderr, "  - the version / commit of Porytiles you are using");
+    fmt::println(stderr, "  - the compiler (and settings) you built with (if you built from source)");
+    fmt::println(stderr, "");
+    fmt::println(stderr, "Including these items makes it more likely a maintainer will be able to");
+    fmt::println(stderr, "reproduce the issue and create a patch.");
     return 1;
 }
