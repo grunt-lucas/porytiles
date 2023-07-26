@@ -56,28 +56,33 @@ struct Config {
 
     Subcommand subcommand;
 
-    std::size_t numPalettesInSecondary() const {
+    [[nodiscard]] std::size_t numPalettesInSecondary() const {
         return numPalettesTotal - numPalettesInPrimary;
     }
 
-    std::size_t numTilesInSecondary() const {
+    [[nodiscard]] std::size_t numTilesInSecondary() const {
         return numTilesTotal - numTilesInPrimary;
     }
 
-    std::size_t numMetatilesInSecondary() const {
+    [[nodiscard]] std::size_t numMetatilesInSecondary() const {
         return numMetatilesTotal - numMetatilesInPrimary;
     }
 
     void validate() const {
         if (numTilesInPrimary > numTilesTotal) {
-            // TODO : display values here
-            throw PtException{"fieldmap parameter `numTilesInPrimary' exceeded `numTilesTotal'"};
+            throw PtException{
+                    "fieldmap parameter `numTilesInPrimary' (" + std::to_string(numTilesInPrimary) +
+                    ") exceeded `numTilesTotal' (" + std::to_string(numTilesTotal) + ")"};
         }
         if (numMetatilesInPrimary > numMetatilesTotal) {
-            throw PtException{"fieldmap parameter `numMetatilesInPrimary' exceeded `numMetatilesTotal'"};
+            throw PtException{
+                    "fieldmap parameter `numMetatilesInPrimary' (" + std::to_string(numMetatilesInPrimary) +
+                    ") exceeded `numMetatilesTotal' (" + std::to_string(numMetatilesTotal) + ")"};
         }
         if (numPalettesInPrimary > numPalettesTotal) {
-            throw PtException{"fieldmap parameter `numPalettesInPrimary' exceeded `numPalettesTotal'"};
+            throw PtException{
+                    "fieldmap parameter `numPalettesInPrimary' (" + std::to_string(numPalettesInPrimary) +
+                    ") exceeded `numPalettesTotal' (" + std::to_string(numPalettesTotal) + ")"};
         }
     }
 };
