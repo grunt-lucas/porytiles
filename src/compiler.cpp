@@ -15,6 +15,54 @@
 #include "compiler_helpers.h"
 
 namespace porytiles {
+CompiledTileset compile(const CompilerContext& context, const DecompiledTileset& decompiledTileset) {
+    if (context.mode == SECONDARY && (context.config.numPalettesInPrimary != context.primaryTileset->palettes.size())) {
+        throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
+            std::to_string(context.config.numPalettesInPrimary) +
+            " != " +
+            std::to_string(context.primaryTileset->palettes.size()) + ")"
+        };
+    }
+
+    CompiledTileset compiled;
+    if (context.mode == PRIMARY) {
+        compiled.palettes.resize(context.config.numPalettesInPrimary);
+        std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / context.config.numTilesPerMetatile);
+        if (inputMetatileCount > context.config.numMetatilesInPrimary) {
+            throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
+                ") exceeded primary metatile limit (" + std::to_string(context.config.numMetatilesInPrimary) + ")"};
+        }
+    }
+    else if (context.mode == SECONDARY) {
+        compiled.palettes.resize(context.config.numPalettesTotal);
+        std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / context.config.numTilesPerMetatile);
+        if (inputMetatileCount > context.config.numMetatilesInSecondary()) {
+            throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
+                ") exceeded secondary metatile limit (" + std::to_string(context.config.numMetatilesInSecondary()) + ")"};
+        }
+    }
+    else if (context.mode == RAW) {
+        throw std::runtime_error{"TODO : support RAW mode"};
+    }
+    else {
+        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+    }
+    compiled.assignments.resize(decompiledTileset.tiles.size());
+
+    // Build helper data structures for the assignments
+    std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
+    const std::unordered_map<BGR15, std::size_t>* primaryColorIndexMap = &emptyPrimaryColorIndexMap;
+    if (context.mode == SECONDARY) {
+        primaryColorIndexMap = &(context.primaryTileset->colorIndexMap);
+    }
+    std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(context.config, decompiledTileset);
+    auto [colorToIndex, indexToColor] = buildColorIndexMaps(context.config, indexedNormTiles, *primaryColorIndexMap);
+    compiled.colorIndexMap = colorToIndex;
+    auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+
+    return compiled;
+}
+
 CompiledTileset compilePrimary(const CompilerContext& context, const DecompiledTileset& decompiledTileset) {
     CompiledTileset compiled;
     compiled.palettes.resize(context.config.numPalettesInPrimary);
@@ -111,14 +159,15 @@ CompiledTileset compilePrimary(const CompilerContext& context, const DecompiledT
 
 CompiledTileset compileSecondary(const CompilerContext& context, const DecompiledTileset& decompiledTileset, const CompiledTileset& primaryTileset) {
     if (context.config.numPalettesInPrimary != primaryTileset.palettes.size()) {
-        // TODO : better error context
-        throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size"};
+        throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
+            std::to_string(context.config.numPalettesInPrimary) + " != " + std::to_string(primaryTileset.palettes.size()) +
+            ")"};
     }
 
     CompiledTileset compiled;
     compiled.palettes.resize(context.config.numPalettesTotal);
     std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / context.config.numTilesPerMetatile);
-    if (inputMetatileCount > context.config.numMetatilesInPrimary) {
+    if (inputMetatileCount > context.config.numMetatilesInSecondary()) {
         throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
             ") exceeded secondary metatile limit (" + std::to_string(context.config.numMetatilesInSecondary()) + ")"};
     }

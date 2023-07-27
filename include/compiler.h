@@ -14,6 +14,7 @@ namespace porytiles {
 /**
  * TODO : fill in doc comments
  */
+CompiledTileset compile(const CompilerContext& context, const DecompiledTileset& decompiledTileset);
 CompiledTileset compilePrimary(const CompilerContext& context, const DecompiledTileset& decompiledTileset);
 CompiledTileset compileSecondary(const CompilerContext& context, const DecompiledTileset& decompiledTileset, const CompiledTileset& primaryTileset);
 
