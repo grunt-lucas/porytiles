@@ -7,6 +7,7 @@
 namespace porytiles {
 
 std::filesystem::path getTmpfilePath(std::string fileName);
+std::filesystem::path getTmpdirPath();
 
 }
 

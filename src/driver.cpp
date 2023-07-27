@@ -236,7 +236,17 @@ void drive(const Config& config) {
 }
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary set") {
+    porytiles::Config config = porytiles::defaultConfig();
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary_expected_tiles.png"));
+
+    config.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
+    config.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
+    config.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
 }
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set") {
