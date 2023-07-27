@@ -40,8 +40,6 @@ assignTilesPrimary(const CompilerContext& context, CompiledTileset& compiled,
             throw std::runtime_error{"it == std::end(assignedPalsSolution)"};
         }
         std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
-        // TODO : debug remove
-        //pt_err("palIndex: {}", paletteIndex);
         GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
         // insert only updates the map if the key is not already present
         auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
@@ -200,6 +198,51 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
     if (!assignSuccessful) {
         // TODO : better error context
         throw PtException{"failed to allocate palettes"};
+    }
+
+    /*
+     * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
+     * and so we may need to do something fancier here so that the colors align correctly.
+     */
+    if (context.mode == PRIMARY) {
+        for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
+        ColorSet palAssignments = assignedPalsSolution.at(i);
+        compiled.palettes[i].colors[0] = rgbaToBgr(context.config.transparencyColor);
+        std::size_t colorIndex = 1;
+        for (std::size_t j = 0; j < palAssignments.size(); j++) {
+            if (palAssignments.test(j)) {
+                compiled.palettes[i].colors[colorIndex] = indexToColor.at(j);
+                colorIndex++;
+            }
+        }
+        compiled.palettes[i].size = colorIndex;
+    }
+    }
+    else if (context.mode == SECONDARY) {
+        for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
+        // Copy the primary set's palettes into this tileset so tiles can use them
+            for (std::size_t j = 0; j < PAL_SIZE; j++) {
+                compiled.palettes[i].colors[j] = context.primaryTileset->palettes[i].colors[j];
+            }
+        }
+        for (std::size_t i = context.config.numPalettesInPrimary; i < context.config.numPalettesTotal; i++) {
+            ColorSet palAssignments = assignedPalsSolution.at(i - context.config.numPalettesInPrimary);
+            compiled.palettes[i].colors[0] = rgbaToBgr(context.config.transparencyColor);
+            std::size_t colorIndex = 1;
+            for (std::size_t j = 0; j < palAssignments.size(); j++) {
+                if (palAssignments.test(j)) {
+                    compiled.palettes[i].colors[colorIndex] = indexToColor.at(j);
+                    colorIndex++;
+                }
+            }
+            compiled.palettes[i].size = colorIndex;
+        }
+    }
+    else if (context.mode == RAW) {
+        throw std::runtime_error{"TODO : support RAW mode"};
+    }
+    else {
+        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
     }
 
     /*
@@ -460,7 +503,7 @@ TEST_CASE("compile simple example should perform as expected") {
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(context, tiles);
+    porytiles::CompiledTileset compiledTiles = porytiles::compile(context, tiles);
 
     // Check that compiled palettes are as expected
     CHECK(compiledTiles.palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
@@ -527,7 +570,6 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
     porytiles::Config config = porytiles::defaultConfig();
     config.numPalettesInPrimary = 3;
     config.numPalettesTotal = 6;
-    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
@@ -537,7 +579,9 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
     png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
                                                                                            topPrimary);
-    porytiles::CompiledTileset compiledPrimary = porytiles::compilePrimary(context, decompiledPrimary);
+
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
+    porytiles::CompiledTileset compiledPrimary = porytiles::compile(context, decompiledPrimary);
 
     // Check that tiles are as expected
     CHECK(compiledPrimary.tiles.size() == 5);
@@ -663,7 +707,6 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
     porytiles::Config config = porytiles::defaultConfig();
     config.numPalettesInPrimary = 3;
     config.numPalettesTotal = 6;
-    porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
@@ -673,7 +716,9 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
     png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary,
                                                                                            topPrimary);
-    porytiles::CompiledTileset compiledPrimary = porytiles::compilePrimary(primaryContext, decompiledPrimary);
+
+    porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
+    porytiles::CompiledTileset compiledPrimary = porytiles::compile(primaryContext, decompiledPrimary);
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_secondary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_secondary.png"));
@@ -685,8 +730,8 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
                                                                                              middleSecondary,
                                                                                              topSecondary);
     porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
-    porytiles::CompiledTileset compiledSecondary = porytiles::compileSecondary(secondaryContext, decompiledSecondary,
-                                                                               compiledPrimary);
+    secondaryContext.primaryTileset = &compiledPrimary;
+    porytiles::CompiledTileset compiledSecondary = porytiles::compile(secondaryContext, decompiledSecondary);
 
     // Check that tiles are as expected
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary_expected_tiles.png"));
