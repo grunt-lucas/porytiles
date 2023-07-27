@@ -6,6 +6,7 @@
 #include <exception>
 #include <png.hpp>
 
+#include "doctest.h"
 #include "config.h"
 #include "emitter.h"
 #include "compiler.h"
@@ -231,5 +232,13 @@ void drive(const Config& config) {
             throw std::runtime_error{"unknown subcommand setting: " + std::to_string(config.subcommand)};
     }
 }
+
+}
+
+TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary set") {
+
+}
+
+TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set") {
 
 }
