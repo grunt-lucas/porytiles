@@ -14,6 +14,11 @@
   + universal MacOS binary?
     + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
 
++ Setup some kind of clang tidy script:
+```
+/opt/homebrew/opt/llvm/bin/clang-tidy -checks='cert-*' -header-filter='.*' --warnings-as-errors='*' src/*.cpp -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
+```
+
 + Add `--verbose` logs to stdout
   + each log should have a category tag for easier grep filtering
 

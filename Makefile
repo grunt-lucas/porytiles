@@ -1,5 +1,4 @@
 CXX ?= clang++
-#CXX = /opt/homebrew/opt/llvm/bin/clang++
 
 # TODO : have an option somewhere to define DOCTEST_CONFIG_DISABLE to remove test code from binary
 
@@ -36,7 +35,7 @@ DEBUG_OBJ_FILES       = $(filter-out $(DEBUG_BUILD)/$(MAIN_OBJ) $(DEBUG_BUILD)/$
 ### Compiler and linker flags ###
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
     CXXFLAGS_COVERAGE := -fprofile-instr-generate -fcoverage-mapping
-    LDFLAGS_COVERAGE  := --coverage #-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++
+    LDFLAGS_COVERAGE  := --coverage
 else
     CXXFLAGS_COVERAGE :=
     LDFLAGS_COVERAGE  :=
@@ -44,8 +43,13 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include #-I/opt/homebrew/opt/llvm/include/c++/v1
-CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
+CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
+ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
+	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
+else
+# If not clang, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
+	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O1
+endif
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
 LDFLAGS              += $(shell pkg-config --libs-only-L libpng) -lpng -lz
@@ -99,7 +103,6 @@ debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
 all: release debug
 	@:
 
-# /opt/homebrew/opt/llvm/bin/clang-tidy -checks='cert-*' -header-filter='.*' --warnings-as-errors='*' src/*.cpp -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
 check: release
 	@./$(RELEASE_TEST_TARGET)
 
