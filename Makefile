@@ -44,11 +44,11 @@ endif
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
 CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
-ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
-	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
-else
-# If not clang, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
+ifneq '' '$(findstring GCC,$(COMPILER_VERSION))'
+# If GCC, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
 	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O1
+else
+	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 endif
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
