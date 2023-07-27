@@ -300,7 +300,7 @@ GBATile makeTile(const NormalizedTile& normalizedTile, GBAPalette palette) {
         auto it = std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
         if (it == std::end(palette.colors)) {
             // TODO : better error context
-            throw std::runtime_error{"internal error"};
+            throw std::runtime_error{"it == std::end(palette.colors)"};
         }
         paletteIndexes[i] = it - std::begin(palette.colors);
     }

@@ -7,14 +7,107 @@
 #include <stdexcept>
 #include <utility>
 
+#include "types.h"
+#include "compiler_context.h"
 #include "doctest.h"
 #include "config.h"
 #include "ptexception.h"
-#include "types.h"
 #include "importer.h"
 #include "compiler_helpers.h"
+#include "logger.h"
 
 namespace porytiles {
+static void
+assignTilesPrimary(const CompilerContext& context, CompiledTileset& compiled,
+                   const std::vector<IndexedNormTileWithColorSet>& indexedNormTilesWithColorSets,
+                   const std::vector<ColorSet>& assignedPalsSolution) {
+    std::unordered_map<GBATile, std::size_t> tileIndexes;
+    // force tile 0 to be a transparent tile that uses palette 0
+    tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});
+    compiled.tiles.push_back(GBA_TILE_TRANSPARENT);
+    compiled.paletteIndexesOfTile.push_back(0);
+    for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
+        auto index = std::get<0>(indexedNormTile);
+        auto& normTile = std::get<1>(indexedNormTile);
+        auto& colorSet = std::get<2>(indexedNormTile);
+        auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
+                               [&colorSet](const auto& assignedPal) {
+                                   // Find which of the assignedSolution palettes this tile belongs to
+                                   return (colorSet & ~assignedPal).none();
+                               });
+        if (it == std::end(assignedPalsSolution)) {
+            // TODO : better error context
+            throw std::runtime_error{"it == std::end(assignedPalsSolution)"};
+        }
+        std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
+        // TODO : debug remove
+        //pt_err("palIndex: {}", paletteIndex);
+        GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        // insert only updates the map if the key is not already present
+        auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
+        if (inserted.second) {
+            compiled.tiles.push_back(gbaTile);
+            if (compiled.tiles.size() > context.config.numTilesInPrimary) {
+                // TODO : better error context
+                throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " + std::to_string(context.config.numTilesInPrimary)};
+            }
+            compiled.paletteIndexesOfTile.push_back(paletteIndex);
+        }
+        std::size_t tileIndex = inserted.first->second;
+        compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
+    }
+    compiled.tileIndexes = tileIndexes;
+}
+
+static void
+assignTilesSecondary(const CompilerContext& context, CompiledTileset& compiled,
+                     const std::vector<IndexedNormTileWithColorSet>& indexedNormTilesWithColorSets,
+                     const std::vector<ColorSet>& primaryPaletteColorSets,
+                     const std::vector<ColorSet>& assignedPalsSolution) {
+    std::vector<ColorSet> allColorSets{};
+    allColorSets.insert(allColorSets.end(), primaryPaletteColorSets.begin(), primaryPaletteColorSets.end());
+    allColorSets.insert(allColorSets.end(), assignedPalsSolution.begin(), assignedPalsSolution.end());
+    std::unordered_map<GBATile, std::size_t> tileIndexes;
+    for (const auto& indexedNormTile: indexedNormTilesWithColorSets) {
+        auto index = std::get<0>(indexedNormTile);
+        auto& normTile = std::get<1>(indexedNormTile);
+        auto& colorSet = std::get<2>(indexedNormTile);
+        auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets),
+                               [&colorSet](const auto& assignedPal) {
+                                   // Find which of the allColorSets palettes this tile belongs to
+                                   return (colorSet & ~assignedPal).none();
+                               });
+        if (it == std::end(allColorSets)) {
+            // TODO : better error context
+            throw std::runtime_error{"it == std::end(allColorSets)"};
+        }
+        std::size_t paletteIndex = it - std::begin(allColorSets);
+        GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+        if (context.primaryTileset->tileIndexes.find(gbaTile) != context.primaryTileset->tileIndexes.end()) {
+            // Tile was in the primary set
+            compiled.assignments[index] = {context.primaryTileset->tileIndexes.at(gbaTile), paletteIndex,
+                                           normTile.hFlip, normTile.vFlip};
+        }
+        else {
+            // Tile was in the secondary set
+            auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
+            if (inserted.second) {
+                compiled.tiles.push_back(gbaTile);
+                if (compiled.tiles.size() > context.config.numTilesInSecondary()) {
+                    // TODO : better error context
+                    throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
+                                      std::to_string(context.config.numTilesInSecondary())};
+                }
+                compiled.paletteIndexesOfTile.push_back(paletteIndex);
+            }
+            std::size_t tileIndex = inserted.first->second;
+            // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
+            compiled.assignments[index] = {tileIndex + context.config.numTilesInPrimary, paletteIndex, normTile.hFlip, normTile.vFlip};
+        }
+    }
+    compiled.tileIndexes = tileIndexes;
+}
+
 CompiledTileset compile(const CompilerContext& context, const DecompiledTileset& decompiledTileset) {
     if (context.mode == SECONDARY && (context.config.numPalettesInPrimary != context.primaryTileset->palettes.size())) {
         throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
@@ -59,6 +152,71 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
     auto [colorToIndex, indexToColor] = buildColorIndexMaps(context.config, indexedNormTiles, *primaryColorIndexMap);
     compiled.colorIndexMap = colorToIndex;
     auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+
+    /*
+     * Run palette assignment:
+     * `assignedPalsSolution' is an out param that the assign function will populate when it finds a solution
+     */
+    std::vector<ColorSet> assignedPalsSolution;
+    std::vector<ColorSet> tmpHardwarePalettes;
+    if (context.mode == PRIMARY) {
+        assignedPalsSolution.reserve(context.config.numPalettesInPrimary);
+        tmpHardwarePalettes.resize(context.config.numPalettesInPrimary);
+    }
+    else if (context.mode == SECONDARY) {
+        assignedPalsSolution.reserve(context.config.numPalettesInSecondary());
+        tmpHardwarePalettes.resize(context.config.numPalettesInSecondary());
+    }
+    else if (context.mode == RAW) {
+        throw std::runtime_error{"TODO : support RAW mode"};
+    }
+    else {
+        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+    }
+    std::vector<ColorSet> unassignedNormPalettes;
+    std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
+    std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
+                     [](const auto& cs1, const auto& cs2) { return cs1.count() < cs2.count(); });
+    std::vector<ColorSet> primaryPaletteColorSets{};
+    if (context.mode == SECONDARY) {
+        /*
+         * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
+         * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
+         * palettes.
+         */
+        primaryPaletteColorSets.reserve(context.primaryTileset->palettes.size());
+        for (std::size_t i = 0; i < context.primaryTileset->palettes.size(); i++) {
+            const auto& gbaPalette = context.primaryTileset->palettes[i];
+            primaryPaletteColorSets.emplace_back();
+            for (std::size_t j = 1; j < gbaPalette.size; j++) {
+                primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[j]));
+            }
+        }
+    }
+
+    AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
+    gRecurseCount = 0;
+    bool assignSuccessful = assign(context.config, state, assignedPalsSolution, primaryPaletteColorSets);
+    if (!assignSuccessful) {
+        // TODO : better error context
+        throw PtException{"failed to allocate palettes"};
+    }
+
+    /*
+     * Build the tile assignments.
+     */
+    if (context.mode == PRIMARY) {
+        assignTilesPrimary(context, compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
+    }
+    else if (context.mode == SECONDARY) {
+        assignTilesSecondary(context, compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets, assignedPalsSolution);
+    }
+    else if (context.mode == RAW) {
+        throw std::runtime_error{"TODO : support RAW mode"};
+    }
+    else {
+        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+    }
 
     return compiled;
 }
@@ -296,6 +454,7 @@ TEST_CASE("compile simple example should perform as expected") {
     config.numPalettesInPrimary = 2;
     config.numTilesInPrimary = 4;
     config.maxRecurseCount = 5;
+    config.verbose = true;
     porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));

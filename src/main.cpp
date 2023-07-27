@@ -14,6 +14,7 @@
 
 int main(int argc, char** argv) try {
     porytiles::Config config = porytiles::defaultConfig();
+    //fmt::println(stderr, "foo: {}: {}", fmt::styled("error:",fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)), fmt::format("{}, {}", 1, 2));
     porytiles::parseOptions(config, argc, argv);
     porytiles::drive(config);
     return 0;
