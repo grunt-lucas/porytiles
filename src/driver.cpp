@@ -14,8 +14,7 @@
 
 namespace porytiles {
 
-static void emitPalettes(const Config& config, const CompiledTileset& compiledTiles, std::filesystem::path palettesPath) {
-    // TODO : this needs to account for primary / secondary distinction
+static void emitPalettes(const Config& config, const CompiledTileset& compiledTiles, const std::filesystem::path& palettesPath) {
     for (std::size_t i = 0; i < config.numPalettesTotal; i++) {
         std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
         fileName += ".pal";
@@ -31,7 +30,7 @@ static void emitPalettes(const Config& config, const CompiledTileset& compiledTi
     }
 }
 
-static void emitTilesPng(const Config& config, const CompiledTileset& compiledTiles, std::filesystem::path tilesetPath) {
+static void emitTilesPng(const Config& config, const CompiledTileset& compiledTiles, const std::filesystem::path& tilesetPath) {
     const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
     const std::size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
     png::image<png::index_pixel> tilesPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};

@@ -8,11 +8,11 @@ Config defaultConfig() {
     // Fieldmap params
     setPokeemeraldDefaultTilesetParams(config);
     config.numTilesPerMetatile = 12;
-    config.secondary = false;
 
     // Input params
     config.transparencyColor = RGBA_MAGENTA;
     config.maxRecurseCount = 2000000;
+    config.secondary = false;
 
     // Output params
     config.tilesPngPaletteMode = GREYSCALE;
