@@ -50,7 +50,7 @@ else
 # If not clang, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
 	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 endif
-CXXFLAGS_DEBUG       := $(CXXFLAGS) -O2 $(CXXFLAGS_COVERAGE)
+CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
 LDFLAGS              += $(shell pkg-config --libs-only-L libpng) -lpng -lz
 LDFLAGS_RELEASE      := $(LDFLAGS)
