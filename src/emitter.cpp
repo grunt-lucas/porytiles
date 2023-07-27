@@ -205,13 +205,14 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 
 TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings") {
     porytiles::Config config = porytiles::defaultConfig();
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/expected.png"));
 
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(config, tiles);
+    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(context, tiles);
 
     const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
     const size_t imageHeight = porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
@@ -238,6 +239,8 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
 
 TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings") {
     porytiles::Config config = porytiles::defaultConfig();
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
+
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/top.png"));
@@ -247,7 +250,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
     porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
-    porytiles::CompiledTileset compiled = porytiles::compilePrimary(config, decompiled);
+    porytiles::CompiledTileset compiled = porytiles::compilePrimary(context, decompiled);
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath("emitMetatilesBin_test.bin");
     std::ofstream outFile{tmpPath};

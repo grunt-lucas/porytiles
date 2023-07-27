@@ -797,12 +797,13 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     config.numTilesInPrimary = 4;
     config.secondary = false;
     config.maxRecurseCount = 5;
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
     std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
-    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(config, tiles);
+    porytiles::CompiledTileset compiledTiles = porytiles::compilePrimary(context, tiles);
 
     porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles.palettes[0]);
     CHECK_FALSE(indexedNormTiles[0].second.hFlip);

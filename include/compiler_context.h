@@ -14,6 +14,9 @@ enum CompilerMode {
 struct CompilerContext {
     const Config& config;
     CompilerMode mode;
+
+    explicit CompilerContext(const Config& config, CompilerMode mode) : config{config}, mode{mode} {
+    }
 };
 
 }

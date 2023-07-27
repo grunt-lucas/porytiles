@@ -1,6 +1,7 @@
 #ifndef PORYTILES_COMPILER_H
 #define PORYTILES_COMPILER_H
 
+#include "compiler_context.h"
 #include "config.h"
 #include "types.h"
 
@@ -13,8 +14,8 @@ namespace porytiles {
 /**
  * TODO : fill in doc comments
  */
-CompiledTileset compilePrimary(const Config& config, const DecompiledTileset& decompiledTileset);
-CompiledTileset compileSecondary(const Config& config, const DecompiledTileset& decompiledTileset, const CompiledTileset& primaryTileset);
+CompiledTileset compilePrimary(const CompilerContext& context, const DecompiledTileset& decompiledTileset);
+CompiledTileset compileSecondary(const CompilerContext& context, const DecompiledTileset& decompiledTileset, const CompiledTileset& primaryTileset);
 
 }
 

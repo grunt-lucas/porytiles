@@ -61,7 +61,8 @@ static void driveCompileRaw(const Config& config) {
     // confirmed image was a PNG, open it again
     png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
     DecompiledTileset decompiledTiles = importRawTilesFromPng(tilesheetPng);
-    CompiledTileset compiledTiles = compilePrimary(config, decompiledTiles);
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
+    CompiledTileset compiledTiles = compilePrimary(context, decompiledTiles);
 
     std::filesystem::path outputPath(config.outputPath);
     std::filesystem::path palettesDir("palettes");
@@ -175,20 +176,23 @@ static void driveCompile(const Config& config) {
         png::image<png::rgba_pixel> middlePrimaryPng{config.middlePrimaryTilesheetPath};
         png::image<png::rgba_pixel> topPrimaryPng{config.topPrimaryTilesheetPath};
         DecompiledTileset decompiledPrimaryTiles = importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-        CompiledTileset compiledPrimaryTiles = compilePrimary(config, decompiledPrimaryTiles);
+        porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
+        CompiledTileset compiledPrimaryTiles = compilePrimary(primaryContext, decompiledPrimaryTiles);
 
         png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
         png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
         png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-        compiledTiles = compileSecondary(config, decompiledTiles, compiledPrimaryTiles);
+        porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
+        compiledTiles = compileSecondary(secondaryContext, decompiledTiles, compiledPrimaryTiles);
     }
     else {
         png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
         png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
         png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-        compiledTiles = compilePrimary(config, decompiledTiles);
+        porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
+        compiledTiles = compilePrimary(primaryContext, decompiledTiles);
     }
 
     std::filesystem::path outputPath(config.outputPath);
