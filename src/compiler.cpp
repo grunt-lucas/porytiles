@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <utility>
 
+#define FMT_HEADER_ONLY
+#include "fmt/color.h"
+
 #include "types.h"
 #include "compiler_context.h"
 #include "doctest.h"
@@ -21,6 +24,7 @@ static void
 assignTilesPrimary(const CompilerContext& context, CompiledTileset& compiled,
                    const std::vector<IndexedNormTileWithColorSet>& indexedNormTilesWithColorSets,
                    const std::vector<ColorSet>& assignedPalsSolution) {
+    fmt::println(stderr, "foo: {}: {}", fmt::styled("error:",fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)), fmt::format("{}, {}", 1, 2));
     std::unordered_map<GBATile, std::size_t> tileIndexes;
     // force tile 0 to be a transparent tile that uses palette 0
     tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});

@@ -48,7 +48,7 @@ ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
 	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 else
 # If not clang, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
-	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O1
+	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O3
 endif
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
