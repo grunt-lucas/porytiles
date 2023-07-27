@@ -15,7 +15,7 @@ std::filesystem::path getTmpdirPath() {
     // TODO : cleanup
     int maxTries = 1000;
     auto tmp_dir = std::filesystem::temp_directory_path();
-    unsigned long long i = 0;
+    int i = 0;
     std::random_device dev;
     std::mt19937 prng(dev());
     std::uniform_int_distribution<uint64_t> rand(0);
