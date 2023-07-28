@@ -8,7 +8,7 @@ Usage: coverage.sh <show> <file ...>
        coverage.sh <report> <file ...>
 
 Display coverage or coverage report for one or more source files. To set the
-`llvm-cov' executable path, set environment variable `LLVM_COV_PATH'.
+\`llvm-cov' executable path, set environment variable \`LLVM_COV_PATH'.
 
 Options:
     -h, --help      Print this help and exit.
