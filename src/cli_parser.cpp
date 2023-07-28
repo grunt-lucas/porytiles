@@ -593,9 +593,9 @@ static void parseCompile(Config& config, int argc, char** argv) {
         throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
     }
 
-    config.bottomTilesheetPath = argv[optind++];
-    config.middleTilesheetPath = argv[optind++];
-    config.topTilesheetPath = argv[optind++];
+    config.bottomSecondaryTilesheetPath = argv[optind++];
+    config.middleSecondaryTilesheetPath = argv[optind++];
+    config.topSecondaryTilesheetPath = argv[optind++];
 
     if (config.secondary) {
         config.bottomPrimaryTilesheetPath = argv[optind++];

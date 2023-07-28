@@ -40,12 +40,12 @@ struct Config {
     // Input params
     RGBA32 transparencyColor;
     std::string rawTilesheetPath;
-    std::string bottomTilesheetPath;
-    std::string middleTilesheetPath;
-    std::string topTilesheetPath;
     std::string bottomPrimaryTilesheetPath;
     std::string middlePrimaryTilesheetPath;
     std::string topPrimaryTilesheetPath;
+    std::string bottomSecondaryTilesheetPath;
+    std::string middleSecondaryTilesheetPath;
+    std::string topSecondaryTilesheetPath;
     std::size_t maxRecurseCount;
     bool secondary;
 

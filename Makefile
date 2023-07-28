@@ -111,4 +111,4 @@ release-check: check
 	@:
 
 debug-check: debug
-	@./$(DEBUG_TEST_TARGET) -s
+	@./$(DEBUG_TEST_TARGET) #-s

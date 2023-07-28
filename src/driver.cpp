@@ -87,88 +87,88 @@ static void driveCompile(const Config& config) {
     if (std::filesystem::exists(config.outputPath) && !std::filesystem::is_directory(config.outputPath)) {
         throw PtException{config.outputPath + ": exists but is not a directory"};
     }
-    if (!std::filesystem::exists(config.bottomTilesheetPath)) {
-        throw PtException{config.bottomTilesheetPath + ": file does not exist"};
-    }
-    if (!std::filesystem::is_regular_file(config.bottomTilesheetPath)) {
-        throw PtException{config.bottomTilesheetPath + ": exists but was not a regular file"};
-    }
-    if (!std::filesystem::exists(config.middleTilesheetPath)) {
-        throw PtException{config.middleTilesheetPath + ": file does not exist"};
-    }
-    if (!std::filesystem::is_regular_file(config.middleTilesheetPath)) {
-        throw PtException{config.middleTilesheetPath + ": exists but was not a regular file"};
-    }
-    if (!std::filesystem::exists(config.topTilesheetPath)) {
-        throw PtException{config.topTilesheetPath + ": file does not exist"};
-    }
-    if (!std::filesystem::is_regular_file(config.topTilesheetPath)) {
-        throw PtException{config.topTilesheetPath + ": exists but was not a regular file"};
-    }
     if (config.secondary) {
-        if (!std::filesystem::exists(config.bottomPrimaryTilesheetPath)) {
+        if (!std::filesystem::exists(config.bottomSecondaryTilesheetPath)) {
+            throw PtException{config.bottomSecondaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.bottomSecondaryTilesheetPath)) {
+            throw PtException{config.bottomSecondaryTilesheetPath + ": exists but was not a regular file"};
+        }
+        if (!std::filesystem::exists(config.middleSecondaryTilesheetPath)) {
+            throw PtException{config.middleSecondaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.middleSecondaryTilesheetPath)) {
+            throw PtException{config.middleSecondaryTilesheetPath + ": exists but was not a regular file"};
+        }
+        if (!std::filesystem::exists(config.topSecondaryTilesheetPath)) {
+            throw PtException{config.topSecondaryTilesheetPath + ": file does not exist"};
+        }
+        if (!std::filesystem::is_regular_file(config.topSecondaryTilesheetPath)) {
+            throw PtException{config.topSecondaryTilesheetPath + ": exists but was not a regular file"};
+        }
+    }
+    if (!std::filesystem::exists(config.bottomPrimaryTilesheetPath)) {
         throw PtException{config.bottomPrimaryTilesheetPath + ": file does not exist"};
-        }
-        if (!std::filesystem::is_regular_file(config.bottomPrimaryTilesheetPath)) {
-            throw PtException{config.bottomPrimaryTilesheetPath + ": exists but was not a regular file"};
-        }
-        if (!std::filesystem::exists(config.middlePrimaryTilesheetPath)) {
-            throw PtException{config.middlePrimaryTilesheetPath + ": file does not exist"};
-        }
-        if (!std::filesystem::is_regular_file(config.middlePrimaryTilesheetPath)) {
-            throw PtException{config.middlePrimaryTilesheetPath + ": exists but was not a regular file"};
-        }
-        if (!std::filesystem::exists(config.topPrimaryTilesheetPath)) {
-            throw PtException{config.topPrimaryTilesheetPath + ": file does not exist"};
-        }
-        if (!std::filesystem::is_regular_file(config.topPrimaryTilesheetPath)) {
-            throw PtException{config.topPrimaryTilesheetPath + ": exists but was not a regular file"};
-        }
+    }
+    if (!std::filesystem::is_regular_file(config.bottomPrimaryTilesheetPath)) {
+        throw PtException{config.bottomPrimaryTilesheetPath + ": exists but was not a regular file"};
+    }
+    if (!std::filesystem::exists(config.middlePrimaryTilesheetPath)) {
+        throw PtException{config.middlePrimaryTilesheetPath + ": file does not exist"};
+    }
+    if (!std::filesystem::is_regular_file(config.middlePrimaryTilesheetPath)) {
+        throw PtException{config.middlePrimaryTilesheetPath + ": exists but was not a regular file"};
+    }
+    if (!std::filesystem::exists(config.topPrimaryTilesheetPath)) {
+        throw PtException{config.topPrimaryTilesheetPath + ": file does not exist"};
+    }
+    if (!std::filesystem::is_regular_file(config.topPrimaryTilesheetPath)) {
+        throw PtException{config.topPrimaryTilesheetPath + ": exists but was not a regular file"};
     }
 
-    try {
-        // We do this here so if the input is not a PNG, we can catch and give a better error
-        png::image<png::rgba_pixel> tilesheetPng{config.bottomTilesheetPath};
-    }
-    catch(const std::exception& exception) {
-        throw PtException{config.bottomTilesheetPath + " is not a valid PNG file"};
-    }
-    try {
-        // We do this here so if the input is not a PNG, we can catch and give a better error
-        png::image<png::rgba_pixel> tilesheetPng{config.middleTilesheetPath};
-    }
-    catch(const std::exception& exception) {
-        throw PtException{config.middleTilesheetPath + " is not a valid PNG file"};
-    }
-    try {
-        // We do this here so if the input is not a PNG, we can catch and give a better error
-        png::image<png::rgba_pixel> tilesheetPng{config.topTilesheetPath};
-    }
-    catch(const std::exception& exception) {
-        throw PtException{config.topTilesheetPath + " is not a valid PNG file"};
-    }
     if (config.secondary) {
         try {
             // We do this here so if the input is not a PNG, we can catch and give a better error
-            png::image<png::rgba_pixel> tilesheetPng{config.bottomPrimaryTilesheetPath};
+            png::image<png::rgba_pixel> tilesheetPng{config.bottomSecondaryTilesheetPath};
         }
         catch(const std::exception& exception) {
-            throw PtException{config.bottomPrimaryTilesheetPath + " is not a valid PNG file"};
+            throw PtException{config.bottomSecondaryTilesheetPath + " is not a valid PNG file"};
         }
         try {
             // We do this here so if the input is not a PNG, we can catch and give a better error
-            png::image<png::rgba_pixel> tilesheetPng{config.middlePrimaryTilesheetPath};
+            png::image<png::rgba_pixel> tilesheetPng{config.middleSecondaryTilesheetPath};
         }
         catch(const std::exception& exception) {
-            throw PtException{config.middlePrimaryTilesheetPath + " is not a valid PNG file"};
+            throw PtException{config.middleSecondaryTilesheetPath + " is not a valid PNG file"};
         }
         try {
             // We do this here so if the input is not a PNG, we can catch and give a better error
-            png::image<png::rgba_pixel> tilesheetPng{config.topPrimaryTilesheetPath};
+            png::image<png::rgba_pixel> tilesheetPng{config.topSecondaryTilesheetPath};
         }
         catch(const std::exception& exception) {
-            throw PtException{config.topPrimaryTilesheetPath + " is not a valid PNG file"};
+            throw PtException{config.topSecondaryTilesheetPath + " is not a valid PNG file"};
         }
+    }
+    try {
+        // We do this here so if the input is not a PNG, we can catch and give a better error
+        png::image<png::rgba_pixel> tilesheetPng{config.bottomPrimaryTilesheetPath};
+    }
+    catch(const std::exception& exception) {
+        throw PtException{config.bottomPrimaryTilesheetPath + " is not a valid PNG file"};
+    }
+    try {
+        // We do this here so if the input is not a PNG, we can catch and give a better error
+        png::image<png::rgba_pixel> tilesheetPng{config.middlePrimaryTilesheetPath};
+    }
+    catch(const std::exception& exception) {
+        throw PtException{config.middlePrimaryTilesheetPath + " is not a valid PNG file"};
+    }
+    try {
+        // We do this here so if the input is not a PNG, we can catch and give a better error
+        png::image<png::rgba_pixel> tilesheetPng{config.topPrimaryTilesheetPath};
+    }
+    catch(const std::exception& exception) {
+        throw PtException{config.topPrimaryTilesheetPath + " is not a valid PNG file"};
     }
 
     CompiledTileset compiledTiles{};
@@ -180,17 +180,17 @@ static void driveCompile(const Config& config) {
         porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
         CompiledTileset compiledPrimaryTiles = compilePrimary(primaryContext, decompiledPrimaryTiles);
 
-        png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
-        png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
-        png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
+        png::image<png::rgba_pixel> bottomPng{config.bottomSecondaryTilesheetPath};
+        png::image<png::rgba_pixel> middlePng{config.middleSecondaryTilesheetPath};
+        png::image<png::rgba_pixel> topPng{config.topSecondaryTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
         porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
         compiledTiles = compileSecondary(secondaryContext, decompiledTiles, compiledPrimaryTiles);
     }
     else {
-        png::image<png::rgba_pixel> bottomPng{config.bottomTilesheetPath};
-        png::image<png::rgba_pixel> middlePng{config.middleTilesheetPath};
-        png::image<png::rgba_pixel> topPng{config.topTilesheetPath};
+        png::image<png::rgba_pixel> bottomPng{config.bottomPrimaryTilesheetPath};
+        png::image<png::rgba_pixel> middlePng{config.middlePrimaryTilesheetPath};
+        png::image<png::rgba_pixel> topPng{config.topPrimaryTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
         porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
         compiledTiles = compilePrimary(primaryContext, decompiledTiles);
@@ -250,5 +250,21 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 }
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set") {
+    porytiles::Config config = porytiles::defaultConfig();
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::SECONDARY};
 
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_primary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_secondary.png"));
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary_expected_tiles.png"));
+
+    config.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
+    config.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
+    config.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
+    config.bottomSecondaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_secondary.png";
+    config.middleSecondaryTilesheetPath = "res/tests/simple_metatiles_2/middle_secondary.png";
+    config.topSecondaryTilesheetPath = "res/tests/simple_metatiles_2/top_secondary.png";
 }
