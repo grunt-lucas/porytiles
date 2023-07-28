@@ -88,7 +88,7 @@ $(DEBUG_BUILD)/%.o: $(SRC)/%.cpp
 	@mkdir -p $(DEBUG_BUILD)
 	@$(CXX) $(CXXFLAGS_DEBUG) -c -o $@ $<
 
-.PHONY: clean release debug all check release-check debug-check
+.PHONY: clean release debug all check-verbose release-check release-check-verbose debug-check debug-check-verbose
 
 clean:
 	$(RM) -r $(RELEASE) $(DEBUG)
@@ -106,9 +106,19 @@ all: release debug
 check: release
 	@./$(RELEASE_TEST_TARGET)
 
+check-verbose: release
+	@./$(RELEASE_TEST_TARGET) -s
+
 release-check: check
 	# Just an alias for check, for consistency
 	@:
 
+release-check-verbose: check-verbose
+	# Just an alias for check, for consistency
+	@:
+
 debug-check: debug
-	@./$(DEBUG_TEST_TARGET) #-s
+	@./$(DEBUG_TEST_TARGET)
+
+debug-check-verbose: debug
+	@./$(DEBUG_TEST_TARGET) -s
