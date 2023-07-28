@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "types.h"
+#include "compiler_context.h"
 
 /**
  * TODO : fill in doc comment
@@ -55,6 +56,17 @@ extern std::size_t gRecurseCount;
 bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solution, const std::vector<ColorSet>& primaryPalettes);
 
 GBATile makeTile(const NormalizedTile& normalizedTile, GBAPalette palette);
+
+void
+assignTilesPrimary(const CompilerContext& context, CompiledTileset& compiled,
+                   const std::vector<IndexedNormTileWithColorSet>& indexedNormTilesWithColorSets,
+                   const std::vector<ColorSet>& assignedPalsSolution);
+
+void
+assignTilesSecondary(const CompilerContext& context, CompiledTileset& compiled,
+                     const std::vector<IndexedNormTileWithColorSet>& indexedNormTilesWithColorSets,
+                     const std::vector<ColorSet>& primaryPaletteColorSets,
+                     const std::vector<ColorSet>& assignedPalsSolution);
 }
 
 #endif // PORYTILES_COMPILER_HELPERS_H

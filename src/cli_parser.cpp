@@ -299,6 +299,7 @@ static void parseSubcommand(Config& config, int argc, char** argv) {
 // -----------------------------
 // |    COMPILE-RAW COMMAND    |
 // -----------------------------
+// TODO : convert this logic to `compile --freestanding' mode
 // @formatter:off
 const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_RAW_HELP =
