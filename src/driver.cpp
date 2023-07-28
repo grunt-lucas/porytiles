@@ -5,6 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <png.hpp>
+#include <cstdio>
 
 #include "doctest.h"
 #include "config.h"
@@ -254,6 +255,10 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
     porytiles::drive(config);
 
+    // TODO : check pal files
+
+    // Check tiles.png
+
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary_expected_tiles.png"));
     REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
     png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/primary_expected_tiles.png"};
@@ -277,6 +282,41 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
         }
     }
 
+
+    // Check metatiles.bin
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary_expected_metatiles.bin"));
+    REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
+    std::FILE* expected;
+    std::FILE* actual;
+
+    expected = fopen("res/tests/simple_metatiles_2/primary_expected_metatiles.bin", "r");
+    if (expected == NULL) {
+        FAIL("std::FILE `expected' was null");
+    }
+    actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
+    if (actual == NULL) {
+        fclose(expected);
+        FAIL("std::FILE `expected' was null");
+    }
+    fseek(expected, 0, SEEK_END);
+    long expectedSize = ftell(expected);
+    rewind(expected);
+    fseek(actual, 0, SEEK_END);
+    long actualSize = ftell(actual);
+    rewind(actual);
+    CHECK(expectedSize == actualSize);
+
+    std::uint8_t expectedByte;
+    std::uint8_t actualByte;
+    for (long i = 0; i < actualSize; i++) {
+        fread(&expectedByte, 1, 1, expected);
+        fread(&actualByte, 1, 1, actual);
+        CHECK(expectedByte == actualByte);
+    }
+
+    fclose(expected);
+    fclose(actual);
     std::filesystem::remove_all(parentDir);
 }
 
@@ -303,6 +343,10 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
 
     porytiles::drive(config);
 
+    // TODO : check pal files
+
+    // Check tiles.png
+
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary_expected_tiles.png"));
     REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
     png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/secondary_expected_tiles.png"};
@@ -326,5 +370,40 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
         }
     }
 
+
+    // Check metatiles.bin
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary_expected_metatiles.bin"));
+    REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
+    std::FILE* expected;
+    std::FILE* actual;
+
+    expected = fopen("res/tests/simple_metatiles_2/secondary_expected_metatiles.bin", "r");
+    if (expected == NULL) {
+        FAIL("std::FILE `expected' was null");
+    }
+    actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
+    if (actual == NULL) {
+        fclose(expected);
+        FAIL("std::FILE `expected' was null");
+    }
+    fseek(expected, 0, SEEK_END);
+    long expectedSize = ftell(expected);
+    rewind(expected);
+    fseek(actual, 0, SEEK_END);
+    long actualSize = ftell(actual);
+    rewind(actual);
+    CHECK(expectedSize == actualSize);
+
+    std::uint8_t expectedByte;
+    std::uint8_t actualByte;
+    for (long i = 0; i < actualSize; i++) {
+        fread(&expectedByte, 1, 1, expected);
+        fread(&actualByte, 1, 1, actual);
+        CHECK(expectedByte == actualByte);
+    }
+
+    fclose(expected);
+    fclose(actual);
     std::filesystem::remove_all(parentDir);
 }
