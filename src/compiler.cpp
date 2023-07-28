@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "errors.h"
 #include "types.h"
 #include "compiler_context.h"
 #include "doctest.h"
@@ -19,11 +20,7 @@
 namespace porytiles {
 CompiledTileset compile(const CompilerContext& context, const DecompiledTileset& decompiledTileset) {
     if (context.mode == SECONDARY && (context.config.numPalettesInPrimary != context.primaryTileset->palettes.size())) {
-        throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
-            std::to_string(context.config.numPalettesInPrimary) +
-            " != " +
-            std::to_string(context.primaryTileset->palettes.size()) + ")"
-        };
+        fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(context.config.numPalettesInPrimary, context.primaryTileset->palettes.size());
     }
 
     CompiledTileset compiled;

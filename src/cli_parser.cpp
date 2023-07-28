@@ -9,6 +9,7 @@
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 
+#include "errors.h"
 #include "ptexception.h"
 #include "config.h"
 #include "program_name.h"
@@ -433,7 +434,7 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
     }
 
     if (specifiedFieldmap && specifiedPreset) {
-        throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
+        error_specifiedPresetAndFieldmap();
     }
 
     if (config.secondary) {
@@ -610,7 +611,7 @@ static void parseCompile(Config& config, int argc, char** argv) {
     }
 
     if (specifiedFieldmap && specifiedPreset) {
-        throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
+        error_specifiedPresetAndFieldmap();
     }
 
     if (config.secondary) {

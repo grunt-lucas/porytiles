@@ -24,12 +24,36 @@ void pt_log(std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
 template <typename... T>
 void pt_logln_verbose(const Config& config, std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
     if (config.verbose) {
-        fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+        fmt::println(stream, "{}: {}", PROGRAM_NAME, fmt::format(fmt, std::forward<T>(args)...));
     }
 }
 
 template <typename... T>
 void pt_log_verbose(const Config& config, std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
+    if (config.verbose) {
+        fmt::print(stream, "{}: {}", PROGRAM_NAME, fmt::format(fmt, std::forward<T>(args)...));
+    }
+}
+
+template <typename... T>
+void pt_msgln(std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
+    fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+}
+
+template <typename... T>
+void pt_msg(std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
+    fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+}
+
+template <typename... T>
+void pt_msgln_verbose(const Config& config, std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
+    if (config.verbose) {
+        fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+    }
+}
+
+template <typename... T>
+void pt_msg_verbose(const Config& config, std::FILE* stream, fmt::format_string<T...> fmt, T&&... args) {
     if (config.verbose) {
         fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
     }
