@@ -254,8 +254,10 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set") {
     porytiles::Config config = porytiles::defaultConfig();
+    std::filesystem::path parentDir = porytiles::createTmpdir();
     config.secondary = true;
-    porytiles::CompilerContext context{config, porytiles::CompilerMode::SECONDARY};
+    config.outputPath = parentDir;
+    config.subcommand = porytiles::COMPILE;
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
@@ -263,7 +265,6 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_secondary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_secondary.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_secondary.png"));
-    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary_expected_tiles.png"));
 
     config.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
     config.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
@@ -272,6 +273,30 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
     config.middleSecondaryTilesheetPath = "res/tests/simple_metatiles_2/middle_secondary.png";
     config.topSecondaryTilesheetPath = "res/tests/simple_metatiles_2/top_secondary.png";
 
-    std::filesystem::path tmpdir = porytiles::createTmpdir();
-    std::filesystem::remove_all(tmpdir);
+    porytiles::drive(config);
+
+    REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary_expected_tiles.png"));
+    REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
+    png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/secondary_expected_tiles.png"};
+    png::image<png::index_pixel> actualPng{parentDir / "tiles.png"};
+
+    std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+    std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+    std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+    std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+    CHECK(expectedWidthInTiles == actualWidthInTiles);
+    CHECK(expectedHeightInTiles == actualHeightInTiles);
+
+    for (size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+        size_t tileRow = tileIndex / actualWidthInTiles;
+        size_t tileCol = tileIndex % actualHeightInTiles;
+        for (size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+            size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+            size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+            CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
+        }
+    }
+
+    std::filesystem::remove_all(parentDir);
 }
