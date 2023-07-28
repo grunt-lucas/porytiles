@@ -219,8 +219,9 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
     png::image<png::index_pixel> outPng{static_cast<png::uint_32>(imageWidth),
                                             static_cast<png::uint_32>(imageHeight)};
 
+    std::filesystem::path parentDir = porytiles::createTmpdir();
     porytiles::emitTilesPng(config, outPng, compiledTiles);
-    std::filesystem::path pngTmpPath = porytiles::getTmpfilePath("emitTilesPng_test.png");
+    std::filesystem::path pngTmpPath = porytiles::getTmpfilePath(parentDir, "emitTilesPng_test.png");
     outPng.write(pngTmpPath);
 
     png::image<png::index_pixel> tilesetPng{pngTmpPath};
@@ -234,7 +235,7 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
         }
     }
 
-    std::filesystem::remove(pngTmpPath);
+    std::filesystem::remove_all(parentDir);
 }
 
 TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings") {
@@ -252,7 +253,8 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
     porytiles::CompiledTileset compiled = porytiles::compilePrimary(context, decompiled);
 
-    std::filesystem::path tmpPath = porytiles::getTmpfilePath("emitMetatilesBin_test.bin");
+    std::filesystem::path parentDir = porytiles::createTmpdir();
+    std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
     std::ofstream outFile{tmpPath};
     porytiles::emitMetatilesBin(config, outFile, compiled);
     outFile.close();
@@ -288,5 +290,5 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
         CHECK(bytes[i] == 0);
     }
 
-    std::filesystem::remove(tmpPath);
+    std::filesystem::remove_all(parentDir);
 }

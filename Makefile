@@ -103,6 +103,9 @@ debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
 all: release debug
 	@:
 
+all-check: check debug-check
+	@:
+
 check: release
 	@./$(RELEASE_TEST_TARGET)
 

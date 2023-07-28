@@ -11,6 +11,7 @@
 #include "emitter.h"
 #include "compiler.h"
 #include "importer.h"
+#include "tmpfiles.h"
 #include "ptexception.h"
 
 namespace porytiles {
@@ -63,6 +64,7 @@ static void driveCompileRaw(const Config& config) {
     png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
     DecompiledTileset decompiledTiles = importRawTilesFromPng(tilesheetPng);
     porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
+    // TODO : change this over to compile once it supports RAW mode
     CompiledTileset compiledTiles = compilePrimary(context, decompiledTiles);
 
     std::filesystem::path outputPath(config.outputPath);
@@ -178,14 +180,15 @@ static void driveCompile(const Config& config) {
         png::image<png::rgba_pixel> topPrimaryPng{config.topPrimaryTilesheetPath};
         DecompiledTileset decompiledPrimaryTiles = importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
         porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-        CompiledTileset compiledPrimaryTiles = compilePrimary(primaryContext, decompiledPrimaryTiles);
+        CompiledTileset compiledPrimaryTiles = compile(primaryContext, decompiledPrimaryTiles);
 
         png::image<png::rgba_pixel> bottomPng{config.bottomSecondaryTilesheetPath};
         png::image<png::rgba_pixel> middlePng{config.middleSecondaryTilesheetPath};
         png::image<png::rgba_pixel> topPng{config.topSecondaryTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
         porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
-        compiledTiles = compileSecondary(secondaryContext, decompiledTiles, compiledPrimaryTiles);
+        secondaryContext.primaryTileset = &compiledPrimaryTiles;
+        compiledTiles = compile(secondaryContext, decompiledTiles);
     }
     else {
         png::image<png::rgba_pixel> bottomPng{config.bottomPrimaryTilesheetPath};
@@ -193,7 +196,7 @@ static void driveCompile(const Config& config) {
         png::image<png::rgba_pixel> topPng{config.topPrimaryTilesheetPath};
         DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
         porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-        compiledTiles = compilePrimary(primaryContext, decompiledTiles);
+        compiledTiles = compile(primaryContext, decompiledTiles);
     }
 
     std::filesystem::path outputPath(config.outputPath);
@@ -251,6 +254,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set") {
     porytiles::Config config = porytiles::defaultConfig();
+    config.secondary = true;
     porytiles::CompilerContext context{config, porytiles::CompilerMode::SECONDARY};
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
@@ -267,4 +271,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
     config.bottomSecondaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_secondary.png";
     config.middleSecondaryTilesheetPath = "res/tests/simple_metatiles_2/middle_secondary.png";
     config.topSecondaryTilesheetPath = "res/tests/simple_metatiles_2/top_secondary.png";
+
+    std::filesystem::path tmpdir = porytiles::createTmpdir();
+    std::filesystem::remove_all(tmpdir);
 }
