@@ -22,25 +22,25 @@ jobs:
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
-      - name: Build debug executable
+      - name: Build debug and release executables
         run: |
-          CXX=g++-13 make debug
+          CXX=g++-13 make all
 
-      - name: Run tests
+      - name: Run tests on debug and release
         run: |
-          CXX=g++-13 make debug-check
+          CXX=g++-13 make all-check
       
-      - name: Build release executable
+      - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           CXX=g++-13 make release
 
-      - name: Run release tests
+      - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           CXX=g++-13 make check
 
-      - name: Prep release directory
+      - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run : |
           mkdir porytiles-linux
@@ -50,7 +50,7 @@ jobs:
           cp LICENSE porytiles-linux
           cp -r res porytiles-linux
 
-      - name: Bundle release directory
+      - name: Bundle release directory before release
         uses: montudor/action-zip@v0.1.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -79,25 +79,25 @@ jobs:
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
-      - name: Build debug executable
+      - name: Build debug and release executables
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make debug
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
 
-      - name: Run tests
+      - name: Run tests on debug and release
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make debug-check
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all-check
       
-      - name: Build release executable
+      - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release
 
-      - name: Run release tests
+      - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
 
-      - name: Prep release directory
+      - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run : |
           mkdir porytiles-macos-x86_64
@@ -107,7 +107,7 @@ jobs:
           cp LICENSE porytiles-macos-x86_64
           cp -r res porytiles-macos-x86_64
 
-      - name: Bundle release directory
+      - name: Bundle release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           zip -r porytiles-macos-x86_64.zip porytiles-macos-x86_64
