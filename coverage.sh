@@ -6,12 +6,14 @@ usage() {
     cat <<EOF
 Usage: coverage.sh <show> <file ...>
        coverage.sh <report> <file ...>
+       coverage.sh --help
 
-Display coverage or coverage report for one or more source files. To set the
-\`llvm-cov' executable path, set environment variable \`LLVM_COV_PATH'.
+Display coverage or coverage report for one or more source files. To change
+the path to the LLVM coverage tools, set environment variable \`LLVM_COV_PATH'.
 
 Options:
     -h, --help      Print this help and exit.
+
 EOF
 }
 
