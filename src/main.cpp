@@ -11,6 +11,7 @@
 #include "cli_parser.h"
 #include "ptexception.h"
 #include "program_name.h"
+#include "logger.h"
 
 int main(int argc, char** argv) try {
     porytiles::Config config = porytiles::defaultConfig();
@@ -19,10 +20,8 @@ int main(int argc, char** argv) try {
     return 0;
 }
 catch (const porytiles::PtException& e) {
-    // TODO : move away from this paradigm, and just print error messages in place and then std::exit(1)
     // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
-    fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
-                 fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)), e.what());
+    fmt::println(stderr, "{}", e.what());
     return 1;
 }
 catch (const std::exception& e) {

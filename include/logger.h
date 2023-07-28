@@ -73,6 +73,13 @@ void pt_warn(fmt::format_string<T...> fmt, T&&... args) {
     );
 }
 
+template <typename... T>
+void pt_note(fmt::format_string<T...> fmt, T&&... args) {
+    fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
+                 fmt::styled("note:",fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)), fmt::format(fmt, std::forward<T>(args)...)
+    );
+}
+
 }
 
 #endif //PORYTILES_LOGGER_H

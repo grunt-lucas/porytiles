@@ -44,7 +44,7 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
         throw std::runtime_error{"TODO : support RAW mode"};
     }
     else {
-        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+        fatal_unknownCompilerMode(context.mode);
     }
     compiled.assignments.resize(decompiledTileset.tiles.size());
 
@@ -77,7 +77,7 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
         throw std::runtime_error{"TODO : support RAW mode"};
     }
     else {
-        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+        fatal_unknownCompilerMode(context.mode);
     }
     std::vector<ColorSet> unassignedNormPalettes;
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
@@ -150,7 +150,7 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
         throw std::runtime_error{"TODO : support RAW mode"};
     }
     else {
-        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+        fatal_unknownCompilerMode(context.mode);
     }
 
     /*
@@ -166,7 +166,7 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
         throw std::runtime_error{"TODO : support RAW mode"};
     }
     else {
-        throw std::runtime_error{"unknown CompilerMode: " + std::to_string(context.mode)};
+        fatal_unknownCompilerMode(context.mode);
     }
 
     return compiled;

@@ -435,6 +435,7 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
 
     if (specifiedFieldmap && specifiedPreset) {
         error_specifiedPresetAndFieldmap();
+        die_compilationTerminated();
     }
 
     if (config.secondary) {
@@ -612,6 +613,7 @@ static void parseCompile(Config& config, int argc, char** argv) {
 
     if (specifiedFieldmap && specifiedPreset) {
         error_specifiedPresetAndFieldmap();
+        die_compilationTerminated();
     }
 
     if (config.secondary) {

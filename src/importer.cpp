@@ -3,6 +3,7 @@
 #include <iostream>
 #include <png.hpp>
 
+#include "errors.h"
 #include "types.h"
 #include "ptexception.h"
 
@@ -40,28 +41,39 @@ DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel>& png) 
 
 DecompiledTileset
 importLayeredTilesFromPngs(const png::image<png::rgba_pixel>& bottom, const png::image<png::rgba_pixel>& middle, const png::image<png::rgba_pixel>& top) {
+    bool invalidDimension = false;
     if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
-        throw PtException{"bottom layer input PNG height `" + std::to_string(bottom.get_height()) + "' is not divisible by 16"};
+        error_layerHeightNotDivisibleBy16("bottom", bottom.get_height());
+        invalidDimension = true;
     }
     if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
-        throw PtException{"middle layer input PNG height `" + std::to_string(middle.get_height()) + "' is not divisible by 16"};
+        error_layerHeightNotDivisibleBy16("middle", middle.get_height());
+        invalidDimension = true;
     }
     if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
-        throw PtException{"top layer input PNG height `" + std::to_string(top.get_height()) + "' is not divisible by 16"};
+        error_layerHeightNotDivisibleBy16("top", top.get_height());
+        invalidDimension = true;
     }
+
     if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        throw PtException{"bottom layer input PNG width `" + std::to_string(bottom.get_width()) + "' was not 128"};
+        error_layerWidthNeq128("bottom", bottom.get_width());
+        invalidDimension = true;
     }
     if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        throw PtException{"middle layer input PNG width `" + std::to_string(middle.get_width()) + "' was not 128"};
+        error_layerWidthNeq128("middle", middle.get_width());
+        invalidDimension = true;
     }
     if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        throw PtException{"top layer input PNG width `" + std::to_string(top.get_width()) + "' was not 128"};
+        error_layerWidthNeq128("top", top.get_width());
+        invalidDimension = true;
     }
     if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
-        throw PtException{"layer input PNG heights `" + std::to_string(bottom.get_height()) + "," +
-                                                        std::to_string(middle.get_height()) + "," +
-                                                        std::to_string(top.get_height()) + "' must be equivalent"};
+        error_layerHeightsMustEq(bottom.get_height(), middle.get_height(), top.get_height());
+        invalidDimension = true;
+    }
+
+    if (invalidDimension) {
+        die_compilationTerminated();
     }
 
     DecompiledTileset decompiledTiles;
