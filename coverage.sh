@@ -7,7 +7,8 @@ usage() {
 Usage: coverage.sh <show> <file ...>
        coverage.sh <report> <file ...>
 
-Display coverage or coverage report for one or more source files.
+Display coverage or coverage report for one or more source files. To set the
+`llvm-cov' executable path, set environment variable `LLVM_COV_PATH'.
 
 Options:
     -h, --help      Print this help and exit.
@@ -41,7 +42,9 @@ parse_params() {
 }
 
 llvm-profdata-wrapper() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ ! -z "${LLVM_COV_PATH}" ]]; then
+        "${LLVM_COV_PATH}"/llvm-profdata "$@"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
         xcrun llvm-profdata "$@"
     else
         llvm-profdata "$@"
@@ -49,11 +52,13 @@ llvm-profdata-wrapper() {
 }
 
 llvm-cov-wrapper() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-            xcrun llvm-cov "$@"
-        else
-            llvm-cov "$@"
-        fi
+    if [[ ! -z "${LLVM_COV_PATH}" ]]; then
+        "${LLVM_COV_PATH}"/llvm-cov "$@"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        xcrun llvm-cov "$@"
+    else
+        llvm-cov "$@"
+    fi
 }
 
 parse_params "$@"
