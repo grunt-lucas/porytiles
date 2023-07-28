@@ -309,9 +309,16 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
     std::uint8_t expectedByte;
     std::uint8_t actualByte;
+    std::size_t bytesRead;
     for (long i = 0; i < actualSize; i++) {
-        fread(&expectedByte, 1, 1, expected);
-        fread(&actualByte, 1, 1, actual);
+        bytesRead = fread(&expectedByte, 1, 1, expected);
+        if (bytesRead != 1) {
+            FAIL("did not read exactly 1 byte");
+        }
+        bytesRead = fread(&actualByte, 1, 1, actual);
+        if (bytesRead != 1) {
+            FAIL("did not read exactly 1 byte");
+        }
         CHECK(expectedByte == actualByte);
     }
 
@@ -397,9 +404,16 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
 
     std::uint8_t expectedByte;
     std::uint8_t actualByte;
+    std::size_t bytesRead;
     for (long i = 0; i < actualSize; i++) {
-        fread(&expectedByte, 1, 1, expected);
-        fread(&actualByte, 1, 1, actual);
+        bytesRead = fread(&expectedByte, 1, 1, expected);
+        if (bytesRead != 1) {
+            FAIL("did not read exactly 1 byte");
+        }
+        bytesRead = fread(&actualByte, 1, 1, actual);
+        if (bytesRead != 1) {
+            FAIL("did not read exactly 1 byte");
+        }
         CHECK(expectedByte == actualByte);
     }
 
