@@ -240,7 +240,6 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
 
 TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings") {
     porytiles::Config config = porytiles::defaultConfig();
-    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
 
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
     REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
@@ -251,7 +250,8 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
     porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
-    porytiles::CompiledTileset compiled = porytiles::compilePrimary(context, decompiled);
+    porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
+    porytiles::CompiledTileset compiled = porytiles::compile(context, decompiled);
 
     std::filesystem::path parentDir = porytiles::createTmpdir();
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
