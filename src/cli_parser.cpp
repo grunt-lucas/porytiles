@@ -304,6 +304,7 @@ const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, st
 const std::string COMPILE_RAW_HELP =
 "Usage:\n"
 "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] TILES\n"
+"    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] --secondary TILES TILES_PRIMARY\n"
 "\n"
 "Compile one RGBA PNG, i.e. a single tilesheet with no layer information. This\n"
 "command will generate pal files and a `tiles.png', but will not generate a\n"
@@ -311,12 +312,18 @@ const std::string COMPILE_RAW_HELP =
 "\n"
 "Args:\n"
 "    <TILES>\n"
-"        An RGBA PNG tilesheet containing pixel art to be tile-ized.\n"
+"        An RGBA PNG tilesheet containing raw pixel art to be tile-ized.\n"
+"\n"
+"    <TILES_PRIMARY>\n"
+"        In `--secondary' mode, an RGBA PNG tilesheet containing the raw\n"
+"        pixel art for the corresponding primary set.\n"
 "\n"
 "Options:\n" +
 OUTPUT_DESCRIPTION +
 "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION +
+"\n" +
+SECONDARY_DESCRIPTION +
 "\n" +
 "Per-Game Fieldmap Presets:\n" +
 PRESET_POKEEMERALD_DESCRIPTION +
@@ -348,6 +355,7 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
             {
                     {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
                     {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
                     {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
                     {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
                     {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
@@ -371,6 +379,9 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
                 break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+                break;
+            case SECONDARY_VAL:
+                config.secondary = true;
                 break;
             case NUM_PALETTES_IN_PRIMARY_VAL:
                 specifiedFieldmap = true;
@@ -413,17 +424,25 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
         }
     }
 
-    if ((argc - optind) != 1) {
-        throw PtException{"must specify exactly 1 TILES arg, see `porytiles compile-raw --help'"};
+    if (config.secondary && (argc - optind) != 2) {
+        throw PtException{"must specify TILES and TILES_PRIMARY args, see `porytiles compile-raw --help'"};
+    }
+    else if ((argc - optind) != 1) {
+        throw PtException{"must specify one TILES arg, see `porytiles compile-raw --help'"};
     }
 
     if (specifiedFieldmap && specifiedPreset) {
         throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
     }
 
-    config.rawTilesheetPath = argv[optind++];
+    if (config.secondary) {
+        config.rawSecondaryTilesheetPath = argv[optind++];
+    }
+    config.rawPrimaryTilesheetPath = argv[optind++];
 
     config.validate();
+
+    throw PtException{"TODO : support `compile-raw' correctly"};
 }
 
 
@@ -502,8 +521,8 @@ static void parseCompile(Config& config, int argc, char** argv) {
     static struct option longOptions[] =
             {
                     {OUTPUT_LONG.c_str(),                   required_argument, nullptr, OUTPUT_SHORT},
-                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
                     {TILES_PNG_PALETTE_MODE_LONG.c_str(),   required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+                    {SECONDARY_LONG.c_str(),                no_argument,       nullptr, SECONDARY_VAL},
                     {PRESET_POKEEMERALD_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEEMERALD_VAL},
                     {PRESET_POKEFIRERED_LONG.c_str(),       no_argument,       nullptr, PRESET_POKEFIRERED_VAL},
                     {PRESET_POKERUBY_LONG.c_str(),          no_argument,       nullptr, PRESET_POKERUBY_VAL},
@@ -527,11 +546,11 @@ static void parseCompile(Config& config, int argc, char** argv) {
             case OUTPUT_SHORT:
                 config.outputPath = optarg;
                 break;
-            case SECONDARY_VAL:
-                config.secondary = true;
-                break;
             case TILES_PNG_PALETTE_MODE_VAL:
                 config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+                break;
+            case SECONDARY_VAL:
+                config.secondary = true;
                 break;
             case NUM_TILES_IN_PRIMARY_VAL:
                 specifiedFieldmap = true;
@@ -593,15 +612,14 @@ static void parseCompile(Config& config, int argc, char** argv) {
         throw PtException{"cannot specify both a per-game preset and an explicit fieldmap parameter"};
     }
 
-    config.bottomSecondaryTilesheetPath = argv[optind++];
-    config.middleSecondaryTilesheetPath = argv[optind++];
-    config.topSecondaryTilesheetPath = argv[optind++];
-
     if (config.secondary) {
-        config.bottomPrimaryTilesheetPath = argv[optind++];
-        config.middlePrimaryTilesheetPath = argv[optind++];
-        config.topPrimaryTilesheetPath = argv[optind++];
+        config.bottomSecondaryTilesheetPath = argv[optind++];
+        config.middleSecondaryTilesheetPath = argv[optind++];
+        config.topSecondaryTilesheetPath = argv[optind++];
     }
+    config.bottomPrimaryTilesheetPath = argv[optind++];
+    config.middlePrimaryTilesheetPath = argv[optind++];
+    config.topPrimaryTilesheetPath = argv[optind++];
 
     config.validate();
 }

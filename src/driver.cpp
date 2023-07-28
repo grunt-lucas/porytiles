@@ -43,47 +43,64 @@ static void emitTilesPng(const Config& config, const CompiledTileset& compiledTi
 }
 
 static void driveCompileRaw(const Config& config) {
-    if (std::filesystem::exists(config.outputPath) && !std::filesystem::is_directory(config.outputPath)) {
-        throw PtException{config.outputPath + ": exists but is not a directory"};
-    }
-    if (!std::filesystem::exists(config.rawTilesheetPath)) {
-        throw PtException{config.rawTilesheetPath + ": file does not exist"};
-    }
-    if (!std::filesystem::is_regular_file(config.rawTilesheetPath)) {
-        throw PtException{config.rawTilesheetPath + ": exists but was not a regular file"};
-    }
+    // if (std::filesystem::exists(config.outputPath) && !std::filesystem::is_directory(config.outputPath)) {
+    //     throw PtException{config.outputPath + ": exists but is not a directory"};
+    // }
+    // if (config.secondary) {
+    //     if (!std::filesystem::exists(config.rawSecondaryTilesheetPath)) {
+    //     throw PtException{config.rawSecondaryTilesheetPath + ": file does not exist"};
+    //     }
+    //     if (!std::filesystem::is_regular_file(config.rawSecondaryTilesheetPath)) {
+    //         throw PtException{config.rawSecondaryTilesheetPath + ": exists but was not a regular file"};
+    //     }
+    // }
+    // if (!std::filesystem::exists(config.rawPrimaryTilesheetPath)) {
+    //     throw PtException{config.rawPrimaryTilesheetPath + ": file does not exist"};
+    // }
+    // if (!std::filesystem::is_regular_file(config.rawPrimaryTilesheetPath)) {
+    //     throw PtException{config.rawPrimaryTilesheetPath + ": exists but was not a regular file"};
+    // }
 
-    try {
-        // We do this here so if the input is not a PNG, we can catch and give a better error
-        png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
-    }
-    catch(const std::exception& exception) {
-        throw PtException{config.rawTilesheetPath + " is not a valid PNG file"};
-    }
+    // if (config.secondary) {
+    //     try {
+    //     // We do this here so if the input is not a PNG, we can catch and give a better error
+    //         png::image<png::rgba_pixel> tilesheetPng{config.rawSecondaryTilesheetPath};
+    //     }
+    //     catch(const std::exception& exception) {
+    //         throw PtException{config.rawSecondaryTilesheetPath + " is not a valid PNG file"};
+    //     }
+    // }
+    // try {
+    //     // We do this here so if the input is not a PNG, we can catch and give a better error
+    //     png::image<png::rgba_pixel> tilesheetPng{config.rawPrimaryTilesheetPath};
+    // }
+    // catch(const std::exception& exception) {
+    //     throw PtException{config.rawPrimaryTilesheetPath + " is not a valid PNG file"};
+    // }
 
-    // confirmed image was a PNG, open it again
-    png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
-    DecompiledTileset decompiledTiles = importRawTilesFromPng(tilesheetPng);
-    porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
-    // TODO : change this over to compile once it supports RAW mode
-    CompiledTileset compiledTiles = compilePrimary(context, decompiledTiles);
+    // // confirmed image was a PNG, open it again
+    // png::image<png::rgba_pixel> tilesheetPng{config.rawTilesheetPath};
+    // DecompiledTileset decompiledTiles = importRawTilesFromPng(tilesheetPng);
+    // porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
+    // // TODO : change this over to compile once it supports RAW mode
+    // CompiledTileset compiledTiles = compilePrimary(context, decompiledTiles);
 
-    std::filesystem::path outputPath(config.outputPath);
-    std::filesystem::path palettesDir("palettes");
-    std::filesystem::path tilesetFile("tiles.png");
-    std::filesystem::path tilesetPath = config.outputPath / tilesetFile;
-    std::filesystem::path palettesPath = config.outputPath / palettesDir;
+    // std::filesystem::path outputPath(config.outputPath);
+    // std::filesystem::path palettesDir("palettes");
+    // std::filesystem::path tilesetFile("tiles.png");
+    // std::filesystem::path tilesetPath = config.outputPath / tilesetFile;
+    // std::filesystem::path palettesPath = config.outputPath / palettesDir;
 
-    if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
-        throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
-    }
-    if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
-        throw PtException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
-    }
-    std::filesystem::create_directories(palettesPath);
+    // if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
+    //     throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
+    // }
+    // if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
+    //     throw PtException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
+    // }
+    // std::filesystem::create_directories(palettesPath);
 
-    emitPalettes(config, compiledTiles, palettesPath);
-    emitTilesPng(config, compiledTiles, tilesetPath);
+    // emitPalettes(config, compiledTiles, palettesPath);
+    // emitTilesPng(config, compiledTiles, tilesetPath);
 }
 
 static void driveCompile(const Config& config) {

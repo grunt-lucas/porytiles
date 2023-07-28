@@ -39,7 +39,8 @@ struct Config {
 
     // Input params
     RGBA32 transparencyColor;
-    std::string rawTilesheetPath;
+    std::string rawSecondaryTilesheetPath;
+    std::string rawPrimaryTilesheetPath;
     std::string bottomPrimaryTilesheetPath;
     std::string middlePrimaryTilesheetPath;
     std::string topPrimaryTilesheetPath;
