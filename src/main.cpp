@@ -28,9 +28,8 @@ catch (const std::exception& e) {
     // TODO : if this catches, something we really didn't expect happened, can we print a stack trace here? How?
     // New C++23 features may allow this at some point: https://github.com/TylerGlaiel/Crashlogs
     // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
-    fmt::println(stderr, "{}: {} internal compiler error", porytiles::PROGRAM_NAME,
-                 fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)));
-    fmt::println(stderr, "{}", e.what());
+    fmt::println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
+                 fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)), e.what());
     fmt::println(stderr, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     fmt::println(stderr, "This is a bug. Please file an issue here:");
     fmt::println(stderr, "https://github.com/grunt-lucas/porytiles/issues");
