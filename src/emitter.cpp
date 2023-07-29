@@ -26,7 +26,7 @@ void emitPalette(const Config& config, std::ostream& out, const GBAPalette& pale
 
 void emitZeroedPalette(const Config& config, std::ostream& out) {
     GBAPalette palette{};
-    palette.colors[0] = rgbaToBgr(config.transparencyColor);
+    palette.colors.at(0) = rgbaToBgr(config.transparencyColor);
     emitPalette(config, out, palette);
 }
 

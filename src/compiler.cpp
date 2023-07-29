@@ -92,10 +92,10 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
          */
         primaryPaletteColorSets.reserve(context.primaryTileset->palettes.size());
         for (std::size_t i = 0; i < context.primaryTileset->palettes.size(); i++) {
-            const auto& gbaPalette = context.primaryTileset->palettes[i];
+            const auto& gbaPalette = context.primaryTileset->palettes.at(i);
             primaryPaletteColorSets.emplace_back();
             for (std::size_t j = 1; j < gbaPalette.size; j++) {
-                primaryPaletteColorSets[i].set(colorToIndex.at(gbaPalette.colors[j]));
+                primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
             }
         }
     }
@@ -115,35 +115,35 @@ CompiledTileset compile(const CompilerContext& context, const DecompiledTileset&
     if (context.mode == PRIMARY) {
         for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
         ColorSet palAssignments = assignedPalsSolution.at(i);
-        compiled.palettes[i].colors[0] = rgbaToBgr(context.config.transparencyColor);
+        compiled.palettes.at(i).colors.at(0) = rgbaToBgr(context.config.transparencyColor);
         std::size_t colorIndex = 1;
         for (std::size_t j = 0; j < palAssignments.size(); j++) {
             if (palAssignments.test(j)) {
-                compiled.palettes[i].colors[colorIndex] = indexToColor.at(j);
+                compiled.palettes.at(i).colors.at(colorIndex) = indexToColor.at(j);
                 colorIndex++;
             }
         }
-        compiled.palettes[i].size = colorIndex;
+        compiled.palettes.at(i).size = colorIndex;
     }
     }
     else if (context.mode == SECONDARY) {
         for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
         // Copy the primary set's palettes into this tileset so tiles can use them
             for (std::size_t j = 0; j < PAL_SIZE; j++) {
-                compiled.palettes[i].colors[j] = context.primaryTileset->palettes[i].colors[j];
+                compiled.palettes.at(i).colors.at(j) = context.primaryTileset->palettes.at(i).colors.at(j);
             }
         }
         for (std::size_t i = context.config.numPalettesInPrimary; i < context.config.numPalettesTotal; i++) {
             ColorSet palAssignments = assignedPalsSolution.at(i - context.config.numPalettesInPrimary);
-            compiled.palettes[i].colors[0] = rgbaToBgr(context.config.transparencyColor);
+            compiled.palettes.at(i).colors.at(0) = rgbaToBgr(context.config.transparencyColor);
             std::size_t colorIndex = 1;
             for (std::size_t j = 0; j < palAssignments.size(); j++) {
                 if (palAssignments.test(j)) {
-                    compiled.palettes[i].colors[colorIndex] = indexToColor.at(j);
+                    compiled.palettes.at(i).colors.at(colorIndex) = indexToColor.at(j);
                     colorIndex++;
                 }
             }
-            compiled.palettes[i].size = colorIndex;
+            compiled.palettes.at(i).size = colorIndex;
         }
     }
     else if (context.mode == RAW) {

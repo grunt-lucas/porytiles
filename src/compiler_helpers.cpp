@@ -41,7 +41,7 @@ size_t insertRGBA(const Config& config, NormalizedPalette& palette, RGBA32 rgba)
                 // TODO : better error context
                 throw PtException{"too many unique colors in tile"};
             }
-            palette.colors[palette.size++] = bgr;
+            palette.colors.at(palette.size++) = bgr;
         }
         return bgrPosInPalette;
     }
@@ -157,7 +157,7 @@ ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t>& colorIndexMap,
     ColorSet colorSet;
     // starts at 1, skip the transparent color at slot 0 in the normalized palette
     for (int i = 1; i < palette.size; i++) {
-        colorSet.set(colorIndexMap.at(palette.colors[i]));
+        colorSet.set(colorIndexMap.at(palette.colors.at(i)));
     }
     return colorSet;
 }
@@ -281,7 +281,7 @@ bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solu
         std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
                   std::back_inserter(hardwarePalettesCopy));
         unassignedCopy.pop_back();
-        hardwarePalettesCopy[i] |= toAssign;
+        hardwarePalettesCopy.at(i) |= toAssign;
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
         if (assign(config, updatedState, solution, primaryPalettes)) {
@@ -296,17 +296,17 @@ bool assign(const Config& config, AssignState state, std::vector<ColorSet>& solu
 GBATile makeTile(const NormalizedTile& normalizedTile, GBAPalette palette) {
     GBATile gbaTile{};
     std::array<std::uint8_t, PAL_SIZE> paletteIndexes{};
-    paletteIndexes[0] = 0;
+    paletteIndexes.at(0) = 0;
     for (int i = 1; i < normalizedTile.palette.size; i++) {
         auto it = std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
         if (it == std::end(palette.colors)) {
             // TODO : better error context
             throw std::runtime_error{"it == std::end(palette.colors)"};
         }
-        paletteIndexes[i] = it - std::begin(palette.colors);
+        paletteIndexes.at(i) = it - std::begin(palette.colors);
     }
     for (std::size_t i = 0; i < normalizedTile.pixels.colorIndexes.size(); i++) {
-        gbaTile.colorIndexes[i] = paletteIndexes[normalizedTile.pixels.colorIndexes[i]];
+        gbaTile.colorIndexes.at(i) = paletteIndexes.at(normalizedTile.pixels.colorIndexes.at(i));
     }
     return gbaTile;
 }
@@ -346,7 +346,7 @@ assignTilesPrimary(const CompilerContext& context, CompiledTileset& compiled,
             compiled.paletteIndexesOfTile.push_back(paletteIndex);
         }
         std::size_t tileIndex = inserted.first->second;
-        compiled.assignments[index] = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
+        compiled.assignments.at(index) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
     }
     compiled.tileIndexes = tileIndexes;
 }
@@ -377,7 +377,7 @@ assignTilesSecondary(const CompilerContext& context, CompiledTileset& compiled,
         GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
         if (context.primaryTileset->tileIndexes.find(gbaTile) != context.primaryTileset->tileIndexes.end()) {
             // Tile was in the primary set
-            compiled.assignments[index] = {context.primaryTileset->tileIndexes.at(gbaTile), paletteIndex,
+            compiled.assignments.at(index) = {context.primaryTileset->tileIndexes.at(gbaTile), paletteIndex,
                                            normTile.hFlip, normTile.vFlip};
         }
         else {
@@ -394,7 +394,7 @@ assignTilesSecondary(const CompilerContext& context, CompiledTileset& compiled,
             }
             std::size_t tileIndex = inserted.first->second;
             // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
-            compiled.assignments[index] = {tileIndex + context.config.numTilesInPrimary, paletteIndex, normTile.hFlip, normTile.vFlip};
+            compiled.assignments.at(index) = {tileIndex + context.config.numTilesInPrimary, paletteIndex, normTile.hFlip, normTile.vFlip};
         }
     }
     compiled.tileIndexes = tileIndexes;
