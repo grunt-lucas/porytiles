@@ -346,8 +346,6 @@ NUM_PALETTES_TOTAL_DESCRIPTION +
 // @formatter:on
 
 static void parseCompileRaw(Config& config, int argc, char** argv) {
-    bool specifiedPreset = false;
-    bool specifiedFieldmap = false;
     std::ostringstream implodedShorts;
     std::copy(COMPILE_RAW_SHORTS.begin(), COMPILE_RAW_SHORTS.end(),
            std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -386,31 +384,24 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
                 config.secondary = true;
                 break;
             case NUM_PALETTES_IN_PRIMARY_VAL:
-                specifiedFieldmap = true;
                 config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_PALETTES_TOTAL_VAL:
-                specifiedFieldmap = true;
                 config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
                 break;
             case NUM_TILES_IN_PRIMARY_VAL:
-                specifiedFieldmap = true;
                 config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_TILES_TOTAL_VAL:
-                specifiedFieldmap = true;
                 config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
                 break;
             case PRESET_POKEEMERALD_VAL:
-                specifiedPreset = true;
                 setPokeemeraldDefaultTilesetParams(config);
                 break;
             case PRESET_POKEFIRERED_VAL:
-                specifiedPreset = true;
                 setPokefireredDefaultTilesetParams(config);
                 break;
             case PRESET_POKERUBY_VAL:
-                specifiedPreset = true;
                 setPokerubyDefaultTilesetParams(config);
                 break;
 
@@ -509,8 +500,6 @@ NUM_PALETTES_TOTAL_DESCRIPTION +
 "\n";
 // @formatter:on
 static void parseCompile(Config& config, int argc, char** argv) {
-    bool specifiedPreset = false;
-    bool specifiedFieldmap = false;
     std::ostringstream implodedShorts;
     std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(),
            std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -551,39 +540,30 @@ static void parseCompile(Config& config, int argc, char** argv) {
                 config.secondary = true;
                 break;
             case NUM_TILES_IN_PRIMARY_VAL:
-                specifiedFieldmap = true;
                 config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_TILES_TOTAL_VAL:
-                specifiedFieldmap = true;
                 config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
                 break;
             case NUM_METATILES_IN_PRIMARY_VAL:
-                specifiedFieldmap = true;
                 config.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_METATILES_TOTAL_VAL:
-                specifiedFieldmap = true;
                 config.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
                 break;
             case NUM_PALETTES_IN_PRIMARY_VAL:
-                specifiedFieldmap = true;
                 config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
                 break;
             case NUM_PALETTES_TOTAL_VAL:
-                specifiedFieldmap = true;
                 config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
                 break;
             case PRESET_POKEEMERALD_VAL:
-                specifiedPreset = true;
                 setPokeemeraldDefaultTilesetParams(config);
                 break;
             case PRESET_POKEFIRERED_VAL:
-                specifiedPreset = true;
                 setPokefireredDefaultTilesetParams(config);
                 break;
             case PRESET_POKERUBY_VAL:
-                specifiedPreset = true;
                 setPokerubyDefaultTilesetParams(config);
                 break;
 
