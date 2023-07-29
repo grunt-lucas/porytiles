@@ -26,8 +26,8 @@ void fatal_unknownCompilerMode(CompilerMode mode) {
 }
 
 void error_specifiedPresetAndFieldmap() {
-    pt_err("found a game preset option and explicit fieldmap option");
-    pt_msg(stderr, "Please specify either a per-game preset, or use the fieldmap options to customize");
+    pt_fatal_err("found a game preset option and explicit fieldmap option");
+    pt_note("please specify either a per-game preset, or use the fieldmap options to customize");
 }
 
 void error_layerHeightNotDivisibleBy16(std::string layer, png::uint_32 height) {
