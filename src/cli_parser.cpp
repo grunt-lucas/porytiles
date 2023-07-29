@@ -433,11 +433,6 @@ static void parseCompileRaw(Config& config, int argc, char** argv) {
         throw PtException{"must specify one TILES arg, see `porytiles compile-raw --help'"};
     }
 
-    if (specifiedFieldmap && specifiedPreset) {
-        error_specifiedPresetAndFieldmap();
-        die_compilationTerminated();
-    }
-
     if (config.secondary) {
         config.rawSecondaryTilesheetPath = argv[optind++];
     }
@@ -609,11 +604,6 @@ static void parseCompile(Config& config, int argc, char** argv) {
     }
     else if (!config.secondary && (argc - optind) != 3) {
         throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile --help'"};
-    }
-
-    if (specifiedFieldmap && specifiedPreset) {
-        error_specifiedPresetAndFieldmap();
-        die_compilationTerminated();
     }
 
     if (config.secondary) {

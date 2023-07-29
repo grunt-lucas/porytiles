@@ -25,11 +25,6 @@ void fatal_unknownCompilerMode(CompilerMode mode) {
     throw std::runtime_error{"unknown CompilerMode: " + std::to_string(mode)};
 }
 
-void error_specifiedPresetAndFieldmap() {
-    pt_fatal_err("found a game preset option and explicit fieldmap option");
-    pt_note("please specify either a per-game preset, or use the fieldmap options to customize");
-}
-
 void error_layerHeightNotDivisibleBy16(std::string layer, png::uint_32 height) {
     pt_err("{} layer input PNG height `{}' was not divisible by 16", layer, height);
 }
