@@ -18,8 +18,10 @@
 + Refactor commands / options
   + Use `-f` prefix for frontend configuration
     + e.g. `-fnum-pals-primary`, `-fruby`, `-ftiles-png-pal-mode`
-  + Delete `compile-raw`, use `-ffreestanding` instead
+  + `compile-freestanding`
+    + takes a raw tilesheet (no layers), generates `tiles.png` and freestanding palette files
   + `compile-primary` and `compile-secondary` should be separate commands
+    + `-fskip-metatile-generation` skips generation of `metatiles.bin`
 
 + Set up more CI builds
   + Windows MSVC?
