@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests on debug and release
         run: |
-          CXX=g++-13 make all-check
+          CXX=g++-13 make check
       
       - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
@@ -38,7 +38,7 @@ jobs:
       - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          CXX=g++-13 make check
+          CXX=g++-13 make release-check
 
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
@@ -85,7 +85,7 @@ jobs:
 
       - name: Run tests on debug and release
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all-check
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
       
       - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
@@ -95,7 +95,7 @@ jobs:
       - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release-check
 
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')

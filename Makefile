@@ -102,27 +102,13 @@ format:
 release: $(RELEASE_TARGET) $(RELEASE_TEST_TARGET)
 	@:
 
-debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
-	@:
-
-all: release debug
-	@:
-
-all-check: check debug-check
-	@:
-
-check: release
+release-check: release
 	@./$(RELEASE_TEST_TARGET)
 
-check-verbose: release
+release-check-verbose: check-verbose
 	@./$(RELEASE_TEST_TARGET) -s
 
-release-check: check
-	# Just an alias for check, for consistency
-	@:
-
-release-check-verbose: check-verbose
-	# Just an alias for check, for consistency
+debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)
 	@:
 
 debug-check: debug
@@ -130,3 +116,12 @@ debug-check: debug
 
 debug-check-verbose: debug
 	@./$(DEBUG_TEST_TARGET) -s
+
+all: release debug
+	@:
+
+check: release-check debug-check
+	@:
+
+check-verbose: release-check-verbose debug-check-verbose
+	@:
