@@ -2,13 +2,13 @@
 #define PORYTILES_TYPES_H
 
 #include <algorithm>
+#include <array>
+#include <compare>
 #include <cstdint>
 #include <iostream>
-#include <compare>
-#include <array>
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "doctest.h"
 
@@ -33,11 +33,11 @@ constexpr std::size_t MAX_BG_PALETTES = 16;
  * BGR15 color format. 5 bits per color with blue in most significant bits. Top bit unused.
  */
 struct BGR15 {
-    std::uint16_t bgr;
+  std::uint16_t bgr;
 
-    auto operator<=>(const BGR15&) const = default;
+  auto operator<=>(const BGR15 &) const = default;
 
-    friend std::ostream& operator<<(std::ostream&, const BGR15&);
+  friend std::ostream &operator<<(std::ostream &, const BGR15 &);
 };
 
 extern const BGR15 BGR_BLACK;
@@ -49,13 +49,10 @@ extern const BGR15 BGR_MAGENTA;
 extern const BGR15 BGR_CYAN;
 extern const BGR15 BGR_WHITE;
 extern const BGR15 BGR_GREY;
-}
+} // namespace porytiles
 
-template<>
-struct std::hash<porytiles::BGR15> {
-    std::size_t operator()(const porytiles::BGR15& bgr) const noexcept {
-        return std::hash<uint16_t>{}(bgr.bgr);
-    }
+template <> struct std::hash<porytiles::BGR15> {
+  std::size_t operator()(const porytiles::BGR15 &bgr) const noexcept { return std::hash<uint16_t>{}(bgr.bgr); }
 };
 
 namespace porytiles {
@@ -63,18 +60,19 @@ namespace porytiles {
  * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
  */
 struct RGBA32 {
-    std::uint8_t red;
-    std::uint8_t green;
-    std::uint8_t blue;
-    std::uint8_t alpha;
+  std::uint8_t red;
+  std::uint8_t green;
+  std::uint8_t blue;
+  std::uint8_t alpha;
 
-    [[nodiscard]] std::string jasc() const {
-        return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
-    }
+  [[nodiscard]] std::string jasc() const
+  {
+    return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
+  }
 
-    auto operator<=>(const RGBA32&) const = default;
+  auto operator<=>(const RGBA32 &) const = default;
 
-    friend std::ostream& operator<<(std::ostream&, const RGBA32&);
+  friend std::ostream &operator<<(std::ostream &, const RGBA32 &);
 };
 
 constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
@@ -92,54 +90,52 @@ extern const RGBA32 RGBA_GREY;
 extern const RGBA32 RGBA_PURPLE;
 extern const RGBA32 RGBA_LIME;
 
-BGR15 rgbaToBgr(const RGBA32& rgba) noexcept;
+BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
-RGBA32 bgrToRgba(const BGR15& bgr) noexcept;
+RGBA32 bgrToRgba(const BGR15 &bgr) noexcept;
 
 /**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
-    std::array<RGBA32, TILE_NUM_PIX> pixels;
+  std::array<RGBA32, TILE_NUM_PIX> pixels;
 
-    [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const {
-        if (row >= TILE_SIDE_LENGTH) {
-            throw std::out_of_range{
-                    "internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
-        }
-        if (col >= TILE_SIDE_LENGTH) {
-            throw std::out_of_range{
-                    "internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
-        }
-        return pixels[row * TILE_SIDE_LENGTH + col];
+  [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
+  {
+    if (row >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
     }
+    if (col >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
+    }
+    return pixels[row * TILE_SIDE_LENGTH + col];
+  }
 
 #if defined(__GNUG__) && !defined(__clang__)
 
-    auto operator<=>(const RGBATile&) const = default;
+  auto operator<=>(const RGBATile &) const = default;
 
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const RGBATile&) const = default;
-    auto operator<=>(const RGBATile& other) const {
-        if (this->pixels == other.pixels) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->pixels < other.pixels) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const RGBATile&) const = default;
+  auto operator<=>(const RGBATile &other) const
+  {
+    if (this->pixels == other.pixels) {
+      return std::strong_ordering::equal;
     }
+    else if (this->pixels < other.pixels) {
+      return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+  }
 
-    auto operator==(const RGBATile& other) const {
-        return this->pixels == other.pixels;
-    }
+  auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
 #endif
 
-    friend std::ostream& operator<<(std::ostream&, const RGBATile&);
+  friend std::ostream &operator<<(std::ostream &, const RGBATile &);
 };
 
 extern const RGBATile RGBA_TILE_BLACK;
@@ -155,55 +151,55 @@ extern const RGBATile RGBA_TILE_WHITE;
  * A tile of palette indexes.
  */
 struct GBATile {
-    std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
+  std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
-    [[nodiscard]] std::uint8_t getPixel(size_t index) const {
-        if (index >= TILE_NUM_PIX) {
-            throw std::out_of_range{
-                    "internal: GBATile::getPixel index argument out of bounds (" + std::to_string(index) + ")"};
-        }
-        return colorIndexes.at(index);
+  [[nodiscard]] std::uint8_t getPixel(size_t index) const
+  {
+    if (index >= TILE_NUM_PIX) {
+      throw std::out_of_range{"internal: GBATile::getPixel index argument out of bounds (" + std::to_string(index) +
+                              ")"};
     }
+    return colorIndexes.at(index);
+  }
 
 #if defined(__GNUG__) && !defined(__clang__)
 
-    auto operator<=>(const GBATile&) const = default;
+  auto operator<=>(const GBATile &) const = default;
 
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const GBATile&) const = default;
-    auto operator<=>(const GBATile& other) const {
-        if (this->colorIndexes == other.colorIndexes) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->colorIndexes < other.colorIndexes) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const GBATile&) const = default;
+  auto operator<=>(const GBATile &other) const
+  {
+    if (this->colorIndexes == other.colorIndexes) {
+      return std::strong_ordering::equal;
     }
+    else if (this->colorIndexes < other.colorIndexes) {
+      return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+  }
 
-    auto operator==(const GBATile& other) const {
-        return this->colorIndexes == other.colorIndexes;
-    }
+  auto operator==(const GBATile &other) const { return this->colorIndexes == other.colorIndexes; }
 #endif
 };
 
 extern const GBATile GBA_TILE_TRANSPARENT;
-}
+} // namespace porytiles
 
-template<>
-struct std::hash<porytiles::GBATile> {
-    std::size_t operator()(const porytiles::GBATile& tile) const noexcept {
-        // TODO : better hash function
-        std::size_t hashValue = 0;
-        for (auto index: tile.colorIndexes) {
-            hashValue ^= std::hash<uint8_t>{}(index);
-        }
-        return hashValue;
+template <> struct std::hash<porytiles::GBATile> {
+  std::size_t operator()(const porytiles::GBATile &tile) const noexcept
+  {
+    // TODO : better hash function
+    std::size_t hashValue = 0;
+    for (auto index : tile.colorIndexes) {
+      hashValue ^= std::hash<uint8_t>{}(index);
     }
+    return hashValue;
+  }
 };
 
 namespace porytiles {
@@ -211,32 +207,31 @@ namespace porytiles {
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
 struct GBAPalette {
-    std::size_t size;
-    std::array<BGR15, PAL_SIZE> colors;
+  std::size_t size;
+  std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)
 
-    auto operator<=>(const GBAPalette&) const = default;
+  auto operator<=>(const GBAPalette &) const = default;
 
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const GBAPalette&) const = default;
-    auto operator<=>(const GBAPalette& other) const {
-        if (this->colors == other.colors) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->colors < other.colors) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const GBAPalette&) const = default;
+  auto operator<=>(const GBAPalette &other) const
+  {
+    if (this->colors == other.colors) {
+      return std::strong_ordering::equal;
     }
+    else if (this->colors < other.colors) {
+      return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+  }
 
-    auto operator==(const GBAPalette& other) const {
-        return this->colors == other.colors;
-    }
+  auto operator==(const GBAPalette &other) const { return this->colors == other.colors; }
 #endif
 };
 
@@ -245,10 +240,10 @@ struct GBAPalette {
  * index and the corresponding flips.
  */
 struct Assignment {
-    std::size_t tileIndex;
-    std::size_t paletteIndex;
-    bool hFlip;
-    bool vFlip;
+  std::size_t tileIndex;
+  std::size_t paletteIndex;
+  bool hFlip;
+  bool vFlip;
 };
 
 /**
@@ -257,7 +252,8 @@ struct Assignment {
  * The `tiles' field contains the normalized tiles from the input tilesheets. This field can be directly written out to
  * `tiles.png'.
  *
- * The `paletteIndexes' contains the palette index (into the `palettes' field) for each corresponding GBATile in `tiles'.
+ * The `paletteIndexes' contains the palette index (into the `palettes' field) for each corresponding GBATile in
+ * `tiles'.
  *
  * The `palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
  * `numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
@@ -266,12 +262,12 @@ struct Assignment {
  * final metatiles.
  */
 struct CompiledTileset {
-    std::vector<GBATile> tiles;
-    std::vector<std::size_t> paletteIndexesOfTile;
-    std::vector<GBAPalette> palettes;
-    std::vector<Assignment> assignments;
-    std::unordered_map<BGR15, std::size_t> colorIndexMap;
-    std::unordered_map<GBATile, std::size_t> tileIndexes;
+  std::vector<GBATile> tiles;
+  std::vector<std::size_t> paletteIndexesOfTile;
+  std::vector<GBAPalette> palettes;
+  std::vector<Assignment> assignments;
+  std::unordered_map<BGR15, std::size_t> colorIndexMap;
+  std::unordered_map<GBATile, std::size_t> tileIndexes;
 };
 
 // TODO : remove this in favor of using config.numTilesInPrimary
@@ -281,7 +277,7 @@ constexpr std::size_t SECONDARY_TILESET_VRAM_OFFSET = 512;
  * A decompiled tileset, which is just a vector of RGBATiles.
  */
 struct DecompiledTileset {
-    std::vector<RGBATile> tiles;
+  std::vector<RGBATile> tiles;
 };
 
 /*
@@ -292,45 +288,44 @@ struct DecompiledTileset {
  * TODO : fill in doc comment
  */
 struct NormalizedPixels {
-    std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
+  std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
 #if defined(__GNUG__) && !defined(__clang__)
 
-    auto operator<=>(const NormalizedPixels&) const = default;
+  auto operator<=>(const NormalizedPixels &) const = default;
 
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const NormalizedPixels&) const = default;
-    auto operator<=>(const NormalizedPixels& other) const {
-        if (this->colorIndexes == other.colorIndexes) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->colorIndexes < other.colorIndexes) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const NormalizedPixels&) const = default;
+  auto operator<=>(const NormalizedPixels &other) const
+  {
+    if (this->colorIndexes == other.colorIndexes) {
+      return std::strong_ordering::equal;
     }
+    else if (this->colorIndexes < other.colorIndexes) {
+      return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+  }
 
-    auto operator==(const NormalizedPixels& other) const {
-        return this->colorIndexes == other.colorIndexes;
-    }
+  auto operator==(const NormalizedPixels &other) const { return this->colorIndexes == other.colorIndexes; }
 #endif
 };
-}
+} // namespace porytiles
 
-template<>
-struct std::hash<porytiles::NormalizedPixels> {
-    std::size_t operator()(const porytiles::NormalizedPixels& pixels) const noexcept {
-        // TODO : better hash function
-        std::size_t hashValue = 0;
-        for (auto pixel: pixels.colorIndexes) {
-            hashValue ^= std::hash<uint8_t>{}(pixel);
-        }
-        return hashValue;
+template <> struct std::hash<porytiles::NormalizedPixels> {
+  std::size_t operator()(const porytiles::NormalizedPixels &pixels) const noexcept
+  {
+    // TODO : better hash function
+    std::size_t hashValue = 0;
+    for (auto pixel : pixels.colorIndexes) {
+      hashValue ^= std::hash<uint8_t>{}(pixel);
     }
+    return hashValue;
+  }
 };
 
 namespace porytiles {
@@ -338,47 +333,46 @@ namespace porytiles {
  * TODO : fill in doc comment
  */
 struct NormalizedPalette {
-    int size;
-    std::array<BGR15, PAL_SIZE> colors;
+  int size;
+  std::array<BGR15, PAL_SIZE> colors;
 
 #if defined(__GNUG__) && !defined(__clang__)
 
-    auto operator<=>(const NormalizedPalette&) const = default;
+  auto operator<=>(const NormalizedPalette &) const = default;
 
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const NormalizedPalette&) const = default;
-    auto operator<=>(const NormalizedPalette& other) const {
-        if (this->colors == other.colors) {
-            return std::strong_ordering::equal;
-        }
-        else if (this->colors < other.colors) {
-            return std::strong_ordering::less;
-        }
-        return std::strong_ordering::greater;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const NormalizedPalette&) const = default;
+  auto operator<=>(const NormalizedPalette &other) const
+  {
+    if (this->colors == other.colors) {
+      return std::strong_ordering::equal;
     }
+    else if (this->colors < other.colors) {
+      return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+  }
 
-    auto operator==(const NormalizedPalette& other) const {
-        return this->colors == other.colors;
-    }
+  auto operator==(const NormalizedPalette &other) const { return this->colors == other.colors; }
 #endif
 };
-}
+} // namespace porytiles
 
-template<>
-struct std::hash<porytiles::NormalizedPalette> {
-    std::size_t operator()(const porytiles::NormalizedPalette& palette) const noexcept {
-        // TODO : better hash function
-        std::size_t hashValue = 0;
-        hashValue ^= std::hash<int>{}(palette.size);
-        for (auto color: palette.colors) {
-            hashValue ^= std::hash<porytiles::BGR15>{}(color);
-        }
-        return hashValue;
+template <> struct std::hash<porytiles::NormalizedPalette> {
+  std::size_t operator()(const porytiles::NormalizedPalette &palette) const noexcept
+  {
+    // TODO : better hash function
+    std::size_t hashValue = 0;
+    hashValue ^= std::hash<int>{}(palette.size);
+    for (auto color : palette.colors) {
+      hashValue ^= std::hash<porytiles::BGR15>{}(color);
     }
+    return hashValue;
+  }
 };
 
 namespace porytiles {
@@ -386,54 +380,56 @@ namespace porytiles {
  * TODO : fill in doc comment
  */
 struct NormalizedTile {
-    // TODO : can we collapse these types into NormalizedTile?
-    NormalizedPixels pixels;
-    NormalizedPalette palette;
-    bool hFlip;
-    bool vFlip;
+  // TODO : can we collapse these types into NormalizedTile?
+  NormalizedPixels pixels;
+  NormalizedPalette palette;
+  bool hFlip;
+  bool vFlip;
 
-    explicit NormalizedTile(RGBA32 transparency) : pixels{}, palette{}, hFlip{}, vFlip{} {
-        palette.size = 1;
-        palette.colors[0] = rgbaToBgr(transparency);
-    }
+  explicit NormalizedTile(RGBA32 transparency) : pixels{}, palette{}, hFlip{}, vFlip{}
+  {
+    palette.size = 1;
+    palette.colors[0] = rgbaToBgr(transparency);
+  }
 
-    [[nodiscard]] bool transparent() const { return palette.size == 1; }
+  [[nodiscard]] bool transparent() const { return palette.size == 1; }
 
 #if defined(__GNUG__) && !defined(__clang__)
-    // auto operator<=>(const NormalizedTile&) const = default;
+  // auto operator<=>(const NormalizedTile&) const = default;
 #else
-    // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-    // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-    // https://reviews.llvm.org/D132265
-    // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-    // auto operator<=>(const NormalizedTile&) const = default;
+  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
+  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+  // https://reviews.llvm.org/D132265
+  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+  // auto operator<=>(const NormalizedTile&) const = default;
 #endif
 
-    void setPixel(size_t row, size_t col, uint8_t value) {
-        if (row >= TILE_SIDE_LENGTH) {
-            throw std::out_of_range{
-                    "internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
-        }
-        if (col >= TILE_SIDE_LENGTH) {
-            throw std::out_of_range{
-                    "internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
-        }
-        pixels.colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
+  void setPixel(size_t row, size_t col, uint8_t value)
+  {
+    if (row >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) +
+                              ")"};
     }
+    if (col >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) +
+                              ")"};
+    }
+    pixels.colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
+  }
 };
-}
+} // namespace porytiles
 
-template<>
-struct std::hash<porytiles::NormalizedTile> {
-    std::size_t operator()(const porytiles::NormalizedTile& tile) const noexcept {
-        // TODO : better hash function
-        std::size_t hashValue = 0;
-        hashValue ^= std::hash<porytiles::NormalizedPixels>{}(tile.pixels);
-        hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);
-        hashValue ^= std::hash<bool>{}(tile.hFlip);
-        hashValue ^= std::hash<bool>{}(tile.vFlip);
-        return hashValue;
-    }
+template <> struct std::hash<porytiles::NormalizedTile> {
+  std::size_t operator()(const porytiles::NormalizedTile &tile) const noexcept
+  {
+    // TODO : better hash function
+    std::size_t hashValue = 0;
+    hashValue ^= std::hash<porytiles::NormalizedPixels>{}(tile.pixels);
+    hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);
+    hashValue ^= std::hash<bool>{}(tile.hFlip);
+    hashValue ^= std::hash<bool>{}(tile.vFlip);
+    return hashValue;
+  }
 };
 
 #endif // PORYTILES_TYPES_H

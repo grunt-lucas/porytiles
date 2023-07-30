@@ -9,6 +9,6 @@ extern const std::string PROGRAM_NAME;
 extern const std::string VERSION;
 extern const std::string RELEASE_DATE;
 
-}
+} // namespace porytiles
 
-#endif //PORYTILES_PROGRAM_NAME_H
+#endif // PORYTILES_PROGRAM_NAME_H

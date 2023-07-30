@@ -10,7 +10,7 @@
 
 namespace porytiles {
 
-void drive(const Config& config);
+void drive(const Config &config);
 
 }
 

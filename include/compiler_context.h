@@ -6,22 +6,16 @@
 
 namespace porytiles {
 
-enum CompilerMode {
-    RAW,
-    PRIMARY,
-    SECONDARY
-};
+enum CompilerMode { RAW, PRIMARY, SECONDARY };
 
 struct CompilerContext {
-    const Config& config;
-    CompilerMode mode;
-    const CompiledTileset* primaryTileset;
+  const Config &config;
+  CompilerMode mode;
+  const CompiledTileset *primaryTileset;
 
-    explicit CompilerContext(const Config& config, CompilerMode mode) :
-        config{config}, mode{mode}, primaryTileset{} {
-    }
+  explicit CompilerContext(const Config &config, CompilerMode mode) : config{config}, mode{mode}, primaryTileset{} {}
 };
 
-}
+} // namespace porytiles
 
 #endif // PORYTILES_COMPILER_CONTEXT_H

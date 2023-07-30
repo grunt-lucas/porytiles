@@ -8,7 +8,8 @@
 
 namespace porytiles {
 
-void fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary, std::size_t primaryPalettesSize);
+void fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
+                                                      std::size_t primaryPalettesSize);
 void fatal_unknownCompilerMode(CompilerMode mode);
 
 void error_layerHeightNotDivisibleBy16(std::string layer, png::uint_32 height);
@@ -17,6 +18,6 @@ void error_layerHeightsMustEq(png::uint_32 bottom, png::uint_32 middle, png::uin
 
 void die_compilationTerminated();
 
-}
+} // namespace porytiles
 
 #endif // PORYTILES_ERRORS_H
