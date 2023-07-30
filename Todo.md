@@ -20,10 +20,15 @@
 + Refactor commands / options
   + Use `-f` prefix for frontend configuration
     + e.g. `-fnum-pals-primary`, `-fruby`, `-ftiles-png-pal-mode`
-  + `compile-freestanding`
-    + takes a raw tilesheet (no layers), generates `tiles.png` and freestanding palette files
-  + `compile-primary` and `compile-secondary` should be separate commands
-    + `-fskip-metatile-generation` skips generation of `metatiles.bin`
+  + `compile` command has three modes
+    + `compile freestanding`: takes a raw tilesheet (no layers), generates `tiles.png` and freestanding palette files
+      + freestanding palette files aren't in a `palettes` folder, aren't named according to 00.pal
+      + so it would just make pal1.txt, pal2.txt, pal3.txt, ... , empty.txt where empty.txt is an empty palette for convenience
+    + `compile primary`: compiles a primary tileset
+    + `compile secondary`: compiles a secondary tileset, takes path to primary folder
+  + `-fskip-metatile-generation` skips generation of `metatiles.bin`
+  + compile should take path to folder as input, folder must contain a `bottom,middle,top.png`, `anim` folder with
+    frames in expected format, and metatile_attributes.csv file, etc
 
 + Set up more CI builds
   + Windows MSVC?
@@ -37,10 +42,13 @@
 
 + Decompile compiled tilesets back into three layer PNGs + animated sets
 
++ Proper support for dual layer tiles (requires modifying metatile attributes file)
+  + input to compile can include `metatile_attributes.csv`, which defines attributes for each metatile
+  + then just generate `metatile_attributes.bin` from this CSV
+  + will probably need to do some basic C parsing to allow for macro expansion
+
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
-
-+ Proper support for dual layer tiles (requires modifying metatile attributes file)
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
   + https://github.com/tfussell/miniz-cpp
