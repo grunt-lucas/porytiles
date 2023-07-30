@@ -32,8 +32,6 @@
 /opt/homebrew/opt/llvm/bin/clang-tidy -checks='cert-*' -header-filter='.*' --warnings-as-errors='*' src/*.cpp -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
 ```
 
-+ Setup some kind of clang format script
-
 + Add `--verbose` logs to stderr
 
 + Support for animated tiles, i.e. stable placement in `tiles.png`
