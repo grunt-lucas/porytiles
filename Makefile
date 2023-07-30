@@ -8,6 +8,7 @@ COMPILER_VERSION     := $(shell $(CXX) --version)
 
 ### Define the targets, source, and build folders ###
 SRC                  := src
+INCLUDE              := include
 BUILD                := build
 BIN                  := bin
 
@@ -26,6 +27,7 @@ DEBUG_TEST_TARGET    := $(DEBUG)/$(BIN)/$(TEST_TARGET)
 RELEASE_BUILD        := $(RELEASE)/$(BUILD)
 DEBUG_BUILD          := $(DEBUG)/$(BUILD)
 SRC_FILES             = $(shell find $(SRC) -type f -name *.cpp)
+INCLUDE_FILES         = $(shell find $(INCLUDE) -type f -name *.h)
 MAIN_OBJ             := main.o
 TESTS_OBJ            := tests.o
 RELEASE_OBJ_FILES     = $(filter-out $(RELEASE_BUILD)/$(MAIN_OBJ) $(RELEASE_BUILD)/$(TESTS_OBJ), $(patsubst $(SRC)/%, $(RELEASE_BUILD)/%, $(SRC_FILES:.cpp=.o)))
@@ -43,7 +45,7 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -Iinclude $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
+CXXFLAGS             += -I$(INCLUDE) $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
 ifneq '' '$(findstring GCC,$(COMPILER_VERSION))'
 # If GCC, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
 	CXXFLAGS_RELEASE     := $(CXXFLAGS) -O1
@@ -93,6 +95,9 @@ $(DEBUG_BUILD)/%.o: $(SRC)/%.cpp
 clean:
 	$(RM) -r $(RELEASE) $(DEBUG)
 	$(RM) default.profraw testcov.profdata
+
+format:
+	clang-format -style=file -i $(SRC_FILES) $(INCLUDE_FILES)
 
 release: $(RELEASE_TARGET) $(RELEASE_TEST_TARGET)
 	@:
