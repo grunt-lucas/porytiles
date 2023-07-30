@@ -1,6 +1,7 @@
 #include "compiler.h"
 
 #include <algorithm>
+#include <doctest.h>
 #include <png.hpp>
 #include <stdexcept>
 #include <tuple>
@@ -10,7 +11,6 @@
 #include "compiler_context.h"
 #include "compiler_helpers.h"
 #include "config.h"
-#include "doctest.h"
 #include "errors.h"
 #include "importer.h"
 #include "logger.h"

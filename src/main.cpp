@@ -4,7 +4,7 @@
 #include <exception>
 
 #define FMT_HEADER_ONLY
-#include "fmt/color.h"
+#include <fmt/color.h>
 
 #include "cli_parser.h"
 #include "config.h"

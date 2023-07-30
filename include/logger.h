@@ -5,8 +5,9 @@
 #include <string>
 
 #define FMT_HEADER_ONLY
+#include <fmt/color.h>
+
 #include "config.h"
-#include "fmt/color.h"
 #include "program_name.h"
 
 namespace porytiles {

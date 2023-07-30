@@ -1,6 +1,7 @@
 #include "compiler_helpers.h"
 
 #include <bitset>
+#include <doctest.h>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
@@ -9,7 +10,6 @@
 #include "compiler.h"
 #include "compiler_context.h"
 #include "config.h"
-#include "doctest.h"
 #include "importer.h"
 #include "ptexception.h"
 #include "types.h"

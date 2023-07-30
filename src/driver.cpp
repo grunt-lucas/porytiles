@@ -1,6 +1,7 @@
 #include "driver.h"
 
 #include <cstdio>
+#include <doctest.h>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -9,7 +10,6 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "doctest.h"
 #include "emitter.h"
 #include "importer.h"
 #include "ptexception.h"

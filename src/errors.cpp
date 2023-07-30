@@ -1,12 +1,12 @@
 #include "errors.h"
 
 #include <cstddef>
+#include <doctest.h>
 #include <png.hpp>
 #include <stdexcept>
 #include <string>
 
 #include "compiler_context.h"
-#include "doctest.h"
 #include "logger.h"
 #include "ptexception.h"
 

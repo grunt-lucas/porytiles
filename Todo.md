@@ -29,7 +29,7 @@
 
 + Setup some kind of clang tidy script:
 ```
-/opt/homebrew/opt/llvm/bin/clang-tidy -checks='cert-*' -header-filter='.*' --warnings-as-errors='*' src/*.cpp -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9
+clang-tidy -checks='cert-*' -header-filter='.*' --warnings-as-errors='*' src/*.cpp -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
 ```
 
 + Add `--verbose` logs to stderr

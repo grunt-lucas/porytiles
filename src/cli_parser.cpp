@@ -7,7 +7,7 @@
 #include <string>
 
 #define FMT_HEADER_ONLY
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 #include "config.h"
 #include "errors.h"
