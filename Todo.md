@@ -14,6 +14,8 @@
   + `-Wpalette-alloc-efficiency` / `-Wno-palette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
   + `-Wall`: enable all warnings
+  + `-Werror`: warnings become errors
+    + `-Werror=color-precision-loss`
 
 + Refactor commands / options
   + Use `-f` prefix for frontend configuration
