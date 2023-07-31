@@ -65,32 +65,49 @@ struct FieldmapConfig {
   }
 };
 
-struct PtContext {
-  FieldmapConfig fieldmapConfig;
+struct InputPaths {
+  std::string rawFreestandingTilesheetPath;
 
-  RGBA32 transparencyColor;
-  std::string rawSecondaryTilesheetPath;
-  std::string rawPrimaryTilesheetPath;
   std::string bottomPrimaryTilesheetPath;
   std::string middlePrimaryTilesheetPath;
   std::string topPrimaryTilesheetPath;
+
   std::string bottomSecondaryTilesheetPath;
   std::string middleSecondaryTilesheetPath;
   std::string topSecondaryTilesheetPath;
-  std::size_t maxRecurseCount;
-  bool secondary;
+};
 
-  // Output params
-  TilesPngPaletteMode tilesPngPaletteMode;
-  std::string outputPath;
+struct Output {
+  TilesPngPaletteMode paletteMode;
+  std::string path;
+};
+
+struct CompilerConfig {
+  CompilerMode compilerMode;
+  RGBA32 transparencyColor;
+  std::size_t maxRecurseCount;
+  std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
+};
+
+struct CompilerContext {};
+
+struct PtContext {
+  FieldmapConfig fieldmapConfig;
+  InputPaths inputPaths;
+  Output output;
+  CompilerConfig compilerConfig;
+  CompilerContext compilerContext;
 
   // Command params
   Subcommand subcommand;
   bool verbose;
 
-  // Compiler params
-  CompilerMode compilerMode;
-  std::unique_ptr<CompiledTileset> primaryTileset;
+  PtContext()
+      : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
+        compilerContext{}, subcommand{}
+  {
+    verbose = false;
+  }
 };
 
 } // namespace porytiles
