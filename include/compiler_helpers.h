@@ -24,7 +24,7 @@ using IndexedNormTile = std::pair<DecompiledIndex, porytiles::NormalizedTile>;
 using IndexedNormTileWithColorSet = std::tuple<DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
 
 namespace porytiles {
-std::size_t insertRGBA(PtContext &ctx, NormalizedPalette &palette, RGBA32 rgba);
+std::size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, RGBA32 rgba);
 
 NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool vFlip);
 
