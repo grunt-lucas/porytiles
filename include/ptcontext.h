@@ -5,8 +5,8 @@
 #include <memory>
 #include <string>
 
-#include "types.h"
 #include "ptexception.h"
+#include "types.h"
 
 namespace porytiles {
 
