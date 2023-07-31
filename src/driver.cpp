@@ -198,7 +198,7 @@ static void driveCompile(const Config &config)
     throw PtException{config.topPrimaryTilesheetPath + " is not a valid PNG file"};
   }
 
-  CompiledTileset compiledTiles{};
+  std::unique_ptr<CompiledTileset> compiledTiles;
   if (config.secondary) {
     png::image<png::rgba_pixel> bottomPrimaryPng{config.bottomPrimaryTilesheetPath};
     png::image<png::rgba_pixel> middlePrimaryPng{config.middlePrimaryTilesheetPath};
@@ -206,14 +206,14 @@ static void driveCompile(const Config &config)
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-    CompiledTileset compiledPrimaryTiles = compile(primaryContext, decompiledPrimaryTiles);
+    auto compiledPrimaryTiles = compile(primaryContext, decompiledPrimaryTiles);
 
     png::image<png::rgba_pixel> bottomPng{config.bottomSecondaryTilesheetPath};
     png::image<png::rgba_pixel> middlePng{config.middleSecondaryTilesheetPath};
     png::image<png::rgba_pixel> topPng{config.topSecondaryTilesheetPath};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
     porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
-    secondaryContext.primaryTileset = &compiledPrimaryTiles;
+    secondaryContext.primaryTileset = std::move(compiledPrimaryTiles);
     compiledTiles = compile(secondaryContext, decompiledTiles);
   }
   else {
@@ -241,11 +241,11 @@ static void driveCompile(const Config &config)
   }
   std::filesystem::create_directories(palettesPath);
 
-  emitPalettes(config, compiledTiles, palettesPath);
-  emitTilesPng(config, compiledTiles, tilesetPath);
+  emitPalettes(config, *compiledTiles, palettesPath);
+  emitTilesPng(config, *compiledTiles, tilesetPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
-  emitMetatilesBin(config, outMetatiles, compiledTiles);
+  emitMetatilesBin(config, outMetatiles, *compiledTiles);
   outMetatiles.close();
 }
 

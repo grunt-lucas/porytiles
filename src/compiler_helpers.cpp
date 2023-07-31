@@ -920,9 +920,9 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
   std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
   porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
-  porytiles::CompiledTileset compiledTiles = porytiles::compile(context, tiles);
+  auto compiledTiles = porytiles::compile(context, tiles);
 
-  porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles.palettes[0]);
+  porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles->palettes[0]);
   CHECK_FALSE(indexedNormTiles[0].second.hFlip);
   CHECK(indexedNormTiles[0].second.vFlip);
   CHECK(tile0.colorIndexes[0] == 0);
@@ -931,7 +931,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     CHECK(tile0.colorIndexes[i] == 1);
   }
 
-  porytiles::GBATile tile1 = porytiles::makeTile(indexedNormTiles[1].second, compiledTiles.palettes[1]);
+  porytiles::GBATile tile1 = porytiles::makeTile(indexedNormTiles[1].second, compiledTiles->palettes[1]);
   CHECK_FALSE(indexedNormTiles[1].second.hFlip);
   CHECK_FALSE(indexedNormTiles[1].second.vFlip);
   CHECK(tile1.colorIndexes[0] == 0);
@@ -940,7 +940,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   CHECK(tile1.colorIndexes[62] == 1);
   CHECK(tile1.colorIndexes[63] == 2);
 
-  porytiles::GBATile tile2 = porytiles::makeTile(indexedNormTiles[2].second, compiledTiles.palettes[1]);
+  porytiles::GBATile tile2 = porytiles::makeTile(indexedNormTiles[2].second, compiledTiles->palettes[1]);
   CHECK(indexedNormTiles[2].second.hFlip);
   CHECK_FALSE(indexedNormTiles[2].second.vFlip);
   CHECK(tile2.colorIndexes[0] == 0);
@@ -948,7 +948,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   CHECK(tile2.colorIndexes[56] == 3);
   CHECK(tile2.colorIndexes[63] == 1);
 
-  porytiles::GBATile tile3 = porytiles::makeTile(indexedNormTiles[3].second, compiledTiles.palettes[0]);
+  porytiles::GBATile tile3 = porytiles::makeTile(indexedNormTiles[3].second, compiledTiles->palettes[0]);
   CHECK(indexedNormTiles[3].second.hFlip);
   CHECK(indexedNormTiles[3].second.vFlip);
   CHECK(tile3.colorIndexes[0] == 0);

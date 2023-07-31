@@ -242,12 +242,12 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
   porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
   porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
-  porytiles::CompiledTileset compiled = porytiles::compile(context, decompiled);
+  auto compiled = porytiles::compile(context, decompiled);
 
   std::filesystem::path parentDir = porytiles::createTmpdir();
   std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
   std::ofstream outFile{tmpPath};
-  porytiles::emitMetatilesBin(config, outFile, compiled);
+  porytiles::emitMetatilesBin(config, outFile, *compiled);
   outFile.close();
 
   std::ifstream input(tmpPath, std::ios::binary);

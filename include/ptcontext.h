@@ -2,6 +2,7 @@
 #define PORYTILES_PT_CONTEXT_H
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "types.h"
@@ -24,7 +25,8 @@ struct FieldmapConfig {
   std::size_t numPalettesTotal;
   std::size_t numTilesPerMetatile;
 
-  static FieldmapConfig pokeemeraldDefaults() {
+  static FieldmapConfig pokeemeraldDefaults()
+  {
     FieldmapConfig config;
     config.numTilesInPrimary = 512;
     config.numTilesTotal = 1024;
@@ -36,7 +38,8 @@ struct FieldmapConfig {
     return config;
   }
 
-  static FieldmapConfig pokefireredDefaults() {
+  static FieldmapConfig pokefireredDefaults()
+  {
     FieldmapConfig config;
     config.numTilesInPrimary = 640;
     config.numTilesTotal = 1024;
@@ -48,7 +51,8 @@ struct FieldmapConfig {
     return config;
   }
 
-  static FieldmapConfig pokerubyDefaults() {
+  static FieldmapConfig pokerubyDefaults()
+  {
     FieldmapConfig config;
     config.numTilesInPrimary = 512;
     config.numTilesTotal = 1024;
@@ -86,7 +90,7 @@ struct PtContext {
 
   // Compiler params
   CompilerMode compilerMode;
-  const CompiledTileset *primaryTileset;
+  std::unique_ptr<CompiledTileset> primaryTileset;
 };
 
 } // namespace porytiles
