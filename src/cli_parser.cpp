@@ -18,7 +18,6 @@ namespace porytiles {
 
 static void parseGlobalOptions(PtContext &ctx, int argc, char **argv);
 static void parseSubcommand(PtContext &ctx, int argc, char **argv);
-static void parseCompileRaw(PtContext &ctx, int argc, char **argv);
 static void parseCompile(PtContext &ctx, int argc, char **argv);
 
 void parseOptions(PtContext &ctx, int argc, char **argv)
@@ -27,6 +26,9 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
   parseSubcommand(ctx, argc, argv);
 
   switch (ctx.subcommand) {
+  case DECOMPILE:
+    throw std::runtime_error{"TODO : support decompile command"};
+    break;
   case COMPILE:
     parseCompile(ctx, argc, argv);
     break;

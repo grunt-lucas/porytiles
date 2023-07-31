@@ -6,6 +6,7 @@
 #include <string>
 
 #include "types.h"
+#include "ptexception.h"
 
 namespace porytiles {
 

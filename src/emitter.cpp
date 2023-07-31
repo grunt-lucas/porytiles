@@ -248,7 +248,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   std::filesystem::path parentDir = porytiles::createTmpdir();
   std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
   std::ofstream outFile{tmpPath};
-  porytiles::emitMetatilesBin(config, outFile, *compiled);
+  porytiles::emitMetatilesBin(ctx, outFile, *compiled);
   outFile.close();
 
   std::ifstream input(tmpPath, std::ios::binary);
