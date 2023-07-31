@@ -54,7 +54,7 @@ struct AssignState {
   std::vector<ColorSet> unassigned;
 };
 extern std::size_t gRecurseCount;
-bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
+bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<ColorSet> &solution,
             const std::vector<ColorSet> &primaryPalettes);
 
 GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette);

@@ -189,12 +189,12 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
 }
 
 std::size_t gRecurseCount = 0;
-bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
+bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<ColorSet> &solution,
             const std::vector<ColorSet> &primaryPalettes)
 {
   gRecurseCount++;
   // TODO : this is a horrible hack avert your eyes
-  if (gRecurseCount > ctx.compilerConfig.maxRecurseCount) {
+  if (gRecurseCount > maxRecurseCount) {
     // TODO : better error context
     throw PtException{"too many assignment recurses"};
   }
@@ -233,7 +233,7 @@ bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
         unassignedCopy.pop_back();
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assign(ctx, updatedState, solution, primaryPalettes)) {
+        if (assign(maxRecurseCount, updatedState, solution, primaryPalettes)) {
           return true;
         }
       }
@@ -294,7 +294,7 @@ bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-    if (assign(ctx, updatedState, solution, primaryPalettes)) {
+    if (assign(maxRecurseCount, updatedState, solution, primaryPalettes)) {
       return true;
     }
   }
@@ -882,7 +882,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(ctx, state, solution, {}));
+    CHECK(porytiles::assign(ctx.compilerConfig.maxRecurseCount, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -920,7 +920,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(ctx, state, solution, {}));
+    CHECK(porytiles::assign(ctx.compilerConfig.maxRecurseCount, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);

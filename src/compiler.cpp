@@ -109,7 +109,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
   gRecurseCount = 0;
-  bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
+  bool assignSuccessful =
+      assign(ctx.compilerConfig.maxRecurseCount, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
     // TODO : better error context
     throw PtException{"failed to allocate palettes"};
