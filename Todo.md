@@ -15,6 +15,7 @@
     + warn user if palette allocation was not 100% efficient
   + `-Wall`: enable all warnings
   + `-Werror`: warnings become errors
+    + https://cfengine.com/blog/2021/optional-arguments-with-getopt-long/
     + `-Werror=color-precision-loss`
 
 + Refactor commands / options
