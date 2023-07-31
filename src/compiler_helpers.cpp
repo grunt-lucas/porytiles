@@ -49,14 +49,14 @@ size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, R
   throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 
-NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool vFlip)
+NormalizedTile candidate(const RGBA32 &transparencyColor, const RGBATile &rgba, bool hFlip, bool vFlip)
 {
   /*
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
    * form). We'll use this to generate candidates to find the true normal form.
    */
   // TODO : same color precision note as above in insertRGBA
-  NormalizedTile candidateTile{ctx.compilerConfig.transparencyColor};
+  NormalizedTile candidateTile{transparencyColor};
   candidateTile.hFlip = hFlip;
   candidateTile.vFlip = vFlip;
 
@@ -64,31 +64,30 @@ NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool 
     for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
       std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
       std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
-      candidateTile.setPixel(row, col,
-                             insertRGBA(ctx.compilerConfig.transparencyColor, candidateTile.palette,
-                                        rgba.getPixel(rowWithFlip, colWithFlip)));
+      candidateTile.setPixel(
+          row, col, insertRGBA(transparencyColor, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
     }
   }
 
   return candidateTile;
 }
 
-NormalizedTile normalize(PtContext &ctx, const RGBATile &rgba)
+NormalizedTile normalize(const RGBA32 &transparencyColor, const RGBATile &rgba)
 {
   /*
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
    * "lexicographic" order, where this order is determined by the std::array spaceship operator.
    */
-  auto noFlipsTile = candidate(ctx, rgba, false, false);
+  auto noFlipsTile = candidate(transparencyColor, rgba, false, false);
 
   // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
   if (noFlipsTile.transparent()) {
     return noFlipsTile;
   }
 
-  auto hFlipTile = candidate(ctx, rgba, true, false);
-  auto vFlipTile = candidate(ctx, rgba, false, true);
-  auto bothFlipsTile = candidate(ctx, rgba, true, true);
+  auto hFlipTile = candidate(transparencyColor, rgba, true, false);
+  auto vFlipTile = candidate(transparencyColor, rgba, false, true);
+  auto bothFlipsTile = candidate(transparencyColor, rgba, true, true);
 
   std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
   auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
@@ -96,7 +95,8 @@ NormalizedTile normalize(PtContext &ctx, const RGBATile &rgba)
   return **normalizedTile;
 }
 
-std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset)
+std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColor,
+                                                  const DecompiledTileset &decompiledTileset)
 {
   /*
    * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
@@ -104,7 +104,7 @@ std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const Decompil
   std::vector<IndexedNormTile> normalizedTiles;
   DecompiledIndex decompiledIndex = 0;
   for (auto const &tile : decompiledTileset.tiles) {
-    auto normalizedTile = normalize(ctx, tile);
+    auto normalizedTile = normalize(transparencyColor, tile);
     normalizedTiles.emplace_back(decompiledIndex++, normalizedTile);
   }
   return normalizedTiles;
@@ -494,7 +494,8 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: no flips")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, false, false);
+    porytiles::NormalizedTile candidate =
+        porytiles::candidate(ctx.compilerConfig.transparencyColor, tile, false, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
@@ -521,7 +522,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, true, false);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx.compilerConfig.transparencyColor, tile, true, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
@@ -548,7 +549,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: vFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, false, true);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx.compilerConfig.transparencyColor, tile, false, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
@@ -575,7 +576,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip and vFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, true, true);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx.compilerConfig.transparencyColor, tile, true, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
@@ -610,7 +611,7 @@ TEST_CASE("normalize should return the normal form of the given tile")
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
   porytiles::RGBATile tile = tiles.tiles[0];
 
-  porytiles::NormalizedTile normalizedTile = porytiles::normalize(ctx, tile);
+  porytiles::NormalizedTile normalizedTile = porytiles::normalize(ctx.compilerConfig.transparencyColor, tile);
   CHECK(normalizedTile.palette.size == 9);
   CHECK_FALSE(normalizedTile.hFlip);
   CHECK_FALSE(normalizedTile.vFlip);
@@ -636,7 +637,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
 
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
 
   CHECK(indexedNormTiles.size() == 4);
 
@@ -701,7 +702,8 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> normalizedTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+  std::vector<IndexedNormTile> normalizedTiles =
+      porytiles::normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
 
   auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, normalizedTiles, {});
 
@@ -756,7 +758,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+  std::vector<IndexedNormTile> indexedNormTiles =
+      porytiles::normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
   auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
 
   CHECK(colorToIndex.size() == 4);
@@ -861,7 +864,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+    std::vector<IndexedNormTile> indexedNormTiles =
+        porytiles::normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
     auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
     auto [indexedNormTilesWithColorSets, colorSets] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
@@ -898,7 +902,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+    std::vector<IndexedNormTile> indexedNormTiles =
+        porytiles::normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
     auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
     auto [indexedNormTilesWithColorSets, colorSets] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
@@ -938,7 +943,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
   auto compiledTiles = porytiles::compile(ctx, tiles);
 
   porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles->palettes[0]);

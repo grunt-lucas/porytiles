@@ -60,7 +60,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   if (ctx.compilerConfig.mode == SECONDARY) {
     primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTiles->colorIndexMap);
   }
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, decompiledTileset);
+  std::vector<IndexedNormTile> indexedNormTiles =
+      normalizeDecompTiles(ctx.compilerConfig.transparencyColor, decompiledTileset);
   auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
   compiled->colorIndexMap = colorToIndex;
   auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);

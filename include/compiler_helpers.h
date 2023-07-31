@@ -26,11 +26,12 @@ using IndexedNormTileWithColorSet = std::tuple<DecompiledIndex, porytiles::Norma
 namespace porytiles {
 std::size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, RGBA32 rgba);
 
-NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool vFlip);
+NormalizedTile candidate(const RGBA32 &transparencyColor, const RGBATile &rgba, bool hFlip, bool vFlip);
 
-NormalizedTile normalize(PtContext &ctx, const RGBATile &rgba);
+NormalizedTile normalize(const RGBA32 &transparencyColor, const RGBATile &rgba);
 
-std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset);
+std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColor,
+                                                  const DecompiledTileset &decompiledTileset);
 
 std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
 buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normalizedTiles,
