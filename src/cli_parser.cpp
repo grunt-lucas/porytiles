@@ -96,12 +96,12 @@ HELP_DESCRIPTION + "\n" +
 VERBOSE_DESCRIPTION + "\n" +
 VERSION_DESCRIPTION + "\n"
 "Commands:\n"
-"    compile-raw\n"
-"        Compile one RGBA PNG layer into palettes and tiles. Won't generate\n"
-"        a `metatiles.bin' file.\n"
+"    decompile\n"
+"        TODO : implement\n"
 "\n"
 "    compile\n"
-"        Compile three RGBA PNG layers into a complete tileset.\n"
+"        Compile RGBA PNGs into a tileset. Supports primary, secondary, and\n"
+"        freestanding tilesets using the various mode arguments.\n"
 "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
@@ -152,8 +152,8 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 // |    SUBCOMMAND PARSING    |
 // ----------------------------
 
-const std::string COMPILE_RAW_COMMAND = "compile-raw";
 const std::string COMPILE_COMMAND = "compile";
+const std::string DECOMPILE_COMMAND = "decompile";
 static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
@@ -161,7 +161,10 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
   }
 
   std::string subcommand = argv[optind++];
-  if (subcommand == COMPILE_COMMAND) {
+  if (subcommand == DECOMPILE_COMMAND) {
+    ctx.subcommand = Subcommand::DECOMPILE;
+  }
+  else if (subcommand == COMPILE_COMMAND) {
     ctx.subcommand = Subcommand::COMPILE;
   }
   else {
@@ -175,37 +178,37 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 // TODO : convert this logic to `compile --freestanding' mode
 // @formatter:off
 // clang-format off
-const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
-const std::string COMPILE_RAW_HELP =
-"Usage:\n"
-"    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] TILES\n"
-"    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] --secondary TILES TILES_PRIMARY\n"
-"\n"
-"Compile one RGBA PNG, i.e. a single tilesheet with no layer information. This\n"
-"command will generate pal files and a `tiles.png', but will not generate a\n"
-"`metatiles.bin' file.\n"
-"\n"
-"Args:\n"
-"    <TILES>\n"
-"        An RGBA PNG tilesheet containing raw pixel art to be tile-ized.\n"
-"\n"
-"    <TILES_PRIMARY>\n"
-"        In `--secondary' mode, an RGBA PNG tilesheet containing the raw\n"
-"        pixel art for the corresponding primary set.\n"
-"\n"
-"Options:\n" +
-OUTPUT_DESCRIPTION + "\n" +
-TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
-SECONDARY_DESCRIPTION + "\n" +
-"Per-Game Fieldmap Presets:\n" +
-PRESET_POKEEMERALD_DESCRIPTION + "\n" +
-PRESET_POKEFIRERED_DESCRIPTION + "\n" +
-PRESET_POKERUBY_DESCRIPTION + "\n" +
-"Individual Fieldmap Options:\n" +
-NUM_TILES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_TILES_TOTAL_DESCRIPTION + "\n" +
-NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
+// const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
+// const std::string COMPILE_RAW_HELP =
+// "Usage:\n"
+// "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] TILES\n"
+// "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] --secondary TILES TILES_PRIMARY\n"
+// "\n"
+// "Compile one RGBA PNG, i.e. a single tilesheet with no layer information. This\n"
+// "command will generate pal files and a `tiles.png', but will not generate a\n"
+// "`metatiles.bin' file.\n"
+// "\n"
+// "Args:\n"
+// "    <TILES>\n"
+// "        An RGBA PNG tilesheet containing raw pixel art to be tile-ized.\n"
+// "\n"
+// "    <TILES_PRIMARY>\n"
+// "        In `--secondary' mode, an RGBA PNG tilesheet containing the raw\n"
+// "        pixel art for the corresponding primary set.\n"
+// "\n"
+// "Options:\n" +
+// OUTPUT_DESCRIPTION + "\n" +
+// TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
+// SECONDARY_DESCRIPTION + "\n" +
+// "Per-Game Fieldmap Presets:\n" +
+// PRESET_POKEEMERALD_DESCRIPTION + "\n" +
+// PRESET_POKEFIRERED_DESCRIPTION + "\n" +
+// PRESET_POKERUBY_DESCRIPTION + "\n" +
+// "Individual Fieldmap Options:\n" +
+// NUM_TILES_IN_PRIMARY_DESCRIPTION + "\n" +
+// NUM_TILES_TOTAL_DESCRIPTION + "\n" +
+// NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
+// NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
@@ -305,12 +308,19 @@ NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_HELP =
 "Usage:\n"
-"    porytiles " + COMPILE_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP\n"
-"    porytiles " + COMPILE_COMMAND + " [OPTIONS] --secondary BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
+"    porytiles " + COMPILE_COMMAND + " primary [OPTIONS] BOTTOM MIDDLE TOP\n"
+"    porytiles " + COMPILE_COMMAND + " secondary [OPTIONS] BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
+"    porytiles " + COMPILE_COMMAND + " freestanding [OPTIONS] TILES\n"
 "\n"
-"Compile a bottom, middle, and top layer tilesheet into a complete tileset.\n"
-"This command will generate a `metatiles.bin' file along with `tiles.png' and\n"
-"the pal files.\n"
+"Compile given tilesheet(s) into a tileset. The `primary' and `secondary'\n"
+"modes compile a bottom, middle, and top layer tilesheet into a complete\n"
+"tileset. That is, it will generate a `metatiles.bin' file along with\n"
+"`tiles.png' and the pal files in a `palettes' directory, in-place.\n"
+"\n"
+"In `freestanding' mode, compile a single tilesheet into a freestanding\n"
+"tileset. That is, it will not generate a `metatiles.bin', and the pal files\n"
+"are not generated in-place. Input requirements for this mode are accordingly\n"
+"relaxed. See the documentation for more details.\n"
 "\n"
 "Args:\n"
 "    <BOTTOM>\n"
@@ -323,16 +333,20 @@ const std::string COMPILE_HELP =
 "        An RGBA PNG tilesheet containing the top metatile layer.\n"
 "\n"
 "    <BOTTOM-PRIMARY>\n"
-"        In `--secondary' mode, an RGBA PNG tilesheet containing the bottom\n"
+"        In `secondary' mode, an RGBA PNG tilesheet containing the bottom\n"
 "        metatile layer for the corresponding primary set.\n"
 "\n"
 "    <MIDDLE-PRIMARY>\n"
-"        In `--secondary' mode, an RGBA PNG tilesheet containing the middle\n"
+"        In `secondary' mode, an RGBA PNG tilesheet containing the middle\n"
 "        metatile layer for the corresponding primary set.\n"
 "\n"
 "    <TOP-PRIMARY>\n"
-"        In `--secondary' mode, an RGBA PNG tilesheet containing the top\n"
+"        In `secondary' mode, an RGBA PNG tilesheet containing the top\n"
 "        metatile layer for the corresponding primary set.\n"
+"\n"
+"    <TILES>\n"
+"        In `freestanding' mode, an unlayered RGBA PNG tilesheet containing\n"
+"        the pixel art to be tile-ized.\n"
 "\n"
 "Options:\n" +
 OUTPUT_DESCRIPTION + "\n" +
@@ -352,6 +366,9 @@ NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
+const std::string PRIMARY_MODE = "primary";
+const std::string SECONDARY_MODE = "secondary";
+const std::string FREESTANDING_MODE = "freestanding";
 static void parseCompile(PtContext &ctx, int argc, char **argv)
 {
   std::ostringstream implodedShorts;
@@ -373,6 +390,10 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
+
+  // TODO : impl subcommand
+  std::cout << "ARGS:" << std::endl;
+  std::cout << argv[0] << std::endl;
 
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
