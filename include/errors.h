@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <png.hpp>
 
-#include "compiler_context.h"
+#include "ptcontext.h"
 
 namespace porytiles {
 

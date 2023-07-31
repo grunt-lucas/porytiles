@@ -6,6 +6,7 @@
 
 #include "compiler.h"
 #include "importer.h"
+#include "ptcontext.h"
 #include "tmpfiles.h"
 #include "types.h"
 
@@ -13,7 +14,7 @@ namespace porytiles {
 
 constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
-void emitPalette(const Config &config, std::ostream &out, const GBAPalette &palette)
+void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette)
 {
   out << "JASC-PAL" << std::endl;
   out << "0100" << std::endl;
@@ -25,14 +26,14 @@ void emitPalette(const Config &config, std::ostream &out, const GBAPalette &pale
   }
 }
 
-void emitZeroedPalette(const Config &config, std::ostream &out)
+void emitZeroedPalette(PtContext &ctx, std::ostream &out)
 {
   GBAPalette palette{};
-  palette.colors.at(0) = rgbaToBgr(config.transparencyColor);
-  emitPalette(config, out, palette);
+  palette.colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
+  emitPalette(ctx, out, palette);
 }
 
-void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
+void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
 {
   std::array<RGBA32, PAL_SIZE> greyscalePalette = {
       RGBA32{0, 0, 0, 255},       RGBA32{16, 16, 16, 255},    RGBA32{32, 32, 32, 255},    RGBA32{48, 48, 48, 255},
@@ -49,7 +50,7 @@ void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const
    */
   // 0 initial length here since we will push_back our colors in-order
   png::palette pngPal{0};
-  if (config.tilesPngPaletteMode == TRUE_COLOR) {
+  if (ctx.output.paletteMode == TRUE_COLOR) {
     for (const auto &palette : tileset.palettes) {
       for (const auto &color : palette.colors) {
         RGBA32 rgbaColor = bgrToRgba(color);
@@ -57,7 +58,7 @@ void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const
       }
     }
   }
-  else if (config.tilesPngPaletteMode == GREYSCALE) {
+  else if (ctx.output.paletteMode == GREYSCALE) {
     for (const auto &color : greyscalePalette) {
       pngPal.push_back(png::color{color.red, color.green, color.blue});
     }
@@ -88,7 +89,7 @@ void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const
         const GBATile &tile = tileset.tiles[tilesetTileIndex];
         png::byte paletteIndex = tileset.paletteIndexesOfTile[tilesetTileIndex];
         png::byte indexInPalette = tile.getPixel(pixelIndex);
-        switch (config.tilesPngPaletteMode) {
+        switch (ctx.output.paletteMode) {
         case PAL0:
         case GREYSCALE:
           out[pixelRow][pixelCol] = indexInPalette;
@@ -106,7 +107,7 @@ void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const
   }
 }
 
-void emitMetatilesBin(const Config &config, std::ostream &out, const CompiledTileset &tileset)
+void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset)
 {
   for (std::size_t i = 0; i < tileset.assignments.size(); i++) {
     auto &assignment = tileset.assignments.at(i);
@@ -127,7 +128,7 @@ void emitMetatilesBin(const Config &config, std::ostream &out, const CompiledTil
 
 TEST_CASE("emitPalette should write the expected JASC pal to the output stream")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
   porytiles::GBAPalette palette{};
   palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
   palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
@@ -156,14 +157,14 @@ TEST_CASE("emitPalette should write the expected JASC pal to the output stream")
                                "0 0 0\n";
 
   std::stringstream outputStream;
-  porytiles::emitPalette(config, outputStream, palette);
+  porytiles::emitPalette(ctx, outputStream, palette);
 
   CHECK(outputStream.str() == expectedOutput);
 }
 
 TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output stream")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   std::string expectedOutput = "JASC-PAL\n"
                                "0100\n"
@@ -186,7 +187,7 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
                                "0 0 0\n";
 
   std::stringstream outputStream;
-  porytiles::emitZeroedPalette(config, outputStream);
+  porytiles::emitZeroedPalette(ctx, outputStream);
 
   CHECK(outputStream.str() == expectedOutput);
 }
@@ -230,7 +231,7 @@ TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings"
 
 TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
@@ -241,8 +242,8 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
-  porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
-  auto compiled = porytiles::compile(context, decompiled);
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  auto compiled = porytiles::compile(ctx, decompiled);
 
   std::filesystem::path parentDir = porytiles::createTmpdir();
   std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");

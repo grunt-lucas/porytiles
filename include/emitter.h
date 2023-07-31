@@ -4,7 +4,7 @@
 #include <iostream>
 #include <png.hpp>
 
-#include "config.h"
+#include "ptcontext.h"
 #include "types.h"
 
 /**
@@ -18,22 +18,22 @@ extern const std::size_t TILES_PNG_WIDTH_IN_TILES;
 /**
  * TODO : fill in doc comment
  */
-void emitPalette(const Config &config, std::ostream &out, const GBAPalette &palette);
+void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette);
 
 /**
  * TODO : fill in doc comment
  */
-void emitZeroedPalette(const Config &config, std::ostream &out);
+void emitZeroedPalette(PtContext &ctx, std::ostream &out);
 
 /**
  * TODO : fill in doc comment
  */
-void emitTilesPng(const Config &config, png::image<png::index_pixel> &out, const CompiledTileset &tileset);
+void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset);
 
 /**
  * TODO : fill in doc comment
  */
-void emitMetatilesBin(const Config &config, std::ostream &out, const CompiledTileset &tileset);
+void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset);
 
 } // namespace porytiles
 

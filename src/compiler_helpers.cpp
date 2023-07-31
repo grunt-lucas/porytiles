@@ -8,15 +8,14 @@
 #include <vector>
 
 #include "compiler.h"
-#include "compiler_context.h"
-#include "config.h"
 #include "importer.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"
 
 namespace porytiles {
 // TODO : change this to receive CompilerContext once I have made that type available
-size_t insertRGBA(const Config &config, NormalizedPalette &palette, RGBA32 rgba)
+size_t insertRGBA(PtContext &ctx, NormalizedPalette &palette, RGBA32 rgba)
 {
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
@@ -24,7 +23,7 @@ size_t insertRGBA(const Config &config, NormalizedPalette &palette, RGBA32 rgba)
    * will pixels that are of transparent color (again, set by the user but default to magenta). Fails if a tile
    * contains too many unique colors or if an invalid alpha value is detected.
    */
-  if (rgba.alpha == ALPHA_TRANSPARENT || rgba == config.transparencyColor) {
+  if (rgba.alpha == ALPHA_TRANSPARENT || rgba == ctx.compilerConfig.transparencyColor) {
     return 0;
   }
   else if (rgba.alpha == ALPHA_OPAQUE) {
@@ -50,14 +49,14 @@ size_t insertRGBA(const Config &config, NormalizedPalette &palette, RGBA32 rgba)
   throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 
-NormalizedTile candidate(const Config &config, const RGBATile &rgba, bool hFlip, bool vFlip)
+NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool vFlip)
 {
   /*
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
    * form). We'll use this to generate candidates to find the true normal form.
    */
   // TODO : same color precision note as above in insertRGBA
-  NormalizedTile candidateTile{config.transparencyColor};
+  NormalizedTile candidateTile{ctx.compilerConfig.transparencyColor};
   candidateTile.hFlip = hFlip;
   candidateTile.vFlip = vFlip;
 
@@ -65,30 +64,29 @@ NormalizedTile candidate(const Config &config, const RGBATile &rgba, bool hFlip,
     for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
       std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
       std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
-      candidateTile.setPixel(row, col,
-                             insertRGBA(config, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
+      candidateTile.setPixel(row, col, insertRGBA(ctx, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
     }
   }
 
   return candidateTile;
 }
 
-NormalizedTile normalize(const Config &config, const RGBATile &rgba)
+NormalizedTile normalize(PtContext &ctx, const RGBATile &rgba)
 {
   /*
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
    * "lexicographic" order, where this order is determined by the std::array spaceship operator.
    */
-  auto noFlipsTile = candidate(config, rgba, false, false);
+  auto noFlipsTile = candidate(ctx, rgba, false, false);
 
   // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
   if (noFlipsTile.transparent()) {
     return noFlipsTile;
   }
 
-  auto hFlipTile = candidate(config, rgba, true, false);
-  auto vFlipTile = candidate(config, rgba, false, true);
-  auto bothFlipsTile = candidate(config, rgba, true, true);
+  auto hFlipTile = candidate(ctx, rgba, true, false);
+  auto vFlipTile = candidate(ctx, rgba, false, true);
+  auto bothFlipsTile = candidate(ctx, rgba, true, true);
 
   std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
   auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
@@ -96,7 +94,7 @@ NormalizedTile normalize(const Config &config, const RGBATile &rgba)
   return **normalizedTile;
 }
 
-std::vector<IndexedNormTile> normalizeDecompTiles(const Config &config, const DecompiledTileset &decompiledTileset)
+std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset)
 {
   /*
    * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
@@ -104,14 +102,14 @@ std::vector<IndexedNormTile> normalizeDecompTiles(const Config &config, const De
   std::vector<IndexedNormTile> normalizedTiles;
   DecompiledIndex decompiledIndex = 0;
   for (auto const &tile : decompiledTileset.tiles) {
-    auto normalizedTile = normalize(config, tile);
+    auto normalizedTile = normalize(ctx, tile);
     normalizedTiles.emplace_back(decompiledIndex++, normalizedTile);
   }
   return normalizedTiles;
 }
 
 std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
-buildColorIndexMaps(const Config &config, const std::vector<IndexedNormTile> &normalizedTiles,
+buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normalizedTiles,
                     const std::unordered_map<BGR15, std::size_t> &primaryIndexMap)
 {
   /*
@@ -145,7 +143,7 @@ buildColorIndexMaps(const Config &config, const std::vector<IndexedNormTile> &no
     }
   }
 
-  if (colorIndex > (PAL_SIZE - 1) * config.numPalettesInPrimary) {
+  if (colorIndex > (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary) {
     // TODO : better error context
     throw PtException{"too many unique colors"};
   }
@@ -189,12 +187,12 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
 }
 
 std::size_t gRecurseCount = 0;
-bool assign(const Config &config, AssignState state, std::vector<ColorSet> &solution,
+bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
             const std::vector<ColorSet> &primaryPalettes)
 {
   gRecurseCount++;
   // TODO : this is a horrible hack avert your eyes
-  if (gRecurseCount > config.maxRecurseCount) {
+  if (gRecurseCount > ctx.compilerConfig.maxRecurseCount) {
     // TODO : better error context
     throw PtException{"too many assignment recurses"};
   }
@@ -233,7 +231,7 @@ bool assign(const Config &config, AssignState state, std::vector<ColorSet> &solu
         unassignedCopy.pop_back();
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assign(config, updatedState, solution, primaryPalettes)) {
+        if (assign(ctx, updatedState, solution, primaryPalettes)) {
           return true;
         }
       }
@@ -294,7 +292,7 @@ bool assign(const Config &config, AssignState state, std::vector<ColorSet> &solu
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-    if (assign(config, updatedState, solution, primaryPalettes)) {
+    if (assign(ctx, updatedState, solution, primaryPalettes)) {
       return true;
     }
   }
@@ -322,7 +320,7 @@ GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette)
   return gbaTile;
 }
 
-void assignTilesPrimary(const CompilerContext &context, CompiledTileset &compiled,
+void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                         const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                         const std::vector<ColorSet> &assignedPalsSolution)
 {
@@ -350,10 +348,10 @@ void assignTilesPrimary(const CompilerContext &context, CompiledTileset &compile
     auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
     if (inserted.second) {
       compiled.tiles.push_back(gbaTile);
-      if (compiled.tiles.size() > context.config.numTilesInPrimary) {
+      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
         // TODO : better error context
         throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                          std::to_string(context.config.numTilesInPrimary)};
+                          std::to_string(ctx.fieldmapConfig.numTilesInPrimary)};
       }
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
     }
@@ -363,7 +361,7 @@ void assignTilesPrimary(const CompilerContext &context, CompiledTileset &compile
   compiled.tileIndexes = tileIndexes;
 }
 
-void assignTilesSecondary(const CompilerContext &context, CompiledTileset &compiled,
+void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
                           const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                           const std::vector<ColorSet> &primaryPaletteColorSets,
                           const std::vector<ColorSet> &assignedPalsSolution)
@@ -386,26 +384,27 @@ void assignTilesSecondary(const CompilerContext &context, CompiledTileset &compi
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
     GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
-    if (context.primaryTileset->tileIndexes.find(gbaTile) != context.primaryTileset->tileIndexes.end()) {
+    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.find(gbaTile) !=
+        ctx.compilerContext.pairedPrimaryTiles->tileIndexes.end()) {
       // Tile was in the primary set
-      compiled.assignments.at(index) = {context.primaryTileset->tileIndexes.at(gbaTile), paletteIndex, normTile.hFlip,
-                                        normTile.vFlip};
+      compiled.assignments.at(index) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile), paletteIndex,
+                                        normTile.hFlip, normTile.vFlip};
     }
     else {
       // Tile was in the secondary set
       auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
       if (inserted.second) {
         compiled.tiles.push_back(gbaTile);
-        if (compiled.tiles.size() > context.config.numTilesInSecondary()) {
+        if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
           // TODO : better error context
           throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                            std::to_string(context.config.numTilesInSecondary())};
+                            std::to_string(ctx.fieldmapConfig.numTilesInSecondary())};
         }
         compiled.paletteIndexesOfTile.push_back(paletteIndex);
       }
       std::size_t tileIndex = inserted.first->second;
       // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
-      compiled.assignments.at(index) = {tileIndex + context.config.numTilesInPrimary, paletteIndex, normTile.hFlip,
+      compiled.assignments.at(index) = {tileIndex + ctx.fieldmapConfig.numTilesInPrimary, paletteIndex, normTile.hFlip,
                                         normTile.vFlip};
     }
   }
@@ -419,53 +418,53 @@ void assignTilesSecondary(const CompilerContext &context, CompiledTileset &compi
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   porytiles::NormalizedPalette palette1{};
   palette1.size = 1;
   palette1.colors = {};
 
   // invalid alpha value, must be opaque or transparent
-  CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, porytiles::RGBA32{0, 0, 0, 12}), "invalid alpha value: 12",
+  CHECK_THROWS_WITH_AS(insertRGBA(ctx, palette1, porytiles::RGBA32{0, 0, 0, 12}), "invalid alpha value: 12",
                        const porytiles::PtException &);
 
   // Transparent should return 0
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA_MAGENTA) == 0);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA_MAGENTA) == 0);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
 
   // insert colors
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_OPAQUE}) == 1);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{8, 0, 0, porytiles::ALPHA_OPAQUE}) == 2);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{16, 0, 0, porytiles::ALPHA_OPAQUE}) == 3);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{24, 0, 0, porytiles::ALPHA_OPAQUE}) == 4);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{32, 0, 0, porytiles::ALPHA_OPAQUE}) == 5);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{40, 0, 0, porytiles::ALPHA_OPAQUE}) == 6);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{48, 0, 0, porytiles::ALPHA_OPAQUE}) == 7);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{56, 0, 0, porytiles::ALPHA_OPAQUE}) == 8);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{64, 0, 0, porytiles::ALPHA_OPAQUE}) == 9);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{80, 0, 0, porytiles::ALPHA_OPAQUE}) == 11);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{88, 0, 0, porytiles::ALPHA_OPAQUE}) == 12);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{96, 0, 0, porytiles::ALPHA_OPAQUE}) == 13);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{104, 0, 0, porytiles::ALPHA_OPAQUE}) == 14);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_OPAQUE}) == 1);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{8, 0, 0, porytiles::ALPHA_OPAQUE}) == 2);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{16, 0, 0, porytiles::ALPHA_OPAQUE}) == 3);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{24, 0, 0, porytiles::ALPHA_OPAQUE}) == 4);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{32, 0, 0, porytiles::ALPHA_OPAQUE}) == 5);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{40, 0, 0, porytiles::ALPHA_OPAQUE}) == 6);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{48, 0, 0, porytiles::ALPHA_OPAQUE}) == 7);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{56, 0, 0, porytiles::ALPHA_OPAQUE}) == 8);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{64, 0, 0, porytiles::ALPHA_OPAQUE}) == 9);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{80, 0, 0, porytiles::ALPHA_OPAQUE}) == 11);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{88, 0, 0, porytiles::ALPHA_OPAQUE}) == 12);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{96, 0, 0, porytiles::ALPHA_OPAQUE}) == 13);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{104, 0, 0, porytiles::ALPHA_OPAQUE}) == 14);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
 
   // repeat colors should return their indexes
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
 
   // Transparent should still return 0
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA_MAGENTA) == 0);
-  CHECK(insertRGBA(config, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA_MAGENTA) == 0);
+  CHECK(insertRGBA(ctx, palette1, porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
 
   // Should throw, palette full
-  CHECK_THROWS_WITH_AS(insertRGBA(config, palette1, porytiles::RGBA_CYAN), "too many unique colors in tile",
+  CHECK_THROWS_WITH_AS(insertRGBA(ctx, palette1, porytiles::RGBA_CYAN), "too many unique colors in tile",
                        const porytiles::PtException &);
 }
 
 TEST_CASE("candidate should return the NormalizedTile with requested flips")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/corners.png"));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -474,7 +473,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: no flips")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, false, false);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, false, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
@@ -501,7 +500,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, true, false);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, true, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
@@ -528,7 +527,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: vFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, false, true);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, false, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
@@ -555,7 +554,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip and vFlip")
   {
-    porytiles::NormalizedTile candidate = porytiles::candidate(config, tile, true, true);
+    porytiles::NormalizedTile candidate = porytiles::candidate(ctx, tile, true, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
@@ -583,14 +582,14 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
 TEST_CASE("normalize should return the normal form of the given tile")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/corners.png"));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
   porytiles::RGBATile tile = tiles.tiles[0];
 
-  porytiles::NormalizedTile normalizedTile = porytiles::normalize(config, tile);
+  porytiles::NormalizedTile normalizedTile = porytiles::normalize(ctx, tile);
   CHECK(normalizedTile.palette.size == 9);
   CHECK_FALSE(normalizedTile.hFlip);
   CHECK_FALSE(normalizedTile.vFlip);
@@ -610,13 +609,13 @@ TEST_CASE("normalize should return the normal form of the given tile")
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
 
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
 
   CHECK(indexedNormTiles.size() == 4);
 
@@ -676,14 +675,14 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> normalizedTiles = porytiles::normalizeDecompTiles(config, tiles);
+  std::vector<IndexedNormTile> normalizedTiles = porytiles::normalizeDecompTiles(ctx, tiles);
 
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, normalizedTiles, {});
+  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, normalizedTiles, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -731,13 +730,13 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 
 TEST_CASE("matchNormalizedWithColorSets should return the expected data structures")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+  std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -830,20 +829,19 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
 TEST_CASE("assign should correctly assign all normalized palettes or fail if impossible")
 {
-  porytiles::Config config = porytiles::defaultConfig();
-  config.transparencyColor = porytiles::RGBA_MAGENTA;
+  porytiles::PtContext ctx{};
 
   SUBCASE("It should successfully allocate a simple 2x2 tileset png")
   {
     constexpr int SOLUTION_SIZE = 2;
-    config.numPalettesInPrimary = SOLUTION_SIZE;
-    config.maxRecurseCount = 20;
+    ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
+    ctx.compilerConfig.maxRecurseCount = 20;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
     auto [indexedNormTilesWithColorSets, colorSets] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
@@ -859,7 +857,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(config, state, solution, {}));
+    CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -872,15 +870,15 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   SUBCASE("It should successfully allocate a large, complex PNG")
   {
     constexpr int SOLUTION_SIZE = 5;
-    config.numPalettesInPrimary = SOLUTION_SIZE;
-    config.secondary = false;
-    config.maxRecurseCount = 200;
+    ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
+    ctx.secondary = false;
+    ctx.compilerConfig.maxRecurseCount = 200;
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(config, tiles);
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(config, indexedNormTiles, {});
+    std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
     auto [indexedNormTilesWithColorSets, colorSets] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
@@ -896,7 +894,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(config, state, solution, {}));
+    CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
@@ -908,19 +906,19 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
 
 TEST_CASE("makeTile should create the expected GBATile from the given NormalizedTile and GBAPalette")
 {
-  porytiles::Config config = porytiles::defaultConfig();
-  config.transparencyColor = porytiles::RGBA_MAGENTA;
-  config.numPalettesInPrimary = 2;
-  config.numTilesInPrimary = 4;
-  config.secondary = false;
-  config.maxRecurseCount = 5;
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.transparencyColor = porytiles::RGBA_MAGENTA;
+  ctx.fieldmapConfig.numPalettesInPrimary = 2;
+  ctx.fieldmapConfig.numTilesInPrimary = 4;
+  ctx.secondary = false;
+  ctx.compilerConfig.maxRecurseCount = 5;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(config, tiles);
-  porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
-  auto compiledTiles = porytiles::compile(context, tiles);
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  auto compiledTiles = porytiles::compile(ctx, tiles);
 
   porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles->palettes[0]);
   CHECK_FALSE(indexedNormTiles[0].second.hFlip);

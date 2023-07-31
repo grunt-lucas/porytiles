@@ -6,8 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_context.h"
-#include "config.h"
+#include "ptcontext.h"
 #include "types.h"
 
 /**
@@ -25,16 +24,16 @@ using IndexedNormTile = std::pair<DecompiledIndex, porytiles::NormalizedTile>;
 using IndexedNormTileWithColorSet = std::tuple<DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
 
 namespace porytiles {
-std::size_t insertRGBA(const Config &config, NormalizedPalette &palette, RGBA32 rgba);
+std::size_t insertRGBA(PtContext &ctx, NormalizedPalette &palette, RGBA32 rgba);
 
-NormalizedTile candidate(const Config &config, const RGBATile &rgba, bool hFlip, bool vFlip);
+NormalizedTile candidate(PtContext &ctx, const RGBATile &rgba, bool hFlip, bool vFlip);
 
-NormalizedTile normalize(const Config &config, const RGBATile &rgba);
+NormalizedTile normalize(PtContext &ctx, const RGBATile &rgba);
 
-std::vector<IndexedNormTile> normalizeDecompTiles(const Config &config, const DecompiledTileset &decompiledTileset);
+std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset);
 
 std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
-buildColorIndexMaps(const Config &config, const std::vector<IndexedNormTile> &normalizedTiles,
+buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normalizedTiles,
                     const std::unordered_map<BGR15, std::size_t> &primaryIndexMap);
 
 ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap, const NormalizedPalette &palette);
@@ -54,16 +53,16 @@ struct AssignState {
   std::vector<ColorSet> unassigned;
 };
 extern std::size_t gRecurseCount;
-bool assign(const Config &config, AssignState state, std::vector<ColorSet> &solution,
+bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
             const std::vector<ColorSet> &primaryPalettes);
 
 GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette);
 
-void assignTilesPrimary(const CompilerContext &context, CompiledTileset &compiled,
+void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                         const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                         const std::vector<ColorSet> &assignedPalsSolution);
 
-void assignTilesSecondary(const CompilerContext &context, CompiledTileset &compiled,
+void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
                           const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                           const std::vector<ColorSet> &primaryPaletteColorSets,
                           const std::vector<ColorSet> &assignedPalsSolution);

@@ -1,7 +1,7 @@
 #ifndef PORYTILES_DRIVER_H
 #define PORYTILES_DRIVER_H
 
-#include "config.h"
+#include "ptcontext.h"
 #include "types.h"
 
 /**
@@ -10,7 +10,7 @@
 
 namespace porytiles {
 
-void drive(const Config &config);
+void drive(PtContext &ctx);
 
 }
 

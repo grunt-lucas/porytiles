@@ -6,8 +6,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "compiler_context.h"
 #include "logger.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 
 namespace porytiles {

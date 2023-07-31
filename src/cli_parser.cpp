@@ -10,29 +10,25 @@
 #include <fmt/format.h>
 
 #include "cli_options.h"
-#include "config.h"
 #include "errors.h"
 #include "program_name.h"
 #include "ptexception.h"
 
 namespace porytiles {
 
-static void parseGlobalOptions(Config &config, int argc, char **argv);
-static void parseSubcommand(Config &config, int argc, char **argv);
-static void parseCompileRaw(Config &config, int argc, char **argv);
-static void parseCompile(Config &config, int argc, char **argv);
+static void parseGlobalOptions(PtContext &ctx, int argc, char **argv);
+static void parseSubcommand(PtContext &ctx, int argc, char **argv);
+static void parseCompileRaw(PtContext &ctx, int argc, char **argv);
+static void parseCompile(PtContext &ctx, int argc, char **argv);
 
-void parseOptions(Config &config, int argc, char **argv)
+void parseOptions(PtContext &ctx, int argc, char **argv)
 {
-  parseGlobalOptions(config, argc, argv);
-  parseSubcommand(config, argc, argv);
+  parseGlobalOptions(ctx, argc, argv);
+  parseSubcommand(ctx, argc, argv);
 
-  switch (config.subcommand) {
-  case COMPILE_RAW:
-    parseCompileRaw(config, argc, argv);
-    break;
+  switch (ctx.subcommand) {
   case COMPILE:
-    parseCompile(config, argc, argv);
+    parseCompile(ctx, argc, argv);
     break;
   }
 }
@@ -112,7 +108,7 @@ VERSION_DESCRIPTION + "\n"
 // @formatter:on
 // clang-format on
 
-static void parseGlobalOptions(Config &config, int argc, char **argv)
+static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 {
   std::ostringstream implodedShorts;
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -156,18 +152,15 @@ static void parseGlobalOptions(Config &config, int argc, char **argv)
 
 const std::string COMPILE_RAW_COMMAND = "compile-raw";
 const std::string COMPILE_COMMAND = "compile";
-static void parseSubcommand(Config &config, int argc, char **argv)
+static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
     throw PtException{"missing required subcommand, try `porytiles --help' for usage information"};
   }
 
   std::string subcommand = argv[optind++];
-  if (subcommand == COMPILE_RAW_COMMAND) {
-    config.subcommand = Subcommand::COMPILE_RAW;
-  }
-  else if (subcommand == COMPILE_COMMAND) {
-    config.subcommand = Subcommand::COMPILE;
+  if (subcommand == COMPILE_COMMAND) {
+    ctx.subcommand = Subcommand::COMPILE;
   }
   else {
     throw PtException{"unrecognized subcommand: " + subcommand};
@@ -214,93 +207,93 @@ NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
-static void parseCompileRaw(Config &config, int argc, char **argv)
-{
-  std::ostringstream implodedShorts;
-  std::copy(COMPILE_RAW_SHORTS.begin(), COMPILE_RAW_SHORTS.end(),
-            std::ostream_iterator<std::string>(implodedShorts, ""));
-  // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
-  std::string shortOptions = "+" + implodedShorts.str();
-  static struct option longOptions[] = {
-      {OUTPUT_LONG.c_str(), required_argument, nullptr, OUTPUT_SHORT},
-      {TILES_PNG_PALETTE_MODE_LONG.c_str(), required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-      {SECONDARY_LONG.c_str(), no_argument, nullptr, SECONDARY_VAL},
-      {PRESET_POKEEMERALD_LONG.c_str(), no_argument, nullptr, PRESET_POKEEMERALD_VAL},
-      {PRESET_POKEFIRERED_LONG.c_str(), no_argument, nullptr, PRESET_POKEFIRERED_VAL},
-      {PRESET_POKERUBY_LONG.c_str(), no_argument, nullptr, PRESET_POKERUBY_VAL},
-      {NUM_TILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-      {NUM_TILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-      {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-      {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-      {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
-      {nullptr, no_argument, nullptr, 0}};
+// static void parseCompileRaw(PtContext& ctx, int argc, char **argv)
+// {
+//   std::ostringstream implodedShorts;
+//   std::copy(COMPILE_RAW_SHORTS.begin(), COMPILE_RAW_SHORTS.end(),
+//             std::ostream_iterator<std::string>(implodedShorts, ""));
+//   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
+//   std::string shortOptions = "+" + implodedShorts.str();
+//   static struct option longOptions[] = {
+//       {OUTPUT_LONG.c_str(), required_argument, nullptr, OUTPUT_SHORT},
+//       {TILES_PNG_PALETTE_MODE_LONG.c_str(), required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
+//       {SECONDARY_LONG.c_str(), no_argument, nullptr, SECONDARY_VAL},
+//       {PRESET_POKEEMERALD_LONG.c_str(), no_argument, nullptr, PRESET_POKEEMERALD_VAL},
+//       {PRESET_POKEFIRERED_LONG.c_str(), no_argument, nullptr, PRESET_POKEFIRERED_VAL},
+//       {PRESET_POKERUBY_LONG.c_str(), no_argument, nullptr, PRESET_POKERUBY_VAL},
+//       {NUM_TILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
+//       {NUM_TILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_TILES_TOTAL_VAL},
+//       {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
+//       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+//       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
+//       {nullptr, no_argument, nullptr, 0}};
 
-  while (true) {
-    const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
+//   while (true) {
+//     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
 
-    if (opt == -1)
-      break;
+//     if (opt == -1)
+//       break;
 
-    switch (opt) {
-    case OUTPUT_SHORT:
-      config.outputPath = optarg;
-      break;
-    case TILES_PNG_PALETTE_MODE_VAL:
-      config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
-      break;
-    case SECONDARY_VAL:
-      config.secondary = true;
-      break;
-    case NUM_PALETTES_IN_PRIMARY_VAL:
-      config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
-      break;
-    case NUM_PALETTES_TOTAL_VAL:
-      config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
-      break;
-    case NUM_TILES_IN_PRIMARY_VAL:
-      config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
-      break;
-    case NUM_TILES_TOTAL_VAL:
-      config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
-      break;
-    case PRESET_POKEEMERALD_VAL:
-      setPokeemeraldDefaultTilesetParams(config);
-      break;
-    case PRESET_POKEFIRERED_VAL:
-      setPokefireredDefaultTilesetParams(config);
-      break;
-    case PRESET_POKERUBY_VAL:
-      setPokerubyDefaultTilesetParams(config);
-      break;
+//     switch (opt) {
+//     case OUTPUT_SHORT:
+//       config.outputPath = optarg;
+//       break;
+//     case TILES_PNG_PALETTE_MODE_VAL:
+//       config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+//       break;
+//     case SECONDARY_VAL:
+//       config.secondary = true;
+//       break;
+//     case NUM_PALETTES_IN_PRIMARY_VAL:
+//       config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+//       break;
+//     case NUM_PALETTES_TOTAL_VAL:
+//       config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+//       break;
+//     case NUM_TILES_IN_PRIMARY_VAL:
+//       config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+//       break;
+//     case NUM_TILES_TOTAL_VAL:
+//       config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+//       break;
+//     case PRESET_POKEEMERALD_VAL:
+//       setPokeemeraldDefaultTilesetParams(config);
+//       break;
+//     case PRESET_POKEFIRERED_VAL:
+//       setPokefireredDefaultTilesetParams(config);
+//       break;
+//     case PRESET_POKERUBY_VAL:
+//       setPokerubyDefaultTilesetParams(config);
+//       break;
 
-    // Help message upon '-h/--help' goes to stdout
-    case HELP_SHORT:
-      fmt::println("{}", COMPILE_RAW_HELP);
-      exit(0);
-    // Help message on invalid or unknown options goes to stderr and gives error code
-    case '?':
-    default:
-      fmt::println(stderr, "{}", COMPILE_RAW_HELP);
-      exit(2);
-    }
-  }
+//     // Help message upon '-h/--help' goes to stdout
+//     case HELP_SHORT:
+//       fmt::println("{}", COMPILE_RAW_HELP);
+//       exit(0);
+//     // Help message on invalid or unknown options goes to stderr and gives error code
+//     case '?':
+//     default:
+//       fmt::println(stderr, "{}", COMPILE_RAW_HELP);
+//       exit(2);
+//     }
+//   }
 
-  if (config.secondary && (argc - optind) != 2) {
-    throw PtException{"must specify TILES and TILES_PRIMARY args, see `porytiles compile-raw --help'"};
-  }
-  else if ((argc - optind) != 1) {
-    throw PtException{"must specify one TILES arg, see `porytiles compile-raw --help'"};
-  }
+//   if (config.secondary && (argc - optind) != 2) {
+//     throw PtException{"must specify TILES and TILES_PRIMARY args, see `porytiles compile-raw --help'"};
+//   }
+//   else if ((argc - optind) != 1) {
+//     throw PtException{"must specify one TILES arg, see `porytiles compile-raw --help'"};
+//   }
 
-  if (config.secondary) {
-    config.rawSecondaryTilesheetPath = argv[optind++];
-  }
-  config.rawPrimaryTilesheetPath = argv[optind++];
+//   if (config.secondary) {
+//     config.rawSecondaryTilesheetPath = argv[optind++];
+//   }
+//   config.rawPrimaryTilesheetPath = argv[optind++];
 
-  config.validate();
+//   config.validate();
 
-  throw PtException{"TODO : support `compile-raw' correctly"};
-}
+//   throw PtException{"TODO : support `compile-raw' correctly"};
+// }
 
 // -------------------------
 // |    COMPILE COMMAND    |
@@ -357,7 +350,7 @@ NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
-static void parseCompile(Config &config, int argc, char **argv)
+static void parseCompile(PtContext &ctx, int argc, char **argv)
 {
   std::ostringstream implodedShorts;
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -387,40 +380,40 @@ static void parseCompile(Config &config, int argc, char **argv)
 
     switch (opt) {
     case OUTPUT_SHORT:
-      config.outputPath = optarg;
+      ctx.output.path = optarg;
       break;
     case TILES_PNG_PALETTE_MODE_VAL:
-      config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+      ctx.output.paletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
       break;
     case SECONDARY_VAL:
-      config.secondary = true;
+      ctx.secondary = true;
       break;
     case NUM_TILES_IN_PRIMARY_VAL:
-      config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_TILES_TOTAL_VAL:
-      config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
       break;
     case NUM_METATILES_IN_PRIMARY_VAL:
-      config.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_METATILES_TOTAL_VAL:
-      config.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
       break;
     case NUM_PALETTES_IN_PRIMARY_VAL:
-      config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_PALETTES_TOTAL_VAL:
-      config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
       break;
     case PRESET_POKEEMERALD_VAL:
-      setPokeemeraldDefaultTilesetParams(config);
+      ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
       break;
     case PRESET_POKEFIRERED_VAL:
-      setPokefireredDefaultTilesetParams(config);
+      ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
       break;
     case PRESET_POKERUBY_VAL:
-      setPokerubyDefaultTilesetParams(config);
+      ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -435,24 +428,24 @@ static void parseCompile(Config &config, int argc, char **argv)
     }
   }
 
-  if (config.secondary && (argc - optind) != 6) {
+  if (ctx.secondary && (argc - optind) != 6) {
     throw PtException{"must specify BOTTOM, MIDDLE, TOP, BOTTOM_PRIMARY, MIDDLE_PRIMARY, TOP_PRIMARY layer args, see "
                       "`porytiles compile --help'"};
   }
-  else if (!config.secondary && (argc - optind) != 3) {
+  else if (!ctx.secondary && (argc - optind) != 3) {
     throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile --help'"};
   }
 
-  if (config.secondary) {
-    config.bottomSecondaryTilesheetPath = argv[optind++];
-    config.middleSecondaryTilesheetPath = argv[optind++];
-    config.topSecondaryTilesheetPath = argv[optind++];
+  if (ctx.secondary) {
+    ctx.inputPaths.bottomSecondaryTilesheetPath = argv[optind++];
+    ctx.inputPaths.middleSecondaryTilesheetPath = argv[optind++];
+    ctx.inputPaths.topSecondaryTilesheetPath = argv[optind++];
   }
-  config.bottomPrimaryTilesheetPath = argv[optind++];
-  config.middlePrimaryTilesheetPath = argv[optind++];
-  config.topPrimaryTilesheetPath = argv[optind++];
+  ctx.inputPaths.bottomPrimaryTilesheetPath = argv[optind++];
+  ctx.inputPaths.middlePrimaryTilesheetPath = argv[optind++];
+  ctx.inputPaths.topPrimaryTilesheetPath = argv[optind++];
 
-  config.validate();
+  ctx.validate();
 }
 
 } // namespace porytiles

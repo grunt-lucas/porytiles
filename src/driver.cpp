@@ -9,48 +9,47 @@
 #include <png.hpp>
 
 #include "compiler.h"
-#include "config.h"
 #include "emitter.h"
 #include "importer.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 #include "tmpfiles.h"
 
 namespace porytiles {
 
-static void emitPalettes(const Config &config, const CompiledTileset &compiledTiles,
+static void emitPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
                          const std::filesystem::path &palettesPath)
 {
-  for (std::size_t i = 0; i < config.numPalettesTotal; i++) {
+  for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
     std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
     fileName += ".pal";
     std::filesystem::path paletteFile = palettesPath / fileName;
     std::ofstream outPal{paletteFile.string()};
     if (i < compiledTiles.palettes.size()) {
-      emitPalette(config, outPal, compiledTiles.palettes.at(i));
+      emitPalette(ctx, outPal, compiledTiles.palettes.at(i));
     }
     else {
-      emitZeroedPalette(config, outPal);
+      emitZeroedPalette(ctx, outPal);
     }
     outPal.close();
   }
 }
 
-static void emitTilesPng(const Config &config, const CompiledTileset &compiledTiles,
-                         const std::filesystem::path &tilesetPath)
+static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, const std::filesystem::path &tilesetPath)
 {
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
       porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
   png::image<png::index_pixel> tilesPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};
 
-  emitTilesPng(config, tilesPng, compiledTiles);
+  emitTilesPng(ctx, tilesPng, compiledTiles);
   tilesPng.write(tilesetPath);
 }
 
-static void driveCompileRaw(const Config &config)
+static void driveCompileRaw(PtContext &ctx)
 {
-  // if (std::filesystem::exists(config.outputPath) && !std::filesystem::is_directory(config.outputPath)) {
-  //     throw PtException{config.outputPath + ": exists but is not a directory"};
+  // if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
+  //     throw PtException{ctx.output.path + ": exists but is not a directory"};
   // }
   // if (config.secondary) {
   //     if (!std::filesystem::exists(config.rawSecondaryTilesheetPath)) {
@@ -91,11 +90,11 @@ static void driveCompileRaw(const Config &config)
   // // TODO : change this over to compile once it supports RAW mode
   // CompiledTileset compiledTiles = compilePrimary(context, decompiledTiles);
 
-  // std::filesystem::path outputPath(config.outputPath);
+  // std::filesystem::path outputPath(ctx.output.path);
   // std::filesystem::path palettesDir("palettes");
   // std::filesystem::path tilesetFile("tiles.png");
-  // std::filesystem::path tilesetPath = config.outputPath / tilesetFile;
-  // std::filesystem::path palettesPath = config.outputPath / palettesDir;
+  // std::filesystem::path tilesetPath = ctx.output.path / tilesetFile;
+  // std::filesystem::path palettesPath = ctx.output.path / palettesDir;
 
   // if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
   //     throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
@@ -109,129 +108,129 @@ static void driveCompileRaw(const Config &config)
   // emitTilesPng(config, compiledTiles, tilesetPath);
 }
 
-static void driveCompile(const Config &config)
+static void driveCompile(PtContext &ctx)
 {
-  if (std::filesystem::exists(config.outputPath) && !std::filesystem::is_directory(config.outputPath)) {
-    throw PtException{config.outputPath + ": exists but is not a directory"};
+  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
+    throw PtException{ctx.output.path + ": exists but is not a directory"};
   }
-  if (config.secondary) {
-    if (!std::filesystem::exists(config.bottomSecondaryTilesheetPath)) {
-      throw PtException{config.bottomSecondaryTilesheetPath + ": file does not exist"};
+  if (ctx.secondary) {
+    if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath + ": file does not exist"};
     }
-    if (!std::filesystem::is_regular_file(config.bottomSecondaryTilesheetPath)) {
-      throw PtException{config.bottomSecondaryTilesheetPath + ": exists but was not a regular file"};
+    if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath + ": exists but was not a regular file"};
     }
-    if (!std::filesystem::exists(config.middleSecondaryTilesheetPath)) {
-      throw PtException{config.middleSecondaryTilesheetPath + ": file does not exist"};
+    if (!std::filesystem::exists(ctx.inputPaths.middleSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath + ": file does not exist"};
     }
-    if (!std::filesystem::is_regular_file(config.middleSecondaryTilesheetPath)) {
-      throw PtException{config.middleSecondaryTilesheetPath + ": exists but was not a regular file"};
+    if (!std::filesystem::is_regular_file(ctx.inputPaths.middleSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath + ": exists but was not a regular file"};
     }
-    if (!std::filesystem::exists(config.topSecondaryTilesheetPath)) {
-      throw PtException{config.topSecondaryTilesheetPath + ": file does not exist"};
+    if (!std::filesystem::exists(ctx.inputPaths.topSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath + ": file does not exist"};
     }
-    if (!std::filesystem::is_regular_file(config.topSecondaryTilesheetPath)) {
-      throw PtException{config.topSecondaryTilesheetPath + ": exists but was not a regular file"};
+    if (!std::filesystem::is_regular_file(ctx.inputPaths.topSecondaryTilesheetPath)) {
+      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath + ": exists but was not a regular file"};
     }
   }
-  if (!std::filesystem::exists(config.bottomPrimaryTilesheetPath)) {
-    throw PtException{config.bottomPrimaryTilesheetPath + ": file does not exist"};
+  if (!std::filesystem::exists(ctx.inputPaths.bottomPrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath + ": file does not exist"};
   }
-  if (!std::filesystem::is_regular_file(config.bottomPrimaryTilesheetPath)) {
-    throw PtException{config.bottomPrimaryTilesheetPath + ": exists but was not a regular file"};
+  if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomPrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath + ": exists but was not a regular file"};
   }
-  if (!std::filesystem::exists(config.middlePrimaryTilesheetPath)) {
-    throw PtException{config.middlePrimaryTilesheetPath + ": file does not exist"};
+  if (!std::filesystem::exists(ctx.inputPaths.middlePrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath + ": file does not exist"};
   }
-  if (!std::filesystem::is_regular_file(config.middlePrimaryTilesheetPath)) {
-    throw PtException{config.middlePrimaryTilesheetPath + ": exists but was not a regular file"};
+  if (!std::filesystem::is_regular_file(ctx.inputPaths.middlePrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath + ": exists but was not a regular file"};
   }
-  if (!std::filesystem::exists(config.topPrimaryTilesheetPath)) {
-    throw PtException{config.topPrimaryTilesheetPath + ": file does not exist"};
+  if (!std::filesystem::exists(ctx.inputPaths.topPrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath + ": file does not exist"};
   }
-  if (!std::filesystem::is_regular_file(config.topPrimaryTilesheetPath)) {
-    throw PtException{config.topPrimaryTilesheetPath + ": exists but was not a regular file"};
+  if (!std::filesystem::is_regular_file(ctx.inputPaths.topPrimaryTilesheetPath)) {
+    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath + ": exists but was not a regular file"};
   }
 
-  if (config.secondary) {
+  if (ctx.secondary) {
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{config.bottomSecondaryTilesheetPath};
+      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomSecondaryTilesheetPath};
     }
     catch (const std::exception &exception) {
-      throw PtException{config.bottomSecondaryTilesheetPath + " is not a valid PNG file"};
-    }
-    try {
-      // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{config.middleSecondaryTilesheetPath};
-    }
-    catch (const std::exception &exception) {
-      throw PtException{config.middleSecondaryTilesheetPath + " is not a valid PNG file"};
+      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath + " is not a valid PNG file"};
     }
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{config.topSecondaryTilesheetPath};
+      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middleSecondaryTilesheetPath};
     }
     catch (const std::exception &exception) {
-      throw PtException{config.topSecondaryTilesheetPath + " is not a valid PNG file"};
+      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath + " is not a valid PNG file"};
+    }
+    try {
+      // We do this here so if the input is not a PNG, we can catch and give a better error
+      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topSecondaryTilesheetPath};
+    }
+    catch (const std::exception &exception) {
+      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath + " is not a valid PNG file"};
     }
   }
   try {
     // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{config.bottomPrimaryTilesheetPath};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomPrimaryTilesheetPath};
   }
   catch (const std::exception &exception) {
-    throw PtException{config.bottomPrimaryTilesheetPath + " is not a valid PNG file"};
+    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath + " is not a valid PNG file"};
   }
   try {
     // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{config.middlePrimaryTilesheetPath};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middlePrimaryTilesheetPath};
   }
   catch (const std::exception &exception) {
-    throw PtException{config.middlePrimaryTilesheetPath + " is not a valid PNG file"};
+    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath + " is not a valid PNG file"};
   }
   try {
     // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{config.topPrimaryTilesheetPath};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topPrimaryTilesheetPath};
   }
   catch (const std::exception &exception) {
-    throw PtException{config.topPrimaryTilesheetPath + " is not a valid PNG file"};
+    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath + " is not a valid PNG file"};
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
-  if (config.secondary) {
-    png::image<png::rgba_pixel> bottomPrimaryPng{config.bottomPrimaryTilesheetPath};
-    png::image<png::rgba_pixel> middlePrimaryPng{config.middlePrimaryTilesheetPath};
-    png::image<png::rgba_pixel> topPrimaryPng{config.topPrimaryTilesheetPath};
+  if (ctx.secondary) {
+    png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath};
+    png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath};
+    png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath};
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-    auto compiledPrimaryTiles = compile(primaryContext, decompiledPrimaryTiles);
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+    auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
-    png::image<png::rgba_pixel> bottomPng{config.bottomSecondaryTilesheetPath};
-    png::image<png::rgba_pixel> middlePng{config.middleSecondaryTilesheetPath};
-    png::image<png::rgba_pixel> topPng{config.topSecondaryTilesheetPath};
+    png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath};
+    png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath};
+    png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-    porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
-    secondaryContext.primaryTileset = std::move(compiledPrimaryTiles);
-    compiledTiles = compile(secondaryContext, decompiledTiles);
+    ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
+    ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
+    compiledTiles = compile(ctx, decompiledTiles);
   }
   else {
-    png::image<png::rgba_pixel> bottomPng{config.bottomPrimaryTilesheetPath};
-    png::image<png::rgba_pixel> middlePng{config.middlePrimaryTilesheetPath};
-    png::image<png::rgba_pixel> topPng{config.topPrimaryTilesheetPath};
+    png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomPrimaryTilesheetPath};
+    png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath};
+    png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
-    porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-    compiledTiles = compile(primaryContext, decompiledTiles);
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+    compiledTiles = compile(ctx, decompiledTiles);
   }
 
-  std::filesystem::path outputPath(config.outputPath);
+  std::filesystem::path outputPath(ctx.output.path);
   std::filesystem::path palettesDir("palettes");
   std::filesystem::path tilesetFile("tiles.png");
   std::filesystem::path metatilesFile("metatiles.bin");
-  std::filesystem::path tilesetPath = config.outputPath / tilesetFile;
-  std::filesystem::path metatilesPath = config.outputPath / metatilesFile;
-  std::filesystem::path palettesPath = config.outputPath / palettesDir;
+  std::filesystem::path tilesetPath = ctx.output.path / tilesetFile;
+  std::filesystem::path metatilesPath = ctx.output.path / metatilesFile;
+  std::filesystem::path palettesPath = ctx.output.path / palettesDir;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
     throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
@@ -241,25 +240,22 @@ static void driveCompile(const Config &config)
   }
   std::filesystem::create_directories(palettesPath);
 
-  emitPalettes(config, *compiledTiles, palettesPath);
-  emitTilesPng(config, *compiledTiles, tilesetPath);
+  emitPalettes(ctx, *compiledTiles, palettesPath);
+  emitTilesPng(ctx, *compiledTiles, tilesetPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
-  emitMetatilesBin(config, outMetatiles, *compiledTiles);
+  emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
   outMetatiles.close();
 }
 
-void drive(const Config &config)
+void drive(PtContext &ctx)
 {
-  switch (config.subcommand) {
-  case COMPILE_RAW:
-    driveCompileRaw(config);
-    break;
+  switch (ctx.subcommand) {
   case COMPILE:
-    driveCompile(config);
+    driveCompile(ctx);
     break;
   default:
-    throw std::runtime_error{"unknown subcommand setting: " + std::to_string(config.subcommand)};
+    throw std::runtime_error{"unknown subcommand setting: " + std::to_string(ctx.subcommand)};
   }
 }
 
@@ -267,20 +263,20 @@ void drive(const Config &config)
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary set")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
-  config.secondary = false;
-  config.outputPath = parentDir;
-  config.subcommand = porytiles::COMPILE;
+  ctx.secondary = false;
+  ctx.output.path = parentDir;
+  ctx.subcommand = porytiles::COMPILE;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_primary.png"));
-  config.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
-  config.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
-  config.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
+  ctx.inputPaths.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
+  ctx.inputPaths.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
+  ctx.inputPaths.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
 
-  porytiles::drive(config);
+  porytiles::drive(ctx);
 
   // TODO : check pal files
 
@@ -355,11 +351,11 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
 TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set")
 {
-  porytiles::Config config = porytiles::defaultConfig();
+  porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
-  config.secondary = true;
-  config.outputPath = parentDir;
-  config.subcommand = porytiles::COMPILE;
+  ctx.secondary = true;
+  ctx.output.path = parentDir;
+  ctx.subcommand = porytiles::COMPILE;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
@@ -368,14 +364,14 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_secondary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/top_secondary.png"));
 
-  config.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
-  config.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
-  config.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
-  config.bottomSecondaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_secondary.png";
-  config.middleSecondaryTilesheetPath = "res/tests/simple_metatiles_2/middle_secondary.png";
-  config.topSecondaryTilesheetPath = "res/tests/simple_metatiles_2/top_secondary.png";
+  ctx.inputPaths.bottomPrimaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_primary.png";
+  ctx.inputPaths.middlePrimaryTilesheetPath = "res/tests/simple_metatiles_2/middle_primary.png";
+  ctx.inputPaths.topPrimaryTilesheetPath = "res/tests/simple_metatiles_2/top_primary.png";
+  ctx.inputPaths.bottomSecondaryTilesheetPath = "res/tests/simple_metatiles_2/bottom_secondary.png";
+  ctx.inputPaths.middleSecondaryTilesheetPath = "res/tests/simple_metatiles_2/middle_secondary.png";
+  ctx.inputPaths.topSecondaryTilesheetPath = "res/tests/simple_metatiles_2/top_secondary.png";
 
-  porytiles::drive(config);
+  porytiles::drive(ctx);
 
   // TODO : check pal files
 

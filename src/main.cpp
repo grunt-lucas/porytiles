@@ -7,17 +7,17 @@
 #include <fmt/color.h>
 
 #include "cli_parser.h"
-#include "config.h"
 #include "driver.h"
 #include "logger.h"
 #include "program_name.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 
 int main(int argc, char **argv)
 try {
-  porytiles::Config config = porytiles::defaultConfig();
-  porytiles::parseOptions(config, argc, argv);
-  porytiles::drive(config);
+  porytiles::PtContext ctx{};
+  porytiles::parseOptions(ctx, argc, argv);
+  porytiles::drive(ctx);
   return 0;
 }
 catch (const porytiles::PtException &e) {

@@ -7,22 +7,22 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
-#include "config.h"
 #include "program_name.h"
+#include "ptcontext.h"
 
 namespace porytiles {
 
 template <typename... T>
-void pt_logln(const Config &config, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
+void pt_logln(const PtContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  if (config.verbose) {
+  if (ctx.verbose) {
     fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
   }
 }
 
-template <typename... T> void pt_log(const Config &config, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
+template <typename... T> void pt_log(const PtContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  if (config.verbose) {
+  if (ctx.verbose) {
     fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
   }
 }

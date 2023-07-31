@@ -25,6 +25,12 @@ struct FieldmapConfig {
   std::size_t numPalettesTotal;
   std::size_t numTilesPerMetatile;
 
+  [[nodiscard]] std::size_t numPalettesInSecondary() const { return numPalettesTotal - numPalettesInPrimary; }
+
+  [[nodiscard]] std::size_t numTilesInSecondary() const { return numTilesTotal - numTilesInPrimary; }
+
+  [[nodiscard]] std::size_t numMetatilesInSecondary() const { return numMetatilesTotal - numMetatilesInPrimary; }
+
   static FieldmapConfig pokeemeraldDefaults()
   {
     FieldmapConfig config;
@@ -80,16 +86,23 @@ struct InputPaths {
 struct Output {
   TilesPngPaletteMode paletteMode;
   std::string path;
+
+  Output() : paletteMode{GREYSCALE} {}
 };
 
 struct CompilerConfig {
-  CompilerMode compilerMode;
+  CompilerMode mode;
   RGBA32 transparencyColor;
   std::size_t maxRecurseCount;
-  std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
+
+  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, maxRecurseCount{2'000'000} {}
 };
 
-struct CompilerContext {};
+struct CompilerContext {
+  std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
+
+  CompilerContext() : pairedPrimaryTiles{nullptr} {}
+};
 
 struct PtContext {
   FieldmapConfig fieldmapConfig;
@@ -101,12 +114,32 @@ struct PtContext {
   // Command params
   Subcommand subcommand;
   bool verbose;
+  // TODO : remove this in favor of compiler mode
+  bool secondary;
 
   PtContext()
       : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
-        compilerContext{}, subcommand{}
+        compilerContext{}, subcommand{}, verbose{false}
   {
-    verbose = false;
+  }
+
+  void validate() const
+  {
+    // TODO : handle this in a better way
+    if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
+      throw PtException{"fieldmap parameter `numTilesInPrimary' (" + std::to_string(fieldmapConfig.numTilesInPrimary) +
+                        ") exceeded `numTilesTotal' (" + std::to_string(fieldmapConfig.numTilesTotal) + ")"};
+    }
+    if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
+      throw PtException{"fieldmap parameter `numMetatilesInPrimary' (" +
+                        std::to_string(fieldmapConfig.numMetatilesInPrimary) + ") exceeded `numMetatilesTotal' (" +
+                        std::to_string(fieldmapConfig.numMetatilesTotal) + ")"};
+    }
+    if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
+      throw PtException{"fieldmap parameter `numPalettesInPrimary' (" +
+                        std::to_string(fieldmapConfig.numPalettesInPrimary) + ") exceeded `numPalettesTotal' (" +
+                        std::to_string(fieldmapConfig.numPalettesTotal) + ")"};
+    }
   }
 };
 

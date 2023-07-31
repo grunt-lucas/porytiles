@@ -9,59 +9,59 @@
 #include <unordered_map>
 #include <utility>
 
-#include "compiler_context.h"
 #include "compiler_helpers.h"
-#include "config.h"
 #include "errors.h"
 #include "importer.h"
 #include "logger.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"
 
 namespace porytiles {
-std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const DecompiledTileset &decompiledTileset)
+std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)
 {
-  if (context.mode == SECONDARY && (context.config.numPalettesInPrimary != context.primaryTileset->palettes.size())) {
-    fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(context.config.numPalettesInPrimary,
-                                                     context.primaryTileset->palettes.size());
+  if (ctx.compilerConfig.mode == SECONDARY &&
+      (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTiles->palettes.size())) {
+    fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(ctx.fieldmapConfig.numPalettesInPrimary,
+                                                     ctx.compilerContext.pairedPrimaryTiles->palettes.size());
   }
 
   auto compiled = std::make_unique<CompiledTileset>();
 
-  if (context.mode == PRIMARY) {
-    compiled->palettes.resize(context.config.numPalettesInPrimary);
-    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / context.config.numTilesPerMetatile);
-    if (inputMetatileCount > context.config.numMetatilesInPrimary) {
+  if (ctx.compilerConfig.mode == PRIMARY) {
+    compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
+    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+    if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
       throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
-                        ") exceeded primary metatile limit (" + std::to_string(context.config.numMetatilesInPrimary) +
-                        ")"};
+                        ") exceeded primary metatile limit (" +
+                        std::to_string(ctx.fieldmapConfig.numMetatilesInPrimary) + ")"};
     }
   }
-  else if (context.mode == SECONDARY) {
-    compiled->palettes.resize(context.config.numPalettesTotal);
-    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / context.config.numTilesPerMetatile);
-    if (inputMetatileCount > context.config.numMetatilesInSecondary()) {
+  else if (ctx.compilerConfig.mode == SECONDARY) {
+    compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
+    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+    if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
       throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
                         ") exceeded secondary metatile limit (" +
-                        std::to_string(context.config.numMetatilesInSecondary()) + ")"};
+                        std::to_string(ctx.fieldmapConfig.numMetatilesInSecondary()) + ")"};
     }
   }
-  else if (context.mode == RAW) {
-    throw std::runtime_error{"TODO : support RAW mode"};
+  else if (ctx.compilerConfig.mode == FREESTANDING) {
+    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(context.mode);
+    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
   }
   compiled->assignments.resize(decompiledTileset.tiles.size());
 
   // Build helper data structures for the assignments
   std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
   const std::unordered_map<BGR15, std::size_t> *primaryColorIndexMap = &emptyPrimaryColorIndexMap;
-  if (context.mode == SECONDARY) {
-    primaryColorIndexMap = &(context.primaryTileset->colorIndexMap);
+  if (ctx.compilerConfig.mode == SECONDARY) {
+    primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTiles->colorIndexMap);
   }
-  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(context.config, decompiledTileset);
-  auto [colorToIndex, indexToColor] = buildColorIndexMaps(context.config, indexedNormTiles, *primaryColorIndexMap);
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, decompiledTileset);
+  auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
   compiled->colorIndexMap = colorToIndex;
   auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
@@ -71,34 +71,34 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
    */
   std::vector<ColorSet> assignedPalsSolution;
   std::vector<ColorSet> tmpHardwarePalettes;
-  if (context.mode == PRIMARY) {
-    assignedPalsSolution.reserve(context.config.numPalettesInPrimary);
-    tmpHardwarePalettes.resize(context.config.numPalettesInPrimary);
+  if (ctx.compilerConfig.mode == PRIMARY) {
+    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
+    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
   }
-  else if (context.mode == SECONDARY) {
-    assignedPalsSolution.reserve(context.config.numPalettesInSecondary());
-    tmpHardwarePalettes.resize(context.config.numPalettesInSecondary());
+  else if (ctx.compilerConfig.mode == SECONDARY) {
+    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
+    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
   }
-  else if (context.mode == RAW) {
-    throw std::runtime_error{"TODO : support RAW mode"};
+  else if (ctx.compilerConfig.mode == FREESTANDING) {
+    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(context.mode);
+    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
   }
   std::vector<ColorSet> unassignedNormPalettes;
   std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
   std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
                    [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
   std::vector<ColorSet> primaryPaletteColorSets{};
-  if (context.mode == SECONDARY) {
+  if (ctx.compilerConfig.mode == SECONDARY) {
     /*
      * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
      * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
      * palettes.
      */
-    primaryPaletteColorSets.reserve(context.primaryTileset->palettes.size());
-    for (std::size_t i = 0; i < context.primaryTileset->palettes.size(); i++) {
-      const auto &gbaPalette = context.primaryTileset->palettes.at(i);
+    primaryPaletteColorSets.reserve(ctx.compilerContext.pairedPrimaryTiles->palettes.size());
+    for (std::size_t i = 0; i < ctx.compilerContext.pairedPrimaryTiles->palettes.size(); i++) {
+      const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTiles->palettes.at(i);
       primaryPaletteColorSets.emplace_back();
       for (std::size_t j = 1; j < gbaPalette.size; j++) {
         primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
@@ -108,7 +108,7 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
   gRecurseCount = 0;
-  bool assignSuccessful = assign(context.config, state, assignedPalsSolution, primaryPaletteColorSets);
+  bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
     // TODO : better error context
     throw PtException{"failed to allocate palettes"};
@@ -118,10 +118,10 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
    * and so we may need to do something fancier here so that the colors align correctly.
    */
-  if (context.mode == PRIMARY) {
-    for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
+  if (ctx.compilerConfig.mode == PRIMARY) {
+    for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       ColorSet palAssignments = assignedPalsSolution.at(i);
-      compiled->palettes.at(i).colors.at(0) = rgbaToBgr(context.config.transparencyColor);
+      compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
       std::size_t colorIndex = 1;
       for (std::size_t j = 0; j < palAssignments.size(); j++) {
         if (palAssignments.test(j)) {
@@ -132,16 +132,16 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (context.mode == SECONDARY) {
-    for (std::size_t i = 0; i < context.config.numPalettesInPrimary; i++) {
+  else if (ctx.compilerConfig.mode == SECONDARY) {
+    for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       // Copy the primary set's palettes into this tileset so tiles can use them
       for (std::size_t j = 0; j < PAL_SIZE; j++) {
-        compiled->palettes.at(i).colors.at(j) = context.primaryTileset->palettes.at(i).colors.at(j);
+        compiled->palettes.at(i).colors.at(j) = ctx.compilerContext.pairedPrimaryTiles->palettes.at(i).colors.at(j);
       }
     }
-    for (std::size_t i = context.config.numPalettesInPrimary; i < context.config.numPalettesTotal; i++) {
-      ColorSet palAssignments = assignedPalsSolution.at(i - context.config.numPalettesInPrimary);
-      compiled->palettes.at(i).colors.at(0) = rgbaToBgr(context.config.transparencyColor);
+    for (std::size_t i = ctx.fieldmapConfig.numPalettesInPrimary; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
+      ColorSet palAssignments = assignedPalsSolution.at(i - ctx.fieldmapConfig.numPalettesInPrimary);
+      compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
       std::size_t colorIndex = 1;
       for (std::size_t j = 0; j < palAssignments.size(); j++) {
         if (palAssignments.test(j)) {
@@ -152,28 +152,27 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (context.mode == RAW) {
-    throw std::runtime_error{"TODO : support RAW mode"};
+  else if (ctx.compilerConfig.mode == FREESTANDING) {
+    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(context.mode);
+    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
   }
 
   /*
    * Build the tile assignments.
    */
-  if (context.mode == PRIMARY) {
-    assignTilesPrimary(context, *compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
+  if (ctx.compilerConfig.mode == PRIMARY) {
+    assignTilesPrimary(ctx, *compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
   }
-  else if (context.mode == SECONDARY) {
-    assignTilesSecondary(context, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets,
-                         assignedPalsSolution);
+  else if (ctx.compilerConfig.mode == SECONDARY) {
+    assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets, assignedPalsSolution);
   }
-  else if (context.mode == RAW) {
-    throw std::runtime_error{"TODO : support RAW mode"};
+  else if (ctx.compilerConfig.mode == FREESTANDING) {
+    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(context.mode);
+    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
   }
 
   return compiled;
@@ -186,23 +185,21 @@ std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const D
 
 TEST_CASE("compile simple example should perform as expected")
 {
-  porytiles::Config config = porytiles::defaultConfig();
-  config.transparencyColor = porytiles::RGBA_MAGENTA;
-  config.numPalettesInPrimary = 2;
-  config.numTilesInPrimary = 4;
-  config.maxRecurseCount = 5;
-  config.verbose = true;
-  porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 2;
+  ctx.fieldmapConfig.numTilesInPrimary = 4;
+  ctx.compilerConfig.maxRecurseCount = 5;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
-  auto compiledTiles = porytiles::compile(context, tiles);
+  auto compiledTiles = porytiles::compile(ctx, tiles);
 
   // Check that compiled palettes are as expected
-  CHECK(compiledTiles->palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledTiles->palettes.at(0).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledTiles->palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-  CHECK(compiledTiles->palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledTiles->palettes.at(1).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledTiles->palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
   CHECK(compiledTiles->palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
   CHECK(compiledTiles->palettes.at(1).colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
@@ -262,9 +259,10 @@ TEST_CASE("compile simple example should perform as expected")
 
 TEST_CASE("compile function should fill out CompiledTileset struct with expected values")
 {
-  porytiles::Config config = porytiles::defaultConfig();
-  config.numPalettesInPrimary = 3;
-  config.numPalettesTotal = 6;
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
@@ -275,8 +273,7 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   porytiles::DecompiledTileset decompiledPrimary =
       porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
 
-  porytiles::CompilerContext context{config, porytiles::CompilerMode::PRIMARY};
-  auto compiledPrimary = porytiles::compile(context, decompiledPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
   // Check that tiles are as expected
   CHECK(compiledPrimary->tiles.size() == 5);
@@ -300,18 +297,18 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   CHECK(compiledPrimary->paletteIndexesOfTile[4] == 0);
 
   // Check that compiled palettes are as expected
-  CHECK(compiledPrimary->palettes.size() == config.numPalettesInPrimary);
-  CHECK(compiledPrimary->palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledPrimary->palettes.size() == ctx.fieldmapConfig.numPalettesInPrimary);
+  CHECK(compiledPrimary->palettes.at(0).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledPrimary->palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
-  CHECK(compiledPrimary->palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledPrimary->palettes.at(1).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledPrimary->palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
   CHECK(compiledPrimary->palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-  CHECK(compiledPrimary->palettes.at(2).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledPrimary->palettes.at(2).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledPrimary->palettes.at(2).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
   CHECK(compiledPrimary->palettes.at(2).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
 
   // Check that all assignments are correct
-  CHECK(compiledPrimary->assignments.size() == porytiles::METATILES_IN_ROW * config.numTilesPerMetatile);
+  CHECK(compiledPrimary->assignments.size() == porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile);
 
   CHECK(compiledPrimary->assignments[0].hFlip);
   CHECK_FALSE(compiledPrimary->assignments[0].vFlip);
@@ -373,8 +370,8 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   CHECK(compiledPrimary->assignments[11].tileIndex == 0);
   CHECK(compiledPrimary->assignments[11].paletteIndex == 0);
 
-  for (std::size_t index = config.numTilesPerMetatile; index < porytiles::METATILES_IN_ROW * config.numTilesPerMetatile;
-       index++) {
+  for (std::size_t index = ctx.fieldmapConfig.numTilesPerMetatile;
+       index < porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile; index++) {
     CHECK_FALSE(compiledPrimary->assignments[index].hFlip);
     CHECK_FALSE(compiledPrimary->assignments[index].vFlip);
     CHECK(compiledPrimary->assignments[index].tileIndex == 0);
@@ -399,9 +396,10 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
 
 TEST_CASE("compileSecondary function should fill out CompiledTileset struct with expected values")
 {
-  porytiles::Config config = porytiles::defaultConfig();
-  config.numPalettesInPrimary = 3;
-  config.numPalettesTotal = 6;
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
@@ -412,8 +410,7 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   porytiles::DecompiledTileset decompiledPrimary =
       porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
 
-  porytiles::CompilerContext primaryContext{config, porytiles::CompilerMode::PRIMARY};
-  auto compiledPrimary = porytiles::compile(primaryContext, decompiledPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_secondary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_secondary.png"));
@@ -423,9 +420,9 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/top_secondary.png"};
   porytiles::DecompiledTileset decompiledSecondary =
       porytiles::importLayeredTilesFromPngs(bottomSecondary, middleSecondary, topSecondary);
-  porytiles::CompilerContext secondaryContext{config, porytiles::CompilerMode::SECONDARY};
-  secondaryContext.primaryTileset = std::move(compiledPrimary);
-  auto compiledSecondary = porytiles::compile(secondaryContext, decompiledSecondary);
+  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
+  ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
+  auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
   // Check that tiles are as expected
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary_expected_tiles.png"));
@@ -448,25 +445,25 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   CHECK(compiledSecondary->paletteIndexesOfTile[5] == 5);
 
   // Check that compiled palettes are as expected
-  CHECK(compiledSecondary->palettes.at(0).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(0).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledSecondary->palettes.at(0).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
-  CHECK(compiledSecondary->palettes.at(1).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(1).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledSecondary->palettes.at(1).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
   CHECK(compiledSecondary->palettes.at(1).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
-  CHECK(compiledSecondary->palettes.at(2).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(2).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledSecondary->palettes.at(2).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
   CHECK(compiledSecondary->palettes.at(2).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
-  CHECK(compiledSecondary->palettes.at(3).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(3).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledSecondary->palettes.at(3).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
   CHECK(compiledSecondary->palettes.at(3).colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
   CHECK(compiledSecondary->palettes.at(3).colors[3] == porytiles::rgbaToBgr(porytiles::RGBA_PURPLE));
   CHECK(compiledSecondary->palettes.at(3).colors[4] == porytiles::rgbaToBgr(porytiles::RGBA_LIME));
-  CHECK(compiledSecondary->palettes.at(4).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
-  CHECK(compiledSecondary->palettes.at(5).colors[0] == porytiles::rgbaToBgr(config.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(4).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
+  CHECK(compiledSecondary->palettes.at(5).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
   CHECK(compiledSecondary->palettes.at(5).colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
 
   // Check that all assignments are correct
-  CHECK(compiledSecondary->assignments.size() == porytiles::METATILES_IN_ROW * config.numTilesPerMetatile);
+  CHECK(compiledSecondary->assignments.size() == porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile);
 
   CHECK_FALSE(compiledSecondary->assignments[0].hFlip);
   CHECK_FALSE(compiledSecondary->assignments[0].vFlip);
@@ -475,12 +472,12 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
 
   CHECK_FALSE(compiledSecondary->assignments[1].hFlip);
   CHECK(compiledSecondary->assignments[1].vFlip);
-  CHECK(compiledSecondary->assignments[1].tileIndex == 0 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[1].tileIndex == 0 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[1].paletteIndex == 2);
 
   CHECK_FALSE(compiledSecondary->assignments[2].hFlip);
   CHECK_FALSE(compiledSecondary->assignments[2].vFlip);
-  CHECK(compiledSecondary->assignments[2].tileIndex == 1 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[2].tileIndex == 1 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[2].paletteIndex == 3);
 
   CHECK_FALSE(compiledSecondary->assignments[3].hFlip);
@@ -495,12 +492,12 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
 
   CHECK_FALSE(compiledSecondary->assignments[5].hFlip);
   CHECK_FALSE(compiledSecondary->assignments[5].vFlip);
-  CHECK(compiledSecondary->assignments[5].tileIndex == 2 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[5].tileIndex == 2 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[5].paletteIndex == 3);
 
   CHECK_FALSE(compiledSecondary->assignments[6].hFlip);
   CHECK_FALSE(compiledSecondary->assignments[6].vFlip);
-  CHECK(compiledSecondary->assignments[6].tileIndex == 3 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[6].tileIndex == 3 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[6].paletteIndex == 3);
 
   CHECK_FALSE(compiledSecondary->assignments[7].hFlip);
@@ -510,7 +507,7 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
 
   CHECK_FALSE(compiledSecondary->assignments[8].hFlip);
   CHECK_FALSE(compiledSecondary->assignments[8].vFlip);
-  CHECK(compiledSecondary->assignments[8].tileIndex == 4 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[8].tileIndex == 4 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[8].paletteIndex == 3);
 
   CHECK_FALSE(compiledSecondary->assignments[9].hFlip);
@@ -525,11 +522,11 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
 
   CHECK(compiledSecondary->assignments[11].hFlip);
   CHECK(compiledSecondary->assignments[11].vFlip);
-  CHECK(compiledSecondary->assignments[11].tileIndex == 5 + config.numTilesInPrimary);
+  CHECK(compiledSecondary->assignments[11].tileIndex == 5 + ctx.fieldmapConfig.numTilesInPrimary);
   CHECK(compiledSecondary->assignments[11].paletteIndex == 5);
 
-  for (std::size_t index = config.numTilesPerMetatile; index < porytiles::METATILES_IN_ROW * config.numTilesPerMetatile;
-       index++) {
+  for (std::size_t index = ctx.fieldmapConfig.numTilesPerMetatile;
+       index < porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile; index++) {
     CHECK_FALSE(compiledSecondary->assignments[index].hFlip);
     CHECK_FALSE(compiledSecondary->assignments[index].vFlip);
     CHECK(compiledSecondary->assignments[index].tileIndex == 0);

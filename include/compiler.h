@@ -3,8 +3,7 @@
 
 #include <memory>
 
-#include "compiler_context.h"
-#include "config.h"
+#include "ptcontext.h"
 #include "types.h"
 
 /**
@@ -16,7 +15,7 @@ namespace porytiles {
 /**
  * TODO : fill in doc comments
  */
-std::unique_ptr<CompiledTileset> compile(const CompilerContext &context, const DecompiledTileset &decompiledTileset);
+std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset);
 
 } // namespace porytiles
 
