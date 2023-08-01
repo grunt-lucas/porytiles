@@ -96,9 +96,6 @@ clean:
 	$(RM) -r $(RELEASE) $(DEBUG)
 	$(RM) default.profraw testcov.profdata
 
-format:
-	clang-format -style=file -i $(SRC_FILES) $(INCLUDE_FILES)
-
 tidy:
 	clang-tidy -checks='cert-*' -header-filter='.*' $(SRC_FILES) -- --std=c++20 -Iinclude $(pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
 
