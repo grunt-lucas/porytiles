@@ -105,12 +105,38 @@ struct CompilerContext {
   CompilerContext() : pairedPrimaryTiles{nullptr} {}
 };
 
+struct Errors {
+  std::size_t errCount;
+  bool dieCompilation;
+
+  Errors() : errCount{0}, dieCompilation{false} {}
+};
+
+enum WarningMode { OFF, WARN, ERR };
+
+struct Warnings {
+  std::size_t colorPrecisionLossCount;
+  WarningMode colorPrecisionLossMode;
+
+  std::size_t paletteAllocEfficCount;
+  WarningMode paletteAllocEfficMode;
+
+  [[nodiscard]] std::size_t warnCount() const { return colorPrecisionLossCount + paletteAllocEfficCount; }
+
+  Warnings()
+      : colorPrecisionLossCount{0}, colorPrecisionLossMode{OFF}, paletteAllocEfficCount{0}, paletteAllocEfficMode{OFF}
+  {
+  }
+};
+
 struct PtContext {
   FieldmapConfig fieldmapConfig;
   InputPaths inputPaths;
   Output output;
   CompilerConfig compilerConfig;
   CompilerContext compilerContext;
+  Errors errors;
+  Warnings warnings;
 
   // Command params
   Subcommand subcommand;
@@ -118,7 +144,7 @@ struct PtContext {
 
   PtContext()
       : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
-        compilerContext{}, subcommand{}, verbose{false}
+        compilerContext{}, errors{}, warnings{}, subcommand{}, verbose{false}
   {
   }
 
