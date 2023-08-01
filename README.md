@@ -77,7 +77,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 11. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
-./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/simple_metatiles_2/bottom_secondary.png res/tests/simple_metatiles_2/middle_secondary.png res/tests/simple_metatiles_2/top_secondary.png
+./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/simple_metatiles_2/bottom_secondary.png res/tests/simple_metatiles_2/middle_secondary.png res/tests/simple_metatiles_2/top_secondary.png res/tests/simple_metatiles_2/bottom_primary.png res/tests/simple_metatiles_2/middle_primary.png res/tests/simple_metatiles_2/top_primary.png
 ```
 
 12. In Porymap, select `File -> Reload Project`.
