@@ -14,6 +14,12 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 For detailed documentation about Porytiles features and internal workings, please see
 [the wiki.](https://github.com/grunt-lucas/porytiles/wiki/Porytiles-Homepage)
 
+## Table of Contents
+1. [Why Should I Use This Tool?](#why-should-i-use-this-tool)
+2. [Planned Features](#planned-features)
+3. [Building](#building)
+4. [Getting Started](#getting-started)
+
 ## Why Should I Use This Tool?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
