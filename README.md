@@ -24,6 +24,20 @@ file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
+## Planned Features
+
+|  Feature  |  Completed?  |  Available In Version:  |
+|-----------|--------------|---------|
+| Generate `palettes/*.pal`   | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
+| Generate `tiles.png`        | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
+| Generate `metatiles.bin`    | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
+| Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [0.0.3](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.3) |
+| Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
+| Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
+| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
+| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
+| Support `.ora` files as input to compile command   | ❌ |  |
+
 ## Building
 
 LLVM 16 (i.e. `clang++`) is the "official" Porytiles build toolchain. However, most reasonable C++ compilers should
@@ -84,17 +98,3 @@ Once you've cloned and built Porytiles, try the following little demo.
 
 13. Your map now has a custom primary and secondary tileset! Feel free to keep editing these sets to see what Porytiles
     can do!
-
-## Planned Features
-
-|  Feature  |  Completed?  |  Available In Version:  |
-|-----------|--------------|---------|
-| Generate `palettes/*.pal`   | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Generate `tiles.png`        | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Generate `metatiles.bin`    | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [0.0.3](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.3) |
-| Support for animated tiles, i.e. stable placement in `tiles.png`   | ❌ |  |
-| Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
-| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
-| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
-| Support `.ora` files as input to compile command   | ❌ |  |
