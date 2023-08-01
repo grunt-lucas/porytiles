@@ -39,6 +39,8 @@
 
 + Add `--verbose` logs to stderr
 
++ Set up auto-generated documentation: doxygen? RTD?
+
 + Support for animated tiles, i.e. stable placement in `tiles.png`
 
 + Decompile compiled tilesets back into three layer PNGs + animated sets
