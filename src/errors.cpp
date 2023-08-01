@@ -12,15 +12,15 @@
 
 namespace porytiles {
 
-void fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
-                                                      std::size_t primaryPalettesSize)
+void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
+                                                              std::size_t primaryPalettesSize)
 {
   throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
                            std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) +
                            ")"};
 }
 
-void fatal_unknownCompilerMode(CompilerMode mode)
+void internalerror_unknownCompilerMode(CompilerMode mode)
 {
   throw std::runtime_error{"unknown CompilerMode: " + std::to_string(mode)};
 }

@@ -433,8 +433,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 {
   if (ctx.compilerConfig.mode == SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTiles->palettes.size())) {
-    fatal_numPalettesInPrimaryNeqPrimaryPalettesSize(ctx.fieldmapConfig.numPalettesInPrimary,
-                                                     ctx.compilerContext.pairedPrimaryTiles->palettes.size());
+    internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(ctx.fieldmapConfig.numPalettesInPrimary,
+                                                             ctx.compilerContext.pairedPrimaryTiles->palettes.size());
   }
 
   auto compiled = std::make_unique<CompiledTileset>();
@@ -461,7 +461,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
   }
   compiled->assignments.resize(decompiledTileset.tiles.size());
 
@@ -495,7 +495,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
   }
   std::vector<ColorSet> unassignedNormPalettes;
   std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
@@ -569,7 +569,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
   }
 
   /*
@@ -585,7 +585,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    fatal_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
   }
 
   return compiled;
