@@ -241,7 +241,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
-  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   auto compiled = porytiles::compile(ctx, decompiled);
 

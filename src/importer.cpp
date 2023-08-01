@@ -4,6 +4,7 @@
 #include <png.hpp>
 
 #include "errors.h"
+#include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"
 
@@ -40,43 +41,35 @@ DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel> &png)
   return decompiledTiles;
 }
 
-DecompiledTileset importLayeredTilesFromPngs(const png::image<png::rgba_pixel> &bottom,
+DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top)
 {
-  bool invalidDimension = false;
   if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16("bottom", bottom.get_height());
-    invalidDimension = true;
+    error_layerHeightNotDivisibleBy16(ctx.errors, "bottom", bottom.get_height());
   }
   if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16("middle", middle.get_height());
-    invalidDimension = true;
+    error_layerHeightNotDivisibleBy16(ctx.errors, "middle", middle.get_height());
   }
   if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16("top", top.get_height());
-    invalidDimension = true;
+    error_layerHeightNotDivisibleBy16(ctx.errors, "top", top.get_height());
   }
 
   if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128("bottom", bottom.get_width());
-    invalidDimension = true;
+    error_layerWidthNeq128(ctx.errors, "bottom", bottom.get_width());
   }
   if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128("middle", middle.get_width());
-    invalidDimension = true;
+    error_layerWidthNeq128(ctx.errors, "middle", middle.get_width());
   }
   if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128("top", top.get_width());
-    invalidDimension = true;
+    error_layerWidthNeq128(ctx.errors, "top", top.get_width());
   }
   if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
-    error_layerHeightsMustEq(bottom.get_height(), middle.get_height(), top.get_height());
-    invalidDimension = true;
+    error_layerHeightsMustEq(ctx.errors, bottom.get_height(), middle.get_height(), top.get_height());
   }
 
-  if (invalidDimension) {
-    die_compilationTerminated();
+  if (ctx.errors.errCount > 0) {
+    die_errorCount(ctx.errors);
   }
 
   DecompiledTileset decompiledTiles;
@@ -185,6 +178,8 @@ TEST_CASE("importRawTilesFromPng should read an RGBA PNG into a DecompiledTilese
 
 TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a DecompiledTileset in correct metatile order")
 {
+  porytiles::PtContext ctx{};
+
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/top.png"));
@@ -193,7 +188,7 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
   png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(bottom, middle, top);
+  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
 
   // Metatile 0 bottom layer
   CHECK(tiles.tiles[0] == porytiles::RGBA_TILE_RED);

@@ -1247,7 +1247,7 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
   porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
+      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -1384,7 +1384,7 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
   porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(bottomPrimary, middlePrimary, topPrimary);
+      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -1395,7 +1395,7 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/middle_secondary.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/top_secondary.png"};
   porytiles::DecompiledTileset decompiledSecondary =
-      porytiles::importLayeredTilesFromPngs(bottomSecondary, middleSecondary, topSecondary);
+      porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
   ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);

@@ -203,14 +203,14 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath};
     DecompiledTileset decompiledPrimaryTiles =
-        importLayeredTilesFromPngs(bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
+        importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath};
-    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
+    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
@@ -219,7 +219,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomPrimaryTilesheetPath};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath};
-    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(bottomPng, middlePng, topPng);
+    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     compiledTiles = compile(ctx, decompiledTiles);
   }

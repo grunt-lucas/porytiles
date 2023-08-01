@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <png.hpp>
 
+#include "ptcontext.h"
 #include "types.h"
 
 /**
@@ -19,7 +20,7 @@ namespace porytiles {
  */
 DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel> &png);
 
-DecompiledTileset importLayeredTilesFromPngs(const png::image<png::rgba_pixel> &bottom,
+DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top);
 

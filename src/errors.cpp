@@ -25,21 +25,28 @@ void fatal_unknownCompilerMode(CompilerMode mode)
   throw std::runtime_error{"unknown CompilerMode: " + std::to_string(mode)};
 }
 
-void error_layerHeightNotDivisibleBy16(std::string layer, png::uint_32 height)
+void error_layerHeightNotDivisibleBy16(Errors &err, std::string layer, png::uint_32 height)
 {
-  pt_err("{} layer input PNG height `{}' was not divisible by 16", layer, height);
+  err.errCount++;
+  pt_err("{} layer input PNG height '{}' was not divisible by 16", layer, fmt::styled(height, fmt::emphasis::bold));
 }
 
-void error_layerWidthNeq128(std::string layer, png::uint_32 width)
+void error_layerWidthNeq128(Errors &err, std::string layer, png::uint_32 width)
 {
-  pt_err("{} layer input PNG width `{}' was not 128", layer, width);
+  err.errCount++;
+  pt_err("{} layer input PNG width '{}' was not 128", layer, fmt::styled(width, fmt::emphasis::bold));
 }
 
-void error_layerHeightsMustEq(png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
+void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
 {
-  pt_err("bottom, middle, top layer input PNG heights `{}, {}, {}' were not equivalent", bottom, middle, top);
+  err.errCount++;
+  pt_err("bottom, middle, top layer input PNG heights '{}, {}, {}' were not equivalent",
+         fmt::styled(bottom, fmt::emphasis::bold), fmt::styled(middle, fmt::emphasis::bold),
+         fmt::styled(top, fmt::emphasis::bold));
 }
 
 void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
+
+void die_errorCount(const Errors &err) { throw PtException{std::to_string(err.errCount) + " errors generated."}; }
 
 } // namespace porytiles
