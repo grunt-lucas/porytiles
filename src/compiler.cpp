@@ -1,15 +1,15 @@
 #include "compiler.h"
 
 #include <algorithm>
+#include <bitset>
 #include <doctest.h>
 #include <memory>
 #include <png.hpp>
 #include <stdexcept>
 #include <tuple>
 #include <unordered_map>
-#include <utility>
-#include <bitset>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "errors.h"
