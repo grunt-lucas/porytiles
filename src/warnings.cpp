@@ -5,14 +5,15 @@
 
 namespace porytiles {
 
-void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors) {
-    if (warnings.colorPrecisionLossMode == ERR) {
-        errors.errCount++;
-    }
-    else if (warnings.colorPrecisionLossMode == WARN) {
-        warnings.colorPrecisionLossCount++;
-    }
-    // TODO : print logs
+void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors)
+{
+  if (warnings.colorPrecisionLossMode == ERR) {
+    errors.errCount++;
+  }
+  else if (warnings.colorPrecisionLossMode == WARN) {
+    warnings.colorPrecisionLossCount++;
+  }
+  // TODO : print logs
 }
 
 } // namespace porytiles
