@@ -24,36 +24,40 @@ file as part of your build, Porytiles takes an RGBA `top.png`, `middle.png`, and
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
+## Building
+
+LLVM 16 (i.e. `clang++`) is the "official" Porytiles build toolchain. However, most reasonable C++ compilers should
+work as well, assuming they have support for the C++20 standard. The Porytiles CI pipeline has a GCC 13 target, so that
+toolchain is confirmed to build Porytiles correctly. In the future, I intend to add more compiler targets (like MSVC).
+
 ## Getting Started
 
-First, clone and build Porytiles like so. You must have a version of Clang or GCC that supports C++20 features. The
-project CI pipeline uses GCC 13 and LLVM 16, so try those if older versions give you trouble. Alternatively, you can
-skip the build step by downloading a release binary from the [Releases](https://github.com/grunt-lucas/porytiles/releases)
-tab.
+First, clone and build Porytiles. (Alternatively, you can skip the build step by downloading a release binary from the
+[Releases](https://github.com/grunt-lucas/porytiles/releases) tab.)
 
 ```
 git clone https://github.com/grunt-lucas/porytiles.git
 cd porytiles
-make check
+CXX=clang++ make check
 ./release/bin/porytiles --help
 ```
 
 Once you've cloned and built Porytiles, try the following little demo.
 
-1. Open a `pokeemerald` project (`pokefirered` and `pokeruby` support is coming!) in Porymap, one that has triple-layer
-   metatiles enabled. Porytiles requires that you use triple layer metatiles (for now). If you don't know what this is
-   or how to enable, please see here:
+1. Open a `pokeemerald` project (`pokefirered` and `pokeruby` are also supported via command line options) in Porymap,
+   one that has triple-layer metatiles enabled. Porytiles requires that you use triple layer metatiles (for now). If you
+   don't know what this is or how to enable, please see here:
    https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles
 
-2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesTest`.
+2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesPrimaryTest`.
 
 3. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary
-   tileset, select `gTileset_PorytilesTest`.
+   tileset, select `gTileset_PorytilesPrimaryTest`.
 
 4. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
-./release/bin/porytiles compile -o path/to/project/data/tilesets/primary/porytiles_test res/examples/basic_primary_set/bottom.png res/examples/basic_primary_set/middle.png res/examples/basic_primary_set/top.png
+./release/bin/porytiles compile-primary -o path/to/project/data/tilesets/primary/porytiles_primary_test res/tests/simple_metatiles_2/bottom_primary.png res/tests/simple_metatiles_2/middle_primary.png res/tests/simple_metatiles_2/top_primary.png
 ```
 
 5. In Porymap, select `File -> Reload Project`.
@@ -63,7 +67,23 @@ Once you've cloned and built Porytiles, try the following little demo.
 7. Open one of the layer PNGs in `res/examples/basic_primary_set` and edit it. Re-run the command from Step 4, and then
    reload Porymap again like in Step 5. You should see your changes reflected in both the map and the metatile picker.
 
-8. Enjoy!
+8. You can stop here and enjoy! Or, if you want to bring in a secondary set as well, please read on.
+
+9. In Porymap, select `Tools -> New Tileset`. Create a secondary set called `PorytilesSecondaryTest`.
+
+10. In Porymap, make sure `PorytilesTestMap` is open. Use the tileset selector to change `PorytilesTestMap`'s secondary
+    tileset to `gTileset_PorytilesSecondaryTest`
+
+11. Run the following command, replacing `path/to/project` with the path to your project:
+
+```
+./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/simple_metatiles_2/bottom_secondary.png res/tests/simple_metatiles_2/middle_secondary.png res/tests/simple_metatiles_2/top_secondary.png
+```
+
+12. In Porymap, select `File -> Reload Project`.
+
+13. Your map now has a custom primary and secondary tileset! Feel free to keep editing these sets to see what Porytiles
+    can do!
 
 ## Planned Features
 
