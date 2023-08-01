@@ -247,20 +247,21 @@ const std::string COMPILE_HELP =
 "        In `freestanding' mode, a single RGBA PNG tilesheet containing\n"
 "        the pixel art to be tile-ized.\n"
 "\n"
-"Options:\n" +
+"Output Options:\n" +
 OUTPUT_DESCRIPTION + "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
-"Per-Game Fieldmap Presets:\n" +
+"Fieldmap Options:\n" +
 PRESET_POKEEMERALD_DESCRIPTION + "\n" +
 PRESET_POKEFIRERED_DESCRIPTION + "\n" +
 PRESET_POKERUBY_DESCRIPTION + "\n" +
-"Individual Fieldmap Options:\n" +
 NUM_TILES_IN_PRIMARY_DESCRIPTION + "\n" +
 NUM_TILES_TOTAL_DESCRIPTION + "\n" +
 NUM_METATILES_IN_PRIMARY_DESCRIPTION + "\n" +
 NUM_METATILES_TOTAL_DESCRIPTION + "\n" +
 NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
+NUM_PALETTES_TOTAL_DESCRIPTION + "\n" +
+"Warnings:\n" + 
+WALL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 

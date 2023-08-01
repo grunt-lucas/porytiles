@@ -126,6 +126,12 @@ const std::string PRESET_POKERUBY_DESCRIPTION =
 "        Set the fieldmap parameters to match those of `pokeruby'. These\n"
 "        can be found in `include/fieldmap.h'.\n";
 constexpr int PRESET_POKERUBY_VAL = 1010;
+
+const std::string WALL_LONG = "Wall";
+const std::string WALL_DESCRIPTION =
+"    -" + WALL_LONG + "\n"
+"        Enable all warnings.\n";
+constexpr int WALL_VAL = 1011;
 // @formatter:on
 // clang-format on
 
