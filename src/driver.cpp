@@ -113,7 +113,7 @@ static void driveCompile(PtContext &ctx)
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
     throw PtException{ctx.output.path + ": exists but is not a directory"};
   }
-  if (ctx.secondary) {
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath)) {
       throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath + ": file does not exist"};
     }
@@ -152,7 +152,7 @@ static void driveCompile(PtContext &ctx)
     throw PtException{ctx.inputPaths.topPrimaryTilesheetPath + ": exists but was not a regular file"};
   }
 
-  if (ctx.secondary) {
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
       png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomSecondaryTilesheetPath};
@@ -198,7 +198,7 @@ static void driveCompile(PtContext &ctx)
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
-  if (ctx.secondary) {
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath};
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath};
@@ -254,7 +254,9 @@ void drive(PtContext &ctx)
   case DECOMPILE:
     throw std::runtime_error{"TODO : support decompile command"};
     break;
-  case COMPILE:
+  case COMPILE_PRIMARY:
+  case COMPILE_SECONDARY:
+  case COMPILE_FREESTANDING:
     driveCompile(ctx);
     break;
   default:
@@ -268,9 +270,9 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 {
   porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
-  ctx.secondary = false;
   ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::COMPILE;
+  ctx.subcommand = porytiles::COMPILE_PRIMARY;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));
@@ -356,9 +358,9 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
 {
   porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
-  ctx.secondary = true;
   ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::COMPILE;
+  ctx.subcommand = porytiles::COMPILE_SECONDARY;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/middle_primary.png"));

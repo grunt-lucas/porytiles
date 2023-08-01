@@ -29,7 +29,16 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
   case DECOMPILE:
     throw std::runtime_error{"TODO : support decompile command"};
     break;
-  case COMPILE:
+  case COMPILE_PRIMARY:
+    ctx.compilerConfig.mode = CompilerMode::PRIMARY;
+    parseCompile(ctx, argc, argv);
+    break;
+  case COMPILE_SECONDARY:
+    ctx.compilerConfig.mode = CompilerMode::SECONDARY;
+    parseCompile(ctx, argc, argv);
+    break;
+  case COMPILE_FREESTANDING:
+    ctx.compilerConfig.mode = CompilerMode::FREESTANDING;
     parseCompile(ctx, argc, argv);
     break;
   }
@@ -99,9 +108,19 @@ VERSION_DESCRIPTION + "\n"
 "    decompile\n"
 "        TODO : implement\n"
 "\n"
-"    compile\n"
-"        Compile RGBA PNGs into a tileset. Supports primary, secondary, and\n"
-"        freestanding tilesets using the various mode arguments.\n"
+"    compile-primary\n"
+"        Compile a bottom, middle, and top RGBA PNG into a complete primary\n"
+"        tileset. All files are generated in-place at the output location.\n"
+"\n"
+"    compile-secondary\n"
+"        Compile a bottom, middle, and top RGBA PNG into a complete secondary\n"
+"        tileset. All files are generated in-place at the output location. You\n"
+"        must also supply the layers for the paired primary tileset.\n"
+"\n"
+"    compile-freestanding\n"
+"        Compile a single RGBA PNG into a freestanding tileset. This mode will\n"
+"        not generate metatiles, and the palettes files will not be generated\n"
+"        in-place.\n"
 "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
@@ -152,8 +171,10 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 // |    SUBCOMMAND PARSING    |
 // ----------------------------
 
-const std::string COMPILE_COMMAND = "compile";
 const std::string DECOMPILE_COMMAND = "decompile";
+const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
+const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
+const std::string COMPILE_FREESTANDING_COMMAND = "compile-freestanding";
 static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
@@ -164,157 +185,35 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
   if (subcommand == DECOMPILE_COMMAND) {
     ctx.subcommand = Subcommand::DECOMPILE;
   }
-  else if (subcommand == COMPILE_COMMAND) {
-    ctx.subcommand = Subcommand::COMPILE;
+  else if (subcommand == COMPILE_PRIMARY_COMMAND) {
+    ctx.subcommand = Subcommand::COMPILE_PRIMARY;
+  }
+  else if (subcommand == COMPILE_SECONDARY_COMMAND) {
+    ctx.subcommand = Subcommand::COMPILE_SECONDARY;
+  }
+  else if (subcommand == COMPILE_FREESTANDING_COMMAND) {
+    ctx.subcommand = Subcommand::COMPILE_FREESTANDING;
   }
   else {
     throw PtException{"unrecognized subcommand: " + subcommand};
   }
 }
 
-// -----------------------------
-// |    COMPILE-RAW COMMAND    |
-// -----------------------------
-// TODO : convert this logic to `compile --freestanding' mode
-// @formatter:off
-// clang-format off
-// const std::vector<std::string> COMPILE_RAW_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
-// const std::string COMPILE_RAW_HELP =
-// "Usage:\n"
-// "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] TILES\n"
-// "    porytiles " + COMPILE_RAW_COMMAND + " [OPTIONS] --secondary TILES TILES_PRIMARY\n"
-// "\n"
-// "Compile one RGBA PNG, i.e. a single tilesheet with no layer information. This\n"
-// "command will generate pal files and a `tiles.png', but will not generate a\n"
-// "`metatiles.bin' file.\n"
-// "\n"
-// "Args:\n"
-// "    <TILES>\n"
-// "        An RGBA PNG tilesheet containing raw pixel art to be tile-ized.\n"
-// "\n"
-// "    <TILES_PRIMARY>\n"
-// "        In `--secondary' mode, an RGBA PNG tilesheet containing the raw\n"
-// "        pixel art for the corresponding primary set.\n"
-// "\n"
-// "Options:\n" +
-// OUTPUT_DESCRIPTION + "\n" +
-// TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
-// SECONDARY_DESCRIPTION + "\n" +
-// "Per-Game Fieldmap Presets:\n" +
-// PRESET_POKEEMERALD_DESCRIPTION + "\n" +
-// PRESET_POKEFIRERED_DESCRIPTION + "\n" +
-// PRESET_POKERUBY_DESCRIPTION + "\n" +
-// "Individual Fieldmap Options:\n" +
-// NUM_TILES_IN_PRIMARY_DESCRIPTION + "\n" +
-// NUM_TILES_TOTAL_DESCRIPTION + "\n" +
-// NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
-// NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
-// @formatter:on
-// clang-format on
-
-// static void parseCompileRaw(PtContext& ctx, int argc, char **argv)
-// {
-//   std::ostringstream implodedShorts;
-//   std::copy(COMPILE_RAW_SHORTS.begin(), COMPILE_RAW_SHORTS.end(),
-//             std::ostream_iterator<std::string>(implodedShorts, ""));
-//   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
-//   std::string shortOptions = "+" + implodedShorts.str();
-//   static struct option longOptions[] = {
-//       {OUTPUT_LONG.c_str(), required_argument, nullptr, OUTPUT_SHORT},
-//       {TILES_PNG_PALETTE_MODE_LONG.c_str(), required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-//       {SECONDARY_LONG.c_str(), no_argument, nullptr, SECONDARY_VAL},
-//       {PRESET_POKEEMERALD_LONG.c_str(), no_argument, nullptr, PRESET_POKEEMERALD_VAL},
-//       {PRESET_POKEFIRERED_LONG.c_str(), no_argument, nullptr, PRESET_POKEFIRERED_VAL},
-//       {PRESET_POKERUBY_LONG.c_str(), no_argument, nullptr, PRESET_POKERUBY_VAL},
-//       {NUM_TILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-//       {NUM_TILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-//       {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-//       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-//       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
-//       {nullptr, no_argument, nullptr, 0}};
-
-//   while (true) {
-//     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
-
-//     if (opt == -1)
-//       break;
-
-//     switch (opt) {
-//     case OUTPUT_SHORT:
-//       config.outputPath = optarg;
-//       break;
-//     case TILES_PNG_PALETTE_MODE_VAL:
-//       config.tilesPngPaletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
-//       break;
-//     case SECONDARY_VAL:
-//       config.secondary = true;
-//       break;
-//     case NUM_PALETTES_IN_PRIMARY_VAL:
-//       config.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
-//       break;
-//     case NUM_PALETTES_TOTAL_VAL:
-//       config.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
-//       break;
-//     case NUM_TILES_IN_PRIMARY_VAL:
-//       config.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
-//       break;
-//     case NUM_TILES_TOTAL_VAL:
-//       config.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
-//       break;
-//     case PRESET_POKEEMERALD_VAL:
-//       setPokeemeraldDefaultTilesetParams(config);
-//       break;
-//     case PRESET_POKEFIRERED_VAL:
-//       setPokefireredDefaultTilesetParams(config);
-//       break;
-//     case PRESET_POKERUBY_VAL:
-//       setPokerubyDefaultTilesetParams(config);
-//       break;
-
-//     // Help message upon '-h/--help' goes to stdout
-//     case HELP_SHORT:
-//       fmt::println("{}", COMPILE_RAW_HELP);
-//       exit(0);
-//     // Help message on invalid or unknown options goes to stderr and gives error code
-//     case '?':
-//     default:
-//       fmt::println(stderr, "{}", COMPILE_RAW_HELP);
-//       exit(2);
-//     }
-//   }
-
-//   if (config.secondary && (argc - optind) != 2) {
-//     throw PtException{"must specify TILES and TILES_PRIMARY args, see `porytiles compile-raw --help'"};
-//   }
-//   else if ((argc - optind) != 1) {
-//     throw PtException{"must specify one TILES arg, see `porytiles compile-raw --help'"};
-//   }
-
-//   if (config.secondary) {
-//     config.rawSecondaryTilesheetPath = argv[optind++];
-//   }
-//   config.rawPrimaryTilesheetPath = argv[optind++];
-
-//   config.validate();
-
-//   throw PtException{"TODO : support `compile-raw' correctly"};
-// }
-
-// -------------------------
-// |    COMPILE COMMAND    |
-// -------------------------
+// ----------------------------
+// |    COMPILE-X COMMANDS    |
+// ----------------------------
 // @formatter:off
 // clang-format off
 const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_HELP =
 "Usage:\n"
-"    porytiles " + COMPILE_COMMAND + " primary [OPTIONS] BOTTOM MIDDLE TOP\n"
-"    porytiles " + COMPILE_COMMAND + " secondary [OPTIONS] BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
-"    porytiles " + COMPILE_COMMAND + " freestanding [OPTIONS] TILES\n"
+"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
+"    porytiles " + COMPILE_FREESTANDING_COMMAND + " [OPTIONS] TILES\n"
 "\n"
 "Compile given tilesheet(s) into a tileset. The `primary' and `secondary'\n"
 "modes compile a bottom, middle, and top layer tilesheet into a complete\n"
-"tileset. That is, it will generate a `metatiles.bin' file along with\n"
+"tileset. That is, they will generate a `metatiles.bin' file along with\n"
 "`tiles.png' and the pal files in a `palettes' directory, in-place.\n"
 "\n"
 "In `freestanding' mode, compile a single tilesheet into a freestanding\n"
@@ -345,13 +244,12 @@ const std::string COMPILE_HELP =
 "        metatile layer for the corresponding primary set.\n"
 "\n"
 "    <TILES>\n"
-"        In `freestanding' mode, an unlayered RGBA PNG tilesheet containing\n"
+"        In `freestanding' mode, a single RGBA PNG tilesheet containing\n"
 "        the pixel art to be tile-ized.\n"
 "\n"
 "Options:\n" +
 OUTPUT_DESCRIPTION + "\n" +
 TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
-SECONDARY_DESCRIPTION + "\n" +
 "Per-Game Fieldmap Presets:\n" +
 PRESET_POKEEMERALD_DESCRIPTION + "\n" +
 PRESET_POKEFIRERED_DESCRIPTION + "\n" +
@@ -366,9 +264,6 @@ NUM_PALETTES_TOTAL_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
-const std::string PRIMARY_MODE = "primary";
-const std::string SECONDARY_MODE = "secondary";
-const std::string FREESTANDING_MODE = "freestanding";
 static void parseCompile(PtContext &ctx, int argc, char **argv)
 {
   std::ostringstream implodedShorts;
@@ -378,7 +273,6 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   static struct option longOptions[] = {
       {OUTPUT_LONG.c_str(), required_argument, nullptr, OUTPUT_SHORT},
       {TILES_PNG_PALETTE_MODE_LONG.c_str(), required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-      {SECONDARY_LONG.c_str(), no_argument, nullptr, SECONDARY_VAL},
       {PRESET_POKEEMERALD_LONG.c_str(), no_argument, nullptr, PRESET_POKEEMERALD_VAL},
       {PRESET_POKEFIRERED_LONG.c_str(), no_argument, nullptr, PRESET_POKEFIRERED_VAL},
       {PRESET_POKERUBY_LONG.c_str(), no_argument, nullptr, PRESET_POKERUBY_VAL},
@@ -390,10 +284,6 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
-
-  // TODO : impl subcommand
-  std::cout << "ARGS:" << std::endl;
-  std::cout << argv[0] << std::endl;
 
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
@@ -407,9 +297,6 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
     case TILES_PNG_PALETTE_MODE_VAL:
       ctx.output.paletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
-      break;
-    case SECONDARY_VAL:
-      ctx.secondary = true;
       break;
     case NUM_TILES_IN_PRIMARY_VAL:
       ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
@@ -451,22 +338,30 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     }
   }
 
-  if (ctx.secondary && (argc - optind) != 6) {
-    throw PtException{"must specify BOTTOM, MIDDLE, TOP, BOTTOM_PRIMARY, MIDDLE_PRIMARY, TOP_PRIMARY layer args, see "
-                      "`porytiles compile --help'"};
+  if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
+    if ((argc - optind) != 1) {
+      throw PtException{"must specify TILES args, see `porytiles compile-freestanding --help'"};
+    }
+    ctx.inputPaths.freestandingTilesheetPath = argv[optind++];
   }
-  else if (!ctx.secondary && (argc - optind) != 3) {
-    throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile --help'"};
-  }
+  else {
+    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY && (argc - optind) != 6) {
+      throw PtException{"must specify BOTTOM, MIDDLE, TOP, BOTTOM_PRIMARY, MIDDLE_PRIMARY, TOP_PRIMARY layer args, see "
+                        "`porytiles compile-secondary --help'"};
+    }
+    else if (ctx.compilerConfig.mode != CompilerMode::SECONDARY && (argc - optind) != 3) {
+      throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile-primary --help'"};
+    }
 
-  if (ctx.secondary) {
-    ctx.inputPaths.bottomSecondaryTilesheetPath = argv[optind++];
-    ctx.inputPaths.middleSecondaryTilesheetPath = argv[optind++];
-    ctx.inputPaths.topSecondaryTilesheetPath = argv[optind++];
+    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+      ctx.inputPaths.bottomSecondaryTilesheetPath = argv[optind++];
+      ctx.inputPaths.middleSecondaryTilesheetPath = argv[optind++];
+      ctx.inputPaths.topSecondaryTilesheetPath = argv[optind++];
+    }
+    ctx.inputPaths.bottomPrimaryTilesheetPath = argv[optind++];
+    ctx.inputPaths.middlePrimaryTilesheetPath = argv[optind++];
+    ctx.inputPaths.topPrimaryTilesheetPath = argv[optind++];
   }
-  ctx.inputPaths.bottomPrimaryTilesheetPath = argv[optind++];
-  ctx.inputPaths.middlePrimaryTilesheetPath = argv[optind++];
-  ctx.inputPaths.topPrimaryTilesheetPath = argv[optind++];
 
   ctx.validate();
 }

@@ -12,7 +12,7 @@ namespace porytiles {
 
 enum TilesPngPaletteMode { PAL0, TRUE_COLOR, GREYSCALE };
 
-enum Subcommand { DECOMPILE, COMPILE };
+enum Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY, COMPILE_FREESTANDING };
 
 enum CompilerMode { PRIMARY, SECONDARY, FREESTANDING };
 
@@ -73,7 +73,7 @@ struct FieldmapConfig {
 };
 
 struct InputPaths {
-  std::string rawFreestandingTilesheetPath;
+  std::string freestandingTilesheetPath;
 
   std::string bottomPrimaryTilesheetPath;
   std::string middlePrimaryTilesheetPath;
@@ -88,7 +88,7 @@ struct Output {
   TilesPngPaletteMode paletteMode;
   std::string path;
 
-  Output() : paletteMode{GREYSCALE} {}
+  Output() : paletteMode{GREYSCALE}, path{} {}
 };
 
 struct CompilerConfig {
@@ -115,8 +115,6 @@ struct PtContext {
   // Command params
   Subcommand subcommand;
   bool verbose;
-  // TODO : remove this in favor of compiler mode
-  bool secondary;
 
   PtContext()
       : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
