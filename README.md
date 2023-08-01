@@ -52,7 +52,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesPrimaryTest`.
 
 3. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary
-   tileset, select `gTileset_PorytilesPrimaryTest`.
+   tileset, select `gTileset_PorytilesPrimaryTest`. Then save the map.
 
 4. Run the following command, replacing `path/to/project` with the path to your project:
 
@@ -72,7 +72,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 9. In Porymap, select `Tools -> New Tileset`. Create a secondary set called `PorytilesSecondaryTest`.
 
 10. In Porymap, make sure `PorytilesTestMap` is open. Use the tileset selector to change `PorytilesTestMap`'s secondary
-    tileset to `gTileset_PorytilesSecondaryTest`
+    tileset to `gTileset_PorytilesSecondaryTest`. Then save the map.
 
 11. Run the following command, replacing `path/to/project` with the path to your project:
 
