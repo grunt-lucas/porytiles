@@ -50,7 +50,7 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
    */
   // 0 initial length here since we will push_back our colors in-order
   png::palette pngPal{0};
-  if (ctx.output.paletteMode == TRUE_COLOR) {
+  if (ctx.output.paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
     for (const auto &palette : tileset.palettes) {
       for (const auto &color : palette.colors) {
         RGBA32 rgbaColor = bgrToRgba(color);
@@ -58,7 +58,7 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
       }
     }
   }
-  else if (ctx.output.paletteMode == GREYSCALE) {
+  else if (ctx.output.paletteMode == TilesPngPaletteMode::GREYSCALE) {
     for (const auto &color : greyscalePalette) {
       pngPal.push_back(png::color{color.red, color.green, color.blue});
     }
@@ -90,11 +90,11 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
         png::byte paletteIndex = tileset.paletteIndexesOfTile[tilesetTileIndex];
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         switch (ctx.output.paletteMode) {
-        case PAL0:
-        case GREYSCALE:
+        case TilesPngPaletteMode::PAL0:
+        case TilesPngPaletteMode::GREYSCALE:
           out[pixelRow][pixelCol] = indexInPalette;
           break;
-        case TRUE_COLOR:
+        case TilesPngPaletteMode::TRUE_COLOR:
           out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
         }
       }

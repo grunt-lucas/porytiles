@@ -26,18 +26,18 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
   parseSubcommand(ctx, argc, argv);
 
   switch (ctx.subcommand) {
-  case DECOMPILE:
+  case Subcommand::DECOMPILE:
     throw std::runtime_error{"TODO : support decompile command"};
     break;
-  case COMPILE_PRIMARY:
+  case Subcommand::COMPILE_PRIMARY:
     ctx.compilerConfig.mode = CompilerMode::PRIMARY;
     parseCompile(ctx, argc, argv);
     break;
-  case COMPILE_SECONDARY:
+  case Subcommand::COMPILE_SECONDARY:
     ctx.compilerConfig.mode = CompilerMode::SECONDARY;
     parseCompile(ctx, argc, argv);
     break;
-  case COMPILE_FREESTANDING:
+  case Subcommand::COMPILE_FREESTANDING:
     ctx.compilerConfig.mode = CompilerMode::FREESTANDING;
     parseCompile(ctx, argc, argv);
     break;

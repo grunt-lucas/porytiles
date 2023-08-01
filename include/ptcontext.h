@@ -10,11 +10,11 @@
 
 namespace porytiles {
 
-enum TilesPngPaletteMode { PAL0, TRUE_COLOR, GREYSCALE };
+enum class TilesPngPaletteMode { PAL0, TRUE_COLOR, GREYSCALE };
 
-enum Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY, COMPILE_FREESTANDING };
+enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY, COMPILE_FREESTANDING };
 
-enum CompilerMode { PRIMARY, SECONDARY, FREESTANDING };
+enum class CompilerMode { PRIMARY, SECONDARY, FREESTANDING };
 
 struct FieldmapConfig {
   // Fieldmap params
@@ -88,7 +88,7 @@ struct Output {
   TilesPngPaletteMode paletteMode;
   std::string path;
 
-  Output() : paletteMode{GREYSCALE}, path{} {}
+  Output() : paletteMode{TilesPngPaletteMode::GREYSCALE}, path{} {}
 };
 
 struct CompilerConfig {
@@ -112,7 +112,7 @@ struct Errors {
   Errors() : errCount{0}, dieCompilation{false} {}
 };
 
-enum WarningMode { OFF, WARN, ERR };
+enum class WarningMode { OFF, WARN, ERR };
 
 struct Warnings {
   std::size_t colorPrecisionLossCount;
@@ -124,7 +124,8 @@ struct Warnings {
   [[nodiscard]] std::size_t warnCount() const { return colorPrecisionLossCount + paletteAllocEfficCount; }
 
   Warnings()
-      : colorPrecisionLossCount{0}, colorPrecisionLossMode{OFF}, paletteAllocEfficCount{0}, paletteAllocEfficMode{OFF}
+      : colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
+        paletteAllocEfficMode{WarningMode::OFF}
   {
   }
 };

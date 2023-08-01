@@ -251,16 +251,16 @@ static void driveCompile(PtContext &ctx)
 void drive(PtContext &ctx)
 {
   switch (ctx.subcommand) {
-  case DECOMPILE:
+  case Subcommand::DECOMPILE:
     throw std::runtime_error{"TODO : support decompile command"};
     break;
-  case COMPILE_PRIMARY:
-  case COMPILE_SECONDARY:
-  case COMPILE_FREESTANDING:
+  case Subcommand::COMPILE_PRIMARY:
+  case Subcommand::COMPILE_SECONDARY:
+  case Subcommand::COMPILE_FREESTANDING:
     driveCompile(ctx);
     break;
   default:
-    throw std::runtime_error{"unknown subcommand setting: " + std::to_string(ctx.subcommand)};
+    throw std::runtime_error{"unknown subcommand setting"};
   }
 }
 
@@ -271,7 +271,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
   porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::COMPILE_PRIMARY;
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));
@@ -359,7 +359,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
   porytiles::PtContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::COMPILE_SECONDARY;
+  ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/bottom_primary.png"));

@@ -431,7 +431,7 @@ void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
 
 std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)
 {
-  if (ctx.compilerConfig.mode == SECONDARY &&
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTiles->palettes.size())) {
     internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(ctx.fieldmapConfig.numPalettesInPrimary,
                                                              ctx.compilerContext.pairedPrimaryTiles->palettes.size());
@@ -439,7 +439,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   auto compiled = std::make_unique<CompiledTileset>();
 
-  if (ctx.compilerConfig.mode == PRIMARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
     std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
@@ -448,7 +448,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
                         std::to_string(ctx.fieldmapConfig.numMetatilesInPrimary) + ")"};
     }
   }
-  else if (ctx.compilerConfig.mode == SECONDARY) {
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
     std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
@@ -457,7 +457,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
                         std::to_string(ctx.fieldmapConfig.numMetatilesInSecondary()) + ")"};
     }
   }
-  else if (ctx.compilerConfig.mode == FREESTANDING) {
+  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
@@ -468,7 +468,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   // Build helper data structures for the assignments
   std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
   const std::unordered_map<BGR15, std::size_t> *primaryColorIndexMap = &emptyPrimaryColorIndexMap;
-  if (ctx.compilerConfig.mode == SECONDARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTiles->colorIndexMap);
   }
   std::vector<IndexedNormTile> indexedNormTiles =
@@ -483,15 +483,15 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
    */
   std::vector<ColorSet> assignedPalsSolution;
   std::vector<ColorSet> tmpHardwarePalettes;
-  if (ctx.compilerConfig.mode == PRIMARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
     tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
   }
-  else if (ctx.compilerConfig.mode == SECONDARY) {
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
     tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
   }
-  else if (ctx.compilerConfig.mode == FREESTANDING) {
+  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
@@ -502,7 +502,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
                    [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
   std::vector<ColorSet> primaryPaletteColorSets{};
-  if (ctx.compilerConfig.mode == SECONDARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     /*
      * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
      * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
@@ -531,7 +531,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
    * and so we may need to do something fancier here so that the colors align correctly.
    */
-  if (ctx.compilerConfig.mode == PRIMARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       ColorSet palAssignments = assignedPalsSolution.at(i);
       compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
@@ -545,7 +545,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (ctx.compilerConfig.mode == SECONDARY) {
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       // Copy the primary set's palettes into this tileset so tiles can use them
       for (std::size_t j = 0; j < PAL_SIZE; j++) {
@@ -565,7 +565,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (ctx.compilerConfig.mode == FREESTANDING) {
+  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
@@ -575,13 +575,13 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   /*
    * Build the tile assignments.
    */
-  if (ctx.compilerConfig.mode == PRIMARY) {
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     assignTilesPrimary(ctx, *compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
   }
-  else if (ctx.compilerConfig.mode == SECONDARY) {
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets, assignedPalsSolution);
   }
-  else if (ctx.compilerConfig.mode == FREESTANDING) {
+  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
