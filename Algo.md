@@ -17,14 +17,14 @@
   + etc.
 
 ```C++
-struct AnimFrame {
+struct DecompiledAnimFrame {
   std::vector<RGBATile> tiles;
 }
 
-struct Animation {
-  std::vector<AnimFrame> frames;
+struct DecompiledAnimation {
+  std::vector<DecompiledAnimFrame> frames;
 
-   AnimFrame representativeFrame() const {
+   DecompiledAnimFrame representativeFrame() const {
     return frames.at(0);
    }
 }
@@ -38,8 +38,20 @@ struct DecompiledTileset {
   // that frame. The compiler will ultimately copy frame 0 into the start of VRAM. Users can "use" an animated tile
   // by simply painting a frame 0 tile onto the RGBA metatile sheet. The compiler will automatically link it to one of
   // the anim tiles at the start of tiles.png
-  std::vector<Animation> anims;
+  std::vector<DecompiledAnimation> anims;
 };
+
+struct CompiledAnimFrame {
+  std::vector<GBATile> tiles;
+}
+
+struct CompiledAnimation {
+  std::vector<CompiledAnimFrame> frames;
+
+   CompiledAnimFrame representativeFrame() const {
+    return frames.at(0);
+   }
+}
 
 struct CompiledTileset {
   std::vector<GBATile> tiles;
@@ -50,7 +62,7 @@ struct CompiledTileset {
   std::unordered_map<GBATile, std::size_t> tileIndexes;
 
   // new field:
-  
+  std::vector<CompiledAnimation> anims;
 };
 
 void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>>& rawAnims, DecompiledTileset& tiles) {
