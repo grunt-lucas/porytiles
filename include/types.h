@@ -271,10 +271,41 @@ struct CompiledTileset {
 };
 
 /**
- * A decompiled tileset, which is just a vector of RGBATiles.
+ * An AnimFrame is just a vector of RGBATiles representing one frame of an animation
+ */
+struct AnimFrame {
+  std::vector<RGBATile> tiles;
+
+  AnimFrame() : tiles{} {}
+};
+
+/**
+ * An Animation is a vector of AnimFrames. The first frame is the 'representative frame'. That is, the regular tileset
+ * must use tiles from the representative frame in order for them to properly link into the animation. The other frames
+ * of the animation are not stored in tiles.png, but are dynamically copied in from ROM by the game engine.
+ */
+struct Animation {
+  std::vector<AnimFrame> frames;
+
+  Animation() : frames{} {}
+
+  AnimFrame representativeFrame() const { return frames.at(0); }
+};
+
+/**
+ * A decompiled tileset, which is just two vectors. One for the standard tiles. Another that holds Animations, a
+ * special type that handles animated tiles.
  */
 struct DecompiledTileset {
   std::vector<RGBATile> tiles;
+
+  /*
+   * This field holds the decompiled anim data from the optionally supplied anims folder. Each anim is essentially a
+   * vector of frames, where each frame is a vector of RGBATiles representing that frame. The compiler will ultimately
+   * copy frame 0 into the start of VRAM. Users can "use" an animated tile by simply painting a frame 0 tile onto the
+   * RGBA metatile sheet. The compiler will automatically link it to one of the anim tiles at the start of tiles.png
+   */
+  std::vector<Animation> anims;
 };
 
 /*
