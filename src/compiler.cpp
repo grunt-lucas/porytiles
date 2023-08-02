@@ -465,19 +465,28 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
   compiled->assignments.resize(decompiledTileset.tiles.size());
 
-  // Build helper data structures for the assignments
+  /*
+   * Build indexed normalized tiles, order of this vector matches the decompiled iteration order, with animated tiles
+   * at the beginning
+   */
+  std::vector<IndexedNormTile> indexedNormTiles =
+      normalizeDecompTiles(ctx.compilerConfig.transparencyColor, decompiledTileset);
+
+  /*
+   * Map each unique color to a unique index between 0 and 240 (15 colors per palette * 16 palettes MAX)
+   */
   std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
   const std::unordered_map<BGR15, std::size_t> *primaryColorIndexMap = &emptyPrimaryColorIndexMap;
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTiles->colorIndexMap);
   }
-  std::vector<IndexedNormTile> indexedNormTiles =
-      normalizeDecompTiles(ctx.compilerConfig.transparencyColor, decompiledTileset);
   auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
   compiled->colorIndexMap = colorToIndex;
+
   /*
    * colorSets is a vector: this enforces a well-defined ordering so tileset compilation results are identical across
-   * all compilers and platforms
+   * all compilers and platforms. A ColorSet is just a bitset<240> that marks which colors are present (indexes are
+   * based on the colorIndexMaps from above)
    */
   auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
