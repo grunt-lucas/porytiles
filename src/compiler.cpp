@@ -475,6 +475,10 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
       normalizeDecompTiles(ctx.compilerConfig.transparencyColor, decompiledTileset);
   auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
   compiled->colorIndexMap = colorToIndex;
+  /*
+   * colorSets is a vector: this enforces a well-defined ordering so tileset compilation results are identical across
+   * all compilers and platforms
+   */
   auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
   /*
