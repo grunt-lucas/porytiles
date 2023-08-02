@@ -57,6 +57,14 @@ void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>>
   std::vector<Animation> anims;
 
   // Read all the anims from rawAnims
+  // HOW TO READ SORTED FILES
+  // std::vector<std::filesystem::path> files_in_directory;
+  // std::copy(std::filesystem::directory_iterator(myFolder), std::filesystem::directory_iterator(), std::back_inserter(files_in_directory));
+  // std::sort(files_in_directory.begin(), files_in_directory.end());
+
+  // for (const std::string& filename : files_in_directory) {
+  //     std::cout << filename << std::endl; // printed in alphabetical order
+  // }
 
   tiles.anims = anims;
 }
