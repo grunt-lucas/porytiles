@@ -38,6 +38,12 @@
     + will also be better because it means all files in a given tileset folder will now be managed by porytiles,
       which will prevent possible corruption from porymap
 
++ `dump-anim-code` command
+  + takes input tiles just like `compile-X` commands
+  + instead of outputting all the files, just write C code to the console
+  + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
+  + is it possible to generate the code and insert it automatically?
+
 + Set up more CI builds
   + Windows MSVC?
   + set up package caches so installs don't have to run every time

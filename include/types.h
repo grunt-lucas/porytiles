@@ -307,6 +307,8 @@ struct DecompiledAnimation {
   DecompiledAnimation() : frames{} {}
 
   DecompiledAnimFrame representativeFrame() const { return frames.at(0); }
+
+  std::size_t size() const { return frames.size(); }
 };
 
 /**
