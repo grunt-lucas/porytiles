@@ -246,11 +246,27 @@ struct Assignment {
   bool vFlip;
 };
 
+struct CompiledAnimFrame {
+  std::vector<GBATile> tiles;
+
+  CompiledAnimFrame() : tiles{} {}
+};
+
+struct CompiledAnimation {
+  std::vector<CompiledAnimFrame> frames;
+
+  CompiledAnimation() : frames{} {}
+
+  CompiledAnimFrame representativeFrame() const { return frames.at(0); }
+};
+
 /**
  * A compiled tileset.
  *
  * The `tiles' field contains the normalized tiles from the input tilesheets. This field can be directly written out to
  * `tiles.png'.
+ *
+ * The `paletteIndexesOfTile'
  *
  * The `paletteIndexes' contains the palette index (into the `palettes' field) for each corresponding GBATile in
  * `tiles'.
@@ -268,6 +284,7 @@ struct CompiledTileset {
   std::vector<Assignment> assignments;
   std::unordered_map<BGR15, std::size_t> colorIndexMap;
   std::unordered_map<GBATile, std::size_t> tileIndexes;
+  std::vector<CompiledAnimation> anims;
 };
 
 /**
