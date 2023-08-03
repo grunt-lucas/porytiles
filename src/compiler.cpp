@@ -55,7 +55,7 @@ static size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &pal
   throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 
-static NormalizedTile candidate(const RGBA32 &transparencyColor, const std::vector<RGBATile> &rgbaLayers, bool hFlip,
+static NormalizedTile candidate(const RGBA32 &transparencyColor, const std::vector<RGBATile> &rgbaFrames, bool hFlip,
                                 bool vFlip)
 {
   /*
@@ -68,7 +68,7 @@ static NormalizedTile candidate(const RGBA32 &transparencyColor, const std::vect
   candidateTile.vFlip = vFlip;
 
   std::size_t layer = 0;
-  for (const auto &rgba : rgbaLayers) {
+  for (const auto &rgba : rgbaFrames) {
     for (std::size_t row = 0; row < TILE_SIDE_LENGTH; row++) {
       for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
         std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
@@ -85,22 +85,22 @@ static NormalizedTile candidate(const RGBA32 &transparencyColor, const std::vect
   return candidateTile;
 }
 
-static NormalizedTile normalize(const RGBA32 &transparencyColor, const std::vector<RGBATile> &rgbaLayers)
+static NormalizedTile normalize(const RGBA32 &transparencyColor, const std::vector<RGBATile> &rgbaFrames)
 {
   /*
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
    * "lexicographic" order, where this order is determined by the std::array spaceship operator.
    */
-  auto noFlipsTile = candidate(transparencyColor, rgbaLayers, false, false);
+  auto noFlipsTile = candidate(transparencyColor, rgbaFrames, false, false);
 
   // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
   if (noFlipsTile.transparent()) {
     return noFlipsTile;
   }
 
-  auto hFlipTile = candidate(transparencyColor, rgbaLayers, true, false);
-  auto vFlipTile = candidate(transparencyColor, rgbaLayers, false, true);
-  auto bothFlipsTile = candidate(transparencyColor, rgbaLayers, true, true);
+  auto hFlipTile = candidate(transparencyColor, rgbaFrames, true, false);
+  auto vFlipTile = candidate(transparencyColor, rgbaFrames, false, true);
+  auto bothFlipsTile = candidate(transparencyColor, rgbaFrames, true, true);
 
   std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
   auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates), [](auto tile1, auto tile2) {
@@ -124,8 +124,8 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transpare
 
   std::size_t tileIndex = 0;
   for (const auto &tile : decompiledTileset.tiles) {
-    std::vector<RGBATile> singleLayerTile = {tile};
-    auto normalizedTile = normalize(transparencyColor, singleLayerTile);
+    std::vector<RGBATile> singleFrameTile = {tile};
+    auto normalizedTile = normalize(transparencyColor, singleFrameTile);
     DecompiledIndex index{};
     index.tileIndex = tileIndex++;
     normalizedTiles.emplace_back(index, normalizedTile);
@@ -705,9 +705,9 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: no flips")
   {
-    std::vector<porytiles::RGBATile> singleLayerTile = {tile};
+    std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleLayerTile, false, false);
+        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleFrameTile, false, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
@@ -734,9 +734,9 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip")
   {
-    std::vector<porytiles::RGBATile> singleLayerTile = {tile};
+    std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleLayerTile, true, false);
+        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleFrameTile, true, false);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
@@ -763,9 +763,9 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: vFlip")
   {
-    std::vector<porytiles::RGBATile> singleLayerTile = {tile};
+    std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleLayerTile, false, true);
+        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleFrameTile, false, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
@@ -792,9 +792,9 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   SUBCASE("case: hFlip and vFlip")
   {
-    std::vector<porytiles::RGBATile> singleLayerTile = {tile};
+    std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleLayerTile, true, true);
+        porytiles::candidate(ctx.compilerConfig.transparencyColor, singleFrameTile, true, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
@@ -829,9 +829,9 @@ TEST_CASE("normalize should return the normal form of the given tile")
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(png1);
   porytiles::RGBATile tile = tiles.tiles[0];
 
-  std::vector<porytiles::RGBATile> singleLayerTile = {tile};
+  std::vector<porytiles::RGBATile> singleFrameTile = {tile};
   porytiles::NormalizedTile normalizedTile =
-      porytiles::normalize(ctx.compilerConfig.transparencyColor, singleLayerTile);
+      porytiles::normalize(ctx.compilerConfig.transparencyColor, singleFrameTile);
   CHECK(normalizedTile.palette.size == 9);
   CHECK_FALSE(normalizedTile.hFlip);
   CHECK_FALSE(normalizedTile.vFlip);
