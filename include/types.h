@@ -427,8 +427,15 @@ namespace porytiles {
  * TODO : fill in doc comment
  */
 struct NormalizedTile {
-  // TODO : can we collapse these types into NormalizedTile?
-  NormalizedPixels pixels;
+  /*
+   * Vector here to represent layers. Animated tiles can have multiple layers, with each layer corresponding to
+   * a frame in the animation. Regular tiles will have a size 1 vector, since they don't have layers.
+   */
+  std::vector<NormalizedPixels> pixels;
+  /*
+   * This palette is the combined palette for all layers. We want to handle it this way, since for anim tiles, each
+   * frame in the animation must be placed in the same hardware palette.
+   */
   NormalizedPalette palette;
   bool hFlip;
   bool vFlip;
@@ -437,22 +444,17 @@ struct NormalizedTile {
   {
     palette.size = 1;
     palette.colors[0] = rgbaToBgr(transparency);
+    pixels.resize(1);
   }
 
   [[nodiscard]] bool transparent() const { return palette.size == 1; }
 
-#if defined(__GNUG__) && !defined(__clang__)
-  // auto operator<=>(const NormalizedTile&) const = default;
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const NormalizedTile&) const = default;
-#endif
-
-  void setPixel(size_t row, size_t col, uint8_t value)
+  void setPixel(std::size_t layer, std::size_t row, std::size_t col, uint8_t value)
   {
+    if (layer >= pixels.size()) {
+      throw std::out_of_range{"internal: NormalizedTile::setPixel layer argument out of bounds (" +
+                              std::to_string(layer) + " >= " + std::to_string(pixels.size()) + ")"};
+    }
     if (row >= TILE_SIDE_LENGTH) {
       throw std::out_of_range{"internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) +
                               ")"};
@@ -461,8 +463,10 @@ struct NormalizedTile {
       throw std::out_of_range{"internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) +
                               ")"};
     }
-    pixels.colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
+    pixels.at(layer).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
   }
+
+  NormalizedPixels representativeTile() const { return pixels.at(0); }
 };
 } // namespace porytiles
 
@@ -471,7 +475,9 @@ template <> struct std::hash<porytiles::NormalizedTile> {
   {
     // TODO : better hash function
     std::size_t hashValue = 0;
-    hashValue ^= std::hash<porytiles::NormalizedPixels>{}(tile.pixels);
+    for (const auto &layer : tile.pixels) {
+      hashValue ^= std::hash<porytiles::NormalizedPixels>{}(layer);
+    }
     hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);
     hashValue ^= std::hash<bool>{}(tile.hFlip);
     hashValue ^= std::hash<bool>{}(tile.vFlip);

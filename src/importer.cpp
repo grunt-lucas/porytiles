@@ -155,6 +155,8 @@ void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>>
         throw PtException{"input PNG width `" + std::to_string(rawFrame.get_width()) + "' is not divisible by 8"};
       }
 
+      // TODO : throw if this frame's dimensions don't match dimensions of other frames in this anim
+
       std::size_t pngWidthInTiles = rawFrame.get_width() / TILE_SIDE_LENGTH;
       std::size_t pngHeightInTiles = rawFrame.get_height() / TILE_SIDE_LENGTH;
       for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {

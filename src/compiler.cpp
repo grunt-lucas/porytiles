@@ -21,7 +21,7 @@
 
 namespace porytiles {
 // TODO : change this to receive CompilerContext once I have made that type available
-size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, RGBA32 rgba)
+static size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, RGBA32 rgba)
 {
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
@@ -55,7 +55,7 @@ size_t insertRGBA(const RGBA32 &transparencyColor, NormalizedPalette &palette, R
   throw PtException{"invalid alpha value: " + std::to_string(rgba.alpha)};
 }
 
-NormalizedTile candidate(const RGBA32 &transparencyColor, const RGBATile &rgba, bool hFlip, bool vFlip)
+static NormalizedTile candidate(const RGBA32 &transparencyColor, const RGBATile &rgba, bool hFlip, bool vFlip)
 {
   /*
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
@@ -70,15 +70,16 @@ NormalizedTile candidate(const RGBA32 &transparencyColor, const RGBATile &rgba, 
     for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
       std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
       std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
+      // TODO : account for layers
       candidateTile.setPixel(
-          row, col, insertRGBA(transparencyColor, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
+          0, row, col, insertRGBA(transparencyColor, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
     }
   }
 
   return candidateTile;
 }
 
-NormalizedTile normalize(const RGBA32 &transparencyColor, const RGBATile &rgba)
+static NormalizedTile normalize(const RGBA32 &transparencyColor, const RGBATile &rgba)
 {
   /*
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
@@ -96,20 +97,27 @@ NormalizedTile normalize(const RGBA32 &transparencyColor, const RGBATile &rgba)
   auto bothFlipsTile = candidate(transparencyColor, rgba, true, true);
 
   std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
-  auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
-                                         [](auto tile1, auto tile2) { return tile1->pixels < tile2->pixels; });
+  auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates), [](auto tile1, auto tile2) {
+    return tile1->representativeTile() < tile2->representativeTile();
+  });
   return **normalizedTile;
 }
 
-std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColor,
-                                                  const DecompiledTileset &decompiledTileset)
+static std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColor,
+                                                         const DecompiledTileset &decompiledTileset)
 {
   /*
-   * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
+   * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset. We tag the
+   * animated tiles first, with their anim and frame index. Then tag the regular assignment tiles.
    */
   std::vector<IndexedNormTile> normalizedTiles;
+
+  // std::size_t animIndex = 0;
+  // for (const auto &anim : decompiledTileset.anims) {
+  // }
+
   std::size_t tileIndex = 0;
-  for (auto const &tile : decompiledTileset.tiles) {
+  for (const auto &tile : decompiledTileset.tiles) {
     auto normalizedTile = normalize(transparencyColor, tile);
     DecompiledIndex index{};
     index.tileIndex = tileIndex++;
@@ -118,7 +126,7 @@ std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColo
   return normalizedTiles;
 }
 
-std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
+static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
 buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normalizedTiles,
                     const std::unordered_map<BGR15, std::size_t> &primaryIndexMap)
 {
@@ -161,7 +169,8 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
   return {colorIndexes, indexesToColors};
 }
 
-ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap, const NormalizedPalette &palette)
+static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
+                           const NormalizedPalette &palette)
 {
   /*
    * Set a color set based on a given palette. Each bit in the ColorSet represents if the color at the given index in
@@ -177,7 +186,7 @@ ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
   return colorSet;
 }
 
-std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
+static std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
 matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
                              const std::vector<IndexedNormTile> &indexedNormalizedTiles)
 {
@@ -206,9 +215,10 @@ struct AssignState {
   // The unique color sets from the NormalizedTiles
   std::vector<ColorSet> unassigned;
 };
+
 std::size_t gRecurseCount = 0;
-bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<ColorSet> &solution,
-            const std::vector<ColorSet> &primaryPalettes)
+static bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<ColorSet> &solution,
+                   const std::vector<ColorSet> &primaryPalettes)
 {
   gRecurseCount++;
   // TODO : this is a horrible hack avert your eyes
@@ -321,7 +331,7 @@ bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<Co
   return false;
 }
 
-GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette)
+static GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette)
 {
   GBATile gbaTile{};
   std::array<std::uint8_t, PAL_SIZE> paletteIndexes{};
@@ -334,15 +344,16 @@ GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette)
     }
     paletteIndexes.at(i) = it - std::begin(palette.colors);
   }
-  for (std::size_t i = 0; i < normalizedTile.pixels.colorIndexes.size(); i++) {
-    gbaTile.colorIndexes.at(i) = paletteIndexes.at(normalizedTile.pixels.colorIndexes.at(i));
+  // TODO : account for layers
+  for (std::size_t i = 0; i < normalizedTile.representativeTile().colorIndexes.size(); i++) {
+    gbaTile.colorIndexes.at(i) = paletteIndexes.at(normalizedTile.representativeTile().colorIndexes.at(i));
   }
   return gbaTile;
 }
 
-void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
-                        const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
-                        const std::vector<ColorSet> &assignedPalsSolution)
+static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
+                               const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
+                               const std::vector<ColorSet> &assignedPalsSolution)
 {
   std::unordered_map<GBATile, std::size_t> tileIndexes;
   // force tile 0 to be a transparent tile that uses palette 0
@@ -381,10 +392,10 @@ void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
   compiled.tileIndexes = tileIndexes;
 }
 
-void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
-                          const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
-                          const std::vector<ColorSet> &primaryPaletteColorSets,
-                          const std::vector<ColorSet> &assignedPalsSolution)
+static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
+                                 const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
+                                 const std::vector<ColorSet> &primaryPaletteColorSets,
+                                 const std::vector<ColorSet> &assignedPalsSolution)
 {
   std::vector<ColorSet> allColorSets{};
   allColorSets.insert(allColorSets.end(), primaryPaletteColorSets.begin(), primaryPaletteColorSets.end());
@@ -699,18 +710,18 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
     CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
     CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
     CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
-    CHECK(candidate.pixels.colorIndexes[0] == 1);
-    CHECK(candidate.pixels.colorIndexes[7] == 2);
-    CHECK(candidate.pixels.colorIndexes[9] == 3);
-    CHECK(candidate.pixels.colorIndexes[14] == 4);
-    CHECK(candidate.pixels.colorIndexes[18] == 2);
-    CHECK(candidate.pixels.colorIndexes[21] == 5);
-    CHECK(candidate.pixels.colorIndexes[42] == 3);
-    CHECK(candidate.pixels.colorIndexes[45] == 1);
-    CHECK(candidate.pixels.colorIndexes[49] == 6);
-    CHECK(candidate.pixels.colorIndexes[54] == 7);
-    CHECK(candidate.pixels.colorIndexes[56] == 8);
-    CHECK(candidate.pixels.colorIndexes[63] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[0] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[7] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[9] == 3);
+    CHECK(candidate.representativeTile().colorIndexes[14] == 4);
+    CHECK(candidate.representativeTile().colorIndexes[18] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[21] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[42] == 3);
+    CHECK(candidate.representativeTile().colorIndexes[45] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[49] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[54] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[56] == 8);
+    CHECK(candidate.representativeTile().colorIndexes[63] == 5);
   }
 
   SUBCASE("case: hFlip")
@@ -726,18 +737,18 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
     CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
     CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_BLACK));
     CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
-    CHECK(candidate.pixels.colorIndexes[0] == 1);
-    CHECK(candidate.pixels.colorIndexes[7] == 2);
-    CHECK(candidate.pixels.colorIndexes[9] == 3);
-    CHECK(candidate.pixels.colorIndexes[14] == 4);
-    CHECK(candidate.pixels.colorIndexes[18] == 5);
-    CHECK(candidate.pixels.colorIndexes[21] == 1);
-    CHECK(candidate.pixels.colorIndexes[42] == 2);
-    CHECK(candidate.pixels.colorIndexes[45] == 4);
-    CHECK(candidate.pixels.colorIndexes[49] == 6);
-    CHECK(candidate.pixels.colorIndexes[54] == 7);
-    CHECK(candidate.pixels.colorIndexes[56] == 5);
-    CHECK(candidate.pixels.colorIndexes[63] == 8);
+    CHECK(candidate.representativeTile().colorIndexes[0] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[7] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[9] == 3);
+    CHECK(candidate.representativeTile().colorIndexes[14] == 4);
+    CHECK(candidate.representativeTile().colorIndexes[18] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[21] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[42] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[45] == 4);
+    CHECK(candidate.representativeTile().colorIndexes[49] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[54] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[56] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[63] == 8);
   }
 
   SUBCASE("case: vFlip")
@@ -753,18 +764,18 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
     CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
     CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
     CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
-    CHECK(candidate.pixels.colorIndexes[0] == 1);
-    CHECK(candidate.pixels.colorIndexes[7] == 2);
-    CHECK(candidate.pixels.colorIndexes[9] == 3);
-    CHECK(candidate.pixels.colorIndexes[14] == 4);
-    CHECK(candidate.pixels.colorIndexes[18] == 5);
-    CHECK(candidate.pixels.colorIndexes[21] == 6);
-    CHECK(candidate.pixels.colorIndexes[42] == 7);
-    CHECK(candidate.pixels.colorIndexes[45] == 2);
-    CHECK(candidate.pixels.colorIndexes[49] == 5);
-    CHECK(candidate.pixels.colorIndexes[54] == 8);
-    CHECK(candidate.pixels.colorIndexes[56] == 6);
-    CHECK(candidate.pixels.colorIndexes[63] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[0] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[7] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[9] == 3);
+    CHECK(candidate.representativeTile().colorIndexes[14] == 4);
+    CHECK(candidate.representativeTile().colorIndexes[18] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[21] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[42] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[45] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[49] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[54] == 8);
+    CHECK(candidate.representativeTile().colorIndexes[56] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[63] == 7);
   }
 
   SUBCASE("case: hFlip and vFlip")
@@ -780,18 +791,18 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
     CHECK(candidate.palette.colors[6] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
     CHECK(candidate.palette.colors[7] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
     CHECK(candidate.palette.colors[8] == porytiles::rgbaToBgr(porytiles::RGBA_WHITE));
-    CHECK(candidate.pixels.colorIndexes[0] == 1);
-    CHECK(candidate.pixels.colorIndexes[7] == 2);
-    CHECK(candidate.pixels.colorIndexes[9] == 3);
-    CHECK(candidate.pixels.colorIndexes[14] == 4);
-    CHECK(candidate.pixels.colorIndexes[18] == 5);
-    CHECK(candidate.pixels.colorIndexes[21] == 6);
-    CHECK(candidate.pixels.colorIndexes[42] == 1);
-    CHECK(candidate.pixels.colorIndexes[45] == 7);
-    CHECK(candidate.pixels.colorIndexes[49] == 8);
-    CHECK(candidate.pixels.colorIndexes[54] == 6);
-    CHECK(candidate.pixels.colorIndexes[56] == 7);
-    CHECK(candidate.pixels.colorIndexes[63] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[0] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[7] == 2);
+    CHECK(candidate.representativeTile().colorIndexes[9] == 3);
+    CHECK(candidate.representativeTile().colorIndexes[14] == 4);
+    CHECK(candidate.representativeTile().colorIndexes[18] == 5);
+    CHECK(candidate.representativeTile().colorIndexes[21] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[42] == 1);
+    CHECK(candidate.representativeTile().colorIndexes[45] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[49] == 8);
+    CHECK(candidate.representativeTile().colorIndexes[54] == 6);
+    CHECK(candidate.representativeTile().colorIndexes[56] == 7);
+    CHECK(candidate.representativeTile().colorIndexes[63] == 5);
   }
 }
 
@@ -808,18 +819,18 @@ TEST_CASE("normalize should return the normal form of the given tile")
   CHECK(normalizedTile.palette.size == 9);
   CHECK_FALSE(normalizedTile.hFlip);
   CHECK_FALSE(normalizedTile.vFlip);
-  CHECK(normalizedTile.pixels.colorIndexes[0] == 1);
-  CHECK(normalizedTile.pixels.colorIndexes[7] == 2);
-  CHECK(normalizedTile.pixels.colorIndexes[9] == 3);
-  CHECK(normalizedTile.pixels.colorIndexes[14] == 4);
-  CHECK(normalizedTile.pixels.colorIndexes[18] == 2);
-  CHECK(normalizedTile.pixels.colorIndexes[21] == 5);
-  CHECK(normalizedTile.pixels.colorIndexes[42] == 3);
-  CHECK(normalizedTile.pixels.colorIndexes[45] == 1);
-  CHECK(normalizedTile.pixels.colorIndexes[49] == 6);
-  CHECK(normalizedTile.pixels.colorIndexes[54] == 7);
-  CHECK(normalizedTile.pixels.colorIndexes[56] == 8);
-  CHECK(normalizedTile.pixels.colorIndexes[63] == 5);
+  CHECK(normalizedTile.representativeTile().colorIndexes[0] == 1);
+  CHECK(normalizedTile.representativeTile().colorIndexes[7] == 2);
+  CHECK(normalizedTile.representativeTile().colorIndexes[9] == 3);
+  CHECK(normalizedTile.representativeTile().colorIndexes[14] == 4);
+  CHECK(normalizedTile.representativeTile().colorIndexes[18] == 2);
+  CHECK(normalizedTile.representativeTile().colorIndexes[21] == 5);
+  CHECK(normalizedTile.representativeTile().colorIndexes[42] == 3);
+  CHECK(normalizedTile.representativeTile().colorIndexes[45] == 1);
+  CHECK(normalizedTile.representativeTile().colorIndexes[49] == 6);
+  CHECK(normalizedTile.representativeTile().colorIndexes[54] == 7);
+  CHECK(normalizedTile.representativeTile().colorIndexes[56] == 8);
+  CHECK(normalizedTile.representativeTile().colorIndexes[63] == 5);
 }
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset")
@@ -835,10 +846,10 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles.size() == 4);
 
   // First tile normal form is vFlipped, palette should have 2 colors
-  CHECK(indexedNormTiles[0].second.pixels.colorIndexes[0] == 0);
-  CHECK(indexedNormTiles[0].second.pixels.colorIndexes[7] == 1);
+  CHECK(indexedNormTiles[0].second.representativeTile().colorIndexes[0] == 0);
+  CHECK(indexedNormTiles[0].second.representativeTile().colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {
-    CHECK(indexedNormTiles[0].second.pixels.colorIndexes[i] == 1);
+    CHECK(indexedNormTiles[0].second.representativeTile().colorIndexes[i] == 1);
   }
   CHECK(indexedNormTiles[0].second.palette.size == 2);
   CHECK(indexedNormTiles[0].second.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
@@ -848,11 +859,11 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[0].first.tileIndex == 0);
 
   // Second tile already in normal form, palette should have 3 colors
-  CHECK(indexedNormTiles[1].second.pixels.colorIndexes[0] == 0);
-  CHECK(indexedNormTiles[1].second.pixels.colorIndexes[54] == 1);
-  CHECK(indexedNormTiles[1].second.pixels.colorIndexes[55] == 1);
-  CHECK(indexedNormTiles[1].second.pixels.colorIndexes[62] == 1);
-  CHECK(indexedNormTiles[1].second.pixels.colorIndexes[63] == 2);
+  CHECK(indexedNormTiles[1].second.representativeTile().colorIndexes[0] == 0);
+  CHECK(indexedNormTiles[1].second.representativeTile().colorIndexes[54] == 1);
+  CHECK(indexedNormTiles[1].second.representativeTile().colorIndexes[55] == 1);
+  CHECK(indexedNormTiles[1].second.representativeTile().colorIndexes[62] == 1);
+  CHECK(indexedNormTiles[1].second.representativeTile().colorIndexes[63] == 2);
   CHECK(indexedNormTiles[1].second.palette.size == 3);
   CHECK(indexedNormTiles[1].second.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
   CHECK(indexedNormTiles[1].second.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
@@ -862,10 +873,10 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[1].first.tileIndex == 1);
 
   // Third tile normal form is hFlipped, palette should have 3 colors
-  CHECK(indexedNormTiles[2].second.pixels.colorIndexes[0] == 0);
-  CHECK(indexedNormTiles[2].second.pixels.colorIndexes[7] == 1);
-  CHECK(indexedNormTiles[2].second.pixels.colorIndexes[56] == 1);
-  CHECK(indexedNormTiles[2].second.pixels.colorIndexes[63] == 2);
+  CHECK(indexedNormTiles[2].second.representativeTile().colorIndexes[0] == 0);
+  CHECK(indexedNormTiles[2].second.representativeTile().colorIndexes[7] == 1);
+  CHECK(indexedNormTiles[2].second.representativeTile().colorIndexes[56] == 1);
+  CHECK(indexedNormTiles[2].second.representativeTile().colorIndexes[63] == 2);
   CHECK(indexedNormTiles[2].second.palette.size == 3);
   CHECK(indexedNormTiles[2].second.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
   CHECK(indexedNormTiles[2].second.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_CYAN));
@@ -875,10 +886,10 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[2].first.tileIndex == 2);
 
   // Fourth tile normal form is hFlipped and vFlipped, palette should have 2 colors
-  CHECK(indexedNormTiles[3].second.pixels.colorIndexes[0] == 0);
-  CHECK(indexedNormTiles[3].second.pixels.colorIndexes[7] == 1);
+  CHECK(indexedNormTiles[3].second.representativeTile().colorIndexes[0] == 0);
+  CHECK(indexedNormTiles[3].second.representativeTile().colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {
-    CHECK(indexedNormTiles[3].second.pixels.colorIndexes[i] == 1);
+    CHECK(indexedNormTiles[3].second.representativeTile().colorIndexes[i] == 1);
   }
   CHECK(indexedNormTiles[3].second.palette.size == 2);
   CHECK(indexedNormTiles[3].second.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
@@ -970,10 +981,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
   // First tile has 1 non-transparent color, color should be BLUE
   CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).tileIndex == 0);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.colorIndexes[0] == 0);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.colorIndexes[7] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).representativeTile().colorIndexes[0] == 0);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).representativeTile().colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.colorIndexes[i] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).representativeTile().colorIndexes[i] == 1);
   }
   CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.size == 2);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).palette.colors[0] ==
@@ -988,11 +999,11 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
   // Second tile has two non-transparent colors, RED and GREEN
   CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).tileIndex == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[0] == 0);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[54] == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[55] == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[62] == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[63] == 2);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).representativeTile().colorIndexes[0] == 0);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).representativeTile().colorIndexes[54] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).representativeTile().colorIndexes[55] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).representativeTile().colorIndexes[62] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).representativeTile().colorIndexes[63] == 2);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.size == 3);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[0] ==
         porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
@@ -1008,10 +1019,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
   // Third tile has two non-transparent colors, CYAN and GREEN
   CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).tileIndex == 2);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[0] == 0);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[7] == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[56] == 1);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[63] == 2);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).representativeTile().colorIndexes[0] == 0);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).representativeTile().colorIndexes[7] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).representativeTile().colorIndexes[56] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).representativeTile().colorIndexes[63] == 2);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.size == 3);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).palette.colors[0] ==
         porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
@@ -1027,10 +1038,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
   // Fourth tile has 1 non-transparent color, color should be BLUE
   CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).tileIndex == 3);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.colorIndexes[0] == 0);
-  CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.colorIndexes[7] == 1);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).representativeTile().colorIndexes[0] == 0);
+  CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).representativeTile().colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {
-    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.colorIndexes[i] == 1);
+    CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).representativeTile().colorIndexes[i] == 1);
   }
   CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.size == 2);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).palette.colors[0] ==
