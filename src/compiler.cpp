@@ -385,6 +385,12 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
     auto &colorSet = std::get<2>(indexedNormTile);
+
+    // Skip animated tiles since we already processed them
+    if (index.animated) {
+      continue;
+    }
+
     auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
                            [&colorSet](const auto &assignedPal) {
                              // Find which of the assignedSolution palettes this tile belongs to
@@ -427,6 +433,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
     auto &colorSet = std::get<2>(indexedNormTile);
+
+    // Skip animated tiles since we already processed them
+    if (index.animated) {
+      continue;
+    }
+
     auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets), [&colorSet](const auto &assignedPal) {
       // Find which of the allColorSets palettes this tile belongs to
       return (colorSet & ~assignedPal).none();
