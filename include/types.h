@@ -257,7 +257,9 @@ struct CompiledAnimation {
 
   CompiledAnimation() : frames{} {}
 
-  CompiledAnimFrame representativeFrame() const { return frames.at(0); }
+  CompiledAnimFrame representativeFrame() const { return frames.at(representativeFrameIndex()); }
+
+  static const std::size_t representativeFrameIndex() { return 0; }
 };
 
 /**
@@ -308,7 +310,9 @@ struct DecompiledAnimation {
 
   DecompiledAnimation() : frames{} {}
 
-  const DecompiledAnimFrame &representativeFrame() const { return frames.at(0); }
+  const DecompiledAnimFrame &representativeFrame() const { return frames.at(representativeFrameIndex()); }
+
+  static const std::size_t representativeFrameIndex() { return 0; }
 
   std::size_t size() const { return frames.size(); }
 };

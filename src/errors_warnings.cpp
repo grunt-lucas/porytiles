@@ -56,4 +56,16 @@ void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors)
   // TODO : print logs
 }
 
+void warn_transparentRepresentativeAnimTile(Warnings &warnings, Errors &errors)
+{
+  if (warnings.transparentRepresentativeAnimTileMode == WarningMode::ERR) {
+    errors.errCount++;
+  }
+  else if (warnings.transparentRepresentativeAnimTileMode == WarningMode::WARN) {
+    warnings.transparentRepresentativeAnimTileCount++;
+  }
+  // TODO : better message
+  pt_warn("transparent representative tile");
+}
+
 } // namespace porytiles

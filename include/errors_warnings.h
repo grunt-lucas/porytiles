@@ -21,11 +21,18 @@ struct Warnings {
   std::size_t paletteAllocEfficCount;
   WarningMode paletteAllocEfficMode;
 
-  [[nodiscard]] std::size_t warnCount() const { return colorPrecisionLossCount + paletteAllocEfficCount; }
+  std::size_t transparentRepresentativeAnimTileCount;
+  WarningMode transparentRepresentativeAnimTileMode;
+
+  [[nodiscard]] std::size_t warnCount() const
+  {
+    return colorPrecisionLossCount + paletteAllocEfficCount + transparentRepresentativeAnimTileCount;
+  }
 
   Warnings()
       : colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
-        paletteAllocEfficMode{WarningMode::OFF}
+        paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileCount{0},
+        transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
   }
 };
@@ -42,6 +49,7 @@ void die_compilationTerminated();
 void die_errorCount(const Errors &err);
 
 void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors);
+void warn_transparentRepresentativeAnimTile(Warnings &warnings, Errors &errors);
 
 } // namespace porytiles
 

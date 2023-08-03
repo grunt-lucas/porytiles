@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "emitter.h"
 #include "errors_warnings.h"
 #include "importer.h"
 #include "logger.h"
@@ -377,10 +378,84 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                                const std::vector<ColorSet> &assignedPalsSolution)
 {
   std::unordered_map<GBATile, std::size_t> tileIndexes;
+
   // force tile 0 to be a transparent tile that uses palette 0
   tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});
   compiled.tiles.push_back(GBA_TILE_TRANSPARENT);
   compiled.paletteIndexesOfTile.push_back(0);
+
+  /*
+   * Process animated tiles, we want frame 0 of each animation to be at the beginning of the tiles.png in a stable
+   * location.
+   */
+  for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
+    auto index = std::get<0>(indexedNormTile);
+    auto &normTile = std::get<1>(indexedNormTile);
+    auto &colorSet = std::get<2>(indexedNormTile);
+
+    // Skip regular tiles, since we will process them next
+    if (!index.animated) {
+      continue;
+    }
+
+    auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
+                           [&colorSet](const auto &assignedPal) {
+                             // Find which of the assignedSolution palettes this tile belongs to
+                             return (colorSet & ~assignedPal).none();
+                           });
+    if (it == std::end(assignedPalsSolution)) {
+      // TODO : better error context
+      throw std::runtime_error{"it == std::end(assignedPalsSolution)"};
+    }
+    std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
+
+    // Create the GBATile for this tile's representative frame
+    GBATile representativeFrameTile =
+        makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes.at(paletteIndex));
+
+    /*
+     * Warn the user if the representative frame of an animation contained a transparent tile. This is technically OK
+     * but typically indicates a user oversight, or a lack of understanding of the animation system. It does not really
+     * make sense to ever have a transparent animated tile in the representative frame, since it cannot be correctly
+     * referenced from the metatile sheet.
+     */
+    if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
+        tileIndexes.at(representativeFrameTile) == 0) {
+      warn_transparentRepresentativeAnimTile(ctx.warnings, ctx.errors);
+    }
+
+    // Insert this tile's representative frame into the seen tiles map
+    auto inserted = tileIndexes.insert({representativeFrameTile, compiled.tiles.size()});
+
+    // Insertion happened or tile was transparent
+    if (inserted.second || (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
+                            tileIndexes.at(representativeFrameTile) == 0)) {
+      // Insert this tile's representative frame into the tiles.png
+      compiled.tiles.push_back(representativeFrameTile);
+      compiled.paletteIndexesOfTile.push_back(paletteIndex);
+      // Fill out the anim structure
+      compiled.anims.at(index.animIndex)
+          .frames.at(NormalizedTile::representativeFrameIndex())
+          .tiles.push_back(representativeFrameTile);
+    }
+    else if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
+             tileIndexes.at(representativeFrameTile) != 0) {
+      // TODO : better error context
+      throw PtException{"detected duplicate representative anim tile, not allowed"};
+    }
+
+    // Put the rest of this tile's frames into the anim structure for the emitter
+    for (std::size_t frameIndex = 1; frameIndex < normTile.frames.size(); frameIndex++) {
+      GBATile frameNTile = makeTile(normTile, frameIndex, compiled.palettes.at(paletteIndex));
+      compiled.anims.at(index.animIndex).frames.at(frameIndex).tiles.push_back(frameNTile);
+    }
+  }
+
+  /*
+   * Process regular tiles. The user will have used frame 0 of an animated tile to indicate that a particular metatile
+   * has an animated component. Since we already processed animated tiles, we'll link up the assignment. Other tiles
+   * will be added and linked.
+   */
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -429,6 +504,13 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
   allColorSets.insert(allColorSets.end(), primaryPaletteColorSets.begin(), primaryPaletteColorSets.end());
   allColorSets.insert(allColorSets.end(), assignedPalsSolution.begin(), assignedPalsSolution.end());
   std::unordered_map<GBATile, std::size_t> tileIndexes;
+
+  /*
+   * Process animated tiles, we want frame 0 of each animation to be at the beginning of the tiles.png in a stable
+   * location.
+   */
+  // TODO : implement anim tile processing
+
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -630,6 +712,12 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
   else {
     internalerror_unknownCompilerMode();
+  }
+
+  // Setup the compiled animations
+  compiled->anims.resize(decompiledTileset.anims.size());
+  for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
+    compiled->anims.at(animIndex).frames.resize(decompiledTileset.anims.at(animIndex).frames.size());
   }
 
   /*
@@ -1551,6 +1639,75 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[2]] == 2);
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[3]] == 3);
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[4]] == 4);
+}
+
+TEST_CASE("compile function should correctly compile animated tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.warnings.transparentRepresentativeAnimTileMode = porytiles::WarningMode::WARN;
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_4/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_4/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_4/primary/top.png"};
+  porytiles::DecompiledTileset decompiledPrimary =
+      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/water"));
+
+  png::image<png::rgba_pixel> flowerWhite00{"res/tests/simple_metatiles_4/primary/anims/flower_white/00.png"};
+  png::image<png::rgba_pixel> flowerWhite01{"res/tests/simple_metatiles_4/primary/anims/flower_white/01.png"};
+  png::image<png::rgba_pixel> flowerWhite02{"res/tests/simple_metatiles_4/primary/anims/flower_white/02.png"};
+  png::image<png::rgba_pixel> water00{"res/tests/simple_metatiles_4/primary/anims/water/00.png"};
+  png::image<png::rgba_pixel> water01{"res/tests/simple_metatiles_4/primary/anims/water/01.png"};
+
+  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
+  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+
+  flowerWhiteAnim.push_back(flowerWhite00);
+  flowerWhiteAnim.push_back(flowerWhite01);
+  flowerWhiteAnim.push_back(flowerWhite02);
+
+  waterAnim.push_back(water00);
+  waterAnim.push_back(water01);
+
+  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  anims.push_back(flowerWhiteAnim);
+  anims.push_back(waterAnim);
+
+  porytiles::importAnimTiles(anims, decompiledPrimary);
+
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+
+  CHECK(compiledPrimary->anims.size() == 2);
+
+  CHECK(compiledPrimary->anims.at(0).frames.size() == 3);
+  CHECK(compiledPrimary->anims.at(0).frames.at(0).tiles.size() == 4);
+  CHECK(compiledPrimary->anims.at(0).frames.at(1).tiles.size() == 4);
+  CHECK(compiledPrimary->anims.at(0).frames.at(2).tiles.size() == 4);
+
+  CHECK(compiledPrimary->anims.at(1).frames.size() == 2);
+  CHECK(compiledPrimary->anims.at(1).frames.at(0).tiles.size() == 1);
+  CHECK(compiledPrimary->anims.at(1).frames.at(1).tiles.size() == 1);
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_4/primary/expected_tiles.png"};
+  for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
+        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+      }
+    }
+  }
+
+  // TODO : flesh out test more
 }
 
 TEST_CASE("compileSecondary function should fill out CompiledTileset struct with expected values")
