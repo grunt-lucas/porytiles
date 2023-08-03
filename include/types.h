@@ -431,7 +431,7 @@ struct NormalizedTile {
    * Vector here to represent frames. Animated tiles can have multiple frames, with each frame corresponding to
    * a frame in the animation. Regular tiles will have a size 1 vector, since they don't have frames.
    */
-  std::vector<NormalizedPixels> pixels;
+  std::vector<NormalizedPixels> frames;
   /*
    * This palette is the combined palette for all frames. We want to handle it this way, since for anim tiles, each
    * frame in the animation must be placed in the same hardware palette.
@@ -440,20 +440,20 @@ struct NormalizedTile {
   bool hFlip;
   bool vFlip;
 
-  explicit NormalizedTile(RGBA32 transparency) : pixels{}, palette{}, hFlip{}, vFlip{}
+  explicit NormalizedTile(RGBA32 transparency) : frames{}, palette{}, hFlip{}, vFlip{}
   {
     palette.size = 1;
     palette.colors[0] = rgbaToBgr(transparency);
-    pixels.resize(1);
+    frames.resize(1);
   }
 
   [[nodiscard]] bool transparent() const { return palette.size == 1; }
 
   void setPixel(std::size_t frame, std::size_t row, std::size_t col, uint8_t value)
   {
-    if (frame >= pixels.size()) {
+    if (frame >= frames.size()) {
       throw std::out_of_range{"internal: NormalizedTile::setPixel frame argument out of bounds (" +
-                              std::to_string(frame) + " >= " + std::to_string(pixels.size()) + ")"};
+                              std::to_string(frame) + " >= " + std::to_string(frames.size()) + ")"};
     }
     if (row >= TILE_SIDE_LENGTH) {
       throw std::out_of_range{"internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) +
@@ -463,10 +463,10 @@ struct NormalizedTile {
       throw std::out_of_range{"internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) +
                               ")"};
     }
-    pixels.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
+    frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
   }
 
-  NormalizedPixels representativeTile() const { return pixels.at(0); }
+  NormalizedPixels representativeFrame() const { return frames.at(0); }
 };
 } // namespace porytiles
 
@@ -475,7 +475,7 @@ template <> struct std::hash<porytiles::NormalizedTile> {
   {
     // TODO : better hash function
     std::size_t hashValue = 0;
-    for (const auto &layer : tile.pixels) {
+    for (const auto &layer : tile.frames) {
       hashValue ^= std::hash<porytiles::NormalizedPixels>{}(layer);
     }
     hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);
