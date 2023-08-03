@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "compiler.h"
 #include "logger.h"
 #include "ptcontext.h"
 #include "ptexception.h"
@@ -20,7 +21,7 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t config
                            ")"};
 }
 
-void internalerror_unknownCompilerMode(CompilerMode mode) { throw std::runtime_error{"unknown CompilerMode"}; }
+void internalerror_unknownCompilerMode() { throw std::runtime_error{"unknown CompilerMode"}; }
 
 void error_layerHeightNotDivisibleBy16(Errors &err, std::string layer, png::uint_32 height)
 {

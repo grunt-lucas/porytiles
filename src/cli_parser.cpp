@@ -207,8 +207,8 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_HELP =
 "Usage:\n"
-"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP\n"
-"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] BOTTOM MIDDLE TOP BOTTOM-PRIMARY MIDDLE-PRIMARY TOP-PRIMARY\n"
+"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PRIMARY-PATH\n"
 "    porytiles " + COMPILE_FREESTANDING_COMMAND + " [OPTIONS] TILES\n"
 "\n"
 "Compile given tilesheet(s) into a tileset. The `primary' and `secondary'\n"
@@ -222,26 +222,17 @@ const std::string COMPILE_HELP =
 "relaxed. See the documentation for more details.\n"
 "\n"
 "Args:\n"
-"    <BOTTOM>\n"
-"        An RGBA PNG tilesheet containing the bottom metatile layer.\n"
+"    <PRIMARY-PATH>\n"
+"        Path to a directory containing the source data for a primary set.\n"
+"        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
+"        tile sheets. May optionally contain an `anims' folder with animated\n"
+"        tile sheets. See the documentation for more details."
 "\n"
-"    <MIDDLE>\n"
-"        An RGBA PNG tilesheet containing the middle metatile layer.\n"
-"\n"
-"    <TOP>\n"
-"        An RGBA PNG tilesheet containing the top metatile layer.\n"
-"\n"
-"    <BOTTOM-PRIMARY>\n"
-"        In `secondary' mode, an RGBA PNG tilesheet containing the bottom\n"
-"        metatile layer for the corresponding primary set.\n"
-"\n"
-"    <MIDDLE-PRIMARY>\n"
-"        In `secondary' mode, an RGBA PNG tilesheet containing the middle\n"
-"        metatile layer for the corresponding primary set.\n"
-"\n"
-"    <TOP-PRIMARY>\n"
-"        In `secondary' mode, an RGBA PNG tilesheet containing the top\n"
-"        metatile layer for the corresponding primary set.\n"
+"    <SECONDARY-PATH>\n"
+"        Path to a directory containing the source data for a secondary set.\n"
+"        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
+"        tile sheets. May optionally contain an `anims' folder with animated\n"
+"        tile sheets. See the documentation for more details."
 "\n"
 "    <TILES>\n"
 "        In `freestanding' mode, a single RGBA PNG tilesheet containing\n"
@@ -341,27 +332,22 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
 
   if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
     if ((argc - optind) != 1) {
-      throw PtException{"must specify TILES args, see `porytiles compile-freestanding --help'"};
+      throw PtException{"must specify TILES arg, see `porytiles compile-freestanding --help'"};
     }
     ctx.inputPaths.freestandingTilesheetPath = argv[optind++];
   }
   else {
-    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY && (argc - optind) != 6) {
-      throw PtException{"must specify BOTTOM, MIDDLE, TOP, BOTTOM_PRIMARY, MIDDLE_PRIMARY, TOP_PRIMARY layer args, see "
-                        "`porytiles compile-secondary --help'"};
+    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY && (argc - optind) != 2) {
+      throw PtException{"must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'"};
     }
-    else if (ctx.compilerConfig.mode != CompilerMode::SECONDARY && (argc - optind) != 3) {
-      throw PtException{"must specify BOTTOM, MIDDLE, TOP layer args, see `porytiles compile-primary --help'"};
+    else if (ctx.compilerConfig.mode != CompilerMode::SECONDARY && (argc - optind) != 1) {
+      throw PtException{"must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'"};
     }
 
     if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-      ctx.inputPaths.bottomSecondaryTilesheetPath = argv[optind++];
-      ctx.inputPaths.middleSecondaryTilesheetPath = argv[optind++];
-      ctx.inputPaths.topSecondaryTilesheetPath = argv[optind++];
+      ctx.inputPaths.secondaryInputPath = argv[optind++];
     }
-    ctx.inputPaths.bottomPrimaryTilesheetPath = argv[optind++];
-    ctx.inputPaths.middlePrimaryTilesheetPath = argv[optind++];
-    ctx.inputPaths.topPrimaryTilesheetPath = argv[optind++];
+    ctx.inputPaths.primaryInputPath = argv[optind++];
   }
 
   ctx.validate();

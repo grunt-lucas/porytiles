@@ -2,11 +2,14 @@
 #define PORYTILES_PT_CONTEXT_H
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <string>
 
+#include "errors.h"
 #include "ptexception.h"
 #include "types.h"
+#include "warnings.h"
 
 namespace porytiles {
 
@@ -74,14 +77,44 @@ struct FieldmapConfig {
 
 struct InputPaths {
   std::string freestandingTilesheetPath;
+  std::string primaryInputPath;
+  std::string secondaryInputPath;
 
-  std::string bottomPrimaryTilesheetPath;
-  std::string middlePrimaryTilesheetPath;
-  std::string topPrimaryTilesheetPath;
+  std::filesystem::path bottomPrimaryTilesheetPath() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "bottom.png";
+  }
 
-  std::string bottomSecondaryTilesheetPath;
-  std::string middleSecondaryTilesheetPath;
-  std::string topSecondaryTilesheetPath;
+  std::filesystem::path middlePrimaryTilesheetPath() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "middle.png";
+  }
+
+  std::filesystem::path topPrimaryTilesheetPath() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "top.png";
+  }
+
+  std::filesystem::path bottomSecondaryTilesheetPath() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "bottom.png";
+  }
+
+  std::filesystem::path middleSecondaryTilesheetPath() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "middle.png";
+  }
+
+  std::filesystem::path topSecondaryTilesheetPath() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "top.png";
+  }
 };
 
 struct Output {
@@ -103,31 +136,6 @@ struct CompilerContext {
   std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
 
   CompilerContext() : pairedPrimaryTiles{nullptr} {}
-};
-
-struct Errors {
-  std::size_t errCount;
-  bool dieCompilation;
-
-  Errors() : errCount{0}, dieCompilation{false} {}
-};
-
-enum class WarningMode { OFF, WARN, ERR };
-
-struct Warnings {
-  std::size_t colorPrecisionLossCount;
-  WarningMode colorPrecisionLossMode;
-
-  std::size_t paletteAllocEfficCount;
-  WarningMode paletteAllocEfficMode;
-
-  [[nodiscard]] std::size_t warnCount() const { return colorPrecisionLossCount + paletteAllocEfficCount; }
-
-  Warnings()
-      : colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
-        paletteAllocEfficMode{WarningMode::OFF}
-  {
-  }
 };
 
 struct PtContext {

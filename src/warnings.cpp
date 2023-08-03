@@ -1,5 +1,6 @@
 #include "warnings.h"
 
+#include "errors.h"
 #include "logger.h"
 #include "ptcontext.h"
 

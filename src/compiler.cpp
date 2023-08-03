@@ -461,7 +461,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode();
   }
   compiled->assignments.resize(decompiledTileset.tiles.size());
 
@@ -508,7 +508,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode();
   }
   std::vector<ColorSet> unassignedNormPalettes;
   std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
@@ -582,7 +582,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode();
   }
 
   /*
@@ -598,7 +598,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
-    internalerror_unknownCompilerMode(ctx.compilerConfig.mode);
+    internalerror_unknownCompilerMode();
   }
 
   return compiled;
@@ -1253,12 +1253,12 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_primary.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/bottom_primary.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary =
       porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
 
@@ -1266,8 +1266,8 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
 
   // Check that tiles are as expected
   CHECK(compiledPrimary->tiles.size() == 5);
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary_expected_tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary_expected_tiles.png"};
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
       for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
@@ -1390,23 +1390,23 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_primary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_primary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_primary.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/bottom_primary.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/middle_primary.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/top_primary.png"};
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary =
       porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/bottom_secondary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/middle_secondary.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/top_secondary.png"));
-  png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_3/bottom_secondary.png"};
-  png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/middle_secondary.png"};
-  png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/top_secondary.png"};
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/top.png"));
+  png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_3/secondary/bottom.png"};
+  png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/secondary/middle.png"};
+  png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/secondary/top.png"};
   porytiles::DecompiledTileset decompiledSecondary =
       porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
@@ -1414,8 +1414,8 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
   // Check that tiles are as expected
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary_expected_tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/secondary_expected_tiles.png"};
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
       for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {

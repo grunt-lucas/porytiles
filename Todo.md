@@ -31,9 +31,7 @@
   + compile should take path to folder as input, folder must contain a `bottom,middle,top.png`, `anim` folder with
     frames in expected format, and metatile_attributes.csv file, etc
 
-+ change input for compile-primary and compile-secondary to a directory
-  + input directory must contain:
-  + a bottom.png, middle.png, top.png
++ directory input
   + an optional anims folder that follows the directory structure above
   + metatile_attributes.csv which contains attributes for each metatile
     + this will allow us to support dual layers
