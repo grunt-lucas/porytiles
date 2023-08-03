@@ -108,10 +108,12 @@ std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transparencyColo
    * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset.
    */
   std::vector<IndexedNormTile> normalizedTiles;
-  DecompiledIndex decompiledIndex = 0;
+  std::size_t tileIndex = 0;
   for (auto const &tile : decompiledTileset.tiles) {
     auto normalizedTile = normalize(transparencyColor, tile);
-    normalizedTiles.emplace_back(decompiledIndex++, normalizedTile);
+    DecompiledIndex index{};
+    index.tileIndex = tileIndex++;
+    normalizedTiles.emplace_back(index, normalizedTile);
   }
   return normalizedTiles;
 }
@@ -374,7 +376,7 @@ void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
     }
     std::size_t tileIndex = inserted.first->second;
-    compiled.assignments.at(index) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
+    compiled.assignments.at(index.tileIndex) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
   }
   compiled.tileIndexes = tileIndexes;
 }
@@ -405,8 +407,8 @@ void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.find(gbaTile) !=
         ctx.compilerContext.pairedPrimaryTiles->tileIndexes.end()) {
       // Tile was in the primary set
-      compiled.assignments.at(index) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile), paletteIndex,
-                                        normTile.hFlip, normTile.vFlip};
+      compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile),
+                                                  paletteIndex, normTile.hFlip, normTile.vFlip};
     }
     else {
       // Tile was in the secondary set
@@ -422,8 +424,8 @@ void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       }
       std::size_t tileIndex = inserted.first->second;
       // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
-      compiled.assignments.at(index) = {tileIndex + ctx.fieldmapConfig.numTilesInPrimary, paletteIndex, normTile.hFlip,
-                                        normTile.vFlip};
+      compiled.assignments.at(index.tileIndex) = {tileIndex + ctx.fieldmapConfig.numTilesInPrimary, paletteIndex,
+                                                  normTile.hFlip, normTile.vFlip};
     }
   }
   compiled.tileIndexes = tileIndexes;
@@ -843,7 +845,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[0].second.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
   CHECK_FALSE(indexedNormTiles[0].second.hFlip);
   CHECK(indexedNormTiles[0].second.vFlip);
-  CHECK(indexedNormTiles[0].first == 0);
+  CHECK(indexedNormTiles[0].first.tileIndex == 0);
 
   // Second tile already in normal form, palette should have 3 colors
   CHECK(indexedNormTiles[1].second.pixels.colorIndexes[0] == 0);
@@ -857,7 +859,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[1].second.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
   CHECK_FALSE(indexedNormTiles[1].second.hFlip);
   CHECK_FALSE(indexedNormTiles[1].second.vFlip);
-  CHECK(indexedNormTiles[1].first == 1);
+  CHECK(indexedNormTiles[1].first.tileIndex == 1);
 
   // Third tile normal form is hFlipped, palette should have 3 colors
   CHECK(indexedNormTiles[2].second.pixels.colorIndexes[0] == 0);
@@ -870,7 +872,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[2].second.palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
   CHECK_FALSE(indexedNormTiles[2].second.vFlip);
   CHECK(indexedNormTiles[2].second.hFlip);
-  CHECK(indexedNormTiles[2].first == 2);
+  CHECK(indexedNormTiles[2].first.tileIndex == 2);
 
   // Fourth tile normal form is hFlipped and vFlipped, palette should have 2 colors
   CHECK(indexedNormTiles[3].second.pixels.colorIndexes[0] == 0);
@@ -883,7 +885,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[3].second.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
   CHECK(indexedNormTiles[3].second.hFlip);
   CHECK(indexedNormTiles[3].second.vFlip);
-  CHECK(indexedNormTiles[3].first == 3);
+  CHECK(indexedNormTiles[3].first.tileIndex == 3);
 }
 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset")
@@ -967,7 +969,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
   CHECK(colorSets.size() == 3);
 
   // First tile has 1 non-transparent color, color should be BLUE
-  CHECK(std::get<0>(indexedNormTilesWithColorSets[0]) == 0);
+  CHECK(std::get<0>(indexedNormTilesWithColorSets[0]).tileIndex == 0);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.colorIndexes[0] == 0);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).pixels.colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {
@@ -985,7 +987,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
         colorSets.end());
 
   // Second tile has two non-transparent colors, RED and GREEN
-  CHECK(std::get<0>(indexedNormTilesWithColorSets[1]) == 1);
+  CHECK(std::get<0>(indexedNormTilesWithColorSets[1]).tileIndex == 1);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[0] == 0);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[54] == 1);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).pixels.colorIndexes[55] == 1);
@@ -1005,7 +1007,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
         colorSets.end());
 
   // Third tile has two non-transparent colors, CYAN and GREEN
-  CHECK(std::get<0>(indexedNormTilesWithColorSets[2]) == 2);
+  CHECK(std::get<0>(indexedNormTilesWithColorSets[2]).tileIndex == 2);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[0] == 0);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[7] == 1);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).pixels.colorIndexes[56] == 1);
@@ -1024,7 +1026,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
         colorSets.end());
 
   // Fourth tile has 1 non-transparent color, color should be BLUE
-  CHECK(std::get<0>(indexedNormTilesWithColorSets[3]) == 3);
+  CHECK(std::get<0>(indexedNormTilesWithColorSets[3]).tileIndex == 3);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.colorIndexes[0] == 0);
   CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).pixels.colorIndexes[7] == 1);
   for (int i = 56; i <= 63; i++) {

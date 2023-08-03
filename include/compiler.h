@@ -14,11 +14,13 @@
 
 namespace porytiles {
 
-struct DecompiledIndex2 {
+struct DecompiledIndex {
   bool animated;
   std::size_t animIndex;
   std::size_t frameIndex;
   std::size_t tileIndex;
+
+  DecompiledIndex() : animated{false}, animIndex{0}, frameIndex{0}, tileIndex{0} {}
 };
 
 extern std::size_t gRecurseCount;
@@ -36,8 +38,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
  */
 // ColorSets won't account for transparency color, we will handle that at the end
 using ColorSet = std::bitset<porytiles::MAX_BG_PALETTES *(porytiles::PAL_SIZE - 1)>;
-using DecompiledIndex = std::size_t;
-using IndexedNormTile = std::pair<DecompiledIndex, porytiles::NormalizedTile>;
-using IndexedNormTileWithColorSet = std::tuple<DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
+// using DecompiledIndex = std::size_t;
+using IndexedNormTile = std::pair<porytiles::DecompiledIndex, porytiles::NormalizedTile>;
+using IndexedNormTileWithColorSet = std::tuple<porytiles::DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
 
 #endif // PORYTILES_COMPILER_H
