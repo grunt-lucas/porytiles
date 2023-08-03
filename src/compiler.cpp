@@ -352,7 +352,7 @@ static bool assign(const std::size_t maxRecurseCount, AssignState state, std::ve
   return false;
 }
 
-static GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette)
+static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
 {
   GBATile gbaTile{};
   std::array<std::uint8_t, PAL_SIZE> paletteIndexes{};
@@ -365,9 +365,9 @@ static GBATile makeTile(const NormalizedTile &normalizedTile, GBAPalette palette
     }
     paletteIndexes.at(i) = it - std::begin(palette.colors);
   }
-  // TODO : account for frames
-  for (std::size_t i = 0; i < normalizedTile.representativeFrame().colorIndexes.size(); i++) {
-    gbaTile.colorIndexes.at(i) = paletteIndexes.at(normalizedTile.representativeFrame().colorIndexes.at(i));
+
+  for (std::size_t i = 0; i < normalizedTile.frames.at(frame).colorIndexes.size(); i++) {
+    gbaTile.colorIndexes.at(i) = paletteIndexes.at(normalizedTile.frames.at(frame).colorIndexes.at(i));
   }
   return gbaTile;
 }
@@ -395,7 +395,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       throw std::runtime_error{"it == std::end(assignedPalsSolution)"};
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
-    GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+    GBATile gbaTile =
+        makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes.at(paletteIndex));
     // insert only updates the map if the key is not already present
     auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
     if (inserted.second) {
@@ -435,7 +436,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       throw std::runtime_error{"it == std::end(allColorSets)"};
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
-    GBATile gbaTile = makeTile(normTile, compiled.palettes[paletteIndex]);
+    GBATile gbaTile = makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes[paletteIndex]);
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.find(gbaTile) !=
         ctx.compilerContext.pairedPrimaryTiles->tileIndexes.end()) {
       // Tile was in the primary set
@@ -1289,7 +1290,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
   auto compiledTiles = porytiles::compile(ctx, tiles);
 
-  porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, compiledTiles->palettes[0]);
+  porytiles::GBATile tile0 = porytiles::makeTile(
+      indexedNormTiles[0].second, porytiles::NormalizedTile::representativeFrameIndex(), compiledTiles->palettes[0]);
   CHECK_FALSE(indexedNormTiles[0].second.hFlip);
   CHECK(indexedNormTiles[0].second.vFlip);
   CHECK(tile0.colorIndexes[0] == 0);
@@ -1298,7 +1300,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     CHECK(tile0.colorIndexes[i] == 1);
   }
 
-  porytiles::GBATile tile1 = porytiles::makeTile(indexedNormTiles[1].second, compiledTiles->palettes[1]);
+  porytiles::GBATile tile1 = porytiles::makeTile(
+      indexedNormTiles[1].second, porytiles::NormalizedTile::representativeFrameIndex(), compiledTiles->palettes[1]);
   CHECK_FALSE(indexedNormTiles[1].second.hFlip);
   CHECK_FALSE(indexedNormTiles[1].second.vFlip);
   CHECK(tile1.colorIndexes[0] == 0);
@@ -1307,7 +1310,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   CHECK(tile1.colorIndexes[62] == 1);
   CHECK(tile1.colorIndexes[63] == 2);
 
-  porytiles::GBATile tile2 = porytiles::makeTile(indexedNormTiles[2].second, compiledTiles->palettes[1]);
+  porytiles::GBATile tile2 = porytiles::makeTile(
+      indexedNormTiles[2].second, porytiles::NormalizedTile::representativeFrameIndex(), compiledTiles->palettes[1]);
   CHECK(indexedNormTiles[2].second.hFlip);
   CHECK_FALSE(indexedNormTiles[2].second.vFlip);
   CHECK(tile2.colorIndexes[0] == 0);
@@ -1315,7 +1319,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   CHECK(tile2.colorIndexes[56] == 3);
   CHECK(tile2.colorIndexes[63] == 1);
 
-  porytiles::GBATile tile3 = porytiles::makeTile(indexedNormTiles[3].second, compiledTiles->palettes[0]);
+  porytiles::GBATile tile3 = porytiles::makeTile(
+      indexedNormTiles[3].second, porytiles::NormalizedTile::representativeFrameIndex(), compiledTiles->palettes[0]);
   CHECK(indexedNormTiles[3].second.hFlip);
   CHECK(indexedNormTiles[3].second.vFlip);
   CHECK(tile3.colorIndexes[0] == 0);

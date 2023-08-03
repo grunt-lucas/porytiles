@@ -468,7 +468,9 @@ struct NormalizedTile {
     frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
   }
 
-  const NormalizedPixels &representativeFrame() const { return frames.at(0); }
+  const NormalizedPixels &representativeFrame() const { return frames.at(representativeFrameIndex()); }
+
+  static const std::size_t representativeFrameIndex() { return 0; }
 };
 } // namespace porytiles
 
