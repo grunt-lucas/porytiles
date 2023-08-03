@@ -10,7 +10,7 @@
 
 namespace porytiles {
 
-DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel> &png)
+DecompiledTileset importTilesFromPng(const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
     throw PtException{"input PNG height `" + std::to_string(png.get_height()) + "' is not divisible by 8"};
@@ -137,6 +137,49 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   return decompiledTiles;
 }
 
+void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
+{
+  std::vector<DecompiledAnimation> anims{};
+
+  for (const auto &rawAnim : rawAnims) {
+    DecompiledAnimation anim{};
+
+    for (const auto &rawFrame : rawAnim) {
+      DecompiledAnimFrame animFrame{};
+
+      // TODO : improve error messages here
+      if (rawFrame.get_height() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG height `" + std::to_string(rawFrame.get_height()) + "' is not divisible by 8"};
+      }
+      if (rawFrame.get_width() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG width `" + std::to_string(rawFrame.get_width()) + "' is not divisible by 8"};
+      }
+
+      std::size_t pngWidthInTiles = rawFrame.get_width() / TILE_SIDE_LENGTH;
+      std::size_t pngHeightInTiles = rawFrame.get_height() / TILE_SIDE_LENGTH;
+      for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+        size_t tileRow = tileIndex / pngWidthInTiles;
+        size_t tileCol = tileIndex % pngWidthInTiles;
+        RGBATile tile{};
+
+        for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+          size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+          size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+          tile.pixels[pixelIndex].red = rawFrame[pixelRow][pixelCol].red;
+          tile.pixels[pixelIndex].green = rawFrame[pixelRow][pixelCol].green;
+          tile.pixels[pixelIndex].blue = rawFrame[pixelRow][pixelCol].blue;
+          tile.pixels[pixelIndex].alpha = rawFrame[pixelRow][pixelCol].alpha;
+        }
+        animFrame.tiles.push_back(tile);
+      }
+      anim.frames.push_back(animFrame);
+    }
+    anims.push_back(anim);
+  }
+
+  tiles.anims = anims;
+}
+
 } // namespace porytiles
 
 TEST_CASE("importRawTilesFromPng should read an RGBA PNG into a DecompiledTileset in tile-wise left-to-right, "
@@ -145,7 +188,7 @@ TEST_CASE("importRawTilesFromPng should read an RGBA PNG into a DecompiledTilese
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_1.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importRawTilesFromPng(png1);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(png1);
 
   // Tile 0 should have blue stripe from top left to bottom right
   CHECK(tiles.tiles[0].pixels[0] == porytiles::RGBA_BLUE);
@@ -207,4 +250,9 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
   CHECK(tiles.tiles[9] == porytiles::RGBA_TILE_BLUE);
   CHECK(tiles.tiles[10] == porytiles::RGBA_TILE_MAGENTA);
   CHECK(tiles.tiles[11] == porytiles::RGBA_TILE_MAGENTA);
+}
+
+TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field")
+{
+  // TODO : write test
 }

@@ -18,11 +18,13 @@ namespace porytiles {
  * Build a DecompiledTileset from a single input PNG. This tileset is considered "raw", that is, it has no layering.
  * The importer will simply scan the PNG tiles left-to-right, top-to-bottom and put them into the DecompiledTileset.
  */
-DecompiledTileset importRawTilesFromPng(const png::image<png::rgba_pixel> &png);
+DecompiledTileset importTilesFromPng(const png::image<png::rgba_pixel> &png);
 
 DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top);
+
+void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles);
 
 } // namespace porytiles
 
