@@ -1,5 +1,5 @@
-#ifndef PORYTILES_ERRORS_H
-#define PORYTILES_ERRORS_H
+#ifndef PORYTILES_ERRORS_WARNINGS_H
+#define PORYTILES_ERRORS_WARNINGS_H
 
 #include <cstddef>
 #include <png.hpp>
@@ -10,6 +10,24 @@ struct Errors {
   bool dieCompilation;
 
   Errors() : errCount{0}, dieCompilation{false} {}
+};
+
+enum class WarningMode { OFF, WARN, ERR };
+
+struct Warnings {
+  std::size_t colorPrecisionLossCount;
+  WarningMode colorPrecisionLossMode;
+
+  std::size_t paletteAllocEfficCount;
+  WarningMode paletteAllocEfficMode;
+
+  [[nodiscard]] std::size_t warnCount() const { return colorPrecisionLossCount + paletteAllocEfficCount; }
+
+  Warnings()
+      : colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
+        paletteAllocEfficMode{WarningMode::OFF}
+  {
+  }
 };
 
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
@@ -23,6 +41,8 @@ void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 mid
 void die_compilationTerminated();
 void die_errorCount(const Errors &err);
 
+void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors);
+
 } // namespace porytiles
 
-#endif // PORYTILES_ERRORS_H
+#endif

@@ -6,10 +6,9 @@
 #include <memory>
 #include <string>
 
-#include "errors.h"
+#include "errors_warnings.h"
 #include "ptexception.h"
 #include "types.h"
-#include "warnings.h"
 
 namespace porytiles {
 

@@ -10,7 +10,7 @@
 #include <fmt/format.h>
 
 #include "cli_options.h"
-#include "errors.h"
+#include "errors_warnings.h"
 #include "program_name.h"
 #include "ptexception.h"
 

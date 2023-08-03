@@ -3,7 +3,7 @@
 #include <iostream>
 #include <png.hpp>
 
-#include "errors.h"
+#include "errors_warnings.h"
 #include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"

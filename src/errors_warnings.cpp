@@ -1,4 +1,4 @@
-#include "errors.h"
+#include "errors_warnings.h"
 
 #include <cstddef>
 #include <doctest.h>
@@ -6,9 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "compiler.h"
 #include "logger.h"
-#include "ptcontext.h"
 #include "ptexception.h"
 
 namespace porytiles {
@@ -46,5 +44,16 @@ void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 mid
 void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
 
 void die_errorCount(const Errors &err) { throw PtException{std::to_string(err.errCount) + " errors generated."}; }
+
+void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors)
+{
+  if (warnings.colorPrecisionLossMode == WarningMode::ERR) {
+    errors.errCount++;
+  }
+  else if (warnings.colorPrecisionLossMode == WarningMode::WARN) {
+    warnings.colorPrecisionLossCount++;
+  }
+  // TODO : print logs
+}
 
 } // namespace porytiles
