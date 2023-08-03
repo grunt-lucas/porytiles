@@ -66,6 +66,7 @@ static NormalizedTile candidate(const RGBA32 &transparencyColor, const std::vect
   NormalizedTile candidateTile{transparencyColor};
   candidateTile.hFlip = hFlip;
   candidateTile.vFlip = vFlip;
+  candidateTile.frames.resize(rgbaFrames.size());
 
   std::size_t frame = 0;
   for (const auto &rgba : rgbaFrames) {
@@ -113,13 +114,27 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(const RGBA32 &transpare
 {
   /*
    * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset. We tag the
-   * animated tiles first, with their anim and frame index. Then tag the regular assignment tiles.
+   * animated tiles first, then tag the regular assignment tiles.
    */
   std::vector<IndexedNormTile> normalizedTiles;
 
-  // std::size_t animIndex = 0;
-  // for (const auto &anim : decompiledTileset.anims) {
-  // }
+  for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
+    const auto &anim = decompiledTileset.anims.at(animIndex);
+    // We have already validated that all frames have identical dimensions, so we can use the representative frame here
+    for (std::size_t tileIndex = 0; tileIndex < anim.representativeFrame().size(); tileIndex++) {
+      std::vector<RGBATile> multiFrameTile{};
+      // For each tile, push all frames of the tile into a vector
+      for (std::size_t frameIndex = 0; frameIndex < anim.size(); frameIndex++) {
+        multiFrameTile.push_back(anim.frames.at(frameIndex).tiles.at(tileIndex));
+      }
+      DecompiledIndex index{};
+      auto normalizedTile = normalize(transparencyColor, multiFrameTile);
+      index.animated = true;
+      index.animIndex = animIndex;
+      index.tileIndex = tileIndex;
+      normalizedTiles.emplace_back(index, normalizedTile);
+    }
+  }
 
   std::size_t tileIndex = 0;
   for (const auto &tile : decompiledTileset.tiles) {
@@ -912,6 +927,116 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   CHECK(indexedNormTiles[3].second.hFlip);
   CHECK(indexedNormTiles[3].second.vFlip);
   CHECK(indexedNormTiles[3].first.tileIndex == 3);
+}
+
+TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated tiles")
+{
+  porytiles::PtContext ctx{};
+
+  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  png::image<png::rgba_pixel> tilesPng{"res/tests/2x2_pattern_2.png"};
+
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(tilesPng);
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_flower_yellow"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_water_1"));
+
+  png::image<png::rgba_pixel> white00{"res/tests/anim_flower_white/00.png"};
+  png::image<png::rgba_pixel> white01{"res/tests/anim_flower_white/01.png"};
+  png::image<png::rgba_pixel> white02{"res/tests/anim_flower_white/02.png"};
+
+  png::image<png::rgba_pixel> yellow00{"res/tests/anim_flower_yellow/00.png"};
+  png::image<png::rgba_pixel> yellow01{"res/tests/anim_flower_yellow/01.png"};
+  png::image<png::rgba_pixel> yellow02{"res/tests/anim_flower_yellow/02.png"};
+
+  png::image<png::rgba_pixel> water00{"res/tests/anim_water_1/00.png"};
+  png::image<png::rgba_pixel> water01{"res/tests/anim_water_1/01.png"};
+
+  std::vector<png::image<png::rgba_pixel>> whiteAnim{};
+  std::vector<png::image<png::rgba_pixel>> yellowAnim{};
+  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+
+  whiteAnim.push_back(white00);
+  whiteAnim.push_back(white01);
+  whiteAnim.push_back(white02);
+
+  yellowAnim.push_back(yellow00);
+  yellowAnim.push_back(yellow01);
+  yellowAnim.push_back(yellow02);
+
+  waterAnim.push_back(water00);
+  waterAnim.push_back(water01);
+
+  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  anims.push_back(whiteAnim);
+  anims.push_back(yellowAnim);
+  anims.push_back(waterAnim);
+
+  porytiles::importAnimTiles(anims, tiles);
+
+  std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx.compilerConfig.transparencyColor, tiles);
+
+  CHECK(indexedNormTiles.size() == 13);
+
+  // white flower multiframe tiles
+  CHECK(indexedNormTiles.at(0).first.animated);
+  CHECK(indexedNormTiles.at(0).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(0).first.tileIndex == 0);
+
+  CHECK(indexedNormTiles.at(1).first.animated);
+  CHECK(indexedNormTiles.at(1).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(1).first.tileIndex == 1);
+
+  CHECK(indexedNormTiles.at(2).first.animated);
+  CHECK(indexedNormTiles.at(2).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(2).first.tileIndex == 2);
+
+  CHECK(indexedNormTiles.at(3).first.animated);
+  CHECK(indexedNormTiles.at(3).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(3).first.tileIndex == 3);
+
+  // yellow flower multiframe tiles
+  CHECK(indexedNormTiles.at(4).first.animated);
+  CHECK(indexedNormTiles.at(4).first.animIndex == 1);
+  CHECK(indexedNormTiles.at(4).first.tileIndex == 0);
+
+  CHECK(indexedNormTiles.at(5).first.animated);
+  CHECK(indexedNormTiles.at(5).first.animIndex == 1);
+  CHECK(indexedNormTiles.at(5).first.tileIndex == 1);
+
+  CHECK(indexedNormTiles.at(6).first.animated);
+  CHECK(indexedNormTiles.at(6).first.animIndex == 1);
+  CHECK(indexedNormTiles.at(6).first.tileIndex == 2);
+
+  CHECK(indexedNormTiles.at(7).first.animated);
+  CHECK(indexedNormTiles.at(7).first.animIndex == 1);
+  CHECK(indexedNormTiles.at(7).first.tileIndex == 3);
+
+  // water multiframe tile
+  CHECK(indexedNormTiles.at(8).first.animated);
+  CHECK(indexedNormTiles.at(8).first.animIndex == 2);
+  CHECK(indexedNormTiles.at(8).first.tileIndex == 0);
+  CHECK(indexedNormTiles.at(8).second.palette.size == 8);
+  CHECK_FALSE(indexedNormTiles.at(8).second.hFlip);
+  CHECK(indexedNormTiles.at(8).second.vFlip);
+
+  // regular tiles
+  CHECK_FALSE(indexedNormTiles.at(9).first.animated);
+  CHECK(indexedNormTiles.at(9).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(9).first.tileIndex == 0);
+
+  CHECK_FALSE(indexedNormTiles.at(10).first.animated);
+  CHECK(indexedNormTiles.at(10).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(10).first.tileIndex == 1);
+
+  CHECK_FALSE(indexedNormTiles.at(11).first.animated);
+  CHECK(indexedNormTiles.at(11).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(11).first.tileIndex == 2);
+
+  CHECK_FALSE(indexedNormTiles.at(12).first.animated);
+  CHECK(indexedNormTiles.at(12).first.animIndex == 0);
+  CHECK(indexedNormTiles.at(12).first.tileIndex == 3);
 }
 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset")

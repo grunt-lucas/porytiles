@@ -294,6 +294,8 @@ struct DecompiledAnimFrame {
   std::vector<RGBATile> tiles;
 
   DecompiledAnimFrame() : tiles{} {}
+
+  std::size_t size() const { return tiles.size(); }
 };
 
 /**
@@ -306,7 +308,7 @@ struct DecompiledAnimation {
 
   DecompiledAnimation() : frames{} {}
 
-  DecompiledAnimFrame representativeFrame() const { return frames.at(0); }
+  const DecompiledAnimFrame &representativeFrame() const { return frames.at(0); }
 
   std::size_t size() const { return frames.size(); }
 };
@@ -466,7 +468,7 @@ struct NormalizedTile {
     frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
   }
 
-  NormalizedPixels representativeFrame() const { return frames.at(0); }
+  const NormalizedPixels &representativeFrame() const { return frames.at(0); }
 };
 } // namespace porytiles
 
