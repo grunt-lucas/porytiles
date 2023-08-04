@@ -419,8 +419,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
      * make sense to ever have a transparent animated tile in the representative frame, since it cannot be correctly
      * referenced from the metatile sheet.
      */
-    if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
-        tileIndexes.at(representativeFrameTile) == 0) {
+    if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0) {
       warn_transparentRepresentativeAnimTile(ctx.err);
     }
 
@@ -428,8 +427,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     auto inserted = tileIndexes.insert({representativeFrameTile, compiled.tiles.size()});
 
     // Insertion happened or tile was transparent
-    if (inserted.second || (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
-                            tileIndexes.at(representativeFrameTile) == 0)) {
+    if (inserted.second ||
+        (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0)) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
       if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
@@ -443,8 +442,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
           .frames.at(NormalizedTile::representativeFrameIndex())
           .tiles.push_back(representativeFrameTile);
     }
-    else if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
-             tileIndexes.at(representativeFrameTile) != 0) {
+    else if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) != 0) {
       // TODO : better error context
       throw PtException{"detected duplicate representative anim tile, not allowed"};
     }
@@ -516,7 +514,6 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
    * Process animated tiles, we want frame 0 of each animation to be at the beginning of the tiles.png in a stable
    * location.
    */
-  // TODO : implement anim tile processing
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -541,19 +538,50 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     GBATile representativeFrameTile =
         makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes[paletteIndex]);
 
-    // TODO : error if representativeFrameTile was present in the primary set, this is a user error because it renders
-    // the animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
-    // as opposed to the animation
-
     /*
-     * Warn the user if the representative frame of an animation contained a transparent tile. This is technically OK
-     * but typically indicates a user oversight, or a lack of understanding of the animation system. It does not really
-     * make sense to ever have a transparent animated tile in the representative frame, since it cannot be correctly
-     * referenced from the metatile sheet.
+     * Warn the user if the representative frame of an animation contained a transparent tile, for same reasons as the
+     * primary set case. If representativeFrameTile was elsewhere present in the primary set, this is a user error
+     * because it renders the animation inoperable, any reference to the repTile in the secondary set will be linked to
+     * the primary tile as opposed to the animation.
      */
-    if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
-        tileIndexes.at(representativeFrameTile) == 0) {
-      warn_transparentRepresentativeAnimTile(ctx.err);
+    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(representativeFrameTile)) {
+      if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0) {
+        warn_transparentRepresentativeAnimTile(ctx.err);
+      }
+      else {
+        // TODO : better error context
+        throw PtException{"representative frame tile was present in paired primary set"};
+      }
+    }
+
+    // Insert this tile's representative frame into the seen tiles map
+    auto inserted = tileIndexes.insert({representativeFrameTile, compiled.tiles.size()});
+
+    // Insertion happened or tile was transparent
+    if (inserted.second || (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(representativeFrameTile) &&
+                            ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0)) {
+      // Insert this tile's representative frame into the tiles.png
+      compiled.tiles.push_back(representativeFrameTile);
+      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
+        // TODO : better error context
+        throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
+                          std::to_string(ctx.fieldmapConfig.numTilesInSecondary())};
+      }
+      compiled.paletteIndexesOfTile.push_back(paletteIndex);
+      // Fill out the anim structure
+      compiled.anims.at(index.animIndex)
+          .frames.at(NormalizedTile::representativeFrameIndex())
+          .tiles.push_back(representativeFrameTile);
+    }
+    else if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) != 0) {
+      // TODO : better error context
+      throw PtException{"detected duplicate representative anim tile, not allowed"};
+    }
+
+    // Put the rest of this tile's frames into the anim structure for the emitter
+    for (std::size_t frameIndex = 1; frameIndex < normTile.frames.size(); frameIndex++) {
+      GBATile frameNTile = makeTile(normTile, frameIndex, compiled.palettes.at(paletteIndex));
+      compiled.anims.at(index.animIndex).frames.at(frameIndex).tiles.push_back(frameNTile);
     }
   }
 
@@ -577,8 +605,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
     GBATile gbaTile = makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes[paletteIndex]);
-    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.find(gbaTile) !=
-        ctx.compilerContext.pairedPrimaryTiles->tileIndexes.end()) {
+    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(gbaTile)) {
       // Tile was in the primary set
       compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile),
                                                   paletteIndex, normTile.hFlip, normTile.vFlip};
@@ -2040,4 +2067,78 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   CHECK(compiledPrimary->anims.at(1).frames.size() == 2);
   CHECK(compiledPrimary->anims.at(1).frames.at(0).tiles.size() == 1);
   CHECK(compiledPrimary->anims.at(1).frames.at(1).tiles.size() == 1);
+}
+
+TEST_CASE("compile function should correctly compile secondary set with animated tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
+  porytiles::DecompiledTileset decompiledPrimary =
+      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
+
+  png::image<png::rgba_pixel> flowerWhite00{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"};
+  png::image<png::rgba_pixel> flowerWhite01{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"};
+  png::image<png::rgba_pixel> flowerWhite02{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"};
+  png::image<png::rgba_pixel> water00{"res/tests/anim_metatiles_1/primary/anims/water/00.png"};
+  png::image<png::rgba_pixel> water01{"res/tests/anim_metatiles_1/primary/anims/water/01.png"};
+
+  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
+  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+
+  flowerWhiteAnim.push_back(flowerWhite00);
+  flowerWhiteAnim.push_back(flowerWhite01);
+  flowerWhiteAnim.push_back(flowerWhite02);
+
+  waterAnim.push_back(water00);
+  waterAnim.push_back(water01);
+
+  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  anims.push_back(flowerWhiteAnim);
+  anims.push_back(waterAnim);
+
+  porytiles::importAnimTiles(anims, decompiledPrimary);
+
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+  ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
+  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/top.png"));
+  png::image<png::rgba_pixel> bottomSecondary{"res/tests/anim_metatiles_1/secondary/bottom.png"};
+  png::image<png::rgba_pixel> middleSecondary{"res/tests/anim_metatiles_1/secondary/middle.png"};
+  png::image<png::rgba_pixel> topSecondary{"res/tests/anim_metatiles_1/secondary/top.png"};
+  porytiles::DecompiledTileset decompiledSecondary =
+      porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_yellow"));
+
+  png::image<png::rgba_pixel> flowerYellow00{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/00.png"};
+  png::image<png::rgba_pixel> flowerYellow01{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/01.png"};
+  png::image<png::rgba_pixel> flowerYellow02{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/02.png"};
+
+  std::vector<png::image<png::rgba_pixel>> flowerYellowAnim{};
+
+  flowerYellowAnim.push_back(flowerYellow00);
+  flowerYellowAnim.push_back(flowerYellow01);
+  flowerYellowAnim.push_back(flowerYellow02);
+
+  std::vector<std::vector<png::image<png::rgba_pixel>>> animsSecondary{};
+  animsSecondary.push_back(flowerYellowAnim);
+
+  porytiles::importAnimTiles(anims, decompiledSecondary);
+
+  auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 }

@@ -37,7 +37,6 @@
     frames in expected format, and metatile_attributes.csv file, etc
 
 + directory input
-  + an optional anims folder that follows the directory structure above
   + metatile_attributes.csv which contains attributes for each metatile
     + this will allow us to support dual layers
     + will also be better because it means all files in a given tileset folder will now be managed by porytiles,
