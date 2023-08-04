@@ -421,7 +421,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
      */
     if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
         tileIndexes.at(representativeFrameTile) == 0) {
-      warn_transparentRepresentativeAnimTile(ctx.warnings, ctx.errors);
+      warn_transparentRepresentativeAnimTile(ctx.err);
     }
 
     // Insert this tile's representative frame into the seen tiles map
@@ -1812,7 +1812,6 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.warnings.transparentRepresentativeAnimTileMode = porytiles::WarningMode::WARN;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/middle.png"));

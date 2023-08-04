@@ -143,8 +143,7 @@ struct PtContext {
   Output output;
   CompilerConfig compilerConfig;
   CompilerContext compilerContext;
-  Errors errors;
-  Warnings warnings;
+  ErrorsAndWarnings err;
 
   // Command params
   Subcommand subcommand;
@@ -152,7 +151,7 @@ struct PtContext {
 
   PtContext()
       : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
-        compilerContext{}, errors{}, warnings{}, subcommand{}, verbose{false}
+        compilerContext{}, err{}, subcommand{}, verbose{false}
   {
   }
 

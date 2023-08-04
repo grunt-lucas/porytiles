@@ -46,30 +46,30 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
                                              const png::image<png::rgba_pixel> &top)
 {
   if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.errors, "bottom", bottom.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, "bottom", bottom.get_height());
   }
   if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.errors, "middle", middle.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, "middle", middle.get_height());
   }
   if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.errors, "top", top.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, "top", top.get_height());
   }
 
   if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.errors, "bottom", bottom.get_width());
+    error_layerWidthNeq128(ctx.err, "bottom", bottom.get_width());
   }
   if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.errors, "middle", middle.get_width());
+    error_layerWidthNeq128(ctx.err, "middle", middle.get_width());
   }
   if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.errors, "top", top.get_width());
+    error_layerWidthNeq128(ctx.err, "top", top.get_width());
   }
   if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
-    error_layerHeightsMustEq(ctx.errors, bottom.get_height(), middle.get_height(), top.get_height());
+    error_layerHeightsMustEq(ctx.err, bottom.get_height(), middle.get_height(), top.get_height());
   }
 
-  if (ctx.errors.errCount > 0) {
-    die_errorCount(ctx.errors);
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err);
   }
 
   DecompiledTileset decompiledTiles;

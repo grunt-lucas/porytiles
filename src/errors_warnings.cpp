@@ -21,19 +21,19 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t config
 
 void internalerror_unknownCompilerMode() { throw std::runtime_error{"unknown CompilerMode"}; }
 
-void error_layerHeightNotDivisibleBy16(Errors &err, std::string layer, png::uint_32 height)
+void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer, png::uint_32 height)
 {
   err.errCount++;
   pt_err("{} layer input PNG height '{}' was not divisible by 16", layer, fmt::styled(height, fmt::emphasis::bold));
 }
 
-void error_layerWidthNeq128(Errors &err, std::string layer, png::uint_32 width)
+void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width)
 {
   err.errCount++;
   pt_err("{} layer input PNG width '{}' was not 128", layer, fmt::styled(width, fmt::emphasis::bold));
 }
 
-void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
+void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
 {
   err.errCount++;
   pt_err("bottom, middle, top layer input PNG heights '{}, {}, {}' were not equivalent",
@@ -43,26 +43,26 @@ void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 mid
 
 void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
 
-void die_errorCount(const Errors &err) { throw PtException{std::to_string(err.errCount) + " errors generated."}; }
+void die_errorCount(const ErrorsAndWarnings &err) { throw PtException{std::to_string(err.errCount) + " errors generated."}; }
 
-void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors)
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
-  if (warnings.colorPrecisionLossMode == WarningMode::ERR) {
-    errors.errCount++;
+  if (err.colorPrecisionLossMode == WarningMode::ERR) {
+    err.errCount++;
   }
-  else if (warnings.colorPrecisionLossMode == WarningMode::WARN) {
-    warnings.colorPrecisionLossCount++;
+  else if (err.colorPrecisionLossMode == WarningMode::WARN) {
+    err.colorPrecisionLossCount++;
   }
   // TODO : print logs
 }
 
-void warn_transparentRepresentativeAnimTile(Warnings &warnings, Errors &errors)
+void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
 {
-  if (warnings.transparentRepresentativeAnimTileMode == WarningMode::ERR) {
-    errors.errCount++;
+  if (err.transparentRepresentativeAnimTileMode == WarningMode::ERR) {
+    err.errCount++;
   }
-  else if (warnings.transparentRepresentativeAnimTileMode == WarningMode::WARN) {
-    warnings.transparentRepresentativeAnimTileCount++;
+  else if (err.transparentRepresentativeAnimTileMode == WarningMode::WARN) {
+    err.transparentRepresentativeAnimTileCount++;
   }
   // TODO : better message
   pt_warn("transparent representative tile");

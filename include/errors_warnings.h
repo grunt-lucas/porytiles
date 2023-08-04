@@ -5,16 +5,12 @@
 #include <png.hpp>
 
 namespace porytiles {
-struct Errors {
+enum class WarningMode { OFF, WARN, ERR };
+
+struct ErrorsAndWarnings {
   std::size_t errCount;
   bool dieCompilation;
 
-  Errors() : errCount{0}, dieCompilation{false} {}
-};
-
-enum class WarningMode { OFF, WARN, ERR };
-
-struct Warnings {
   std::size_t colorPrecisionLossCount;
   WarningMode colorPrecisionLossMode;
 
@@ -29,8 +25,8 @@ struct Warnings {
     return colorPrecisionLossCount + paletteAllocEfficCount + transparentRepresentativeAnimTileCount;
   }
 
-  Warnings()
-      : colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
+  ErrorsAndWarnings()
+      : errCount{0}, dieCompilation{false}, colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
         paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileCount{0},
         transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
@@ -41,15 +37,15 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t config
                                                               std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode();
 
-void error_layerHeightNotDivisibleBy16(Errors &err, std::string layer, png::uint_32 height);
-void error_layerWidthNeq128(Errors &err, std::string layer, png::uint_32 width);
-void error_layerHeightsMustEq(Errors &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
+void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer, png::uint_32 height);
+void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width);
+void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
 
 void die_compilationTerminated();
-void die_errorCount(const Errors &err);
+void die_errorCount(const ErrorsAndWarnings &err);
 
-void warn_colorPrecisionLoss(Warnings &warnings, Errors &errors);
-void warn_transparentRepresentativeAnimTile(Warnings &warnings, Errors &errors);
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
+void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
 
 } // namespace porytiles
 
