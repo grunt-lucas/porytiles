@@ -8,7 +8,10 @@
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
     + calculate this by taking the `Number Unique Colors / Number Slots In Use`
   + Print all animation start tiles
-  + dump pal files and tile.png to CLI using: https://github.com/eddieantonio/imgcat
+  + dump pal files and tile.png to CLI, see e.g.:
+    + https://github.com/eddieantonio/imgcat
+    + https://github.com/stefanhaustein/TerminalImageViewer
+    + 
 
 + Warnings
   + `-Wcolor-precision-loss` / `-Wno-color-precision-loss`
