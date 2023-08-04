@@ -43,7 +43,10 @@ void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::
 
 void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
 
-void die_errorCount(const ErrorsAndWarnings &err) { throw PtException{std::to_string(err.errCount) + " errors generated."}; }
+void die_errorCount(const ErrorsAndWarnings &err)
+{
+  throw PtException{std::to_string(err.errCount) + " errors generated."};
+}
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {

@@ -26,8 +26,8 @@ struct ErrorsAndWarnings {
   }
 
   ErrorsAndWarnings()
-      : errCount{0}, dieCompilation{false}, colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF}, paletteAllocEfficCount{0},
-        paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileCount{0},
+      : errCount{0}, dieCompilation{false}, colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF},
+        paletteAllocEfficCount{0}, paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileCount{0},
         transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
   }
