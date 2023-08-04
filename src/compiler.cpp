@@ -1814,23 +1814,23 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.warnings.transparentRepresentativeAnimTileMode = porytiles::WarningMode::WARN;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/top.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_4/primary/bottom.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_4/primary/middle.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_4/primary/top.png"};
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary =
       porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/water"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
 
-  png::image<png::rgba_pixel> flowerWhite00{"res/tests/simple_metatiles_4/primary/anims/flower_white/00.png"};
-  png::image<png::rgba_pixel> flowerWhite01{"res/tests/simple_metatiles_4/primary/anims/flower_white/01.png"};
-  png::image<png::rgba_pixel> flowerWhite02{"res/tests/simple_metatiles_4/primary/anims/flower_white/02.png"};
-  png::image<png::rgba_pixel> water00{"res/tests/simple_metatiles_4/primary/anims/water/00.png"};
-  png::image<png::rgba_pixel> water01{"res/tests/simple_metatiles_4/primary/anims/water/01.png"};
+  png::image<png::rgba_pixel> flowerWhite00{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"};
+  png::image<png::rgba_pixel> flowerWhite01{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"};
+  png::image<png::rgba_pixel> flowerWhite02{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"};
+  png::image<png::rgba_pixel> water00{"res/tests/anim_metatiles_1/primary/anims/water/00.png"};
+  png::image<png::rgba_pixel> water01{"res/tests/anim_metatiles_1/primary/anims/water/01.png"};
 
   std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<png::image<png::rgba_pixel>> waterAnim{};
@@ -1852,8 +1852,8 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
   CHECK(compiledPrimary->tiles.size() == 10);
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/expected_tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_4/primary/expected_tiles.png"};
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
       for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
