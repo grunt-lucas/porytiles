@@ -6,11 +6,9 @@
 #include <sstream>
 #include <string>
 
-#define FMT_HEADER_ONLY
-#include <fmt/format.h>
-
 #include "cli_options.h"
 #include "errors_warnings.h"
+#include "logger.h"
 #include "program_name.h"
 #include "ptexception.h"
 

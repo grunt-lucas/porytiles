@@ -498,6 +498,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     compiled.assignments.at(index.tileIndex) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
   }
   compiled.tileIndexes = tileIndexes;
+
+  // TODO : warn user if there are any representative tiles that did not appear in the assignments
 }
 
 static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
@@ -515,6 +517,45 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
    * location.
    */
   // TODO : implement anim tile processing
+  for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
+    auto index = std::get<0>(indexedNormTile);
+    auto &normTile = std::get<1>(indexedNormTile);
+    auto &colorSet = std::get<2>(indexedNormTile);
+
+    // Skip regular tiles, since we will process them next
+    if (!index.animated) {
+      continue;
+    }
+
+    auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets), [&colorSet](const auto &assignedPal) {
+      // Find which of the allColorSets palettes this tile belongs to
+      return (colorSet & ~assignedPal).none();
+    });
+    if (it == std::end(allColorSets)) {
+      // TODO : better error context
+      throw std::runtime_error{"it == std::end(allColorSets)"};
+    }
+    std::size_t paletteIndex = it - std::begin(allColorSets);
+
+    // Create the GBATile for this tile's representative frame
+    GBATile representativeFrameTile =
+        makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes[paletteIndex]);
+
+    // TODO : error if representativeFrameTile was present in the primary set, this is a user error because it renders
+    // the animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
+    // as opposed to the animation
+
+    /*
+     * Warn the user if the representative frame of an animation contained a transparent tile. This is technically OK
+     * but typically indicates a user oversight, or a lack of understanding of the animation system. It does not really
+     * make sense to ever have a transparent animated tile in the representative frame, since it cannot be correctly
+     * referenced from the metatile sheet.
+     */
+    if (tileIndexes.find(representativeFrameTile) != tileIndexes.end() &&
+        tileIndexes.at(representativeFrameTile) == 0) {
+      warn_transparentRepresentativeAnimTile(ctx.err);
+    }
+  }
 
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
@@ -561,6 +602,8 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
   }
   compiled.tileIndexes = tileIndexes;
+
+  // TODO : warn user if there are any representative tiles that did not appear in the assignments
 }
 
 std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)

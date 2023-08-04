@@ -3,9 +3,11 @@
 + Continue to create more in-file unit tests that maximize coverage
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
-+ Add a `--report` option that prints out various statistics
++ Add a `report` command that prints out various statistics
+  + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
     + calculate this by taking the `Number Unique Colors / Number Slots In Use`
+  + Print all animation start tiles
   + dump pal files and tile.png to CLI using: https://github.com/eddieantonio/imgcat
 
 + Warnings
