@@ -432,6 +432,11 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                             tileIndexes.at(representativeFrameTile) == 0)) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
+      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
+        // TODO : better error context
+        throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
+                          std::to_string(ctx.fieldmapConfig.numTilesInPrimary)};
+      }
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
       // Fill out the anim structure
       compiled.anims.at(index.animIndex)
@@ -1504,7 +1509,7 @@ TEST_CASE("compile simple example should perform as expected")
   CHECK(compiledTiles->assignments[3].vFlip);
 }
 
-TEST_CASE("compile function should fill out CompiledTileset struct with expected values")
+TEST_CASE("compile function should fill out primary CompiledTileset struct with expected values")
 {
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
@@ -1641,76 +1646,7 @@ TEST_CASE("compile function should fill out CompiledTileset struct with expected
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[4]] == 4);
 }
 
-TEST_CASE("compile function should correctly compile animated tiles")
-{
-  porytiles::PtContext ctx{};
-  ctx.fieldmapConfig.numPalettesInPrimary = 3;
-  ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.warnings.transparentRepresentativeAnimTileMode = porytiles::WarningMode::WARN;
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/top.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_4/primary/bottom.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_4/primary/middle.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_4/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/water"));
-
-  png::image<png::rgba_pixel> flowerWhite00{"res/tests/simple_metatiles_4/primary/anims/flower_white/00.png"};
-  png::image<png::rgba_pixel> flowerWhite01{"res/tests/simple_metatiles_4/primary/anims/flower_white/01.png"};
-  png::image<png::rgba_pixel> flowerWhite02{"res/tests/simple_metatiles_4/primary/anims/flower_white/02.png"};
-  png::image<png::rgba_pixel> water00{"res/tests/simple_metatiles_4/primary/anims/water/00.png"};
-  png::image<png::rgba_pixel> water01{"res/tests/simple_metatiles_4/primary/anims/water/01.png"};
-
-  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
-  std::vector<png::image<png::rgba_pixel>> waterAnim{};
-
-  flowerWhiteAnim.push_back(flowerWhite00);
-  flowerWhiteAnim.push_back(flowerWhite01);
-  flowerWhiteAnim.push_back(flowerWhite02);
-
-  waterAnim.push_back(water00);
-  waterAnim.push_back(water01);
-
-  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
-  anims.push_back(flowerWhiteAnim);
-  anims.push_back(waterAnim);
-
-  porytiles::importAnimTiles(anims, decompiledPrimary);
-
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
-
-  CHECK(compiledPrimary->anims.size() == 2);
-
-  CHECK(compiledPrimary->anims.at(0).frames.size() == 3);
-  CHECK(compiledPrimary->anims.at(0).frames.at(0).tiles.size() == 4);
-  CHECK(compiledPrimary->anims.at(0).frames.at(1).tiles.size() == 4);
-  CHECK(compiledPrimary->anims.at(0).frames.at(2).tiles.size() == 4);
-
-  CHECK(compiledPrimary->anims.at(1).frames.size() == 2);
-  CHECK(compiledPrimary->anims.at(1).frames.at(0).tiles.size() == 1);
-  CHECK(compiledPrimary->anims.at(1).frames.at(1).tiles.size() == 1);
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/expected_tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_4/primary/expected_tiles.png"};
-  for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
-    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
-        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
-              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
-      }
-    }
-  }
-
-  // TODO : flesh out test more
-}
-
-TEST_CASE("compileSecondary function should fill out CompiledTileset struct with expected values")
+TEST_CASE("compile function should fill out secondary CompiledTileset struct with expected values")
 {
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
@@ -1868,4 +1804,105 @@ TEST_CASE("compileSecondary function should fill out CompiledTileset struct with
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[3]] == 3);
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[4]] == 4);
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[5]] == 5);
+}
+
+TEST_CASE("compile function should correctly compile primary set with animated tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.warnings.transparentRepresentativeAnimTileMode = porytiles::WarningMode::WARN;
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_4/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_4/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_4/primary/top.png"};
+  porytiles::DecompiledTileset decompiledPrimary =
+      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/anims/water"));
+
+  png::image<png::rgba_pixel> flowerWhite00{"res/tests/simple_metatiles_4/primary/anims/flower_white/00.png"};
+  png::image<png::rgba_pixel> flowerWhite01{"res/tests/simple_metatiles_4/primary/anims/flower_white/01.png"};
+  png::image<png::rgba_pixel> flowerWhite02{"res/tests/simple_metatiles_4/primary/anims/flower_white/02.png"};
+  png::image<png::rgba_pixel> water00{"res/tests/simple_metatiles_4/primary/anims/water/00.png"};
+  png::image<png::rgba_pixel> water01{"res/tests/simple_metatiles_4/primary/anims/water/01.png"};
+
+  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
+  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+
+  flowerWhiteAnim.push_back(flowerWhite00);
+  flowerWhiteAnim.push_back(flowerWhite01);
+  flowerWhiteAnim.push_back(flowerWhite02);
+
+  waterAnim.push_back(water00);
+  waterAnim.push_back(water01);
+
+  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  anims.push_back(flowerWhiteAnim);
+  anims.push_back(waterAnim);
+
+  porytiles::importAnimTiles(anims, decompiledPrimary);
+
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+
+  CHECK(compiledPrimary->tiles.size() == 10);
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_4/primary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_4/primary/expected_tiles.png"};
+  for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
+        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+      }
+    }
+  }
+
+  // Check that paletteIndexesOfTile is correct
+  CHECK(compiledPrimary->paletteIndexesOfTile.size() == 10);
+  CHECK(compiledPrimary->paletteIndexesOfTile[0] == 0);
+  CHECK(compiledPrimary->paletteIndexesOfTile[1] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[2] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[3] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[4] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[5] == 1);
+  CHECK(compiledPrimary->paletteIndexesOfTile[6] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[7] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[8] == 2);
+  CHECK(compiledPrimary->paletteIndexesOfTile[9] == 2);
+
+  // Check that all assignments are correct
+  CHECK(compiledPrimary->assignments.size() == porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile);
+
+  // Metatile 0
+  CHECK_FALSE(compiledPrimary->assignments[0].hFlip);
+  CHECK_FALSE(compiledPrimary->assignments[0].vFlip);
+  CHECK(compiledPrimary->assignments[0].tileIndex == 0);
+  CHECK(compiledPrimary->assignments[0].paletteIndex == 0);
+  CHECK_FALSE(compiledPrimary->assignments[1].hFlip);
+  CHECK_FALSE(compiledPrimary->assignments[1].vFlip);
+  CHECK(compiledPrimary->assignments[1].tileIndex == 0);
+  CHECK(compiledPrimary->assignments[1].paletteIndex == 0);
+  CHECK_FALSE(compiledPrimary->assignments[2].hFlip);
+  CHECK_FALSE(compiledPrimary->assignments[2].vFlip);
+  CHECK(compiledPrimary->assignments[2].tileIndex == 0);
+  CHECK(compiledPrimary->assignments[2].paletteIndex == 0);
+  // TODO : fill in checks for rest of assignments
+
+  // Verify integrity of anims structure
+  CHECK(compiledPrimary->anims.size() == 2);
+
+  CHECK(compiledPrimary->anims.at(0).frames.size() == 3);
+  CHECK(compiledPrimary->anims.at(0).frames.at(0).tiles.size() == 4);
+  CHECK(compiledPrimary->anims.at(0).frames.at(1).tiles.size() == 4);
+  CHECK(compiledPrimary->anims.at(0).frames.at(2).tiles.size() == 4);
+
+  CHECK(compiledPrimary->anims.at(1).frames.size() == 2);
+  CHECK(compiledPrimary->anims.at(1).frames.at(0).tiles.size() == 1);
+  CHECK(compiledPrimary->anims.at(1).frames.at(1).tiles.size() == 1);
 }
