@@ -1,5 +1,7 @@
 #include "types.h"
 
+#include <stdexcept>
+
 namespace porytiles {
 
 static RGBATile uniformTile(const RGBA32 &color) noexcept
@@ -51,6 +53,23 @@ const RGBATile RGBA_TILE_YELLOW = uniformTile(RGBA_YELLOW);
 const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 
 const GBATile GBA_TILE_TRANSPARENT = uniformTile(0);
+
+std::string layerString(TileLayer layer)
+{
+  switch (layer) {
+  case TileLayer::BOTTOM:
+    return "bottom";
+    break;
+  case TileLayer::MIDDLE:
+    return "middle";
+    break;
+  case TileLayer::TOP:
+    return "top";
+    break;
+  default:
+    throw std::runtime_error{"unknown TileLayer type"};
+  }
+}
 
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
 {

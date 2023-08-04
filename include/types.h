@@ -70,9 +70,9 @@ struct RGBA32 {
     return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
   }
 
-  auto operator<=>(const RGBA32 &) const = default;
+  auto operator<=>(const RGBA32 &rgba) const = default;
 
-  friend std::ostream &operator<<(std::ostream &, const RGBA32 &);
+  friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
 };
 
 constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
@@ -94,11 +94,17 @@ BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
 RGBA32 bgrToRgba(const BGR15 &bgr) noexcept;
 
+enum class TileLayer { BOTTOM, MIDDLE, TOP };
+
+std::string layerString(TileLayer layer);
+
 /**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
   std::array<RGBA32, TILE_NUM_PIX> pixels;
+  TileLayer layer;
+  std::size_t index;
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {
@@ -445,6 +451,8 @@ struct NormalizedTile {
   NormalizedPalette palette;
   bool hFlip;
   bool vFlip;
+
+  // TODO : should contain some kind of owning reference back to source RGBATiles
 
   explicit NormalizedTile(RGBA32 transparency) : frames{}, palette{}, hFlip{}, vFlip{}
   {
