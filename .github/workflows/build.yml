@@ -11,34 +11,36 @@ jobs:
     name: Build on ubuntu-latest
     runs-on: ubuntu-latest
     steps:
-      - name: Install GCC 13
+      - name: Install LLVM 16
         run: |
           sudo apt-get update
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          sudo apt-get install g++-13
-          g++-13 --version
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16.0.6
+          clang++
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
       - name: Build debug and release executables
         run: |
-          CXX=g++-13 make all
+          CXX=clang++ make all
 
       - name: Run tests on debug and release
         run: |
-          CXX=g++-13 make check
+          CXX=clang++ make check
       
       - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          CXX=g++-13 make release
+          CXX=clang++ make release
 
       - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          CXX=g++-13 make release-check
+          CXX=clang++ make release-check
 
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
