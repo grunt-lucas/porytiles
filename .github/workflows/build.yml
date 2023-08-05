@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-linux:
-    name: Build on ubuntu-latest
+    name: Build on ubuntu-latest with LLVM 16
     runs-on: ubuntu-latest
     steps:
       - name: Install LLVM 16
@@ -26,21 +26,21 @@ jobs:
 
       - name: Build debug and release executables
         run: |
-          CXX=clang++ make all
+          CXX=clang++-16 make all
 
       - name: Run tests on debug and release
         run: |
-          CXX=clang++ make check
-      
+          CXX=clang++-16 make check
+
       - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          CXX=clang++ make release
+          CXX=clang++-16 make release
 
       - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          CXX=clang++ make release-check
+          CXX=clang++-16 make release-check
 
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
@@ -66,8 +66,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-linux-gcc:
+    name: Build on ubuntu-latest with GCC1 3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GCC 13
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install g++-13
+          g++-13 --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      - name: Build debug and release executables
+        run: |
+          CXX=g++-13 make all
+
+      - name: Run tests on debug and release
+        run: |
+          CXX=g++-13 make check
+
   build-macos:
-    name: Build on macos-latest-x86_64
+    name: Build on macos-latest-x86_64 with LLVM 16
     runs-on: macos-latest
     steps:
       - name: Install LLVM 16 and dependencies
