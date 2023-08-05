@@ -18,7 +18,7 @@ jobs:
           sudo apt-get install libpng-dev
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 16.0.6
+          sudo ./llvm.sh 16
           clang++
 
       - name: Checkout porytiles
