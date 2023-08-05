@@ -4,6 +4,7 @@
 #include <png.hpp>
 
 #include "errors_warnings.h"
+#include "logger.h"
 #include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"

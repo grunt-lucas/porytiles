@@ -398,6 +398,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       continue;
     }
 
+    pt_logln(ctx, stderr, "found anim tile (frame count = {}) for anim={}, tile={}", normTile.frames.size(),
+             index.animIndex, index.tileIndex);
     auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
                            [&colorSet](const auto &assignedPal) {
                              // Find which of the assignedSolution palettes this tile belongs to

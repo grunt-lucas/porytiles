@@ -49,6 +49,11 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
   tilesPng.write(tilesetPath);
 }
 
+static void emitAnims(PtContext &ctx, const CompiledTileset &compiledTiles, const std::filesystem::path &animsPath)
+{
+  // TODO : impl
+}
+
 static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
 {
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
@@ -69,7 +74,6 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
 
     // collate all possible animation frame files
     pt_logln(ctx, stderr, "found animation: {}", animDir.string());
-    std::vector<png::image<png::rgba_pixel>> framePngs{};
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
@@ -83,6 +87,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
 
+    std::vector<png::image<png::rgba_pixel>> framePngs{};
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
         fatalerror_missingRequiredAnimFrameFile(animDir.filename().string(), i);
@@ -292,11 +297,13 @@ static void driveCompile(PtContext &ctx)
 
   std::filesystem::path outputPath(ctx.output.path);
   std::filesystem::path palettesDir("palettes");
+  std::filesystem::path animsDir("anims");
   std::filesystem::path tilesetFile("tiles.png");
   std::filesystem::path metatilesFile("metatiles.bin");
   std::filesystem::path tilesetPath = ctx.output.path / tilesetFile;
   std::filesystem::path metatilesPath = ctx.output.path / metatilesFile;
   std::filesystem::path palettesPath = ctx.output.path / palettesDir;
+  std::filesystem::path animsPath = ctx.output.path / animsDir;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
     throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
@@ -308,6 +315,7 @@ static void driveCompile(PtContext &ctx)
 
   emitPalettes(ctx, *compiledTiles, palettesPath);
   emitTilesPng(ctx, *compiledTiles, tilesetPath);
+  emitAnims(ctx, *compiledTiles, animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
   emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
