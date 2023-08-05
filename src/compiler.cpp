@@ -2123,22 +2123,46 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::DecompiledTileset decompiledSecondary =
       porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_yellow"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_red"));
 
-  png::image<png::rgba_pixel> flowerYellow00{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/00.png"};
-  png::image<png::rgba_pixel> flowerYellow01{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/01.png"};
-  png::image<png::rgba_pixel> flowerYellow02{"res/tests/anim_metatiles_1/secondary/anims/flower_yellow/02.png"};
+  png::image<png::rgba_pixel> flowerRed00{"res/tests/anim_metatiles_1/secondary/anims/flower_red/00.png"};
+  png::image<png::rgba_pixel> flowerRed01{"res/tests/anim_metatiles_1/secondary/anims/flower_red/01.png"};
+  png::image<png::rgba_pixel> flowerRed02{"res/tests/anim_metatiles_1/secondary/anims/flower_red/02.png"};
 
-  std::vector<png::image<png::rgba_pixel>> flowerYellowAnim{};
+  std::vector<png::image<png::rgba_pixel>> flowerRedAnim{};
 
-  flowerYellowAnim.push_back(flowerYellow00);
-  flowerYellowAnim.push_back(flowerYellow01);
-  flowerYellowAnim.push_back(flowerYellow02);
+  flowerRedAnim.push_back(flowerRed00);
+  flowerRedAnim.push_back(flowerRed01);
+  flowerRedAnim.push_back(flowerRed02);
 
   std::vector<std::vector<png::image<png::rgba_pixel>>> animsSecondary{};
-  animsSecondary.push_back(flowerYellowAnim);
+  animsSecondary.push_back(flowerRedAnim);
 
-  porytiles::importAnimTiles(anims, decompiledSecondary);
+  porytiles::importAnimTiles(animsSecondary, decompiledSecondary);
 
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
+
+  CHECK(compiledSecondary->tiles.size() == 8);
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/expected_tiles.png"));
+  png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"};
+  for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
+        CHECK(compiledSecondary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+      }
+    }
+  }
+
+  // Check that paletteIndexesOfTile is correct
+  CHECK(compiledSecondary->paletteIndexesOfTile.size() == 8);
+  CHECK(compiledSecondary->paletteIndexesOfTile[0] == 5);
+  CHECK(compiledSecondary->paletteIndexesOfTile[1] == 5);
+  CHECK(compiledSecondary->paletteIndexesOfTile[2] == 5);
+  CHECK(compiledSecondary->paletteIndexesOfTile[3] == 5);
+  CHECK(compiledSecondary->paletteIndexesOfTile[4] == 3);
+  CHECK(compiledSecondary->paletteIndexesOfTile[5] == 3);
+  CHECK(compiledSecondary->paletteIndexesOfTile[6] == 3);
+  CHECK(compiledSecondary->paletteIndexesOfTile[7] == 3);
 }
