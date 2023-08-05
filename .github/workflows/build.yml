@@ -19,7 +19,7 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 16
-          clang++
+          clang++-16 --version
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
