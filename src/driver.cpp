@@ -61,7 +61,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
             std::back_inserter(animationDirectories));
   std::sort(animationDirectories.begin(), animationDirectories.end());
   std::vector<std::vector<png::image<png::rgba_pixel>>> animations{};
-  for (const auto& animDir : animationDirectories) {
+  for (const auto &animDir : animationDirectories) {
     if (!std::filesystem::is_directory(animDir)) {
       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
       continue;
@@ -72,15 +72,15 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::vector<png::image<png::rgba_pixel>> framePngs{};
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
-        std::string fileName = frameFile.path().filename().string();
-        std::string extension = frameFile.path().extension().string();
-        if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
-          pt_logln(ctx, stderr, "skipping invalid anim frame file: {}", frameFile.path().string());
-          continue;
-        }
-        std::size_t index = std::stoi(fileName, 0, 10);
-        frames.insert(std::pair{index, frameFile});
-        pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+      std::string fileName = frameFile.path().filename().string();
+      std::string extension = frameFile.path().extension().string();
+      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+        pt_logln(ctx, stderr, "skipping invalid anim frame file: {}", frameFile.path().string());
+        continue;
+      }
+      std::size_t index = std::stoi(fileName, 0, 10);
+      frames.insert(std::pair{index, frameFile});
+      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
 
     for (std::size_t i = 0; i < frames.size(); i++) {

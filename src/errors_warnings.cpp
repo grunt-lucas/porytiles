@@ -41,18 +41,21 @@ void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::
          fmt::styled(top, fmt::emphasis::bold));
 }
 
-void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string& animation, const std::string &file)
+void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file)
 {
   err.errCount++;
-  pt_err("animation '{}' frame file '{}' was not a valid PNG file",fmt::styled(animation, fmt::emphasis::bold), fmt::styled(file, fmt::emphasis::bold));
+  pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
+         fmt::styled(file, fmt::emphasis::bold));
 }
 
-void fatalerror_missingRequiredAnimFrameFile(const std::string& animation, std::size_t index) {
+void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index)
+{
   std::string file = std::to_string(index) + ".png";
   if (index < 10) {
     file = "0" + file;
   }
-  pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold), fmt::styled(file, fmt::emphasis::bold));
+  pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
+               fmt::styled(file, fmt::emphasis::bold));
   die_compilationTerminated();
 }
 
