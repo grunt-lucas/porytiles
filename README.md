@@ -19,7 +19,7 @@ For detailed documentation about Porytiles features and internal workings, pleas
   - [Table of Contents](#table-of-contents)
   - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
   - [Planned Features](#planned-features)
-  - [Building](#building)
+  - [Compiler Information](#compiler-information)
   - [Getting Started](#getting-started)
 
 ## Why Should I Use This Tool?
@@ -46,11 +46,12 @@ For more info, please see
 | Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
 | Support `.ora` files as input to compile command   | ❌ |  |
 
-## Building
+## Compiler Information
 
-LLVM 16 (i.e. `clang++`) is the "official" Porytiles build toolchain. However, most reasonable C++ compilers should
-work as well, assuming they have support for the C++20 standard. The Porytiles CI pipeline has a GCC 13 target, so that
-toolchain is confirmed to build Porytiles correctly. In the future, I intend to add more compiler targets (like MSVC).
+Clang+LLVM 16 is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM
+tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have
+support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC 13. I
+try to maintain compatibility with that compiler should you prefer it over Clang+LLVM.
 
 ## Getting Started
 

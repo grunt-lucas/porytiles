@@ -8,10 +8,10 @@ on:
 
 jobs:
   build-linux:
-    name: Build on ubuntu-latest with LLVM 16
+    name: Build on ubuntu-latest with Clang+LLVM 16
     runs-on: ubuntu-latest
     steps:
-      - name: Install LLVM 16
+      - name: Install Clang+LLVM 16 and dependencies
         run: |
           sudo apt-get update
           sudo apt-get install zlib1g-dev
@@ -67,10 +67,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-linux-gcc:
-    name: Build on ubuntu-latest with GCC1 3
+    name: Build on ubuntu-latest with GCC 13
     runs-on: ubuntu-latest
     steps:
-      - name: Install GCC 13
+      - name: Install GCC 13 and dependencies
         run: |
           sudo apt-get update
           sudo apt-get install zlib1g-dev
@@ -90,10 +90,10 @@ jobs:
           CXX=g++-13 make check
 
   build-macos:
-    name: Build on macos-latest-x86_64 with LLVM 16
+    name: Build on macos-latest-x86_64 with Clang+LLVM 16
     runs-on: macos-latest
     steps:
-      - name: Install LLVM 16 and dependencies
+      - name: Install Clang+LLVM 16 and dependencies
         run: |
           brew update
           brew install zlib
