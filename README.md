@@ -51,7 +51,7 @@ For more info, please see
 Clang+LLVM 16 is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM
 tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have
 support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC 13. I
-try to maintain compatibility with that compiler should you prefer it over Clang+LLVM.
+try to maintain compatibility with that compiler, should you prefer it over Clang+LLVM.
 
 ## Getting Started
 
