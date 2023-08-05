@@ -11,6 +11,7 @@
 #include "compiler.h"
 #include "emitter.h"
 #include "importer.h"
+#include "logger.h"
 #include "ptcontext.h"
 #include "ptexception.h"
 #include "tmpfiles.h"
@@ -44,6 +45,19 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
 
   emitTilesPng(ctx, tilesPng, compiledTiles);
   tilesPng.write(tilesetPath);
+}
+
+static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
+{
+  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
+    pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
+    return;
+  }
+  // TODO : finish
+  std::vector<std::filesystem::path> files_in_directory;
+  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
+            std::back_inserter(files_in_directory));
+  std::sort(files_in_directory.begin(), files_in_directory.end());
 }
 
 // static void driveCompileRaw(PtContext &ctx)
@@ -108,12 +122,14 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
 //   emitTilesPng(config, compiledTiles, tilesetPath);
 // }
 
+static void driveCompileFreestanding(PtContext &ctx) {}
+
 static void driveCompile(PtContext &ctx)
 {
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
     throw PtException{ctx.output.path + ": exists but is not a directory"};
   }
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
       throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath().string() + ": file does not exist"};
     }
@@ -152,7 +168,7 @@ static void driveCompile(PtContext &ctx)
     throw PtException{ctx.inputPaths.topPrimaryTilesheetPath().string() + ": exists but was not a regular file"};
   }
 
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
       png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
@@ -198,12 +214,13 @@ static void driveCompile(PtContext &ctx)
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
+    importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
@@ -211,6 +228,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
+    importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.secondaryAnimPath());
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
@@ -220,6 +238,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
+    importAnimations(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     compiledTiles = compile(ctx, decompiledTiles);
   }
@@ -256,11 +275,13 @@ void drive(PtContext &ctx)
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
-  case Subcommand::COMPILE_FREESTANDING:
     driveCompile(ctx);
     break;
+  case Subcommand::COMPILE_FREESTANDING:
+    driveCompileFreestanding(ctx);
+    break;
   default:
-    throw std::runtime_error{"unknown subcommand setting"};
+    throw std::runtime_error{"driver::drive unknown subcommand setting"};
   }
 }
 

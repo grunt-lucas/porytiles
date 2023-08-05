@@ -28,17 +28,12 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
     throw std::runtime_error{"TODO : support decompile command"};
     break;
   case Subcommand::COMPILE_PRIMARY:
-    ctx.compilerConfig.mode = CompilerMode::PRIMARY;
-    parseCompile(ctx, argc, argv);
-    break;
   case Subcommand::COMPILE_SECONDARY:
-    ctx.compilerConfig.mode = CompilerMode::SECONDARY;
-    parseCompile(ctx, argc, argv);
-    break;
   case Subcommand::COMPILE_FREESTANDING:
-    ctx.compilerConfig.mode = CompilerMode::FREESTANDING;
     parseCompile(ctx, argc, argv);
     break;
+  default:
+    throw std::runtime_error{"cli_parser::parseOptions unknown subcommand setting"};
   }
 }
 
@@ -146,6 +141,7 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 
     switch (opt) {
     case VERBOSE_SHORT:
+      ctx.verbose = true;
       break;
     case VERSION_SHORT:
       fmt::println("{} {} {}", PROGRAM_NAME, VERSION, RELEASE_DATE);

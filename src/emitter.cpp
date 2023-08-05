@@ -120,6 +120,11 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
   out.flush();
 }
 
+void emitAnims(PtContext &ctx, std::vector<std::vector<png::image<png::index_pixel>>> &outAnims,
+               const CompiledTileset &tileset)
+{
+}
+
 } // namespace porytiles
 
 // --------------------

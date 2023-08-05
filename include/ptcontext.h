@@ -114,6 +114,18 @@ struct InputPaths {
     std::filesystem::path path{secondaryInputPath};
     return path / "top.png";
   }
+
+  std::filesystem::path primaryAnimPath() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "anims";
+  }
+
+  std::filesystem::path secondaryAnimPath() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "anims";
+  }
 };
 
 struct Output {
