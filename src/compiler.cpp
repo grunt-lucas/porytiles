@@ -2166,5 +2166,60 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   CHECK(compiledSecondary->paletteIndexesOfTile[6] == 3);
   CHECK(compiledSecondary->paletteIndexesOfTile[7] == 3);
 
-  // TODO : more test cases
+  // Check that all assignments are correct
+  CHECK(compiledSecondary->assignments.size() == porytiles::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile);
+
+  // Metatile 0 bottom
+  CHECK_FALSE(compiledSecondary->assignments[0].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[0].vFlip);
+  CHECK(compiledSecondary->assignments[0].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[0].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[1].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[1].vFlip);
+  CHECK(compiledSecondary->assignments[1].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[1].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[2].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[2].vFlip);
+  CHECK(compiledSecondary->assignments[2].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[2].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[3].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[3].vFlip);
+  CHECK(compiledSecondary->assignments[3].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[3].paletteIndex == 0);
+  // Metatile 0 middle
+  CHECK_FALSE(compiledSecondary->assignments[4].hFlip);
+  CHECK(compiledSecondary->assignments[4].vFlip);
+  CHECK(compiledSecondary->assignments[4].tileIndex == 5);
+  CHECK(compiledSecondary->assignments[4].paletteIndex == 1);
+  CHECK_FALSE(compiledSecondary->assignments[5].hFlip);
+  CHECK(compiledSecondary->assignments[5].vFlip);
+  CHECK(compiledSecondary->assignments[5].tileIndex == 5);
+  CHECK(compiledSecondary->assignments[5].paletteIndex == 1);
+  CHECK_FALSE(compiledSecondary->assignments[6].hFlip);
+  CHECK(compiledSecondary->assignments[6].vFlip);
+  CHECK(compiledSecondary->assignments[6].tileIndex == 5);
+  CHECK(compiledSecondary->assignments[6].paletteIndex == 1);
+  CHECK_FALSE(compiledSecondary->assignments[7].hFlip);
+  CHECK(compiledSecondary->assignments[7].vFlip);
+  CHECK(compiledSecondary->assignments[7].tileIndex == 5);
+  CHECK(compiledSecondary->assignments[7].paletteIndex == 1);
+  // Metatile 0 top
+  CHECK_FALSE(compiledSecondary->assignments[8].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[8].vFlip);
+  CHECK(compiledSecondary->assignments[8].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[8].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[9].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[9].vFlip);
+  CHECK(compiledSecondary->assignments[9].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[9].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[10].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[10].vFlip);
+  CHECK(compiledSecondary->assignments[10].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[10].paletteIndex == 0);
+  CHECK_FALSE(compiledSecondary->assignments[11].hFlip);
+  CHECK_FALSE(compiledSecondary->assignments[11].vFlip);
+  CHECK(compiledSecondary->assignments[11].tileIndex == 0);
+  CHECK(compiledSecondary->assignments[11].paletteIndex == 0);
+
+  // TODO : fill in test
 }
