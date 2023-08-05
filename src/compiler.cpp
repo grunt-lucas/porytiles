@@ -2165,4 +2165,6 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   CHECK(compiledSecondary->paletteIndexesOfTile[5] == 3);
   CHECK(compiledSecondary->paletteIndexesOfTile[6] == 3);
   CHECK(compiledSecondary->paletteIndexesOfTile[7] == 3);
+
+  // TODO : more test cases
 }
