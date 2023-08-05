@@ -41,11 +41,19 @@ void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::
          fmt::styled(top, fmt::emphasis::bold));
 }
 
-void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
-
-void die_errorCount(const ErrorsAndWarnings &err)
+void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string& animation, const std::string &file)
 {
-  throw PtException{std::to_string(err.errCount) + " errors generated."};
+  err.errCount++;
+  pt_err("animation '{}' frame file '{}' was not a valid PNG file",fmt::styled(animation, fmt::emphasis::bold), fmt::styled(file, fmt::emphasis::bold));
+}
+
+void fatalerror_missingRequiredAnimFrameFile(const std::string& animation, std::size_t index) {
+  std::string file = std::to_string(index) + ".png";
+  if (index < 10) {
+    file = "0" + file;
+  }
+  pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold), fmt::styled(file, fmt::emphasis::bold));
+  die_compilationTerminated();
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
@@ -57,6 +65,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
     err.colorPrecisionLossCount++;
   }
   // TODO : print logs
+  pt_warn("color precision loss");
 }
 
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
@@ -69,6 +78,13 @@ void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
   }
   // TODO : better message
   pt_warn("transparent representative tile");
+}
+
+void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
+
+void die_errorCount(const ErrorsAndWarnings &err)
+{
+  throw PtException{std::to_string(err.errCount) + " errors generated."};
 }
 
 } // namespace porytiles

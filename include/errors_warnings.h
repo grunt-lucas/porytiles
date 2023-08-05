@@ -40,12 +40,15 @@ void internalerror_unknownCompilerMode();
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer, png::uint_32 height);
 void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
+void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string& animation, const std::string &file);
 
-void die_compilationTerminated();
-void die_errorCount(const ErrorsAndWarnings &err);
+void fatalerror_missingRequiredAnimFrameFile(const std::string& animation, std::size_t index);
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
+
+void die_compilationTerminated();
+void die_errorCount(const ErrorsAndWarnings &err);
 
 } // namespace porytiles
 

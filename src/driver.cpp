@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 #include <png.hpp>
+#include <regex>
+#include <unordered_map>
 
 #include "compiler.h"
 #include "emitter.h"
@@ -49,15 +51,60 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
 
 static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
 {
+  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
     return;
   }
-  // TODO : finish
-  std::vector<std::filesystem::path> files_in_directory;
+  std::vector<std::filesystem::path> animationDirectories;
   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
-            std::back_inserter(files_in_directory));
-  std::sort(files_in_directory.begin(), files_in_directory.end());
+            std::back_inserter(animationDirectories));
+  std::sort(animationDirectories.begin(), animationDirectories.end());
+  std::vector<std::vector<png::image<png::rgba_pixel>>> animations{};
+  for (const auto& animDir : animationDirectories) {
+    if (!std::filesystem::is_directory(animDir)) {
+      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
+      continue;
+    }
+
+    // collate all possible animation frame files
+    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
+    std::vector<png::image<png::rgba_pixel>> framePngs{};
+    std::unordered_map<std::size_t, std::filesystem::path> frames{};
+    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
+        std::string fileName = frameFile.path().filename().string();
+        std::string extension = frameFile.path().extension().string();
+        if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+          pt_logln(ctx, stderr, "skipping invalid anim frame file: {}", frameFile.path().string());
+          continue;
+        }
+        std::size_t index = std::stoi(fileName, 0, 10);
+        frames.insert(std::pair{index, frameFile});
+        pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+    }
+
+    for (std::size_t i = 0; i < frames.size(); i++) {
+      if (!frames.contains(i)) {
+        fatalerror_missingRequiredAnimFrameFile(animDir.filename().string(), i);
+      }
+
+      try {
+        // We do this here so if the input is not a PNG, we can catch and give a better error
+        png::image<png::rgba_pixel> png{frames.at(i)};
+        framePngs.push_back(png);
+      }
+      catch (const std::exception &exception) {
+        error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+      }
+    }
+
+    animations.push_back(framePngs);
+  }
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err);
+  }
+
+  importAnimTiles(animations, decompTiles);
 }
 
 // static void driveCompileRaw(PtContext &ctx)
