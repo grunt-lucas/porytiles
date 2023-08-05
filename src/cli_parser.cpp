@@ -324,21 +324,21 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     }
   }
 
-  if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
+  if (ctx.subcommand == Subcommand::COMPILE_FREESTANDING) {
     if ((argc - optind) != 1) {
       throw PtException{"must specify TILES arg, see `porytiles compile-freestanding --help'"};
     }
     ctx.inputPaths.freestandingTilesheetPath = argv[optind++];
   }
   else {
-    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY && (argc - optind) != 2) {
+    if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
       throw PtException{"must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'"};
     }
-    else if (ctx.compilerConfig.mode != CompilerMode::SECONDARY && (argc - optind) != 1) {
+    else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
       throw PtException{"must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'"};
     }
 
-    if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+    if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
       ctx.inputPaths.secondaryInputPath = argv[optind++];
     }
     ctx.inputPaths.primaryInputPath = argv[optind++];

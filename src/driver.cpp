@@ -280,7 +280,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
-    importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.secondaryAnimPath());
+    importAnimations(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
