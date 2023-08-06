@@ -138,12 +138,12 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   return decompiledTiles;
 }
 
-void importAnimTiles(const std::vector<std::vector<png::image<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
+void importAnimTiles(const std::vector<std::vector<NamedRgbaPng>> &rawAnims, DecompiledTileset &tiles)
 {
   std::vector<DecompiledAnimation> anims{};
 
   for (const auto &rawAnim : rawAnims) {
-    DecompiledAnimation anim{};
+    DecompiledAnimation anim{rawAnim.name};
 
     for (const auto &rawFrame : rawAnim) {
       DecompiledAnimFrame animFrame{};

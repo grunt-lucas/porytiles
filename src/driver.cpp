@@ -49,7 +49,8 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
   tilesPng.write(tilesetPath);
 }
 
-static void emitAnims(PtContext &ctx, const CompiledTileset &compiledTiles, const std::filesystem::path &animsPath)
+static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
+                      const std::filesystem::path &animsPath)
 {
   // TODO : impl
 }
@@ -65,7 +66,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
             std::back_inserter(animationDirectories));
   std::sort(animationDirectories.begin(), animationDirectories.end());
-  std::vector<std::vector<png::image<png::rgba_pixel>>> animations{};
+  std::vector<std::vector<NamedRgbaPng>> animations{};
   for (const auto &animDir : animationDirectories) {
     if (!std::filesystem::is_directory(animDir)) {
       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
@@ -87,7 +88,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
 
-    std::vector<png::image<png::rgba_pixel>> framePngs{};
+    std::vector<NamedRgbaPng> framePngs{};
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
         fatalerror_missingRequiredAnimFrameFile(animDir.filename().string(), i);
@@ -96,7 +97,8 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
       try {
         // We do this here so if the input is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> png{frames.at(i)};
-        framePngs.push_back(png);
+        NamedRgbaPng namedPng{png, animDir.filename().string() + "::" + frames.at(i).filename().string()};
+        framePngs.push_back(namedPng);
       }
       catch (const std::exception &exception) {
         error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
@@ -311,11 +313,15 @@ static void driveCompile(PtContext &ctx)
   if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
     throw PtException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
   }
+  if (std::filesystem::exists(animsPath) && !std::filesystem::is_directory(animsPath)) {
+    throw PtException{"`" + animsDir.string() + "' exists in output directory but is not a directory"};
+  }
   std::filesystem::create_directories(palettesPath);
+  std::filesystem::create_directories(animsPath);
 
   emitPalettes(ctx, *compiledTiles, palettesPath);
   emitTilesPng(ctx, *compiledTiles, tilesetPath);
-  emitAnims(ctx, *compiledTiles, animsPath);
+  emitAnims(ctx, compiledTiles->anims, animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
   emitMetatilesBin(ctx, outMetatiles, *compiledTiles);

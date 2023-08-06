@@ -38,8 +38,8 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
 /**
  * TODO : fill in doc comment
  */
-void emitAnims(PtContext &ctx, std::vector<std::vector<png::image<png::index_pixel>>> &outAnims,
-               const CompiledTileset &tileset);
+void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames, const CompiledAnimation &animation,
+              const std::vector<std::size_t> &paletteIndexesOfTile);
 
 } // namespace porytiles
 

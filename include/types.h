@@ -30,6 +30,26 @@ constexpr std::size_t MAX_BG_PALETTES = 16;
 // --------------------
 
 /**
+ * An RGBA PNG from png++, tagged with a name.
+ */
+struct NamedRgbaPng {
+  png::image<png::rgba_pixel> png;
+  std::string name;
+
+  NamedRgbaPng(png::image<png::rgba_pixel> png, std::string name) : png{png}, name{name} {}
+};
+
+/**
+ * An index PNG from png++, tagged with a name.
+ */
+struct NamedIndexPng {
+  png::image<png::index_pixel> png;
+  std::string name;
+
+  NamedIndexPng(png::image<png::index_pixel> png, std::string name) : png{png}, name{name} {}
+};
+
+/**
  * BGR15 color format. 5 bits per color with blue in most significant bits. Top bit unused.
  */
 struct BGR15 {
@@ -260,8 +280,9 @@ struct CompiledAnimFrame {
 
 struct CompiledAnimation {
   std::vector<CompiledAnimFrame> frames;
+  std::string name;
 
-  CompiledAnimation() : frames{} {}
+  CompiledAnimation(std::string name) : frames{}, name{name} {}
 
   CompiledAnimFrame representativeFrame() const { return frames.at(representativeFrameIndex()); }
 
@@ -313,8 +334,9 @@ struct DecompiledAnimFrame {
  */
 struct DecompiledAnimation {
   std::vector<DecompiledAnimFrame> frames;
+  std::string name;
 
-  DecompiledAnimation() : frames{} {}
+  DecompiledAnimation(std::string name) : frames{}, name{name} {}
 
   const DecompiledAnimFrame &representativeFrame() const { return frames.at(representativeFrameIndex()); }
 

@@ -78,16 +78,15 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
    */
   std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
   std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
-  std::size_t tilesetTileIndex = 0;
-  for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / pngWidthInTiles;
-    size_t tileCol = tileIndex % pngWidthInTiles;
-    for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+  for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / pngWidthInTiles;
+    std::size_t tileCol = tileIndex % pngWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
       if (tileIndex < tileset.tiles.size()) {
-        const GBATile &tile = tileset.tiles[tilesetTileIndex];
-        png::byte paletteIndex = tileset.paletteIndexesOfTile[tilesetTileIndex];
+        const GBATile &tile = tileset.tiles.at(tileIndex);
+        png::byte paletteIndex = tileset.paletteIndexesOfTile.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         switch (ctx.output.paletteMode) {
         case TilesPngPaletteMode::PAL0:
@@ -103,7 +102,6 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
         out[pixelRow][pixelCol] = 0;
       }
     }
-    tilesetTileIndex++;
   }
 }
 
@@ -120,9 +118,36 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
   out.flush();
 }
 
-void emitAnims(PtContext &ctx, std::vector<std::vector<png::image<png::index_pixel>>> &outAnims,
-               const CompiledTileset &tileset)
+void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames, const CompiledAnimation &animation,
+              const std::vector<std::size_t> &paletteIndexesOfTile)
 {
+  if (outFrames.size() != animation.frames.size()) {
+    throw std::runtime_error{"emitter::emitAnim outFrames.size() != animation.frames.size()"};
+  }
+  for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
+    png::image<png::index_pixel> out = outFrames.at(frameIndex);
+    std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
+    std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
+    for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+      std::size_t tileRow = tileIndex / pngWidthInTiles;
+      std::size_t tileCol = tileIndex % pngWidthInTiles;
+      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+        std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+        std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        const GBATile &tile = animation.frames.at(frameIndex).tiles.at(tileIndex);
+        png::byte paletteIndex = paletteIndexesOfTile.at(tileIndex);
+        png::byte indexInPalette = tile.getPixel(pixelIndex);
+        switch (ctx.output.paletteMode) {
+        case TilesPngPaletteMode::PAL0:
+        case TilesPngPaletteMode::GREYSCALE:
+          out[pixelRow][pixelCol] = indexInPalette;
+          break;
+        case TilesPngPaletteMode::TRUE_COLOR:
+          out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
+        }
+      }
+    }
+  }
 }
 
 } // namespace porytiles
