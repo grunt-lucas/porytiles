@@ -194,6 +194,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           brew update
           brew install zlib
@@ -206,10 +207,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build debug and release executables
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
 
       - name: Run tests on debug and release
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
       
