@@ -2316,5 +2316,11 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   CHECK(compiledSecondary->assignments[31].paletteIndex == 3);
   // Metatile 2 top is blank, don't bother testing
 
-  // TODO : test impl
+  // Verify integrity of anims structure
+  CHECK(compiledSecondary->anims.size() == 1);
+
+  CHECK(compiledSecondary->anims.at(0).frames.size() == 3);
+  CHECK(compiledSecondary->anims.at(0).frames.at(0).tiles.size() == 4);
+  CHECK(compiledSecondary->anims.at(0).frames.at(1).tiles.size() == 4);
+  CHECK(compiledSecondary->anims.at(0).frames.at(2).tiles.size() == 4);
 }
