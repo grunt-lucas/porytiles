@@ -22,6 +22,7 @@
   + `-Werror`: warnings become errors
     + https://cfengine.com/blog/2021/optional-arguments-with-getopt-long/
     + `-Werror=color-precision-loss`
+  + `-Wtrue-color-mode`: warn on true-color output mode usage since Porymap doesn't support it yet
 
 + Refactor commands / options
   + Use `-f` prefix for frontend configuration
