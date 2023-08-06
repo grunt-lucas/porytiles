@@ -33,23 +33,7 @@ void emitZeroedPalette(PtContext &ctx, std::ostream &out)
   emitPalette(ctx, out, palette);
 }
 
-static void configurePngPaletteGreyscale(const PtContext &ctx, png::image<png::index_pixel> &out,
-                                         const std::vector<GBAPalette> &palettes)
-{
-  std::array<RGBA32, PAL_SIZE> greyscalePalette = {
-      RGBA32{0, 0, 0, 255},       RGBA32{16, 16, 16, 255},    RGBA32{32, 32, 32, 255},    RGBA32{48, 48, 48, 255},
-      RGBA32{64, 64, 64, 255},    RGBA32{80, 80, 80, 255},    RGBA32{96, 96, 96, 255},    RGBA32{112, 112, 112, 255},
-      RGBA32{128, 128, 128, 255}, RGBA32{144, 144, 144, 255}, RGBA32{160, 160, 160, 255}, RGBA32{176, 176, 176, 255},
-      RGBA32{192, 192, 192, 255}, RGBA32{208, 208, 208, 255}, RGBA32{224, 224, 224, 255}, RGBA32{240, 240, 240, 255}};
-
-  png::palette pngPal{0};
-  for (const auto &color : greyscalePalette) {
-    pngPal.push_back(png::color{color.red, color.green, color.blue});
-  }
-  out.set_palette(pngPal);
-}
-
-static void configurePngPalette(const PtContext &ctx, png::image<png::index_pixel> &out,
+static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png::index_pixel> &out,
                                 const std::vector<GBAPalette> &palettes)
 {
   std::array<RGBA32, PAL_SIZE> greyscalePalette = {
@@ -67,7 +51,7 @@ static void configurePngPalette(const PtContext &ctx, png::image<png::index_pixe
    */
   // 0 initial length here since we will push_back our colors in-order
   png::palette pngPal{0};
-  if (ctx.output.paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
+  if (paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
     for (const auto &palette : palettes) {
       for (const auto &color : palette.colors) {
         RGBA32 rgbaColor = bgrToRgba(color);
@@ -75,7 +59,7 @@ static void configurePngPalette(const PtContext &ctx, png::image<png::index_pixe
       }
     }
   }
-  else if (ctx.output.paletteMode == TilesPngPaletteMode::GREYSCALE) {
+  else if (paletteMode == TilesPngPaletteMode::GREYSCALE) {
     for (const auto &color : greyscalePalette) {
       pngPal.push_back(png::color{color.red, color.green, color.blue});
     }
@@ -93,7 +77,7 @@ static void configurePngPalette(const PtContext &ctx, png::image<png::index_pixe
 
 void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
 {
-  configurePngPalette(ctx, out, tileset.palettes);
+  configurePngPalette(ctx.output.paletteMode, out, tileset.palettes);
 
   /*
    * Set up the tileset PNG based on the tiles list and then write it to `tiles.png`.
@@ -148,7 +132,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
   }
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);
-    configurePngPaletteGreyscale(ctx, out, palettes);
+    configurePngPalette(TilesPngPaletteMode::GREYSCALE, out, palettes);
     std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
     std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
     for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
