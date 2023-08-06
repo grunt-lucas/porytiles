@@ -2260,5 +2260,5 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   CHECK(compiledSecondary->assignments[11].tileIndex == 0);
   CHECK(compiledSecondary->assignments[11].paletteIndex == 0);
 
-  // TODO : fill in test
+  // TODO : test impl
 }

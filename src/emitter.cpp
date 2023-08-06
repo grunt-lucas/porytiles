@@ -240,7 +240,7 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 
 TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings")
 {
-  // TODO : fix this test
+  // TODO : test impl
   // porytiles::Config config = porytiles::defaultConfig();
   // porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
 
@@ -332,5 +332,5 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
 TEST_CASE("emitAnim should ")
 {
-  // TODO : fill in test
+  // TODO : test impl
 }

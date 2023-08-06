@@ -534,7 +534,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
   std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("drive should ")
+TEST_CASE("drive should work with animated tiles")
 {
-  // TODO : add a drive test case that does animated tiles
+  // TODO : test impl
 }
