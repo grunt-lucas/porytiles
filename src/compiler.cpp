@@ -794,9 +794,14 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
 
   // Setup the compiled animations
-  compiled->anims.resize(decompiledTileset.anims.size());
+  compiled->anims.reserve(decompiledTileset.anims.size());
   for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
-    compiled->anims.at(animIndex).frames.resize(decompiledTileset.anims.at(animIndex).frames.size());
+    compiled->anims.emplace_back(decompiledTileset.anims.at(animIndex).animName);
+    compiled->anims.at(animIndex).frames.reserve(decompiledTileset.anims.at(animIndex).frames.size());
+    for (std::size_t frameIndex = 0; frameIndex < decompiledTileset.anims.at(animIndex).frames.size(); frameIndex++) {
+      compiled->anims.at(animIndex).frames.emplace_back(
+          decompiledTileset.anims.at(animIndex).frames.at(frameIndex).frameName);
+    }
   }
 
   /*
@@ -1122,20 +1127,28 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
   REQUIRE(std::filesystem::exists("res/tests/anim_flower_yellow"));
   REQUIRE(std::filesystem::exists("res/tests/anim_water_1"));
 
-  png::image<png::rgba_pixel> white00{"res/tests/anim_flower_white/00.png"};
-  png::image<png::rgba_pixel> white01{"res/tests/anim_flower_white/01.png"};
-  png::image<png::rgba_pixel> white02{"res/tests/anim_flower_white/02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white00{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/00.png"},
+                                                   "anim_flower_white", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white01{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/01.png"},
+                                                   "anim_flower_white", "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white02{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/02.png"},
+                                                   "anim_flower_white", "02.png"};
 
-  png::image<png::rgba_pixel> yellow00{"res/tests/anim_flower_yellow/00.png"};
-  png::image<png::rgba_pixel> yellow01{"res/tests/anim_flower_yellow/01.png"};
-  png::image<png::rgba_pixel> yellow02{"res/tests/anim_flower_yellow/02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow00{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/00.png"},
+                                                    "anim_flower_yellow", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow01{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/01.png"},
+                                                    "anim_flower_yellow", "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow02{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/02.png"},
+                                                    "anim_flower_yellow", "02.png"};
 
-  png::image<png::rgba_pixel> water00{"res/tests/anim_water_1/00.png"};
-  png::image<png::rgba_pixel> water01{"res/tests/anim_water_1/01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water00{png::image<png::rgba_pixel>{"res/tests/anim_water_1/00.png"},
+                                                   "anim_water_1", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water01{png::image<png::rgba_pixel>{"res/tests/anim_water_1/01.png"},
+                                                   "anim_water_1", "01.png"};
 
-  std::vector<png::image<png::rgba_pixel>> whiteAnim{};
-  std::vector<png::image<png::rgba_pixel>> yellowAnim{};
-  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> whiteAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> yellowAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
 
   whiteAnim.push_back(white00);
   whiteAnim.push_back(white01);
@@ -1148,7 +1161,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
   waterAnim.push_back(water00);
   waterAnim.push_back(water01);
 
-  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
   anims.push_back(whiteAnim);
   anims.push_back(yellowAnim);
   anims.push_back(waterAnim);
@@ -1899,14 +1912,22 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
 
-  png::image<png::rgba_pixel> flowerWhite00{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"};
-  png::image<png::rgba_pixel> flowerWhite01{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"};
-  png::image<png::rgba_pixel> flowerWhite02{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"};
-  png::image<png::rgba_pixel> water00{"res/tests/anim_metatiles_1/primary/anims/water/00.png"};
-  png::image<png::rgba_pixel> water01{"res/tests/anim_metatiles_1/primary/anims/water/01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
+      "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"}, "flower_white",
+      "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
+      "02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water00{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water01{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/01.png"}, "water", "01.png"};
 
-  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
-  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
 
   flowerWhiteAnim.push_back(flowerWhite00);
   flowerWhiteAnim.push_back(flowerWhite01);
@@ -1915,7 +1936,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   waterAnim.push_back(water00);
   waterAnim.push_back(water01);
 
-  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
@@ -2092,14 +2113,22 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
 
-  png::image<png::rgba_pixel> flowerWhite00{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"};
-  png::image<png::rgba_pixel> flowerWhite01{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"};
-  png::image<png::rgba_pixel> flowerWhite02{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"};
-  png::image<png::rgba_pixel> water00{"res/tests/anim_metatiles_1/primary/anims/water/00.png"};
-  png::image<png::rgba_pixel> water01{"res/tests/anim_metatiles_1/primary/anims/water/01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
+      "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"}, "flower_white",
+      "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
+      "02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water00{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> water01{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/01.png"}, "water", "01.png"};
 
-  std::vector<png::image<png::rgba_pixel>> flowerWhiteAnim{};
-  std::vector<png::image<png::rgba_pixel>> waterAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
 
   flowerWhiteAnim.push_back(flowerWhite00);
   flowerWhiteAnim.push_back(flowerWhite01);
@@ -2108,7 +2137,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   waterAnim.push_back(water00);
   waterAnim.push_back(water01);
 
-  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
@@ -2129,17 +2158,23 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_red"));
 
-  png::image<png::rgba_pixel> flowerRed00{"res/tests/anim_metatiles_1/secondary/anims/flower_red/00.png"};
-  png::image<png::rgba_pixel> flowerRed01{"res/tests/anim_metatiles_1/secondary/anims/flower_red/01.png"};
-  png::image<png::rgba_pixel> flowerRed02{"res/tests/anim_metatiles_1/secondary/anims/flower_red/02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerRed00{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/00.png"}, "flower_white",
+      "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerRed01{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/01.png"}, "flower_white",
+      "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> flowerRed02{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/02.png"}, "flower_white",
+      "02.png"};
 
-  std::vector<png::image<png::rgba_pixel>> flowerRedAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerRedAnim{};
 
   flowerRedAnim.push_back(flowerRed00);
   flowerRedAnim.push_back(flowerRed01);
   flowerRedAnim.push_back(flowerRed02);
 
-  std::vector<std::vector<png::image<png::rgba_pixel>>> animsSecondary{};
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> animsSecondary{};
   animsSecondary.push_back(flowerRedAnim);
 
   porytiles::importAnimTiles(animsSecondary, decompiledSecondary);

@@ -50,9 +50,24 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
 }
 
 static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
-                      const std::filesystem::path &animsPath)
+                      const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
-  // TODO : impl
+  for (const auto &compiledAnim : compiledAnims) {
+    std::filesystem::path animPath = animsPath / compiledAnim.animName;
+    std::filesystem::create_directories(animPath);
+    const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * compiledAnim.representativeFrame().tiles.size();
+    const std::size_t imageHeight = porytiles::TILE_SIDE_LENGTH;
+    std::vector<png::image<png::index_pixel>> outFrames{};
+    for (std::size_t frameIndex = 0; frameIndex < compiledAnim.frames.size(); frameIndex++) {
+      outFrames.emplace_back(static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight));
+    }
+    emitAnim(ctx, outFrames, compiledAnim, palettes);
+    for (std::size_t frameIndex = 0; frameIndex < compiledAnim.frames.size(); frameIndex++) {
+      auto &frame = outFrames.at(frameIndex);
+      std::filesystem::path framePngPath = animPath / compiledAnim.frames.at(frameIndex).frameName;
+      frame.write(framePngPath);
+    }
+  }
 }
 
 static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
@@ -66,7 +81,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
             std::back_inserter(animationDirectories));
   std::sort(animationDirectories.begin(), animationDirectories.end());
-  std::vector<std::vector<NamedRgbaPng>> animations{};
+  std::vector<std::vector<AnimationPng<png::rgba_pixel>>> animations{};
   for (const auto &animDir : animationDirectories) {
     if (!std::filesystem::is_directory(animDir)) {
       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
@@ -88,7 +103,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
 
-    std::vector<NamedRgbaPng> framePngs{};
+    std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
         fatalerror_missingRequiredAnimFrameFile(animDir.filename().string(), i);
@@ -97,8 +112,8 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
       try {
         // We do this here so if the input is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> png{frames.at(i)};
-        NamedRgbaPng namedPng{png, animDir.filename().string() + "::" + frames.at(i).filename().string()};
-        framePngs.push_back(namedPng);
+        AnimationPng<png::rgba_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
+        framePngs.push_back(animPng);
       }
       catch (const std::exception &exception) {
         error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
@@ -321,7 +336,7 @@ static void driveCompile(PtContext &ctx)
 
   emitPalettes(ctx, *compiledTiles, palettesPath);
   emitTilesPng(ctx, *compiledTiles, tilesetPath);
-  emitAnims(ctx, compiledTiles->anims, animsPath);
+  emitAnims(ctx, compiledTiles->anims, compiledTiles->palettes, animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
   emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
@@ -517,4 +532,9 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
   fclose(expected);
   fclose(actual);
   std::filesystem::remove_all(parentDir);
+}
+
+TEST_CASE("drive should ")
+{
+  // TODO : add a drive test case that does animated tiles
 }

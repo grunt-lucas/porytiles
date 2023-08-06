@@ -138,28 +138,31 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   return decompiledTiles;
 }
 
-void importAnimTiles(const std::vector<std::vector<NamedRgbaPng>> &rawAnims, DecompiledTileset &tiles)
+void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
 {
   std::vector<DecompiledAnimation> anims{};
 
   for (const auto &rawAnim : rawAnims) {
-    DecompiledAnimation anim{rawAnim.name};
+    if (rawAnim.empty()) {
+      throw std::runtime_error{"importer::importAnimTiles rawAnim was empty"};
+    }
 
+    DecompiledAnimation anim{rawAnim.at(0).animName};
     for (const auto &rawFrame : rawAnim) {
-      DecompiledAnimFrame animFrame{};
+      DecompiledAnimFrame animFrame{rawFrame.frame};
 
       // TODO : improve error messages here
-      if (rawFrame.get_height() % TILE_SIDE_LENGTH != 0) {
-        throw PtException{"input PNG height `" + std::to_string(rawFrame.get_height()) + "' is not divisible by 8"};
+      if (rawFrame.png.get_height() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG height `" + std::to_string(rawFrame.png.get_height()) + "' is not divisible by 8"};
       }
-      if (rawFrame.get_width() % TILE_SIDE_LENGTH != 0) {
-        throw PtException{"input PNG width `" + std::to_string(rawFrame.get_width()) + "' is not divisible by 8"};
+      if (rawFrame.png.get_width() % TILE_SIDE_LENGTH != 0) {
+        throw PtException{"input PNG width `" + std::to_string(rawFrame.png.get_width()) + "' is not divisible by 8"};
       }
 
       // TODO : throw if this frame's dimensions don't match dimensions of other frames in this anim
 
-      std::size_t pngWidthInTiles = rawFrame.get_width() / TILE_SIDE_LENGTH;
-      std::size_t pngHeightInTiles = rawFrame.get_height() / TILE_SIDE_LENGTH;
+      std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH;
+      std::size_t pngHeightInTiles = rawFrame.png.get_height() / TILE_SIDE_LENGTH;
       for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
         size_t tileRow = tileIndex / pngWidthInTiles;
         size_t tileCol = tileIndex % pngWidthInTiles;
@@ -168,10 +171,10 @@ void importAnimTiles(const std::vector<std::vector<NamedRgbaPng>> &rawAnims, Dec
         for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
           size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
           size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
-          tile.pixels[pixelIndex].red = rawFrame[pixelRow][pixelCol].red;
-          tile.pixels[pixelIndex].green = rawFrame[pixelRow][pixelCol].green;
-          tile.pixels[pixelIndex].blue = rawFrame[pixelRow][pixelCol].blue;
-          tile.pixels[pixelIndex].alpha = rawFrame[pixelRow][pixelCol].alpha;
+          tile.pixels[pixelIndex].red = rawFrame.png[pixelRow][pixelCol].red;
+          tile.pixels[pixelIndex].green = rawFrame.png[pixelRow][pixelCol].green;
+          tile.pixels[pixelIndex].blue = rawFrame.png[pixelRow][pixelCol].blue;
+          tile.pixels[pixelIndex].alpha = rawFrame.png[pixelRow][pixelCol].alpha;
         }
         animFrame.tiles.push_back(tile);
       }
@@ -260,16 +263,22 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   REQUIRE(std::filesystem::exists("res/tests/anim_flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_flower_yellow"));
 
-  png::image<png::rgba_pixel> white00{"res/tests/anim_flower_white/00.png"};
-  png::image<png::rgba_pixel> white01{"res/tests/anim_flower_white/01.png"};
-  png::image<png::rgba_pixel> white02{"res/tests/anim_flower_white/02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white00{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/00.png"},
+                                                   "anim_flower_white", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white01{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/01.png"},
+                                                   "anim_flower_white", "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> white02{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/02.png"},
+                                                   "anim_flower_white", "02.png"};
 
-  png::image<png::rgba_pixel> yellow00{"res/tests/anim_flower_yellow/00.png"};
-  png::image<png::rgba_pixel> yellow01{"res/tests/anim_flower_yellow/01.png"};
-  png::image<png::rgba_pixel> yellow02{"res/tests/anim_flower_yellow/02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow00{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/00.png"},
+                                                    "anim_flower_yellow", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow01{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/01.png"},
+                                                    "anim_flower_yellow", "01.png"};
+  porytiles::AnimationPng<png::rgba_pixel> yellow02{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/02.png"},
+                                                    "anim_flower_yellow", "02.png"};
 
-  std::vector<png::image<png::rgba_pixel>> whiteAnim{};
-  std::vector<png::image<png::rgba_pixel>> yellowAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> whiteAnim{};
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> yellowAnim{};
 
   whiteAnim.push_back(white00);
   whiteAnim.push_back(white01);
@@ -279,7 +288,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   yellowAnim.push_back(yellow01);
   yellowAnim.push_back(yellow02);
 
-  std::vector<std::vector<png::image<png::rgba_pixel>>> anims{};
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
   anims.push_back(whiteAnim);
   anims.push_back(yellowAnim);
 

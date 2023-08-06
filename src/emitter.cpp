@@ -33,7 +33,24 @@ void emitZeroedPalette(PtContext &ctx, std::ostream &out)
   emitPalette(ctx, out, palette);
 }
 
-void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
+static void configurePngPaletteGreyscale(const PtContext &ctx, png::image<png::index_pixel> &out,
+                                         const std::vector<GBAPalette> &palettes)
+{
+  std::array<RGBA32, PAL_SIZE> greyscalePalette = {
+      RGBA32{0, 0, 0, 255},       RGBA32{16, 16, 16, 255},    RGBA32{32, 32, 32, 255},    RGBA32{48, 48, 48, 255},
+      RGBA32{64, 64, 64, 255},    RGBA32{80, 80, 80, 255},    RGBA32{96, 96, 96, 255},    RGBA32{112, 112, 112, 255},
+      RGBA32{128, 128, 128, 255}, RGBA32{144, 144, 144, 255}, RGBA32{160, 160, 160, 255}, RGBA32{176, 176, 176, 255},
+      RGBA32{192, 192, 192, 255}, RGBA32{208, 208, 208, 255}, RGBA32{224, 224, 224, 255}, RGBA32{240, 240, 240, 255}};
+
+  png::palette pngPal{0};
+  for (const auto &color : greyscalePalette) {
+    pngPal.push_back(png::color{color.red, color.green, color.blue});
+  }
+  out.set_palette(pngPal);
+}
+
+static void configurePngPalette(const PtContext &ctx, png::image<png::index_pixel> &out,
+                                const std::vector<GBAPalette> &palettes)
 {
   std::array<RGBA32, PAL_SIZE> greyscalePalette = {
       RGBA32{0, 0, 0, 255},       RGBA32{16, 16, 16, 255},    RGBA32{32, 32, 32, 255},    RGBA32{48, 48, 48, 255},
@@ -51,7 +68,7 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
   // 0 initial length here since we will push_back our colors in-order
   png::palette pngPal{0};
   if (ctx.output.paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
-    for (const auto &palette : tileset.palettes) {
+    for (const auto &palette : palettes) {
       for (const auto &color : palette.colors) {
         RGBA32 rgbaColor = bgrToRgba(color);
         pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
@@ -72,6 +89,11 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
     throw std::runtime_error{"PAL0 option not yet supported"};
   }
   out.set_palette(pngPal);
+}
+
+void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
+{
+  configurePngPalette(ctx, out, tileset.palettes);
 
   /*
    * Set up the tileset PNG based on the tiles list and then write it to `tiles.png`.
@@ -119,13 +141,14 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
 }
 
 void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames, const CompiledAnimation &animation,
-              const std::vector<std::size_t> &paletteIndexesOfTile)
+              const std::vector<GBAPalette> &palettes)
 {
   if (outFrames.size() != animation.frames.size()) {
     throw std::runtime_error{"emitter::emitAnim outFrames.size() != animation.frames.size()"};
   }
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
-    png::image<png::index_pixel> out = outFrames.at(frameIndex);
+    png::image<png::index_pixel> &out = outFrames.at(frameIndex);
+    configurePngPaletteGreyscale(ctx, out, palettes);
     std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
     std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
     for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
@@ -135,16 +158,9 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
         std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
         std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         const GBATile &tile = animation.frames.at(frameIndex).tiles.at(tileIndex);
-        png::byte paletteIndex = paletteIndexesOfTile.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
-        switch (ctx.output.paletteMode) {
-        case TilesPngPaletteMode::PAL0:
-        case TilesPngPaletteMode::GREYSCALE:
-          out[pixelRow][pixelCol] = indexInPalette;
-          break;
-        case TilesPngPaletteMode::TRUE_COLOR:
-          out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
-        }
+        // TODO : how do we handle true-color for anim tiles? no easy way to access tile palette indices
+        out[pixelRow][pixelCol] = indexInPalette;
       }
     }
   }
@@ -224,6 +240,7 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 
 TEST_CASE("emitTilesPng should emit the tiles.png as expected based on settings")
 {
+  // TODO : fix this test
   // porytiles::Config config = porytiles::defaultConfig();
   // porytiles::CompilerContext context{config, porytiles::CompilerMode::RAW};
 
@@ -311,4 +328,9 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   }
 
   std::filesystem::remove_all(parentDir);
+}
+
+TEST_CASE("emitAnim should ")
+{
+  // TODO : fill in test
 }

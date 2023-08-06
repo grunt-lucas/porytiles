@@ -24,7 +24,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top);
 
-void importAnimTiles(const std::vector<std::vector<NamedRgbaPng>> &rawAnims, DecompiledTileset &tiles);
+void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles);
 
 } // namespace porytiles
 

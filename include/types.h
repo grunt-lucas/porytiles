@@ -6,6 +6,7 @@
 #include <compare>
 #include <cstdint>
 #include <iostream>
+#include <png.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -30,23 +31,16 @@ constexpr std::size_t MAX_BG_PALETTES = 16;
 // --------------------
 
 /**
- * An RGBA PNG from png++, tagged with a name.
+ * An PNG from png++, tagged with a name and frame.
  */
-struct NamedRgbaPng {
-  png::image<png::rgba_pixel> png;
-  std::string name;
+template <typename T> struct AnimationPng {
+  png::image<T> png;
+  std::string animName;
+  std::string frame;
 
-  NamedRgbaPng(png::image<png::rgba_pixel> png, std::string name) : png{png}, name{name} {}
-};
-
-/**
- * An index PNG from png++, tagged with a name.
- */
-struct NamedIndexPng {
-  png::image<png::index_pixel> png;
-  std::string name;
-
-  NamedIndexPng(png::image<png::index_pixel> png, std::string name) : png{png}, name{name} {}
+  AnimationPng(png::image<T> png, std::string animName, std::string frame) : png{png}, animName{animName}, frame{frame}
+  {
+  }
 };
 
 /**
@@ -274,15 +268,16 @@ struct Assignment {
 
 struct CompiledAnimFrame {
   std::vector<GBATile> tiles;
+  std::string frameName;
 
-  CompiledAnimFrame() : tiles{} {}
+  CompiledAnimFrame(std::string frameName) : tiles{}, frameName{frameName} {}
 };
 
 struct CompiledAnimation {
   std::vector<CompiledAnimFrame> frames;
-  std::string name;
+  std::string animName;
 
-  CompiledAnimation(std::string name) : frames{}, name{name} {}
+  CompiledAnimation(std::string animName) : frames{}, animName{animName} {}
 
   CompiledAnimFrame representativeFrame() const { return frames.at(representativeFrameIndex()); }
 
@@ -314,6 +309,11 @@ struct CompiledTileset {
   std::unordered_map<BGR15, std::size_t> colorIndexMap;
   std::unordered_map<GBATile, std::size_t> tileIndexes;
   std::vector<CompiledAnimation> anims;
+
+  CompiledTileset()
+      : tiles{}, paletteIndexesOfTile{}, palettes{}, assignments{}, colorIndexMap{}, tileIndexes{}, anims{}
+  {
+  }
 };
 
 /**
@@ -321,8 +321,9 @@ struct CompiledTileset {
  */
 struct DecompiledAnimFrame {
   std::vector<RGBATile> tiles;
+  std::string frameName;
 
-  DecompiledAnimFrame() : tiles{} {}
+  DecompiledAnimFrame(std::string frameName) : tiles{}, frameName{frameName} {}
 
   std::size_t size() const { return tiles.size(); }
 };
@@ -334,9 +335,9 @@ struct DecompiledAnimFrame {
  */
 struct DecompiledAnimation {
   std::vector<DecompiledAnimFrame> frames;
-  std::string name;
+  std::string animName;
 
-  DecompiledAnimation(std::string name) : frames{}, name{name} {}
+  DecompiledAnimation(std::string animName) : frames{}, animName{animName} {}
 
   const DecompiledAnimFrame &representativeFrame() const { return frames.at(representativeFrameIndex()); }
 
