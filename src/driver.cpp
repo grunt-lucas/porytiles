@@ -376,7 +376,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary s
 
   porytiles::drive(ctx);
 
-  // TODO : check pal files
+  // TODO : test impl check pal files
 
   // Check tiles.png
 
@@ -463,7 +463,7 @@ TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary
 
   porytiles::drive(ctx);
 
-  // TODO : check pal files
+  // TODO : test impl check pal files
 
   // Check tiles.png
 
