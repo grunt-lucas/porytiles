@@ -7,8 +7,8 @@ on:
     branches: [ "trunk" ]
 
 jobs:
-  build-linux-clang-llvm:
-    name: Build on ubuntu-latest with Clang+LLVM 16
+  build-linux-amd64-clang-llvm:
+    name: Build on ubuntu-latest-amd64 with Clang+LLVM 16
     runs-on: ubuntu-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -18,7 +18,7 @@ jobs:
           sudo apt-get install libpng-dev
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 16
+          sudo ./llvm.sh 16 all
           clang++-16 --version
           clang++-16 -v
 
@@ -44,7 +44,7 @@ jobs:
           CXX=clang++-16 make release-check
 
   release-linux-amd64:
-    name: Release a dynamic-linked amd64 binary
+    name: Release a dynamic-linked linux-amd64 binary
     runs-on: ubuntu-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -55,7 +55,7 @@ jobs:
           sudo apt-get install libpng-dev
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 16
+          sudo ./llvm.sh 16 all
           clang++-16 --version
           clang++-16 -v
 
@@ -93,7 +93,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-linux-amd64-static:
-    name: Release a static-linked amd64 binary
+    name: Release a static-linked linux-amd64 binary
     runs-on: ubuntu-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -104,7 +104,7 @@ jobs:
           sudo apt-get install libpng-dev
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 16
+          sudo ./llvm.sh 16 all
           clang++-16 --version
           clang++-16 -v
 
@@ -142,7 +142,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-linux-gcc:
-    name: Build on ubuntu-latest with GCC 13
+    name: Build on ubuntu-latest-amd64 with GCC 13
     runs-on: ubuntu-latest
     steps:
       - name: Install GCC 13 and dependencies
@@ -166,7 +166,7 @@ jobs:
           CXX=g++-13 make check
 
   build-macos-clang-llvm:
-    name: Build on macos-latest-x86_64 with Clang+LLVM 16
+    name: Build on macos-latest-amd64 with Clang+LLVM 16
     runs-on: macos-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -183,41 +183,65 @@ jobs:
 
       - name: Build debug and release executables
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
 
       - name: Run tests on debug and release
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+
+  release-macos-amd64:
+    name: Release a dynamic-linked macos-amd64 binary
+    runs-on: macos-latest
+    steps:
+      - name: Install Clang+LLVM 16 and dependencies
+        run: |
+          brew update
+          brew install zlib
+          brew install libpng
+          brew install llvm@16
+          /usr/local/opt/llvm/bin/clang++ --version
+          /usr/local/opt/llvm/bin/clang++ -v
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      - name: Build debug and release executables
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
+
+      - name: Run tests on debug and release
+        run: |
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
       
       - name: Build release executable before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release
 
       - name: Run release tests before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXX_FLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release-check
+          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make release-check
 
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run : |
-          mkdir porytiles-macos-x86_64
-          cp release/bin/porytiles porytiles-macos-x86_64
-          cp CHANGELOG.md porytiles-macos-x86_64
-          cp README.md porytiles-macos-x86_64
-          cp LICENSE porytiles-macos-x86_64
-          cp -r res porytiles-macos-x86_64
+          mkdir porytiles-macos-amd64
+          cp release/bin/porytiles porytiles-macos-amd64
+          cp CHANGELOG.md porytiles-macos-amd64
+          cp README.md porytiles-macos-amd64
+          cp LICENSE porytiles-macos-amd64
+          cp -r res porytiles-macos-amd64
 
       - name: Bundle release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          zip -r porytiles-macos-x86_64.zip porytiles-macos-x86_64
+          zip -r porytiles-macos-amd64.zip porytiles-macos-amd64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: porytiles-macos-x86_64.zip
+          files: porytiles-macos-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
