@@ -7,7 +7,7 @@ on:
     branches: [ "trunk" ]
 
 jobs:
-  build-linux:
+  build-linux-clang-llvm:
     name: Build on ubuntu-latest with Clang+LLVM 16
     runs-on: ubuntu-latest
     steps:
@@ -20,6 +20,7 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 16
           clang++-16 --version
+          clang++-16 -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
@@ -42,27 +43,101 @@ jobs:
         run: |
           CXX=clang++-16 make release-check
 
+  release-linux-amd64:
+    name: Release a dynamic-linked amd64 binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Clang+LLVM 16 and dependencies
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16
+          clang++-16 --version
+          clang++-16 -v
+
+      - name: Checkout porytiles
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v3
+
+      - name: Build release executable and run tests
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          CXX=clang++-16 CXXFLAGS=-stdlib=libc++ LDFLAGS=-stdlib=libc++ make release-check
+
       - name: Prep release directory before release
         if: startsWith(github.ref, 'refs/tags/')
         run : |
-          mkdir porytiles-linux
-          cp release/bin/porytiles porytiles-linux
-          cp CHANGELOG.md porytiles-linux
-          cp README.md porytiles-linux
-          cp LICENSE porytiles-linux
-          cp -r res porytiles-linux
+          mkdir porytiles-linux-amd64
+          cp release/bin/porytiles porytiles-linux-amd64
+          cp CHANGELOG.md porytiles-linux-amd64
+          cp README.md porytiles-linux-amd64
+          cp LICENSE porytiles-linux-amd64
+          cp -r res porytiles-linux-amd64
 
       - name: Bundle release directory before release
         uses: montudor/action-zip@v0.1.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          args: zip -r porytiles-linux.zip porytiles-linux
+          args: zip -r porytiles-linux-amd64.zip porytiles-linux-amd64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: porytiles-linux.zip
+          files: porytiles-linux-amd64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-linux-amd64-static:
+    name: Release a static-linked amd64 binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Clang+LLVM 16 and dependencies
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16
+          clang++-16 --version
+          clang++-16 -v
+
+      - name: Checkout porytiles
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v3
+
+      - name: Build release executable and run tests
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          CXX=clang++-16 CXXFLAGS=-stdlib=libc++ LDFLAGS='-stdlib=libc++ -static' make release-check
+
+      - name: Prep release directory before release
+        if: startsWith(github.ref, 'refs/tags/')
+        run : |
+          mkdir porytiles-linux-amd64-static
+          cp release/bin/porytiles porytiles-linux-amd64-static
+          cp CHANGELOG.md porytiles-linux-amd64-static
+          cp README.md porytiles-linux-amd64-static
+          cp LICENSE porytiles-linux-amd64-static
+          cp -r res porytiles-linux-amd64-static
+
+      - name: Bundle release directory before release
+        uses: montudor/action-zip@v0.1.0
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          args: zip -r porytiles-linux-amd64-static.zip porytiles-linux-amd64-static
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: porytiles-linux-amd64-static.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -77,6 +152,7 @@ jobs:
           sudo apt-get install libpng-dev
           sudo apt-get install g++-13
           g++-13 --version
+          g++-13 -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
@@ -89,7 +165,7 @@ jobs:
         run: |
           CXX=g++-13 make check
 
-  build-macos:
+  build-macos-clang-llvm:
     name: Build on macos-latest-x86_64 with Clang+LLVM 16
     runs-on: macos-latest
     steps:
@@ -100,6 +176,7 @@ jobs:
           brew install libpng
           brew install llvm@16
           /usr/local/opt/llvm/bin/clang++ --version
+          /usr/local/opt/llvm/bin/clang++ -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
