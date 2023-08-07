@@ -56,7 +56,7 @@ void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::
   }
   pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
                fmt::styled(file, fmt::emphasis::bold));
-  die_compilationTerminated();
+  die_compilationTerminated(fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
@@ -85,11 +85,16 @@ void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
   }
 }
 
-void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
-
-void die_errorCount(const ErrorsAndWarnings &err)
+void die_compilationTerminated(std::string errorMessage)
 {
-  throw PtException{std::to_string(err.errCount) + " errors generated."};
+  pt_println(stderr, "compilation terminated.");
+  throw PtException{errorMessage};
+}
+
+void die_errorCount(const ErrorsAndWarnings &err, std::string errorMessage)
+{
+  pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+  throw PtException{errorMessage};
 }
 
 } // namespace porytiles

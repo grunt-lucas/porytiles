@@ -19,8 +19,6 @@ try {
 }
 catch (const porytiles::PtException &e) {
   // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
-  // Eventually refactor so we don't print exception message here, we will use that instead for testing
-  porytiles::pt_println(stderr, "{}", e.what());
   return 1;
 }
 catch (const std::exception &e) {

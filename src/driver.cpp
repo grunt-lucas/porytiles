@@ -123,7 +123,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     animations.push_back(framePngs);
   }
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err);
+    die_errorCount(ctx.err, "found anim frame that was not a png");
   }
 
   importAnimTiles(animations, decompTiles);

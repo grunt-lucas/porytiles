@@ -72,7 +72,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err);
+    die_errorCount(ctx.err, "input layer png dimensions invalid");
   }
 
   DecompiledTileset decompiledTiles;
