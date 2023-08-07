@@ -9,26 +9,16 @@ enum class WarningMode { OFF, WARN, ERR };
 
 struct ErrorsAndWarnings {
   std::size_t errCount;
+  std::size_t warnCount;
   bool dieCompilation;
 
-  std::size_t colorPrecisionLossCount;
   WarningMode colorPrecisionLossMode;
-
-  std::size_t paletteAllocEfficCount;
   WarningMode paletteAllocEfficMode;
-
-  std::size_t transparentRepresentativeAnimTileCount;
   WarningMode transparentRepresentativeAnimTileMode;
 
-  [[nodiscard]] std::size_t warnCount() const
-  {
-    return colorPrecisionLossCount + paletteAllocEfficCount + transparentRepresentativeAnimTileCount;
-  }
-
   ErrorsAndWarnings()
-      : errCount{0}, dieCompilation{false}, colorPrecisionLossCount{0}, colorPrecisionLossMode{WarningMode::OFF},
-        paletteAllocEfficCount{0}, paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileCount{0},
-        transparentRepresentativeAnimTileMode{WarningMode::OFF}
+      : errCount{0}, dieCompilation{false}, colorPrecisionLossMode{WarningMode::OFF},
+        paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
   }
 };

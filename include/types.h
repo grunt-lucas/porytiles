@@ -112,13 +112,22 @@ enum class TileLayer { BOTTOM, MIDDLE, TOP };
 
 std::string layerString(TileLayer layer);
 
+enum class Subtile { NORTHWEST = 0, NORTHEAST = 1, SOUTHWEST = 2, SOUTHEAST = 3 };
+
+std::string subtileString(Subtile subtile);
+
 /**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
   std::array<RGBA32, TILE_NUM_PIX> pixels;
   TileLayer layer;
-  std::size_t index;
+  // tileIndex is used in compile-freestanding
+  std::size_t tileIndex;
+  // metatileIndex is which metatile on the sheet, used in compile-primary and compile-secondary
+  std::size_t metatileIndex;
+  // Subtile within the metatile
+  Subtile subtile;
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {

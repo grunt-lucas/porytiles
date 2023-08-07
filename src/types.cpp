@@ -71,6 +71,26 @@ std::string layerString(TileLayer layer)
   }
 }
 
+std::string subtileString(Subtile subtile)
+{
+  switch (subtile) {
+  case Subtile::NORTHWEST:
+    return "northwest";
+    break;
+  case Subtile::NORTHEAST:
+    return "northeast";
+    break;
+  case Subtile::SOUTHWEST:
+    return "southwest";
+    break;
+  case Subtile::SOUTHEAST:
+    return "southeast";
+    break;
+  default:
+    throw std::runtime_error{"unknown Subtile type"};
+  }
+}
+
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
 {
   os << std::to_string(bgr.bgr);

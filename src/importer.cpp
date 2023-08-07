@@ -28,6 +28,7 @@ DecompiledTileset importTilesFromPng(const png::image<png::rgba_pixel> &png)
   for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
     size_t tileRow = tileIndex / pngWidthInTiles;
     size_t tileCol = tileIndex % pngWidthInTiles;
+    // TODO fill in metadata fields for raw tiles
     RGBATile tile{};
     for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
       size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -87,6 +88,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
       size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile bottomTile{};
+      bottomTile.metatileIndex = metatileIndex;
+      bottomTile.subtile = static_cast<Subtile>(bottomTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -104,6 +107,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
       size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile middleTile{};
+      middleTile.metatileIndex = metatileIndex;
+      middleTile.subtile = static_cast<Subtile>(middleTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -121,6 +126,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
       size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile topTile{};
+      topTile.metatileIndex = metatileIndex;
+      topTile.subtile = static_cast<Subtile>(topTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -166,6 +173,7 @@ void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>
       for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
         size_t tileRow = tileIndex / pngWidthInTiles;
         size_t tileCol = tileIndex % pngWidthInTiles;
+        // TODO fill in metadata fields for anim tiles
         RGBATile tile{};
 
         for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {

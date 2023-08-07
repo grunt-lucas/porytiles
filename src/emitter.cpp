@@ -17,9 +17,12 @@ constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette)
 {
   // TODO : detect windows, omit the "\r"
-  out << "JASC-PAL" << "\r" << std::endl;
-  out << "0100" << "\r" << std::endl;
-  out << "16" << "\r" << std::endl;
+  out << "JASC-PAL"
+      << "\r" << std::endl;
+  out << "0100"
+      << "\r" << std::endl;
+  out << "16"
+      << "\r" << std::endl;
   size_t i;
   for (i = 0; i < palette.colors.size(); i++) {
     RGBA32 color = bgrToRgba(palette.colors.at(i));

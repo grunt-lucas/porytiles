@@ -61,26 +61,28 @@ void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
+  // TODO : better message
   if (err.colorPrecisionLossMode == WarningMode::ERR) {
     err.errCount++;
+    pt_err("color precision loss");
   }
   else if (err.colorPrecisionLossMode == WarningMode::WARN) {
-    err.colorPrecisionLossCount++;
+    err.warnCount++;
+    pt_warn("color precision loss");
   }
-  // TODO : print logs
-  pt_warn("color precision loss");
 }
 
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
 {
+  // TODO : better message
   if (err.transparentRepresentativeAnimTileMode == WarningMode::ERR) {
     err.errCount++;
+    pt_err("transparent representative tile");
   }
   else if (err.transparentRepresentativeAnimTileMode == WarningMode::WARN) {
-    err.transparentRepresentativeAnimTileCount++;
+    err.warnCount++;
+    pt_warn("transparent representative tile");
   }
-  // TODO : better message
-  pt_warn("transparent representative tile");
 }
 
 void die_compilationTerminated() { throw PtException{"compilation terminated."}; }
