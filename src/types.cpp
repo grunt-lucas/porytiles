@@ -54,6 +54,23 @@ const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 
 const GBATile GBA_TILE_TRANSPARENT = uniformTile(0);
 
+std::string tileTypeString(TileType type)
+{
+  switch (type) {
+  case TileType::FREESTANDING:
+    return "freestanding";
+    break;
+  case TileType::LAYERED:
+    return "layered";
+    break;
+  case TileType::ANIM:
+    return "anim";
+    break;
+  default:
+    throw std::runtime_error{"unknown TileType type"};
+  }
+}
+
 std::string layerString(TileLayer layer)
 {
   switch (layer) {

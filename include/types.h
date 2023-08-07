@@ -108,6 +108,10 @@ BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
 RGBA32 bgrToRgba(const BGR15 &bgr) noexcept;
 
+enum class TileType { FREESTANDING, LAYERED, ANIM };
+
+std::string tileTypeString(TileType type);
+
 enum class TileLayer { BOTTOM, MIDDLE, TOP };
 
 std::string layerString(TileLayer layer);
@@ -121,6 +125,7 @@ std::string subtileString(Subtile subtile);
  */
 struct RGBATile {
   std::array<RGBA32, TILE_NUM_PIX> pixels;
+  TileType type;
   TileLayer layer;
   // tileIndex is used in compile-freestanding
   std::size_t tileIndex;
