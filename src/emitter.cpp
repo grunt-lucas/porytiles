@@ -16,13 +16,14 @@ constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
 void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette)
 {
-  out << "JASC-PAL" << std::endl;
-  out << "0100" << std::endl;
-  out << "16" << std::endl;
+  // TODO : detect windows, omit the "\r"
+  out << "JASC-PAL" << "\r" << std::endl;
+  out << "0100" << "\r" << std::endl;
+  out << "16" << "\r" << std::endl;
   size_t i;
   for (i = 0; i < palette.colors.size(); i++) {
     RGBA32 color = bgrToRgba(palette.colors.at(i));
-    out << color.jasc() << std::endl;
+    out << color.jasc() << "\r" << std::endl;
   }
 }
 
@@ -166,25 +167,25 @@ TEST_CASE("emitPalette should write the expected JASC pal to the output stream")
   palette.colors[3] = porytiles::rgbaToBgr(porytiles::RGBA_BLUE);
   palette.colors[4] = porytiles::rgbaToBgr(porytiles::RGBA_WHITE);
 
-  std::string expectedOutput = "JASC-PAL\n"
-                               "0100\n"
-                               "16\n"
-                               "248 0 248\n"
-                               "248 0 0\n"
-                               "0 248 0\n"
-                               "0 0 248\n"
-                               "248 248 248\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n";
+  std::string expectedOutput = "JASC-PAL\r\n"
+                               "0100\r\n"
+                               "16\r\n"
+                               "248 0 248\r\n"
+                               "248 0 0\r\n"
+                               "0 248 0\r\n"
+                               "0 0 248\r\n"
+                               "248 248 248\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n";
 
   std::stringstream outputStream;
   porytiles::emitPalette(ctx, outputStream, palette);
@@ -196,25 +197,25 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 {
   porytiles::PtContext ctx{};
 
-  std::string expectedOutput = "JASC-PAL\n"
-                               "0100\n"
-                               "16\n"
-                               "248 0 248\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n"
-                               "0 0 0\n";
+  std::string expectedOutput = "JASC-PAL\r\n"
+                               "0100\r\n"
+                               "16\r\n"
+                               "248 0 248\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n"
+                               "0 0 0\r\n";
 
   std::stringstream outputStream;
   porytiles::emitZeroedPalette(ctx, outputStream);
