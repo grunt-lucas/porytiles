@@ -284,6 +284,7 @@ static void driveCompile(PtContext &ctx)
 
   std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.inputPaths.primaryInputPath);
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
@@ -293,6 +294,7 @@ static void driveCompile(PtContext &ctx)
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
+    pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.inputPaths.secondaryInputPath);
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
@@ -303,6 +305,7 @@ static void driveCompile(PtContext &ctx)
     compiledTiles = compile(ctx, decompiledTiles);
   }
   else {
+    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.inputPaths.primaryInputPath);
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
