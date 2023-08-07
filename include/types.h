@@ -127,13 +127,15 @@ std::string subtileString(Subtile subtile);
 struct RGBATile {
   std::array<RGBA32, TILE_NUM_PIX> pixels;
   TileType type;
-  TileLayer layer;
   // tileIndex is used in compile-freestanding
   std::size_t tileIndex;
+  TileLayer layer;
   // metatileIndex is which metatile on the sheet, used in compile-primary and compile-secondary
   std::size_t metatileIndex;
   // Subtile within the metatile
   Subtile subtile;
+  std::string anim;
+  std::size_t frame;
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {

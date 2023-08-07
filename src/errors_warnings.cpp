@@ -8,6 +8,7 @@
 
 #include "logger.h"
 #include "ptexception.h"
+#include "types.h"
 
 namespace porytiles {
 
@@ -47,6 +48,8 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
   pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
          fmt::styled(file, fmt::emphasis::bold));
 }
+
+void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile) { err.errCount++; }
 
 void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index)
 {

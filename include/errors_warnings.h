@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <png.hpp>
 
+#include "types.h"
+
 namespace porytiles {
 enum class WarningMode { OFF, WARN, ERR };
 
@@ -31,6 +33,7 @@ void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer
 void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
 void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file);
+void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile);
 
 void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index);
 

@@ -15,6 +15,11 @@ try {
   porytiles::PtContext ctx{};
   porytiles::parseOptions(ctx, argc, argv);
   porytiles::drive(ctx);
+
+  if (ctx.err.warnCount > 0) {
+    porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
+  }
+
   return 0;
 }
 catch (const porytiles::PtException &e) {
