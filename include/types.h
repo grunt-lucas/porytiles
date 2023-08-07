@@ -145,16 +145,9 @@ struct RGBATile {
     return pixels[row * TILE_SIDE_LENGTH + col];
   }
 
-#if defined(__GNUG__) && !defined(__clang__)
+  auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
 
-  auto operator<=>(const RGBATile &) const = default;
-
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const RGBATile&) const = default;
+  // Ignore the other fields for purposes of ordering the tiles
   auto operator<=>(const RGBATile &other) const
   {
     if (this->pixels == other.pixels) {
@@ -165,9 +158,6 @@ struct RGBATile {
     }
     return std::strong_ordering::greater;
   }
-
-  auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
-#endif
 
   friend std::ostream &operator<<(std::ostream &, const RGBATile &);
 };
