@@ -25,6 +25,7 @@ constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH * METATILE_TILE_SI
 constexpr std::size_t METATILES_IN_ROW = 8;
 constexpr std::size_t PAL_SIZE = 16;
 constexpr std::size_t MAX_BG_PALETTES = 16;
+constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 
 // --------------------
 // |    DATA TYPES    |
