@@ -201,3 +201,24 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim til
                        porytiles::PtException);
   CHECK(ctx.err.errCount == 4);
 }
+
+TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  // ctx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/invalidAlphaValue/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/invalidAlphaValue/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/invalidAlphaValue/top.png"));
+  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/invalidAlphaValue/bottom.png"};
+  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/invalidAlphaValue/middle.png"};
+  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/invalidAlphaValue/top.png"};
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+
+  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during tile normalization",
+                       porytiles::PtException);
+  CHECK(ctx.err.errCount == 2);
+}
