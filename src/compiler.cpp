@@ -21,7 +21,6 @@
 #include "types.h"
 
 namespace porytiles {
-// TODO : change this to receive CompilerContext once I have made that type available
 static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const RGBA32 &transparencyColor,
                               NormalizedPalette &palette, RGBA32 rgba)
 {

@@ -41,7 +41,7 @@ void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
 
-void die_compilationTerminated(std::string errorMessage);
+void die_compilationTerminated(const ErrorsAndWarnings &err, std::string errorMessage);
 void die_errorCount(const ErrorsAndWarnings &err, std::string errorMessage);
 
 } // namespace porytiles

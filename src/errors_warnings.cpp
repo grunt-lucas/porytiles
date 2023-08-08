@@ -64,7 +64,7 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
   // TODO : show which pixel gives the error
   if (err.printErrors) {
     pt_err_rgbatile(tile, "too many unique colors in tile");
-    pt_note_rgbatile(tile, "cannot have greater than {}, including transparency color", PAL_SIZE);
+    pt_note_rgbatile(tile, "cannot have more than {} unique colors, including the transparency color", PAL_SIZE);
   }
 }
 
@@ -89,7 +89,7 @@ void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::
     pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
                  fmt::styled(file, fmt::emphasis::bold));
   }
-  die_compilationTerminated(fmt::format("animation {} missing required anim frame file {}", animation, file));
+  die_compilationTerminated(err, fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
@@ -118,16 +118,85 @@ void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
   }
 }
 
-void die_compilationTerminated(std::string errorMessage)
+void die_compilationTerminated(const ErrorsAndWarnings &err, std::string errorMessage)
 {
-  pt_println(stderr, "compilation terminated.");
+  if (err.printErrors) {
+    pt_println(stderr, "compilation terminated.");
+  }
   throw PtException{errorMessage};
 }
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string errorMessage)
 {
-  pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+  if (err.printErrors) {
+    pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+  }
   throw PtException{errorMessage};
 }
 
 } // namespace porytiles
+
+// Test cases that deliberately check for end-to-end warning correctness go here
+
+#include "compiler.h"
+#include "importer.h"
+
+TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInTile/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInTile/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInTile/top.png"));
+  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/tooManyUniqueColorsInTile/bottom.png"};
+  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/tooManyUniqueColorsInTile/middle.png"};
+  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/tooManyUniqueColorsInTile/top.png"};
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+
+  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during tile normalization",
+                       porytiles::PtException);
+  CHECK(ctx.err.errCount > 0);
+}
+
+TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 3;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/top.png"));
+  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/bottom.png"};
+  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/middle.png"};
+  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/top.png"};
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+
+  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1"));
+
+  porytiles::AnimationPng<png::rgba_pixel> anim1_00{
+      png::image<png::rgba_pixel>{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1/00.png"},
+      "anim1", "00.png"};
+  porytiles::AnimationPng<png::rgba_pixel> anim1_01{
+      png::image<png::rgba_pixel>{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1/01.png"},
+      "anim1", "01.png"};
+
+  std::vector<porytiles::AnimationPng<png::rgba_pixel>> anim1{};
+  anim1.push_back(anim1_00);
+  anim1.push_back(anim1_01);
+
+  std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
+  anims.push_back(anim1);
+
+  porytiles::importAnimTiles(anims, decompiled);
+
+  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during animated tile normalization",
+                       porytiles::PtException);
+  CHECK(ctx.err.errCount > 0);
+}
