@@ -49,6 +49,6 @@ catch (const std::exception &e) {
   porytiles::pt_println(stderr, "  - the compiler (and settings) you built with (if you built from source)");
   porytiles::pt_println(stderr, "");
   porytiles::pt_println(stderr, "Including these items makes it more likely a maintainer will be able to");
-  porytiles::pt_println(stderr, "reproduce the issue and create a patch.");
+  porytiles::pt_println(stderr, "reproduce the issue and create a fix release.");
   return 1;
 }
