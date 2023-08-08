@@ -144,7 +144,7 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPa
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+    pt_println(stderr, "{} error(s) generated.", std::to_string(err.errCount));
     pt_println(stderr, "terminating compilation of {}", inputPath);
   }
   throw PtException{errorMessage};
@@ -160,103 +160,52 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::st
 TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular tiles")
 {
   porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile";
   ctx.err.printErrors = false;
 
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/top.png"));
-  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile/top.png"};
-  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
-
-  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during tile normalization",
-                       porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
   CHECK(ctx.err.errCount == 6);
 }
 
 TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
 {
   porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_invalidAlphaValue";
   ctx.err.printErrors = false;
 
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_invalidAlphaValue/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_invalidAlphaValue/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/error_invalidAlphaValue/top.png"));
-  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/error_invalidAlphaValue/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/error_invalidAlphaValue/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/error_invalidAlphaValue/top.png"};
-  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
-
-  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during tile normalization",
-                       porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
   CHECK(ctx.err.errCount == 2);
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular tiles")
 {
   porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
   ctx.err.printErrors = false;
 
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/top.png"));
-  png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/top.png"};
-  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
-
-  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "too many unique colors total", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")
 {
   porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
-  ctx.inputPaths.secondaryInputPath = "/my/secondary_tileset";
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.inputPaths.primaryInputPath = "res/tests/simple_metatiles_1";
+  ctx.inputPaths.secondaryInputPath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
   ctx.err.printErrors = false;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/top.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_1/bottom.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_1/middle.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_1/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
-
-  auto primaryCompiled = porytiles::compile(ctx, decompiledPrimary);
-  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-  ctx.compilerContext.pairedPrimaryTiles = std::move(primaryCompiled);
-
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/top.png"));
-  png::image<png::rgba_pixel> bottomSecondary{
-      "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/bottom.png"};
-  png::image<png::rgba_pixel> middleSecondary{
-      "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/middle.png"};
-  png::image<png::rgba_pixel> topSecondary{"res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal/top.png"};
-  porytiles::DecompiledTileset decompiledSecondary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
-
-  CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiledSecondary), "too many unique colors total",
-                       porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
 TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when an anim frame is missing")
@@ -266,9 +215,21 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile";
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
                        porytiles::PtException);
+}
+
+TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
+  CHECK(ctx.err.errCount == 1);
 }

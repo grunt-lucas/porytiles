@@ -17,7 +17,7 @@ try {
   porytiles::drive(ctx);
 
   if (ctx.err.warnCount > 0) {
-    porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
+    porytiles::pt_println(stderr, "{} warning(s) generated.", ctx.err.warnCount);
   }
 
   return 0;

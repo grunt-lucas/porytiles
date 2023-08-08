@@ -46,8 +46,7 @@ template <typename... T> void pt_msg(std::FILE *stream, fmt::format_string<T...>
 
 template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
-               fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+  fmt::println(stderr, "{} {}", fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
@@ -73,22 +72,19 @@ template <typename... T> void pt_err_rgbatile(const RGBATile &tile, fmt::format_
 
 template <typename... T> void pt_fatal_err(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
-               fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+  fmt::println(stderr, "{} {}", fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_warn(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
-               fmt::styled("warning:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)),
+  fmt::println(stderr, "{} {}", fmt::styled("warning:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)),
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_note(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
-               fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
+  fmt::println(stderr, "{} {}", fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
