@@ -154,8 +154,9 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::st
 
 } // namespace porytiles
 
-// Test cases that deliberately check for end-to-end warning correctness go here
-
+/*
+ * Test cases that deliberately check for end-to-end error/warning correctness go here
+ */
 #include "compiler.h"
 #include "importer.h"
 
