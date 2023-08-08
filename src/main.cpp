@@ -29,6 +29,11 @@ catch (const porytiles::PtException &e) {
 catch (const std::exception &e) {
   // New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
   // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
+
+  /*
+   * Any other exception type indicates an internal compiler error -- dump a helpful message so the user can file an
+   * issue in the repo.
+   */
   porytiles::pt_println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
                         fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)),
                         e.what());
