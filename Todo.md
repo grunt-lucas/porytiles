@@ -60,6 +60,10 @@
 
 + `anim_flower_white` and `anim_flower_yellow` in `res/tests` do not have true magenta backgrounds, fix this
 
++ warn user on less than 100% palette alloc efficiency
+  + `-Wpalette-alloc-efficiency` / `-Wno-palette-alloc-efficiency`
+  + provide a way to input primer tiles to improve algorithm efficiency
+
 + Add `--verbose` logs to stderr
 
 + Set up auto-generated documentation: doxygen? RTD?
