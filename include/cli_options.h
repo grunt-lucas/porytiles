@@ -92,9 +92,9 @@ const std::string TILES_PNG_PALETTE_MODE_LONG = "tiles-png-pal-mode";
 const std::string TILES_PNG_PALETTE_MODE_DESCRIPTION =
 "    --" + TILES_PNG_PALETTE_MODE_LONG + "=<MODE>\n"
 "        Set the palette mode for the output `tiles.png'. Valid settings are\n"
-"        `pal0', `true-color', or `greyscale'. These settings are for human\n"
-"        visual purposes only and have no effect on the final in-game tiles.\n"
-"        Default value is `greyscale'.\n";
+"        `true-color' or `greyscale'. These settings are for human visual\n"
+"        purposes only and have no effect on the final in-game tiles. Default\n"
+"        value is `greyscale'.\n";
 constexpr int TILES_PNG_PALETTE_MODE_VAL = 1006;
 
 const std::string SECONDARY_LONG = "secondary";

@@ -160,7 +160,7 @@ void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>
 
   for (const auto &rawAnim : rawAnims) {
     if (rawAnim.empty()) {
-      throw std::runtime_error{"importer::importAnimTiles rawAnim was empty"};
+      internalerror_custom("importer::importAnimTiles rawAnim was empty");
     }
 
     DecompiledAnimation anim{rawAnim.at(0).animName};

@@ -33,7 +33,7 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
     parseCompile(ctx, argc, argv);
     break;
   default:
-    throw std::runtime_error{"cli_parser::parseOptions unknown subcommand setting"};
+    internalerror_custom("cli_parser::parseOptions unknown subcommand setting");
   }
 }
 
@@ -55,10 +55,7 @@ template <typename T> static T parseIntegralOption(const std::string &optionName
 static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string &optionName, const char *optarg)
 {
   std::string optargString{optarg};
-  if (optargString == "pal0") {
-    return TilesPngPaletteMode::PAL0;
-  }
-  else if (optargString == "true-color") {
+  if (optargString == "true-color") {
     return TilesPngPaletteMode::TRUE_COLOR;
   }
   else if (optargString == "greyscale") {

@@ -362,7 +362,7 @@ void drive(PtContext &ctx)
     driveCompileFreestanding(ctx);
     break;
   default:
-    throw std::runtime_error{"driver::drive unknown subcommand setting"};
+    internalerror_custom("driver::drive unknown subcommand setting");
   }
 }
 

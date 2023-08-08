@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "errors_warnings.h"
+
 namespace porytiles {
 
 static RGBATile uniformTile(const RGBA32 &color) noexcept
@@ -67,7 +69,7 @@ std::string tileTypeString(TileType type)
     return "anim";
     break;
   default:
-    throw std::runtime_error{"unknown TileType type"};
+    internalerror_custom("types::tileTypeString unknown TileType");
   }
 }
 
@@ -84,7 +86,7 @@ std::string layerString(TileLayer layer)
     return "top";
     break;
   default:
-    throw std::runtime_error{"unknown TileLayer type"};
+    internalerror_custom("types::layerString unknown TileLayer");
   }
 }
 
@@ -104,7 +106,7 @@ std::string subtileString(Subtile subtile)
     return "southeast";
     break;
   default:
-    throw std::runtime_error{"unknown Subtile type"};
+    internalerror_custom("types::subtileString unknown Subtile");
   }
 }
 
@@ -189,6 +191,20 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
   return rgba;
 }
 
+std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::FREESTANDING:
+    return freestandingTilesheetPath;
+  case CompilerMode::PRIMARY:
+    return primaryInputPath;
+  case CompilerMode::SECONDARY:
+    return secondaryInputPath;
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedInputPath");
+  }
+}
+
 std::string compilerModeString(CompilerMode mode)
 {
   switch (mode) {
@@ -202,7 +218,7 @@ std::string compilerModeString(CompilerMode mode)
     return "secondary";
     break;
   default:
-    throw std::runtime_error{"unknown CompilerMode"};
+    internalerror_unknownCompilerMode("types::compilerModeString");
   }
 }
 

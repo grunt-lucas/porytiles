@@ -64,7 +64,7 @@ template <typename... T> void pt_err_rgbatile(const RGBATile &tile, fmt::format_
     prefix = tile.anim + ":" + tile.frame + ":" + std::to_string(tile.tileIndex);
   }
   else {
-    throw std::runtime_error{"pt_err_tileprefix unknown TileType"};
+    throw std::runtime_error{"pt_err_rgbatile unknown TileType"};
   }
   fmt::println(stderr, "{} {} {}", fmt::styled(prefix + ":", fmt::emphasis::bold),
                fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),

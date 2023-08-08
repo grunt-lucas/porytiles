@@ -537,7 +537,7 @@ namespace porytiles {
 // |   CONFIG TYPES    |
 // ---------------------
 
-enum class TilesPngPaletteMode { PAL0, TRUE_COLOR, GREYSCALE };
+enum class TilesPngPaletteMode { TRUE_COLOR, GREYSCALE };
 
 enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY, COMPILE_FREESTANDING };
 
@@ -654,21 +654,7 @@ struct InputPaths {
     return path / "anims";
   }
 
-  std::filesystem::path modeBasedInputPath(CompilerMode mode) const
-  {
-    if (mode == CompilerMode::FREESTANDING) {
-      return freestandingTilesheetPath;
-    }
-    else if (mode == CompilerMode::PRIMARY) {
-      return primaryInputPath;
-    }
-    else if (mode == CompilerMode::SECONDARY) {
-      return secondaryInputPath;
-    }
-    else {
-      throw std::runtime_error{"unknown CompilerMode"};
-    }
-  }
+  std::filesystem::path modeBasedInputPath(CompilerMode mode) const;
 };
 
 struct Output {

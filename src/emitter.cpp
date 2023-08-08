@@ -69,12 +69,7 @@ static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png:
     }
   }
   else {
-    // TODO : provide user option to select palette based on output palettes
-    // for (const auto& color: tileset.palettes[config.numPalettesInPrimary - 1].colors) {
-    //     RGBA32 rgbaColor = bgrToRgba(color);
-    //     pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
-    // }
-    throw std::runtime_error{"PAL0 option not yet supported"};
+    internalerror_custom("emitter::configurePngPalette unknown TilesPngPaletteMode");
   }
   out.set_palette(pngPal);
 }
@@ -99,12 +94,14 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
         png::byte paletteIndex = tileset.paletteIndexesOfTile.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         switch (ctx.output.paletteMode) {
-        case TilesPngPaletteMode::PAL0:
         case TilesPngPaletteMode::GREYSCALE:
           out[pixelRow][pixelCol] = indexInPalette;
           break;
         case TilesPngPaletteMode::TRUE_COLOR:
           out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
+          break;
+        default:
+          internalerror_custom("emitter::emitTilesPng unknown TilesPngPalMode");
         }
       }
       else {
@@ -132,7 +129,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
               const std::vector<GBAPalette> &palettes)
 {
   if (outFrames.size() != animation.frames.size()) {
-    throw std::runtime_error{"emitter::emitAnim outFrames.size() != animation.frames.size()"};
+    internalerror_custom("emitter::emitAnim outFrames.size() != animation.frames.size()");
   }
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);

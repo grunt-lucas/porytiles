@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include "errors_warnings.h"
+
 namespace porytiles {
 
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName)
@@ -29,7 +31,7 @@ std::filesystem::path createTmpdir()
       break;
     }
     if (i == maxTries) {
-      throw std::runtime_error("getTmpdirPath took too many tries");
+      internalerror_custom("tmpfiles::createTmpdir getTmpdirPath took too many tries");
     }
     i++;
   }

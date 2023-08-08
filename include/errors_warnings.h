@@ -25,9 +25,10 @@ struct ErrorsAndWarnings {
   }
 };
 
-void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
+void internalerror_custom(std::string customMessage);
+void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize);
-void internalerror_unknownCompilerMode();
+void internalerror_unknownCompilerMode(std::string context);
 
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);

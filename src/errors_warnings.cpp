@@ -12,15 +12,16 @@
 
 namespace porytiles {
 
-void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t configNumPalettesPrimary,
+void internalerror_custom(std::string customMessage) { throw std::runtime_error(customMessage); }
+
+void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize)
 {
-  throw std::runtime_error{"config.numPalettesInPrimary did not match primary palette set size (" +
-                           std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) +
-                           ")"};
+  internalerror_custom("config.numPalettesInPrimary did not match primary palette set size (" +
+                       std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) + ")");
 }
 
-void internalerror_unknownCompilerMode() { throw std::runtime_error{"unknown CompilerMode"}; }
+void internalerror_unknownCompilerMode(std::string context) { internalerror_custom(context + " unknown CompilerMode"); }
 
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height)
 {
