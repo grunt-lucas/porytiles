@@ -32,8 +32,10 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string contex
 void internalerror_unknownCompilerMode(std::string context);
 
 // Regular compilation errors (due to bad user input), regular errors try to die as late as possible
-void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string dimensionName,
-                                                png::uint_32 dimension);
+void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const InputPaths &inputs,
+                                                std::string dimensionName, png::uint_32 dimension);
+void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frame,
+                                        std::string dimensionName, png::uint_32 dimension);
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);

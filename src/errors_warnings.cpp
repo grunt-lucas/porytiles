@@ -24,13 +24,22 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string contex
 
 void internalerror_unknownCompilerMode(std::string context) { internalerror_custom(context + " unknown CompilerMode"); }
 
-void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string dimensionName,
-                                                png::uint_32 dimension)
+void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const InputPaths &inputs,
+                                                std::string dimensionName, png::uint_32 dimension)
 {
   err.errCount++;
   if (err.printErrors) {
     pt_err("input tiles PNG {} '{}' was not divisible by 8", dimensionName,
            fmt::styled(dimension, fmt::emphasis::bold));
+  }
+}
+
+void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frame,
+                                        std::string dimensionName, png::uint_32 dimension)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("anim PNG {} '{}' was not divisible by 8", dimensionName, fmt::styled(dimension, fmt::emphasis::bold));
   }
 }
 

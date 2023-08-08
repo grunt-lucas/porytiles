@@ -128,7 +128,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
                    "found anim frame that was not a png");
   }
 
-  importAnimTiles(animations, decompTiles);
+  importAnimTiles(ctx, animations, decompTiles);
 }
 
 // static void driveCompileRaw(PtContext &ctx)

@@ -14,10 +14,15 @@ namespace porytiles {
 DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, "height", png.get_height());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.inputPaths, "height", png.get_height());
   }
   if (png.get_width() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, "width", png.get_width());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.inputPaths, "width", png.get_width());
+  }
+
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "freestanding input dimension not divisible by 8");
   }
 
   DecompiledTileset decompiledTiles;
@@ -153,7 +158,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   return decompiledTiles;
 }
 
-void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
+void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
+                     DecompiledTileset &tiles)
 {
   std::vector<DecompiledAnimation> anims{};
 
@@ -162,16 +168,23 @@ void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>
       internalerror_custom("importer::importAnimTiles rawAnim was empty");
     }
 
-    DecompiledAnimation anim{rawAnim.at(0).animName};
+    std::string animName = rawAnim.at(0).animName;
+    DecompiledAnimation anim{animName};
     for (const auto &rawFrame : rawAnim) {
       DecompiledAnimFrame animFrame{rawFrame.frame};
 
-      // TODO : improve error messages here
       if (rawFrame.png.get_height() % TILE_SIDE_LENGTH != 0) {
-        throw PtException{"input PNG height `" + std::to_string(rawFrame.png.get_height()) + "' is not divisible by 8"};
+        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frame, "height",
+                                           rawFrame.png.get_height());
       }
       if (rawFrame.png.get_width() % TILE_SIDE_LENGTH != 0) {
-        throw PtException{"input PNG width `" + std::to_string(rawFrame.png.get_width()) + "' is not divisible by 8"};
+        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frame, "width",
+                                           rawFrame.png.get_width());
+      }
+
+      if (ctx.err.errCount > 0) {
+        die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                       "anim frame input dimension not divisible by 8");
       }
 
       // TODO : throw if this frame's dimensions don't match dimensions of other frames in this anim
@@ -371,7 +384,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
 
   porytiles::DecompiledTileset tiles{};
 
-  porytiles::importAnimTiles(anims, tiles);
+  porytiles::importAnimTiles(ctx, anims, tiles);
 
   CHECK(tiles.anims.size() == 2);
   CHECK(tiles.anims.at(0).size() == 3);

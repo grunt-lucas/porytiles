@@ -1212,7 +1212,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
   anims.push_back(yellowAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(anims, tiles);
+  porytiles::importAnimTiles(ctx, anims, tiles);
 
   std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
 
@@ -1982,7 +1982,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(anims, decompiledPrimary);
+  porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -2183,7 +2183,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(anims, decompiledPrimary);
+  porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
   ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
@@ -2219,7 +2219,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> animsSecondary{};
   animsSecondary.push_back(flowerRedAnim);
 
-  porytiles::importAnimTiles(animsSecondary, decompiledSecondary);
+  porytiles::importAnimTiles(ctx, animsSecondary, decompiledSecondary);
 
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
