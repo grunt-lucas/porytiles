@@ -64,8 +64,9 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "too many unique colors at pixel col {}, row {}", col, row);
-    pt_note_rgbatile(tile, "cannot have more than {} unique colors, including the transparency color", PAL_SIZE);
+    pt_err_rgbatile(tile, "too many unique colors, threw at pixel col {}, row {}", col, row);
+    pt_note_rgbatile(tile, "cannot have more than {} unique colors, including the transparency color",
+                     fmt::styled(PAL_SIZE, fmt::emphasis::bold));
   }
 }
 
@@ -102,7 +103,8 @@ void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPath
 {
   if (err.printErrors) {
     pt_fatal_err("too many unique colors in {} tileset", compilerModeString(mode));
-    pt_note("{} allowed based on fieldmap configuration, but found {}", allowed, found);
+    pt_note("{} allowed based on fieldmap configuration, but found {}", fmt::styled(allowed, fmt::emphasis::bold),
+            fmt::styled(found, fmt::emphasis::bold));
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("too many unique colors total"));
 }
@@ -136,7 +138,7 @@ void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_println(stderr, "terminating compilation of {}", inputPath);
+    pt_println(stderr, "terminating compilation of {}", fmt::styled(inputPath, fmt::emphasis::bold));
   }
   throw PtException{errorMessage};
 }
@@ -145,7 +147,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::st
 {
   if (err.printErrors) {
     pt_println(stderr, "{} error(s) generated.", std::to_string(err.errCount));
-    pt_println(stderr, "terminating compilation of {}", inputPath);
+    pt_println(stderr, "terminating compilation of {}", fmt::styled(inputPath, fmt::emphasis::bold));
   }
   throw PtException{errorMessage};
 }
