@@ -69,7 +69,7 @@ static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png:
     }
   }
   else {
-    internalerror_custom("emitter::configurePngPalette unknown TilesPngPaletteMode");
+    internalerror("emitter::configurePngPalette unknown TilesPngPaletteMode");
   }
   out.set_palette(pngPal);
 }
@@ -101,7 +101,7 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
           out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
           break;
         default:
-          internalerror_custom("emitter::emitTilesPng unknown TilesPngPalMode");
+          internalerror("emitter::emitTilesPng unknown TilesPngPalMode");
         }
       }
       else {
@@ -129,7 +129,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
               const std::vector<GBAPalette> &palettes)
 {
   if (outFrames.size() != animation.frames.size()) {
-    internalerror_custom("emitter::emitAnim outFrames.size() != animation.frames.size()");
+    internalerror("emitter::emitAnim outFrames.size() != animation.frames.size()");
   }
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);

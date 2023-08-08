@@ -13,16 +13,16 @@
 
 namespace porytiles {
 
-void internalerror_custom(std::string customMessage) { throw std::runtime_error(customMessage); }
+void internalerror(std::string message) { throw std::runtime_error(message); }
 
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize)
 {
-  internalerror_custom("config.numPalettesInPrimary did not match primary palette set size (" +
-                       std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) + ")");
+  internalerror("config.numPalettesInPrimary did not match primary palette set size (" +
+                std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) + ")");
 }
 
-void internalerror_unknownCompilerMode(std::string context) { internalerror_custom(context + " unknown CompilerMode"); }
+void internalerror_unknownCompilerMode(std::string context) { internalerror(context + " unknown CompilerMode"); }
 
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const InputPaths &inputs,
                                                 std::string dimensionName, png::uint_32 dimension)
@@ -100,6 +100,14 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
                      fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold),
                      fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
   }
+}
+
+void fatalerror(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
+{
+  if (err.printErrors) {
+    pt_fatal_err("{}", message);
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), message);
 }
 
 void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,

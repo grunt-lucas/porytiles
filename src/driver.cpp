@@ -136,45 +136,63 @@ static void driveCompileFreestanding(PtContext &ctx) {}
 static void driveCompile(PtContext &ctx)
 {
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
-    throw PtException{ctx.output.path + ": exists but is not a directory"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath().string() + ": file does not exist"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath().string() + ": exists but was not a regular file"};
+      fatalerror(
+          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
     }
     if (!std::filesystem::exists(ctx.inputPaths.middleSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath().string() + ": file does not exist"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.inputPaths.middleSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath().string() + ": exists but was not a regular file"};
+      fatalerror(
+          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
     }
     if (!std::filesystem::exists(ctx.inputPaths.topSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath().string() + ": file does not exist"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.inputPaths.topSecondaryTilesheetPath().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.inputPaths.topSecondaryTilesheetPath())) {
-      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath().string() + ": exists but was not a regular file"};
+      fatalerror(
+          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
     }
   }
   if (!std::filesystem::exists(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath().string() + ": file does not exist"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath().string() + ": exists but was not a regular file"};
+    fatalerror(
+        ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+        fmt::format("{}: exists but was not a regular file", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
   }
   if (!std::filesystem::exists(ctx.inputPaths.middlePrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath().string() + ": file does not exist"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.inputPaths.middlePrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath().string() + ": exists but was not a regular file"};
+    fatalerror(
+        ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+        fmt::format("{}: exists but was not a regular file", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
   }
   if (!std::filesystem::exists(ctx.inputPaths.topPrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath().string() + ": file does not exist"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.inputPaths.topPrimaryTilesheetPath().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.inputPaths.topPrimaryTilesheetPath())) {
-    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath().string() + ": exists but was not a regular file"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topPrimaryTilesheetPath().string()));
   }
 
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -183,21 +201,24 @@ static void driveCompile(PtContext &ctx)
       png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      throw PtException{ctx.inputPaths.bottomSecondaryTilesheetPath().string() + " is not a valid PNG file"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
     }
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
       png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      throw PtException{ctx.inputPaths.middleSecondaryTilesheetPath().string() + " is not a valid PNG file"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
     }
     try {
       // We do this here so if the input is not a PNG, we can catch and give a better error
       png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      throw PtException{ctx.inputPaths.topSecondaryTilesheetPath().string() + " is not a valid PNG file"};
+      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
     }
   }
   try {
@@ -205,21 +226,24 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    throw PtException{ctx.inputPaths.bottomPrimaryTilesheetPath().string() + " is not a valid PNG file"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
   }
   try {
     // We do this here so if the input is not a PNG, we can catch and give a better error
     png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    throw PtException{ctx.inputPaths.middlePrimaryTilesheetPath().string() + " is not a valid PNG file"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
   }
   try {
     // We do this here so if the input is not a PNG, we can catch and give a better error
     png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topPrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    throw PtException{ctx.inputPaths.topPrimaryTilesheetPath().string() + " is not a valid PNG file"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.inputPaths.topPrimaryTilesheetPath().string()));
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
@@ -266,13 +290,16 @@ static void driveCompile(PtContext &ctx)
   std::filesystem::path animsPath = ctx.output.path / animsDir;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
-    throw PtException{"`" + tilesetPath.string() + "' exists in output directory but is not a file"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a file", tilesetPath.string()));
   }
   if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
-    throw PtException{"`" + palettesDir.string() + "' exists in output directory but is not a directory"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a directory", palettesDir.string()));
   }
   if (std::filesystem::exists(animsPath) && !std::filesystem::is_directory(animsPath)) {
-    throw PtException{"`" + animsDir.string() + "' exists in output directory but is not a directory"};
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a directory", animsDir.string()));
   }
   std::filesystem::create_directories(palettesPath);
   std::filesystem::create_directories(animsPath);
@@ -300,7 +327,7 @@ void drive(PtContext &ctx)
     driveCompileFreestanding(ctx);
     break;
   default:
-    internalerror_custom("driver::drive unknown subcommand setting");
+    internalerror("driver::drive unknown subcommand setting");
   }
 }
 

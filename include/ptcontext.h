@@ -34,6 +34,7 @@ struct PtContext {
   void validate() const
   {
     // TODO : handle this in a better way
+    // TODO : better error context
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
       throw PtException{"fieldmap parameter `numTilesInPrimary' (" + std::to_string(fieldmapConfig.numTilesInPrimary) +
                         ") exceeded `numTilesTotal' (" + std::to_string(fieldmapConfig.numTilesTotal) + ")"};

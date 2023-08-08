@@ -188,11 +188,11 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
     for (const auto &[color, index] : primaryIndexMap) {
       auto [insertedValue, wasInserted] = colorIndexes.insert({color, index});
       if (!wasInserted) {
-        internalerror_custom("compiler::buildColorIndexMaps colorIndexes.insert failed");
+        internalerror("compiler::buildColorIndexMaps colorIndexes.insert failed");
       }
       auto [_, wasInserted2] = indexesToColors.insert(std::pair{index, color});
       if (!wasInserted2) {
-        internalerror_custom("compiler::buildColorIndexMaps indexesToColors.insert failed");
+        internalerror("compiler::buildColorIndexMaps indexesToColors.insert failed");
       }
     }
   }
@@ -406,7 +406,7 @@ static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame,
   for (int i = 1; i < normalizedTile.palette.size; i++) {
     auto it = std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
     if (it == std::end(palette.colors)) {
-      internalerror_custom("compiler::makeTile it == std::end(palette.colors)");
+      internalerror("compiler::makeTile it == std::end(palette.colors)");
     }
     paletteIndexes.at(i) = it - std::begin(palette.colors);
   }
@@ -450,7 +450,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                              return (colorSet & ~assignedPal).none();
                            });
     if (it == std::end(assignedPalsSolution)) {
-      internalerror_custom("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
+      internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
 
@@ -520,7 +520,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                              return (colorSet & ~assignedPal).none();
                            });
     if (it == std::end(assignedPalsSolution)) {
-      internalerror_custom("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
+      internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
     GBATile gbaTile =
@@ -575,7 +575,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       return (colorSet & ~assignedPal).none();
     });
     if (it == std::end(allColorSets)) {
-      internalerror_custom("compiler::assignTilesSecondary it == std::end(allColorSets)");
+      internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
 
@@ -645,7 +645,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       return (colorSet & ~assignedPal).none();
     });
     if (it == std::end(allColorSets)) {
-      internalerror_custom("compiler::assignTilesSecondary it == std::end(allColorSets)");
+      internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
     GBATile gbaTile = makeTile(normTile, NormalizedTile::representativeFrameIndex(), compiled.palettes[paletteIndex]);

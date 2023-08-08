@@ -166,7 +166,7 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
 
   for (const auto &rawAnim : rawAnims) {
     if (rawAnim.empty()) {
-      internalerror_custom("importer::importAnimTiles rawAnim was empty");
+      internalerror("importer::importAnimTiles rawAnim was empty");
     }
 
     std::set<png::uint_32> frameWidths{};

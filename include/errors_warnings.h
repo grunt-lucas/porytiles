@@ -26,7 +26,7 @@ struct ErrorsAndWarnings {
 };
 
 // Internal compiler errors (due to bug in the compiler)
-void internalerror_custom(std::string customMessage);
+void internalerror(std::string message);
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode(std::string context);
@@ -45,6 +45,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              std::size_t col);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
+void fatalerror(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
 void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,

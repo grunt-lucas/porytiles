@@ -67,7 +67,7 @@ std::string tileTypeString(TileType type)
   case TileType::ANIM:
     return "anim";
   default:
-    internalerror_custom("types::tileTypeString unknown TileType");
+    internalerror("types::tileTypeString unknown TileType");
   }
   // unreachable, here to satisfy compiler
   return "";
@@ -83,7 +83,7 @@ std::string layerString(TileLayer layer)
   case TileLayer::TOP:
     return "top";
   default:
-    internalerror_custom("types::layerString unknown TileLayer");
+    internalerror("types::layerString unknown TileLayer");
   }
   // unreachable, here to satisfy compiler
   return "";
@@ -101,7 +101,7 @@ std::string subtileString(Subtile subtile)
   case Subtile::SOUTHEAST:
     return "southeast";
   default:
-    internalerror_custom("types::subtileString unknown Subtile");
+    internalerror("types::subtileString unknown Subtile");
   }
   // unreachable, here to satisfy compiler
   return "";

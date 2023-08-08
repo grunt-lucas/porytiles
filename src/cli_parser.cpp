@@ -33,7 +33,7 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
     parseCompile(ctx, argc, argv);
     break;
   default:
-    internalerror_custom("cli_parser::parseOptions unknown subcommand setting");
+    internalerror("cli_parser::parseOptions unknown subcommand setting");
   }
 }
 

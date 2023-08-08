@@ -31,7 +31,7 @@ std::filesystem::path createTmpdir()
       break;
     }
     if (i == maxTries) {
-      internalerror_custom("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+      internalerror("tmpfiles::createTmpdir getTmpdirPath took too many tries");
     }
     i++;
   }
