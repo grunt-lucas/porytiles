@@ -49,6 +49,9 @@ void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const Input
                                              const std::string &animation, std::size_t index);
 void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found);
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err, const InputPaths &inputs,
+                                                         CompilerMode mode, std::string animName, std::string frame,
+                                                         std::string dimensionName, png::uint_32 dimension);
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);

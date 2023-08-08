@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <png.hpp>
+#include <set>
 
 #include "errors_warnings.h"
 #include "logger.h"
@@ -168,6 +169,8 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
       internalerror_custom("importer::importAnimTiles rawAnim was empty");
     }
 
+    std::set<png::uint_32> frameWidths{};
+    std::set<png::uint_32> frameHeights{};
     std::string animName = rawAnim.at(0).animName;
     DecompiledAnimation anim{animName};
     for (const auto &rawFrame : rawAnim) {
@@ -187,7 +190,18 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
                        "anim frame input dimension not divisible by 8");
       }
 
-      // TODO : throw if this frame's dimensions don't match dimensions of other frames in this anim
+      frameWidths.insert(rawFrame.png.get_width());
+      frameHeights.insert(rawFrame.png.get_height());
+      if (frameWidths.size() != 1) {
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                                                            rawFrame.animName, rawFrame.frame, "width",
+                                                            rawFrame.png.get_width());
+      }
+      if (frameHeights.size() != 1) {
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                                                            rawFrame.animName, rawFrame.frame, "height",
+                                                            rawFrame.png.get_height());
+      }
 
       std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH;
       std::size_t pngHeightInTiles = rawFrame.png.get_height() / TILE_SIDE_LENGTH;

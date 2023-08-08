@@ -128,6 +128,19 @@ void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPath
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("too many unique colors total"));
 }
 
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err, const InputPaths &inputs,
+                                                         CompilerMode mode, std::string animName, std::string frame,
+                                                         std::string dimensionName, png::uint_32 dimension)
+{
+  if (err.printErrors) {
+    pt_fatal_err("animation '{}' frame '{}' {} '{}' did not match previous frame {}s",
+                 fmt::styled(animName, fmt::emphasis::bold), fmt::styled(frame, fmt::emphasis::bold), dimensionName,
+                 fmt::styled(dimension, fmt::emphasis::bold), dimensionName);
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("anim {} frame {} dimension {} mismatch", animName, frame, dimensionName));
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
   // TODO : better message
@@ -217,6 +230,19 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
+TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
+  CHECK(ctx.err.errCount == 1);
+}
+
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")
 {
   porytiles::PtContext ctx{};
@@ -243,15 +269,32 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when
                        porytiles::PtException);
 }
 
-TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing")
+TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame width "
+          "is mismatched")
 {
   porytiles::PtContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.inputPaths.primaryInputPath =
+      "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
   ctx.err.printErrors = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
-  CHECK(ctx.err.errCount == 1);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 01.png dimension width mismatch",
+                       porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame height "
+          "is mismatched")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath =
+      "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
+                       porytiles::PtException);
 }
