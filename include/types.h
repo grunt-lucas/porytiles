@@ -32,6 +32,12 @@ constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 // |    DATA TYPES    |
 // --------------------
 
+// TODO : For clang, default spaceship for std::array not yet supported by libc++
+// https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
+// https://reviews.llvm.org/D132265
+// https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
+// So we manually implement spaceship for some types here
+
 /**
  * An PNG from png++, tagged with a name and frame.
  */
@@ -127,6 +133,12 @@ std::string subtileString(Subtile subtile);
  */
 struct RGBATile {
   std::array<RGBA32, TILE_NUM_PIX> pixels;
+
+  /*
+   * Metadata Fields:
+   * These are used by the various components to track metadata around the usage context of an RGBATile. Allows
+   * Porytiles to give much more detailed error messages.
+   */
   TileType type;
   // tileIndex is used in compile-freestanding
   std::size_t tileIndex;
@@ -190,16 +202,6 @@ struct GBATile {
     return colorIndexes.at(index);
   }
 
-#if defined(__GNUG__) && !defined(__clang__)
-
-  auto operator<=>(const GBATile &) const = default;
-
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const GBATile&) const = default;
   auto operator<=>(const GBATile &other) const
   {
     if (this->colorIndexes == other.colorIndexes) {
@@ -212,7 +214,6 @@ struct GBATile {
   }
 
   auto operator==(const GBATile &other) const { return this->colorIndexes == other.colorIndexes; }
-#endif
 };
 
 extern const GBATile GBA_TILE_TRANSPARENT;
@@ -237,30 +238,6 @@ namespace porytiles {
 struct GBAPalette {
   std::size_t size;
   std::array<BGR15, PAL_SIZE> colors;
-
-#if defined(__GNUG__) && !defined(__clang__)
-
-  auto operator<=>(const GBAPalette &) const = default;
-
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const GBAPalette&) const = default;
-  auto operator<=>(const GBAPalette &other) const
-  {
-    if (this->colors == other.colors) {
-      return std::strong_ordering::equal;
-    }
-    else if (this->colors < other.colors) {
-      return std::strong_ordering::less;
-    }
-    return std::strong_ordering::greater;
-  }
-
-  auto operator==(const GBAPalette &other) const { return this->colors == other.colors; }
-#endif
 };
 
 /**
@@ -380,16 +357,6 @@ struct DecompiledTileset {
 struct NormalizedPixels {
   std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
-#if defined(__GNUG__) && !defined(__clang__)
-
-  auto operator<=>(const NormalizedPixels &) const = default;
-
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const NormalizedPixels&) const = default;
   auto operator<=>(const NormalizedPixels &other) const
   {
     if (this->colorIndexes == other.colorIndexes) {
@@ -402,7 +369,6 @@ struct NormalizedPixels {
   }
 
   auto operator==(const NormalizedPixels &other) const { return this->colorIndexes == other.colorIndexes; }
-#endif
 };
 } // namespace porytiles
 
@@ -425,30 +391,6 @@ namespace porytiles {
 struct NormalizedPalette {
   int size;
   std::array<BGR15, PAL_SIZE> colors;
-
-#if defined(__GNUG__) && !defined(__clang__)
-
-  auto operator<=>(const NormalizedPalette &) const = default;
-
-#else
-  // TODO : manually implement for clang, default spaceship for std::array not yet supported by libc++
-  // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
-  // https://reviews.llvm.org/D132265
-  // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
-  // auto operator<=>(const NormalizedPalette&) const = default;
-  auto operator<=>(const NormalizedPalette &other) const
-  {
-    if (this->colors == other.colors) {
-      return std::strong_ordering::equal;
-    }
-    else if (this->colors < other.colors) {
-      return std::strong_ordering::less;
-    }
-    return std::strong_ordering::greater;
-  }
-
-  auto operator==(const NormalizedPalette &other) const { return this->colors == other.colors; }
-#endif
 };
 } // namespace porytiles
 
