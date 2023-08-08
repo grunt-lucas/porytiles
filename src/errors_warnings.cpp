@@ -58,24 +58,25 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
   }
 }
 
-void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile)
+void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col)
 {
   err.errCount++;
-  // TODO : show which pixel gives the error
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "too many unique colors in tile");
+    pt_err_rgbatile(tile, "too many unique colors at pixel col {}, row {}", col, row);
     pt_note_rgbatile(tile, "cannot have more than {} unique colors, including the transparency color", PAL_SIZE);
   }
 }
 
-void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha)
+void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
+                             std::size_t col)
 {
   err.errCount++;
-  // TODO : show which pixel gives the error
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "invalid alpha value: {}", alpha);
-    pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent", ALPHA_OPAQUE,
-                     ALPHA_TRANSPARENT);
+    pt_err_rgbatile(tile, "invalid alpha value '{}' at pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
+                    col, row);
+    pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent",
+                     fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold),
+                     fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
   }
 }
 
@@ -159,7 +160,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular 
 
   CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during tile normalization",
                        porytiles::PtException);
-  CHECK(ctx.err.errCount > 0);
+  CHECK(ctx.err.errCount == 6);
 }
 
 TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim tiles")
@@ -198,5 +199,5 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim til
 
   CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during animated tile normalization",
                        porytiles::PtException);
-  CHECK(ctx.err.errCount > 0);
+  CHECK(ctx.err.errCount == 4);
 }

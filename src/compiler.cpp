@@ -22,7 +22,7 @@
 
 namespace porytiles {
 static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const RGBA32 &transparencyColor,
-                              NormalizedPalette &palette, RGBA32 rgba)
+                              NormalizedPalette &palette, RGBA32 rgba, std::size_t row, std::size_t col, bool errWarn)
 {
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
@@ -45,21 +45,23 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
     if (bgrPosInPalette == palette.size) {
       // palette size will grow as we add to it
       if (palette.size == PAL_SIZE) {
-        // TODO : how to not show this error for each candidate?
-        error_tooManyUniqueColorsInTile(ctx.err, rgbaFrame);
+        if (errWarn) {
+          error_tooManyUniqueColorsInTile(ctx.err, rgbaFrame, row, col);
+        }
         return INVALID_INDEX_PIXEL_VALUE;
       }
       palette.colors.at(palette.size++) = bgr;
     }
     return bgrPosInPalette;
   }
-  // TODO : how to not show this error for each candidate?
-  error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha);
+  if (errWarn) {
+    error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
+  }
   return INVALID_INDEX_PIXEL_VALUE;
 }
 
 static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
-                                const std::vector<RGBATile> &rgbaFrames, bool hFlip, bool vFlip)
+                                const std::vector<RGBATile> &rgbaFrames, bool hFlip, bool vFlip, bool errWarn)
 {
   /*
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
@@ -77,9 +79,9 @@ static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
       for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
         std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
         std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
-        candidateTile.setPixel(
-            frame, row, col,
-            insertRGBA(ctx, rgba, transparencyColor, candidateTile.palette, rgba.getPixel(rowWithFlip, colWithFlip)));
+        candidateTile.setPixel(frame, row, col,
+                               insertRGBA(ctx, rgba, transparencyColor, candidateTile.palette,
+                                          rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn));
       }
     }
     frame++;
@@ -94,7 +96,7 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
    * "lexicographic" order, where this order is determined by the std::array spaceship operator.
    */
-  auto noFlipsTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, false, false);
+  auto noFlipsTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, false, false, true);
 
   // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
   if (noFlipsTile.transparent()) {
@@ -105,9 +107,9 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
     return noFlipsTile;
   }
 
-  auto hFlipTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, true, false);
-  auto vFlipTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, false, true);
-  auto bothFlipsTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, true, true);
+  auto hFlipTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, true, false, false);
+  auto vFlipTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, false, true, false);
+  auto bothFlipsTile = candidate(ctx, ctx.compilerConfig.transparencyColor, rgbaFrames, true, true, false);
 
   std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
   auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates), [](auto tile1, auto tile2) {
@@ -872,59 +874,61 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
   dummy.tileIndex = 0;
 
   // Transparent should return 0
-  CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_MAGENTA) == 0);
+  CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_MAGENTA, 0, 0, true) ==
+        0);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
+                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}, 0, 0, true) == 0);
 
   // insert colors
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_OPAQUE}) == 1);
+                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 1);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{8, 0, 0, porytiles::ALPHA_OPAQUE}) == 2);
+                   porytiles::RGBA32{8, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 2);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{16, 0, 0, porytiles::ALPHA_OPAQUE}) == 3);
+                   porytiles::RGBA32{16, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 3);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{24, 0, 0, porytiles::ALPHA_OPAQUE}) == 4);
+                   porytiles::RGBA32{24, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 4);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{32, 0, 0, porytiles::ALPHA_OPAQUE}) == 5);
+                   porytiles::RGBA32{32, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 5);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{40, 0, 0, porytiles::ALPHA_OPAQUE}) == 6);
+                   porytiles::RGBA32{40, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 6);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{48, 0, 0, porytiles::ALPHA_OPAQUE}) == 7);
+                   porytiles::RGBA32{48, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 7);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{56, 0, 0, porytiles::ALPHA_OPAQUE}) == 8);
+                   porytiles::RGBA32{56, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 8);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{64, 0, 0, porytiles::ALPHA_OPAQUE}) == 9);
+                   porytiles::RGBA32{64, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 9);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
+                   porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 10);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{80, 0, 0, porytiles::ALPHA_OPAQUE}) == 11);
+                   porytiles::RGBA32{80, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 11);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{88, 0, 0, porytiles::ALPHA_OPAQUE}) == 12);
+                   porytiles::RGBA32{88, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 12);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{96, 0, 0, porytiles::ALPHA_OPAQUE}) == 13);
+                   porytiles::RGBA32{96, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 13);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{104, 0, 0, porytiles::ALPHA_OPAQUE}) == 14);
+                   porytiles::RGBA32{104, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 14);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
+                   porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 15);
 
   // repeat colors should return their indexes
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}) == 10);
+                   porytiles::RGBA32{72, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 10);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}) == 15);
+                   porytiles::RGBA32{112, 0, 0, porytiles::ALPHA_OPAQUE}, 0, 0, true) == 15);
 
   // Transparent should still return 0
-  CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_MAGENTA) == 0);
+  CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_MAGENTA, 0, 0, true) ==
+        0);
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1,
-                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}) == 0);
+                   porytiles::RGBA32{0, 0, 0, porytiles::ALPHA_TRANSPARENT}, 0, 0, true) == 0);
 
   // Should generate an error, palette full
-  insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_CYAN);
+  insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_CYAN, 0, 0, true);
   CHECK(ctx.err.errCount == 1);
 
   // invalid alpha value, must be opaque or transparent, generates another error
-  insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA32{0, 0, 0, 12});
+  insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA32{0, 0, 0, 12}, 0, 0, true);
   CHECK(ctx.err.errCount == 2);
 }
 
@@ -941,7 +945,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
   {
     std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, false, false);
+        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, false, false, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
@@ -970,7 +974,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
   {
     std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, true, false);
+        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, true, false, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_YELLOW));
@@ -999,7 +1003,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
   {
     std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, false, true);
+        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, false, true, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_GREY));
@@ -1028,7 +1032,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
   {
     std::vector<porytiles::RGBATile> singleFrameTile = {tile};
     porytiles::NormalizedTile candidate =
-        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, true, true);
+        porytiles::candidate(ctx, ctx.compilerConfig.transparencyColor, singleFrameTile, true, true, true);
     CHECK(candidate.palette.size == 9);
     CHECK(candidate.palette.colors[0] == porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA));
     CHECK(candidate.palette.colors[1] == porytiles::rgbaToBgr(porytiles::RGBA_BLUE));

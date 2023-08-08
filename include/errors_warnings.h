@@ -33,8 +33,9 @@ void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, 
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
 void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file);
-void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile);
-void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha);
+void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col);
+void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
+                             std::size_t col);
 
 void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index);
 
