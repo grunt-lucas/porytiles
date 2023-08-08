@@ -58,8 +58,6 @@
     + https://releases.llvm.org/16.0.0/projects/libcxx/docs/UsingLibcxx.html
     + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
 
-+ `anim_flower_white` and `anim_flower_yellow` in `res/tests` do not have true magenta backgrounds, fix this
-
 + warn user on less than 100% palette alloc efficiency
   + `-Wpalette-alloc-efficiency` / `-Wno-palette-alloc-efficiency`
   + provide a way to input primer tiles to improve algorithm efficiency
