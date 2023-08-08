@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "driver.h"
 #include "logger.h"
 #include "ptexception.h"
 #include "types.h"
@@ -178,46 +179,6 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular 
   CHECK(ctx.err.errCount == 6);
 }
 
-TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim tiles")
-{
-  // porytiles::PtContext ctx{};
-  // ctx.fieldmapConfig.numPalettesInPrimary = 3;
-  // ctx.fieldmapConfig.numPalettesTotal = 6;
-  // ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
-  // ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  // ctx.err.printErrors = false;
-
-  // REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/bottom.png"));
-  // REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/middle.png"));
-  // REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/top.png"));
-  // png::image<png::rgba_pixel> bottom{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/bottom.png"};
-  // png::image<png::rgba_pixel> middle{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/middle.png"};
-  // png::image<png::rgba_pixel> top{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/top.png"};
-  // porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
-
-  // REQUIRE(std::filesystem::exists("res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1"));
-
-  // porytiles::AnimationPng<png::rgba_pixel> anim1_00{
-  //     png::image<png::rgba_pixel>{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1/00.png"},
-  //     "anim1", "00.png"};
-  // porytiles::AnimationPng<png::rgba_pixel> anim1_01{
-  //     png::image<png::rgba_pixel>{"res/tests/errors_and_warnings/tooManyUniqueColorsInAnimTile/anims/anim1/01.png"},
-  //     "anim1", "01.png"};
-
-  // std::vector<porytiles::AnimationPng<png::rgba_pixel>> anim1{};
-  // anim1.push_back(anim1_00);
-  // anim1.push_back(anim1_01);
-
-  // std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
-  // anims.push_back(anim1);
-
-  // porytiles::importAnimTiles(anims, decompiled);
-
-  // CHECK_THROWS_WITH_AS(porytiles::compile(ctx, decompiled), "errors generated during animated tile normalization",
-  //                      porytiles::PtException);
-  // CHECK(ctx.err.errCount == 4);
-}
-
 TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
 {
   porytiles::PtContext ctx{};
@@ -298,4 +259,16 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
                        porytiles::PtException);
 }
 
-TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when an anim frame is missing") {}
+TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when an anim frame is missing")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile";
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
+                       porytiles::PtException);
+}
