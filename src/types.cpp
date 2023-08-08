@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include <filesystem>
 #include <stdexcept>
 
 #include "errors_warnings.h"
@@ -61,16 +62,15 @@ std::string tileTypeString(TileType type)
   switch (type) {
   case TileType::FREESTANDING:
     return "freestanding";
-    break;
   case TileType::LAYERED:
     return "layered";
-    break;
   case TileType::ANIM:
     return "anim";
-    break;
   default:
     internalerror_custom("types::tileTypeString unknown TileType");
   }
+  // unreachable, here to satisfy compiler
+  return "";
 }
 
 std::string layerString(TileLayer layer)
@@ -78,16 +78,15 @@ std::string layerString(TileLayer layer)
   switch (layer) {
   case TileLayer::BOTTOM:
     return "bottom";
-    break;
   case TileLayer::MIDDLE:
     return "middle";
-    break;
   case TileLayer::TOP:
     return "top";
-    break;
   default:
     internalerror_custom("types::layerString unknown TileLayer");
   }
+  // unreachable, here to satisfy compiler
+  return "";
 }
 
 std::string subtileString(Subtile subtile)
@@ -95,19 +94,17 @@ std::string subtileString(Subtile subtile)
   switch (subtile) {
   case Subtile::NORTHWEST:
     return "northwest";
-    break;
   case Subtile::NORTHEAST:
     return "northeast";
-    break;
   case Subtile::SOUTHWEST:
     return "southwest";
-    break;
   case Subtile::SOUTHEAST:
     return "southeast";
-    break;
   default:
     internalerror_custom("types::subtileString unknown Subtile");
   }
+  // unreachable, here to satisfy compiler
+  return "";
 }
 
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
@@ -203,6 +200,8 @@ std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
   default:
     internalerror_unknownCompilerMode("types::InputPaths::modeBasedInputPath");
   }
+  // unreachable, here to satisfy compiler
+  return "";
 }
 
 std::string compilerModeString(CompilerMode mode)
@@ -210,16 +209,15 @@ std::string compilerModeString(CompilerMode mode)
   switch (mode) {
   case CompilerMode::FREESTANDING:
     return "freestanding";
-    break;
   case CompilerMode::PRIMARY:
     return "primary";
-    break;
   case CompilerMode::SECONDARY:
     return "secondary";
-    break;
   default:
     internalerror_unknownCompilerMode("types::compilerModeString");
   }
+  // unreachable, here to satisfy compiler
+  return "";
 }
 
 } // namespace porytiles

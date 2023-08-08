@@ -5,6 +5,7 @@
 #include <array>
 #include <compare>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <png.hpp>
 #include <string>
