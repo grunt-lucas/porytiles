@@ -25,58 +25,70 @@ void internalerror_unknownCompilerMode() { throw std::runtime_error{"unknown Com
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height)
 {
   err.errCount++;
-  pt_err("{} layer input PNG height '{}' was not divisible by 16", layerString(layer),
-         fmt::styled(height, fmt::emphasis::bold));
+  if (err.printErrors) {
+    pt_err("{} layer input PNG height '{}' was not divisible by 16", layerString(layer),
+           fmt::styled(height, fmt::emphasis::bold));
+  }
 }
 
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width)
 {
   err.errCount++;
-  pt_err("{} layer input PNG width '{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+  if (err.printErrors) {
+    pt_err("{} layer input PNG width '{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+  }
 }
 
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
 {
   err.errCount++;
-  pt_err("bottom, middle, top layer input PNG heights '{}, {}, {}' were not equivalent",
-         fmt::styled(bottom, fmt::emphasis::bold), fmt::styled(middle, fmt::emphasis::bold),
-         fmt::styled(top, fmt::emphasis::bold));
+  if (err.printErrors) {
+    pt_err("bottom, middle, top layer input PNG heights '{}, {}, {}' were not equivalent",
+           fmt::styled(bottom, fmt::emphasis::bold), fmt::styled(middle, fmt::emphasis::bold),
+           fmt::styled(top, fmt::emphasis::bold));
+  }
 }
 
 void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file)
 {
   err.errCount++;
-  pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
-         fmt::styled(file, fmt::emphasis::bold));
+  if (err.printErrors) {
+    pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
+           fmt::styled(file, fmt::emphasis::bold));
+  }
 }
 
 void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile)
 {
   err.errCount++;
   // TODO : show which pixel gives the error
-  // TODO : how to not print errs / warnings during tests
-  pt_err_rgbatile(tile, "too many unique colors in tile");
-  pt_note_rgbatile(tile, "cannot have greater than {}, including transparency color", PAL_SIZE);
+  if (err.printErrors) {
+    pt_err_rgbatile(tile, "too many unique colors in tile");
+    pt_note_rgbatile(tile, "cannot have greater than {}, including transparency color", PAL_SIZE);
+  }
 }
 
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha)
 {
   err.errCount++;
   // TODO : show which pixel gives the error
-  // TODO : how to not print errs / warnings during tests
-  pt_err_rgbatile(tile, "invalid alpha value: {}", alpha);
-  pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent", ALPHA_OPAQUE,
-                   ALPHA_TRANSPARENT);
+  if (err.printErrors) {
+    pt_err_rgbatile(tile, "invalid alpha value: {}", alpha);
+    pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent", ALPHA_OPAQUE,
+                     ALPHA_TRANSPARENT);
+  }
 }
 
-void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index)
+void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index)
 {
   std::string file = std::to_string(index) + ".png";
   if (index < 10) {
     file = "0" + file;
   }
-  pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
-               fmt::styled(file, fmt::emphasis::bold));
+  if (err.printErrors) {
+    pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
+                 fmt::styled(file, fmt::emphasis::bold));
+  }
   die_compilationTerminated(fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 

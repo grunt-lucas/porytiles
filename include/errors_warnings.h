@@ -12,14 +12,14 @@ enum class WarningMode { OFF, WARN, ERR };
 struct ErrorsAndWarnings {
   std::size_t errCount;
   std::size_t warnCount;
-  bool dieCompilation;
+  bool printErrors;
 
   WarningMode colorPrecisionLossMode;
   WarningMode paletteAllocEfficMode;
   WarningMode transparentRepresentativeAnimTileMode;
 
   ErrorsAndWarnings()
-      : errCount{0}, dieCompilation{false}, colorPrecisionLossMode{WarningMode::OFF},
+      : errCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF},
         paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
   }
@@ -36,7 +36,7 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
 void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile);
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha);
 
-void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index);
+void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index);
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);

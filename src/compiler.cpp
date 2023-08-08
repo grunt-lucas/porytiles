@@ -862,6 +862,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color")
 {
   porytiles::PtContext ctx{};
+  ctx.err.printErrors = false;
 
   porytiles::NormalizedPalette palette1{};
   palette1.size = 1;
