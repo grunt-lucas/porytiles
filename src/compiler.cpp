@@ -79,9 +79,9 @@ static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
       for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
         std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
         std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
-        candidateTile.setPixel(frame, row, col,
-                               insertRGBA(ctx, rgba, transparencyColor, candidateTile.palette,
-                                          rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn));
+        std::size_t pixelValue = insertRGBA(ctx, rgba, transparencyColor, candidateTile.palette,
+                                            rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn);
+        candidateTile.setPixel(frame, row, col, pixelValue);
       }
     }
     frame++;
@@ -476,11 +476,6 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
         (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0)) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
-      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
-        // TODO : better error context
-        throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                          std::to_string(ctx.fieldmapConfig.numTilesInPrimary)};
-      }
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
       // Fill out the anim structure
       compiled.anims.at(index.animIndex)
@@ -529,17 +524,18 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
     if (inserted.second) {
       compiled.tiles.push_back(gbaTile);
-      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
-        // TODO : better error context
-        throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                          std::to_string(ctx.fieldmapConfig.numTilesInPrimary)};
-      }
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
     }
     std::size_t tileIndex = inserted.first->second;
     compiled.assignments.at(index.tileIndex) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip};
   }
   compiled.tileIndexes = tileIndexes;
+
+  // error out if there were too many unique tiles
+  if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+                                  ctx.fieldmapConfig.numTilesInPrimary);
+  }
 
   // TODO : warn user if there are any representative tiles that did not appear in the assignments
 }
@@ -607,11 +603,6 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
                             ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0)) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
-      if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
-        // TODO : better error context
-        throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                          std::to_string(ctx.fieldmapConfig.numTilesInSecondary())};
-      }
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
       // Fill out the anim structure
       compiled.anims.at(index.animIndex)
@@ -659,11 +650,6 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
       if (inserted.second) {
         compiled.tiles.push_back(gbaTile);
-        if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
-          // TODO : better error context
-          throw PtException{"too many tiles: " + std::to_string(compiled.tiles.size()) + " > " +
-                            std::to_string(ctx.fieldmapConfig.numTilesInSecondary())};
-        }
         compiled.paletteIndexesOfTile.push_back(paletteIndex);
       }
       std::size_t tileIndex = inserted.first->second;
@@ -673,6 +659,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
   }
   compiled.tileIndexes = tileIndexes;
+
+  // error out if there were too many unique tiles
+  if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+                                  ctx.fieldmapConfig.numTilesInSecondary());
+  }
 
   // TODO : warn user if there are any representative tiles that did not appear in the assignments
 }

@@ -53,6 +53,8 @@ void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPath
 void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err, const InputPaths &inputs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension);
+void fatalerror_tooManyUniqueTiles(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                   std::size_t numTiles, std::size_t maxAllowedTiles);
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);

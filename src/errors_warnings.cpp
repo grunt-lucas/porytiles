@@ -149,6 +149,17 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err,
                             fmt::format("anim {} frame {} dimension {} mismatch", animName, frame, dimensionName));
 }
 
+void fatalerror_tooManyUniqueTiles(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                   std::size_t numTiles, std::size_t maxAllowedTiles)
+{
+  if (err.printErrors) {
+    pt_fatal_err("unique tile count '{}' exceeded limit of '{}'", fmt::styled(numTiles, fmt::emphasis::bold),
+                 fmt::styled(maxAllowedTiles, fmt::emphasis::bold));
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
   // TODO : better message
