@@ -43,6 +43,13 @@
     + will also be better because it means all files in a given tileset folder will now be managed by porytiles,
       which will prevent possible corruption from porymap
 
++ see note in `res/tests/anim_metatiles_shared_tiles/note.txt`
+  + a better way to do representative tiles
+  + may allow to properly decompile vanilla tilesets
+  + will also solve problem of some animated tiles sharing content
+    + anim_yellow_flower and anim_white_flower share some representative tiles, which means you can't have both in
+      the same tileset
+
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
   + instead of outputting all the files, just write C code to the console

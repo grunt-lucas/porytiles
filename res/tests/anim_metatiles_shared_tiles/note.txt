@@ -1,0 +1,16 @@
+Right now, compiling this tileset yields:
+
+    detected duplicate representative anim tile, not allowed
+
+The reason for this is if two different animations in the same tileset share any representative tiles, then we
+have to fail because the compiler won't know what to do when it encounters a representative tile in the regular
+tileset.
+
+The way to solve this would be to have animations use a separate "frame" file called "representative.png", where
+you use this file to specify unique representative tiles for your animation. But those tiles will never actually
+appear in-game, instead they are just used in the layer PNGs to indicate that this tile should index into the
+animation sequence.
+
+The vanilla games actually do this already. If you look at the water animations, the tiles on the tilesheet that
+display in Porymap don't actually correspond to any animation frame, and are never actually visible in-game.
+
