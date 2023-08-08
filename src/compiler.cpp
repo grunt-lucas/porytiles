@@ -152,7 +152,8 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, "errors generated during animated tile normalization");
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "errors generated during animated tile normalization");
   }
 
   std::size_t tileIndex = 0;
@@ -165,7 +166,8 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, "errors generated during tile normalization");
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "errors generated during tile normalization");
   }
 
   return normalizedTiles;
@@ -214,14 +216,14 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
   if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, "primary", allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, allowed, colorIndex);
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     // use numPalettesTotal since secondary tiles can use colors from the primary set
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, "secondary", allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, allowed, colorIndex);
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {

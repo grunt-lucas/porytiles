@@ -80,12 +80,8 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
-/*
- * TODO : instead of printing porytiles: prefix, fatal errors should print name of input tileset
- * this will make it easier for users to see which tileset threw the error when running this in a Make job
- */
-
-void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index)
+void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                             const std::string &animation, std::size_t index)
 {
   std::string file = std::to_string(index) + ".png";
   if (index < 10) {
@@ -95,17 +91,18 @@ void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::
     pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
                  fmt::styled(file, fmt::emphasis::bold));
   }
-  die_compilationTerminated(err, fmt::format("animation {} missing required anim frame file {}", animation, file));
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
-void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, std::string mode, std::size_t allowed,
-                                         std::size_t found)
+void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                         std::size_t allowed, std::size_t found)
 {
   if (err.printErrors) {
-    pt_fatal_err("too many unique colors in {} tileset", mode);
+    pt_fatal_err("too many unique colors in {} tileset", compilerModeString(mode));
     pt_note("{} allowed based on fieldmap configuration, but found {}", allowed, found);
   }
-  die_compilationTerminated(err, fmt::format("too many unique colors total"));
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("too many unique colors total"));
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
@@ -134,18 +131,19 @@ void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
   }
 }
 
-void die_compilationTerminated(const ErrorsAndWarnings &err, std::string errorMessage)
+void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_println(stderr, "compilation terminated.");
+    pt_println(stderr, "terminating compilation of {}", inputPath);
   }
   throw PtException{errorMessage};
 }
 
-void die_errorCount(const ErrorsAndWarnings &err, std::string errorMessage)
+void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
     pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+    pt_println(stderr, "terminating compilation of {}", inputPath);
   }
   throw PtException{errorMessage};
 }
@@ -162,6 +160,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular 
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -183,6 +182,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for anim til
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -222,6 +222,7 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -243,6 +244,7 @@ TEST_CASE("error_tooManyUniqueColorsTotal should trigger correctly for regular t
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -262,6 +264,8 @@ TEST_CASE("error_tooManyUniqueColorsTotal should trigger correctly for regular s
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "/my/primary_tileset";
+  ctx.inputPaths.secondaryInputPath = "/my/secondary_tileset";
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 

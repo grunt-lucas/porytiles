@@ -106,7 +106,8 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
-        fatalerror_missingRequiredAnimFrameFile(ctx.err, animDir.filename().string(), i);
+        fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                                                animDir.filename().string(), i);
       }
 
       try {
@@ -123,7 +124,8 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     animations.push_back(framePngs);
   }
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, "found anim frame that was not a png");
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "found anim frame that was not a png");
   }
 
   importAnimTiles(animations, decompTiles);
@@ -288,19 +290,19 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.inputPaths.secondaryInputPath);
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
+    ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     importAnimations(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
-    ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
   }
@@ -309,9 +311,9 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     importAnimations(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     compiledTiles = compile(ctx, decompiledTiles);
   }
 

@@ -189,6 +189,23 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
   return rgba;
 }
 
+std::string compilerModeString(CompilerMode mode)
+{
+  switch (mode) {
+  case CompilerMode::FREESTANDING:
+    return "freestanding";
+    break;
+  case CompilerMode::PRIMARY:
+    return "primary";
+    break;
+  case CompilerMode::SECONDARY:
+    return "secondary";
+    break;
+  default:
+    throw std::runtime_error{"unknown CompilerMode"};
+  }
+}
+
 } // namespace porytiles
 
 // --------------------

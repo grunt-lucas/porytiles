@@ -37,15 +37,16 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
                              std::size_t col);
 
-void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index);
-void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, std::string mode, std::size_t allowed,
-                                         std::size_t found);
+void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                             const std::string &animation, std::size_t index);
+void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                         std::size_t allowed, std::size_t found);
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
 
-void die_compilationTerminated(const ErrorsAndWarnings &err, std::string errorMessage);
-void die_errorCount(const ErrorsAndWarnings &err, std::string errorMessage);
+void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
+void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
 
 } // namespace porytiles
 
