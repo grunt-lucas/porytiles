@@ -22,16 +22,17 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t config
 
 void internalerror_unknownCompilerMode() { throw std::runtime_error{"unknown CompilerMode"}; }
 
-void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer, png::uint_32 height)
+void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height)
 {
   err.errCount++;
-  pt_err("{} layer input PNG height '{}' was not divisible by 16", layer, fmt::styled(height, fmt::emphasis::bold));
+  pt_err("{} layer input PNG height '{}' was not divisible by 16", layerString(layer),
+         fmt::styled(height, fmt::emphasis::bold));
 }
 
-void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width)
+void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width)
 {
   err.errCount++;
-  pt_err("{} layer input PNG width '{}' was not 128", layer, fmt::styled(width, fmt::emphasis::bold));
+  pt_err("{} layer input PNG width '{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
 }
 
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top)
@@ -49,7 +50,24 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
          fmt::styled(file, fmt::emphasis::bold));
 }
 
-void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile) { err.errCount++; }
+void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile)
+{
+  err.errCount++;
+  // TODO : show which pixel gives the error
+  // TODO : how to not print errs / warnings during tests
+  pt_err_rgbatile(tile, "too many unique colors in tile");
+  pt_note_rgbatile(tile, "cannot have greater than {}, including transparency color", PAL_SIZE);
+}
+
+void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha)
+{
+  err.errCount++;
+  // TODO : show which pixel gives the error
+  // TODO : how to not print errs / warnings during tests
+  pt_err_rgbatile(tile, "invalid alpha value: {}", alpha);
+  pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent", ALPHA_OPAQUE,
+                   ALPHA_TRANSPARENT);
+}
 
 void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index)
 {

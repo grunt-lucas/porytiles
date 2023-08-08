@@ -29,11 +29,12 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::size_t config
                                                               std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode();
 
-void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, std::string layer, png::uint_32 height);
-void error_layerWidthNeq128(ErrorsAndWarnings &err, std::string layer, png::uint_32 width);
+void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
+void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
 void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file);
 void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile);
+void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha);
 
 void fatalerror_missingRequiredAnimFrameFile(const std::string &animation, std::size_t index);
 

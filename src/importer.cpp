@@ -13,6 +13,7 @@ namespace porytiles {
 
 DecompiledTileset importTilesFromPng(const png::image<png::rgba_pixel> &png)
 {
+  // TODO : better error context
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
     throw PtException{"input PNG height `" + std::to_string(png.get_height()) + "' is not divisible by 8"};
   }
@@ -49,23 +50,23 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
                                              const png::image<png::rgba_pixel> &top)
 {
   if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.err, "bottom", bottom.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::BOTTOM, bottom.get_height());
   }
   if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.err, "middle", middle.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::MIDDLE, middle.get_height());
   }
   if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
-    error_layerHeightNotDivisibleBy16(ctx.err, "top", top.get_height());
+    error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::TOP, top.get_height());
   }
 
   if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.err, "bottom", bottom.get_width());
+    error_layerWidthNeq128(ctx.err, TileLayer::BOTTOM, bottom.get_width());
   }
   if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.err, "middle", middle.get_width());
+    error_layerWidthNeq128(ctx.err, TileLayer::MIDDLE, middle.get_width());
   }
   if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-    error_layerWidthNeq128(ctx.err, "top", top.get_width());
+    error_layerWidthNeq128(ctx.err, TileLayer::TOP, top.get_width());
   }
   if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
     error_layerHeightsMustEq(ctx.err, bottom.get_height(), middle.get_height(), top.get_height());
@@ -180,9 +181,11 @@ void importAnimTiles(const std::vector<std::vector<AnimationPng<png::rgba_pixel>
       for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
         size_t tileRow = tileIndex / pngWidthInTiles;
         size_t tileCol = tileIndex % pngWidthInTiles;
-        // TODO fill in metadata fields for anim tiles?
         RGBATile tile{};
         tile.type = TileType::ANIM;
+        tile.anim = rawFrame.animName;
+        tile.frame = rawFrame.frame;
+        tile.tileIndex = tileIndex;
 
         for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
           size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);

@@ -135,7 +135,7 @@ struct RGBATile {
   // Subtile within the metatile
   Subtile subtile;
   std::string anim;
-  std::size_t frame;
+  std::string frame;
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {
