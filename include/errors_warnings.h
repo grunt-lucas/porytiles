@@ -38,6 +38,8 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              std::size_t col);
 
 void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const std::string &animation, std::size_t index);
+void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, std::string mode, std::size_t allowed,
+                                         std::size_t found);
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);

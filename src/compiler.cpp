@@ -211,14 +211,24 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
    * This error is merely a fail-early heuristic. E.g. just because a primary tileset passes this check does not mean
    * it is actually allocatable.
    */
-  if (colorIndex > (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary) {
-    // TODO : better error context
-    // TODO : this check is wrong, it needs to account for primary / secondary correctly
-    // In primary mode, we want to use numPalettesInPrimary. In secondary mode, we want to
-    // use numPalettesTotal since secondary tiles can use colors from the primary set. This
-    // error is merely a fail-early heuristic. E.g. just because a primary tileset passes this
-    // check does not mean it is actually allocatable.
-    throw PtException{"too many unique colors"};
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+    std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
+    if (colorIndex > allowed) {
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, "primary", allowed, colorIndex);
+    }
+  }
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+    // use numPalettesTotal since secondary tiles can use colors from the primary set
+    std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
+    if (colorIndex > allowed) {
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, "secondary", allowed, colorIndex);
+    }
+  }
+  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
+    throw std::runtime_error{"TODO : support FREESTANDING mode"};
+  }
+  else {
+    internalerror_unknownCompilerMode();
   }
 
   return {colorIndexes, indexesToColors};
