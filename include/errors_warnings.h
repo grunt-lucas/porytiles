@@ -25,11 +25,13 @@ struct ErrorsAndWarnings {
   }
 };
 
+// Internal compiler errors (due to bug in the compiler)
 void internalerror_custom(std::string customMessage);
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode(std::string context);
 
+// Regular compilation errors (due to bad user input), regular errors try to die as late as possible
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
@@ -38,14 +40,17 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
                              std::size_t col);
 
+// Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
 void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found);
 
+// Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
 
+// Die functions
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
 
