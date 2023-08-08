@@ -19,7 +19,7 @@ struct ErrorsAndWarnings {
   WarningMode transparentRepresentativeAnimTileMode;
 
   ErrorsAndWarnings()
-      : errCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF},
+      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF},
         paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileMode{WarningMode::OFF}
   {
   }
