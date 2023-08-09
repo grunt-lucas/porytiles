@@ -27,6 +27,10 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
 {
   auto transparencyBgr = rgbaToBgr(transparencyColor);
   if (rgba != transparencyColor && rgbaToBgr(rgba) == transparencyBgr && errWarn) {
+    /*
+     * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err on the
+     * side of forcing the user to be explicit, especially when it comes to transparency handling.
+     */
     error_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
   }
   /*
