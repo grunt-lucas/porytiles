@@ -102,6 +102,14 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message)
+{
+  if (err.printErrors) {
+    pt_fatal_err_prefix("{}", message);
+  }
+  throw PtException{message};
+}
+
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
 {
   if (err.printErrors) {

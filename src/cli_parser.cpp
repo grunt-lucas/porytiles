@@ -37,22 +37,30 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
   }
 }
 
-template <typename T> static T parseIntegralOption(const std::string &optionName, const char *optarg)
+template <typename T>
+static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &optionName, const char *optarg)
 {
   try {
     size_t pos;
     T arg = std::stoi(optarg, &pos);
     if (std::string{optarg}.size() != pos) {
-      throw PtException{"option argument was not a valid integral type"};
+      fatalerror_basicprefix(err, fmt::format("option '-{}' argument '{}' was not a valid integral type",
+                                              fmt::styled(optionName, fmt::emphasis::bold),
+                                              fmt::styled(optarg, fmt::emphasis::bold)));
     }
     return arg;
   }
   catch (const std::exception &e) {
-    throw PtException{"invalid argument `" + std::string{optarg} + "' for option `" + optionName + "': " + e.what()};
+    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}': {}",
+                                            fmt::styled(optarg, fmt::emphasis::bold),
+                                            fmt::styled(optionName, fmt::emphasis::bold), e.what()));
   }
+  // unreachable, here for compiler
+  throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
 }
 
-static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string &optionName, const char *optarg)
+static TilesPngPaletteMode parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
+                                                    const char *optarg)
 {
   std::string optargString{optarg};
   if (optargString == "true-color") {
@@ -62,8 +70,12 @@ static TilesPngPaletteMode parseTilesPngPaletteMode(const std::string &optionNam
     return TilesPngPaletteMode::GREYSCALE;
   }
   else {
-    throw PtException{"invalid argument `" + optargString + "' for option `" + optionName + "'"};
+    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}'",
+                                            fmt::styled(optargString, fmt::emphasis::bold),
+                                            fmt::styled(optionName, fmt::emphasis::bold)));
   }
+  // unreachable, here for compiler
+  throw std::runtime_error("cli_parser::parseTilesPngPaletteMode reached unreachable code path");
 }
 
 // --------------------------------
@@ -279,25 +291,27 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       ctx.output.path = optarg;
       break;
     case TILES_PNG_PALETTE_MODE_VAL:
-      ctx.output.paletteMode = parseTilesPngPaletteMode(TILES_PNG_PALETTE_MODE_LONG, optarg);
+      ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_PNG_PALETTE_MODE_LONG, optarg);
       break;
     case NUM_TILES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(NUM_TILES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(ctx.err, NUM_TILES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_TILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(NUM_TILES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(ctx.err, NUM_TILES_TOTAL_LONG, optarg);
       break;
     case NUM_METATILES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numMetatilesInPrimary = parseIntegralOption<size_t>(NUM_METATILES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numMetatilesInPrimary =
+          parseIntegralOption<size_t>(ctx.err, NUM_METATILES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_METATILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(NUM_METATILES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(ctx.err, NUM_METATILES_TOTAL_LONG, optarg);
       break;
     case NUM_PALETTES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numPalettesInPrimary = parseIntegralOption<size_t>(NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+      ctx.fieldmapConfig.numPalettesInPrimary =
+          parseIntegralOption<size_t>(ctx.err, NUM_PALETTES_IN_PRIMARY_LONG, optarg);
       break;
     case NUM_PALETTES_TOTAL_VAL:
-      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(NUM_PALETTES_TOTAL_LONG, optarg);
+      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(ctx.err, NUM_PALETTES_TOTAL_LONG, optarg);
       break;
     case PRESET_POKEEMERALD_VAL:
       ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();

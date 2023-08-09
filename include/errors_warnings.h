@@ -44,6 +44,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              std::size_t col);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message);
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);

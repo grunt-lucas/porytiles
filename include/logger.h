@@ -70,6 +70,13 @@ template <typename... T> void pt_err_rgbatile(const RGBATile &tile, fmt::format_
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
+template <typename... T> void pt_fatal_err_prefix(fmt::format_string<T...> fmt, T &&...args)
+{
+  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
+               fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+               fmt::format(fmt, std::forward<T>(args)...));
+}
+
 template <typename... T> void pt_fatal_err(fmt::format_string<T...> fmt, T &&...args)
 {
   fmt::println(stderr, "{} {}", fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
