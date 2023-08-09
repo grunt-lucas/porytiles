@@ -477,7 +477,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
      */
     if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0) {
       // TODO : better error context
-      // TODO : once we implement they key frame system, make this an error
+      // TODO : once we implement the key frame system, make this an error
       throw PtException("transparent representative anim tile");
     }
 
@@ -485,8 +485,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     auto inserted = tileIndexes.insert({representativeFrameTile, compiled.tiles.size()});
 
     // Insertion happened or tile was transparent
-    if (inserted.second ||
-        (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0)) {
+    if (inserted.second) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
@@ -616,8 +615,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     auto inserted = tileIndexes.insert({representativeFrameTile, compiled.tiles.size()});
 
     // Insertion happened or tile was transparent
-    if (inserted.second || (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(representativeFrameTile) &&
-                            ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0)) {
+    if (inserted.second) {
       // Insert this tile's representative frame into the tiles.png
       compiled.tiles.push_back(representativeFrameTile);
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
