@@ -193,16 +193,16 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
   }
 }
 
-void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err)
+void warn_paletteAllocEffic(ErrorsAndWarnings &err)
 {
   // TODO : better message
-  if (err.transparentRepresentativeAnimTileMode == WarningMode::ERR) {
+  if (err.paletteAllocEfficMode == WarningMode::ERR) {
     err.errCount++;
-    pt_err("transparent representative tile");
+    pt_err("palette alloc effic");
   }
-  else if (err.transparentRepresentativeAnimTileMode == WarningMode::WARN) {
+  else if (err.paletteAllocEfficMode == WarningMode::WARN) {
     err.warnCount++;
-    pt_warn("transparent representative tile");
+    pt_warn("palette alloc effic");
   }
 }
 

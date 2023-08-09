@@ -16,11 +16,10 @@ struct ErrorsAndWarnings {
 
   WarningMode colorPrecisionLossMode;
   WarningMode paletteAllocEfficMode;
-  WarningMode transparentRepresentativeAnimTileMode;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF},
-        paletteAllocEfficMode{WarningMode::OFF}, transparentRepresentativeAnimTileMode{WarningMode::OFF}
+        paletteAllocEfficMode{WarningMode::OFF}
   {
   }
 };
@@ -61,7 +60,7 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
-void warn_transparentRepresentativeAnimTile(ErrorsAndWarnings &err);
+void warn_paletteAllocEffic(ErrorsAndWarnings &err);
 
 // Die functions
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);

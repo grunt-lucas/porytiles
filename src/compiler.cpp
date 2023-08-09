@@ -465,8 +465,9 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
      * referenced from the metatile sheet.
      */
     if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0) {
+      // TODO : better error context
       // TODO : once we implement they key frame system, make this an error
-      warn_transparentRepresentativeAnimTile(ctx.err);
+      throw PtException("transparent representative anim tile");
     }
 
     // Insert this tile's representative frame into the seen tiles map
@@ -589,8 +590,9 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
      */
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(representativeFrameTile)) {
       if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0) {
+        // TODO : better error context
         // TODO : once we implement they key frame system, make this an error
-        warn_transparentRepresentativeAnimTile(ctx.err);
+        throw PtException("transparent representative anim tile");
       }
       else {
         // TODO : better error context
