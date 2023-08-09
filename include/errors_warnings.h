@@ -23,7 +23,8 @@ struct ErrorsAndWarnings {
   {
   }
 
-  void enableAllWarnings() {
+  void enableAllWarnings()
+  {
     colorPrecisionLossMode = WarningMode::WARN;
     paletteAllocEfficMode = WarningMode::WARN;
   }
