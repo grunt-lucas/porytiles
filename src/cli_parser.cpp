@@ -255,7 +255,8 @@ NUM_METATILES_TOTAL_DESCRIPTION + "\n" +
 NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
 NUM_PALETTES_TOTAL_DESCRIPTION + "\n" +
 "Warnings:\n" + 
-WALL_DESCRIPTION + "\n";
+WALL_DESCRIPTION + "\n" +
+WERROR_DESCRIPTION + "\n";
 // @formatter:on
 // clang-format on
 
@@ -278,9 +279,11 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
       {WALL_LONG.c_str(), no_argument, nullptr, WALL_VAL},
+      {WERROR_LONG.c_str(), no_argument, nullptr, WERROR_VAL},
       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
 
+  bool setAllWarningsToErrors = false;
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
 
@@ -326,6 +329,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     case WALL_VAL:
       ctx.err.enableAllWarnings();
       break;
+    case WERROR_VAL:
+      setAllWarningsToErrors = true;
+      break;
 
     // Help message upon '-h/--help' goes to stdout
     case HELP_SHORT:
@@ -337,6 +343,10 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       fmt::println(stderr, "{}", COMPILE_HELP);
       exit(2);
     }
+  }
+
+  if (setAllWarningsToErrors) {
+    ctx.err.setAllEnabledWarningsToErrors();
   }
 
   if (ctx.subcommand == Subcommand::COMPILE_FREESTANDING) {

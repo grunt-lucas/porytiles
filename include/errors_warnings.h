@@ -16,14 +16,15 @@ struct ErrorsAndWarnings {
 
   WarningMode colorPrecisionLossMode;
 
-  ErrorsAndWarnings()
-      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF}
-  {
-  }
+  ErrorsAndWarnings() : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF} {}
 
-  void enableAllWarnings()
+  void enableAllWarnings() { colorPrecisionLossMode = WarningMode::WARN; }
+
+  void setAllEnabledWarningsToErrors()
   {
-    colorPrecisionLossMode = WarningMode::WARN;
+    if (colorPrecisionLossMode == WarningMode::WARN) {
+      colorPrecisionLossMode = WarningMode::ERR;
+    }
   }
 };
 

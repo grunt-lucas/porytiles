@@ -132,6 +132,12 @@ const std::string WALL_DESCRIPTION =
 "    -" + WALL_LONG + "\n"
 "        Enable all warnings.\n";
 constexpr int WALL_VAL = 1011;
+
+const std::string WERROR_LONG = "Werror";
+const std::string WERROR_DESCRIPTION =
+"    -" + WERROR_LONG + "\n"
+"        Force all enabled warnings to generate errors.\n";
+constexpr int WERROR_VAL = 1012;
 // @formatter:on
 // clang-format on
 
