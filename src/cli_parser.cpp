@@ -181,7 +181,7 @@ const std::string COMPILE_FREESTANDING_COMMAND = "compile-freestanding";
 static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
-    throw PtException{"missing required subcommand, try `porytiles --help' for usage information"};
+    fatalerror_basicprefix(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
   }
 
   std::string subcommand = argv[optind++];
@@ -198,7 +198,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
     ctx.subcommand = Subcommand::COMPILE_FREESTANDING;
   }
   else {
-    throw PtException{"unrecognized subcommand: " + subcommand};
+    internalerror("cli_parser::parseSubcommand unrecognized Subcommand");
   }
 }
 
@@ -229,13 +229,13 @@ const std::string COMPILE_HELP =
 "        Path to a directory containing the source data for a primary set.\n"
 "        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
 "        tile sheets. May optionally contain an `anims' folder with animated\n"
-"        tile sheets. See the documentation for more details."
+"        tile sheets. See the documentation for more details.\n"
 "\n"
 "    <SECONDARY-PATH>\n"
 "        Path to a directory containing the source data for a secondary set.\n"
 "        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
 "        tile sheets. May optionally contain an `anims' folder with animated\n"
-"        tile sheets. See the documentation for more details."
+"        tile sheets. See the documentation for more details.\n"
 "\n"
 "    <TILES>\n"
 "        In `freestanding' mode, a single RGBA PNG tilesheet containing\n"
@@ -337,16 +337,17 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
 
   if (ctx.subcommand == Subcommand::COMPILE_FREESTANDING) {
     if ((argc - optind) != 1) {
-      throw PtException{"must specify TILES arg, see `porytiles compile-freestanding --help'"};
+      fatalerror_basicprefix(ctx.err, "must specify TILES arg, see `porytiles compile-freestanding --help'");
     }
     ctx.inputPaths.freestandingTilesheetPath = argv[optind++];
   }
   else {
     if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-      throw PtException{"must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'"};
+      fatalerror_basicprefix(
+          ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
     }
     else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
-      throw PtException{"must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'"};
+      fatalerror_basicprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
     }
 
     if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
