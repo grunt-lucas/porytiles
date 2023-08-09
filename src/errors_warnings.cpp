@@ -243,23 +243,6 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
-void warn_paletteAllocEffic(ErrorsAndWarnings &err)
-{
-  // TODO : better message
-  if (err.paletteAllocEfficMode == WarningMode::ERR) {
-    err.errCount++;
-    if (err.printErrors) {
-      pt_err("palette alloc effic");
-    }
-  }
-  else if (err.paletteAllocEfficMode == WarningMode::WARN) {
-    err.warnCount++;
-    if (err.printErrors) {
-      pt_warn("palette alloc effic");
-    }
-  }
-}
-
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {

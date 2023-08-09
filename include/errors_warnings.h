@@ -15,18 +15,15 @@ struct ErrorsAndWarnings {
   bool printErrors;
 
   WarningMode colorPrecisionLossMode;
-  WarningMode paletteAllocEfficMode;
 
   ErrorsAndWarnings()
-      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF},
-        paletteAllocEfficMode{WarningMode::OFF}
+      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF}
   {
   }
 
   void enableAllWarnings()
   {
     colorPrecisionLossMode = WarningMode::WARN;
-    paletteAllocEfficMode = WarningMode::WARN;
   }
 };
 
@@ -75,7 +72,6 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba);
-void warn_paletteAllocEffic(ErrorsAndWarnings &err);
 
 // Die functions
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
