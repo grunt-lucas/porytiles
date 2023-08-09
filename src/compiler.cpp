@@ -1955,6 +1955,9 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
 
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
+      "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
       "00.png"};
@@ -1964,6 +1967,8 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
       "02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> waterKey{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
@@ -1972,10 +1977,12 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
 
+  flowerWhiteAnim.push_back(flowerWhiteKey);
   flowerWhiteAnim.push_back(flowerWhite00);
   flowerWhiteAnim.push_back(flowerWhite01);
   flowerWhiteAnim.push_back(flowerWhite02);
 
+  waterAnim.push_back(waterKey);
   waterAnim.push_back(water00);
   waterAnim.push_back(water01);
 
@@ -2127,14 +2134,16 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   // Verify integrity of anims structure
   CHECK(compiledPrimary->anims.size() == 2);
 
-  CHECK(compiledPrimary->anims.at(0).frames.size() == 3);
+  CHECK(compiledPrimary->anims.at(0).frames.size() == 4);
   CHECK(compiledPrimary->anims.at(0).frames.at(0).tiles.size() == 4);
   CHECK(compiledPrimary->anims.at(0).frames.at(1).tiles.size() == 4);
   CHECK(compiledPrimary->anims.at(0).frames.at(2).tiles.size() == 4);
+  CHECK(compiledPrimary->anims.at(0).frames.at(3).tiles.size() == 4);
 
-  CHECK(compiledPrimary->anims.at(1).frames.size() == 2);
+  CHECK(compiledPrimary->anims.at(1).frames.size() == 3);
   CHECK(compiledPrimary->anims.at(1).frames.at(0).tiles.size() == 1);
   CHECK(compiledPrimary->anims.at(1).frames.at(1).tiles.size() == 1);
+  CHECK(compiledPrimary->anims.at(1).frames.at(2).tiles.size() == 1);
 }
 
 TEST_CASE("compile function should correctly compile secondary set with animated tiles")
@@ -2156,6 +2165,9 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
 
+  porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
+      "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
       "00.png"};
@@ -2165,6 +2177,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
       "02.png"};
+  porytiles::AnimationPng<png::rgba_pixel> waterKey{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
@@ -2173,10 +2187,12 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
 
+  flowerWhiteAnim.push_back(flowerWhiteKey);
   flowerWhiteAnim.push_back(flowerWhite00);
   flowerWhiteAnim.push_back(flowerWhite01);
   flowerWhiteAnim.push_back(flowerWhite02);
 
+  waterAnim.push_back(waterKey);
   waterAnim.push_back(water00);
   waterAnim.push_back(water01);
 
@@ -2201,6 +2217,9 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_red"));
 
+  porytiles::AnimationPng<png::rgba_pixel> flowerRedKey{
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/key.png"}, "flower_white",
+      "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed00{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/00.png"}, "flower_white",
       "00.png"};
@@ -2213,6 +2232,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerRedAnim{};
 
+  flowerRedAnim.push_back(flowerRedKey);
   flowerRedAnim.push_back(flowerRed00);
   flowerRedAnim.push_back(flowerRed01);
   flowerRedAnim.push_back(flowerRed02);
@@ -2362,8 +2382,9 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   // Verify integrity of anims structure
   CHECK(compiledSecondary->anims.size() == 1);
 
-  CHECK(compiledSecondary->anims.at(0).frames.size() == 3);
+  CHECK(compiledSecondary->anims.at(0).frames.size() == 4);
   CHECK(compiledSecondary->anims.at(0).frames.at(0).tiles.size() == 4);
   CHECK(compiledSecondary->anims.at(0).frames.at(1).tiles.size() == 4);
   CHECK(compiledSecondary->anims.at(0).frames.at(2).tiles.size() == 4);
+  CHECK(compiledSecondary->anims.at(0).frames.at(3).tiles.size() == 4);
 }

@@ -91,15 +91,24 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     // collate all possible animation frame files
     pt_logln(ctx, stderr, "found animation: {}", animDir.string());
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
+    std::filesystem::path keyFrameFile = animDir / "key.png";
+    if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
+      // TODO : better error context
+      throw PtException("key frame file " + keyFrameFile.string() + " did not exist or was not a regular file");
+    }
+    frames.insert(std::pair{0, keyFrameFile});
+    pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
-        pt_logln(ctx, stderr, "skipping invalid anim frame file: {}", frameFile.path().string());
+        if (fileName != "key.png") {
+          pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
+        }
         continue;
       }
-      std::size_t index = std::stoi(fileName, 0, 10);
-      frames.insert(std::pair{index, frameFile});
+      std::size_t index = std::stoi(fileName, 0, 10) + 1;
+      frames.insert(std::pair{index, frameFile.path()});
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
 
@@ -107,7 +116,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
         fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                                                animDir.filename().string(), i);
+                                                animDir.filename().string(), i - 1);
       }
 
       try {
