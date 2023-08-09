@@ -3,6 +3,10 @@
 + Continue to create more in-file unit tests that maximize coverage
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
++ swap out png++ library for CImg
+  + CImg is much more maintained, it is also header-only and seems to have a clean interface
+  + https://github.com/GreycLab/CImg
+
 + Add a `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
@@ -11,7 +15,6 @@
   + dump pal files and tile.png to CLI, see e.g.:
     + https://github.com/eddieantonio/imgcat
     + https://github.com/stefanhaustein/TerminalImageViewer
-    + 
 
 + Warnings
   + `-Wcolor-precision-loss` / `-Wno-color-precision-loss`
@@ -49,6 +52,15 @@
   + will also solve problem of some animated tiles sharing content
     + anim_yellow_flower and anim_white_flower share some representative tiles, which means you can't have both in
       the same tileset
+  + basically, each anim has a `key.png` key frame, this key frame must contain unique tiles, the key frame is used in
+    the layer PNGs to tell Porytiles that we want an anim tile at that location
+  + the nice thing about a dedicated key frame is that it can literally be anything the user wants, since it is never
+    actually displayed in-game, obviously the most natural choice is just to have it match `0.png`
+  + the decompile command can then take a sequence of args like 'yellow_flower=12' where 12 is the tile index for the
+    start of the key frame sequence for 'yellow_flower' anim, this solves the problem of vanilla tilesets using key
+    frames that don't actually appear anywhere in the anim, and decompile can warn the user if it decomps an animation
+    that doesn't have any frames present in the tiles (which indicates the user will need to manually provide the
+    location of the keyframes for that anim, e.g. the water tiles in the vanilla tilesets)
 
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
