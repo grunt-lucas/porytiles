@@ -5,7 +5,7 @@
 Overworld tileset compiler for use with the [`pokeemerald`](https://github.com/pret/pokeemerald),
 [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeruby`](https://github.com/pret/pokeruby) Pokémon
 Generation 3 decompilation projects from [`pret`](https://github.com/pret). Builds
-[Porymap](https://github.com/huderlem/porymap)-ready tilesets from a RGBA tile assets.
+[Porymap](https://github.com/huderlem/porymap)-ready tilesets from RGBA tile assets.
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out
 the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get the upcoming changes listed in the
