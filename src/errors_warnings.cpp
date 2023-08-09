@@ -102,7 +102,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
-void fatalerror(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
+void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
 {
   if (err.printErrors) {
     pt_fatal_err("{}", message);
@@ -110,7 +110,7 @@ void fatalerror(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode m
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), message);
 }
 
-void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index)
 {
   std::string file = std::to_string(index) + ".png";
@@ -125,7 +125,7 @@ void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const Input
                             fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
-void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found)
 {
   if (err.printErrors) {
@@ -136,7 +136,7 @@ void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPath
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("too many unique colors total"));
 }
 
-void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err, const InputPaths &inputs,
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const InputPaths &inputs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension)
 {
@@ -149,7 +149,7 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err,
                             fmt::format("anim {} frame {} dimension {} mismatch", animName, frame, dimensionName));
 }
 
-void fatalerror_tooManyUniqueTiles(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles)
 {
   if (err.printErrors) {
@@ -158,6 +158,17 @@ void fatalerror_tooManyUniqueTiles(ErrorsAndWarnings &err, const InputPaths &inp
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
                             fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
+}
+
+void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                          std::size_t maxRecurses)
+{
+  if (err.printErrors) {
+    pt_fatal_err("palette assignment exceeded maximum depth '{}'", fmt::styled(maxRecurses, fmt::emphasis::bold));
+    // TODO : impl this CLI option
+    pt_note("you can increase this depth with the '-fmax-assign-depth' option");
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "too many assignment recurses");
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)

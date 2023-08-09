@@ -45,16 +45,18 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              std::size_t col);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
-void fatalerror(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
-void fatalerror_missingRequiredAnimFrameFile(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
+void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
-void fatalerror_tooManyUniqueColorsTotal(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found);
-void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ErrorsAndWarnings &err, const InputPaths &inputs,
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const InputPaths &inputs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension);
-void fatalerror_tooManyUniqueTiles(ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles);
+void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                          std::size_t maxRecurses);
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);

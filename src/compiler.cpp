@@ -284,14 +284,14 @@ struct AssignState {
 };
 
 std::size_t gRecurseCount = 0;
-static bool assign(const std::size_t maxRecurseCount, AssignState state, std::vector<ColorSet> &solution,
+static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
                    const std::vector<ColorSet> &primaryPalettes)
 {
   gRecurseCount++;
   // TODO : this is a horrible hack avert your eyes
-  if (gRecurseCount > maxRecurseCount) {
-    // TODO : better error context
-    throw PtException{"too many assignment recurses"};
+  if (gRecurseCount > ctx.compilerConfig.maxRecurseCount) {
+    fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                                         ctx.compilerConfig.maxRecurseCount);
   }
 
   if (state.unassigned.empty()) {
@@ -328,7 +328,7 @@ static bool assign(const std::size_t maxRecurseCount, AssignState state, std::ve
         unassignedCopy.pop_back();
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assign(maxRecurseCount, updatedState, solution, primaryPalettes)) {
+        if (assign(ctx, updatedState, solution, primaryPalettes)) {
           return true;
         }
       }
@@ -389,7 +389,7 @@ static bool assign(const std::size_t maxRecurseCount, AssignState state, std::ve
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-    if (assign(maxRecurseCount, updatedState, solution, primaryPalettes)) {
+    if (assign(ctx, updatedState, solution, primaryPalettes)) {
       return true;
     }
   }
@@ -773,8 +773,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
   gRecurseCount = 0;
-  bool assignSuccessful =
-      assign(ctx.compilerConfig.maxRecurseCount, state, assignedPalsSolution, primaryPaletteColorSets);
+  bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
     // TODO : better error context
     throw PtException{"failed to allocate palettes"};
@@ -1455,7 +1454,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(ctx.compilerConfig.maxRecurseCount, state, solution, {}));
+    CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -1491,7 +1490,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
     porytiles::gRecurseCount = 0;
-    CHECK(porytiles::assign(ctx.compilerConfig.maxRecurseCount, state, solution, {}));
+    CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
