@@ -55,7 +55,7 @@ static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &comp
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
     std::filesystem::create_directories(animPath);
-    const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * compiledAnim.representativeFrame().tiles.size();
+    const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * compiledAnim.keyFrame().tiles.size();
     const std::size_t imageHeight = porytiles::TILE_SIDE_LENGTH;
     std::vector<png::image<png::index_pixel>> outFrames{};
     for (std::size_t frameIndex = 0; frameIndex < compiledAnim.frames.size(); frameIndex++) {

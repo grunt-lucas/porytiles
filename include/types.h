@@ -264,9 +264,9 @@ struct CompiledAnimation {
 
   CompiledAnimation(std::string animName) : frames{}, animName{animName} {}
 
-  CompiledAnimFrame representativeFrame() const { return frames.at(representativeFrameIndex()); }
+  CompiledAnimFrame keyFrame() const { return frames.at(keyFrameIndex()); }
 
-  static const std::size_t representativeFrameIndex() { return 0; }
+  static const std::size_t keyFrameIndex() { return 0; }
 };
 
 /**
@@ -314,8 +314,8 @@ struct DecompiledAnimFrame {
 };
 
 /**
- * An Animation is a vector of AnimFrames. The first frame is the 'representative frame'. That is, the regular tileset
- * must use tiles from the representative frame in order for them to properly link into the animation. The other frames
+ * An Animation is a vector of AnimFrames. The first frame is the 'key frame'. That is, the regular tileset
+ * must use tiles from the key frame in order for them to properly link into the animation. The other frames
  * of the animation are not stored in tiles.png, but are dynamically copied in from ROM by the game engine.
  */
 struct DecompiledAnimation {
@@ -324,9 +324,9 @@ struct DecompiledAnimation {
 
   DecompiledAnimation(std::string animName) : frames{}, animName{animName} {}
 
-  const DecompiledAnimFrame &representativeFrame() const { return frames.at(representativeFrameIndex()); }
+  const DecompiledAnimFrame &keyFrame() const { return frames.at(keyFrameIndex()); }
 
-  static const std::size_t representativeFrameIndex() { return 0; }
+  static const std::size_t keyFrameIndex() { return 0; }
 
   std::size_t size() const { return frames.size(); }
 };
@@ -414,7 +414,10 @@ namespace porytiles {
 struct NormalizedTile {
   /*
    * Vector here to represent frames. Animated tiles can have multiple frames, with each frame corresponding to
-   * a frame in the animation. Regular tiles will have a size 1 vector, since they don't have frames.
+   * a frame in the animation. Regular tiles will have a size 1 vector, since they don't have frames. For tiles with
+   * more than one frame, the first frame is the "key" frame. The key frame is the frame we place in tiles.png, and
+   * it is the frame the user supplies in the layer PNGs to "key" in to a particular animation. However, the actual
+   * animation is stored in the 00.png, 01.png, etc. The game will never display the key-frame in-game.
    */
   std::vector<NormalizedPixels> frames;
   /*
@@ -453,9 +456,9 @@ struct NormalizedTile {
     frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
   }
 
-  const NormalizedPixels &representativeFrame() const { return frames.at(representativeFrameIndex()); }
+  const NormalizedPixels &keyFrame() const { return frames.at(keyFrameIndex()); }
 
-  static const std::size_t representativeFrameIndex() { return 0; }
+  static const std::size_t keyFrameIndex() { return 0; }
 };
 } // namespace porytiles
 
