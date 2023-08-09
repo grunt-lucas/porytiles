@@ -171,6 +171,15 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const In
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "too many assignment recurses");
 }
 
+void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode)
+{
+  if (err.printErrors) {
+    pt_fatal_err("no possible palette assignment exists for the given inputs");
+    pt_note("increase the number of allowed palettes or restructure your tiles to use colors more efficiently");
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "no possible palette assignment");
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
   // TODO : better message

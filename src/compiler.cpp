@@ -465,6 +465,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
      * referenced from the metatile sheet.
      */
     if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) == 0) {
+      // TODO : once we implement they key frame system, make this an error
       warn_transparentRepresentativeAnimTile(ctx.err);
     }
 
@@ -484,6 +485,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     }
     else if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) != 0) {
       // TODO : better error context
+      // TODO : this check should look for duplicate key frames once we implement the key frame system
       throw PtException{"detected duplicate representative anim tile, not allowed"};
     }
 
@@ -587,10 +589,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
      */
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(representativeFrameTile)) {
       if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(representativeFrameTile) == 0) {
+        // TODO : once we implement they key frame system, make this an error
         warn_transparentRepresentativeAnimTile(ctx.err);
       }
       else {
         // TODO : better error context
+        // TODO : this error will remain once we implement the key frame system
         throw PtException{"representative frame tile was present in paired primary set"};
       }
     }
@@ -611,6 +615,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
     else if (tileIndexes.contains(representativeFrameTile) && tileIndexes.at(representativeFrameTile) != 0) {
       // TODO : better error context
+      // TODO : this check should look for duplicate key frames once we implement the key frame system
       throw PtException{"detected duplicate representative anim tile, not allowed"};
     }
 
@@ -775,8 +780,12 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   gRecurseCount = 0;
   bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
-    // TODO : better error context
-    throw PtException{"failed to allocate palettes"};
+    /*
+     * If we get here, we know there is truly no possible palette solution since we exhausted every possibility. For
+     * most reasonably sized tilesets, it would be difficult to reach this condition since there are too many possible
+     * allocations to try. Instead it is more likely we hit the depth limit.
+     */
+    fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
   }
 
   /*
