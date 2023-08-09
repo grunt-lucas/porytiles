@@ -22,6 +22,11 @@ struct ErrorsAndWarnings {
         paletteAllocEfficMode{WarningMode::OFF}
   {
   }
+
+  void enableAllWarnings() {
+    colorPrecisionLossMode = WarningMode::WARN;
+    paletteAllocEfficMode = WarningMode::WARN;
+  }
 };
 
 // Internal compiler errors (due to bug in the compiler)

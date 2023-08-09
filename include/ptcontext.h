@@ -33,7 +33,6 @@ struct PtContext {
 
   void validate() const
   {
-    // TODO : handle this in a better way?
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
       fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numTiles",
                                            fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);

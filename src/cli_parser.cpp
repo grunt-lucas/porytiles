@@ -277,6 +277,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {NUM_METATILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_METATILES_TOTAL_VAL},
       {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
       {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
+      {WALL_LONG.c_str(), no_argument, nullptr, WALL_VAL},
       {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
 
@@ -321,6 +322,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
     case PRESET_POKERUBY_VAL:
       ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
+      break;
+    case WALL_VAL:
+      ctx.err.enableAllWarnings();
       break;
 
     // Help message upon '-h/--help' goes to stdout
