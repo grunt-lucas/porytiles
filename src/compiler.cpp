@@ -22,8 +22,13 @@
 
 namespace porytiles {
 static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const RGBA32 &transparencyColor,
-                              NormalizedPalette &palette, RGBA32 rgba, std::size_t row, std::size_t col, bool errWarn)
+                              NormalizedPalette &palette, const RGBA32 &rgba, std::size_t row, std::size_t col,
+                              bool errWarn)
 {
+  auto transparencyBgr = rgbaToBgr(transparencyColor);
+  if (rgba != transparencyColor && rgbaToBgr(rgba) == transparencyBgr && errWarn) {
+    error_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
+  }
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
    * and possibly deduped (depending on user settings). Transparent alpha pixels will be treated as transparent, as
@@ -54,10 +59,12 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
     }
     return bgrPosInPalette;
   }
-  if (errWarn) {
-    error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
+  else {
+    if (errWarn) {
+      error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
+    }
+    return INVALID_INDEX_PIXEL_VALUE;
   }
-  return INVALID_INDEX_PIXEL_VALUE;
 }
 
 static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
@@ -67,7 +74,7 @@ static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
    * form). We'll use this to generate candidates to find the true normal form.
    */
-  // TODO : same color precision note as above in insertRGBA
+  // TODO : same color precision note as above in insertRGBA (what did I mean by this??)
   NormalizedTile candidateTile{transparencyColor};
   candidateTile.hFlip = hFlip;
   candidateTile.vFlip = vFlip;
@@ -149,11 +156,6 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
       index.tileIndex = tileIndex;
       normalizedTiles.emplace_back(index, normalizedTile);
     }
-  }
-
-  if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
-                   "errors generated during animated tile normalization");
   }
 
   std::size_t tileIndex = 0;

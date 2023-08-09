@@ -617,8 +617,9 @@ struct CompilerConfig {
 
 struct CompilerContext {
   std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
+  std::unordered_map<BGR15, RGBA32> bgrToRgba;
 
-  CompilerContext() : pairedPrimaryTiles{nullptr} {}
+  CompilerContext() : pairedPrimaryTiles{nullptr}, bgrToRgba{} {}
 };
 
 } // namespace porytiles

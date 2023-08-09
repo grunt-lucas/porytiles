@@ -102,12 +102,14 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message)
+void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
+                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
 {
+  err.errCount++;
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}", message);
+    pt_err_rgbatile(tile, "color '{}' at pixel col {}, row {} collapsed to transparent under BGR conversion",
+                    fmt::styled(color.jasc(), fmt::emphasis::bold), col, row);
   }
-  throw PtException{message};
 }
 
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
@@ -116,6 +118,14 @@ void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, Compiler
     pt_fatal_err("{}", message);
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), message);
+}
+
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message)
+{
+  if (err.printErrors) {
+    pt_fatal_err_prefix("{}", message);
+  }
+  throw PtException{message};
 }
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
@@ -312,6 +322,19 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
   CHECK(ctx.err.errCount == 1);
+}
+
+TEST_CASE("error_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK(ctx.err.errCount == 2);
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")

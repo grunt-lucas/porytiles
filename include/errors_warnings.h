@@ -42,10 +42,13 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
 void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col);
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
                              std::size_t col);
+void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
+                                                       std::size_t col, const RGBA32 &color,
+                                                       const RGBA32 &transparency);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message);
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message);
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
 void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
@@ -63,7 +66,7 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths 
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::string field, std::size_t primary, std::size_t total);
 
-// Compilation warnings
+// Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
 void warn_paletteAllocEffic(ErrorsAndWarnings &err);
 
