@@ -472,21 +472,22 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     GBATile keyFrameTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
 
     /*
-     * Warn the user if the key frame of an animation contained a transparent tile. This is technically OK but
-     * typically indicates a user oversight, or a lack of understanding of the animation system. It does not really
-     * make sense to ever have a transparent animated tile in the key frame, since it cannot be correctly referenced
-     * from the metatile sheet.
+     * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no way
+     * to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if it was
+     * a reference into this particular animation.
      */
     if (tileIndexes.contains(keyFrameTile) && tileIndexes.at(keyFrameTile) == 0) {
-      // TODO : better error context
-      // TODO : once we implement the key frame system, make this an error
-      throw PtException("transparent key frame tile");
+      /*
+       * TODO : normTile needs some kind of reference back to its source RGBATile if we want to give better error
+       * context here
+       */
+      fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
     }
 
     // Insert this tile's key frame into the seen tiles map
     auto inserted = tileIndexes.insert({keyFrameTile, compiled.tiles.size()});
 
-    // Insertion happened or tile was transparent
+    // Insertion happened
     if (inserted.second) {
       // Insert this tile's key frame into the tiles.png
       compiled.tiles.push_back(keyFrameTile);
@@ -494,10 +495,12 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       // Fill out the anim structure
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
     }
-    else if (tileIndexes.contains(keyFrameTile) && tileIndexes.at(keyFrameTile) != 0) {
+    else if (tileIndexes.contains(keyFrameTile)) {
       // TODO : better error context
-      // TODO : this check should look for duplicate key frames once we implement the key frame system
       throw PtException{"detected duplicate key frame tile, not allowed"};
+    }
+    else {
+      internalerror("compiler::assignTilesPrimary third key tile insertion branch, should be unreachable");
     }
 
     // Put the rest of this tile's frames into the anim structure for the emitter
@@ -590,21 +593,26 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     // Create the GBATile for this tile's key frame
     GBATile keyFrameTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes[paletteIndex]);
 
-    /*
-     * Warn the user if the key frame of an animation contained a transparent tile, for same reasons as the primary set
-     * case. If keyFrameTile was elsewhere present in the primary set, this is a user error because it renders the
-     * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile as
-     * opposed to the animation.
-     */
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(keyFrameTile)) {
       if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(keyFrameTile) == 0) {
-        // TODO : better error context
-        // TODO : once we implement they key frame system, make this an error
-        throw PtException("transparent key frame tile");
+        /*
+         * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no
+         * way to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if
+         * it was a reference into this particular animation.
+         */
+        /*
+         * TODO : normTile needs some kind of reference back to its source RGBATile if we want to give better error
+         * context here
+         */
+        fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
       }
       else {
+        /*
+         * If keyFrameTile was elsewhere present in the primary set, this is a user error because it renders the
+         * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
+         * as opposed to the animation.
+         */
         // TODO : better error context
-        // TODO : this error will remain once we implement the key frame system
         throw PtException{"key frame tile was present in paired primary set"};
       }
     }
@@ -612,7 +620,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     // Insert this tile's key frame into the seen tiles map
     auto inserted = tileIndexes.insert({keyFrameTile, compiled.tiles.size()});
 
-    // Insertion happened or tile was transparent
+    // Insertion happened
     if (inserted.second) {
       // Insert this tile's key frame into the tiles.png
       compiled.tiles.push_back(keyFrameTile);
@@ -620,10 +628,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       // Fill out the anim structure
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
     }
-    else if (tileIndexes.contains(keyFrameTile) && tileIndexes.at(keyFrameTile) != 0) {
+    else if (tileIndexes.contains(keyFrameTile)) {
       // TODO : better error context
-      // TODO : this check should look for duplicate key frames once we implement the key frame system
       throw PtException{"detected duplicate key frame tile, not allowed"};
+    }
+    else {
+      internalerror("compiler::assignTilesSecondary third key tile insertion branch, should be unreachable");
     }
 
     // Put the rest of this tile's frames into the anim structure for the emitter

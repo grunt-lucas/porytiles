@@ -94,9 +94,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
     std::filesystem::path keyFrameFile = animDir / "key.png";
     if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
-      // TODO : better error context
       fatalerror_missingKeyFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, animDir.filename().string());
-      throw PtException("key frame file " + keyFrameFile.string() + " did not exist or was not a regular file");
     }
     frames.insert(std::pair{0, keyFrameFile});
     pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());

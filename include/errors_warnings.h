@@ -90,6 +90,8 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths 
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::string field, std::size_t primary, std::size_t total);
 
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
+
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba);

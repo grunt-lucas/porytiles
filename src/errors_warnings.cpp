@@ -232,6 +232,16 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
 }
 
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode)
+{
+  if (err.printErrors) {
+    // TODO : improve this error message with additional context
+    pt_fatal_err("animation had a transparent key frame tile");
+    // TODO : add note here explaining why this is not allowed
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "animation had a transparent key frame tile");
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
 {
