@@ -117,7 +117,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
     if (frames.size() == 1) {
       fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                                                animDir.filename().string(), 0);
+                                              animDir.filename().string(), 0);
     }
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {

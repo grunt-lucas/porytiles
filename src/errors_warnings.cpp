@@ -144,7 +144,8 @@ void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const
 }
 
 void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                                             const std::string &animation) {
+                                    const std::string &animation)
+{
   if (err.printErrors) {
     pt_fatal_err("animation '{}' was missing key frame file", fmt::styled(animation, fmt::emphasis::bold));
   }
@@ -390,8 +391,7 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
   ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
   ctx.err.printErrors = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file",
-                       porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file", porytiles::PtException);
 }
 
 TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame width "
