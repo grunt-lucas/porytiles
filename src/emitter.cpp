@@ -131,7 +131,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
   if (outFrames.size() != animation.frames.size()) {
     internalerror("emitter::emitAnim outFrames.size() != animation.frames.size()");
   }
-  // TODO : do not emit compiled key.png, it is not intended to be loaded in-game
+
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);
     configurePngPalette(TilesPngPaletteMode::GREYSCALE, out, palettes);

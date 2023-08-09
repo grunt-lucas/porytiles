@@ -143,6 +143,15 @@ void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const
                             fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
+void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                             const std::string &animation) {
+  if (err.printErrors) {
+    pt_fatal_err("animation '{}' was missing key frame file", fmt::styled(animation, fmt::emphasis::bold));
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("animation {} missing key frame file", animation));
+}
+
 void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found)
 {
@@ -345,16 +354,43 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
-TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly when an anim frame is missing")
+TEST_CASE("fatalerror_missingRequiredAnimFrameFile_skipCase should trigger correctly when an anim frame is missing")
 {
   porytiles::PtContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile";
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
   ctx.err.printErrors = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
+                       porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_missingRequiredAnimFrameFile_keyOnlyCase should trigger correctly when there are no regular "
+          "frames supplied")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
+                       porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is no key frame supplied")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file",
                        porytiles::PtException);
 }
 

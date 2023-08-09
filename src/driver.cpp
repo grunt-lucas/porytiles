@@ -62,7 +62,8 @@ static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &comp
       outFrames.emplace_back(static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight));
     }
     emitAnim(ctx, outFrames, compiledAnim, palettes);
-    for (std::size_t frameIndex = 0; frameIndex < compiledAnim.frames.size(); frameIndex++) {
+    // Index starts at 1 here so we don't actually save a key.png compiled file, not necessary
+    for (std::size_t frameIndex = 1; frameIndex < compiledAnim.frames.size(); frameIndex++) {
       auto &frame = outFrames.at(frameIndex);
       std::filesystem::path framePngPath = animPath / compiledAnim.frames.at(frameIndex).frameName;
       frame.write(framePngPath);
@@ -94,6 +95,7 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::filesystem::path keyFrameFile = animDir / "key.png";
     if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
       // TODO : better error context
+      fatalerror_missingKeyFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, animDir.filename().string());
       throw PtException("key frame file " + keyFrameFile.string() + " did not exist or was not a regular file");
     }
     frames.insert(std::pair{0, keyFrameFile});
@@ -113,6 +115,10 @@ static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std
     }
 
     std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
+    if (frames.size() == 1) {
+      fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+                                                animDir.filename().string(), 0);
+    }
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
         fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
@@ -153,6 +159,7 @@ static void driveCompile(PtContext &ctx)
       fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                  fmt::format("{}: file does not exist", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
     }
+    // TODO : throw if ctx.inputPaths.secondaryInputPath DNE or is not a directory
     if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
       fatalerror(
           ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
@@ -177,6 +184,7 @@ static void driveCompile(PtContext &ctx)
           fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
     }
   }
+  // TODO : throw if ctx.inputPaths.primaryInputPath DNE or is not a directory
   if (!std::filesystem::exists(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
     fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                fmt::format("{}: file does not exist", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
