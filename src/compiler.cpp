@@ -39,12 +39,21 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
     return 0;
   }
   else if (rgba.alpha == ALPHA_OPAQUE) {
-    /*
-     * TODO : we lose color precision here, it would be nice to warn the user if two distinct RGBA colors they used
-     * in the master sheet are going to collapse to one BGR color on the GBA. This should default fail the build,
-     * but a compiler flag '--ignore-color-precision-loss' would disable this warning
-     */
     auto bgr = rgbaToBgr(rgba);
+    if (ctx.compilerContext.bgrToRgba.contains(bgr) && ctx.compilerContext.bgrToRgba.at(bgr) != rgba) {
+      /*
+       * We lost color precision here, so let's warn the user that two distinct RGBA colors they used
+       * in the master sheet are going to collapse to one BGR color on the GBA.
+       */
+      if (errWarn) {
+        warn_colorPrecisionLoss(ctx.err, rgbaFrame, row, col, bgr, rgba, ctx.compilerContext.bgrToRgba.at(bgr));
+      }
+      ctx.compilerContext.bgrToRgba.at(bgr) = rgba;
+    }
+    else {
+      // First time we've seen this BGR, add it to the map and save the RGBA that produced it
+      ctx.compilerContext.bgrToRgba.insert(std::pair{bgr, rgba});
+    }
     auto itrAtBgr = std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, bgr);
     auto bgrPosInPalette = itrAtBgr - std::begin(palette.colors);
     if (bgrPosInPalette == palette.size) {

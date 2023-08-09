@@ -67,7 +67,8 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
                                           std::string field, std::size_t primary, std::size_t total);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err);
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
+                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba);
 void warn_paletteAllocEffic(ErrorsAndWarnings &err);
 
 // Die functions

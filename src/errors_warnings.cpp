@@ -222,16 +222,24 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
 }
 
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
+                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
 {
-  // TODO : better message
+  // TODO : can we improve this message? it's a bit vague
+  std::string message = fmt::format(
+      "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
+      fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
   if (err.colorPrecisionLossMode == WarningMode::ERR) {
     err.errCount++;
-    pt_err("color precision loss");
+    if (err.printErrors) {
+      pt_err_rgbatile(tile, "{}", message);
+    }
   }
   else if (err.colorPrecisionLossMode == WarningMode::WARN) {
     err.warnCount++;
-    pt_warn("color precision loss");
+    if (err.printErrors) {
+      pt_warn_rgbatile(tile, "{}", message);
+    }
   }
 }
 
@@ -240,11 +248,15 @@ void warn_paletteAllocEffic(ErrorsAndWarnings &err)
   // TODO : better message
   if (err.paletteAllocEfficMode == WarningMode::ERR) {
     err.errCount++;
-    pt_err("palette alloc effic");
+    if (err.printErrors) {
+      pt_err("palette alloc effic");
+    }
   }
   else if (err.paletteAllocEfficMode == WarningMode::WARN) {
     err.warnCount++;
-    pt_warn("palette alloc effic");
+    if (err.printErrors) {
+      pt_warn("palette alloc effic");
+    }
   }
 }
 
@@ -391,4 +403,18 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
                        porytiles::PtException);
+}
+
+TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
+  ctx.err.colorPrecisionLossMode = porytiles::WarningMode::ERR;
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK(ctx.err.errCount == 3);
 }
