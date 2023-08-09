@@ -37,36 +37,53 @@ void internalerror_unknownCompilerMode(std::string context);
 // Regular compilation errors (due to bad user input), regular errors try to die as late as possible
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const InputPaths &inputs,
                                                 std::string dimensionName, png::uint_32 dimension);
+
 void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frame,
                                         std::string dimensionName, png::uint_32 dimension);
+
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
+
 void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 width);
+
 void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::uint_32 middle, png::uint_32 top);
+
 void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animation, const std::string &file);
+
 void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col);
+
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
                              std::size_t col);
+
 void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                        std::size_t col, const RGBA32 &color,
                                                        const RGBA32 &transparency);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
+
 void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message);
+
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
+
 void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found);
+
 void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const InputPaths &inputs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension);
+
 void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles);
+
 void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::size_t maxRecurses);
+
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
+
 void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                  std::size_t numMetatiles, std::size_t metatileLimit);
+
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::string field, std::size_t primary, std::size_t total);
 
@@ -76,6 +93,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
 
 // Die functions
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
+
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
 
 } // namespace porytiles
