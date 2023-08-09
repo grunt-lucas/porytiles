@@ -5,7 +5,7 @@
 Overworld tileset compiler for use with the [`pokeemerald`](https://github.com/pret/pokeemerald),
 [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeruby`](https://github.com/pret/pokeruby) Pokémon
 Generation 3 decompilation projects from [`pret`](https://github.com/pret). Builds
-[Porymap](https://github.com/huderlem/porymap)-ready tilesets from an RGBA tilesheet.
+[Porymap](https://github.com/huderlem/porymap)-ready tilesets from a RGBA tile assets.
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out
 the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get the upcoming changes listed in the
@@ -27,7 +27,8 @@ For detailed documentation about Porytiles features and internal workings, pleas
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
 just like [Poryscript](https://github.com/huderlem/poryscript) takes a `.script` file and generates a corresponding `.inc`
 file as part of your build, Porytiles takes an input folder containing RGBA tile assets and generates a corresponding
-`metatiles.bin`, indexed `tiles.png`, and `palettes/*.pal` as part of your build!
+`metatiles.bin`, indexed `tiles.png`, indexed `anims` folder, and a populated `palettes` folder -- all as part of your
+build!
 
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
@@ -80,7 +81,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 4. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
-./release/bin/porytiles compile-primary -o path/to/project/data/tilesets/primary/porytiles_primary_test res/tests/simple_metatiles_2/primary
+./release/bin/porytiles compile-primary -o path/to/project/data/tilesets/primary/porytiles_primary_test res/tests/anim_metatiles_2/primary
 ```
 
 5. In Porymap, select `File -> Reload Project`.
@@ -100,7 +101,7 @@ Once you've cloned and built Porytiles, try the following little demo.
 11. Run the following command, replacing `path/to/project` with the path to your project:
 
 ```
-./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/simple_metatiles_2/secondary res/tests/simple_metatiles_2/primary
+./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/anim_metatiles_2/secondary res/tests/anim_metatiles_2/primary
 ```
 
 12. In Porymap, select `File -> Reload Project`.
