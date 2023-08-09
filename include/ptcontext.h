@@ -33,21 +33,18 @@ struct PtContext {
 
   void validate() const
   {
-    // TODO : handle this in a better way
-    // TODO : better error context
+    // TODO : handle this in a better way?
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      throw PtException{"fieldmap parameter `numTilesInPrimary' (" + std::to_string(fieldmapConfig.numTilesInPrimary) +
-                        ") exceeded `numTilesTotal' (" + std::to_string(fieldmapConfig.numTilesTotal) + ")"};
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numTiles",
+                                           fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
     }
     if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      throw PtException{"fieldmap parameter `numMetatilesInPrimary' (" +
-                        std::to_string(fieldmapConfig.numMetatilesInPrimary) + ") exceeded `numMetatilesTotal' (" +
-                        std::to_string(fieldmapConfig.numMetatilesTotal) + ")"};
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numMetatiles",
+                                           fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
     }
     if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      throw PtException{"fieldmap parameter `numPalettesInPrimary' (" +
-                        std::to_string(fieldmapConfig.numPalettesInPrimary) + ") exceeded `numPalettesTotal' (" +
-                        std::to_string(fieldmapConfig.numPalettesTotal) + ")"};
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numPalettes",
+                                           fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
     }
   }
 };

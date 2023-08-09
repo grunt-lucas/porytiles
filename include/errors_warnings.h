@@ -59,6 +59,8 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const In
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
 void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                  std::size_t numMetatiles, std::size_t metatileLimit);
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                          std::string field, std::size_t primary, std::size_t total);
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);

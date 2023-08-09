@@ -193,6 +193,17 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths 
       fmt::format("too many {} metatiles: {} > {}", compilerModeString(mode), numMetatiles, metatileLimit));
 }
 
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                          std::string field, std::size_t primary, std::size_t total)
+{
+  if (err.printErrors) {
+    pt_fatal_err("invalid configuration {}InPrimary '{}' exceeded {}Total '{}'", field,
+                 fmt::styled(primary, fmt::emphasis::bold), field, fmt::styled(total, fmt::emphasis::bold));
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("invalid config {}: {} > {}", field, primary, total));
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
   // TODO : better message
