@@ -57,6 +57,8 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const InputPath
 void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::size_t maxRecurses);
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
+void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                 std::size_t numMetatiles, std::size_t metatileLimit);
 
 // Compilation warnings
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err);

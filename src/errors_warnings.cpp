@@ -180,6 +180,19 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "no possible palette assignment");
 }
 
+void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                 std::size_t numMetatiles, std::size_t metatileLimit)
+{
+  if (err.printErrors) {
+    pt_fatal_err("input metatile count of '{}' exceeded the {} tileset limit of '{}'",
+                 fmt::styled(numMetatiles, fmt::emphasis::bold), compilerModeString(mode),
+                 fmt::styled(metatileLimit, fmt::emphasis::bold));
+  }
+  die_compilationTerminated(
+      err, inputs.modeBasedInputPath(mode),
+      fmt::format("too many {} metatiles: {} > {}", compilerModeString(mode), numMetatiles, metatileLimit));
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err)
 {
   // TODO : better message

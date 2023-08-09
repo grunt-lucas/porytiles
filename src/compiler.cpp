@@ -691,18 +691,16 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
     std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
-      throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
-                        ") exceeded primary metatile limit (" +
-                        std::to_string(ctx.fieldmapConfig.numMetatilesInPrimary) + ")"};
+      fatalerror_tooManyMetatiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, inputMetatileCount,
+                                  ctx.fieldmapConfig.numMetatilesInPrimary);
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
     std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
-      throw PtException{"input metatile count (" + std::to_string(inputMetatileCount) +
-                        ") exceeded secondary metatile limit (" +
-                        std::to_string(ctx.fieldmapConfig.numMetatilesInSecondary()) + ")"};
+      fatalerror_tooManyMetatiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, inputMetatileCount,
+                                  ctx.fieldmapConfig.numMetatilesInSecondary());
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
