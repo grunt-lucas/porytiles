@@ -338,7 +338,6 @@ void drive(PtContext &ctx)
   case Subcommand::COMPILE_SECONDARY:
     driveCompile(ctx);
     break;
-  case Subcommand::COMPILE_FREESTANDING:
     driveCompileFreestanding(ctx);
     break;
   default:

@@ -191,8 +191,6 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
 std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
 {
   switch (mode) {
-  case CompilerMode::FREESTANDING:
-    return freestandingTilesheetPath;
   case CompilerMode::PRIMARY:
     return primaryInputPath;
   case CompilerMode::SECONDARY:
@@ -207,8 +205,6 @@ std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
 std::string compilerModeString(CompilerMode mode)
 {
   switch (mode) {
-  case CompilerMode::FREESTANDING:
-    return "freestanding";
   case CompilerMode::PRIMARY:
     return "primary";
   case CompilerMode::SECONDARY:

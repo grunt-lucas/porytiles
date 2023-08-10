@@ -120,7 +120,7 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
 
   // Short-circuit because transparent tiles are common in metatiles and trivially in normal form.
   if (noFlipsTile.transparent()) {
-    if (rgbaFrames.at(0).type == TileType::LAYERED || rgbaFrames.at(0).type == TileType::FREESTANDING) {
+    if (rgbaFrames.at(0).type == TileType::LAYERED) {
       pt_logln(ctx, stderr, "{}:{}:{} = transparent", layerString(rgbaFrames.at(0).layer),
                rgbaFrames.at(0).metatileIndex, subtileString(rgbaFrames.at(0).subtile));
     }
@@ -135,7 +135,7 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
   auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates),
                                          [](auto tile1, auto tile2) { return tile1->keyFrame() < tile2->keyFrame(); });
 
-  if (rgbaFrames.at(0).type == TileType::LAYERED || rgbaFrames.at(0).type == TileType::FREESTANDING) {
+  if (rgbaFrames.at(0).type == TileType::LAYERED) {
     pt_logln(ctx, stderr, "{}:{}:{} = [hFlip: {}, vFlip: {}]", layerString(rgbaFrames.at(0).layer),
              rgbaFrames.at(0).metatileIndex, subtileString(rgbaFrames.at(0).subtile), (**normalizedTile).hFlip,
              (**normalizedTile).vFlip);
@@ -239,9 +239,6 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
     if (colorIndex > allowed) {
       fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, allowed, colorIndex);
     }
-  }
-  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
-    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
     internalerror_unknownCompilerMode("compiler::buildColorIndexMaps");
@@ -718,9 +715,6 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
                                   ctx.fieldmapConfig.numMetatilesInSecondary());
     }
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
-    throw std::runtime_error{"TODO : support FREESTANDING mode"};
-  }
   else {
     internalerror_unknownCompilerMode("compiler::compile");
   }
@@ -763,9 +757,6 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
     tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
-  }
-  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
-    throw std::runtime_error{"TODO : support FREESTANDING mode"};
   }
   else {
     internalerror_unknownCompilerMode("compiler::compile");
@@ -841,9 +832,6 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
-    throw std::runtime_error{"TODO : support FREESTANDING mode"};
-  }
   else {
     internalerror_unknownCompilerMode("compiler::compile");
   }
@@ -868,9 +856,6 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets, assignedPalsSolution);
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::FREESTANDING) {
-    throw std::runtime_error{"TODO : support FREESTANDING mode"};
-  }
   else {
     internalerror_unknownCompilerMode("compiler::compile");
   }
@@ -893,8 +878,9 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
   palette1.colors = {};
 
   porytiles::RGBATile dummy{};
-  dummy.type = porytiles::TileType::FREESTANDING;
-  dummy.tileIndex = 0;
+  dummy.type = porytiles::TileType::LAYERED;
+  dummy.metatileIndex = 0;
+  dummy.subtile = porytiles::Subtile::NORTHEAST;
 
   // Transparent should return 0
   CHECK(insertRGBA(ctx, dummy, ctx.compilerConfig.transparencyColor, palette1, porytiles::RGBA_MAGENTA, 0, 0, true) ==

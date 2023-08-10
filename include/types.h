@@ -140,7 +140,6 @@ struct RGBATile {
    * Porytiles to give much more detailed error messages.
    */
   TileType type;
-  // tileIndex is used in compile-freestanding
   std::size_t tileIndex;
   TileLayer layer;
   // metatileIndex is which metatile on the sheet, used in compile-primary and compile-secondary
@@ -485,9 +484,9 @@ namespace porytiles {
 
 enum class TilesPngPaletteMode { TRUE_COLOR, GREYSCALE };
 
-enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY, COMPILE_FREESTANDING };
+enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY };
 
-enum class CompilerMode { PRIMARY, SECONDARY, FREESTANDING };
+enum class CompilerMode { PRIMARY, SECONDARY };
 
 std::string compilerModeString(CompilerMode mode);
 
@@ -548,7 +547,6 @@ struct FieldmapConfig {
 };
 
 struct InputPaths {
-  std::string freestandingTilesheetPath;
   std::string primaryInputPath;
   std::string secondaryInputPath;
 

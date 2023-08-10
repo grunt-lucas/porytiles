@@ -53,10 +53,7 @@ template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
 template <typename... T> void pt_err_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
 {
   std::string prefix = "";
-  if (tile.type == TileType::FREESTANDING) {
-    prefix = "tile:" + std::to_string(tile.tileIndex);
-  }
-  else if (tile.type == TileType::LAYERED) {
+  if (tile.type == TileType::LAYERED) {
     prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
   }
   else if (tile.type == TileType::ANIM) {
@@ -92,10 +89,7 @@ template <typename... T> void pt_warn(fmt::format_string<T...> fmt, T &&...args)
 template <typename... T> void pt_warn_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
 {
   std::string prefix = "";
-  if (tile.type == TileType::FREESTANDING) {
-    prefix = "tile:" + std::to_string(tile.tileIndex);
-  }
-  else if (tile.type == TileType::LAYERED) {
+  if (tile.type == TileType::LAYERED) {
     prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
   }
   else if (tile.type == TileType::ANIM) {
@@ -118,10 +112,7 @@ template <typename... T> void pt_note(fmt::format_string<T...> fmt, T &&...args)
 template <typename... T> void pt_note_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
 {
   std::string prefix = "";
-  if (tile.type == TileType::FREESTANDING) {
-    prefix = "tile:" + std::to_string(tile.tileIndex);
-  }
-  else if (tile.type == TileType::LAYERED) {
+  if (tile.type == TileType::LAYERED) {
     prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
   }
   else if (tile.type == TileType::ANIM) {

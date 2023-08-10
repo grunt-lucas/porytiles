@@ -29,7 +29,6 @@ void parseOptions(PtContext &ctx, int argc, char **argv)
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
-  case Subcommand::COMPILE_FREESTANDING:
     parseCompile(ctx, argc, argv);
     break;
   default:
@@ -119,11 +118,6 @@ VERSION_DESCRIPTION + "\n"
 "        tileset. All files are generated in-place at the output location. You\n"
 "        must also supply the layers for the paired primary tileset.\n"
 "\n"
-"    compile-freestanding\n"
-"        Compile a single RGBA PNG into a freestanding tileset. This mode will\n"
-"        not generate metatiles, and the palettes files will not be generated\n"
-"        in-place.\n"
-"\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
 "To get more help with porytiles, check out the guides at:\n"
@@ -177,7 +171,6 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 const std::string DECOMPILE_COMMAND = "decompile";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
 const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
-const std::string COMPILE_FREESTANDING_COMMAND = "compile-freestanding";
 static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
@@ -194,9 +187,6 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
   else if (subcommand == COMPILE_SECONDARY_COMMAND) {
     ctx.subcommand = Subcommand::COMPILE_SECONDARY;
   }
-  else if (subcommand == COMPILE_FREESTANDING_COMMAND) {
-    ctx.subcommand = Subcommand::COMPILE_FREESTANDING;
-  }
   else {
     internalerror("cli_parser::parseSubcommand unrecognized Subcommand");
   }
@@ -212,17 +202,13 @@ const std::string COMPILE_HELP =
 "Usage:\n"
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
 "    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PRIMARY-PATH\n"
-"    porytiles " + COMPILE_FREESTANDING_COMMAND + " [OPTIONS] TILES\n"
 "\n"
-"Compile given tilesheet(s) into a tileset. The `primary' and `secondary'\n"
+"Compile given RGBA tile assets into a tileset. The `primary' and `secondary'\n"
 "modes compile a bottom, middle, and top layer tilesheet into a complete\n"
 "tileset. That is, they will generate a `metatiles.bin' file along with\n"
-"`tiles.png' and the pal files in a `palettes' directory, in-place.\n"
-"\n"
-"In `freestanding' mode, compile a single tilesheet into a freestanding\n"
-"tileset. That is, it will not generate a `metatiles.bin', and the pal files\n"
-"are not generated in-place. Input requirements for this mode are accordingly\n"
-"relaxed. See the documentation for more details.\n"
+"`tiles.png' and the pal files in a `palettes' directory, in-place. In the\n"
+"input path, you may optionally supply an `anims' folder containing RGBA\n"
+"animation assets to be compiled.\n"
 "\n"
 "Args:\n"
 "    <PRIMARY-PATH>\n"
@@ -236,10 +222,6 @@ const std::string COMPILE_HELP =
 "        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
 "        tile sheets. May optionally contain an `anims' folder with animated\n"
 "        tile sheets. See the documentation for more details.\n"
-"\n"
-"    <TILES>\n"
-"        In `freestanding' mode, a single RGBA PNG tilesheet containing\n"
-"        the pixel art to be tile-ized.\n"
 "\n"
 "Output Options:\n" +
 OUTPUT_DESCRIPTION + "\n" +
@@ -349,26 +331,18 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     ctx.err.setAllEnabledWarningsToErrors();
   }
 
-  if (ctx.subcommand == Subcommand::COMPILE_FREESTANDING) {
-    if ((argc - optind) != 1) {
-      fatalerror_basicprefix(ctx.err, "must specify TILES arg, see `porytiles compile-freestanding --help'");
-    }
-    ctx.inputPaths.freestandingTilesheetPath = argv[optind++];
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
+    fatalerror_basicprefix(
+        ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
   }
-  else {
-    if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-      fatalerror_basicprefix(
-          ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
-    }
-    else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
-      fatalerror_basicprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
-    }
+  else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
+    fatalerror_basicprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
+  }
 
-    if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-      ctx.inputPaths.secondaryInputPath = argv[optind++];
-    }
-    ctx.inputPaths.primaryInputPath = argv[optind++];
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    ctx.inputPaths.secondaryInputPath = argv[optind++];
   }
+  ctx.inputPaths.primaryInputPath = argv[optind++];
 
   ctx.validate();
 }

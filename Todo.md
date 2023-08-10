@@ -33,10 +33,6 @@
   + Use `-f` prefix for frontend configuration
     + e.g. `-fnum-pals-primary`, `-fruby`, `-ftiles-png-pal-mode`
   + `-fskip-metatile-generation` skips generation of `metatiles.bin`
-  + `compile-freestanding` mode
-    + `takes a raw tilesheet (no layers), generates `tiles.png` and freestanding palette files
-    + freestanding palette files aren't in a `palettes` folder, aren't named according to 00.pal
-    + so it would just make pal1.txt, pal2.txt, pal3.txt, ... , empty.txt where empty.txt is an empty palette for convenience
 
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
