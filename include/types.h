@@ -453,6 +453,11 @@ struct NormalizedTile {
   bool vFlip;
 
   /*
+   * TODO : create a way to populate these fields, and then do so at NormTile creation time. We will also need to
+   * propogate the LayerType forward into assignment field of the compiledTileset, so the metatile attributes emitter
+   * can use it.
+   */
+  /*
    * Metadata Fields:
    * These are used by the various components to track metadata around the usage context of a NormalizedTile. Allows
    * Porytiles to give much more detailed error messages.
