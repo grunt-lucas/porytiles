@@ -633,3 +633,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3) == frame2Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 }
+
+TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset") {
+  // TODO : test impl importLayeredTilesFromPngs should correctly import a dual layer tileset
+}

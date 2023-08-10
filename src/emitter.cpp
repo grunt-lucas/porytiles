@@ -322,7 +322,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("emitAnim should ")
+TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
-  // TODO : test impl
+  // TODO : test impl emitAnim should correctly emit compiled animation PNG files
 }
