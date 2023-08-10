@@ -131,7 +131,7 @@ std::string subtileString(Subtile subtile);
 // Normal = Middle/Top
 // Covered = Bottom/Middle
 // Split = Bottom/Top
-enum class LayerType { NORMAL, COVERED, SPLIT };
+enum class LayerType { NORMAL, COVERED, SPLIT, TRIPLE };
 
 std::string layerTypeString(LayerType layerType);
 
@@ -270,6 +270,9 @@ struct Assignment {
   std::size_t paletteIndex;
   bool hFlip;
   bool vFlip;
+
+  // Store this here so the attributes emitter can easily find the layer type of this assignment
+  LayerType layerType;
 };
 
 struct CompiledAnimFrame {

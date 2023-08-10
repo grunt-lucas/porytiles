@@ -113,7 +113,6 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         bottomTile.pixels[pixelIndex].blue = bottom[pixelRow][pixelCol].blue;
         bottomTile.pixels[pixelIndex].alpha = bottom[pixelRow][pixelCol].alpha;
       }
-      decompiledTiles.tiles.push_back(bottomTile);
       bottomTiles.push_back(bottomTile);
     }
     for (std::size_t middleTileIndex = 0; middleTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
@@ -135,7 +134,6 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         middleTile.pixels[pixelIndex].blue = middle[pixelRow][pixelCol].blue;
         middleTile.pixels[pixelIndex].alpha = middle[pixelRow][pixelCol].alpha;
       }
-      decompiledTiles.tiles.push_back(middleTile);
       middleTiles.push_back(middleTile);
     }
     for (std::size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
@@ -157,12 +155,26 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         topTile.pixels[pixelIndex].blue = top[pixelRow][pixelCol].blue;
         topTile.pixels[pixelIndex].alpha = top[pixelRow][pixelCol].alpha;
       }
-      decompiledTiles.tiles.push_back(topTile);
       topTiles.push_back(topTile);
     }
 
-    // If we are in dual-layer mode, we need to generate errors if the user specified content on all three layers
-    if (!ctx.compilerConfig.tripleLayer) {
+    if (bottomTiles.size() != middleTiles.size() || middleTiles.size() != topTiles.size()) {
+      internalerror("importer::importLayeredTilesFromPng bottomTiles, middleTiles, topTiles sizes were not equivalent");
+    }
+
+    if (ctx.compilerConfig.tripleLayer) {
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        bottomTiles.at(i).layerType = LayerType::TRIPLE;
+        middleTiles.at(i).layerType = LayerType::TRIPLE;
+        topTiles.at(i).layerType = LayerType::TRIPLE;
+      }
+    }
+    else {
+      /*
+       * If we are in dual-layer mode, we need to generate errors if the user specified content on all three layers. We
+       * can also deduce the layer type here and set that appropriately before we copy the tiles into the final
+       * decompiled buffer.
+       */
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
         auto bottomTile = bottomTiles.at(i);
         auto middleTile = middleTiles.at(i);
@@ -174,6 +186,47 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
           throw PtException{"all three tiles had content but dual layer mode"};
         }
       }
+      // Computer LayerType
+    }
+
+    switch (bottomTiles.at(0).layerType) {
+    case LayerType::TRIPLE:
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(bottomTiles.at(i));
+      }
+      for (std::size_t i = 0; i < middleTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(middleTiles.at(i));
+      }
+      for (std::size_t i = 0; i < topTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(topTiles.at(i));
+      }
+      break;
+    case LayerType::NORMAL:
+      for (std::size_t i = 0; i < middleTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(middleTiles.at(i));
+      }
+      for (std::size_t i = 0; i < topTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(topTiles.at(i));
+      }
+      break;
+    case LayerType::COVERED:
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(bottomTiles.at(i));
+      }
+      for (std::size_t i = 0; i < middleTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(middleTiles.at(i));
+      }
+      break;
+    case LayerType::SPLIT:
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(bottomTiles.at(i));
+      }
+      for (std::size_t i = 0; i < topTiles.size(); i++) {
+        decompiledTiles.tiles.push_back(topTiles.at(i));
+      }
+      break;
+    default:
+      internalerror("importer::importLayeredTilesFromPng unknown LayerType");
     }
   }
 

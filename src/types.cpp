@@ -116,6 +116,8 @@ std::string layerTypeString(LayerType layerType)
     return "covered";
   case LayerType::SPLIT:
     return "split";
+  case LayerType::TRIPLE:
+    return "triple";
   default:
     internalerror("types::layerTypeString unknown LayerType");
   }
