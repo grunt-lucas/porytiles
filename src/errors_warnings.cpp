@@ -267,6 +267,20 @@ void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const InputP
                             fmt::format("animation {} had a duplicate key frame tile", animName));
 }
 
+void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, const InputPaths &inputs,
+                                               CompilerMode mode, std::string animName, std::size_t tileIndex)
+{
+  if (err.printErrors) {
+    pt_fatal_err("animation '{}' key frame tile '{}' was present in the paired primary tileset",
+                 fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
+    pt_note("this is an error because it renders the animation inoperable, any reference to the key tile in the");
+    pt_println(stderr,
+               "      secondary layer sheet will be linked to primary tileset instead of the intended animation");
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("animation {} key frame tile present in paired primary", animName));
+}
+
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
 {
@@ -497,6 +511,22 @@ TEST_CASE(
   ctx.err.printErrors = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile", porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an animation key frame tile is present in the "
+          "paired primary tileset")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 2;
+  ctx.fieldmapConfig.numPalettesTotal = 4;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
+  ctx.inputPaths.secondaryInputPath =
+      "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 key frame tile present in paired primary",
+                       porytiles::PtException);
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")

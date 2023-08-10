@@ -605,8 +605,8 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
          * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
          * as opposed to the animation.
          */
-        // TODO : better error context
-        throw PtException{"key frame tile was present in paired primary set"};
+        fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+                                                  normTile.tileIndex);
       }
     }
 
