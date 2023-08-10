@@ -128,6 +128,13 @@ enum class Subtile { NORTHWEST = 0, NORTHEAST = 1, SOUTHWEST = 2, SOUTHEAST = 3 
 
 std::string subtileString(Subtile subtile);
 
+// Normal = Middle/Top
+// Covered = Bottom/Middle
+// Split = Bottom/Top
+enum class LayerType { NORMAL, COVERED, SPLIT };
+
+std::string layerTypeString(LayerType layerType);
+
 /**
  * A tile of RGBA32 colors.
  */
@@ -145,6 +152,7 @@ struct RGBATile {
   std::size_t tileIndex;
 
   // LAYERED specific metadata
+  LayerType layerType;
   TileLayer layer;
   std::size_t metatileIndex;
   Subtile subtile;
@@ -441,7 +449,24 @@ struct NormalizedTile {
   bool hFlip;
   bool vFlip;
 
-  // TODO : should contain some kind of owning reference back to source RGBATiles
+  /*
+   * Metadata Fields:
+   * These are used by the various components to track metadata around the usage context of a NormalizedTile. Allows
+   * Porytiles to give much more detailed error messages.
+   */
+  TileType type;
+
+  // raw tile index, used for FREESTANDING and ANIM types
+  std::size_t tileIndex;
+
+  // LAYERED specific metadata
+  LayerType layerType;
+  TileLayer layer;
+  std::size_t metatileIndex;
+  Subtile subtile;
+
+  // ANIM specific metadata
+  std::string anim;
 
   explicit NormalizedTile(RGBA32 transparency) : frames{}, palette{}, hFlip{}, vFlip{}
   {

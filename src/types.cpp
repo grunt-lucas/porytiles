@@ -69,8 +69,8 @@ std::string tileTypeString(TileType type)
   default:
     internalerror("types::tileTypeString unknown TileType");
   }
-  // unreachable, here to satisfy compiler
-  return "";
+  // unreachable, here for compiler
+  throw std::runtime_error("types::tileTypeString reached unreachable code path");
 }
 
 std::string layerString(TileLayer layer)
@@ -85,8 +85,8 @@ std::string layerString(TileLayer layer)
   default:
     internalerror("types::layerString unknown TileLayer");
   }
-  // unreachable, here to satisfy compiler
-  return "";
+  // unreachable, here for compiler
+  throw std::runtime_error("types::layerString reached unreachable code path");
 }
 
 std::string subtileString(Subtile subtile)
@@ -103,8 +103,24 @@ std::string subtileString(Subtile subtile)
   default:
     internalerror("types::subtileString unknown Subtile");
   }
-  // unreachable, here to satisfy compiler
-  return "";
+  // unreachable, here for compiler
+  throw std::runtime_error("types::subtileString reached unreachable code path");
+}
+
+std::string layerTypeString(LayerType layerType)
+{
+  switch (layerType) {
+  case LayerType::NORMAL:
+    return "normal";
+  case LayerType::COVERED:
+    return "covered";
+  case LayerType::SPLIT:
+    return "split";
+  default:
+    internalerror("types::layerTypeString unknown LayerType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::layerTypeString reached unreachable code path");
 }
 
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
@@ -198,8 +214,8 @@ std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
   default:
     internalerror_unknownCompilerMode("types::InputPaths::modeBasedInputPath");
   }
-  // unreachable, here to satisfy compiler
-  return "";
+  // unreachable, here for compiler
+  throw std::runtime_error("types::modeBasedInputPath reached unreachable code path");
 }
 
 std::string compilerModeString(CompilerMode mode)
@@ -212,8 +228,8 @@ std::string compilerModeString(CompilerMode mode)
   default:
     internalerror_unknownCompilerMode("types::compilerModeString");
   }
-  // unreachable, here to satisfy compiler
-  return "";
+  // unreachable, here for compiler
+  throw std::runtime_error("types::compilerModeString reached unreachable code path");
 }
 
 } // namespace porytiles
