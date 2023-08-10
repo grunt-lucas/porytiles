@@ -10,7 +10,7 @@ namespace porytiles {
 static RGBATile uniformTile(const RGBA32 &color) noexcept
 {
   RGBATile tile{};
-  for (size_t i = 0; i < TILE_NUM_PIX; i++) {
+  for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
     tile.pixels[i] = color;
   }
   return tile;
@@ -19,7 +19,7 @@ static RGBATile uniformTile(const RGBA32 &color) noexcept
 static GBATile uniformTile(const uint8_t &index) noexcept
 {
   GBATile tile{};
-  for (size_t i = 0; i < TILE_NUM_PIX; i++) {
+  for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
     tile.colorIndexes[i] = index;
   }
   return tile;

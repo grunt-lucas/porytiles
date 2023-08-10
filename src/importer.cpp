@@ -31,15 +31,15 @@ DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_
   std::size_t pngWidthInTiles = png.get_width() / TILE_SIDE_LENGTH;
   std::size_t pngHeightInTiles = png.get_height() / TILE_SIDE_LENGTH;
 
-  for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / pngWidthInTiles;
-    size_t tileCol = tileIndex % pngWidthInTiles;
+  for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / pngWidthInTiles;
+    std::size_t tileCol = tileIndex % pngWidthInTiles;
     RGBATile tile{};
     tile.type = TileType::FREESTANDING;
     tile.tileIndex = tileIndex;
-    for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+    for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
       tile.pixels[pixelIndex].red = png[pixelRow][pixelCol].red;
       tile.pixels[pixelIndex].green = png[pixelRow][pixelCol].green;
       tile.pixels[pixelIndex].blue = png[pixelRow][pixelCol].blue;
@@ -91,19 +91,22 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
   for (size_t metatileIndex = 0; metatileIndex < widthInMetatiles * heightInMetatiles; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
-    for (size_t bottomTileIndex = 0; bottomTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+    std::vector<RGBATile> bottomTiles{};
+    std::vector<RGBATile> middleTiles{};
+    std::vector<RGBATile> topTiles{};
+    for (std::size_t bottomTileIndex = 0; bottomTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          bottomTileIndex++) {
-      size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
-      size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile bottomTile{};
       bottomTile.type = TileType::LAYERED;
       bottomTile.layer = TileLayer::BOTTOM;
       bottomTile.metatileIndex = metatileIndex;
       bottomTile.subtile = static_cast<Subtile>(bottomTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        size_t pixelRow =
+        std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        size_t pixelCol =
+        std::size_t pixelCol =
             (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         bottomTile.pixels[pixelIndex].red = bottom[pixelRow][pixelCol].red;
         bottomTile.pixels[pixelIndex].green = bottom[pixelRow][pixelCol].green;
@@ -111,20 +114,21 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         bottomTile.pixels[pixelIndex].alpha = bottom[pixelRow][pixelCol].alpha;
       }
       decompiledTiles.tiles.push_back(bottomTile);
+      bottomTiles.push_back(bottomTile);
     }
-    for (size_t middleTileIndex = 0; middleTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+    for (std::size_t middleTileIndex = 0; middleTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          middleTileIndex++) {
-      size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
-      size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile middleTile{};
       middleTile.type = TileType::LAYERED;
       middleTile.layer = TileLayer::MIDDLE;
       middleTile.metatileIndex = metatileIndex;
       middleTile.subtile = static_cast<Subtile>(middleTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        size_t pixelRow =
+        std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        size_t pixelCol =
+        std::size_t pixelCol =
             (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         middleTile.pixels[pixelIndex].red = middle[pixelRow][pixelCol].red;
         middleTile.pixels[pixelIndex].green = middle[pixelRow][pixelCol].green;
@@ -132,20 +136,21 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         middleTile.pixels[pixelIndex].alpha = middle[pixelRow][pixelCol].alpha;
       }
       decompiledTiles.tiles.push_back(middleTile);
+      middleTiles.push_back(middleTile);
     }
-    for (size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+    for (std::size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          topTileIndex++) {
-      size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
-      size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile topTile{};
       topTile.type = TileType::LAYERED;
       topTile.layer = TileLayer::TOP;
       topTile.metatileIndex = metatileIndex;
       topTile.subtile = static_cast<Subtile>(topTileIndex);
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        size_t pixelRow =
+        std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        size_t pixelCol =
+        std::size_t pixelCol =
             (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         topTile.pixels[pixelIndex].red = top[pixelRow][pixelCol].red;
         topTile.pixels[pixelIndex].green = top[pixelRow][pixelCol].green;
@@ -153,7 +158,28 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
         topTile.pixels[pixelIndex].alpha = top[pixelRow][pixelCol].alpha;
       }
       decompiledTiles.tiles.push_back(topTile);
+      topTiles.push_back(topTile);
     }
+
+    // If we are in dual-layer mode, we need to generate errors if the user specified content on all three layers
+    if (!ctx.compilerConfig.tripleLayer) {
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        auto bottomTile = bottomTiles.at(i);
+        auto middleTile = middleTiles.at(i);
+        auto topTile = topTiles.at(i);
+        if (!bottomTile.transparent(ctx.compilerConfig.transparencyColor) &&
+            !middleTile.transparent(ctx.compilerConfig.transparencyColor) &&
+            !topTile.transparent(ctx.compilerConfig.transparencyColor)) {
+          // TODO : better error context
+          throw PtException{"all three tiles had content but dual layer mode"};
+        }
+      }
+    }
+  }
+
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "errors generated during layered tile import");
   }
 
   return decompiledTiles;
@@ -205,18 +231,18 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
 
       std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH;
       std::size_t pngHeightInTiles = rawFrame.png.get_height() / TILE_SIDE_LENGTH;
-      for (size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
-        size_t tileRow = tileIndex / pngWidthInTiles;
-        size_t tileCol = tileIndex % pngWidthInTiles;
+      for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+        std::size_t tileRow = tileIndex / pngWidthInTiles;
+        std::size_t tileCol = tileIndex % pngWidthInTiles;
         RGBATile tile{};
         tile.type = TileType::ANIM;
         tile.anim = rawFrame.animName;
         tile.frame = rawFrame.frame;
         tile.tileIndex = tileIndex;
 
-        for (size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-          size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-          size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
           tile.pixels[pixelIndex].red = rawFrame.png[pixelRow][pixelCol].red;
           tile.pixels[pixelIndex].green = rawFrame.png[pixelRow][pixelCol].green;
           tile.pixels[pixelIndex].blue = rawFrame.png[pixelRow][pixelCol].blue;

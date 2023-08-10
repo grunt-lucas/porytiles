@@ -140,12 +140,16 @@ struct RGBATile {
    * Porytiles to give much more detailed error messages.
    */
   TileType type;
+
+  // raw tile index, used for FREESTANDING and ANIM types
   std::size_t tileIndex;
+
+  // LAYERED specific metadata
   TileLayer layer;
-  // metatileIndex is which metatile on the sheet, used in compile-primary and compile-secondary
   std::size_t metatileIndex;
-  // Subtile within the metatile
   Subtile subtile;
+
+  // ANIM specific metadata
   std::string anim;
   std::string frame;
 
@@ -158,6 +162,16 @@ struct RGBATile {
       throw std::out_of_range{"internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
     }
     return pixels[row * TILE_SIDE_LENGTH + col];
+  }
+
+  [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const
+  {
+    for (std::size_t i = 0; i < pixels.size(); i++) {
+      if (pixels[i] != transparencyColor && pixels[i].alpha != ALPHA_TRANSPARENT) {
+        return false;
+      }
+    }
+    return true;
   }
 
   auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
@@ -174,7 +188,7 @@ struct RGBATile {
     return std::strong_ordering::greater;
   }
 
-  friend std::ostream &operator<<(std::ostream &, const RGBATile &);
+  friend std::ostream &operator<<(std::ostream &os, const RGBATile &tile);
 };
 
 extern const RGBATile RGBA_TILE_BLACK;
@@ -612,8 +626,9 @@ struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
   std::size_t maxRecurseCount;
+  bool tripleLayer;
 
-  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, maxRecurseCount{2'000'000} {}
+  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, maxRecurseCount{2'000'000}, tripleLayer{true} {}
 };
 
 struct CompilerContext {
