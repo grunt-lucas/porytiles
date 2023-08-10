@@ -112,6 +112,14 @@ void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, c
   }
 }
 
+void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::size_t metatileIndex)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("dual-layer inference failed for metatile {}, all three layers had non-transparent content", metatileIndex);
+  }
+}
+
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
 {
   if (err.printErrors) {
@@ -232,14 +240,19 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
 }
 
-void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode)
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                        std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
-    // TODO : improve this error message with additional context
-    pt_fatal_err("animation had a transparent key frame tile");
-    // TODO : add note here explaining why this is not allowed
+    pt_fatal_err("animation '{}' key frame tile '{}' was transparent", fmt::styled(animName, fmt::emphasis::bold),
+                 fmt::styled(tileIndex, fmt::emphasis::bold));
+    pt_note("this is not allowed, since there would be no way to tell if a transparent user-provided tile on the layer "
+            "sheet");
+    pt_println(stderr, "      referred to the true index 0 transparent tile, or if it was a reference into this "
+                       "particular animation");
   }
-  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), "animation had a transparent key frame tile");
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("animation {} had a transparent key frame tile", animName));
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
@@ -352,6 +365,20 @@ TEST_CASE("error_nonTransparentRgbaCollapsedToTransparentBgr should trigger corr
   CHECK(ctx.err.errCount == 2);
 }
 
+TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly when a dual-layer inference fails")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.compilerConfig.tripleLayer = false;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+  CHECK(ctx.err.errCount == 2);
+}
+
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")
 {
   porytiles::PtContext ctx{};
@@ -431,6 +458,19 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.err.printErrors = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
+                       porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a transparent tile")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 had a transparent key frame tile",
                        porytiles::PtException);
 }
 

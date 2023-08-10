@@ -470,17 +470,14 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     // Create the GBATile for this tile's key frame
     GBATile keyFrameTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
 
-    /*
-     * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no way
-     * to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if it was
-     * a reference into this particular animation.
-     */
     if (tileIndexes.contains(keyFrameTile) && tileIndexes.at(keyFrameTile) == 0) {
       /*
-       * TODO : normTile needs some kind of reference back to its source RGBATile if we want to give better error
-       * context here
+       * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no way
+       * to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if it was
+       * a reference into this particular animation.
        */
-      fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
+      fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+                                         normTile.tileIndex);
     }
 
     // Insert this tile's key frame into the seen tiles map
@@ -596,14 +593,11 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(keyFrameTile) == 0) {
         /*
          * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no
-         * way to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if
-         * it was a reference into this particular animation.
+         * way to tell if a transparent user provided tile on the layer sheet referred to the true index 0 transparent
+         * tile, or if it was a reference into this particular animation.
          */
-        /*
-         * TODO : normTile needs some kind of reference back to its source RGBATile if we want to give better error
-         * context here
-         */
-        fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
+        fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+                                           normTile.tileIndex);
       }
       else {
         /*

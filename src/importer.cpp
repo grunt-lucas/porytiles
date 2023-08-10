@@ -67,16 +67,15 @@ static std::bitset<3> getLayerBitset(const RGBA32 &transparentColor, const RGBAT
   return layers;
 }
 
-static LayerType layerBitsetToLayerType(std::bitset<3> layerBitset)
+static LayerType layerBitsetToLayerType(PtContext &ctx, std::bitset<3> layerBitset, std::size_t metatileIndex)
 {
   bool bottomHasContent = layerBitset.test(0);
   bool middleHasContent = layerBitset.test(1);
   bool topHasContent = layerBitset.test(2);
 
   if (bottomHasContent && middleHasContent && topHasContent) {
-    // TODO : better error context
-    throw PtException{"all three layers had content"};
-    // return LayerType::TRIPLE;
+    error_allThreeLayersHadNonTransparentContent(ctx.err, metatileIndex);
+    return LayerType::TRIPLE;
   }
   else if (!bottomHasContent && !middleHasContent && !topHasContent) {
     // transparent tile case
@@ -236,7 +235,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
             getLayerBitset(ctx.compilerConfig.transparencyColor, bottomTiles.at(i), middleTiles.at(i), topTiles.at(i));
         layers |= newLayers;
       }
-      LayerType type = layerBitsetToLayerType(layers);
+      LayerType type = layerBitsetToLayerType(ctx, layers, metatileIndex);
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
         bottomTiles.at(i).layerType = type;
         middleTiles.at(i).layerType = type;

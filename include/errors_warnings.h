@@ -58,6 +58,8 @@ void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, c
                                                        std::size_t col, const RGBA32 &color,
                                                        const RGBA32 &transparency);
 
+void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::size_t metatileIndex);
+
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 
@@ -90,7 +92,8 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths 
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                           std::string field, std::size_t primary, std::size_t total);
 
-void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                        std::string animName, std::size_t tileIndex);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
