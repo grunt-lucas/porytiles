@@ -128,12 +128,12 @@ void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, Compiler
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), message);
 }
 
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message)
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}", message);
+    pt_fatal_err_prefix("{}", errorMessage);
   }
-  throw PtException{message};
+  throw PtException{errorMessage};
 }
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
@@ -253,6 +253,18 @@ void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const Inpu
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
                             fmt::format("animation {} had a transparent key frame tile", animName));
+}
+
+void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                      std::string animName, std::size_t tileIndex)
+{
+  if (err.printErrors) {
+    pt_fatal_err("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
+                 fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
+    pt_note("key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("animation {} had a duplicate key frame tile", animName));
 }
 
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
@@ -472,6 +484,19 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 had a transparent key frame tile",
                        porytiles::PtException);
+}
+
+TEST_CASE(
+    "fatalerror_duplicateKeyFrameTile should trigger when two different animations have a duplicate key frame tile")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile", porytiles::PtException);
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")

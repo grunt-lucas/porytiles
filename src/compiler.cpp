@@ -492,8 +492,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      // TODO : better error context
-      throw PtException{"detected duplicate key frame tile, not allowed"};
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+                                       normTile.tileIndex);
     }
     else {
       internalerror("compiler::assignTilesPrimary third key tile insertion branch, should be unreachable");
@@ -622,8 +622,8 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      // TODO : better error context
-      throw PtException{"detected duplicate key frame tile, not allowed"};
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+                                       normTile.tileIndex);
     }
     else {
       internalerror("compiler::assignTilesSecondary third key tile insertion branch, should be unreachable");

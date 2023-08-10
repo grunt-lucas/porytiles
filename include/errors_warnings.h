@@ -63,7 +63,7 @@ void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::s
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string message);
+void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
@@ -94,6 +94,9 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const In
 
 void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                         std::string animName, std::size_t tileIndex);
+
+void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                      std::string animName, std::size_t tileIndex);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
