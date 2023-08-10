@@ -24,8 +24,6 @@ try {
 }
 catch (const porytiles::PtException &e) {
   // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
-  // TODO : remove this print out once we are fully on the new error system
-  fmt::println("TODO ERROR MESSAGE: {}", e.what());
   return 1;
 }
 catch (const std::exception &e) {
