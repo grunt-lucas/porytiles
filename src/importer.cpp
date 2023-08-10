@@ -1,5 +1,6 @@
 #include "importer.h"
 
+#include <bitset>
 #include <iostream>
 #include <png.hpp>
 #include <set>
@@ -48,6 +49,56 @@ DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_
     decompiledTiles.tiles.push_back(tile);
   }
   return decompiledTiles;
+}
+
+static std::bitset<3> getLayerBitset(const RGBA32 &transparentColor, const RGBATile &bottomTile,
+                                     const RGBATile &middleTile, const RGBATile &topTile)
+{
+  std::bitset<3> layers{};
+  if (!bottomTile.transparent(transparentColor)) {
+    layers.set(0);
+  }
+  if (!middleTile.transparent(transparentColor)) {
+    layers.set(1);
+  }
+  if (!topTile.transparent(transparentColor)) {
+    layers.set(2);
+  }
+  return layers;
+}
+
+static LayerType layerBitsetToLayerType(std::bitset<3> layerBitset)
+{
+  bool bottomHasContent = layerBitset.test(0);
+  bool middleHasContent = layerBitset.test(1);
+  bool topHasContent = layerBitset.test(2);
+
+  if (bottomHasContent && middleHasContent && topHasContent) {
+    // TODO : better error context
+    throw PtException{"all three layers had content"};
+    // return LayerType::TRIPLE;
+  }
+  else if (!bottomHasContent && !middleHasContent && !topHasContent) {
+    return LayerType::NORMAL;
+  }
+  else if (bottomHasContent && !middleHasContent && !topHasContent) {
+    return LayerType::COVERED;
+  }
+  else if (!bottomHasContent && middleHasContent && !topHasContent) {
+    return LayerType::COVERED;
+  }
+  else if (!bottomHasContent && !middleHasContent && topHasContent) {
+    return LayerType::NORMAL;
+  }
+  else if (!bottomHasContent && middleHasContent && topHasContent) {
+    return LayerType::NORMAL;
+  }
+  else if (bottomHasContent && middleHasContent && !topHasContent) {
+    return LayerType::COVERED;
+  }
+
+  // bottomHasContent && !middleHasContent && topHasContent
+  return LayerType::SPLIT;
 }
 
 DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
@@ -163,6 +214,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
     }
 
     if (ctx.compilerConfig.tripleLayer) {
+      // Triple layer case is easy, just set all three layers to LayerType::TRIPLE
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
         bottomTiles.at(i).layerType = LayerType::TRIPLE;
         middleTiles.at(i).layerType = LayerType::TRIPLE;
@@ -171,24 +223,26 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
     }
     else {
       /*
-       * If we are in dual-layer mode, we need to generate errors if the user specified content on all three layers. We
-       * can also deduce the layer type here and set that appropriately before we copy the tiles into the final
-       * decompiled buffer.
+       * Determine layer type by looking at each subsequent layered subtile until we find one that has at least two
+       * layers filled out. If we never find one like that, then just use an appropriate default layer type. If we find
+       * one that has a conflict with what we have already seen, throw an error.
        */
-      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-        auto bottomTile = bottomTiles.at(i);
-        auto middleTile = middleTiles.at(i);
-        auto topTile = topTiles.at(i);
-        if (!bottomTile.transparent(ctx.compilerConfig.transparencyColor) &&
-            !middleTile.transparent(ctx.compilerConfig.transparencyColor) &&
-            !topTile.transparent(ctx.compilerConfig.transparencyColor)) {
-          // TODO : better error context
-          throw PtException{"all three tiles had content but dual layer mode"};
-        }
+      std::bitset<3> layers =
+          getLayerBitset(ctx.compilerConfig.transparencyColor, bottomTiles.at(0), middleTiles.at(0), topTiles.at(0));
+      for (std::size_t i = 1; i < bottomTiles.size(); i++) {
+        std::bitset<3> newLayers =
+            getLayerBitset(ctx.compilerConfig.transparencyColor, bottomTiles.at(i), middleTiles.at(i), topTiles.at(i));
+        layers |= newLayers;
       }
-      // Computer LayerType
+      LayerType type = layerBitsetToLayerType(layers);
+      for (std::size_t i = 0; i < bottomTiles.size(); i++) {
+        bottomTiles.at(i).layerType = type;
+        middleTiles.at(i).layerType = type;
+        topTiles.at(i).layerType = type;
+      }
     }
 
+    // Copy the tiles into the decompiled buffer, accounting for the LayerType we just computed
     switch (bottomTiles.at(0).layerType) {
     case LayerType::TRIPLE:
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
@@ -634,6 +688,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 }
 
-TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset") {
+TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset")
+{
   // TODO : test impl importLayeredTilesFromPngs should correctly import a dual layer tileset
 }
