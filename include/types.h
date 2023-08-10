@@ -453,11 +453,6 @@ struct NormalizedTile {
   bool vFlip;
 
   /*
-   * TODO : create a way to populate these fields, and then do so at NormTile creation time. We will also need to
-   * propogate the LayerType forward into assignment field of the compiledTileset, so the metatile attributes emitter
-   * can use it.
-   */
-  /*
    * Metadata Fields:
    * These are used by the various components to track metadata around the usage context of a NormalizedTile. Allows
    * Porytiles to give much more detailed error messages.
@@ -481,6 +476,17 @@ struct NormalizedTile {
     palette.size = 1;
     palette.colors[0] = rgbaToBgr(transparency);
     frames.resize(1);
+  }
+
+  void copyMetadataFrom(const RGBATile &tile)
+  {
+    this->type = tile.type;
+    this->tileIndex = tile.tileIndex;
+    this->layerType = tile.layerType;
+    this->layer = tile.layer;
+    this->metatileIndex = tile.metatileIndex;
+    this->subtile = tile.subtile;
+    this->anim = tile.anim;
   }
 
   [[nodiscard]] bool transparent() const { return palette.size == 1; }

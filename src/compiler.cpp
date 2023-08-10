@@ -163,6 +163,7 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
       }
       DecompiledIndex index{};
       auto normalizedTile = normalize(ctx, multiFrameTile);
+      normalizedTile.copyMetadataFrom(multiFrameTile.at(0));
       index.animated = true;
       index.animIndex = animIndex;
       index.tileIndex = tileIndex;
@@ -174,6 +175,7 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
   for (const auto &tile : decompiledTileset.tiles) {
     std::vector<RGBATile> singleFrameTile = {tile};
     auto normalizedTile = normalize(ctx, singleFrameTile);
+    normalizedTile.copyMetadataFrom(tile);
     DecompiledIndex index{};
     index.tileIndex = tileIndex++;
     normalizedTiles.emplace_back(index, normalizedTile);
