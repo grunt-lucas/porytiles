@@ -288,16 +288,35 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   std::string message = fmt::format(
       "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
       fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
-  if (err.colorPrecisionLossMode == WarningMode::ERR) {
+  if (err.colorPrecisionLoss == WarningMode::ERR) {
     err.errCount++;
     if (err.printErrors) {
       pt_err_rgbatile(tile, "{}", message);
     }
   }
-  else if (err.colorPrecisionLossMode == WarningMode::WARN) {
+  else if (err.colorPrecisionLoss == WarningMode::WARN) {
     err.warnCount++;
     if (err.printErrors) {
       pt_warn_rgbatile(tile, "{}", message);
+    }
+  }
+}
+
+void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
+{
+  std::string message =
+      fmt::format("animation '{}' key frame tile '{}' was not present in any assignments",
+                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
+  if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::ERR) {
+    err.errCount++;
+    if (err.printErrors) {
+      pt_err("{}", message);
+    }
+  }
+  else if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
+    err.warnCount++;
+    if (err.printErrors) {
+      pt_warn("{}", message);
     }
   }
 }
@@ -418,31 +437,34 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
-TEST_CASE("fatalerror_missingRequiredAnimFrameFile_skipCase should trigger correctly when an anim frame is missing")
+TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in both cases:")
 {
-  porytiles::PtContext ctx{};
-  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-  ctx.fieldmapConfig.numPalettesInPrimary = 1;
-  ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
-  ctx.err.printErrors = false;
+  SUBCASE("when an anim frame is missing")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
+    ctx.err.printErrors = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
-                       porytiles::PtException);
-}
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
+                         porytiles::PtException);
+  }
 
-TEST_CASE("fatalerror_missingRequiredAnimFrameFile_keyOnlyCase should trigger correctly when there are no regular "
-          "frames supplied")
-{
-  porytiles::PtContext ctx{};
-  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-  ctx.fieldmapConfig.numPalettesInPrimary = 1;
-  ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
-  ctx.err.printErrors = false;
+  SUBCASE("when there are no regular frames supplied")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.inputPaths.primaryInputPath =
+        "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
+    ctx.err.printErrors = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
-                       porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
+                         porytiles::PtException);
+  }
 }
 
 TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is no key frame supplied")
@@ -536,9 +558,45 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
-  ctx.err.colorPrecisionLossMode = porytiles::WarningMode::ERR;
+  ctx.err.colorPrecisionLoss = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
   CHECK(ctx.err.errCount == 3);
+}
+
+TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly when a key frame tile is not used")
+{
+  SUBCASE("it should trigger correctly for a primary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
+    ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
+                         porytiles::PtException);
+    CHECK(ctx.err.errCount == 2);
+  }
+
+  SUBCASE("it should trigger correctly for a secondary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.inputPaths.primaryInputPath =
+        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
+    ctx.inputPaths.secondaryInputPath =
+        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
+    ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
+                         porytiles::PtException);
+    CHECK(ctx.err.errCount == 2);
+  }
 }

@@ -14,16 +14,28 @@ struct ErrorsAndWarnings {
   std::size_t warnCount;
   bool printErrors;
 
-  WarningMode colorPrecisionLossMode;
+  WarningMode colorPrecisionLoss;
+  WarningMode keyFrameTileDidNotAppearInAssignment;
 
-  ErrorsAndWarnings() : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLossMode{WarningMode::OFF} {}
+  ErrorsAndWarnings()
+      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
+        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}
+  {
+  }
 
-  void enableAllWarnings() { colorPrecisionLossMode = WarningMode::WARN; }
+  void enableAllWarnings()
+  {
+    colorPrecisionLoss = WarningMode::WARN;
+    keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
+  }
 
   void setAllEnabledWarningsToErrors()
   {
-    if (colorPrecisionLossMode == WarningMode::WARN) {
-      colorPrecisionLossMode = WarningMode::ERR;
+    if (colorPrecisionLoss == WarningMode::WARN) {
+      colorPrecisionLoss = WarningMode::ERR;
+    }
+    if (keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
+      keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
     }
   }
 };
@@ -104,6 +116,8 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba);
+
+void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 
 // Die functions
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);

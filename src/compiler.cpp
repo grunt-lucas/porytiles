@@ -433,7 +433,8 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
                                const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                                const std::vector<ColorSet> &assignedPalsSolution)
 {
-  std::unordered_map<GBATile, std::size_t> tileIndexes;
+  std::unordered_map<GBATile, std::size_t> tileIndexes{};
+  std::unordered_map<GBATile, bool> usedKeyFrameTiles{};
 
   // force tile 0 to be a transparent tile that uses palette 0
   tileIndexes.insert({GBA_TILE_TRANSPARENT, 0});
@@ -489,6 +490,11 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
       // Fill out the anim structure
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
+      /*
+       * Insert this key frame tile into the 'used' map with 'false'. Will use this later to generate a nice warning if
+       * the user doesn't ever use a key frame they specified.
+       */
+      usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
       fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
@@ -506,9 +512,10 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
   }
 
   /*
-   * Process regular tiles. The user will have used frame 0 of an animated tile to indicate that a particular metatile
-   * has an animated component. Since we already processed animated tiles, we'll link up the assignment. Other tiles
-   * will be added and linked.
+   * Process regular tiles. The user may have used frame 0 of an animated tile to indicate that a particular metatile
+   * has an animated component. Since we already processed animated tiles, we can now link up any animated tile
+   * assignments to the animation tile bank at the beginning of tile.png. Regular tiles will be added and linked at
+   * this time.
    */
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
@@ -530,6 +537,12 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
     GBATile gbaTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
+
+    if (usedKeyFrameTiles.contains(gbaTile)) {
+      // if this gbaTile was present in key frames, mark it as used
+      usedKeyFrameTiles.at(gbaTile) = true;
+    }
+
     // insert only updates the map if the key is not already present
     auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
     if (inserted.second) {
@@ -541,13 +554,27 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
   }
   compiled.tileIndexes = tileIndexes;
 
+  // Warn user if there are any key frame tiles that did not appear in the assignments
+  for (std::size_t animIndex = 0; animIndex < compiled.anims.size(); animIndex++) {
+    for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
+      const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
+      if (!usedKeyFrameTiles.at(keyTile)) {
+        warn_keyFrameTileDidNotAppearInAssignment(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+      }
+    }
+  }
+
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
     fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInPrimary);
   }
 
-  // TODO : warn user if there are any key frame tiles that did not appear in the assignments
+  // exit if there were any other errors
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "errors generated during primary tile assignment");
+  }
 }
 
 static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
@@ -558,7 +585,8 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
   std::vector<ColorSet> allColorSets{};
   allColorSets.insert(allColorSets.end(), primaryPaletteColorSets.begin(), primaryPaletteColorSets.end());
   allColorSets.insert(allColorSets.end(), assignedPalsSolution.begin(), assignedPalsSolution.end());
-  std::unordered_map<GBATile, std::size_t> tileIndexes;
+  std::unordered_map<GBATile, std::size_t> tileIndexes{};
+  std::unordered_map<GBATile, bool> usedKeyFrameTiles{};
 
   /*
    * Process animated tiles, we want frame 0 of each animation to be at the beginning of the tiles.png in a stable
@@ -619,6 +647,11 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       compiled.paletteIndexesOfTile.push_back(paletteIndex);
       // Fill out the anim structure
       compiled.anims.at(index.animIndex).frames.at(NormalizedTile::keyFrameIndex()).tiles.push_back(keyFrameTile);
+      /*
+       * Insert this key frame tile into the 'used' map with 'false'. Will use this later to generate a nice warning if
+       * the user doesn't ever use a key frame they specified.
+       */
+      usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
       fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
@@ -635,6 +668,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
   }
 
+  /*
+   * Process regular tiles. The user may have used frame 0 of an animated tile to indicate that a particular metatile
+   * has an animated component. Since we already processed animated tiles, we can now link up any animated tile
+   * assignments to the animation tile bank at the beginning of tile.png. Regular tiles will be added and linked at
+   * this time.
+   */
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -654,6 +693,12 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     }
     std::size_t paletteIndex = it - std::begin(allColorSets);
     GBATile gbaTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes[paletteIndex]);
+
+    if (usedKeyFrameTiles.contains(gbaTile)) {
+      // if this gbaTile was present in key frames, mark it as used
+      usedKeyFrameTiles.at(gbaTile) = true;
+    }
+
     if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(gbaTile)) {
       // Tile was in the primary set
       compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile),
@@ -674,13 +719,27 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
   }
   compiled.tileIndexes = tileIndexes;
 
+  // Warn user if there are any key frame tiles that did not appear in the assignments
+  for (std::size_t animIndex = 0; animIndex < compiled.anims.size(); animIndex++) {
+    for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
+      const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
+      if (!usedKeyFrameTiles.at(keyTile)) {
+        warn_keyFrameTileDidNotAppearInAssignment(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+      }
+    }
+  }
+
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
     fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInSecondary());
   }
 
-  // TODO : warn user if there are any key tiles that did not appear in the assignments
+  // exit if there were any other errors
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                   "errors generated during secondary tile assignment");
+  }
 }
 
 std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)

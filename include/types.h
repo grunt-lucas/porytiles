@@ -288,7 +288,7 @@ struct CompiledAnimation {
 
   CompiledAnimation(std::string animName) : frames{}, animName{animName} {}
 
-  CompiledAnimFrame keyFrame() const { return frames.at(keyFrameIndex()); }
+  const CompiledAnimFrame &keyFrame() const { return frames.at(keyFrameIndex()); }
 
   static const std::size_t keyFrameIndex() { return 0; }
 };
