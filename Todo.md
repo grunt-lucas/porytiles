@@ -48,6 +48,8 @@
   + dist scripts that setup a folder for easy github upload, auto set compiler flags as necessary
     + https://releases.llvm.org/16.0.0/projects/libcxx/docs/UsingLibcxx.html
     + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
+    + MacOS:
+      CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi"
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
