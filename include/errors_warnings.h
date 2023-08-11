@@ -20,7 +20,7 @@ struct ErrorsAndWarnings {
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF}
+        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN}
   {
   }
 
