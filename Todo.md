@@ -28,9 +28,6 @@
     + e.g. `-Werror=color-precision-loss`
   + `-Wno-X` support: should warnings support an off switch syntax?
     + would be helpful if someone wants all warnings EXCEPT one
-  + warning/werror printous should show warning:
-    + main.c:3:14: warning: initialization of 'int *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
-    + main.c:3:14: error: initialization of 'int *' from 'int' makes pointer from integer without a cast [-Werror=int-conversion]
 
 + Refactor commands / options
   + Use `-f` prefix for frontend configuration

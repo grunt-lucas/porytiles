@@ -291,13 +291,17 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   if (err.colorPrecisionLoss == WarningMode::ERR) {
     err.errCount++;
     if (err.printErrors) {
-      pt_err_rgbatile(tile, "{}", message);
+      pt_err_rgbatile(
+          tile, "{} [{}]", message,
+          fmt::styled("-Werror=color-precision-loss", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
     }
   }
   else if (err.colorPrecisionLoss == WarningMode::WARN) {
     err.warnCount++;
     if (err.printErrors) {
-      pt_warn_rgbatile(tile, "{}", message);
+      pt_warn_rgbatile(
+          tile, "{} [{}]", message,
+          fmt::styled("-Wcolor-precision-loss", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
     }
   }
 }
@@ -310,13 +314,17 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
   if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::ERR) {
     err.errCount++;
     if (err.printErrors) {
-      pt_err("{}", message);
+      pt_err(
+          "{} [{}]", message,
+          fmt::styled("-Werror=key-frame-missing-assignment", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
     }
   }
   else if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
     err.warnCount++;
     if (err.printErrors) {
-      pt_warn("{}", message);
+      pt_warn(
+          "{} [{}]", message,
+          fmt::styled("-Wkey-frame-missing-assignment", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
     }
   }
 }
