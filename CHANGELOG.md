@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] - 2023-08-11
+
+### Added
+
+- Support for generating compiled animated tiles. If input path contains an `anim` folder with properly formatted RGBA
+  anim assets, it will generate an `anim` folder in the output location with all anim frames correctly indexed. At the
+  moment, the user must still manually enter the C code in `tileset_anims.{c,h}` to drive the actual animation.
+
+- Colored output, more descriptive error messages
+
+- `-Wall` and `-Werror` flags to turn on some helpful compiler warnings
+
+### Changed
+
+- Inputs are now provided in a given directory instead of as individual files
+
+### Removed
+
+- Raw compilation mode
+
 ## [0.0.3] - 2023-07-23
 
 ### Added
@@ -36,7 +56,9 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.3...HEAD
+[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...HEAD
+
+[0.0.4]: https://github.com/grunt-lucas/porytiles/compare/0.0.3...0.0.4
 
 [0.0.3]: https://github.com/grunt-lucas/porytiles/compare/0.0.2...0.0.3
 
