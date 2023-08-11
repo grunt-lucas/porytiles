@@ -281,19 +281,36 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
                             fmt::format("animation {} key frame tile present in paired primary", animName));
 }
 
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
+static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
+                         const std::string &message)
 {
-  // TODO : can we improve this message? it's a bit vague
-  std::string message = fmt::format(
-      "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
-      fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
+  if (warningMode == WarningMode::ERR) {
+    err.errCount++;
+    if (err.printErrors) {
+      pt_err(
+          "{} [{}]", message,
+          fmt::styled(fmt::format("-Werror={}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
+    }
+  }
+  else if (warningMode == WarningMode::WARN) {
+    err.warnCount++;
+    if (err.printErrors) {
+      pt_warn(
+          "{} [{}]", message,
+          fmt::styled(fmt::format("-W{}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
+    }
+  }
+}
+
+static void printTileWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
+                             const RGBATile &tile, const std::string &message)
+{
   if (err.colorPrecisionLoss == WarningMode::ERR) {
     err.errCount++;
     if (err.printErrors) {
       pt_err_rgbatile(
           tile, "{} [{}]", message,
-          fmt::styled("-Werror=color-precision-loss", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
+          fmt::styled(fmt::format("-Werror={}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
     }
   }
   else if (err.colorPrecisionLoss == WarningMode::WARN) {
@@ -301,9 +318,19 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
     if (err.printErrors) {
       pt_warn_rgbatile(
           tile, "{} [{}]", message,
-          fmt::styled("-Wcolor-precision-loss", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
+          fmt::styled(fmt::format("-W{}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
     }
   }
+}
+
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
+                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
+{
+  // TODO : can we improve this message? it's a bit vague
+  std::string message = fmt::format(
+      "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
+      fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
+  printTileWarning(err, err.colorPrecisionLoss, "color-precision-loss", tile, message);
 }
 
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
@@ -311,22 +338,22 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
   std::string message =
       fmt::format("animation '{}' key frame tile '{}' was not present in any assignments",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
-  if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::ERR) {
-    err.errCount++;
-    if (err.printErrors) {
-      pt_err(
-          "{} [{}]", message,
-          fmt::styled("-Werror=key-frame-missing-assignment", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
-    }
+  printWarning(err, err.keyFrameTileDidNotAppearInAssignment, "key-frame-missing-assignment", message);
+}
+
+void warn_usedTrueColorMode(ErrorsAndWarnings &err)
+{
+  std::string message = "`true-color' mode not yet supported by Porymap";
+  printWarning(err, err.usedTrueColorMode, "used-true-color-mode", message);
+  pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
+}
+
+void die(const ErrorsAndWarnings &err, std::string errorMessage)
+{
+  if (err.printErrors) {
+    pt_println(stderr, "{}", errorMessage);
   }
-  else if (err.keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
-    err.warnCount++;
-    if (err.printErrors) {
-      pt_warn(
-          "{} [{}]", message,
-          fmt::styled("-Wkey-frame-missing-assignment", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
-    }
-  }
+  throw PtException{errorMessage};
 }
 
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)

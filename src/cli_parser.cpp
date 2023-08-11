@@ -345,6 +345,14 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   ctx.inputPaths.primaryInputPath = argv[optind++];
 
   ctx.validate();
+
+  if (ctx.output.paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
+    warn_usedTrueColorMode(ctx.err);
+  }
+
+  if (ctx.err.errCount > 0) {
+    die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
+  }
 }
 
 } // namespace porytiles

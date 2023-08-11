@@ -21,8 +21,6 @@
 + Warnings
   + `-Wpalette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
-  + `-Wtrue-color-mode`
-    + warn on true-color output mode usage since Porymap doesn't support it yet
   + `-Werror` should take an optional argument of specific warnings to activate
     + https://cfengine.com/blog/2021/optional-arguments-with-getopt-long/
     + e.g. `-Werror=color-precision-loss`

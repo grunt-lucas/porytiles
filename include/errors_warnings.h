@@ -16,10 +16,11 @@ struct ErrorsAndWarnings {
 
   WarningMode colorPrecisionLoss;
   WarningMode keyFrameTileDidNotAppearInAssignment;
+  WarningMode usedTrueColorMode;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}
+        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF}
   {
   }
 
@@ -27,6 +28,7 @@ struct ErrorsAndWarnings {
   {
     colorPrecisionLoss = WarningMode::WARN;
     keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
+    usedTrueColorMode = WarningMode::WARN;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -36,6 +38,9 @@ struct ErrorsAndWarnings {
     }
     if (keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
       keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+    }
+    if (usedTrueColorMode == WarningMode::WARN) {
+      usedTrueColorMode = WarningMode::ERR;
     }
   }
 };
@@ -119,7 +124,11 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
 
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 
+void warn_usedTrueColorMode(ErrorsAndWarnings &err);
+
 // Die functions
+void die(const ErrorsAndWarnings &err, std::string errorMessage);
+
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
