@@ -42,10 +42,9 @@ For more info, please see
 | Generate `metatiles.bin`    | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
 | Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [0.0.3](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.3) |
 | Support for animated tiles, i.e. correctly generate `anims` folder content and stable placement in `tiles.png`  | ✅ | [trunk](https://github.com/grunt-lucas/porytiles/tree/trunk) |
+| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
 | Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
 | Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
-| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
-| Support `.ora` files as input to compile command   | ❌ |  |
 
 ## Compiler Information
 

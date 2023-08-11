@@ -87,7 +87,6 @@ static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
    * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
    * form). We'll use this to generate candidates to find the true normal form.
    */
-  // TODO : same color precision note as above in insertRGBA (what did I mean by this??)
   NormalizedTile candidateTile{transparencyColor};
   candidateTile.hFlip = hFlip;
   candidateTile.vFlip = vFlip;
