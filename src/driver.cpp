@@ -347,175 +347,6 @@ void drive(PtContext &ctx)
 
 } // namespace porytiles
 
-TEST_CASE("drive should emit all expected files for simple_metatiles_2 primary set")
-{
-  porytiles::PtContext ctx{};
-  std::filesystem::path parentDir = porytiles::createTmpdir();
-  ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary"));
-  ctx.inputPaths.primaryInputPath = "res/tests/simple_metatiles_2/primary";
-
-  porytiles::drive(ctx);
-
-  // TODO : test impl check pal files
-
-  // Check tiles.png
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/expected_tiles.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/primary/expected_tiles.png"};
-  png::image<png::index_pixel> actualPng{parentDir / "tiles.png"};
-
-  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-
-  CHECK(expectedWidthInTiles == actualWidthInTiles);
-  CHECK(expectedHeightInTiles == actualHeightInTiles);
-
-  for (size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / actualWidthInTiles;
-    size_t tileCol = tileIndex % actualHeightInTiles;
-    for (size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
-      CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
-    }
-  }
-
-  // Check metatiles.bin
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/expected_metatiles.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
-  std::FILE *expected;
-  std::FILE *actual;
-
-  expected = fopen("res/tests/simple_metatiles_2/primary/expected_metatiles.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  long expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  long actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  std::uint8_t expectedByte;
-  std::uint8_t actualByte;
-  std::size_t bytesRead;
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
-  std::filesystem::remove_all(parentDir);
-}
-
-TEST_CASE("drive should emit all expected files for simple_metatiles_2 secondary set")
-{
-  porytiles::PtContext ctx{};
-  std::filesystem::path parentDir = porytiles::createTmpdir();
-  ctx.output.path = parentDir;
-  ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary"));
-
-  ctx.inputPaths.primaryInputPath = "res/tests/simple_metatiles_2/primary";
-  ctx.inputPaths.secondaryInputPath = "res/tests/simple_metatiles_2/secondary";
-
-  porytiles::drive(ctx);
-
-  // TODO : test impl check pal files
-
-  // Check tiles.png
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary/expected_tiles.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/secondary/expected_tiles.png"};
-  png::image<png::index_pixel> actualPng{parentDir / "tiles.png"};
-
-  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-
-  CHECK(expectedWidthInTiles == actualWidthInTiles);
-  CHECK(expectedHeightInTiles == actualHeightInTiles);
-
-  for (size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / actualWidthInTiles;
-    size_t tileCol = tileIndex % actualHeightInTiles;
-    for (size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
-      CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
-    }
-  }
-
-  // Check metatiles.bin
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/secondary/expected_metatiles.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
-  std::FILE *expected;
-  std::FILE *actual;
-
-  expected = fopen("res/tests/simple_metatiles_2/secondary/expected_metatiles.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  long expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  long actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  std::uint8_t expectedByte;
-  std::uint8_t actualByte;
-  std::size_t bytesRead;
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
-  std::filesystem::remove_all(parentDir);
-}
-
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set")
 {
   porytiles::PtContext ctx{};
@@ -545,12 +376,12 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   CHECK(expectedWidthInTiles == actualWidthInTiles);
   CHECK(expectedHeightInTiles == actualHeightInTiles);
 
-  for (size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / actualWidthInTiles;
-    size_t tileCol = tileIndex % actualHeightInTiles;
-    for (size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
       CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
     }
   }
@@ -597,7 +428,95 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   fclose(expected);
   fclose(actual);
 
-  // TODO : test impl check anims
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/01.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/02.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/water/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/water/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/02.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/water/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/water/01.png"));
+
+  png::image<png::index_pixel> expected_flower_white_00{
+      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/00.png"};
+  png::image<png::index_pixel> actual_flower_white_00{parentDir / "anims/flower_white/00.png"};
+  expectedWidthInTiles = expected_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_white_00[pixelRow][pixelCol] == actual_flower_white_00[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_flower_white_01{
+      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/01.png"};
+  png::image<png::index_pixel> actual_flower_white_01{parentDir / "anims/flower_white/01.png"};
+  expectedWidthInTiles = expected_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_white_01[pixelRow][pixelCol] == actual_flower_white_01[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_flower_white_02{
+      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/02.png"};
+  png::image<png::index_pixel> actual_flower_white_02{parentDir / "anims/flower_white/02.png"};
+  expectedWidthInTiles = expected_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_white_02[pixelRow][pixelCol] == actual_flower_white_02[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_water_00{"res/tests/anim_metatiles_2/primary/expected_anims/water/00.png"};
+  png::image<png::index_pixel> actual_water_00{parentDir / "anims/water/00.png"};
+  expectedWidthInTiles = expected_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_water_00[pixelRow][pixelCol] == actual_water_00[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_water_01{"res/tests/anim_metatiles_2/primary/expected_anims/water/01.png"};
+  png::image<png::index_pixel> actual_water_01{parentDir / "anims/water/01.png"};
+  expectedWidthInTiles = expected_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_water_01[pixelRow][pixelCol] == actual_water_01[pixelRow][pixelCol]);
+    }
+  }
 
   std::filesystem::remove_all(parentDir);
 }
@@ -633,12 +552,12 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   CHECK(expectedWidthInTiles == actualWidthInTiles);
   CHECK(expectedHeightInTiles == actualHeightInTiles);
 
-  for (size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
-    size_t tileRow = tileIndex / actualWidthInTiles;
-    size_t tileCol = tileIndex % actualHeightInTiles;
-    for (size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
       CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
     }
   }
@@ -685,7 +604,61 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   fclose(expected);
   fclose(actual);
 
-  // TODO : test impl check anims
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/01.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/02.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/02.png"));
+
+  png::image<png::index_pixel> expected_flower_red_00{
+      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/00.png"};
+  png::image<png::index_pixel> actual_flower_red_00{parentDir / "anims/flower_red/00.png"};
+  expectedWidthInTiles = expected_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_red_00[pixelRow][pixelCol] == actual_flower_red_00[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_flower_red_01{
+      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/01.png"};
+  png::image<png::index_pixel> actual_flower_red_01{parentDir / "anims/flower_red/01.png"};
+  expectedWidthInTiles = expected_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_red_01[pixelRow][pixelCol] == actual_flower_red_01[pixelRow][pixelCol]);
+    }
+  }
+  png::image<png::index_pixel> expected_flower_red_02{
+      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/02.png"};
+  png::image<png::index_pixel> actual_flower_red_02{parentDir / "anims/flower_red/02.png"};
+  expectedWidthInTiles = expected_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
+  expectedHeightInTiles = expected_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  actualWidthInTiles = actual_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
+  actualHeightInTiles = actual_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualWidthInTiles;
+    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expected_flower_red_02[pixelRow][pixelCol] == actual_flower_red_02[pixelRow][pixelCol]);
+    }
+  }
 
   std::filesystem::remove_all(parentDir);
 }
