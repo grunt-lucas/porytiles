@@ -136,6 +136,15 @@ void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessa
   throw PtException{errorMessage};
 }
 
+void fatalerror_invalidInputPath(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                 std::string path)
+{
+  if (err.printErrors) {
+    pt_fatal_err_prefix("{}: input path does not exist or is not a directory", path);
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("invalid input path {}", path));
+}
+
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index)
 {

@@ -153,11 +153,14 @@ static void driveCompile(PtContext &ctx)
                fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    if (!std::filesystem::exists(ctx.inputPaths.secondaryInputPath) ||
+        !std::filesystem::is_directory(ctx.inputPaths.secondaryInputPath)) {
+      fatalerror_invalidInputPath(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, ctx.inputPaths.secondaryInputPath);
+    }
     if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
       fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                  fmt::format("{}: file does not exist", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
     }
-    // TODO : throw if ctx.inputPaths.secondaryInputPath DNE or is not a directory
     if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
       fatalerror(
           ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
@@ -182,7 +185,10 @@ static void driveCompile(PtContext &ctx)
           fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
     }
   }
-  // TODO : throw if ctx.inputPaths.primaryInputPath DNE or is not a directory
+  if (!std::filesystem::exists(ctx.inputPaths.primaryInputPath) ||
+      !std::filesystem::is_directory(ctx.inputPaths.primaryInputPath)) {
+    fatalerror_invalidInputPath(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, ctx.inputPaths.primaryInputPath);
+  }
   if (!std::filesystem::exists(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
     fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                fmt::format("{}: file does not exist", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));

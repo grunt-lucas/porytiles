@@ -82,6 +82,9 @@ void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, Compiler
 
 void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessage);
 
+void fatalerror_invalidInputPath(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                 std::string path);
+
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
 
