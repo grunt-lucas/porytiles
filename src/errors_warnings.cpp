@@ -376,7 +376,12 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPa
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_println(stderr, "{} error(s) generated.", std::to_string(err.errCount));
+    if (err.errCount == 1) {
+      pt_println(stderr, "{} error generated.", std::to_string(err.errCount));
+    }
+    else if (err.errCount > 1) {
+      pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+    }
     pt_println(stderr, "terminating compilation of {}", fmt::styled(inputPath, fmt::emphasis::bold));
   }
   throw PtException{errorMessage};

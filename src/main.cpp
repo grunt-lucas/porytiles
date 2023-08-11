@@ -16,8 +16,11 @@ try {
   porytiles::parseOptions(ctx, argc, argv);
   porytiles::drive(ctx);
 
-  if (ctx.err.warnCount > 0) {
-    porytiles::pt_println(stderr, "{} warning(s) generated.", ctx.err.warnCount);
+  if (ctx.err.warnCount == 1) {
+    porytiles::pt_println(stderr, "{} warning generated.", ctx.err.warnCount);
+  }
+  else if (ctx.err.warnCount > 1) {
+    porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
   }
 
   return 0;
