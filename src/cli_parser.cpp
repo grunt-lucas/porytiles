@@ -96,16 +96,16 @@ const std::string GLOBAL_HELP =
 "Project home page: https://github.com/grunt-lucas/porytiles\n"
 "\n"
 "\n"
-"Usage:\n"
+"USAGE\n"
 "    porytiles [OPTIONS] COMMAND [OPTIONS] [ARGS ...]\n"
 "    porytiles --help\n"
 "    porytiles --version\n"
 "\n"
-"Options:\n" +
-HELP_DESCRIPTION + "\n" +
-VERBOSE_DESCRIPTION + "\n" +
-VERSION_DESCRIPTION + "\n"
-"Commands:\n"
+"OPTIONS\n" +
+HELP_DESC + "\n" +
+VERBOSE_DESC + "\n" +
+VERSION_DESC + "\n"
+"COMMANDS\n"
 "    decompile\n"
 "        TODO : implement\n"
 "\n"
@@ -131,9 +131,9 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
-  static struct option longOptions[] = {{HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
-                                        {VERBOSE_LONG.c_str(), no_argument, nullptr, VERBOSE_SHORT},
-                                        {VERSION_LONG.c_str(), no_argument, nullptr, VERSION_SHORT},
+  static struct option longOptions[] = {{HELP.c_str(), no_argument, nullptr, HELP_SHORT},
+                                        {VERBOSE.c_str(), no_argument, nullptr, VERBOSE_SHORT},
+                                        {VERSION.c_str(), no_argument, nullptr, VERSION_SHORT},
                                         {nullptr, no_argument, nullptr, 0}};
 
   while (true) {
@@ -199,7 +199,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 // clang-format off
 const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
 const std::string COMPILE_HELP =
-"Usage:\n"
+"USAGE\n"
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
 "    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PRIMARY-PATH\n"
 "\n"
@@ -210,7 +210,7 @@ const std::string COMPILE_HELP =
 "input path, you may optionally supply an `anims' folder containing RGBA\n"
 "animation assets to be compiled.\n"
 "\n"
-"Args:\n"
+"ARGS\n"
 "    <PRIMARY-PATH>\n"
 "        Path to a directory containing the source data for a primary set.\n"
 "        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
@@ -223,22 +223,25 @@ const std::string COMPILE_HELP =
 "        tile sheets. May optionally contain an `anims' folder with animated\n"
 "        tile sheets. See the documentation for more details.\n"
 "\n"
-"Output Options:\n" +
-OUTPUT_DESCRIPTION + "\n" +
-TILES_PNG_PALETTE_MODE_DESCRIPTION + "\n" +
-"Fieldmap Options:\n" +
-PRESET_POKEEMERALD_DESCRIPTION + "\n" +
-PRESET_POKEFIRERED_DESCRIPTION + "\n" +
-PRESET_POKERUBY_DESCRIPTION + "\n" +
-NUM_TILES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_TILES_TOTAL_DESCRIPTION + "\n" +
-NUM_METATILES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_METATILES_TOTAL_DESCRIPTION + "\n" +
-NUM_PALETTES_IN_PRIMARY_DESCRIPTION + "\n" +
-NUM_PALETTES_TOTAL_DESCRIPTION + "\n" +
-"Warnings:\n" + 
-WALL_DESCRIPTION + "\n" +
-WERROR_DESCRIPTION + "\n";
+"OPTIONS\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+"    Game Preset Options:\n" +
+F_POKEEMERALD_DESC + "\n" +
+F_POKEFIRERED_DESC + "\n" +
+F_POKERUBY_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+F_TILES_PRIMARY_DESC + "\n" +
+F_TILES_TOTAL_DESC + "\n" +
+F_METATILES_PRIMARY_DESC + "\n" +
+F_METATILES_TOTAL_DESC + "\n" +
+F_PALS_PRIMARY_DESC + "\n" +
+F_PALS_TOTAL_DESC + "\n" +
+"    Tileset Generation Options\n" +
+M_TILES_OUTPUT_PAL_DESC + "\n" +
+"    Warning Options\n" + 
+WALL_DESC + "\n" +
+WERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
 
@@ -249,20 +252,20 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
   static struct option longOptions[] = {
-      {OUTPUT_LONG.c_str(), required_argument, nullptr, OUTPUT_SHORT},
-      {TILES_PNG_PALETTE_MODE_LONG.c_str(), required_argument, nullptr, TILES_PNG_PALETTE_MODE_VAL},
-      {PRESET_POKEEMERALD_LONG.c_str(), no_argument, nullptr, PRESET_POKEEMERALD_VAL},
-      {PRESET_POKEFIRERED_LONG.c_str(), no_argument, nullptr, PRESET_POKEFIRERED_VAL},
-      {PRESET_POKERUBY_LONG.c_str(), no_argument, nullptr, PRESET_POKERUBY_VAL},
-      {NUM_TILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_TILES_IN_PRIMARY_VAL},
-      {NUM_TILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_TILES_TOTAL_VAL},
-      {NUM_METATILES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_METATILES_IN_PRIMARY_VAL},
-      {NUM_METATILES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_METATILES_TOTAL_VAL},
-      {NUM_PALETTES_IN_PRIMARY_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_IN_PRIMARY_VAL},
-      {NUM_PALETTES_TOTAL_LONG.c_str(), required_argument, nullptr, NUM_PALETTES_TOTAL_VAL},
-      {WALL_LONG.c_str(), no_argument, nullptr, WALL_VAL},
-      {WERROR_LONG.c_str(), no_argument, nullptr, WERROR_VAL},
-      {HELP_LONG.c_str(), no_argument, nullptr, HELP_SHORT},
+      {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
+      {M_TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, M_TILES_OUTPUT_PAL_VAL},
+      {F_POKEEMERALD.c_str(), no_argument, nullptr, F_POKEEMERALD_VAL},
+      {F_POKEFIRERED.c_str(), no_argument, nullptr, F_POKEFIRERED_VAL},
+      {F_POKERUBY.c_str(), no_argument, nullptr, F_POKERUBY_VAL},
+      {F_TILES_PRIMARY.c_str(), required_argument, nullptr, F_TILES_PRIMARY_VAL},
+      {F_TILES_TOTAL.c_str(), required_argument, nullptr, F_TILES_TOTAL_VAL},
+      {F_METATILES_PRIMARY.c_str(), required_argument, nullptr, F_METATILES_PRIMARY_VAL},
+      {F_METATILES_TOTAL.c_str(), required_argument, nullptr, F_METATILES_TOTAL_VAL},
+      {F_PALS_PRIMARY.c_str(), required_argument, nullptr, F_PALS_PRIMARY_VAL},
+      {F_PALS_TOTAL.c_str(), required_argument, nullptr, F_PALS_TOTAL_VAL},
+      {WALL.c_str(), no_argument, nullptr, WALL_VAL},
+      {WERROR.c_str(), no_argument, nullptr, WERROR_VAL},
+      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
 
   bool setAllWarningsToErrors = false;
@@ -276,36 +279,34 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     case OUTPUT_SHORT:
       ctx.output.path = optarg;
       break;
-    case TILES_PNG_PALETTE_MODE_VAL:
-      ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_PNG_PALETTE_MODE_LONG, optarg);
+    case M_TILES_OUTPUT_PAL_VAL:
+      ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, M_TILES_OUTPUT_PAL, optarg);
       break;
-    case NUM_TILES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(ctx.err, NUM_TILES_IN_PRIMARY_LONG, optarg);
+    case F_TILES_PRIMARY_VAL:
+      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(ctx.err, F_TILES_PRIMARY, optarg);
       break;
-    case NUM_TILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(ctx.err, NUM_TILES_TOTAL_LONG, optarg);
+    case F_TILES_TOTAL_VAL:
+      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(ctx.err, F_TILES_TOTAL, optarg);
       break;
-    case NUM_METATILES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numMetatilesInPrimary =
-          parseIntegralOption<size_t>(ctx.err, NUM_METATILES_IN_PRIMARY_LONG, optarg);
+    case F_METATILES_PRIMARY_VAL:
+      ctx.fieldmapConfig.numMetatilesInPrimary = parseIntegralOption<size_t>(ctx.err, F_METATILES_PRIMARY, optarg);
       break;
-    case NUM_METATILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(ctx.err, NUM_METATILES_TOTAL_LONG, optarg);
+    case F_METATILES_TOTAL_VAL:
+      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(ctx.err, F_METATILES_TOTAL, optarg);
       break;
-    case NUM_PALETTES_IN_PRIMARY_VAL:
-      ctx.fieldmapConfig.numPalettesInPrimary =
-          parseIntegralOption<size_t>(ctx.err, NUM_PALETTES_IN_PRIMARY_LONG, optarg);
+    case F_PALS_PRIMARY_VAL:
+      ctx.fieldmapConfig.numPalettesInPrimary = parseIntegralOption<size_t>(ctx.err, F_PALS_PRIMARY, optarg);
       break;
-    case NUM_PALETTES_TOTAL_VAL:
-      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(ctx.err, NUM_PALETTES_TOTAL_LONG, optarg);
+    case F_PALS_TOTAL_VAL:
+      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(ctx.err, F_PALS_TOTAL, optarg);
       break;
-    case PRESET_POKEEMERALD_VAL:
+    case F_POKEEMERALD_VAL:
       ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
       break;
-    case PRESET_POKEFIRERED_VAL:
+    case F_POKEFIRERED_VAL:
       ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
       break;
-    case PRESET_POKERUBY_VAL:
+    case F_POKERUBY_VAL:
       ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
       break;
     case WALL_VAL:
