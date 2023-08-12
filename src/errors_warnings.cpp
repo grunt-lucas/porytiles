@@ -395,17 +395,33 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::st
 #include "compiler.h"
 #include "importer.h"
 
-TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly for regular tiles")
+TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
 {
-  porytiles::PtContext ctx{};
-  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-  ctx.fieldmapConfig.numPalettesInPrimary = 3;
-  ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile";
-  ctx.err.printErrors = false;
+  SUBCASE("it should work for regular tiles")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 3;
+    ctx.fieldmapConfig.numPalettesTotal = 6;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
+    ctx.err.printErrors = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
-  CHECK(ctx.err.errCount == 6);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+    CHECK(ctx.err.errCount == 6);
+  }
+
+  SUBCASE("it should work for anim tiles")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 3;
+    ctx.fieldmapConfig.numPalettesTotal = 6;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+    CHECK(ctx.err.errCount == 4);
+  }
 }
 
 TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
