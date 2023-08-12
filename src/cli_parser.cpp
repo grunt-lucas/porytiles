@@ -226,7 +226,7 @@ const std::string COMPILE_HELP =
 "OPTIONS\n" +
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
-"    Game Preset Options:\n" +
+"    Target Base Game Options:\n" +
 F_POKEEMERALD_DESC + "\n" +
 F_POKEFIRERED_DESC + "\n" +
 F_POKERUBY_DESC + "\n" +
