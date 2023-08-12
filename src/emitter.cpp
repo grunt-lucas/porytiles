@@ -37,7 +37,7 @@ void emitZeroedPalette(PtContext &ctx, std::ostream &out)
   emitPalette(ctx, out, palette);
 }
 
-static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png::index_pixel> &out,
+static void configurePngPalette(TilesOutputPalette paletteMode, png::image<png::index_pixel> &out,
                                 const std::vector<GBAPalette> &palettes)
 {
   std::array<RGBA32, PAL_SIZE> greyscalePalette = {
@@ -55,7 +55,7 @@ static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png:
    */
   // 0 initial length here since we will push_back our colors in-order
   png::palette pngPal{0};
-  if (paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
+  if (paletteMode == TilesOutputPalette::TRUE_COLOR) {
     for (const auto &palette : palettes) {
       for (const auto &color : palette.colors) {
         RGBA32 rgbaColor = bgrToRgba(color);
@@ -63,7 +63,7 @@ static void configurePngPalette(TilesPngPaletteMode paletteMode, png::image<png:
       }
     }
   }
-  else if (paletteMode == TilesPngPaletteMode::GREYSCALE) {
+  else if (paletteMode == TilesOutputPalette::GREYSCALE) {
     for (const auto &color : greyscalePalette) {
       pngPal.push_back(png::color{color.red, color.green, color.blue});
     }
@@ -94,10 +94,10 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
         png::byte paletteIndex = tileset.paletteIndexesOfTile.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         switch (ctx.output.paletteMode) {
-        case TilesPngPaletteMode::GREYSCALE:
+        case TilesOutputPalette::GREYSCALE:
           out[pixelRow][pixelCol] = indexInPalette;
           break;
-        case TilesPngPaletteMode::TRUE_COLOR:
+        case TilesOutputPalette::TRUE_COLOR:
           out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
           break;
         default:
@@ -134,7 +134,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
 
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);
-    configurePngPalette(TilesPngPaletteMode::GREYSCALE, out, palettes);
+    configurePngPalette(TilesOutputPalette::GREYSCALE, out, palettes);
     std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
     std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
     for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {

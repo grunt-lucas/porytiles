@@ -48,6 +48,7 @@
     + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
     + MacOS:
       CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi"
+  + better build system? (cmake, autotools, etc)
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
@@ -66,3 +67,6 @@
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
   + https://github.com/tfussell/miniz-cpp
+
++ Wiki page ideas
+  + How to integrate into the pokeemerald Makefile

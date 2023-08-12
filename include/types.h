@@ -535,7 +535,9 @@ namespace porytiles {
 // |   CONFIG TYPES    |
 // ---------------------
 
-enum class TilesPngPaletteMode { TRUE_COLOR, GREYSCALE };
+enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
+
+enum class TilesOutputPalette { TRUE_COLOR, GREYSCALE };
 
 enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY };
 
@@ -655,10 +657,10 @@ struct InputPaths {
 };
 
 struct Output {
-  TilesPngPaletteMode paletteMode;
+  TilesOutputPalette paletteMode;
   std::string path;
 
-  Output() : paletteMode{TilesPngPaletteMode::GREYSCALE}, path{} {}
+  Output() : paletteMode{TilesOutputPalette::GREYSCALE}, path{} {}
 };
 
 struct CompilerConfig {

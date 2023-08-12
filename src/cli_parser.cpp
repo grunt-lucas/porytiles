@@ -58,15 +58,15 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
   throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
 }
 
-static TilesPngPaletteMode parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
-                                                    const char *optarg)
+static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
+                                                   const char *optarg)
 {
   std::string optargString{optarg};
   if (optargString == "true-color") {
-    return TilesPngPaletteMode::TRUE_COLOR;
+    return TilesOutputPalette::TRUE_COLOR;
   }
   else if (optargString == "greyscale") {
-    return TilesPngPaletteMode::GREYSCALE;
+    return TilesOutputPalette::GREYSCALE;
   }
   else {
     fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}'",
@@ -75,6 +75,28 @@ static TilesPngPaletteMode parseTilesPngPaletteMode(const ErrorsAndWarnings &err
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseTilesPngPaletteMode reached unreachable code path");
+}
+
+static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const std::string &optionName,
+                                          const char *optarg)
+{
+  std::string optargString{optarg};
+  if (optargString == "pokeemerald") {
+    return TargetBaseGame::EMERALD;
+  }
+  else if (optargString == "pokefirered") {
+    return TargetBaseGame::FIRERED;
+  }
+  else if (optargString == "pokeruby") {
+    return TargetBaseGame::RUBY;
+  }
+  else {
+    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}'",
+                                            fmt::styled(optargString, fmt::emphasis::bold),
+                                            fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("cli_parser::parseTargetBaseGame reached unreachable code path");
 }
 
 // --------------------------------
@@ -226,10 +248,8 @@ const std::string COMPILE_HELP =
 "OPTIONS\n" +
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
-"    Target Base Game Options:\n" +
-F_POKEEMERALD_DESC + "\n" +
-F_POKEFIRERED_DESC + "\n" +
-F_POKERUBY_DESC + "\n" +
+"    Target Selection Options:\n" +
+M_TARGET_BASE_GAME_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 F_TILES_PRIMARY_DESC + "\n" +
 F_TILES_TOTAL_DESC + "\n" +
@@ -254,9 +274,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   static struct option longOptions[] = {
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
       {M_TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, M_TILES_OUTPUT_PAL_VAL},
-      {F_POKEEMERALD.c_str(), no_argument, nullptr, F_POKEEMERALD_VAL},
-      {F_POKEFIRERED.c_str(), no_argument, nullptr, F_POKEFIRERED_VAL},
-      {F_POKERUBY.c_str(), no_argument, nullptr, F_POKERUBY_VAL},
+      {M_TARGET_BASE_GAME.c_str(), required_argument, nullptr, M_TARGET_BASE_GAME_VAL},
       {F_TILES_PRIMARY.c_str(), required_argument, nullptr, F_TILES_PRIMARY_VAL},
       {F_TILES_TOTAL.c_str(), required_argument, nullptr, F_TILES_TOTAL_VAL},
       {F_METATILES_PRIMARY.c_str(), required_argument, nullptr, F_METATILES_PRIMARY_VAL},
@@ -268,7 +286,32 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
 
+  /*
+   * Warning specific variables. We must wait until after all options are processed before we actually enable warnings,
+   * since enabling/disabling specific warnings must take precedence over the general -Wall and -Werror flags no matter
+   * where in the command line the user specified.
+   */
+  bool enableAllWarnings = false;
   bool setAllWarningsToErrors = false;
+
+  /*
+   * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
+   * start applying the fieldmap config. We want specific fieldmap overrides to take precedence over the general
+   * target base game, no matter where in the command line things were specified.
+   */
+  bool tilesPrimaryOverridden = false;
+  std::size_t tilesPrimaryOverride = 0;
+  bool tilesTotalOverridden = false;
+  std::size_t tilesTotalOverride = 0;
+  bool metatilesPrimaryOverridden = false;
+  std::size_t metatilesPrimaryOverride = 0;
+  bool metatilesTotalOverridden = false;
+  std::size_t metatilesTotalOverride = 0;
+  bool palettesPrimaryOverridden = false;
+  std::size_t palettesPrimaryOverride = 0;
+  bool palettesTotalOverridden = false;
+  std::size_t palettesTotalOverride = 0;
+
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
 
@@ -283,34 +326,34 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, M_TILES_OUTPUT_PAL, optarg);
       break;
     case F_TILES_PRIMARY_VAL:
-      ctx.fieldmapConfig.numTilesInPrimary = parseIntegralOption<size_t>(ctx.err, F_TILES_PRIMARY, optarg);
+      tilesPrimaryOverridden = true;
+      tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_TILES_PRIMARY, optarg);
       break;
     case F_TILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numTilesTotal = parseIntegralOption<size_t>(ctx.err, F_TILES_TOTAL, optarg);
+      tilesTotalOverridden = true;
+      tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_TILES_TOTAL, optarg);
       break;
     case F_METATILES_PRIMARY_VAL:
-      ctx.fieldmapConfig.numMetatilesInPrimary = parseIntegralOption<size_t>(ctx.err, F_METATILES_PRIMARY, optarg);
+      metatilesPrimaryOverridden = true;
+      metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_METATILES_PRIMARY, optarg);
       break;
     case F_METATILES_TOTAL_VAL:
-      ctx.fieldmapConfig.numMetatilesTotal = parseIntegralOption<size_t>(ctx.err, F_METATILES_TOTAL, optarg);
+      metatilesTotalOverridden = true;
+      metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_METATILES_TOTAL, optarg);
       break;
     case F_PALS_PRIMARY_VAL:
-      ctx.fieldmapConfig.numPalettesInPrimary = parseIntegralOption<size_t>(ctx.err, F_PALS_PRIMARY, optarg);
+      palettesPrimaryOverridden = true;
+      palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_PALS_PRIMARY, optarg);
       break;
     case F_PALS_TOTAL_VAL:
-      ctx.fieldmapConfig.numPalettesTotal = parseIntegralOption<size_t>(ctx.err, F_PALS_TOTAL, optarg);
+      palettesTotalOverridden = true;
+      palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_PALS_TOTAL, optarg);
       break;
-    case F_POKEEMERALD_VAL:
-      ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
-      break;
-    case F_POKEFIRERED_VAL:
-      ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
-      break;
-    case F_POKERUBY_VAL:
-      ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
+    case M_TARGET_BASE_GAME_VAL:
+      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, M_TARGET_BASE_GAME, optarg);
       break;
     case WALL_VAL:
-      ctx.err.enableAllWarnings();
+      enableAllWarnings = true;
       break;
     case WERROR_VAL:
       setAllWarningsToErrors = true;
@@ -328,10 +371,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     }
   }
 
-  if (setAllWarningsToErrors) {
-    ctx.err.setAllEnabledWarningsToErrors();
-  }
-
+  // Die immediately if arguments are invalid, otherwise pack them into the context variable
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
     fatalerror_basicprefix(
         ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
@@ -339,18 +379,55 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
     fatalerror_basicprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
   }
-
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     ctx.inputPaths.secondaryInputPath = argv[optind++];
   }
   ctx.inputPaths.primaryInputPath = argv[optind++];
 
-  ctx.validate();
+  // Configure warnings per user specification
+  if (enableAllWarnings) {
+    ctx.err.enableAllWarnings();
+  }
+  if (setAllWarningsToErrors) {
+    ctx.err.setAllEnabledWarningsToErrors();
+  }
 
-  if (ctx.output.paletteMode == TilesPngPaletteMode::TRUE_COLOR) {
+  // Apply and validate the fieldmap configuration parameters
+  if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
+    ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
+  }
+  else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
+  }
+  else if (ctx.targetBaseGame == TargetBaseGame::RUBY) {
+    ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
+  }
+  if (tilesPrimaryOverridden) {
+    ctx.fieldmapConfig.numTilesInPrimary = tilesPrimaryOverride;
+  }
+  if (tilesTotalOverridden) {
+    ctx.fieldmapConfig.numTilesTotal = tilesTotalOverride;
+  }
+  if (metatilesPrimaryOverridden) {
+    ctx.fieldmapConfig.numMetatilesInPrimary = metatilesPrimaryOverride;
+  }
+  if (metatilesTotalOverridden) {
+    ctx.fieldmapConfig.numMetatilesTotal = metatilesTotalOverride;
+  }
+  if (palettesPrimaryOverridden) {
+    ctx.fieldmapConfig.numPalettesInPrimary = palettesPrimaryOverride;
+  }
+  if (palettesTotalOverridden) {
+    ctx.fieldmapConfig.numPalettesTotal = palettesTotalOverride;
+  }
+  ctx.validateFieldmapParameters();
+
+  if (ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
+    // TODO : leave this in until Porymap supports 8bpp input images
     warn_usedTrueColorMode(ctx.err);
   }
 
+  // Die if any errors occurred
   if (ctx.err.errCount > 0) {
     die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
   }

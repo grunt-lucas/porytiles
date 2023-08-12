@@ -14,6 +14,7 @@
 namespace porytiles {
 
 struct PtContext {
+  TargetBaseGame targetBaseGame;
   FieldmapConfig fieldmapConfig;
   InputPaths inputPaths;
   Output output;
@@ -26,12 +27,12 @@ struct PtContext {
   bool verbose;
 
   PtContext()
-      : fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{}, output{}, compilerConfig{},
-        compilerContext{}, err{}, subcommand{}, verbose{false}
+      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{},
+        output{}, compilerConfig{}, compilerContext{}, err{}, subcommand{}, verbose{false}
   {
   }
 
-  void validate() const
+  void validateFieldmapParameters() const
   {
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
       fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numTiles",

@@ -96,27 +96,14 @@ const std::string M_TILES_OUTPUT_PAL_DESC =
 "            the final in-game tiles. Default value is `greyscale'.\n";
 constexpr int M_TILES_OUTPUT_PAL_VAL = 1006;
 
-const std::string F_POKEEMERALD = "fpokeemerald";
-const std::string F_POKEEMERALD_DESC =
-"        -" + F_POKEEMERALD + "\n"
-"            Set the fieldmap parameters to match those of `pokeemerald', and use `pokeemerald'\n"
-"            format metatile attributes. See the wiki docs for more information. This is the\n"
-"            default game preset.\n";
-constexpr int F_POKEEMERALD_VAL = 1008;
-
-const std::string F_POKEFIRERED = "fpokefirered";
-const std::string F_POKEFIRERED_DESC =
-"        -" + F_POKEFIRERED + "\n"
-"            Set the fieldmap parameters to match those of `pokefirered', and use `pokefirered'\n"
-"            format metatile attributes. See the wiki docs for more information.\n";
-constexpr int F_POKEFIRERED_VAL = 1009;
-
-const std::string F_POKERUBY = "fpokeruby";
-const std::string F_POKERUBY_DESC =
-"        -" + F_POKERUBY + "\n"
-"            Set the fieldmap parameters to match those of `pokeruby', and use `pokeruby' format\n"
-"            metatile attributes. See the wiki docs for more information.\n";
-constexpr int F_POKERUBY_VAL = 1010;
+const std::string M_TARGET_BASE_GAME = "mtarget-base-game";
+const std::string M_TARGET_BASE_GAME_DESC =
+"        -" + M_TARGET_BASE_GAME + "=<TARGET>\n"
+"             Set the compilation target base game to TARGET. This option affects default values\n"
+"             for the fieldmap parameters, as well as the metatile attribute format. Valid\n"
+"             settings for TARGET are `pokeemerald', `pokefirered', and `pokeruby'. If this option\n"
+"             is not specified, defaults to `pokeemerald'. See the wiki docs for more information.\n";
+constexpr int M_TARGET_BASE_GAME_VAL = 1008;
 
 const std::string WALL = "Wall";
 const std::string WALL_DESC =
