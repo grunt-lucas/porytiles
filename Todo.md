@@ -28,8 +28,6 @@
     + would be helpful if someone wants all warnings EXCEPT one
 
 + Refactor commands / options
-  + Use `-f` prefix for frontend configuration
-    + e.g. `-fnum-pals-primary`, `-fruby`, `-ftiles-png-pal-mode`
   + `-fskip-metatile-generation` skips generation of `metatiles.bin`
 
 + `dump-anim-code` command

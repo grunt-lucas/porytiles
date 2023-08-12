@@ -111,9 +111,9 @@ const std::string GLOBAL_HELP =
 "porytiles " + VERSION + " " + RELEASE_DATE + "\n"
 "grunt-lucas <grunt.lucas@yahoo.com>\n"
 "\n"
-"Overworld tileset compiler for use with the pokeruby, pokeemerald, and\n"
-"pokefirered Pokémon Generation 3 decompilation projects from pret. Builds\n"
-"Porymap-ready tilesets from RGBA tile assets.\n"
+"Overworld tileset compiler for use with the pokeruby, pokeemerald, and pokefirered Pokémon\n"
+"Generation 3 decompilation projects from pret. Builds Porymap-ready tilesets from RGBA\n"
+"(or indexed) tile assets.\n"
 "\n"
 "Project home page: https://github.com/grunt-lucas/porytiles\n"
 "\n"
@@ -132,13 +132,12 @@ VERSION_DESC + "\n"
 "        TODO : implement\n"
 "\n"
 "    compile-primary\n"
-"        Compile a bottom, middle, and top RGBA PNG into a complete primary\n"
-"        tileset. All files are generated in-place at the output location.\n"
+"        Compile a complete primary tileset. All files are generated in-place at the output\n"
+"        location.\n"
 "\n"
 "    compile-secondary\n"
-"        Compile a bottom, middle, and top RGBA PNG into a complete secondary\n"
-"        tileset. All files are generated in-place at the output location. You\n"
-"        must also supply the layers for the paired primary tileset.\n"
+"        Compile a complete secondary tileset. All files are generated in-place at the output\n"
+"        location.\n"
 "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
@@ -223,42 +222,49 @@ const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::s
 const std::string COMPILE_HELP =
 "USAGE\n"
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
-"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PRIMARY-PATH\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
 "\n"
-"Compile given RGBA tile assets into a tileset. The `primary' and `secondary'\n"
-"modes compile a bottom, middle, and top layer tilesheet into a complete\n"
-"tileset. That is, they will generate a `metatiles.bin' file along with\n"
-"`tiles.png' and the pal files in a `palettes' directory, in-place. In the\n"
-"input path, you may optionally supply an `anims' folder containing RGBA\n"
-"animation assets to be compiled.\n"
+"Compile the tile assets in a given input folder into a Porymap-ready tileset.\n"
 "\n"
 "ARGS\n"
 "    <PRIMARY-PATH>\n"
 "        Path to a directory containing the source data for a primary set.\n"
-"        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
-"        tile sheets. May optionally contain an `anims' folder with animated\n"
-"        tile sheets. See the documentation for more details.\n"
 "\n"
 "    <SECONDARY-PATH>\n"
 "        Path to a directory containing the source data for a secondary set.\n"
-"        Must contain at least the `bottom.png', `middle.png' and `top.png'\n"
-"        tile sheets. May optionally contain an `anims' folder with animated\n"
-"        tile sheets. See the documentation for more details.\n"
+"\n"
+"    <PARTNER-PRIMARY-PATH>\n"
+"        Path to a directory containing the source data for a secondary set's partner primary set.\n"
+"        This partner primary set must be a Porytiles-managed tileset.\n"
+"\n"
+"    Input Directory Format\n"
+"        The input directories must conform to the following format. '[]' indicate optional assets.\n"
+"            input/\n"
+"                bottom.png           # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                middle.png           # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                top.png              # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                attributes.csv       # missing metatile entries will receive default values\n"
+"                [anims/]             # 'anims' folder is optional\n"
+"                    [anim1/]         # animation names can be arbitrary, but must be unique\n"
+"                        key.png      # you must specify a key frame PNG\n"
+"                        00.png       # you must specify at least one animation frame\n"
+"                        [01.png]     # frames must be named numerically, in order\n"
+"                        ...          # you may specify an arbitrary number of additional frames\n"
+"                    ...              # you may specify an arbitrary number of additional animation\n"
 "\n"
 "OPTIONS\n" +
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
-"    Target Selection Options:\n" +
-M_TARGET_BASE_GAME_DESC + "\n" +
-"    Fieldmap Override Options\n" +
-F_TILES_PRIMARY_DESC + "\n" +
-F_TILES_TOTAL_DESC + "\n" +
-F_METATILES_PRIMARY_DESC + "\n" +
-F_METATILES_TOTAL_DESC + "\n" +
-F_PALS_PRIMARY_DESC + "\n" +
-F_PALS_TOTAL_DESC + "\n" +
 "    Tileset Generation Options\n" +
-M_TILES_OUTPUT_PAL_DESC + "\n" +
+TARGET_BASE_GAME_DESC + "\n" +
+TILES_OUTPUT_PAL_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+TILES_PRIMARY_OVERRIDE_DESC + "\n" +
+TILES_TOTAL_OVERRIDE_DESC + "\n" +
+METATILES_PRIMARY_OVERRIDE_DESC + "\n" +
+METATILES_TOTAL_OVERRIDE_DESC + "\n" +
+PALS_PRIMARY_OVERRIDE_DESC + "\n" +
+PALS_TOTAL_OVERRIDE_DESC + "\n" +
 "    Warning Options\n" + 
 WALL_DESC + "\n" +
 WERROR_DESC + "\n";
@@ -273,14 +279,14 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   std::string shortOptions = "+" + implodedShorts.str();
   static struct option longOptions[] = {
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
-      {M_TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, M_TILES_OUTPUT_PAL_VAL},
-      {M_TARGET_BASE_GAME.c_str(), required_argument, nullptr, M_TARGET_BASE_GAME_VAL},
-      {F_TILES_PRIMARY.c_str(), required_argument, nullptr, F_TILES_PRIMARY_VAL},
-      {F_TILES_TOTAL.c_str(), required_argument, nullptr, F_TILES_TOTAL_VAL},
-      {F_METATILES_PRIMARY.c_str(), required_argument, nullptr, F_METATILES_PRIMARY_VAL},
-      {F_METATILES_TOTAL.c_str(), required_argument, nullptr, F_METATILES_TOTAL_VAL},
-      {F_PALS_PRIMARY.c_str(), required_argument, nullptr, F_PALS_PRIMARY_VAL},
-      {F_PALS_TOTAL.c_str(), required_argument, nullptr, F_PALS_TOTAL_VAL},
+      {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
+      {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
+      {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
+      {TILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
+      {METATILES_OVERRIDE_PRIMARY.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
+      {METATILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, METATILES_TOTAL_OVERRIDE_VAL},
+      {PALS_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, PALS_PRIMARY_OVERRIDE_VAL},
+      {PALS_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, PALS_TOTAL_OVERRIDE_VAL},
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
       {WERROR.c_str(), no_argument, nullptr, WERROR_VAL},
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
@@ -322,35 +328,35 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     case OUTPUT_SHORT:
       ctx.output.path = optarg;
       break;
-    case M_TILES_OUTPUT_PAL_VAL:
-      ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, M_TILES_OUTPUT_PAL, optarg);
+    case TILES_OUTPUT_PAL_VAL:
+      ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
       break;
-    case F_TILES_PRIMARY_VAL:
+    case TILES_PRIMARY_OVERRIDE_VAL:
       tilesPrimaryOverridden = true;
-      tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_TILES_PRIMARY, optarg);
+      tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
       break;
-    case F_TILES_TOTAL_VAL:
+    case TILES_TOTAL_OVERRIDE_VAL:
       tilesTotalOverridden = true;
-      tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_TILES_TOTAL, optarg);
+      tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_OVERRIDE_TOTAL, optarg);
       break;
-    case F_METATILES_PRIMARY_VAL:
+    case METATILES_PRIMARY_OVERRIDE_VAL:
       metatilesPrimaryOverridden = true;
-      metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_METATILES_PRIMARY, optarg);
+      metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_OVERRIDE_PRIMARY, optarg);
       break;
-    case F_METATILES_TOTAL_VAL:
+    case METATILES_TOTAL_OVERRIDE_VAL:
       metatilesTotalOverridden = true;
-      metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_METATILES_TOTAL, optarg);
+      metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_OVERRIDE_TOTAL, optarg);
       break;
-    case F_PALS_PRIMARY_VAL:
+    case PALS_PRIMARY_OVERRIDE_VAL:
       palettesPrimaryOverridden = true;
-      palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, F_PALS_PRIMARY, optarg);
+      palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_PRIMARY_OVERRIDE, optarg);
       break;
-    case F_PALS_TOTAL_VAL:
+    case PALS_TOTAL_OVERRIDE_VAL:
       palettesTotalOverridden = true;
-      palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, F_PALS_TOTAL, optarg);
+      palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_TOTAL_OVERRIDE, optarg);
       break;
-    case M_TARGET_BASE_GAME_VAL:
-      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, M_TARGET_BASE_GAME, optarg);
+    case TARGET_BASE_GAME_VAL:
+      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
       break;
     case WALL_VAL:
       enableAllWarnings = true;
