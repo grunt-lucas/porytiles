@@ -376,11 +376,26 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPa
 void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage)
 {
   if (err.printErrors) {
+    std::string errorStr;
     if (err.errCount == 1) {
-      pt_println(stderr, "{} error generated.", std::to_string(err.errCount));
+      errorStr = "error";
     }
-    else if (err.errCount > 1) {
-      pt_println(stderr, "{} errors generated.", std::to_string(err.errCount));
+    else {
+      errorStr = "errors";
+    }
+    std::string warnStr;
+    if (err.warnCount == 1) {
+      warnStr = "warning";
+    }
+    else {
+      warnStr = "warnings";
+    }
+    if (err.warnCount > 0) {
+      pt_println(stderr, "{} {} and {} {} generated.", std::to_string(err.warnCount), warnStr,
+                 std::to_string(err.errCount), errorStr);
+    }
+    else {
+      pt_println(stderr, "{} {} generated.", std::to_string(err.errCount), errorStr);
     }
     pt_println(stderr, "terminating compilation of {}", fmt::styled(inputPath, fmt::emphasis::bold));
   }
