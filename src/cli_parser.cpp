@@ -258,6 +258,7 @@ OUTPUT_DESC + "\n" +
 "    Tileset Generation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
+DUAL_LAYER_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -281,6 +282,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
+      {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
       {TILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
       {METATILES_OVERRIDE_PRIMARY.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
@@ -334,6 +336,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     case TILES_PRIMARY_OVERRIDE_VAL:
       tilesPrimaryOverridden = true;
       tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
+      break;
+    case DUAL_LAYER_VAL:
+      ctx.compilerConfig.tripleLayer = false;
       break;
     case TILES_TOTAL_OVERRIDE_VAL:
       tilesTotalOverridden = true;

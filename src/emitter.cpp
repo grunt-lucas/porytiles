@@ -6,6 +6,7 @@
 
 #include "compiler.h"
 #include "importer.h"
+#include "logger.h"
 #include "ptcontext.h"
 #include "tmpfiles.h"
 #include "types.h"
@@ -116,7 +117,7 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
 {
   for (std::size_t i = 0; i < tileset.assignments.size(); i++) {
     auto &assignment = tileset.assignments.at(i);
-    uint16_t tileValue =
+    std::uint16_t tileValue =
         static_cast<uint16_t>((assignment.tileIndex & 0x3FF) | ((assignment.hFlip & 1) << 10) |
                               ((assignment.vFlip & 1) << 11) | ((assignment.paletteIndex & 0xF) << 12));
     out << static_cast<char>(tileValue);
@@ -150,6 +151,43 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
       }
     }
   }
+}
+
+void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset)
+{
+  std::size_t delta;
+  if (ctx.compilerConfig.tripleLayer) {
+    delta = 12;
+    if (tileset.assignments.size() % 12 != 0) {
+      internalerror("emitter::emitAttributes tileset.assignments size '" + std::to_string(tileset.assignments.size()) +
+                    "' was not divisible by 12");
+    }
+  }
+  else {
+    delta = 8;
+    if (tileset.assignments.size() % 8 != 0) {
+      internalerror("emitter::emitAttributes tileset.assignments size '" + std::to_string(tileset.assignments.size()) +
+                    "' was not divisible by 8");
+    }
+  }
+  for (std::size_t i = 0; i < tileset.assignments.size(); i += delta) {
+    auto &assignment = tileset.assignments.at(i);
+    if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
+      pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ layerType={}, ... ]",
+               targetBaseGameString(ctx.targetBaseGame), i / delta, layerTypeString(assignment.layerType));
+      std::uint16_t attributeValue =
+          static_cast<std::uint16_t>((0 & 0x00FF) | ((layerTypeValue(assignment.layerType) & 0xF) << 12));
+      out << static_cast<char>(attributeValue);
+      out << static_cast<char>(attributeValue >> 8);
+    }
+    else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      throw std::runtime_error{"TODO : implement emitAttributes for FIRERED"};
+    }
+    else {
+      internalerror("emitter::emitAttributes unknown TargetBaseGame");
+    }
+  }
+  out.flush();
 }
 
 } // namespace porytiles
@@ -325,4 +363,12 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
   // TODO : test impl emitAnim should correctly emit compiled animation PNG files
+}
+
+TEST_CASE("emitAttributes should correctly emit metatile attributes")
+{
+  // TODO : test impl emitAttributes should correctly emit metatile attributes
+  SUBCASE("triple layer metatiles") {}
+
+  SUBCASE("dual layer metatiles") {}
 }

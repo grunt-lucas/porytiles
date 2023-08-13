@@ -134,6 +134,7 @@ std::string subtileString(Subtile subtile);
 enum class LayerType { NORMAL, COVERED, SPLIT, TRIPLE };
 
 std::string layerTypeString(LayerType layerType);
+std::uint8_t layerTypeValue(LayerType layerType);
 
 /**
  * A tile of RGBA32 colors.
@@ -536,6 +537,8 @@ namespace porytiles {
 // ---------------------
 
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
+
+std::string targetBaseGameString(TargetBaseGame game);
 
 enum class TilesOutputPalette { TRUE_COLOR, GREYSCALE };
 

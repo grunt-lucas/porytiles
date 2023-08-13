@@ -105,17 +105,23 @@ const std::string TARGET_BASE_GAME_DESC =
 "             is not specified, defaults to `pokeemerald'. See the wiki docs for more information.\n";
 constexpr int TARGET_BASE_GAME_VAL = 1008;
 
+const std::string DUAL_LAYER = "dual-layer";
+const std::string DUAL_LAYER_DESC =
+"        -" + DUAL_LAYER + "\n"
+"             Compile to dual-layer metatiles. (TODO : better description)\n";
+constexpr int DUAL_LAYER_VAL = 1009;
+
 const std::string WALL = "Wall";
 const std::string WALL_DESC =
 "        -" + WALL + "\n"
 "            Enable all warnings.\n";
-constexpr int WALL_VAL = 1011;
+constexpr int WALL_VAL = 2000;
 
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
 "        -" + WERROR + "\n"
 "            Force all enabled warnings to generate errors.\n";
-constexpr int WERROR_VAL = 1012;
+constexpr int WERROR_VAL = 2001;
 // @formatter:on
 // clang-format on
 

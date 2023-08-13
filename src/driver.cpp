@@ -277,7 +277,7 @@ static void driveCompile(PtContext &ctx)
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
-    auto compiledPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
+    auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.inputPaths.secondaryInputPath);
     png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
@@ -286,7 +286,7 @@ static void driveCompile(PtContext &ctx)
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     importAnimations(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
-    ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimaryTiles);
+    ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
   }
   else {
@@ -305,14 +305,20 @@ static void driveCompile(PtContext &ctx)
   std::filesystem::path animsDir("anims");
   std::filesystem::path tilesetFile("tiles.png");
   std::filesystem::path metatilesFile("metatiles.bin");
+  std::filesystem::path attributesFile("metatile_attributes.bin");
   std::filesystem::path tilesetPath = ctx.output.path / tilesetFile;
   std::filesystem::path metatilesPath = ctx.output.path / metatilesFile;
   std::filesystem::path palettesPath = ctx.output.path / palettesDir;
   std::filesystem::path animsPath = ctx.output.path / animsDir;
+  std::filesystem::path attribtuesPath = ctx.output.path / attributesFile;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
     fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a file", tilesetPath.string()));
+  }
+  if (std::filesystem::exists(metatilesPath) && !std::filesystem::is_regular_file(metatilesPath)) {
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a file", metatilesPath.string()));
   }
   if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
     fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
@@ -321,6 +327,10 @@ static void driveCompile(PtContext &ctx)
   if (std::filesystem::exists(animsPath) && !std::filesystem::is_directory(animsPath)) {
     fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a directory", animsDir.string()));
+  }
+  if (std::filesystem::exists(attribtuesPath) && !std::filesystem::is_regular_file(attribtuesPath)) {
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a file", attribtuesPath.string()));
   }
   std::filesystem::create_directories(palettesPath);
   std::filesystem::create_directories(animsPath);
@@ -332,6 +342,10 @@ static void driveCompile(PtContext &ctx)
   std::ofstream outMetatiles{metatilesPath.string()};
   emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
   outMetatiles.close();
+
+  std::ofstream outAttributes{attribtuesPath.string()};
+  emitAttributes(ctx, outAttributes, *compiledTiles);
+  outAttributes.close();
 }
 
 void drive(PtContext &ctx)
@@ -524,6 +538,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
 
+  // TODO : test impl check attributes file
+
   std::filesystem::remove_all(parentDir);
 }
 
@@ -665,6 +681,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
       CHECK(expected_flower_red_02[pixelRow][pixelCol] == actual_flower_red_02[pixelRow][pixelCol]);
     }
   }
+
+  // TODO : test impl check attributes file
 
   std::filesystem::remove_all(parentDir);
 }

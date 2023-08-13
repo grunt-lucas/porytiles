@@ -85,7 +85,7 @@ static LayerType layerBitsetToLayerType(PtContext &ctx, std::bitset<3> layerBits
     return LayerType::COVERED;
   }
   else if (!bottomHasContent && middleHasContent && !topHasContent) {
-    return LayerType::COVERED;
+    return LayerType::NORMAL;
   }
   else if (!bottomHasContent && !middleHasContent && topHasContent) {
     return LayerType::NORMAL;
@@ -745,14 +745,14 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   CHECK(tiles.tiles.at(31).layerType == porytiles::LayerType::COVERED);
 
   // Metatile 4
-  CHECK(tiles.tiles.at(32).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(33).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(34).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(35).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(36).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(37).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(38).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(39).layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(32).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(33).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(34).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(35).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(36).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(37).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(38).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(39).layerType == porytiles::LayerType::NORMAL);
 
   // Metatile 5
   CHECK(tiles.tiles.at(40).layerType == porytiles::LayerType::NORMAL);

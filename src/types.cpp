@@ -125,6 +125,24 @@ std::string layerTypeString(LayerType layerType)
   throw std::runtime_error("types::layerTypeString reached unreachable code path");
 }
 
+std::uint8_t layerTypeValue(LayerType layerType)
+{
+  switch (layerType) {
+  case LayerType::NORMAL:
+    return 0;
+  case LayerType::COVERED:
+    return 1;
+  case LayerType::SPLIT:
+    return 2;
+  case LayerType::TRIPLE:
+    return 0;
+  default:
+    internalerror("types::layerTypeValue unknown LayerType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::layerTypeValue reached unreachable code path");
+}
+
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
 {
   os << std::to_string(bgr.bgr);
@@ -232,6 +250,22 @@ std::string compilerModeString(CompilerMode mode)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::compilerModeString reached unreachable code path");
+}
+
+std::string targetBaseGameString(TargetBaseGame game)
+{
+  switch (game) {
+  case TargetBaseGame::EMERALD:
+    return "pokeemerald";
+  case TargetBaseGame::FIRERED:
+    return "pokefirered";
+  case TargetBaseGame::RUBY:
+    return "pokeruby";
+  default:
+    internalerror_unknownCompilerMode("types::targetBaseGameString");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::targetBaseGameString reached unreachable code path");
 }
 
 } // namespace porytiles
