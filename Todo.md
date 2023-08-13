@@ -28,7 +28,8 @@
     + would be helpful if someone wants all warnings EXCEPT one
 
 + Refactor commands / options
-  + `-fskip-metatile-generation` skips generation of `metatiles.bin`
+  + `-skip-metatile-generation` skips generation of `metatiles.bin`
+  + `-max-recurse-count` (or another suitable name) to change the call limit for the palette assign algo
 
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
@@ -58,7 +59,7 @@
   + input to compile can include `metatile_attributes.csv`, which defines attributes for each metatile
   + then just generate `metatile_attributes.bin` from this CSV
   + will probably need to do some basic C parsing to allow for macro expansion
-  + maybe a `generate-attributes-template` command to generate a template CSV based on layer inputs?
+  + the file should be sparse, that is, any unspecified metatile just receives default values
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)

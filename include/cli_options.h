@@ -108,7 +108,10 @@ constexpr int TARGET_BASE_GAME_VAL = 1008;
 const std::string DUAL_LAYER = "dual-layer";
 const std::string DUAL_LAYER_DESC =
 "        -" + DUAL_LAYER + "\n"
-"             Compile to dual-layer metatiles. (TODO : better description)\n";
+"             Enable dual-layer compilation mode. The layer type will be inferred from your input\n"
+"             layer PNGs, so compilation will error out if any metatiles contain content on all\n"
+"             three layers. If this option is not supplied, Porytiles assumes you are compiling\n"
+"             a triple-layer tileset.\n";
 constexpr int DUAL_LAYER_VAL = 1009;
 
 const std::string WALL = "Wall";

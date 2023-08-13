@@ -250,7 +250,7 @@ const std::string COMPILE_HELP =
 "                        00.png       # you must specify at least one animation frame\n"
 "                        [01.png]     # frames must be named numerically, in order\n"
 "                        ...          # you may specify an arbitrary number of additional frames\n"
-"                    ...              # you may specify an arbitrary number of additional animation\n"
+"                    ...              # you may specify an arbitrary number of additional animations\n"
 "\n"
 "OPTIONS\n" +
 "    Driver Options\n" +
