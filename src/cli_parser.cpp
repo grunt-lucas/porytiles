@@ -142,7 +142,7 @@ VERSION_DESC + "\n"
 "Run `porytiles COMMAND --help' for more information about a command.\n"
 "\n"
 "To get more help with porytiles, check out the guides at:\n"
-"    https://github.com/grunt-lucas/porytiles/wiki/Porytiles-Homepage\n";
+"    https://github.com/grunt-lucas/porytiles/wiki\n";
 // @formatter:on
 // clang-format on
 
