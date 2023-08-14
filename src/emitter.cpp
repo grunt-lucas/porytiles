@@ -174,9 +174,9 @@ void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &ti
     auto &assignment = tileset.assignments.at(i);
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ layerType={}, ... ]",
-               targetBaseGameString(ctx.targetBaseGame), i / delta, layerTypeString(assignment.layerType));
+               targetBaseGameString(ctx.targetBaseGame), i / delta, layerTypeString(assignment.attributes.layerType));
       std::uint16_t attributeValue =
-          static_cast<std::uint16_t>((0 & 0x00FF) | ((layerTypeValue(assignment.layerType) & 0xF) << 12));
+          static_cast<std::uint16_t>((0 & 0x00FF) | ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
       out << static_cast<char>(attributeValue);
       out << static_cast<char>(attributeValue >> 8);
     }

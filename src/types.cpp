@@ -143,6 +143,56 @@ std::uint8_t layerTypeValue(LayerType layerType)
   throw std::runtime_error("types::layerTypeValue reached unreachable code path");
 }
 
+std::uint8_t encounterTypeValue(EncounterType encounterType)
+{
+  switch (encounterType) {
+  case EncounterType::NONE:
+    return 0;
+  case EncounterType::LAND:
+    return 1;
+  case EncounterType::WATER:
+    return 2;
+  default:
+    internalerror("types::encounterTypeValue unknown EncounterType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::encounterTypeValue reached unreachable code path");
+}
+
+std::uint8_t terrainTypeValue(TerrainType terrainType)
+{
+  switch (terrainType) {
+  case TerrainType::NORMAL:
+    return 0;
+  case TerrainType::GRASS:
+    return 1;
+  case TerrainType::WATER:
+    return 2;
+  case TerrainType::WATERFALL:
+    return 3;
+  default:
+    internalerror("types::terrainTypeValue unknown TerrainType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::terrainTypeValue reached unreachable code path");
+}
+
+std::string targetBaseGameString(TargetBaseGame game)
+{
+  switch (game) {
+  case TargetBaseGame::EMERALD:
+    return "pokeemerald";
+  case TargetBaseGame::FIRERED:
+    return "pokefirered";
+  case TargetBaseGame::RUBY:
+    return "pokeruby";
+  default:
+    internalerror_unknownCompilerMode("types::targetBaseGameString");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::targetBaseGameString reached unreachable code path");
+}
+
 std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
 {
   os << std::to_string(bgr.bgr);
@@ -235,7 +285,7 @@ std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
     internalerror_unknownCompilerMode("types::InputPaths::modeBasedInputPath");
   }
   // unreachable, here for compiler
-  throw std::runtime_error("types::modeBasedInputPath reached unreachable code path");
+  throw std::runtime_error("types::InputPaths::modeBasedInputPath reached unreachable code path");
 }
 
 std::string compilerModeString(CompilerMode mode)
@@ -250,22 +300,6 @@ std::string compilerModeString(CompilerMode mode)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::compilerModeString reached unreachable code path");
-}
-
-std::string targetBaseGameString(TargetBaseGame game)
-{
-  switch (game) {
-  case TargetBaseGame::EMERALD:
-    return "pokeemerald";
-  case TargetBaseGame::FIRERED:
-    return "pokefirered";
-  case TargetBaseGame::RUBY:
-    return "pokeruby";
-  default:
-    internalerror_unknownCompilerMode("types::targetBaseGameString");
-  }
-  // unreachable, here for compiler
-  throw std::runtime_error("types::targetBaseGameString reached unreachable code path");
 }
 
 } // namespace porytiles

@@ -551,7 +551,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
     }
     std::size_t tileIndex = inserted.first->second;
     compiled.assignments.at(index.tileIndex) = {tileIndex, paletteIndex, normTile.hFlip, normTile.vFlip,
-                                                normTile.layerType};
+                                                normTile.attributes};
   }
   compiled.tileIndexes = tileIndexes;
 
@@ -715,7 +715,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       std::size_t tileIndex = inserted.first->second;
       // Offset the tile index by the secondary tileset VRAM location, which is just the size of the primary tiles
       compiled.assignments.at(index.tileIndex) = {tileIndex + ctx.fieldmapConfig.numTilesInPrimary, paletteIndex,
-                                                  normTile.hFlip, normTile.vFlip, normTile.layerType};
+                                                  normTile.hFlip, normTile.vFlip, normTile.attributes};
     }
   }
   compiled.tileIndexes = tileIndexes;

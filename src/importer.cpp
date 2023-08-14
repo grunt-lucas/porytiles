@@ -150,10 +150,13 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       std::size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile bottomTile{};
+      Attributes tileAttributes{};
+      tileAttributes.baseGame = ctx.targetBaseGame;
       bottomTile.type = TileType::LAYERED;
       bottomTile.layer = TileLayer::BOTTOM;
       bottomTile.metatileIndex = metatileIndex;
       bottomTile.subtile = static_cast<Subtile>(bottomTileIndex);
+      bottomTile.attributes = tileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -171,10 +174,13 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       std::size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile middleTile{};
+      Attributes tileAttributes{};
+      tileAttributes.baseGame = ctx.targetBaseGame;
       middleTile.type = TileType::LAYERED;
       middleTile.layer = TileLayer::MIDDLE;
       middleTile.metatileIndex = metatileIndex;
       middleTile.subtile = static_cast<Subtile>(middleTileIndex);
+      middleTile.attributes = tileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -192,10 +198,13 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       std::size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile topTile{};
+      Attributes tileAttributes{};
+      tileAttributes.baseGame = ctx.targetBaseGame;
       topTile.type = TileType::LAYERED;
       topTile.layer = TileLayer::TOP;
       topTile.metatileIndex = metatileIndex;
       topTile.subtile = static_cast<Subtile>(topTileIndex);
+      topTile.attributes = tileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -216,9 +225,9 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
     if (ctx.compilerConfig.tripleLayer) {
       // Triple layer case is easy, just set all three layers to LayerType::TRIPLE
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-        bottomTiles.at(i).layerType = LayerType::TRIPLE;
-        middleTiles.at(i).layerType = LayerType::TRIPLE;
-        topTiles.at(i).layerType = LayerType::TRIPLE;
+        bottomTiles.at(i).attributes.layerType = LayerType::TRIPLE;
+        middleTiles.at(i).attributes.layerType = LayerType::TRIPLE;
+        topTiles.at(i).attributes.layerType = LayerType::TRIPLE;
       }
     }
     else {
@@ -237,14 +246,14 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<pn
       }
       LayerType type = layerBitsetToLayerType(ctx, layers, metatileIndex);
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-        bottomTiles.at(i).layerType = type;
-        middleTiles.at(i).layerType = type;
-        topTiles.at(i).layerType = type;
+        bottomTiles.at(i).attributes.layerType = type;
+        middleTiles.at(i).attributes.layerType = type;
+        topTiles.at(i).attributes.layerType = type;
       }
     }
 
     // Copy the tiles into the decompiled buffer, accounting for the LayerType we just computed
-    switch (bottomTiles.at(0).layerType) {
+    switch (bottomTiles.at(0).attributes.layerType) {
     case LayerType::TRIPLE:
       for (std::size_t i = 0; i < bottomTiles.size(); i++) {
         decompiledTiles.tiles.push_back(bottomTiles.at(i));
@@ -705,82 +714,82 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
 
   // Metatile 0
-  CHECK(tiles.tiles.at(0).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(1).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(2).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(3).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(4).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(5).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(6).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(7).layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(0).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(1).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(2).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(3).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(4).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(5).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(6).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(7).attributes.layerType == porytiles::LayerType::COVERED);
 
   // Metatile 1
-  CHECK(tiles.tiles.at(8).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(9).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(10).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(11).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(12).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(13).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(14).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(15).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(8).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(9).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(10).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(11).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(12).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(13).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(14).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(15).attributes.layerType == porytiles::LayerType::NORMAL);
 
   // Metatile 2
-  CHECK(tiles.tiles.at(16).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(17).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(18).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(19).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(20).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(21).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(22).layerType == porytiles::LayerType::SPLIT);
-  CHECK(tiles.tiles.at(23).layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(16).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(17).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(18).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(19).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(20).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(21).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(22).attributes.layerType == porytiles::LayerType::SPLIT);
+  CHECK(tiles.tiles.at(23).attributes.layerType == porytiles::LayerType::SPLIT);
 
   // Metatile 3
-  CHECK(tiles.tiles.at(24).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(25).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(26).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(27).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(28).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(29).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(30).layerType == porytiles::LayerType::COVERED);
-  CHECK(tiles.tiles.at(31).layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(24).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(25).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(26).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(27).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(28).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(29).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(30).attributes.layerType == porytiles::LayerType::COVERED);
+  CHECK(tiles.tiles.at(31).attributes.layerType == porytiles::LayerType::COVERED);
 
   // Metatile 4
-  CHECK(tiles.tiles.at(32).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(33).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(34).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(35).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(36).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(37).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(38).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(39).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(32).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(33).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(34).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(35).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(36).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(37).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(38).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(39).attributes.layerType == porytiles::LayerType::NORMAL);
 
   // Metatile 5
-  CHECK(tiles.tiles.at(40).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(41).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(42).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(43).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(44).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(45).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(46).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(47).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(40).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(41).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(42).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(43).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(44).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(45).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(46).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(47).attributes.layerType == porytiles::LayerType::NORMAL);
 
   // Metatile 6
-  CHECK(tiles.tiles.at(48).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(49).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(50).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(51).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(52).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(53).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(54).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(55).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(48).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(49).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(50).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(51).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(52).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(53).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(54).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(55).attributes.layerType == porytiles::LayerType::NORMAL);
 
   // Metatile 7
-  CHECK(tiles.tiles.at(56).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(57).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(58).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(59).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(60).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(61).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(62).layerType == porytiles::LayerType::NORMAL);
-  CHECK(tiles.tiles.at(63).layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(56).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(57).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(58).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(59).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(60).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(61).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(62).attributes.layerType == porytiles::LayerType::NORMAL);
+  CHECK(tiles.tiles.at(63).attributes.layerType == porytiles::LayerType::NORMAL);
 }

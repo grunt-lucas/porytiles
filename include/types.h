@@ -132,9 +132,31 @@ std::string subtileString(Subtile subtile);
 // Covered = Bottom/Middle
 // Split = Bottom/Top
 enum class LayerType { NORMAL, COVERED, SPLIT, TRIPLE };
-
 std::string layerTypeString(LayerType layerType);
 std::uint8_t layerTypeValue(LayerType layerType);
+
+enum class EncounterType { NONE, LAND, WATER };
+std::uint8_t encounterTypeValue(EncounterType encounterType);
+
+enum class TerrainType { NORMAL, GRASS, WATER, WATERFALL };
+std::uint8_t terrainTypeValue(TerrainType terrainType);
+
+enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
+std::string targetBaseGameString(TargetBaseGame game);
+
+struct Attributes {
+  TargetBaseGame baseGame;
+  LayerType layerType;
+  std::uint8_t metatileBehaviour;
+  EncounterType encounterType;
+  TerrainType terrainType;
+
+  Attributes()
+      : baseGame{TargetBaseGame::EMERALD}, layerType{LayerType::TRIPLE}, metatileBehaviour{0},
+        encounterType{EncounterType::NONE}, terrainType{TerrainType::NORMAL}
+  {
+  }
+};
 
 /**
  * A tile of RGBA32 colors.
@@ -153,7 +175,6 @@ struct RGBATile {
   std::size_t tileIndex;
 
   // LAYERED specific metadata
-  LayerType layerType;
   TileLayer layer;
   std::size_t metatileIndex;
   Subtile subtile;
@@ -161,6 +182,9 @@ struct RGBATile {
   // ANIM specific metadata
   std::string anim;
   std::string frame;
+
+  // Metatile attributes for this tile
+  Attributes attributes;
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {
@@ -272,8 +296,8 @@ struct Assignment {
   bool hFlip;
   bool vFlip;
 
-  // Store this here so the attributes emitter can easily find the layer type of this assignment
-  LayerType layerType;
+  // Store this here for the attributes emitter
+  Attributes attributes;
 };
 
 struct CompiledAnimFrame {
@@ -464,13 +488,15 @@ struct NormalizedTile {
   std::size_t tileIndex;
 
   // LAYERED specific metadata
-  LayerType layerType;
   TileLayer layer;
   std::size_t metatileIndex;
   Subtile subtile;
 
   // ANIM specific metadata
   std::string anim;
+
+  // Metatile attributes for this tile
+  Attributes attributes;
 
   explicit NormalizedTile(RGBA32 transparency) : frames{}, palette{}, hFlip{}, vFlip{}
   {
@@ -483,11 +509,11 @@ struct NormalizedTile {
   {
     this->type = tile.type;
     this->tileIndex = tile.tileIndex;
-    this->layerType = tile.layerType;
     this->layer = tile.layer;
     this->metatileIndex = tile.metatileIndex;
     this->subtile = tile.subtile;
     this->anim = tile.anim;
+    this->attributes = tile.attributes;
   }
 
   [[nodiscard]] bool transparent() const { return palette.size == 1; }
@@ -535,10 +561,6 @@ namespace porytiles {
 // ---------------------
 // |   CONFIG TYPES    |
 // ---------------------
-
-enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
-
-std::string targetBaseGameString(TargetBaseGame game);
 
 enum class TilesOutputPalette { TRUE_COLOR, GREYSCALE };
 
