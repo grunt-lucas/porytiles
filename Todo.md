@@ -60,6 +60,7 @@
   + then just generate `metatile_attributes.bin` from this CSV
   + will probably need to do some basic C parsing to allow for macro expansion
   + the file should be sparse, that is, any unspecified metatile just receives default values
+  + CSV parsing header-only: https://github.com/ben-strasser/fast-cpp-csv-parser
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
