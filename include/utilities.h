@@ -1,5 +1,5 @@
-#ifndef PORYTILES_TMPFILES_H
-#define PORYTILES_TMPFILES_H
+#ifndef PORYTILES_UTILITIES_H
+#define PORYTILES_UTILITIES_H
 
 #include <filesystem>
 #include <string>
@@ -11,4 +11,4 @@ std::filesystem::path createTmpdir();
 
 } // namespace porytiles
 
-#endif // PORYTILES_TMPFILES_H
+#endif // PORYTILES_UTILITIES_H
