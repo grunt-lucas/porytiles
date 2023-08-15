@@ -44,8 +44,8 @@ else
 endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
-CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK
-CXXFLAGS             += -I$(INCLUDE) $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include
+CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK -DCSV_IO_NO_THREAD
+CXXFLAGS             += -I$(INCLUDE) $(shell pkg-config --cflags libpng) -Idoctest-2.4.11 -Ipng++-0.2.9 -Ifmt-10.0.0/include -Ifast-cpp-csv-parser
 ifneq '' '$(findstring g++,$(COMPILER_VERSION))'
 # If GCC, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
 # The reason this happens is:
