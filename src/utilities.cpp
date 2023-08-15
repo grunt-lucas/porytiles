@@ -18,33 +18,48 @@
 namespace porytiles {
 
 std::unordered_map<std::size_t, Attributes>
-getEmeraldRubyAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
-                                std::string filePath)
+getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+                     std::string filePath)
 {
   std::unordered_map<std::size_t, Attributes> attributeMap{};
-  io::CSVReader<2> in{filePath};
+  std::unordered_map<std::size_t, std::size_t> lineFirstSeen{};
+  io::CSVReader<4> in{filePath};
   try {
-    in.read_header(io::ignore_no_column, "id", "behavior");
+    in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
   }
   catch (const std::exception &e) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, "id,behavior");
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
   }
+
   std::size_t id;
+  bool hasId = in.has_column("id");
+
   std::string behavior;
+  bool hasBehavior = in.has_column("behavior");
+
+  std::string terrainType;
+  bool hasTerrainType = in.has_column("terrainType");
+
+  std::string encounterType;
+  bool hasEncounterType = in.has_column("encounterType");
+
+  if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
+  }
 
   // processedUpToLine starts at 1 since we processed the header already, which was on line 1
   std::size_t processedUpToLine = 1;
   while (true) {
     bool readRow = false;
     try {
-      readRow = in.read_row(id, behavior);
+      readRow = in.read_row(id, behavior, terrainType, encounterType);
       processedUpToLine++;
     }
     catch (const std::exception &e) {
-      // add 1 to processedUpToLine display, since we threw before we could increment the counter
-      // TDOD : make this a regular error
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: invalid row on line {}", filePath, processedUpToLine + 1));
+      // increment processedUpToLine here, since we threw before we could increment in the try
+      processedUpToLine++;
+      error_invalidCsvRowFormat(ctx.err, filePath, processedUpToLine);
+      continue;
     }
     if (!readRow) {
       break;
@@ -56,14 +71,32 @@ getEmeraldRubyAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::st
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }
     else {
-      // TDOD : make this a regular error
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: unknown metatile behavior '{}' at line {}", filePath, behavior, processedUpToLine));
+      error_unknownMetatileBehavior(ctx.err, filePath, processedUpToLine, behavior);
     }
+
+    if (hasTerrainType) {
+      try {
+        attribute.terrainType = stringToTerrainType(terrainType);
+      }
+      catch (const std::invalid_argument &e) {
+        error_invalidTerrainType(ctx.err, filePath, processedUpToLine, terrainType);
+      }
+    }
+    if (hasEncounterType) {
+      try {
+        attribute.encounterType = stringToEncounterType(encounterType);
+      }
+      catch (const std::invalid_argument &e) {
+        error_invalidEncounterType(ctx.err, filePath, processedUpToLine, encounterType);
+      }
+    }
+
     auto inserted = attributeMap.insert(std::pair{id, attribute});
     if (!inserted.second) {
-      // TODO : make this a regular error
-      throw std::runtime_error{"failed to insert attribute, duplicate"};
+      error_duplicateAttribute(ctx.err, filePath, processedUpToLine, id, lineFirstSeen.at(id));
+    }
+    if (!lineFirstSeen.contains(id)) {
+      lineFirstSeen.insert(std::pair{id, processedUpToLine});
     }
   }
 
@@ -73,11 +106,6 @@ getEmeraldRubyAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::st
   }
 
   return attributeMap;
-}
-
-std::unordered_map<std::size_t, Attributes> getFireredAttributesFromCsv(PtContext &ctx, std::string filePath)
-{
-  throw std::runtime_error{"TODO : implement"};
 }
 
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName)
@@ -111,7 +139,7 @@ std::filesystem::path createTmpdir()
 
 } // namespace porytiles
 
-TEST_CASE("getEmeraldRubyAttributesFromCsv should parse input CSVs as expected")
+TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -121,14 +149,6 @@ TEST_CASE("getEmeraldRubyAttributesFromCsv should parse input CSVs as expected")
 
   SUBCASE("It should parse an Emerald-style attributes CSV correctly")
   {
-    porytiles::getEmeraldRubyAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/emerald1.csv");
-  }
-
-  SUBCASE("It should fail on an Emerald-style CSV with no header")
-  {
-    CHECK_THROWS_WITH_AS(
-        porytiles::getEmeraldRubyAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/emerald_missing_header.csv"),
-        "res/tests/csv/emerald_missing_header.csv: incorrect header row format, expected 'id,behavior'",
-        porytiles::PtException);
+    porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv");
   }
 }

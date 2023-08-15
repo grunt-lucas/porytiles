@@ -77,6 +77,18 @@ void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, c
 
 void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::size_t metatileIndex);
 
+void error_invalidCsvRowFormat(ErrorsAndWarnings &err, std::string filePath, std::size_t line);
+
+void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath, std::size_t line,
+                                   std::string behavior);
+
+void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::size_t id,
+                              std::size_t previousLine);
+
+void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type);
+
+void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type);
+
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 
@@ -122,7 +134,7 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
                                                CompilerMode mode, std::string animName, std::size_t tileIndex);
 
 void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                                           std::string filePath, std::string header);
+                                           std::string filePath);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,

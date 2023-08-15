@@ -159,6 +159,20 @@ std::uint8_t encounterTypeValue(EncounterType encounterType)
   throw std::runtime_error("types::encounterTypeValue reached unreachable code path");
 }
 
+EncounterType stringToEncounterType(std::string string)
+{
+  if (string == "TILE_ENCOUNTER_NONE") {
+    return EncounterType::NONE;
+  }
+  else if (string == "TILE_ENCOUNTER_LAND") {
+    return EncounterType::LAND;
+  }
+  else if (string == "TILE_ENCOUNTER_WATER") {
+    return EncounterType::WATER;
+  }
+  throw std::invalid_argument{"invalid EnounterType string"};
+}
+
 std::uint8_t terrainTypeValue(TerrainType terrainType)
 {
   switch (terrainType) {
@@ -175,6 +189,24 @@ std::uint8_t terrainTypeValue(TerrainType terrainType)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::terrainTypeValue reached unreachable code path");
+}
+
+TerrainType stringToTerrainType(std::string string)
+{
+  if (string == "TILE_TERRAIN_NORMAL") {
+    return TerrainType::NORMAL;
+  }
+  else if (string == "TILE_TERRAIN_GRASS") {
+    return TerrainType::GRASS;
+  }
+  else if (string == "TILE_TERRAIN_WATER") {
+    return TerrainType::WATER;
+  }
+  else if (string == "TILE_TERRAIN_WATERFALL") {
+    return TerrainType::WATERFALL;
+  }
+
+  throw std::invalid_argument{"invalid TerrainType string"};
 }
 
 std::string targetBaseGameString(TargetBaseGame game)

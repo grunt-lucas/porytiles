@@ -137,9 +137,11 @@ std::uint8_t layerTypeValue(LayerType layerType);
 
 enum class EncounterType { NONE, LAND, WATER };
 std::uint8_t encounterTypeValue(EncounterType encounterType);
+EncounterType stringToEncounterType(std::string string);
 
 enum class TerrainType { NORMAL, GRASS, WATER, WATERFALL };
 std::uint8_t terrainTypeValue(TerrainType terrainType);
+TerrainType stringToTerrainType(std::string string);
 
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
 std::string targetBaseGameString(TargetBaseGame game);

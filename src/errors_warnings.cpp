@@ -121,6 +121,51 @@ void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::s
   }
 }
 
+void error_invalidCsvRowFormat(ErrorsAndWarnings &err, std::string filePath, std::size_t line)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: on line {}: provided columns did not match header", filePath, line);
+  }
+}
+
+void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string behavior)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: on line {}: unknown metatile behavior '{}'", filePath, line,
+           fmt::styled(behavior, fmt::emphasis::bold));
+    pt_note("you can import additional recognized behaviors by creating a symbolic link in");
+    pt_println(stderr, "      the input folder to `include/constants/metatile_behaviors.h'");
+  }
+}
+
+void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::size_t id,
+                              std::size_t previousLine)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: on line {}: duplicate entry for metatile '{}', first definition on line {}", filePath, line,
+           fmt::styled(id, fmt::emphasis::bold), previousLine);
+  }
+}
+
+void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: on line {}: invalid TerrainType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+  }
+}
+
+void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: on line {}: invalid EncounterType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+  }
+}
+
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message)
 {
   if (err.printErrors) {
@@ -292,13 +337,15 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
 }
 
 void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                                           std::string filePath, std::string header)
+                                           std::string filePath)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: incorrect header row format, expected '{}'", filePath, header);
+    pt_fatal_err("{}: incorrect header row format", filePath);
+    pt_note("valid headers are '{}' or '{}'", fmt::styled("id,behavior", fmt::emphasis::bold),
+            fmt::styled("id,behavior,terrainType,encounterType", fmt::emphasis::bold));
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
-                            fmt::format("{}: incorrect header row format, expected '{}'", filePath, header));
+                            fmt::format("{}: incorrect header row format", filePath));
 }
 
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
@@ -463,18 +510,6 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   CHECK(ctx.err.errCount == 2);
 }
 
-TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular tiles")
-{
-  porytiles::PtContext ctx{};
-  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-  ctx.fieldmapConfig.numPalettesInPrimary = 1;
-  ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
-  ctx.err.printErrors = false;
-
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
-}
-
 TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing")
 {
   porytiles::PtContext ctx{};
@@ -513,6 +548,105 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
   CHECK(ctx.err.errCount == 2);
+}
+
+TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format is invalid")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Emerald row format, missing field")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+  SUBCASE("Firered row format, missing field")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_2.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 2);
+  }
+}
+
+TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has an unrecognized behavior")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Emerald row format, missing metatile behavior")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/unknown_behavior_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 2);
+  }
+}
+
+TEST_CASE("error_duplicateAttribute should trigger correctly when two rows specify the same metatile id")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Duplicate metatile definition test 1")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/duplicate_definition_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 2);
+  }
+}
+
+TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifies an invalid TerrainType")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Invalid TerrainType test 1")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_terrain_type_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+}
+
+TEST_CASE("error_invalidEncounterType should trigger correctly when a row specifies an invalid EncounterType")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Invalid EncounterType test 1")
+  {
+    CHECK_THROWS_WITH_AS(
+        porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_encounter_type_1.csv"),
+        "errors generated during attributes CSV parsing", porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+}
+
+TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular primary tiles")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.err.printErrors = false;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")
@@ -650,10 +784,29 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
-  CHECK_THROWS_WITH_AS(
-      porytiles::getEmeraldRubyAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/emerald_missing_header.csv"),
-      "res/tests/csv/emerald_missing_header.csv: incorrect header row format, expected 'id,behavior'",
-      porytiles::PtException);
+  SUBCASE("Completely missing header")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_1.csv"),
+                         "res/tests/csv/missing_header_1.csv: incorrect header row format", porytiles::PtException);
+  }
+
+  SUBCASE("Header missing id field")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_2.csv"),
+                         "res/tests/csv/missing_header_2.csv: incorrect header row format", porytiles::PtException);
+  }
+
+  SUBCASE("Header missing behavior field")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_3.csv"),
+                         "res/tests/csv/missing_header_3.csv: incorrect header row format", porytiles::PtException);
+  }
+
+  SUBCASE("Header has terrainType but missing encounterType")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_4.csv"),
+                         "res/tests/csv/missing_header_4.csv: incorrect header row format", porytiles::PtException);
+  }
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")
