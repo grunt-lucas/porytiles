@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "ptexception.h"
 #include "types.h"
+#include "utilities.h"
 
 namespace porytiles {
 
@@ -288,6 +289,16 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
                             fmt::format("animation {} key frame tile present in paired primary", animName));
+}
+
+void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                           std::string filePath, std::string header)
+{
+  if (err.printErrors) {
+    pt_fatal_err("{}: incorrect header row format, expected '{}'", filePath, header);
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("{}: incorrect header row format, expected '{}'", filePath, header));
 }
 
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
@@ -629,6 +640,20 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 key frame tile present in paired primary",
                        porytiles::PtException);
+}
+
+TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attributes file is missing a header")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  CHECK_THROWS_WITH_AS(
+      porytiles::getEmeraldRubyAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/emerald_missing_header.csv"),
+      "res/tests/csv/emerald_missing_header.csv: incorrect header row format, expected 'id,behavior'",
+      porytiles::PtException);
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")

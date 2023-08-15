@@ -27,8 +27,7 @@ getEmeraldRubyAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::st
     in.read_header(io::ignore_no_column, "id", "behavior");
   }
   catch (const std::exception &e) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: incorrect header row format, expected 'id,behavior'", filePath));
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, "id,behavior");
   }
   std::size_t id;
   std::string behavior;
