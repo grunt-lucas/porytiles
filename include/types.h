@@ -147,12 +147,12 @@ std::string targetBaseGameString(TargetBaseGame game);
 struct Attributes {
   TargetBaseGame baseGame;
   LayerType layerType;
-  std::uint8_t metatileBehaviour;
+  std::uint8_t metatileBehavior;
   EncounterType encounterType;
   TerrainType terrainType;
 
   Attributes()
-      : baseGame{TargetBaseGame::EMERALD}, layerType{LayerType::TRIPLE}, metatileBehaviour{0},
+      : baseGame{TargetBaseGame::EMERALD}, layerType{LayerType::TRIPLE}, metatileBehavior{0},
         encounterType{EncounterType::NONE}, terrainType{TerrainType::NORMAL}
   {
   }
