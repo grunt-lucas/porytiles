@@ -1,5 +1,6 @@
 #include "emitter.h"
 
+#include <doctest.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
