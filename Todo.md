@@ -48,6 +48,8 @@
     + MacOS:
       CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi"
   + better build system? (cmake, autotools, etc)
+  + releases should include the header libs with their licenses
+    + not sure exactly how all the licenses work so just do this to cover our butt
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
