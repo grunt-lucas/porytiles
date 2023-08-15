@@ -12,7 +12,7 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 [changelog](https://github.com/grunt-lucas/porytiles/blob/trunk/CHANGELOG.md).
 
 For detailed documentation about Porytiles features and internal workings, please see
-[the wiki.](https://github.com/grunt-lucas/porytiles/wiki/Porytiles-Homepage)
+[the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
 
 ## Table of Contents
 - [Porytiles](#porytiles)
