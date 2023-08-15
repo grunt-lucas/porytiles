@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <bitset>
 #include <doctest.h>
+#include <filesystem>
 #include <memory>
 #include <png.hpp>
 #include <stdexcept>
