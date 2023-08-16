@@ -874,7 +874,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
   }
 }
 
-TEST_CASE("warn_tooManyAttributesForTargetGame")
+TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -888,7 +888,7 @@ TEST_CASE("warn_tooManyAttributesForTargetGame")
   CHECK(ctx.err.errCount == 1);
 }
 
-TEST_CASE("warn_tooFewAttributesForTargetGame")
+TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
