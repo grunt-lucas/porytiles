@@ -415,16 +415,19 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
   pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
 }
 
-void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err)
+void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
-  std::string message = "TODO : fill in";
-  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch", message);
+  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch",
+               fmt::format("{}: too many attribute columns for base game '{}'", filePath,
+                           fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
 }
 
-void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err)
+void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
-  std::string message = "TODO : fill in";
-  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch", message);
+  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch",
+               fmt::format("{}: too few attribute columns for base game '{}'", filePath,
+                           fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
+  pt_note("unspecified columns will receive default values");
 }
 
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
@@ -873,10 +876,28 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
 
 TEST_CASE("warn_tooManyAttributesForTargetGame")
 {
-  // TODO : test impl
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+  ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
+  ctx.targetBaseGame = porytiles::TargetBaseGame::EMERALD;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+  CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_2.csv"),
+                       "errors generated during attributes CSV parsing", porytiles::PtException);
+  CHECK(ctx.err.errCount == 1);
 }
 
 TEST_CASE("warn_tooFewAttributesForTargetGame")
 {
-  // TODO : test impl
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+  ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
+  ctx.targetBaseGame = porytiles::TargetBaseGame::FIRERED;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+  CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv"),
+                       "errors generated during attributes CSV parsing", porytiles::PtException);
+  CHECK(ctx.err.errCount == 1);
 }

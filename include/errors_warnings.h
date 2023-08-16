@@ -150,9 +150,9 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err);
 
-void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err);
+void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
 
-void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err);
+void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
 
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
