@@ -145,7 +145,22 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
   importAnimTiles(ctx, animations, decompTiles);
 }
 
-static void driveCompileFreestanding(PtContext &ctx) {}
+static std::unordered_map<std::size_t, Attributes> buildAttributesMap(PtContext &ctx,
+                                                                      std::filesystem::path attributesCsvPath)
+{
+  pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
+  if (!std::filesystem::exists(attributesCsvPath) || !std::filesystem::is_regular_file(attributesCsvPath)) {
+    pt_logln(ctx, stderr, "path `{}' does not exist, skipping attributes import", attributesCsvPath.string());
+    warn_attributesFileNotFound(ctx.err, attributesCsvPath);
+    return std::unordered_map<std::size_t, Attributes>{};
+  }
+
+  // TODO : don't hardcode this, actually parse the 'include/constants/metatile_behaviors.h' file
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+  return getAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
+}
+
+// static void driveCompileFreestanding(PtContext &ctx) {}
 
 static void driveCompile(PtContext &ctx)
 {
@@ -275,6 +290,13 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+
+    auto primaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.primaryAttributesPath());
+    if (ctx.err.errCount > 0) {
+      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                     "errors generated during primary attributes import");
+    }
+
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
@@ -285,6 +307,13 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
+
+    auto secondaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.secondaryAttributesPath());
+    if (ctx.err.errCount > 0) {
+      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                     "errors generated during secondary attributes import");
+    }
+
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
     ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
@@ -296,6 +325,13 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath()};
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+
+    auto primaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.primaryAttributesPath());
+    if (ctx.err.errCount > 0) {
+      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+                     "errors generated during primary attributes import");
+    }
+
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
     compiledTiles = compile(ctx, decompiledTiles);
@@ -359,8 +395,6 @@ void drive(PtContext &ctx)
   case Subcommand::COMPILE_SECONDARY:
     driveCompile(ctx);
     break;
-    driveCompileFreestanding(ctx);
-    break;
   default:
     internalerror("driver::drive unknown subcommand setting");
   }
@@ -374,6 +408,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   ctx.inputPaths.primaryInputPath = "res/tests/anim_metatiles_2/primary";
@@ -550,6 +585,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+  ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   ctx.inputPaths.primaryInputPath = "res/tests/anim_metatiles_2/primary";

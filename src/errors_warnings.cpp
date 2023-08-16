@@ -412,7 +412,9 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 {
   std::string message = "`true-color' mode not yet supported by Porymap";
   printWarning(err, err.usedTrueColorMode, "used-true-color-mode", message);
-  pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
+  if (err.printErrors) {
+    pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
+  }
 }
 
 void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
@@ -427,7 +429,18 @@ void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string file
   printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch",
                fmt::format("{}: too few attribute columns for base game '{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
-  pt_note("unspecified columns will receive default values");
+  if (err.printErrors) {
+    pt_note("unspecified columns will receive default values");
+  }
+}
+
+void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
+{
+  printWarning(err, err.missingAttributesFile, "missing-attributes-file",
+               fmt::format("{}: attributes file did not exist", filePath));
+  if (err.printErrors && err.missingAttributesFile == WarningMode::WARN) {
+    pt_note("all attributes will receive default or inferred values");
+  }
 }
 
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
@@ -900,4 +913,38 @@ TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
   CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv"),
                        "errors generated during attributes CSV parsing", porytiles::PtException);
   CHECK(ctx.err.errCount == 1);
+}
+
+TEST_CASE("warn_attributesFileNotFound should correctly warn")
+{
+  SUBCASE("it should trigger correctly for a primary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
+    ctx.err.missingAttributesFile = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
+                         porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+
+  SUBCASE("it should trigger correctly for a secondary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
+    ctx.inputPaths.secondaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
+    ctx.err.missingAttributesFile = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
+                         porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
 }

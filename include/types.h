@@ -680,6 +680,18 @@ struct InputPaths {
     return path / "anims";
   }
 
+  std::filesystem::path primaryAttributesPath() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "attributes.csv";
+  }
+
+  std::filesystem::path secondaryAttributesPath() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "attributes.csv";
+  }
+
   std::filesystem::path modeBasedInputPath(CompilerMode mode) const;
 };
 
