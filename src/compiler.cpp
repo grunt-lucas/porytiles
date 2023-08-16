@@ -1708,8 +1708,8 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -1845,8 +1845,8 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -1856,8 +1856,8 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_3/secondary/bottom.png"};
   png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/secondary/top.png"};
-  porytiles::DecompiledTileset decompiledSecondary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
+  porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
   ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
@@ -2005,8 +2005,8 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
@@ -2215,8 +2215,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
@@ -2268,8 +2268,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   png::image<png::rgba_pixel> bottomSecondary{"res/tests/anim_metatiles_1/secondary/bottom.png"};
   png::image<png::rgba_pixel> middleSecondary{"res/tests/anim_metatiles_1/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/anim_metatiles_1/secondary/top.png"};
-  porytiles::DecompiledTileset decompiledSecondary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomSecondary, middleSecondary, topSecondary);
+  porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_red"));
 

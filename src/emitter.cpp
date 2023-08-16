@@ -277,8 +277,8 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary =
-      porytiles::importLayeredTilesFromPngs(ctx, bottomPrimary, middlePrimary, topPrimary);
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
@@ -319,7 +319,8 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
-  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   auto compiled = porytiles::compile(ctx, decompiled);
 

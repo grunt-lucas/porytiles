@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <png.hpp>
+#include <unordered_map>
 
 #include "ptcontext.h"
 #include "types.h"
@@ -20,7 +21,9 @@ namespace porytiles {
  */
 DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_pixel> &png);
 
-DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
+DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
+                                             const std::unordered_map<std::size_t, Attributes> &attributesMap,
+                                             const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top);
 

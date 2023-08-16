@@ -4,6 +4,7 @@
 #include <iostream>
 #include <png.hpp>
 #include <set>
+#include <unordered_map>
 
 #include "errors_warnings.h"
 #include "logger.h"
@@ -101,7 +102,9 @@ static LayerType layerBitsetToLayerType(PtContext &ctx, std::bitset<3> layerBits
   return LayerType::SPLIT;
 }
 
-DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx, const png::image<png::rgba_pixel> &bottom,
+DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
+                                             const std::unordered_map<std::size_t, Attributes> &attributesMap,
+                                             const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top)
 {
@@ -435,7 +438,8 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
   png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
 
   // Metatile 0 bottom layer
   CHECK(tiles.tiles[0] == porytiles::RGBA_TILE_RED);
@@ -711,7 +715,8 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   png::image<png::rgba_pixel> middle{"res/tests/dual_layer_metatiles_1/middle.png"};
   png::image<png::rgba_pixel> top{"res/tests/dual_layer_metatiles_1/top.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(ctx, bottom, middle, top);
+  porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
 
   // Metatile 0
   CHECK(tiles.tiles.at(0).attributes.layerType == porytiles::LayerType::COVERED);

@@ -298,7 +298,7 @@ static void driveCompile(PtContext &ctx)
     }
 
     DecompiledTileset decompiledPrimaryTiles =
-        importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
+        importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
     auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
@@ -314,7 +314,8 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during secondary attributes import");
     }
 
-    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
+    DecompiledTileset decompiledTiles =
+        importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
     ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
@@ -332,7 +333,8 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during primary attributes import");
     }
 
-    DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
+    DecompiledTileset decompiledTiles =
+        importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
     compiledTiles = compile(ctx, decompiledTiles);
   }
