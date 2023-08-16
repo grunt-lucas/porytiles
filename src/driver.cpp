@@ -20,8 +20,8 @@
 
 namespace porytiles {
 
-static void emitPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
-                         const std::filesystem::path &palettesPath)
+static void drivePaletteEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
+                             const std::filesystem::path &palettesPath)
 {
   for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
     std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
@@ -38,7 +38,8 @@ static void emitPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
   }
 }
 
-static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, const std::filesystem::path &tilesetPath)
+static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
+                           const std::filesystem::path &tilesetPath)
 {
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
@@ -49,8 +50,8 @@ static void emitTilesPng(PtContext &ctx, const CompiledTileset &compiledTiles, c
   tilesPng.write(tilesetPath);
 }
 
-static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
-                      const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
+static void driveAnimEmit(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
+                          const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
@@ -71,7 +72,7 @@ static void emitAnims(PtContext &ctx, const std::vector<CompiledAnimation> &comp
   }
 }
 
-static void importAnimations(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
+static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
 {
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
@@ -276,7 +277,7 @@ static void driveCompile(PtContext &ctx)
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    importAnimations(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
+    driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
     auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.inputPaths.secondaryInputPath);
@@ -285,7 +286,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
-    importAnimations(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
+    driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
     ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
   }
@@ -296,7 +297,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     DecompiledTileset decompiledTiles = importLayeredTilesFromPngs(ctx, bottomPng, middlePng, topPng);
-    importAnimations(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
+    driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
     compiledTiles = compile(ctx, decompiledTiles);
   }
 
@@ -335,9 +336,9 @@ static void driveCompile(PtContext &ctx)
   std::filesystem::create_directories(palettesPath);
   std::filesystem::create_directories(animsPath);
 
-  emitPalettes(ctx, *compiledTiles, palettesPath);
-  emitTilesPng(ctx, *compiledTiles, tilesetPath);
-  emitAnims(ctx, compiledTiles->anims, compiledTiles->palettes, animsPath);
+  drivePaletteEmit(ctx, *compiledTiles, palettesPath);
+  driveTilesEmit(ctx, *compiledTiles, tilesetPath);
+  driveAnimEmit(ctx, compiledTiles->anims, compiledTiles->palettes, animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
   emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
