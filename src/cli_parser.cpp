@@ -129,7 +129,7 @@ VERBOSE_DESC + "\n" +
 VERSION_DESC + "\n"
 "COMMANDS\n"
 "    decompile\n"
-"        TODO : implement\n"
+"        Under construction.\n"
 "\n"
 "    compile-primary\n"
 "        Compile a complete primary tileset. All files are generated in-place at the output\n"

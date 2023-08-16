@@ -157,6 +157,35 @@ TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")
 
   SUBCASE("It should parse an Emerald-style attributes CSV correctly")
   {
-    porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv");
+    auto attributesMap = porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv");
+    CHECK_FALSE(attributesMap.contains(0));
+    CHECK_FALSE(attributesMap.contains(1));
+    CHECK_FALSE(attributesMap.contains(2));
+    CHECK(attributesMap.contains(3));
+    CHECK_FALSE(attributesMap.contains(4));
+    CHECK(attributesMap.contains(5));
+    CHECK_FALSE(attributesMap.contains(6));
+
+    CHECK(attributesMap.at(3).metatileBehavior == behaviorMap.at("MB_NORMAL"));
+    CHECK(attributesMap.at(5).metatileBehavior == behaviorMap.at("MB_NORMAL"));
+  }
+
+  SUBCASE("It should parse a Firered-style attributes CSV correctly")
+  {
+    auto attributesMap = porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_2.csv");
+    CHECK_FALSE(attributesMap.contains(0));
+    CHECK_FALSE(attributesMap.contains(1));
+    CHECK(attributesMap.contains(2));
+    CHECK_FALSE(attributesMap.contains(3));
+    CHECK(attributesMap.contains(4));
+    CHECK_FALSE(attributesMap.contains(5));
+    CHECK_FALSE(attributesMap.contains(6));
+
+    CHECK(attributesMap.at(2).metatileBehavior == behaviorMap.at("MB_NORMAL"));
+    CHECK(attributesMap.at(2).terrainType == porytiles::TerrainType::NORMAL);
+    CHECK(attributesMap.at(2).encounterType == porytiles::EncounterType::NONE);
+    CHECK(attributesMap.at(4).metatileBehavior == behaviorMap.at("MB_NORMAL"));
+    CHECK(attributesMap.at(4).terrainType == porytiles::TerrainType::NORMAL);
+    CHECK(attributesMap.at(4).encounterType == porytiles::EncounterType::NONE);
   }
 }
