@@ -415,6 +415,18 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
   pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
 }
 
+void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err)
+{
+  std::string message = "TODO : fill in";
+  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch", message);
+}
+
+void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err)
+{
+  std::string message = "TODO : fill in";
+  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch", message);
+}
+
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
@@ -857,4 +869,14 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
                          porytiles::PtException);
     CHECK(ctx.err.errCount == 2);
   }
+}
+
+TEST_CASE("warn_tooManyAttributesForTargetGame")
+{
+  // TODO : test impl
+}
+
+TEST_CASE("warn_tooFewAttributesForTargetGame")
+{
+  // TODO : test impl
 }

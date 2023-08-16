@@ -47,6 +47,14 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
     fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
   }
 
+  if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
+    warn_tooFewAttributesForTargetGame(ctx.err);
+  }
+  if ((ctx.targetBaseGame == TargetBaseGame::EMERALD || ctx.targetBaseGame == TargetBaseGame::RUBY) &&
+      (hasTerrainType || hasEncounterType)) {
+    warn_tooManyAttributesForTargetGame(ctx.err);
+  }
+
   // processedUpToLine starts at 1 since we processed the header already, which was on line 1
   std::size_t processedUpToLine = 1;
   while (true) {

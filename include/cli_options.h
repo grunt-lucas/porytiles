@@ -125,6 +125,10 @@ const std::string WERROR_DESC =
 "        -" + WERROR + "\n"
 "            Force all enabled warnings to generate errors.\n";
 constexpr int WERROR_VAL = 2001;
+
+// TODO : add `-w' option to suppress all warnings
+// TODO : Wno-error for a warning that isn't enabled should be a no-op
+
 // @formatter:on
 // clang-format on
 

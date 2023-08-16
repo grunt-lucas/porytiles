@@ -17,10 +17,12 @@ struct ErrorsAndWarnings {
   WarningMode colorPrecisionLoss;
   WarningMode keyFrameTileDidNotAppearInAssignment;
   WarningMode usedTrueColorMode;
+  WarningMode attributeFormatMismatch;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN}
+        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN},
+        attributeFormatMismatch{WarningMode::WARN}
   {
   }
 
@@ -29,6 +31,7 @@ struct ErrorsAndWarnings {
     colorPrecisionLoss = WarningMode::WARN;
     keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
     usedTrueColorMode = WarningMode::WARN;
+    attributeFormatMismatch = WarningMode::WARN;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -41,6 +44,9 @@ struct ErrorsAndWarnings {
     }
     if (usedTrueColorMode == WarningMode::WARN) {
       usedTrueColorMode = WarningMode::ERR;
+    }
+    if (attributeFormatMismatch == WarningMode::WARN) {
+      attributeFormatMismatch = WarningMode::ERR;
     }
   }
 };
@@ -143,6 +149,10 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err);
+
+void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err);
+
+void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err);
 
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
