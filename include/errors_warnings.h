@@ -10,6 +10,13 @@ namespace porytiles {
 enum class WarningMode { OFF, WARN, ERR };
 
 struct ErrorsAndWarnings {
+  /*
+   * TODO : consider having a error-specific counts. This would allows us to intelligently bail in certain places
+   * depending on which errors have actually been generated. So compilation could potentially carry further and
+   * generate additional errors for the user. E.g. when attributes.csv is missing and user specified this warning to
+   * be an error, we could continue compilation further before terminating if we are able to check for specific error
+   * counts instead of just a generalized count.
+   */
   std::size_t errCount;
   std::size_t warnCount;
   bool printErrors;
