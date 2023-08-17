@@ -177,7 +177,8 @@ void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &ti
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ layerType={}, ... ]",
                targetBaseGameString(ctx.targetBaseGame), i / delta, layerTypeString(assignment.attributes.layerType));
       std::uint16_t attributeValue =
-          static_cast<std::uint16_t>((0 & 0x00FF) | ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
+          static_cast<std::uint16_t>((assignment.attributes.metatileBehavior & 0x00FF) |
+                                     ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
       out << static_cast<char>(attributeValue);
       out << static_cast<char>(attributeValue >> 8);
     }
@@ -370,7 +371,9 @@ TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 TEST_CASE("emitAttributes should correctly emit metatile attributes")
 {
   // TODO : test impl emitAttributes should correctly emit metatile attributes
-  SUBCASE("triple layer metatiles") {}
+  SUBCASE("triple layer metatiles") {
+    
+  }
 
   SUBCASE("dual layer metatiles") {}
 }
