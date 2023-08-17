@@ -1,6 +1,7 @@
 #include "importer.h"
 
 #include <bitset>
+#include <filesystem>
 #include <iostream>
 #include <png.hpp>
 #include <set>
