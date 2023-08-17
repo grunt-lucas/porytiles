@@ -156,7 +156,8 @@ static std::unordered_map<std::size_t, Attributes> buildAttributesMap(PtContext 
   }
 
   // TODO : don't hardcode this, actually parse the 'include/constants/metatile_behaviors.h' file
-  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {
+      {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
   return getAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
 }
 

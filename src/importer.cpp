@@ -150,18 +150,28 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     std::vector<RGBATile> bottomTiles{};
     std::vector<RGBATile> middleTiles{};
     std::vector<RGBATile> topTiles{};
+
+    // Attributes are per-metatile so we can compute them once here
+    Attributes metatileAttributes{};
+    metatileAttributes.baseGame = ctx.targetBaseGame;
+    if (attributesMap.contains(metatileIndex)) {
+      const Attributes &fromMap = attributesMap.at(metatileIndex);
+      metatileAttributes.metatileBehavior = fromMap.metatileBehavior;
+      metatileAttributes.terrainType = fromMap.terrainType;
+      metatileAttributes.encounterType = fromMap.encounterType;
+    }
+
+    // Bottom layer
     for (std::size_t bottomTileIndex = 0; bottomTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          bottomTileIndex++) {
       std::size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile bottomTile{};
-      Attributes tileAttributes{};
-      tileAttributes.baseGame = ctx.targetBaseGame;
       bottomTile.type = TileType::LAYERED;
       bottomTile.layer = TileLayer::BOTTOM;
       bottomTile.metatileIndex = metatileIndex;
       bottomTile.subtile = static_cast<Subtile>(bottomTileIndex);
-      bottomTile.attributes = tileAttributes;
+      bottomTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -174,18 +184,18 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
       }
       bottomTiles.push_back(bottomTile);
     }
+
+    // Middle layer
     for (std::size_t middleTileIndex = 0; middleTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          middleTileIndex++) {
       std::size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile middleTile{};
-      Attributes tileAttributes{};
-      tileAttributes.baseGame = ctx.targetBaseGame;
       middleTile.type = TileType::LAYERED;
       middleTile.layer = TileLayer::MIDDLE;
       middleTile.metatileIndex = metatileIndex;
       middleTile.subtile = static_cast<Subtile>(middleTileIndex);
-      middleTile.attributes = tileAttributes;
+      middleTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -198,18 +208,18 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
       }
       middleTiles.push_back(middleTile);
     }
+
+    // Top layer
     for (std::size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
          topTileIndex++) {
       std::size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
       std::size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
       RGBATile topTile{};
-      Attributes tileAttributes{};
-      tileAttributes.baseGame = ctx.targetBaseGame;
       topTile.type = TileType::LAYERED;
       topTile.layer = TileLayer::TOP;
       topTile.metatileIndex = metatileIndex;
       topTile.subtile = static_cast<Subtile>(topTileIndex);
-      topTile.attributes = tileAttributes;
+      topTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
@@ -303,6 +313,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                    "errors generated during layered tile import");
   }
+
+  // TODO : some way to warn users if the attributesMap contained entries we never used
 
   return decompiledTiles;
 }
