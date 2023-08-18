@@ -510,6 +510,43 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   fclose(expected);
   fclose(actual);
 
+  // Check metatile_attributes.bin
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin"));
+  REQUIRE(std::filesystem::exists(parentDir / "metatile_attributes.bin"));
+
+  expected = fopen("res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin", "r");
+  if (expected == NULL) {
+    FAIL("std::FILE `expected' was null");
+  }
+  actual = fopen((parentDir / "metatile_attributes.bin").c_str(), "r");
+  if (actual == NULL) {
+    fclose(expected);
+    FAIL("std::FILE `expected' was null");
+  }
+  fseek(expected, 0, SEEK_END);
+  expectedSize = ftell(expected);
+  rewind(expected);
+  fseek(actual, 0, SEEK_END);
+  actualSize = ftell(actual);
+  rewind(actual);
+  CHECK(expectedSize == actualSize);
+
+  for (long i = 0; i < actualSize; i++) {
+    bytesRead = fread(&expectedByte, 1, 1, expected);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    bytesRead = fread(&actualByte, 1, 1, actual);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    CHECK(expectedByte == actualByte);
+  }
+
+  fclose(expected);
+  fclose(actual);
+
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/00.png"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/01.png"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/02.png"));
@@ -600,8 +637,6 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
 
-  // TODO : test impl check attributes file
-
   std::filesystem::remove_all(parentDir);
 }
 
@@ -689,6 +724,44 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   fclose(expected);
   fclose(actual);
 
+  // Check metatile_attributes.bin
+  // Secondary set doesn't provide a metatile_behaviors.h or an attributes.csv, so default values are used
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"));
+  REQUIRE(std::filesystem::exists(parentDir / "metatile_attributes.bin"));
+
+  expected = fopen("res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin", "r");
+  if (expected == NULL) {
+    FAIL("std::FILE `expected' was null");
+  }
+  actual = fopen((parentDir / "metatile_attributes.bin").c_str(), "r");
+  if (actual == NULL) {
+    fclose(expected);
+    FAIL("std::FILE `expected' was null");
+  }
+  fseek(expected, 0, SEEK_END);
+  expectedSize = ftell(expected);
+  rewind(expected);
+  fseek(actual, 0, SEEK_END);
+  actualSize = ftell(actual);
+  rewind(actual);
+  CHECK(expectedSize == actualSize);
+
+  for (long i = 0; i < actualSize; i++) {
+    bytesRead = fread(&expectedByte, 1, 1, expected);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    bytesRead = fread(&actualByte, 1, 1, actual);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    CHECK(expectedByte == actualByte);
+  }
+
+  fclose(expected);
+  fclose(actual);
+
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/00.png"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/01.png"));
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/02.png"));
@@ -744,8 +817,6 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
       CHECK(expected_flower_red_02[pixelRow][pixelCol] == actual_flower_red_02[pixelRow][pixelCol]);
     }
   }
-
-  // TODO : test impl check attributes file
 
   std::filesystem::remove_all(parentDir);
 }
