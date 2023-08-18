@@ -461,7 +461,7 @@ void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string file
 
 void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
 {
-  printWarning(err, err.missingAttributesFile, "missing-attributes-file",
+  printWarning(err, err.missingAttributesFile, "missing-attributes-csv",
                fmt::format("{}: attributes file did not exist", filePath));
   if (err.printErrors && err.missingAttributesFile == WarningMode::WARN) {
     pt_note("all attributes will receive default or inferred values");

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <png.hpp>
+#include <string>
 
 #include "types.h"
 
