@@ -67,8 +67,6 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
   while (true) {
     bool readRow = false;
     try {
-      // TODO : this can't parse hex notation for ID, would be nice to have that capability
-      // We probably need to make id a string and parse it ourselves
       readRow = in.read_row(id, behavior, terrainType, encounterType);
       processedUpToLine++;
     }
@@ -113,11 +111,11 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
       std::size_t pos;
       idVal = std::stoi(id, &pos, 0);
       if (std::string{id}.size() != pos) {
-        fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id);
+        fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
       }
     }
     catch (const std::exception &e) {
-      fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id);
+      fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
       // here so compiler won't complain
       idVal = 0;
     }

@@ -349,10 +349,13 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const I
 }
 
 void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                               std::string filePath, std::string id)
+                               std::string filePath, std::string id, std::size_t line)
 {
   if (err.printErrors) {
-    pt_fatal_err("TODO : fill in error message");
+    pt_fatal_err("{}: invalid value '{}' for column '{}' at line {}", filePath, fmt::styled(id, fmt::emphasis::bold),
+                 fmt::styled("id", fmt::emphasis::bold), line);
+    pt_note("column '{}' must contain an integral value (both decimal and hexidecimal notations are permitted)",
+            fmt::styled("id", fmt::emphasis::bold));
   }
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
@@ -846,9 +849,25 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
   }
 }
 
-TEST_CASE("fatalerror_invalidIdInCsv")
+TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attribute csv contains a non-integral value")
 {
-  // TODO : test impl
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  // ctx.err.printErrors = false;
+
+  std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+  SUBCASE("Invalid integer format 1")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_1.csv"),
+                         "res/tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PtException);
+  }
+
+  SUBCASE("Invalid integer format 2")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_2.csv"),
+                         "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PtException);
+  }
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")

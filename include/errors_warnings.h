@@ -155,7 +155,7 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const I
                                            std::string filePath);
 
 void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                               std::string filePath, std::string id);
+                               std::string filePath, std::string id, std::size_t line);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
