@@ -11,11 +11,15 @@
 
 namespace porytiles {
 
-std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &ctx, const std::string &filePath);
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+getMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath);
+
 std::unordered_map<std::size_t, Attributes>
 getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                      const std::string &filePath);
+
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName);
+
 std::filesystem::path createTmpdir();
 
 } // namespace porytiles

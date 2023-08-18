@@ -44,7 +44,8 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
 /**
  * TODO : fill in doc comment
  */
-void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset);
+void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::uint8_t, std::string> behaviorReverseMap,
+                    const CompiledTileset &tileset);
 
 } // namespace porytiles
 

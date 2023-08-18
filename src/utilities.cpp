@@ -18,9 +18,11 @@
 
 namespace porytiles {
 
-std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &ctx, const std::string &filePath)
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+getMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   std::ifstream behaviorFile{filePath};
 
   if (behaviorFile.fail()) {
@@ -60,13 +62,14 @@ std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &
       if (behaviorVal != 0xFF) {
         // Check for MB_INVALID above, only insert if it was a valid MB
         behaviorMap.insert(std::pair{behaviorName, behaviorVal});
+        behaviorReverseMap.insert(std::pair{behaviorVal, behaviorName});
       }
     }
     processedUpToLine++;
   }
   behaviorFile.close();
 
-  return behaviorMap;
+  return std::pair{behaviorMap, behaviorReverseMap};
 }
 
 std::unordered_map<std::size_t, Attributes>
@@ -214,19 +217,25 @@ std::filesystem::path createTmpdir()
 
 } // namespace porytiles
 
-TEST_CASE("getMetatileBehaviorMap should parse metatile behaviors as expected")
+TEST_CASE("getMetatileBehaviorMaps should parse metatile behaviors as expected")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
-  auto behaviorMap = porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors.h");
+  auto [behaviorMap, behaviorReverseMap] = porytiles::getMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors.h");
 
   CHECK(!behaviorMap.contains("MB_INVALID"));
   CHECK(behaviorMap.at("MB_NORMAL") == 0x00);
   CHECK(behaviorMap.at("MB_SHALLOW_WATER") == 0x17);
   CHECK(behaviorMap.at("MB_ICE") == 0x20);
   CHECK(behaviorMap.at("MB_UNUSED_EF") == 0xEF);
+
+  CHECK(!behaviorReverseMap.contains(0xFF));
+  CHECK(behaviorReverseMap.at(0x00) == "MB_NORMAL");
+  CHECK(behaviorReverseMap.at(0x17) == "MB_SHALLOW_WATER");
+  CHECK(behaviorReverseMap.at(0x20) == "MB_ICE");
+  CHECK(behaviorReverseMap.at(0xEF) == "MB_UNUSED_EF");
 }
 
 TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")

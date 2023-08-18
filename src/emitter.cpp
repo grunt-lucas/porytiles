@@ -165,7 +165,8 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
   }
 }
 
-void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset)
+void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::uint8_t, std::string> behaviorReverseMap,
+                    const CompiledTileset &tileset)
 {
   std::size_t delta;
   if (ctx.compilerConfig.tripleLayer) {
@@ -185,8 +186,10 @@ void emitAttributes(PtContext &ctx, std::ostream &out, const CompiledTileset &ti
   for (std::size_t i = 0; i < tileset.assignments.size(); i += delta) {
     auto &assignment = tileset.assignments.at(i);
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
-      pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ layerType={}, ... ]",
-               targetBaseGameString(ctx.targetBaseGame), i / delta, layerTypeString(assignment.attributes.layerType));
+      pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
+               targetBaseGameString(ctx.targetBaseGame), i / delta,
+               behaviorReverseMap.at(assignment.attributes.metatileBehavior),
+               layerTypeString(assignment.attributes.layerType));
       // TODO : does this code work as expected on a big-endian machine? I think so...
       std::uint16_t attributeValue = static_cast<std::uint16_t>(
           (assignment.attributes.metatileBehavior) | ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
@@ -393,6 +396,8 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
+    std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
+        {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/attributes.csv"));
     auto attributesMap =
         porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2/primary/attributes.csv");
@@ -409,7 +414,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
     std::ofstream outFile{tmpPath};
-    porytiles::emitAttributes(ctx, outFile, *compiled);
+    porytiles::emitAttributes(ctx, outFile, behaviorReverseMap, *compiled);
     outFile.close();
 
     std::ifstream input(tmpPath, std::ios::binary);
@@ -474,6 +479,8 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
+    std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
+        {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/attributes.csv"));
     auto attributesMap =
         porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2_dual/primary/attributes.csv");
@@ -490,7 +497,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
     std::ofstream outFile{tmpPath};
-    porytiles::emitAttributes(ctx, outFile, *compiled);
+    porytiles::emitAttributes(ctx, outFile, behaviorReverseMap, *compiled);
     outFile.close();
 
     std::ifstream input(tmpPath, std::ios::binary);

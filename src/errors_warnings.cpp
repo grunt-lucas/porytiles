@@ -904,14 +904,14 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
   SUBCASE("Invalid integer format 1")
   {
-    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors_invalid_1.h"),
+    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors_invalid_1.h"),
                          "res/tests/metatile_behaviors_invalid_1.h: invalid behavior value foo",
                          porytiles::PtException);
   }
 
   SUBCASE("Invalid integer format 2")
   {
-    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors_invalid_2.h"),
+    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors_invalid_2.h"),
                          "res/tests/metatile_behaviors_invalid_2.h: invalid behavior value 6bar",
                          porytiles::PtException);
   }

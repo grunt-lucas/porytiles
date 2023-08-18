@@ -282,6 +282,22 @@ static void driveCompile(PtContext &ctx)
                fmt::format("{} is not a valid PNG file", ctx.inputPaths.topPrimaryTilesheetPath().string()));
   }
 
+  /*
+   * We only read the linked behavior header file from the primary set input. It never makes sense for the secondary
+   * set to have a different behavior map than the paired primary, so the user does not need to specify this header in
+   * the secondary set input.
+   */
+  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
+  if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
+    auto [map, reverse] = getMetatileBehaviorMaps(ctx, ctx.inputPaths.primaryMetatileBehaviors());
+    behaviorMap = map;
+    behaviorReverseMap = reverse;
+  }
+  else {
+    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
+  }
+
   std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.inputPaths.primaryInputPath);
@@ -290,15 +306,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    std::unordered_map<std::string, std::uint8_t> primaryBehaviorMap{};
-    if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
-      primaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.primaryMetatileBehaviors());
-    }
-    else {
-      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
-    }
-
-    auto primaryAttributesMap = buildAttributesMap(ctx, primaryBehaviorMap, ctx.inputPaths.primaryAttributesPath());
+    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -315,16 +323,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
-    std::unordered_map<std::string, std::uint8_t> secondaryBehaviorMap{};
-    if (std::filesystem::exists(ctx.inputPaths.secondaryMetatileBehaviors())) {
-      secondaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.secondaryMetatileBehaviors());
-    }
-    else {
-      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.secondaryMetatileBehaviors());
-    }
-
-    auto secondaryAttributesMap =
-        buildAttributesMap(ctx, secondaryBehaviorMap, ctx.inputPaths.secondaryAttributesPath());
+    auto secondaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.secondaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during secondary attributes import");
@@ -343,15 +342,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    std::unordered_map<std::string, std::uint8_t> primaryBehaviorMap{};
-    if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
-      primaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.primaryMetatileBehaviors());
-    }
-    else {
-      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
-    }
-
-    auto primaryAttributesMap = buildAttributesMap(ctx, primaryBehaviorMap, ctx.inputPaths.primaryAttributesPath());
+    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -407,7 +398,7 @@ static void driveCompile(PtContext &ctx)
   outMetatiles.close();
 
   std::ofstream outAttributes{attribtuesPath.string()};
-  emitAttributes(ctx, outAttributes, *compiledTiles);
+  emitAttributes(ctx, outAttributes, behaviorReverseMap, *compiledTiles);
   outAttributes.close();
 }
 
