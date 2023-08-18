@@ -15,12 +15,10 @@ For detailed documentation about Porytiles features and internal workings, pleas
 [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
 
 ## Table of Contents
-- [Porytiles](#porytiles)
-  - [Table of Contents](#table-of-contents)
-  - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
-  - [Planned Features](#planned-features)
-  - [Compiler Information](#compiler-information)
-  - [Getting Started](#getting-started)
+- [Why Should I Use This Tool?](#why-should-i-use-this-tool)
+- [Planned Features](#planned-features)
+- [Compiler Information](#compiler-information)
+- [Getting Started](#getting-started)
 
 ## Why Should I Use This Tool?
 
