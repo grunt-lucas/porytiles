@@ -348,6 +348,15 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const I
                             fmt::format("{}: incorrect header row format", filePath));
 }
 
+void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                               std::string filePath, std::string id)
+{
+  if (err.printErrors) {
+    pt_fatal_err("TODO : fill in error message");
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("{}: invalid id {}", filePath, id));
+}
+
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
                          const std::string &message)
 {
@@ -835,6 +844,11 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
     CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_4.csv"),
                          "res/tests/csv/missing_header_4.csv: incorrect header row format", porytiles::PtException);
   }
+}
+
+TEST_CASE("fatalerror_invalidIdInCsv")
+{
+  // TODO : test impl
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")

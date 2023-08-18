@@ -17,9 +17,16 @@
 
 namespace porytiles {
 
+std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &ctx, const std::string &filePath)
+{
+  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+
+  return behaviorMap;
+}
+
 std::unordered_map<std::size_t, Attributes>
 getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
-                     std::string filePath)
+                     const std::string &filePath)
 {
   std::unordered_map<std::size_t, Attributes> attributeMap{};
   std::unordered_map<std::size_t, std::size_t> lineFirstSeen{};
@@ -31,7 +38,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
     fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
   }
 
-  std::size_t id;
+  std::string id;
   bool hasId = in.has_column("id");
 
   std::string behavior;
@@ -60,6 +67,8 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
   while (true) {
     bool readRow = false;
     try {
+      // TODO : this can't parse hex notation for ID, would be nice to have that capability
+      // We probably need to make id a string and parse it ourselves
       readRow = in.read_row(id, behavior, terrainType, encounterType);
       processedUpToLine++;
     }
@@ -99,12 +108,26 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
       }
     }
 
-    auto inserted = attributeMap.insert(std::pair{id, attribute});
-    if (!inserted.second) {
-      error_duplicateAttribute(ctx.err, filePath, processedUpToLine, id, lineFirstSeen.at(id));
+    std::size_t idVal;
+    try {
+      std::size_t pos;
+      idVal = std::stoi(id, &pos, 0);
+      if (std::string{id}.size() != pos) {
+        fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id);
+      }
     }
-    if (!lineFirstSeen.contains(id)) {
-      lineFirstSeen.insert(std::pair{id, processedUpToLine});
+    catch (const std::exception &e) {
+      fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id);
+      // here so compiler won't complain
+      idVal = 0;
+    }
+
+    auto inserted = attributeMap.insert(std::pair{idVal, attribute});
+    if (!inserted.second) {
+      error_duplicateAttribute(ctx.err, filePath, processedUpToLine, idVal, lineFirstSeen.at(idVal));
+    }
+    if (!lineFirstSeen.contains(idVal)) {
+      lineFirstSeen.insert(std::pair{idVal, processedUpToLine});
     }
   }
 
