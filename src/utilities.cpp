@@ -24,7 +24,8 @@ std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &
   std::ifstream behaviorFile{filePath};
 
   if (behaviorFile.fail()) {
-    fatalerror_basicprefix(ctx.err, fmt::format("{}: could not open for reading", filePath));
+    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: could not open for reading", filePath));
   }
 
   std::string line;

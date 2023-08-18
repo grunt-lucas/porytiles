@@ -110,7 +110,7 @@ void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, st
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
 void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
 
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessage);
+void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_invalidInputPath(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
                                  std::string path);

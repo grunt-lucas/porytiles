@@ -44,16 +44,16 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
     T arg = std::stoi(optarg, &pos);
     if (std::string{optarg}.size() != pos) {
       // TODO : this is a problem, it throws, re-catches down below, which throws again
-      fatalerror_basicprefix(err, fmt::format("option '-{}' argument '{}' was not a valid integral type",
-                                              fmt::styled(optionName, fmt::emphasis::bold),
-                                              fmt::styled(optarg, fmt::emphasis::bold)));
+      fatalerror_porytilesprefix(err, fmt::format("option '-{}' argument '{}' was not a valid integral type",
+                                                  fmt::styled(optionName, fmt::emphasis::bold),
+                                                  fmt::styled(optarg, fmt::emphasis::bold)));
     }
     return arg;
   }
   catch (const std::exception &e) {
-    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}': {}",
-                                            fmt::styled(optarg, fmt::emphasis::bold),
-                                            fmt::styled(optionName, fmt::emphasis::bold), e.what()));
+    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}': {}",
+                                                fmt::styled(optarg, fmt::emphasis::bold),
+                                                fmt::styled(optionName, fmt::emphasis::bold), e.what()));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
@@ -70,9 +70,9 @@ static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err,
     return TilesOutputPalette::GREYSCALE;
   }
   else {
-    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}'",
-                                            fmt::styled(optargString, fmt::emphasis::bold),
-                                            fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
+                                                fmt::styled(optargString, fmt::emphasis::bold),
+                                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseTilesPngPaletteMode reached unreachable code path");
@@ -92,9 +92,9 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
     return TargetBaseGame::RUBY;
   }
   else {
-    fatalerror_basicprefix(err, fmt::format("invalid argument '{}' for option '{}'",
-                                            fmt::styled(optargString, fmt::emphasis::bold),
-                                            fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
+                                                fmt::styled(optargString, fmt::emphasis::bold),
+                                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseTargetBaseGame reached unreachable code path");
@@ -196,7 +196,7 @@ const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
 static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 {
   if ((argc - optind) == 0) {
-    fatalerror_basicprefix(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
+    fatalerror_porytilesprefix(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
   }
 
   std::string subcommand = argv[optind++];
@@ -385,11 +385,11 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
 
   // Die immediately if arguments are invalid, otherwise pack them into the context variable
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror_basicprefix(
+    fatalerror_porytilesprefix(
         ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
   }
   else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
-    fatalerror_basicprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
+    fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     ctx.inputPaths.secondaryInputPath = argv[optind++];

@@ -174,7 +174,7 @@ void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, Compiler
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), message);
 }
 
-void fatalerror_basicprefix(const ErrorsAndWarnings &err, std::string errorMessage)
+void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
     pt_fatal_err_prefix("{}", errorMessage);
