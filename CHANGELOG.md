@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.5] - 2023-08-18
 
+### Added
+
+- Support for generating `metatile_attributes.bin`. Input path may contain an `attributes.csv` file that defines
+  non-default values for any metatiles that should have non-default attributes. Both Emerald/Ruby and Firered style
+  attributes are supported. Additionally, the input path should contain a `metatile_behaviors.h` file (I recommend you
+  simply symlink your actual behavior header here) so that the attribute parser can understand the behavior macro names
+  instead of working with hardcoded behavior values.
+
+- Support for dual-layer tilesets. Supply the `-dual-layer` option, and Porytiles will automatically infer the layer
+  type from your layer PNGs, and put that type into the generate attributes bin file.
+
+- More warnings and errors, better printouts
+
+### Changed
+
+- Fieldmap configuration is a little different. Now, you can specify a target base game with the `-target-base-game`
+  option (defaults to `pokeemerald` if not specified). Then, if your game uses adjusted fieldmap parameters, you can
+  alter those with the fieldmap override options. E.g. to change the number of primary set palettes, use the
+  `-pals-primary-override` option.
+
+- Animation generation now makes use of *key frames*. The *key frame* is the frame of tiles that you will use to
+  reference an animated tile from within your layer PNGs. The key frame can be anything you want, as long as it is
+  unique (note that each key frame tile must share a final hardware palette with the corresponding tiles in other
+  frames, so you have a limitation there). You specify a key frame by putting `key.png` in your input anims folder. The
+  key frame will not be compiled into the final anims folder, but you will see it present in your `tiles.png`.
+
 ## [0.0.4] - 2023-08-11
 
 ### Added
@@ -60,7 +86,7 @@ Preview release.
 
 [Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.5...HEAD
 
-[0.0.5]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...trunk
+[0.0.5]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...0.0.5
 
 [0.0.4]: https://github.com/grunt-lucas/porytiles/compare/0.0.3...0.0.4
 

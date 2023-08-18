@@ -14,7 +14,9 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 For detailed documentation about Porytiles features and internal workings, please see
 [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
 
+## Table of Contents
 - [Porytiles](#porytiles)
+  - [Table of Contents](#table-of-contents)
   - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
   - [Compiler Information](#compiler-information)
   - [Getting Started](#getting-started)

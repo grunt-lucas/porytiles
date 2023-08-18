@@ -700,12 +700,6 @@ struct InputPaths {
     return path / "metatile_behaviors.h";
   }
 
-  std::filesystem::path secondaryMetatileBehaviors() const
-  {
-    std::filesystem::path path{secondaryInputPath};
-    return path / "metatile_behaviors.h";
-  }
-
   std::filesystem::path modeBasedInputPath(CompilerMode mode) const;
 };
 
