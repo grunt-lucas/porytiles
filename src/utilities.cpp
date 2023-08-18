@@ -6,6 +6,7 @@
 #include <csv.h>
 #include <doctest.h>
 #include <filesystem>
+#include <fstream>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -20,6 +21,47 @@ namespace porytiles {
 std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &ctx, const std::string &filePath)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::ifstream behaviorFile{filePath};
+
+  if (behaviorFile.fail()) {
+    fatalerror_basicprefix(ctx.err, fmt::format("{}: could not open for reading", filePath));
+  }
+
+  std::string line;
+  std::size_t processedUpToLine = 1;
+  while (std::getline(behaviorFile, line)) {
+    std::string buffer;
+    std::stringstream stringStream(line);
+    std::vector<std::string> tokens{};
+    while (stringStream >> buffer) {
+      tokens.push_back(buffer);
+    }
+    if (tokens.size() == 3 && tokens.at(1).starts_with("MB_")) {
+      const std::string &behaviorName = tokens.at(1);
+      const std::string &behaviorValueString = tokens.at(2);
+      std::uint8_t behaviorVal;
+      try {
+        std::size_t pos;
+        behaviorVal = std::stoi(behaviorValueString, &pos, 0);
+        if (std::string{behaviorValueString}.size() != pos) {
+          behaviorFile.close();
+          // TODO : this is a problem, it throws, re-catches down below, which throws again
+          fatalerror_invalidBehaviorValue(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, behaviorName,
+                                          behaviorValueString, processedUpToLine);
+        }
+      }
+      catch (const std::exception &e) {
+        behaviorFile.close();
+        fatalerror_invalidBehaviorValue(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, behaviorName,
+                                        behaviorValueString, processedUpToLine);
+        // here so compiler won't complain
+        behaviorVal = 0;
+      }
+      behaviorMap.insert(std::pair{behaviorName, behaviorVal});
+    }
+    processedUpToLine++;
+  }
+  behaviorFile.close();
 
   return behaviorMap;
 }
@@ -111,6 +153,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
       std::size_t pos;
       idVal = std::stoi(id, &pos, 0);
       if (std::string{id}.size() != pos) {
+        // TODO : this is a problem, it throws, re-catches down below, which throws again
         fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
       }
     }
@@ -167,6 +210,17 @@ std::filesystem::path createTmpdir()
 }
 
 } // namespace porytiles
+
+TEST_CASE("getMetatileBehaviorMap should parse metatile behaviors as expected")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  auto behaviorMap = porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors.h");
+
+  // TODO : test impl getMetatileBehaviorMap
+}
 
 TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")
 {

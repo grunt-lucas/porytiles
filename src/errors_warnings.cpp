@@ -360,6 +360,19 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const InputPaths &i
   die_compilationTerminated(err, inputs.modeBasedInputPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
 
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+                                     std::string filePath, std::string behavior, std::string value, std::size_t line)
+{
+  if (err.printErrors) {
+    pt_fatal_err("{}: invalid value '{}' for behavior '{}' defined at line {}", filePath,
+                 fmt::styled(value, fmt::emphasis::bold), fmt::styled(behavior, fmt::emphasis::bold), line);
+    pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
+            fmt::styled("id", fmt::emphasis::bold));
+  }
+  die_compilationTerminated(err, inputs.modeBasedInputPath(mode),
+                            fmt::format("{}: invalid behavior value {}", filePath, value));
+}
+
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
                          const std::string &message)
 {
@@ -853,7 +866,7 @@ TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attrib
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  // ctx.err.printErrors = false;
+  ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
@@ -867,6 +880,28 @@ TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attrib
   {
     CHECK_THROWS_WITH_AS(porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_2.csv"),
                          "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PtException);
+  }
+}
+
+TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile behavior header has a non-integral "
+          "behavior value")
+{
+  porytiles::PtContext ctx{};
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.err.printErrors = false;
+
+  SUBCASE("Invalid integer format 1")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors_invalid_1.h"),
+                         "res/tests/metatile_behaviors_invalid_1.h: invalid behavior value foo",
+                         porytiles::PtException);
+  }
+
+  SUBCASE("Invalid integer format 2")
+  {
+    CHECK_THROWS_WITH_AS(porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors_invalid_2.h"),
+                         "res/tests/metatile_behaviors_invalid_2.h: invalid behavior value 6bar",
+                         porytiles::PtException);
   }
 }
 
