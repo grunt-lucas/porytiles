@@ -46,9 +46,8 @@ std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &
         behaviorVal = std::stoi(behaviorValueString, &pos, 0);
         if (std::string{behaviorValueString}.size() != pos) {
           behaviorFile.close();
-          // TODO : this is a problem, it throws, re-catches down below, which throws again
-          fatalerror_invalidBehaviorValue(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, behaviorName,
-                                          behaviorValueString, processedUpToLine);
+          // throw here so it catches below and prints an error message
+          throw std::runtime_error{""};
         }
       }
       catch (const std::exception &e) {
@@ -58,7 +57,10 @@ std::unordered_map<std::string, std::uint8_t> getMetatileBehaviorMap(PtContext &
         // here so compiler won't complain
         behaviorVal = 0;
       }
-      behaviorMap.insert(std::pair{behaviorName, behaviorVal});
+      if (behaviorVal != 0xFF) {
+        // Check for MB_INVALID above, only insert if it was a valid MB
+        behaviorMap.insert(std::pair{behaviorName, behaviorVal});
+      }
     }
     processedUpToLine++;
   }
@@ -154,8 +156,8 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
       std::size_t pos;
       idVal = std::stoi(id, &pos, 0);
       if (std::string{id}.size() != pos) {
-        // TODO : this is a problem, it throws, re-catches down below, which throws again
-        fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
+        // throw here so it catches below and prints an error
+        throw std::runtime_error{""};
       }
     }
     catch (const std::exception &e) {

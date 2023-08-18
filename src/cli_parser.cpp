@@ -43,10 +43,8 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
     size_t pos;
     T arg = std::stoi(optarg, &pos);
     if (std::string{optarg}.size() != pos) {
-      // TODO : this is a problem, it throws, re-catches down below, which throws again
-      fatalerror_porytilesprefix(err, fmt::format("option '-{}' argument '{}' was not a valid integral type",
-                                                  fmt::styled(optionName, fmt::emphasis::bold),
-                                                  fmt::styled(optarg, fmt::emphasis::bold)));
+      // throw here so it catches below and prints an error message
+      throw std::runtime_error{""};
     }
     return arg;
   }
