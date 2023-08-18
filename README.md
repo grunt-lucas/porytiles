@@ -14,11 +14,10 @@ the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get
 For detailed documentation about Porytiles features and internal workings, please see
 [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
 
-## Table of Contents
-- [Why Should I Use This Tool?](#why-should-i-use-this-tool)
-- [Planned Features](#planned-features)
-- [Compiler Information](#compiler-information)
-- [Getting Started](#getting-started)
+- [Porytiles](#porytiles)
+  - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
+  - [Compiler Information](#compiler-information)
+  - [Getting Started](#getting-started)
 
 ## Why Should I Use This Tool?
 
@@ -30,19 +29,6 @@ corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, i
 
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
-
-## Planned Features
-
-|  Feature  |  Completed?  |  Available In Version:  |
-|-----------|--------------|---------|
-| Generate `palettes/*.pal`   | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Generate `tiles.png`        | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Generate `metatiles.bin`    | ✅ | [0.0.2](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.2) |
-| Proper support for secondary tilesets (i.e. tile/palette sharing with a given primary set)    | ✅ | [0.0.3](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.3) |
-| Support for animated tiles, i.e. correctly generate `anims` folder content and stable placement in `tiles.png`  | ✅ | [0.0.4](https://github.com/grunt-lucas/porytiles/releases/tag/0.0.4) |
-| Proper support for dual layer tiles (requires modifying metatile attributes file)    | ❌ |  |
-| Decompile compiled tilesets back into three layer PNGs   | ❌ |  |
-| Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`   | ❌ |  |
 
 ## Compiler Information
 

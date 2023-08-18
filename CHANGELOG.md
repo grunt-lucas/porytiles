@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2023-08-18
+
 ## [0.0.4] - 2023-08-11
 
 ### Added
@@ -56,7 +58,9 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...HEAD
+[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.5...HEAD
+
+[0.0.5]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...trunk
 
 [0.0.4]: https://github.com/grunt-lucas/porytiles/compare/0.0.3...0.0.4
 
