@@ -185,19 +185,37 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
   }
   for (std::size_t i = 0; i < tileset.assignments.size(); i += delta) {
     auto &assignment = tileset.assignments.at(i);
+    // TODO : at some point we should support configurable masks and shifts like Porymap does
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
                targetBaseGameString(ctx.targetBaseGame), i / delta,
                behaviorReverseMap.at(assignment.attributes.metatileBehavior),
                layerTypeString(assignment.attributes.layerType));
       // TODO : does this code work as expected on a big-endian machine? I think so...
-      std::uint16_t attributeValue = static_cast<std::uint16_t>(
-          (assignment.attributes.metatileBehavior) | ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
+      std::uint16_t attributeValue =
+          static_cast<std::uint16_t>((assignment.attributes.metatileBehavior & 0xFF) |
+                                     ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
       out << static_cast<char>(attributeValue);
       out << static_cast<char>(attributeValue >> 8);
     }
     else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      throw std::runtime_error{"TODO : implement emitAttributes for FIRERED"};
+      pt_logln(
+          ctx, stderr,
+          "emitted {}-format metatile {} attribute: [ behavior={}, encounterType={}, terrainType={}, layerType={} ]",
+          targetBaseGameString(ctx.targetBaseGame), i / delta,
+          behaviorReverseMap.at(assignment.attributes.metatileBehavior),
+          encounterTypeString(assignment.attributes.encounterType),
+          terrainTypeString(assignment.attributes.terrainType), layerTypeString(assignment.attributes.layerType));
+      // TODO : does this code work as expected on a big-endian machine? I think so...
+      std::uint32_t attributeValue =
+          static_cast<std::uint32_t>((assignment.attributes.metatileBehavior & 0x1FF) |
+                                     ((terrainTypeValue(assignment.attributes.terrainType) & 0x1F) << 9) |
+                                     ((encounterTypeValue(assignment.attributes.encounterType) & 0x7) << 24) |
+                                     ((layerTypeValue(assignment.attributes.layerType) & 0x3) << 29));
+      out << static_cast<char>(attributeValue);
+      out << static_cast<char>(attributeValue >> 8);
+      out << static_cast<char>(attributeValue >> 16);
+      out << static_cast<char>(attributeValue >> 24);
     }
     else {
       internalerror("emitter::emitAttributes unknown TargetBaseGame");

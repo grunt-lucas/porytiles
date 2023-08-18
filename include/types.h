@@ -137,10 +137,12 @@ std::uint8_t layerTypeValue(LayerType layerType);
 
 enum class EncounterType { NONE, LAND, WATER };
 std::uint8_t encounterTypeValue(EncounterType encounterType);
+std::string encounterTypeString(EncounterType encounterType);
 EncounterType stringToEncounterType(std::string string);
 
 enum class TerrainType { NORMAL, GRASS, WATER, WATERFALL };
 std::uint8_t terrainTypeValue(TerrainType terrainType);
+std::string terrainTypeString(TerrainType terrainType);
 TerrainType stringToTerrainType(std::string string);
 
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
@@ -149,7 +151,7 @@ std::string targetBaseGameString(TargetBaseGame game);
 struct Attributes {
   TargetBaseGame baseGame;
   LayerType layerType;
-  std::uint8_t metatileBehavior;
+  std::uint16_t metatileBehavior;
   EncounterType encounterType;
   TerrainType terrainType;
 

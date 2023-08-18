@@ -159,6 +159,22 @@ std::uint8_t encounterTypeValue(EncounterType encounterType)
   throw std::runtime_error("types::encounterTypeValue reached unreachable code path");
 }
 
+std::string encounterTypeString(EncounterType encounterType)
+{
+  switch (encounterType) {
+  case EncounterType::NONE:
+    return "TILE_ENCOUNTER_NONE";
+  case EncounterType::LAND:
+    return "TILE_ENCOUNTER_LAND";
+  case EncounterType::WATER:
+    return "TILE_ENCOUNTER_WATER";
+  default:
+    internalerror("types::encounterTypeString unknown EncounterType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::encounterTypeString reached unreachable code path");
+}
+
 EncounterType stringToEncounterType(std::string string)
 {
   if (string == "TILE_ENCOUNTER_NONE") {
@@ -189,6 +205,24 @@ std::uint8_t terrainTypeValue(TerrainType terrainType)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::terrainTypeValue reached unreachable code path");
+}
+
+std::string terrainTypeString(TerrainType terrainType)
+{
+  switch (terrainType) {
+  case TerrainType::NORMAL:
+    return "TILE_TERRAIN_NORMAL";
+  case TerrainType::GRASS:
+    return "TILE_TERRAIN_GRASS";
+  case TerrainType::WATER:
+    return "TILE_TERRAIN_WATER";
+  case TerrainType::WATERFALL:
+    return "TILE_TERRAIN_WATERFALL";
+  default:
+    internalerror("types::terrainTypeString unknown TerrainType");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::terrainTypeString reached unreachable code path");
 }
 
 TerrainType stringToTerrainType(std::string string)
