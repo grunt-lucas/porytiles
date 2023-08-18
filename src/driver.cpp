@@ -145,8 +145,9 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
   importAnimTiles(ctx, animations, decompTiles);
 }
 
-static std::unordered_map<std::size_t, Attributes> buildAttributesMap(PtContext &ctx,
-                                                                      std::filesystem::path attributesCsvPath)
+static std::unordered_map<std::size_t, Attributes>
+buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+                   std::filesystem::path attributesCsvPath)
 {
   pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
   if (!std::filesystem::exists(attributesCsvPath) || !std::filesystem::is_regular_file(attributesCsvPath)) {
@@ -155,9 +156,6 @@ static std::unordered_map<std::size_t, Attributes> buildAttributesMap(PtContext 
     return std::unordered_map<std::size_t, Attributes>{};
   }
 
-  // TODO : don't hardcode this, actually parse the 'include/constants/metatile_behaviors.h' file
-  std::unordered_map<std::string, std::uint8_t> behaviorMap = {
-      {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
   return getAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
 }
 
@@ -292,7 +290,15 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.primaryAttributesPath());
+    std::unordered_map<std::string, std::uint8_t> primaryBehaviorMap{};
+    if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
+      primaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.primaryMetatileBehaviors());
+    }
+    else {
+      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
+    }
+
+    auto primaryAttributesMap = buildAttributesMap(ctx, primaryBehaviorMap, ctx.inputPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -309,7 +315,16 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
-    auto secondaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.secondaryAttributesPath());
+    std::unordered_map<std::string, std::uint8_t> secondaryBehaviorMap{};
+    if (std::filesystem::exists(ctx.inputPaths.secondaryMetatileBehaviors())) {
+      secondaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.secondaryMetatileBehaviors());
+    }
+    else {
+      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.secondaryMetatileBehaviors());
+    }
+
+    auto secondaryAttributesMap =
+        buildAttributesMap(ctx, secondaryBehaviorMap, ctx.inputPaths.secondaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during secondary attributes import");
@@ -328,7 +343,15 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, ctx.inputPaths.primaryAttributesPath());
+    std::unordered_map<std::string, std::uint8_t> primaryBehaviorMap{};
+    if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
+      primaryBehaviorMap = getMetatileBehaviorMap(ctx, ctx.inputPaths.primaryMetatileBehaviors());
+    }
+    else {
+      warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
+    }
+
+    auto primaryAttributesMap = buildAttributesMap(ctx, primaryBehaviorMap, ctx.inputPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");

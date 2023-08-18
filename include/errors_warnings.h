@@ -26,11 +26,13 @@ struct ErrorsAndWarnings {
   WarningMode usedTrueColorMode;
   WarningMode attributeFormatMismatch;
   WarningMode missingAttributesFile;
+  WarningMode missingBehaviorsFile;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN},
-        attributeFormatMismatch{WarningMode::WARN}, missingAttributesFile{WarningMode::WARN}
+        attributeFormatMismatch{WarningMode::WARN}, missingAttributesFile{WarningMode::WARN},
+        missingBehaviorsFile{WarningMode::WARN}
   {
   }
 
@@ -41,6 +43,7 @@ struct ErrorsAndWarnings {
     usedTrueColorMode = WarningMode::WARN;
     attributeFormatMismatch = WarningMode::WARN;
     missingAttributesFile = WarningMode::WARN;
+    missingBehaviorsFile = WarningMode::WARN;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -59,6 +62,9 @@ struct ErrorsAndWarnings {
     }
     if (missingAttributesFile == WarningMode::WARN) {
       missingAttributesFile = WarningMode::ERR;
+    }
+    if (missingBehaviorsFile == WarningMode::WARN) {
+      missingBehaviorsFile = WarningMode::ERR;
     }
   }
 };
@@ -173,6 +179,8 @@ void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string fil
 void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
 
 void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
+
+void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath);
 
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);

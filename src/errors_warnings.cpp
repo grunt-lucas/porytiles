@@ -468,6 +468,15 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
   }
 }
 
+void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath)
+{
+  printWarning(err, err.missingAttributesFile, "missing-behaviors-header",
+               fmt::format("{}: expected behaviors header did not exist", filePath));
+  if (err.printErrors && err.missingAttributesFile == WarningMode::WARN) {
+    pt_note("a behaviors header is required in order to parse behavior names in the attributes csv");
+  }
+}
+
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {

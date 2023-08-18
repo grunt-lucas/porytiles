@@ -692,6 +692,18 @@ struct InputPaths {
     return path / "attributes.csv";
   }
 
+  std::filesystem::path primaryMetatileBehaviors() const
+  {
+    std::filesystem::path path{primaryInputPath};
+    return path / "metatile_behaviors.h";
+  }
+
+  std::filesystem::path secondaryMetatileBehaviors() const
+  {
+    std::filesystem::path path{secondaryInputPath};
+    return path / "metatile_behaviors.h";
+  }
+
   std::filesystem::path modeBasedInputPath(CompilerMode mode) const;
 };
 
