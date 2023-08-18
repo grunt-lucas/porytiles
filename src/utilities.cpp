@@ -222,7 +222,11 @@ TEST_CASE("getMetatileBehaviorMap should parse metatile behaviors as expected")
 
   auto behaviorMap = porytiles::getMetatileBehaviorMap(ctx, "res/tests/metatile_behaviors.h");
 
-  // TODO : test impl getMetatileBehaviorMap
+  CHECK(!behaviorMap.contains("MB_INVALID"));
+  CHECK(behaviorMap.at("MB_NORMAL") == 0x00);
+  CHECK(behaviorMap.at("MB_SHALLOW_WATER") == 0x17);
+  CHECK(behaviorMap.at("MB_ICE") == 0x20);
+  CHECK(behaviorMap.at("MB_UNUSED_EF") == 0xEF);
 }
 
 TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")

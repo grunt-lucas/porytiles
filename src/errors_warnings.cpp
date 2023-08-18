@@ -418,7 +418,10 @@ static void printTileWarning(ErrorsAndWarnings &err, WarningMode warningMode, co
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
 {
-  // TODO : can we improve this message? it's a bit vague
+  /*
+   * TODO : can we improve this message? It's a bit vague. Perhaps save tile, pixel row/col of 'previously saw' so that
+   * the error message is more useful.
+   */
   std::string message = fmt::format(
       "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
       fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));

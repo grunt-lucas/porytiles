@@ -365,7 +365,8 @@ static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet
                       * to choose the palette that has the "closest" colors to our toAssign palette? That might be a
                       * good heuristic for attempting to keep similar colors in the same palette. I.e. especially in
                       * cases where there are no palette intersections, it may be better to first try placing the new
-                      * colors into a palette with similar colors rather than into the smallest palette
+                      * colors into a palette with similar colors rather than into the smallest palette. We can put
+                      * this behind a flag like '-Ocolor-distance-heuristic
                       */
                      if (pal1IntersectSize == pal2IntersectSize) {
                        return pal1.count() < pal2.count();
