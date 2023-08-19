@@ -107,7 +107,7 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
 const std::vector<std::string> GLOBAL_SHORTS = {std::string{HELP_SHORT}, std::string{VERBOSE_SHORT},
                                                 std::string{VERSION_SHORT}};
 const std::string GLOBAL_HELP =
-"porytiles " + VERSION + " " + RELEASE_DATE + "\n"
+"porytiles " + VERSION_TAG + " " + RELEASE_DATE + "\n"
 "grunt-lucas <grunt.lucas@yahoo.com>\n"
 "\n"
 "Overworld tileset compiler for use with the pokeruby, pokeemerald, and pokefirered Pokémon\n"
