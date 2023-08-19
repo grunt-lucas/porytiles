@@ -239,24 +239,25 @@ const std::string COMPILE_HELP =
 "    Input Directory Format\n"
 "        The input directories must conform to the following format. '[]' indicate optional assets.\n"
 "            input/\n"
-"                bottom.png           # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                middle.png           # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                top.png              # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                attributes.csv       # missing metatile entries will receive default values\n"
-"                [anims/]             # 'anims' folder is optional\n"
-"                    [anim1/]         # animation names can be arbitrary, but must be unique\n"
-"                        key.png      # you must specify a key frame PNG\n"
-"                        00.png       # you must specify at least one animation frame\n"
-"                        [01.png]     # frames must be named numerically, in order\n"
-"                        ...          # you may specify an arbitrary number of additional frames\n"
-"                    ...              # you may specify an arbitrary number of additional animations\n"
+"                bottom.png             # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                middle.png             # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                top.png                # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                attributes.csv         # missing metatile entries will receive default values\n"
+"                metatile_attributes.h  # primary sets only, consider symlinking to project metatile_attributes.h\n"
+"                [anims/]               # 'anims' folder is optional\n"
+"                    [anim1/]           # animation names can be arbitrary, but must be unique\n"
+"                        key.png        # you must specify a key frame PNG\n"
+"                        00.png         # you must specify at least one animation frame\n"
+"                        [01.png]       # frames must be named numerically, in order\n"
+"                        ...            # you may specify an arbitrary number of additional frames\n"
+"                    ...                # you may specify an arbitrary number of additional animations\n"
 "\n"
 "OPTIONS\n" +
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
+TILES_OUTPUT_PAL_DESC + "\n" +
 "    Tileset Generation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
-TILES_OUTPUT_PAL_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
