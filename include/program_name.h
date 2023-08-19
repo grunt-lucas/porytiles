@@ -6,7 +6,7 @@
 namespace porytiles {
 
 extern const std::string PROGRAM_NAME;
-extern const std::string VERSION;
+extern const std::string VERSION_TAG;
 extern const std::string RELEASE_DATE;
 
 } // namespace porytiles
