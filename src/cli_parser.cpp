@@ -41,7 +41,7 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
 {
   try {
     size_t pos;
-    T arg = std::stoi(optarg, &pos);
+    T arg = std::stoi(optarg, &pos, 0);
     if (std::string{optarg}.size() != pos) {
       // throw here so it catches below and prints an error message
       throw std::runtime_error{""};
@@ -55,6 +55,52 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
+}
+
+static std::vector<std::string> split(std::string input, const std::string &delimiter)
+{
+  std::vector<std::string> result;
+  size_t pos;
+  std::string token;
+  while ((pos = input.find(delimiter)) != std::string::npos) {
+    token = input.substr(0, pos);
+    result.push_back(token);
+    input.erase(0, pos + delimiter.length());
+  }
+  result.push_back(input);
+  return result;
+}
+
+static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName, const std::string &colorString)
+{
+  std::vector<std::string> colorComponents = split(colorString, ",");
+  if (colorComponents.size() != 3) {
+    fatalerror_porytilesprefix(
+        err, fmt::format("invalid argument '{}' for option '{}': RGB color must have three components",
+                         fmt::styled(colorString, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+  int red = parseIntegralOption<int>(err, optionName, colorComponents[0].c_str());
+  int green = parseIntegralOption<int>(err, optionName, colorComponents[1].c_str());
+  int blue = parseIntegralOption<int>(err, optionName, colorComponents[2].c_str());
+
+  if (red < 0 || red > 255) {
+    fatalerror_porytilesprefix(
+        err, fmt::format("invalid red component '{}' for option '{}': range must be 0 <= red <= 255",
+                         fmt::styled(red, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+  if (green < 0 || green > 255) {
+    fatalerror_porytilesprefix(
+        err, fmt::format("invalid green component '{}' for option '{}': range must be 0 <= green <= 255",
+                         fmt::styled(green, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+  if (blue < 0 || blue > 255) {
+    fatalerror_porytilesprefix(
+        err, fmt::format("invalid blue component '{}' for option '{}': range must be 0 <= blue <= 255",
+                         fmt::styled(blue, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+
+  return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
+                ALPHA_OPAQUE};
 }
 
 static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
@@ -259,6 +305,7 @@ TILES_OUTPUT_PAL_DESC + "\n" +
 "    Tileset Generation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
+TRANSPARENCY_COLOR_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -283,6 +330,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
       {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
+      {TRANSPARENCY_COLOR.c_str(), required_argument, nullptr, TRANSPARENCY_COLOR_VAL},
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
       {TILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
       {METATILES_OVERRIDE_PRIMARY.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
@@ -339,6 +387,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
     case DUAL_LAYER_VAL:
       ctx.compilerConfig.tripleLayer = false;
+      break;
+    case TRANSPARENCY_COLOR_VAL:
+      ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
       break;
     case TILES_TOTAL_OVERRIDE_VAL:
       tilesTotalOverridden = true;
