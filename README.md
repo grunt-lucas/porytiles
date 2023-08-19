@@ -54,8 +54,8 @@ CXX=clang++ make check
 Once you've cloned and built Porytiles, try the following little demo.
 
 1. Open a `pokeemerald` project (`pokefirered` and `pokeruby` are also supported via command line options) in Porymap,
-   one that has triple-layer metatiles enabled. Porytiles requires that you use triple layer metatiles (for now). If you
-   don't know what this is or how to enable, please see here:
+   one that has triple-layer metatiles enabled (Porytiles supports dual-layer metatiles as well, please sit tight for a
+   new tutorial). For now, please use a triple-layer project. If you don't know what this is or how to enable, see here:
    https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles
 
 2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesPrimaryTest`.
