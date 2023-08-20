@@ -317,13 +317,14 @@ METATILES_TOTAL_OVERRIDE_DESC + "\n" +
 PALS_PRIMARY_OVERRIDE_DESC + "\n" +
 PALS_TOTAL_OVERRIDE_DESC + "\n" +
 "    Warning Options\n" +
-"        With these options you can enable or disable additional warnings, as well as set specific\n" +
+"        Use these options to enable or disable additional warnings, as well as set specific\n" +
 "        warnings as errors. For more information and a full list of available warnings, check:\n" +
 "        https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n" +
 "\n" +
 WALL_DESC + "\n" +
 WNONE_DESC + "\n" +
-WERROR_DESC + "\n";
+WERROR_DESC + "\n" +
+WNO_ERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
 
@@ -334,21 +335,30 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
   static struct option longOptions[] = {
+      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
+
+      // Driver options
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
+
+      // Tileset generation options
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
       {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
       {TRANSPARENCY_COLOR.c_str(), required_argument, nullptr, TRANSPARENCY_COLOR_VAL},
+
+      // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
       {TILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
       {METATILES_OVERRIDE_PRIMARY.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
       {METATILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, METATILES_TOTAL_OVERRIDE_VAL},
       {PALS_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, PALS_PRIMARY_OVERRIDE_VAL},
       {PALS_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, PALS_TOTAL_OVERRIDE_VAL},
+
+      // Warning and error options
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
       {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
       {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
-      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
+      {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
       {nullptr, no_argument, nullptr, 0}};
 
   /*

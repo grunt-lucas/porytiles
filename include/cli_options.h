@@ -152,13 +152,18 @@ constexpr int WNONE_VAL = 4001;
 
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
-"        -" + WERROR + "[=WARNING]\n"
+"        -" + WERROR + "[=<WARNING>]\n"
 "             Force all enabled warnings to generate errors, or optionally force WARNING to enable\n"
 "             as an error. To see specific warning options, check:\n"
 "             https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n";
 constexpr int WERROR_VAL = 4002;
 
-// TODO : Wno-error for a warning that isn't enabled should be a no-op
+const std::string WNO_ERROR = "Wno-error";
+const std::string WNO_ERROR_DESC =
+"        -" + WNO_ERROR + "=<WARNING>\n"
+"             Downgrade WARNING from an error to the highest previously seen level. If WARNING\n"
+"             is already off, this is a no-op.\n";
+constexpr int WNO_ERROR_VAL = 4003;
 
 // @formatter:on
 // clang-format on
