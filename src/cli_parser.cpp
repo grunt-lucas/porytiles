@@ -358,7 +358,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
    */
   bool enableAllWarnings = false;
   bool disableAllWarnings = false;
-  bool setAllWarningsToErrors = false;
+  bool setAllEnabledWarningsToErrors = false;
 
   // bool warnColorPrecisionLoss = false;
   bool errColorPrecisionLoss = false;
@@ -450,7 +450,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
     case WERROR_VAL:
       if (optarg == NULL) {
-        setAllWarningsToErrors = true;
+        setAllEnabledWarningsToErrors = true;
       }
       else {
         if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
@@ -504,18 +504,20 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
   ctx.inputPaths.primaryInputPath = argv[optind++];
 
-  // Configure warnings and errors per user specification
+  /*
+   * Configure warnings and errors per user specification
+   */
+  // Enable or disable all warnings, these general options are overridden by more specific settings
   if (enableAllWarnings) {
     ctx.err.setAllWarnings(WarningMode::WARN);
   }
   if (disableAllWarnings) {
     ctx.err.setAllWarnings(WarningMode::OFF);
   }
-  if (setAllWarningsToErrors) {
-    ctx.err.setAllEnabledWarningsToErrors();
-  }
+
   // Specific warn settings take precedence over general settings
   // TODO : fill in warn enables
+
   // Specific err settings take precedence over warns
   if (errColorPrecisionLoss) {
     ctx.err.colorPrecisionLoss = WarningMode::ERR;
@@ -534,6 +536,11 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
   if (errMissingBehaviorsHeader) {
     ctx.err.missingBehaviorsHeader = WarningMode::ERR;
+  }
+
+  // If requested, set all enabled warnings to errors
+  if (setAllEnabledWarningsToErrors) {
+    ctx.err.setAllEnabledWarningsToErrors();
   }
 
   // Apply and validate the fieldmap configuration parameters
