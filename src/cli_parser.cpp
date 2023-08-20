@@ -360,6 +360,24 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   bool disableAllWarnings = false;
   bool setAllWarningsToErrors = false;
 
+  // bool warnColorPrecisionLoss = false;
+  bool errColorPrecisionLoss = false;
+
+  // bool warnKeyFrameTileDidNotAppearInAssignment = false;
+  bool errKeyFrameTileDidNotAppearInAssignment = false;
+
+  // bool warnUsedTrueColorMode = false;
+  bool errUsedTrueColorMode = false;
+
+  // bool warnAttributeFormatMismatch = false;
+  bool errAttributeFormatMismatch = false;
+
+  // bool warnMissingAttributesCsv = false;
+  bool errMissingAttributesCsv = false;
+
+  // bool warnMissingBehaviorsHeader = false;
+  bool errMissingBehaviorsHeader = false;
+
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
    * start applying the fieldmap config. We want specific fieldmap overrides to take precedence over the general
@@ -435,8 +453,23 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
         setAllWarningsToErrors = true;
       }
       else {
-        if (strcmp(optarg, "foo") == 0) {
-          // TODO : impl all these cases
+        if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
+          errColorPrecisionLoss = true;
+        }
+        else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
+          errKeyFrameTileDidNotAppearInAssignment = true;
+        }
+        else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
+          errUsedTrueColorMode = true;
+        }
+        else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+          errAttributeFormatMismatch = true;
+        }
+        else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
+          errMissingAttributesCsv = true;
+        }
+        else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
+          errMissingBehaviorsHeader = true;
         }
         else {
           fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -471,7 +504,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
   ctx.inputPaths.primaryInputPath = argv[optind++];
 
-  // Configure warnings per user specification
+  // Configure warnings and errors per user specification
   if (enableAllWarnings) {
     ctx.err.setAllWarnings(WarningMode::WARN);
   }
@@ -480,6 +513,27 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
   if (setAllWarningsToErrors) {
     ctx.err.setAllEnabledWarningsToErrors();
+  }
+  // Specific warn settings take precedence over general settings
+  // TODO : fill in warn enables
+  // Specific err settings take precedence over warns
+  if (errColorPrecisionLoss) {
+    ctx.err.colorPrecisionLoss = WarningMode::ERR;
+  }
+  if (errKeyFrameTileDidNotAppearInAssignment) {
+    ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+  }
+  if (errUsedTrueColorMode) {
+    ctx.err.usedTrueColorMode = WarningMode::ERR;
+  }
+  if (errAttributeFormatMismatch) {
+    ctx.err.attributeFormatMismatch = WarningMode::ERR;
+  }
+  if (errMissingAttributesCsv) {
+    ctx.err.missingAttributesCsv = WarningMode::ERR;
+  }
+  if (errMissingBehaviorsHeader) {
+    ctx.err.missingBehaviorsHeader = WarningMode::ERR;
   }
 
   // Apply and validate the fieldmap configuration parameters

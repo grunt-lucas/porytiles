@@ -70,12 +70,12 @@ struct ErrorsAndWarnings {
   }
 };
 
-constexpr std::string_view WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
-constexpr std::string_view WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
-constexpr std::string_view WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
-constexpr std::string_view WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
-constexpr std::string_view WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-constexpr std::string_view WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
+extern const char *const WARN_COLOR_PRECISION_LOSS;
+extern const char *const WARN_KEY_FRAME_DID_NOT_APPEAR;
+extern const char *const WARN_USED_TRUE_COLOR_MODE;
+extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
+extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
+extern const char *const WARN_MISSING_BEHAVIORS_HEADER;
 
 // Internal compiler errors (due to bug in the compiler)
 void internalerror(std::string message);

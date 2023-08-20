@@ -17,6 +17,13 @@
 
 namespace porytiles {
 
+const char *const WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
+const char *const WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
+const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
+const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
+const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
+const char *const WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
+
 void internalerror(std::string message) { throw std::runtime_error(message); }
 
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
