@@ -323,8 +323,8 @@ PALS_TOTAL_OVERRIDE_DESC + "\n" +
 "\n" +
 WALL_DESC + "\n" +
 WNONE_DESC + "\n" +
-WERROR_DESC + "\n" +
-WNO_ERROR_DESC + "\n";
+W_GENERAL_DESC + "\n" +
+WERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
 

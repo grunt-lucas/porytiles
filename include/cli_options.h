@@ -143,6 +143,14 @@ const std::string WALL_DESC =
 "             Enable all warnings.\n";
 constexpr int WALL_VAL = 4000;
 
+const std::string W_GENERAL = "W";
+const std::string W_GENERAL_DESC =
+"        -" + W_GENERAL + "<WARNING>, -" + W_GENERAL + "no-<WARNING>\n"
+"             Explicitly enable warning WARNING, or explicitly disable it if the 'no' form of the\n"
+"             option is specified. If WARNING is already off, the 'no' form will no-op. If more\n"
+"             than one specifier for the same warning appears on the same command line, the\n"
+"             right-most specifier will take precedence.\n";
+
 const std::string WNONE = "Wnone";
 constexpr char WNONE_SHORT = "w"[0];
 const std::string WNONE_DESC =
@@ -150,20 +158,18 @@ const std::string WNONE_DESC =
 "             Disable all warnings.\n";
 constexpr int WNONE_VAL = 4001;
 
+const std::string WNO_ERROR = "Wno-error";
+constexpr int WNO_ERROR_VAL = 4002;
+
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
-"        -" + WERROR + "[=<WARNING>]\n"
+"        -" + WERROR + "[=<WARNING>], -" + WNO_ERROR + "=<WARNING>\n"
 "             Force all enabled warnings to generate errors, or optionally force WARNING to enable\n"
-"             as an error. To see specific warning options, check:\n"
-"             https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n";
-constexpr int WERROR_VAL = 4002;
-
-const std::string WNO_ERROR = "Wno-error";
-const std::string WNO_ERROR_DESC =
-"        -" + WNO_ERROR + "=<WARNING>\n"
-"             Downgrade WARNING from an error to the highest previously seen level. If WARNING\n"
-"             is already off, this is a no-op.\n";
-constexpr int WNO_ERROR_VAL = 4003;
+"             as an error. If the 'no' form of the option is specified, downgrade WARNING from an\n"
+"             error to the highest previously seen level. If WARNING is already off, the 'no' form\n"
+"             will no-op. If more than one specifier for the same warning appears on the same\n"
+"             command line, the right-most specifier will take precedence.\n";
+constexpr int WERROR_VAL = 4003;
 
 // @formatter:on
 // clang-format on
