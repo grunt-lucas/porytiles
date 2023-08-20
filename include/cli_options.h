@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "errors_warnings.h"
+
 namespace porytiles {
 
 // ----------------------------
@@ -156,10 +158,10 @@ constexpr char WNONE_SHORT = "w"[0];
 const std::string WNONE_DESC =
 "        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
 "             Disable all warnings.\n";
-constexpr int WNONE_VAL = 4001;
+constexpr int WNONE_VAL = 4002;
 
 const std::string WNO_ERROR = "Wno-error";
-constexpr int WNO_ERROR_VAL = 4002;
+constexpr int WNO_ERROR_VAL = 4003;
 
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
@@ -169,7 +171,13 @@ const std::string WERROR_DESC =
 "             error to the highest previously seen level. If WARNING is already off, the 'no' form\n"
 "             will no-op. If more than one specifier for the same warning appears on the same\n"
 "             command line, the right-most specifier will take precedence.\n";
-constexpr int WERROR_VAL = 4003;
+constexpr int WERROR_VAL = 4004;
+
+// Specific warnings
+const std::string W_COLOR_PRECISION_LOSS = W_GENERAL + WARN_COLOR_PRECISION_LOSS;
+const std::string W_NO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + WARN_COLOR_PRECISION_LOSS;
+constexpr int W_COLOR_PRECISION_LOSS_VAL = 5000;
+constexpr int W_NO_COLOR_PRECISION_LOSS_VAL = 6000;
 
 // @formatter:on
 // clang-format on

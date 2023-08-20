@@ -335,8 +335,6 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
   static struct option longOptions[] = {
-      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
-
       // Driver options
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
@@ -359,6 +357,14 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
       {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
       {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
+
+      // Specific warnings
+      {W_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, W_COLOR_PRECISION_LOSS_VAL},
+      {W_NO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, W_NO_COLOR_PRECISION_LOSS_VAL},
+
+      // Help
+      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
+
       {nullptr, no_argument, nullptr, 0}};
 
   /*
@@ -370,7 +376,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   bool disableAllWarnings = false;
   bool setAllEnabledWarningsToErrors = false;
 
-  // bool warnColorPrecisionLoss = false;
+  bool warnColorPrecisionLoss = false;
   bool errColorPrecisionLoss = false;
 
   // bool warnKeyFrameTileDidNotAppearInAssignment = false;
@@ -413,21 +419,30 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
 
     switch (opt) {
+
+    // Driver options
     case OUTPUT_SHORT:
       ctx.output.path = optarg;
       break;
     case TILES_OUTPUT_PAL_VAL:
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
       break;
-    case TILES_PRIMARY_OVERRIDE_VAL:
-      tilesPrimaryOverridden = true;
-      tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
+
+    // Tileset generation options
+    case TARGET_BASE_GAME_VAL:
+      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
       break;
     case DUAL_LAYER_VAL:
       ctx.compilerConfig.tripleLayer = false;
       break;
     case TRANSPARENCY_COLOR_VAL:
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
+      break;
+
+    // Fieldmap override options
+    case TILES_PRIMARY_OVERRIDE_VAL:
+      tilesPrimaryOverridden = true;
+      tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
       break;
     case TILES_TOTAL_OVERRIDE_VAL:
       tilesTotalOverridden = true;
@@ -449,9 +464,8 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       palettesTotalOverridden = true;
       palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_TOTAL_OVERRIDE, optarg);
       break;
-    case TARGET_BASE_GAME_VAL:
-      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
-      break;
+
+    // Warning and error options
     case WALL_VAL:
       enableAllWarnings = true;
       break;
@@ -487,6 +501,39 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
                                                           fmt::styled(WERROR, fmt::emphasis::bold)));
         }
       }
+      break;
+    case WNO_ERROR_VAL:
+      if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
+        errColorPrecisionLoss = false;
+      }
+      else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
+        errKeyFrameTileDidNotAppearInAssignment = false;
+      }
+      else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
+        errUsedTrueColorMode = false;
+      }
+      else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+        errAttributeFormatMismatch = false;
+      }
+      else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
+        errMissingAttributesCsv = false;
+      }
+      else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
+        errMissingBehaviorsHeader = false;
+      }
+      else {
+        fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+                                                        fmt::styled(std::string{optarg}, fmt::emphasis::bold),
+                                                        fmt::styled(WERROR, fmt::emphasis::bold)));
+      }
+      break;
+
+    // Specific warnings
+    case W_COLOR_PRECISION_LOSS_VAL:
+      warnColorPrecisionLoss = true;
+      break;
+    case W_NO_COLOR_PRECISION_LOSS_VAL:
+      warnColorPrecisionLoss = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -528,7 +575,10 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
 
   // Specific warn settings take precedence over general settings
-  // TODO : fill in warn enables
+  if (warnColorPrecisionLoss) {
+    ctx.err.colorPrecisionLoss = WarningMode::WARN;
+  }
+  // TODO : fill in more warn enables
 
   // Specific err settings take precedence over warns
   if (errColorPrecisionLoss) {
@@ -556,7 +606,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
 
   // Finally, if any warnings were requested 'no-error', downgrade these to their previous state (either WARN of OFF)
-  // TODO : fill in this logic
+  // TODO : do we need to do anything here? think about it more heh
 
   /*
    * Apply and validate the fieldmap configuration parameters
