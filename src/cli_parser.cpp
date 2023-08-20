@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string>
 
+#define FMT_HEADER_ONLY
+#include <fmt/color.h>
+
 #include "cli_options.h"
 #include "errors_warnings.h"
 #include "logger.h"
@@ -263,7 +266,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char **argv)
 // ----------------------------
 // @formatter:off
 // clang-format off
-const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":"};
+const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":", std::string{WNONE_SHORT}};
 const std::string COMPILE_HELP =
 "USAGE\n"
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
@@ -344,7 +347,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {PALS_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, PALS_TOTAL_OVERRIDE_VAL},
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
       {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
-      {WERROR.c_str(), no_argument, nullptr, WERROR_VAL},
+      {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
 
@@ -428,7 +431,19 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       disableAllWarnings = true;
       break;
     case WERROR_VAL:
-      setAllWarningsToErrors = true;
+      if (optarg == NULL) {
+        setAllWarningsToErrors = true;
+      }
+      else {
+        if (strcmp(optarg, "foo") == 0) {
+          // TODO : impl all these cases
+        }
+        else {
+          fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+                                                          fmt::styled(std::string{optarg}, fmt::emphasis::bold),
+                                                          fmt::styled(WERROR, fmt::emphasis::bold)));
+        }
+      }
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -497,7 +512,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   }
   ctx.validateFieldmapParameters();
 
-  if (ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
+  if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
     // TODO : leave this in until Porymap supports 8bpp input images
     warn_usedTrueColorMode(ctx.err);
   }
