@@ -65,6 +65,12 @@ main() {
   esac
 }
 
+if [[ "$#" != 2 ]]
+then
+  echo "invalid arguments: usage: ./package.sh <mode> <output-directory>"
+  exit 1
+fi
+
 mode=$1
 output_directory=$2
 main
