@@ -143,13 +143,21 @@ const std::string WALL_DESC =
 "             Enable all warnings.\n";
 constexpr int WALL_VAL = 4000;
 
+const std::string WNONE = "Wnone";
+constexpr char WNONE_SHORT = "w"[0];
+const std::string WNONE_DESC =
+"        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
+"             Disable all warnings.\n";
+constexpr int WNONE_VAL = 4001;
+
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
-"        -" + WERROR + "\n"
-"             Force all enabled warnings to generate errors.\n";
-constexpr int WERROR_VAL = 4001;
+"        -" + WERROR + "[=WARNING]\n"
+"             Force all enabled warnings to generate errors, or optionally force WARNING to enable\n"
+"             as an error. To see specific warning options, check:\n"
+"             https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n";
+constexpr int WERROR_VAL = 4002;
 
-// TODO : add `-w' option to suppress all warnings
 // TODO : Wno-error for a warning that isn't enabled should be a no-op
 
 // @formatter:on

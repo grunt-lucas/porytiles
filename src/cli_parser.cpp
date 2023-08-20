@@ -289,7 +289,7 @@ const std::string COMPILE_HELP =
 "                middle.png             # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                attributes.csv         # missing metatile entries will receive default values\n"
-"                metatile_attributes.h  # primary sets only, consider symlinking to project metatile_attributes.h\n"
+"                metatile_behaviors.h   # primary sets only, consider symlinking to project metatile_attributes.h\n"
 "                [anims/]               # 'anims' folder is optional\n"
 "                    [anim1/]           # animation names can be arbitrary, but must be unique\n"
 "                        key.png        # you must specify a key frame PNG\n"
@@ -313,8 +313,13 @@ METATILES_PRIMARY_OVERRIDE_DESC + "\n" +
 METATILES_TOTAL_OVERRIDE_DESC + "\n" +
 PALS_PRIMARY_OVERRIDE_DESC + "\n" +
 PALS_TOTAL_OVERRIDE_DESC + "\n" +
-"    Warning Options\n" + 
+"    Warning Options\n" +
+"        With these options you can enable or disable additional warnings, as well as set specific\n" +
+"        warnings as errors. For more information and a full list of available warnings, check:\n" +
+"        https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n" +
+"\n" +
 WALL_DESC + "\n" +
+WNONE_DESC + "\n" +
 WERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
@@ -338,6 +343,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {PALS_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, PALS_PRIMARY_OVERRIDE_VAL},
       {PALS_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, PALS_TOTAL_OVERRIDE_VAL},
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
+      {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
       {WERROR.c_str(), no_argument, nullptr, WERROR_VAL},
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
       {nullptr, no_argument, nullptr, 0}};
@@ -348,6 +354,7 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
    * where in the command line the user specified.
    */
   bool enableAllWarnings = false;
+  bool disableAllWarnings = false;
   bool setAllWarningsToErrors = false;
 
   /*
@@ -417,6 +424,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     case WALL_VAL:
       enableAllWarnings = true;
       break;
+    case WNONE_VAL:
+      disableAllWarnings = true;
+      break;
     case WERROR_VAL:
       setAllWarningsToErrors = true;
       break;
@@ -448,7 +458,10 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
 
   // Configure warnings per user specification
   if (enableAllWarnings) {
-    ctx.err.enableAllWarnings();
+    ctx.err.setAllWarnings(WarningMode::WARN);
+  }
+  if (disableAllWarnings) {
+    ctx.err.setAllWarnings(WarningMode::OFF);
   }
   if (setAllWarningsToErrors) {
     ctx.err.setAllEnabledWarningsToErrors();

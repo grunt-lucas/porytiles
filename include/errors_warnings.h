@@ -26,25 +26,25 @@ struct ErrorsAndWarnings {
   WarningMode keyFrameTileDidNotAppearInAssignment;
   WarningMode usedTrueColorMode;
   WarningMode attributeFormatMismatch;
-  WarningMode missingAttributesFile;
-  WarningMode missingBehaviorsFile;
+  WarningMode missingAttributesCsv;
+  WarningMode missingBehaviorsHeader;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN},
-        attributeFormatMismatch{WarningMode::WARN}, missingAttributesFile{WarningMode::WARN},
-        missingBehaviorsFile{WarningMode::WARN}
+        attributeFormatMismatch{WarningMode::WARN}, missingAttributesCsv{WarningMode::WARN},
+        missingBehaviorsHeader{WarningMode::WARN}
   {
   }
 
-  void enableAllWarnings()
+  void setAllWarnings(WarningMode setting)
   {
-    colorPrecisionLoss = WarningMode::WARN;
-    keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
-    usedTrueColorMode = WarningMode::WARN;
-    attributeFormatMismatch = WarningMode::WARN;
-    missingAttributesFile = WarningMode::WARN;
-    missingBehaviorsFile = WarningMode::WARN;
+    colorPrecisionLoss = setting;
+    keyFrameTileDidNotAppearInAssignment = setting;
+    usedTrueColorMode = setting;
+    attributeFormatMismatch = setting;
+    missingAttributesCsv = setting;
+    missingBehaviorsHeader = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -61,14 +61,21 @@ struct ErrorsAndWarnings {
     if (attributeFormatMismatch == WarningMode::WARN) {
       attributeFormatMismatch = WarningMode::ERR;
     }
-    if (missingAttributesFile == WarningMode::WARN) {
-      missingAttributesFile = WarningMode::ERR;
+    if (missingAttributesCsv == WarningMode::WARN) {
+      missingAttributesCsv = WarningMode::ERR;
     }
-    if (missingBehaviorsFile == WarningMode::WARN) {
-      missingBehaviorsFile = WarningMode::ERR;
+    if (missingBehaviorsHeader == WarningMode::WARN) {
+      missingBehaviorsHeader = WarningMode::ERR;
     }
   }
 };
+
+constexpr std::string_view WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
+constexpr std::string_view WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
+constexpr std::string_view WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
+constexpr std::string_view WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
+constexpr std::string_view WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
+constexpr std::string_view WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
 
 // Internal compiler errors (due to bug in the compiler)
 void internalerror(std::string message);

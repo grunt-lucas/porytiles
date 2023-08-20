@@ -373,7 +373,7 @@ void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const InputPa
                             fmt::format("{}: invalid behavior value {}", filePath, value));
 }
 
-static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
+static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
                          const std::string &message)
 {
   if (warningMode == WarningMode::ERR) {
@@ -394,7 +394,7 @@ static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const 
   }
 }
 
-static void printTileWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string &warningName,
+static void printTileWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
                              const RGBATile &tile, const std::string &message)
 {
   if (err.colorPrecisionLoss == WarningMode::ERR) {
@@ -425,7 +425,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   std::string message = fmt::format(
       "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
       fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
-  printTileWarning(err, err.colorPrecisionLoss, "color-precision-loss", tile, message);
+  printTileWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, tile, message);
 }
 
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
@@ -433,13 +433,13 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
   std::string message =
       fmt::format("animation '{}' key frame tile '{}' was not present in any assignments",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
-  printWarning(err, err.keyFrameTileDidNotAppearInAssignment, "key-frame-missing-assignment", message);
+  printWarning(err, err.keyFrameTileDidNotAppearInAssignment, WARN_KEY_FRAME_DID_NOT_APPEAR, message);
 }
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 {
   std::string message = "`true-color' mode not yet supported by Porymap";
-  printWarning(err, err.usedTrueColorMode, "used-true-color-mode", message);
+  printWarning(err, err.usedTrueColorMode, WARN_USED_TRUE_COLOR_MODE, message);
   if (err.printErrors) {
     pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
   }
@@ -447,14 +447,14 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 
 void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
-  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch",
+  printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
                fmt::format("{}: too many attribute columns for base game '{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
 }
 
 void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
-  printWarning(err, err.attributeFormatMismatch, "attribute-format-mismatch",
+  printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
                fmt::format("{}: too few attribute columns for base game '{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
   if (err.printErrors) {
@@ -464,18 +464,18 @@ void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string file
 
 void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
 {
-  printWarning(err, err.missingAttributesFile, "missing-attributes-csv",
+  printWarning(err, err.missingAttributesCsv, WARN_MISSING_ATTRIBUTES_CSV,
                fmt::format("{}: attributes file did not exist", filePath));
-  if (err.printErrors && err.missingAttributesFile == WarningMode::WARN) {
+  if (err.printErrors && err.missingAttributesCsv == WarningMode::WARN) {
     pt_note("all attributes will receive default or inferred values");
   }
 }
 
 void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath)
 {
-  printWarning(err, err.missingAttributesFile, "missing-behaviors-header",
+  printWarning(err, err.missingAttributesCsv, WARN_MISSING_BEHAVIORS_HEADER,
                fmt::format("{}: expected behaviors header did not exist", filePath));
-  if (err.printErrors && err.missingAttributesFile == WarningMode::WARN) {
+  if (err.printErrors && err.missingAttributesCsv == WarningMode::WARN) {
     pt_note("a behaviors header is required in order to parse behavior names in the attributes csv");
   }
 }
@@ -1004,7 +1004,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
-    ctx.err.missingAttributesFile = porytiles::WarningMode::ERR;
+    ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
@@ -1020,7 +1020,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.inputPaths.primaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
     ctx.inputPaths.secondaryInputPath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
-    ctx.err.missingAttributesFile = porytiles::WarningMode::ERR;
+    ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
