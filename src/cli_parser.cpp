@@ -491,7 +491,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     }
   }
 
-  // Die immediately if arguments are invalid, otherwise pack them into the context variable
+  /*
+   * Die immediately if arguments are invalid, otherwise pack them into the context variable
+   */
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
     fatalerror_porytilesprefix(
         ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
@@ -543,7 +545,12 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     ctx.err.setAllEnabledWarningsToErrors();
   }
 
-  // Apply and validate the fieldmap configuration parameters
+  // Finally, if any warnings were requested 'no-error', downgrade these to their previous state (either WARN of OFF)
+  // TODO : fill in this logic
+
+  /*
+   * Apply and validate the fieldmap configuration parameters
+   */
   if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
     ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
   }
@@ -578,7 +585,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     warn_usedTrueColorMode(ctx.err);
   }
 
-  // Die if any errors occurred
+  /*
+   * Die if any errors occurred
+   */
   if (ctx.err.errCount > 0) {
     die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
   }
