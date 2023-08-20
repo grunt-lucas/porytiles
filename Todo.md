@@ -9,6 +9,8 @@
   + CImg is much more maintained, it is also header-only and seems to have a clean interface
   + https://github.com/GreycLab/CImg
 
++ Decompile compiled tilesets back into three layer PNGs + animated sets
+
 + Add a `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
@@ -48,14 +50,10 @@
     + MacOS:
       CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi"
   + better build system? (cmake, autotools, etc)
-  + releases should include the header libs with their licenses
-    + not sure exactly how all the licenses work so just do this to cover our butt
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
 + Set up auto-generated documentation: doxygen? RTD?
-
-+ Decompile compiled tilesets back into three layer PNGs + animated sets
 
 + support custom masks and shifts for metatile attributes, see how Porymap does this
 
