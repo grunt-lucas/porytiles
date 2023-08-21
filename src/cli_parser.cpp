@@ -503,6 +503,10 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       }
       break;
     case WNO_ERROR_VAL:
+      /*
+       * If any warnings were requested 'no-error', toggle off the error bit. Effectively, this returns the warning to
+       * it's previous state.
+       */
       if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
         errColorPrecisionLoss = false;
       }
@@ -600,13 +604,11 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     ctx.err.missingBehaviorsHeader = WarningMode::ERR;
   }
 
+  // TODO : bug here -> '-Werror -Wno-error=foo' will leave 'Wfoo' enabled incorrectly
   // If requested, set all enabled warnings to errors
   if (setAllEnabledWarningsToErrors) {
     ctx.err.setAllEnabledWarningsToErrors();
   }
-
-  // Finally, if any warnings were requested 'no-error', downgrade these to their previous state (either WARN of OFF)
-  // TODO : do we need to do anything here? think about it more heh
 
   /*
    * Apply and validate the fieldmap configuration parameters
