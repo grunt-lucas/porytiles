@@ -9,6 +9,7 @@
 #include <iostream>
 #include <png.hpp>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -721,7 +722,7 @@ struct CompilerConfig {
 
 struct CompilerContext {
   std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
-  std::unordered_map<BGR15, RGBA32> bgrToRgba;
+  std::unordered_map<BGR15, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>> bgrToRgba;
 
   CompilerContext() : pairedPrimaryTiles{nullptr}, bgrToRgba{} {}
 };

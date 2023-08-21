@@ -176,7 +176,8 @@ void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const SourceP
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba);
+                             const BGR15 &bgr, const RGBA32 &rgba,
+                             const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba);
 
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 

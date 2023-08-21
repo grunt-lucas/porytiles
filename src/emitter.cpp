@@ -187,6 +187,7 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
     auto &assignment = tileset.assignments.at(i);
     // TODO : at some point we should support configurable masks and shifts like Porymap does
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
+      // TODO : behaviorReverseMap.at() will throw if the map was empty...
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
                targetBaseGameString(ctx.targetBaseGame), i / delta,
                behaviorReverseMap.at(assignment.attributes.metatileBehavior),
@@ -199,6 +200,7 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
       out << static_cast<char>(attributeValue >> 8);
     }
     else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      // TODO : behaviorReverseMap.at() will throw if the map was empty...
       pt_logln(
           ctx, stderr,
           "emitted {}-format metatile {} attribute: [ behavior={}, encounterType={}, terrainType={}, layerType={} ]",

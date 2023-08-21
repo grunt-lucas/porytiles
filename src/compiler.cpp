@@ -45,7 +45,8 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
   }
   else if (rgba.alpha == ALPHA_OPAQUE) {
     auto bgr = rgbaToBgr(rgba);
-    if (ctx.compilerContext.bgrToRgba.contains(bgr) && ctx.compilerContext.bgrToRgba.at(bgr) != rgba) {
+
+    if (ctx.compilerContext.bgrToRgba.contains(bgr) && std::get<0>(ctx.compilerContext.bgrToRgba.at(bgr)) != rgba) {
       /*
        * We lost color precision here, so let's warn the user that two distinct RGBA colors they used
        * in the master sheet are going to collapse to one BGR color on the GBA.
@@ -53,12 +54,12 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
       if (errWarn) {
         warn_colorPrecisionLoss(ctx.err, rgbaFrame, row, col, bgr, rgba, ctx.compilerContext.bgrToRgba.at(bgr));
       }
-      ctx.compilerContext.bgrToRgba.at(bgr) = rgba;
+      ctx.compilerContext.bgrToRgba.at(bgr) =
+          std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>{rgba, rgbaFrame, row, col};
     }
-    else {
-      // First time we've seen this BGR, add it to the map and save the RGBA that produced it
-      ctx.compilerContext.bgrToRgba.insert(std::pair{bgr, rgba});
-    }
+    ctx.compilerContext.bgrToRgba.insert_or_assign(
+        bgr, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>{rgba, rgbaFrame, row, col});
+
     auto itrAtBgr = std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, bgr);
     auto bgrPosInPalette = itrAtBgr - std::begin(palette.colors);
     if (bgrPosInPalette == palette.size) {

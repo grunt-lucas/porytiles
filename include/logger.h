@@ -50,23 +50,6 @@ template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
-template <typename... T> void pt_err_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
-{
-  std::string prefix = "";
-  if (tile.type == TileType::LAYERED) {
-    prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
-  }
-  else if (tile.type == TileType::ANIM) {
-    prefix = tile.anim + ":" + tile.frame + ":" + std::to_string(tile.tileIndex);
-  }
-  else {
-    throw std::runtime_error{"pt_err_rgbatile unknown TileType"};
-  }
-  fmt::println(stderr, "{} {} {}", fmt::styled(prefix + ":", fmt::emphasis::bold),
-               fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
-               fmt::format(fmt, std::forward<T>(args)...));
-}
-
 template <typename... T> void pt_fatal_err_prefix(fmt::format_string<T...> fmt, T &&...args)
 {
   fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
@@ -86,43 +69,9 @@ template <typename... T> void pt_warn(fmt::format_string<T...> fmt, T &&...args)
                fmt::format(fmt, std::forward<T>(args)...));
 }
 
-template <typename... T> void pt_warn_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
-{
-  std::string prefix = "";
-  if (tile.type == TileType::LAYERED) {
-    prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
-  }
-  else if (tile.type == TileType::ANIM) {
-    prefix = tile.anim + ":" + tile.frame + ":" + std::to_string(tile.tileIndex);
-  }
-  else {
-    throw std::runtime_error{"pt_warn_rgbatile unknown TileType"};
-  }
-  fmt::println(stderr, "{} {} {}", fmt::styled(prefix + ":", fmt::emphasis::bold),
-               fmt::styled("warning:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)),
-               fmt::format(fmt, std::forward<T>(args)...));
-}
-
 template <typename... T> void pt_note(fmt::format_string<T...> fmt, T &&...args)
 {
   fmt::println(stderr, "{} {}", fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
-               fmt::format(fmt, std::forward<T>(args)...));
-}
-
-template <typename... T> void pt_note_rgbatile(const RGBATile &tile, fmt::format_string<T...> fmt, T &&...args)
-{
-  std::string prefix = "";
-  if (tile.type == TileType::LAYERED) {
-    prefix = layerString(tile.layer) + ":" + std::to_string(tile.metatileIndex) + ":" + subtileString(tile.subtile);
-  }
-  else if (tile.type == TileType::ANIM) {
-    prefix = tile.anim + ":" + tile.frame + ":" + std::to_string(tile.tileIndex);
-  }
-  else {
-    throw std::runtime_error{"pt_err_tileprefix unknown TileType"};
-  }
-  fmt::println(stderr, "{} {} {}", fmt::styled(prefix + ":", fmt::emphasis::bold),
-               fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
                fmt::format(fmt, std::forward<T>(args)...));
 }
 

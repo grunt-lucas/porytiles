@@ -5,6 +5,7 @@
 #include <png.hpp>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
@@ -23,6 +24,28 @@ const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
 const char *const WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
+
+static std::string getTilePrettyString(const RGBATile &tile)
+{
+  std::string tileString = "";
+  std::string foo = "{layer: middle, metatile: 2, subtile: northwest} subtile pixel col 2 row 1";
+  std::string bar = "{anim: water, frame: key.png, subtile: 0} subtile pixel col 2 row 1";
+  if (tile.type == TileType::LAYERED) {
+    tileString = "{layer: " + layerString(tile.layer) + ", metatile: " + std::to_string(tile.metatileIndex) +
+                 ", subtile: " + subtileString(tile.subtile) + "}";
+  }
+  else if (tile.type == TileType::ANIM) {
+    tileString =
+        "{anim: " + tile.anim + ", frame: " + tile.frame + ", subtile: " + std::to_string(tile.tileIndex) + "}";
+  }
+  else if (tile.type == TileType::FREESTANDING) {
+    tileString = "{tile: " + std::to_string(tile.tileIndex) + "}";
+  }
+  else {
+    throw std::runtime_error{"error_warnings::getTilePrettyString unknown TileType"};
+  }
+  return tileString;
+}
 
 void internalerror(std::string message) { throw std::runtime_error(message); }
 
@@ -94,9 +117,12 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "too many unique colors, threw at pixel col {}, row {}", col, row);
-    pt_note_rgbatile(tile, "cannot have more than {} unique colors, including the transparency color",
-                     fmt::styled(PAL_SIZE, fmt::emphasis::bold));
+    std::string tileString = getTilePrettyString(tile);
+    pt_err("too many unique colors, threw at {} subtile pixel col {}, row {}",
+           fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
+           fmt::styled(row, fmt::emphasis::bold));
+    pt_note("cannot have more than {} unique colors, including the transparency color",
+            fmt::styled(PAL_SIZE, fmt::emphasis::bold));
   }
 }
 
@@ -105,11 +131,12 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "invalid alpha value '{}' at pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
-                    col, row);
-    pt_note_rgbatile(tile, "alpha value must be either {} for opaque or {} for transparent",
-                     fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold),
-                     fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
+    std::string tileString = getTilePrettyString(tile);
+    pt_err("invalid alpha value '{}' at {} subtile pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
+           fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
+           fmt::styled(row, fmt::emphasis::bold));
+    pt_note("alpha value must be either {} for opaque or {} for transparent",
+            fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold), fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
   }
 }
 
@@ -118,8 +145,10 @@ void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, c
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err_rgbatile(tile, "color '{}' at pixel col {}, row {} collapsed to transparent under BGR conversion",
-                    fmt::styled(color.jasc(), fmt::emphasis::bold), col, row);
+    std::string tileString = getTilePrettyString(tile);
+    pt_err("color '{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
+           fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
+           fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
   }
 }
 
@@ -267,7 +296,7 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const So
   if (err.printErrors) {
     pt_fatal_err("palette assignment exceeded maximum depth '{}'", fmt::styled(maxRecurses, fmt::emphasis::bold));
     // TODO : impl this CLI option
-    pt_note("you can increase this depth with the '-fmax-assign-depth' option");
+    pt_note("you can increase this depth with the '-max-assign-depth' option");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
@@ -403,38 +432,24 @@ static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const 
   }
 }
 
-static void printTileWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
-                             const RGBATile &tile, const std::string &message)
-{
-  if (err.colorPrecisionLoss == WarningMode::ERR) {
-    err.errCount++;
-    if (err.printErrors) {
-      pt_err_rgbatile(
-          tile, "{} [{}]", message,
-          fmt::styled(fmt::format("-Werror={}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
-    }
-  }
-  else if (err.colorPrecisionLoss == WarningMode::WARN) {
-    err.warnCount++;
-    if (err.printErrors) {
-      pt_warn_rgbatile(
-          tile, "{} [{}]", message,
-          fmt::styled(fmt::format("-W{}", warningName), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
-    }
-  }
-}
-
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba, const RGBA32 &previousRgba)
+                             const BGR15 &bgr, const RGBA32 &rgba,
+                             const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba)
 {
-  /*
-   * TODO : can we improve this message? It's a bit vague. Perhaps save tile, pixel row/col of 'previously saw' so that
-   * the error message is more useful.
-   */
-  std::string message = fmt::format(
-      "color '{}' at pixel col {}, row {} collapsed to duplicate BGR (previously saw '{}')",
-      fmt::styled(rgba.jasc(), fmt::emphasis::bold), col, row, fmt::styled(previousRgba.jasc(), fmt::emphasis::bold));
-  printTileWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, tile, message);
+  std::string tileString = getTilePrettyString(tile);
+  std::string message =
+      fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
+                  fmt::styled(rgba.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
+                  fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
+  printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
+  if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
+    std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
+    pt_note("previously saw '{}' at {} subtile pixel col {}, row {}",
+            fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
+            fmt::styled(previousTileString, fmt::emphasis::bold),
+            fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
+            fmt::styled(std::get<2>(previousRgba), fmt::emphasis::bold));
+  }
 }
 
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
@@ -449,7 +464,7 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 {
   std::string message = "`true-color' mode not yet supported by Porymap";
   printWarning(err, err.usedTrueColorMode, WARN_USED_TRUE_COLOR_MODE, message);
-  if (err.printErrors) {
+  if (err.printErrors && err.usedTrueColorMode != WarningMode::OFF) {
     pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
   }
 }
@@ -466,7 +481,7 @@ void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string file
   printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
                fmt::format("{}: too few attribute columns for base game '{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
-  if (err.printErrors) {
+  if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
     pt_note("unspecified columns will receive default values");
   }
 }
@@ -475,7 +490,7 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
 {
   printWarning(err, err.missingAttributesCsv, WARN_MISSING_ATTRIBUTES_CSV,
                fmt::format("{}: attributes file did not exist", filePath));
-  if (err.printErrors && err.missingAttributesCsv == WarningMode::WARN) {
+  if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
     pt_note("all attributes will receive default or inferred values");
   }
 }
@@ -484,7 +499,7 @@ void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePa
 {
   printWarning(err, err.missingAttributesCsv, WARN_MISSING_BEHAVIORS_HEADER,
                fmt::format("{}: expected behaviors header did not exist", filePath));
-  if (err.printErrors && err.missingAttributesCsv == WarningMode::WARN) {
+  if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
     pt_note("a behaviors header is required in order to parse behavior names in the attributes csv");
   }
 }
