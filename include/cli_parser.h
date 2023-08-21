@@ -12,7 +12,7 @@
 
 namespace porytiles {
 
-void parseOptions(PtContext &ctx, int argc, char **argv);
+void parseOptions(PtContext &ctx, int argc, char *const *argv);
 
 }
 

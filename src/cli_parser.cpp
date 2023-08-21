@@ -1,10 +1,12 @@
 #include "cli_parser.h"
 
+#include <doctest.h>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <optional>
 
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
@@ -17,11 +19,11 @@
 
 namespace porytiles {
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char **argv);
-static void parseSubcommand(PtContext &ctx, int argc, char **argv);
-static void parseCompile(PtContext &ctx, int argc, char **argv);
+static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv);
+static void parseSubcommand(PtContext &ctx, int argc, char *const *argv);
+static void parseCompile(PtContext &ctx, int argc, char *const *argv);
 
-void parseOptions(PtContext &ctx, int argc, char **argv)
+void parseOptions(PtContext &ctx, int argc, char *const *argv)
 {
   parseGlobalOptions(ctx, argc, argv);
   parseSubcommand(ctx, argc, argv);
@@ -194,7 +196,7 @@ VERSION_DESC + "\n"
 // @formatter:on
 // clang-format on
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
+static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -240,7 +242,7 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char **argv)
 const std::string DECOMPILE_COMMAND = "decompile";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
 const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
-static void parseSubcommand(PtContext &ctx, int argc, char **argv)
+static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
 {
   if ((argc - optind) == 0) {
     fatalerror_porytilesprefix(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
@@ -328,7 +330,10 @@ WERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
 
-static void parseCompile(PtContext &ctx, int argc, char **argv)
+/*
+ * TODO : the warning parsing system here is a dumpster fire
+ */
+static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -359,8 +364,18 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
 
       // Specific warnings
-      {W_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, W_COLOR_PRECISION_LOSS_VAL},
-      {W_NO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, W_NO_COLOR_PRECISION_LOSS_VAL},
+      {WCOLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WCOLOR_PRECISION_LOSS_VAL},
+      {WNO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WNO_COLOR_PRECISION_LOSS_VAL},
+      {WKEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WKEY_FRAME_DID_NOT_APPEAR_VAL},
+      {WNO_KEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WNO_KEY_FRAME_DID_NOT_APPEAR_VAL},
+      {WUSED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WUSED_TRUE_COLOR_MODE_VAL},
+      {WNO_USED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WNO_USED_TRUE_COLOR_MODE_VAL},
+      {WATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WATTRIBUTE_FORMAT_MISMATCH_VAL},
+      {WNO_ATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL},
+      {WMISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WMISSING_ATTRIBUTES_CSV_VAL},
+      {WNO_MISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WNO_MISSING_ATTRIBUTES_CSV_VAL},
+      {WMISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WMISSING_BEHAVIORS_HEADER_VAL},
+      {WNO_MISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WNO_MISSING_BEHAVIORS_HEADER_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
@@ -370,29 +385,35 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   /*
    * Warning specific variables. We must wait until after all options are processed before we actually enable warnings,
    * since enabling/disabling specific warnings must take precedence over the general -Wall and -Werror flags no matter
-   * where in the command line the user specified.
+   * where in the command line the user specified. Some of these warnings are enabled by default.
    */
   bool enableAllWarnings = false;
   bool disableAllWarnings = false;
   bool setAllEnabledWarningsToErrors = false;
 
-  bool warnColorPrecisionLoss = false;
-  bool errColorPrecisionLoss = false;
+  std::optional<bool> warnColorPrecisionLossOverride{};
+  std::optional<bool> errColorPrecisionLossOverride{};
+  bool noErrColorPrecisionLoss = false;
 
-  // bool warnKeyFrameTileDidNotAppearInAssignment = false;
-  bool errKeyFrameTileDidNotAppearInAssignment = false;
+  std::optional<bool> warnKeyFrameTileDidNotAppearInAssignmentOverride{};
+  std::optional<bool> errKeyFrameTileDidNotAppearInAssignmentOverride{};
+  bool noErrKeyFrameTileDidNotAppearInAssignment = false;
 
-  // bool warnUsedTrueColorMode = false;
-  bool errUsedTrueColorMode = false;
+  std::optional<bool> warnUsedTrueColorModeOverride{};
+  std::optional<bool> errUsedTrueColorModeOverride{};
+  bool noErrUsedTrueColorMode = false;
 
-  // bool warnAttributeFormatMismatch = false;
-  bool errAttributeFormatMismatch = false;
+  std::optional<bool> warnAttributeFormatMismatchOverride{};
+  std::optional<bool> errAttributeFormatMismatchOverride{};
+  bool noErrAttributeFormatMismatch = false;
 
-  // bool warnMissingAttributesCsv = false;
-  bool errMissingAttributesCsv = false;
+  std::optional<bool> warnMissingAttributesCsvOverride{};
+  std::optional<bool> errMissingAttributesCsvOverride{};
+  bool noErrMissingAttributesCsv = false;
 
-  // bool warnMissingBehaviorsHeader = false;
-  bool errMissingBehaviorsHeader = false;
+  std::optional<bool> warnMissingBehaviorsHeaderOverride{};
+  std::optional<bool> errMissingBehaviorsHeaderOverride{};
+  bool noErrMissingBehaviorsHeader = false;
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -478,22 +499,22 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       }
       else {
         if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-          errColorPrecisionLoss = true;
+          errColorPrecisionLossOverride = true;
         }
         else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
-          errKeyFrameTileDidNotAppearInAssignment = true;
+          errKeyFrameTileDidNotAppearInAssignmentOverride = true;
         }
         else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-          errUsedTrueColorMode = true;
+          errUsedTrueColorModeOverride = true;
         }
         else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-          errAttributeFormatMismatch = true;
+          errAttributeFormatMismatchOverride = true;
         }
         else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-          errMissingAttributesCsv = true;
+          errMissingAttributesCsvOverride = true;
         }
         else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
-          errMissingBehaviorsHeader = true;
+          errMissingBehaviorsHeaderOverride = true;
         }
         else {
           fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -503,27 +524,23 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       }
       break;
     case WNO_ERROR_VAL:
-      /*
-       * If any warnings were requested 'no-error', toggle off the error bit. Effectively, this returns the warning to
-       * it's previous state.
-       */
       if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-        errColorPrecisionLoss = false;
+        noErrColorPrecisionLoss = true;
       }
       else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
-        errKeyFrameTileDidNotAppearInAssignment = false;
+        noErrKeyFrameTileDidNotAppearInAssignment = true;
       }
       else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-        errUsedTrueColorMode = false;
+        noErrUsedTrueColorMode = true;
       }
       else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-        errAttributeFormatMismatch = false;
+        noErrAttributeFormatMismatch = true;
       }
       else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-        errMissingAttributesCsv = false;
+        noErrMissingAttributesCsv = true;
       }
       else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
-        errMissingBehaviorsHeader = false;
+        noErrMissingBehaviorsHeader = true;
       }
       else {
         fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -533,11 +550,41 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
       break;
 
     // Specific warnings
-    case W_COLOR_PRECISION_LOSS_VAL:
-      warnColorPrecisionLoss = true;
+    case WCOLOR_PRECISION_LOSS_VAL:
+      warnColorPrecisionLossOverride = true;
       break;
-    case W_NO_COLOR_PRECISION_LOSS_VAL:
-      warnColorPrecisionLoss = false;
+    case WNO_COLOR_PRECISION_LOSS_VAL:
+      warnColorPrecisionLossOverride = false;
+      break;
+    case WKEY_FRAME_DID_NOT_APPEAR_VAL:
+      warnKeyFrameTileDidNotAppearInAssignmentOverride = true;
+      break;
+    case WNO_KEY_FRAME_DID_NOT_APPEAR_VAL:
+      warnKeyFrameTileDidNotAppearInAssignmentOverride = false;
+      break;
+    case WUSED_TRUE_COLOR_MODE_VAL:
+      warnUsedTrueColorModeOverride = true;
+      break;
+    case WNO_USED_TRUE_COLOR_MODE_VAL:
+      warnUsedTrueColorModeOverride = false;
+      break;
+    case WATTRIBUTE_FORMAT_MISMATCH_VAL:
+      warnAttributeFormatMismatchOverride = true;
+      break;
+    case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
+      warnAttributeFormatMismatchOverride = false;
+      break;
+    case WMISSING_ATTRIBUTES_CSV_VAL:
+      warnMissingAttributesCsvOverride = true;
+      break;
+    case WNO_MISSING_ATTRIBUTES_CSV_VAL:
+      warnMissingAttributesCsvOverride = false;
+      break;
+    case WMISSING_BEHAVIORS_HEADER_VAL:
+      warnMissingBehaviorsHeaderOverride = true;
+      break;
+    case WNO_MISSING_BEHAVIORS_HEADER_VAL:
+      warnMissingBehaviorsHeaderOverride = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -570,19 +617,39 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
   /*
    * Configure warnings and errors per user specification
    */
-  // Enable or disable all warnings, these general options are overridden by more specific settings
+  // These general options are overridden by more specific settings
   if (enableAllWarnings) {
+    // Enable all warnings
     ctx.err.setAllWarnings(WarningMode::WARN);
   }
   if (disableAllWarnings) {
+    // Disable all warnings
     ctx.err.setAllWarnings(WarningMode::OFF);
+  }
+  if (setAllEnabledWarningsToErrors) {
+    // If requested, set all enabled warnings to errors
+    ctx.err.setAllEnabledWarningsToErrors();
   }
 
   // Specific warn settings take precedence over general settings
   if (warnColorPrecisionLoss) {
     ctx.err.colorPrecisionLoss = WarningMode::WARN;
   }
-  // TODO : fill in more warn enables
+  if (warnKeyFrameTileDidNotAppearInAssignment) {
+    ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
+  }
+  if (warnUsedTrueColorMode) {
+    ctx.err.usedTrueColorMode = WarningMode::WARN;
+  }
+  if (warnAttributeFormatMismatch) {
+    ctx.err.attributeFormatMismatch = WarningMode::WARN;
+  }
+  if (warnMissingAttributesCsv) {
+    ctx.err.missingAttributesCsv = WarningMode::WARN;
+  }
+  if (warnMissingBehaviorsHeader) {
+    ctx.err.missingBehaviorsHeader = WarningMode::WARN;
+  }
 
   // Specific err settings take precedence over warns
   if (errColorPrecisionLoss) {
@@ -604,10 +671,25 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     ctx.err.missingBehaviorsHeader = WarningMode::ERR;
   }
 
-  // TODO : bug here -> '-Werror -Wno-error=foo' will leave 'Wfoo' enabled incorrectly
-  // If requested, set all enabled warnings to errors
-  if (setAllEnabledWarningsToErrors) {
-    ctx.err.setAllEnabledWarningsToErrors();
+  // No error settings downgrade errors to warnings, if applicable
+  if (noErrColorPrecisionLoss) {
+    ctx.err.colorPrecisionLoss = warnColorPrecisionLoss ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (noErrKeyFrameTileDidNotAppearInAssignment) {
+    ctx.err.keyFrameTileDidNotAppearInAssignment =
+        warnKeyFrameTileDidNotAppearInAssignment ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (noErrUsedTrueColorMode) {
+    ctx.err.usedTrueColorMode = warnUsedTrueColorMode ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (noErrAttributeFormatMismatch) {
+    ctx.err.attributeFormatMismatch = warnAttributeFormatMismatch ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (noErrMissingAttributesCsv) {
+    ctx.err.missingAttributesCsv = warnMissingAttributesCsv ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (noErrMissingBehaviorsHeader) {
+    ctx.err.missingBehaviorsHeader = warnMissingBehaviorsHeader ? WarningMode::WARN : WarningMode::OFF;
   }
 
   /*
@@ -656,3 +738,133 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
 }
 
 } // namespace porytiles
+
+TEST_CASE("parseCompile should work as expected with all command lines")
+{
+  // These tests are full of disgusting and evil hacks, avert your gaze
+  SUBCASE("command line 1")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufWall[64];
+    strcpy(bufWall, "-Wall");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufWall, bufPath};
+    porytiles::parseCompile(ctx, 3, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::WARN);
+  }
+
+  SUBCASE("command line 2")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufWall[64];
+    strcpy(bufWall, "-Wall");
+
+    char bufWerror[64];
+    strcpy(bufWerror, "-Werror");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath};
+    porytiles::parseCompile(ctx, 4, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
+  }
+
+  SUBCASE("command line 3")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufTrueColor[64];
+    strcpy(bufTrueColor, "-Wused-true-color-mode");
+
+    char bufWerror[64];
+    strcpy(bufWerror, "-Werror");
+
+    char bufNoError[64];
+    strcpy(bufNoError, "-Wno-error=used-true-color-mode");
+
+    char bufNoError2[64];
+    strcpy(bufNoError2, "-Wno-error=attribute-format-mismatch");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufNoError2, bufPath};
+    porytiles::parseCompile(ctx, 6, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
+  }
+
+  SUBCASE("command line 4")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufWall[64];
+    strcpy(bufWall, "-Wall");
+
+    char bufNoColorPrecisionLoss[64];
+    strcpy(bufNoColorPrecisionLoss, "-Wno-color-precision-loss");
+
+    char bufNoMissingBehaviorsHeader[64];
+    strcpy(bufNoMissingBehaviorsHeader, "-Wno-missing-behaviors-header");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufNoMissingBehaviorsHeader, bufPath};
+    porytiles::parseCompile(ctx, 5, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
+  }
+}

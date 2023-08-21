@@ -11,7 +11,7 @@
 
 + Decompile compiled tilesets back into three layer PNGs + animated sets
 
-+ Add a `report` command that prints out various statistics
++ `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
     + calculate this by taking the `Number Unique Colors / Number Slots In Use`
@@ -20,24 +20,21 @@
     + https://github.com/eddieantonio/imgcat
     + https://github.com/stefanhaustein/TerminalImageViewer
 
-+ Warnings
-  + `-Wpalette-alloc-efficiency`
-    + warn user if palette allocation was not 100% efficient
-  + `-Werror` should take an optional argument of specific warnings to activate
-    + https://cfengine.com/blog/2021/optional-arguments-with-getopt-long/
-    + e.g. `-Werror=color-precision-loss`
-  + `-Wno-X` support: should warnings support an off switch syntax?
-    + would be helpful if someone wants all warnings EXCEPT one
-
-+ Refactor commands / options
-  + `-skip-metatile-generation` skips generation of `metatiles.bin`
-  + `-max-recurse-count` (or another suitable name) to change the call limit for the palette assign algo
-
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
   + instead of outputting all the files, just write C code to the console
   + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
   + is it possible to generate the code and insert it automatically?
+
++ Warnings
+  + `-Wpalette-alloc-efficiency`
+    + warn user if palette allocation was not 100% efficient
+  + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
+    + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+
++ Options to add
+  + `-manage-metatiles-with-porymap` skips generation of `metatiles.bin` and `metatile_attributes.bin`
+  + `-max-recurse-count` (or another suitable name) to change the call limit for the palette assign algo
 
 + Set up more CI builds
   + Windows MSVC?
@@ -62,6 +59,3 @@
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
   + https://github.com/tfussell/miniz-cpp
-
-+ Wiki page ideas
-  + How to integrate into the pokeemerald Makefile
