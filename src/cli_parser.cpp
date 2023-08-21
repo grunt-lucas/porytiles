@@ -359,7 +359,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 
       // Warning and error options
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
-      {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
+      {WNONE.c_str(), no_argument, nullptr, WNONE_SHORT},
       {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
       {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
 
@@ -484,7 +484,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     case WALL_VAL:
       enableAllWarnings = true;
       break;
-    case WNONE_VAL:
+    case WNONE_SHORT:
       disableAllWarnings = true;
       break;
     case WERROR_VAL:

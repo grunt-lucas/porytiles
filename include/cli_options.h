@@ -158,7 +158,6 @@ constexpr char WNONE_SHORT = "w"[0];
 const std::string WNONE_DESC =
 "        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
 "             Disable all warnings.\n";
-constexpr int WNONE_VAL = 4002;
 
 const std::string WNO_ERROR = "Wno-error";
 constexpr int WNO_ERROR_VAL = 4003;
