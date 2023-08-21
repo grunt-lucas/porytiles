@@ -31,9 +31,9 @@ struct ErrorsAndWarnings {
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::WARN},
-        attributeFormatMismatch{WarningMode::WARN}, missingAttributesCsv{WarningMode::WARN},
-        missingBehaviorsHeader{WarningMode::WARN}
+        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
+        attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
+        missingBehaviorsHeader{WarningMode::OFF}
   {
   }
 

@@ -4,9 +4,9 @@
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <string>
-#include <optional>
 
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
@@ -393,27 +393,21 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 
   std::optional<bool> warnColorPrecisionLossOverride{};
   std::optional<bool> errColorPrecisionLossOverride{};
-  bool noErrColorPrecisionLoss = false;
 
   std::optional<bool> warnKeyFrameTileDidNotAppearInAssignmentOverride{};
   std::optional<bool> errKeyFrameTileDidNotAppearInAssignmentOverride{};
-  bool noErrKeyFrameTileDidNotAppearInAssignment = false;
 
-  std::optional<bool> warnUsedTrueColorModeOverride{};
+  std::optional<bool> warnUsedTrueColorModeOverride{true};
   std::optional<bool> errUsedTrueColorModeOverride{};
-  bool noErrUsedTrueColorMode = false;
 
-  std::optional<bool> warnAttributeFormatMismatchOverride{};
+  std::optional<bool> warnAttributeFormatMismatchOverride{true};
   std::optional<bool> errAttributeFormatMismatchOverride{};
-  bool noErrAttributeFormatMismatch = false;
 
-  std::optional<bool> warnMissingAttributesCsvOverride{};
+  std::optional<bool> warnMissingAttributesCsvOverride{true};
   std::optional<bool> errMissingAttributesCsvOverride{};
-  bool noErrMissingAttributesCsv = false;
 
-  std::optional<bool> warnMissingBehaviorsHeaderOverride{};
+  std::optional<bool> warnMissingBehaviorsHeaderOverride{true};
   std::optional<bool> errMissingBehaviorsHeaderOverride{};
-  bool noErrMissingBehaviorsHeader = false;
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -525,22 +519,22 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_ERROR_VAL:
       if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-        noErrColorPrecisionLoss = true;
+        errColorPrecisionLossOverride = false;
       }
       else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
-        noErrKeyFrameTileDidNotAppearInAssignment = true;
+        errKeyFrameTileDidNotAppearInAssignmentOverride = false;
       }
       else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-        noErrUsedTrueColorMode = true;
+        errUsedTrueColorModeOverride = false;
       }
       else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-        noErrAttributeFormatMismatch = true;
+        errAttributeFormatMismatchOverride = false;
       }
       else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-        noErrMissingAttributesCsv = true;
+        errMissingAttributesCsvOverride = false;
       }
       else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
-        noErrMissingBehaviorsHeader = true;
+        errMissingBehaviorsHeaderOverride = false;
       }
       else {
         fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -622,74 +616,117 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     // Enable all warnings
     ctx.err.setAllWarnings(WarningMode::WARN);
   }
-  if (disableAllWarnings) {
-    // Disable all warnings
-    ctx.err.setAllWarnings(WarningMode::OFF);
+
+  // Specific warn settings take precedence over general warn settings
+  if (warnColorPrecisionLossOverride.has_value()) {
+    ctx.err.colorPrecisionLoss = warnColorPrecisionLossOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  if (warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
+    ctx.err.keyFrameTileDidNotAppearInAssignment =
+        warnKeyFrameTileDidNotAppearInAssignmentOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnUsedTrueColorModeOverride.has_value()) {
+    ctx.err.usedTrueColorMode = warnUsedTrueColorModeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnAttributeFormatMismatchOverride.has_value()) {
+    ctx.err.attributeFormatMismatch =
+        warnAttributeFormatMismatchOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnMissingAttributesCsvOverride.has_value()) {
+    ctx.err.missingAttributesCsv = warnMissingAttributesCsvOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnMissingBehaviorsHeaderOverride.has_value()) {
+    ctx.err.missingBehaviorsHeader = warnMissingBehaviorsHeaderOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+
+  // If requested, set all enabled warnings to errors
   if (setAllEnabledWarningsToErrors) {
-    // If requested, set all enabled warnings to errors
     ctx.err.setAllEnabledWarningsToErrors();
   }
 
-  // Specific warn settings take precedence over general settings
-  if (warnColorPrecisionLoss) {
-    ctx.err.colorPrecisionLoss = WarningMode::WARN;
-  }
-  if (warnKeyFrameTileDidNotAppearInAssignment) {
-    ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
-  }
-  if (warnUsedTrueColorMode) {
-    ctx.err.usedTrueColorMode = WarningMode::WARN;
-  }
-  if (warnAttributeFormatMismatch) {
-    ctx.err.attributeFormatMismatch = WarningMode::WARN;
-  }
-  if (warnMissingAttributesCsv) {
-    ctx.err.missingAttributesCsv = WarningMode::WARN;
-  }
-  if (warnMissingBehaviorsHeader) {
-    ctx.err.missingBehaviorsHeader = WarningMode::WARN;
-  }
-
   // Specific err settings take precedence over warns
-  if (errColorPrecisionLoss) {
-    ctx.err.colorPrecisionLoss = WarningMode::ERR;
+  if (errColorPrecisionLossOverride.has_value()) {
+    if (errColorPrecisionLossOverride.value()) {
+      ctx.err.colorPrecisionLoss = WarningMode::ERR;
+    }
+    else if ((warnColorPrecisionLossOverride.has_value() && warnColorPrecisionLossOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.colorPrecisionLoss = WarningMode::WARN;
+    }
+    else {
+      ctx.err.colorPrecisionLoss = WarningMode::OFF;
+    }
   }
-  if (errKeyFrameTileDidNotAppearInAssignment) {
-    ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+  if (errKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
+    if (errKeyFrameTileDidNotAppearInAssignmentOverride.value()) {
+      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+    }
+    else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
+              warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
+    }
+    else {
+      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::OFF;
+    }
   }
-  if (errUsedTrueColorMode) {
-    ctx.err.usedTrueColorMode = WarningMode::ERR;
+  if (errUsedTrueColorModeOverride.has_value()) {
+    if (errUsedTrueColorModeOverride.value()) {
+      ctx.err.usedTrueColorMode = WarningMode::ERR;
+    }
+    else if ((warnUsedTrueColorModeOverride.has_value() && warnUsedTrueColorModeOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.usedTrueColorMode = WarningMode::WARN;
+    }
+    else {
+      ctx.err.usedTrueColorMode = WarningMode::OFF;
+    }
   }
-  if (errAttributeFormatMismatch) {
-    ctx.err.attributeFormatMismatch = WarningMode::ERR;
+  if (errAttributeFormatMismatchOverride.has_value()) {
+    if (errAttributeFormatMismatchOverride.value()) {
+      ctx.err.attributeFormatMismatch = WarningMode::ERR;
+    }
+    else if ((warnAttributeFormatMismatchOverride.has_value() && warnAttributeFormatMismatchOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.attributeFormatMismatch = WarningMode::WARN;
+    }
+    else {
+      ctx.err.attributeFormatMismatch = WarningMode::OFF;
+    }
   }
-  if (errMissingAttributesCsv) {
-    ctx.err.missingAttributesCsv = WarningMode::ERR;
+  if (errMissingAttributesCsvOverride.has_value()) {
+    if (errMissingAttributesCsvOverride.value()) {
+      ctx.err.missingAttributesCsv = WarningMode::ERR;
+    }
+    else if ((warnMissingAttributesCsvOverride.has_value() && warnMissingAttributesCsvOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.missingAttributesCsv = WarningMode::WARN;
+    }
+    else {
+      ctx.err.missingAttributesCsv = WarningMode::OFF;
+    }
   }
-  if (errMissingBehaviorsHeader) {
-    ctx.err.missingBehaviorsHeader = WarningMode::ERR;
+  if (errMissingBehaviorsHeaderOverride.has_value()) {
+    if (errMissingBehaviorsHeaderOverride.value()) {
+      ctx.err.missingBehaviorsHeader = WarningMode::ERR;
+    }
+    else if ((warnMissingBehaviorsHeaderOverride.has_value() && warnMissingBehaviorsHeaderOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.missingBehaviorsHeader = WarningMode::WARN;
+    }
+    else {
+      ctx.err.missingBehaviorsHeader = WarningMode::OFF;
+    }
   }
 
-  // No error settings downgrade errors to warnings, if applicable
-  if (noErrColorPrecisionLoss) {
-    ctx.err.colorPrecisionLoss = warnColorPrecisionLoss ? WarningMode::WARN : WarningMode::OFF;
-  }
-  if (noErrKeyFrameTileDidNotAppearInAssignment) {
-    ctx.err.keyFrameTileDidNotAppearInAssignment =
-        warnKeyFrameTileDidNotAppearInAssignment ? WarningMode::WARN : WarningMode::OFF;
-  }
-  if (noErrUsedTrueColorMode) {
-    ctx.err.usedTrueColorMode = warnUsedTrueColorMode ? WarningMode::WARN : WarningMode::OFF;
-  }
-  if (noErrAttributeFormatMismatch) {
-    ctx.err.attributeFormatMismatch = warnAttributeFormatMismatch ? WarningMode::WARN : WarningMode::OFF;
-  }
-  if (noErrMissingAttributesCsv) {
-    ctx.err.missingAttributesCsv = warnMissingAttributesCsv ? WarningMode::WARN : WarningMode::OFF;
-  }
-  if (noErrMissingBehaviorsHeader) {
-    ctx.err.missingBehaviorsHeader = warnMissingBehaviorsHeader ? WarningMode::WARN : WarningMode::OFF;
+  if (disableAllWarnings) {
+    /*
+     * Disable all warnings. A single -Wnone specified anywhere on the command line always takes precedence over
+     * anything else. To my mind, this is a bit odd. But GCC does it this way, and since we are emulating the way GCC
+     * does things, we'll do it too.
+     */
+    enableAllWarnings = false;
+    ctx.err.setAllWarnings(WarningMode::OFF);
   }
 
   /*
@@ -742,7 +779,31 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 TEST_CASE("parseCompile should work as expected with all command lines")
 {
   // These tests are full of disgusting and evil hacks, avert your gaze
-  SUBCASE("command line 1")
+  SUBCASE("Check that the defaults are correct")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufPath};
+    porytiles::parseCompile(ctx, 2, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::WARN);
+  }
+
+  SUBCASE("-Wall should enable everything")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -769,7 +830,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::WARN);
   }
 
-  SUBCASE("command line 2")
+  SUBCASE("-Wall -Werror should enable everything as an error")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -799,7 +860,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
   }
 
-  SUBCASE("command line 3")
+  SUBCASE("Should enable a non-default warn, set all to error, then disable two of the errors")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -835,7 +896,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
   }
 
-  SUBCASE("command line 4")
+  SUBCASE("Should enable all warnings, then disable two of them")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -865,6 +926,36 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
+  }
+
+  SUBCASE("Global warning disable should work, even if a warning was explicitly enabled")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+
+    optind = 1;
+
+    char bufCmd[64];
+    strcpy(bufCmd, "compile-primary");
+
+    char bufWnone[64];
+    strcpy(bufWnone, "-Wnone");
+
+    char bufTrueColor[64];
+    strcpy(bufTrueColor, "-Wused-true-color-mode");
+
+    char bufPath[64];
+    strcpy(bufPath, "/home/foo/pokeemerald");
+
+    char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath};
+    porytiles::parseCompile(ctx, 4, argv);
+
+    CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
     CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 }
