@@ -16,7 +16,7 @@ namespace porytiles {
 struct PtContext {
   TargetBaseGame targetBaseGame;
   FieldmapConfig fieldmapConfig;
-  InputPaths inputPaths;
+  SourcePaths srcPaths;
   Output output;
   CompilerConfig compilerConfig;
   CompilerContext compilerContext;
@@ -27,7 +27,7 @@ struct PtContext {
   bool verbose;
 
   PtContext()
-      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, inputPaths{},
+      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, srcPaths{},
         output{}, compilerConfig{}, compilerContext{}, err{}, subcommand{}, verbose{false}
   {
   }
@@ -35,15 +35,15 @@ struct PtContext {
   void validateFieldmapParameters() const
   {
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numTiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numTiles",
                                            fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
     }
     if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numMetatiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numMetatiles",
                                            fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
     }
     if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->inputPaths, this->compilerConfig.mode, "numPalettes",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numPalettes",
                                            fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
     }
   }

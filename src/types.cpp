@@ -340,13 +340,13 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
   return rgba;
 }
 
-std::filesystem::path InputPaths::modeBasedInputPath(CompilerMode mode) const
+std::filesystem::path SourcePaths::modeBasedSrcPath(CompilerMode mode) const
 {
   switch (mode) {
   case CompilerMode::PRIMARY:
-    return primaryInputPath;
+    return primarySourcePath;
   case CompilerMode::SECONDARY:
-    return secondaryInputPath;
+    return secondarySourcePath;
   default:
     internalerror_unknownCompilerMode("types::InputPaths::modeBasedInputPath");
   }

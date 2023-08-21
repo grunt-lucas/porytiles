@@ -84,7 +84,7 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string contex
 void internalerror_unknownCompilerMode(std::string context);
 
 // Regular compilation errors (due to bad user input), regular errors try to die as late as possible
-void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const InputPaths &inputs,
+void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const SourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension);
 
 void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frame,
@@ -122,56 +122,56 @@ void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std:
 void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type);
 
 // Fatal compilation errors (due to bad user input), fatal errors die immediately
-void fatalerror(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode, std::string message);
+void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode, std::string message);
 
 void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage);
 
-void fatalerror_invalidInputPath(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
-                                 std::string path);
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+                                  std::string path);
 
-void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                              const std::string &animation, std::size_t index);
 
-void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                     const std::string &animation);
 
-void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                          std::size_t allowed, std::size_t found);
 
-void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const InputPaths &inputs,
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const SourcePaths &srcs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension);
 
-void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles);
 
-void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                           std::size_t maxRecurses);
 
-void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode);
+void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode);
 
-void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                  std::size_t numMetatiles, std::size_t metatileLimit);
 
-void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                           std::string field, std::size_t primary, std::size_t total);
 
-void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                         std::string animName, std::size_t tileIndex);
 
-void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                       std::string animName, std::size_t tileIndex);
 
-void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, const InputPaths &inputs,
-                                               CompilerMode mode, std::string animName, std::size_t tileIndex);
+void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+                                               std::string animName, std::size_t tileIndex);
 
-void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                            std::string filePath);
 
-void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                std::string filePath, std::string id, std::size_t line);
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const InputPaths &inputs, CompilerMode mode,
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                      std::string filePath, std::string behavior, std::string value, std::size_t line);
 
 // Compilation warnings (due to possible mistakes in user input), compilation can continue
@@ -193,9 +193,9 @@ void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePa
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
 
-void die_compilationTerminated(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
+void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 
-void die_errorCount(const ErrorsAndWarnings &err, std::string inputPath, std::string errorMessage);
+void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 
 } // namespace porytiles
 

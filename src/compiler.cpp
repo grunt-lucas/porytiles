@@ -182,7 +182,7 @@ static std::vector<IndexedNormTile> normalizeDecompTiles(PtContext &ctx, const D
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during tile normalization");
   }
 
@@ -232,14 +232,14 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexedNormTile> &normaliz
   if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, allowed, colorIndex);
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     // use numPalettesTotal since secondary tiles can use colors from the primary set
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, allowed, colorIndex);
     }
   }
   else {
@@ -303,7 +303,7 @@ static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet
   gRecurseCount++;
   // TODO : this is a horrible hack avert your eyes
   if (gRecurseCount > ctx.compilerConfig.maxRecurseCount) {
-    fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                          ctx.compilerConfig.maxRecurseCount);
   }
 
@@ -478,7 +478,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
        * to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if it was
        * a reference into this particular animation.
        */
-      fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_transparentKeyFrameTile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, normTile.anim,
                                          normTile.tileIndex);
     }
 
@@ -499,7 +499,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
       usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, normTile.anim,
                                        normTile.tileIndex);
     }
     else {
@@ -569,13 +569,13 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
 
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
-    fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInPrimary);
   }
 
   // exit if there were any other errors
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during primary tile assignment");
   }
 }
@@ -626,7 +626,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
          * way to tell if a transparent user provided tile on the layer sheet referred to the true index 0 transparent
          * tile, or if it was a reference into this particular animation.
          */
-        fatalerror_transparentKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+        fatalerror_transparentKeyFrameTile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, normTile.anim,
                                            normTile.tileIndex);
       }
       else {
@@ -635,7 +635,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
          * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
          * as opposed to the animation.
          */
-        fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+        fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, normTile.anim,
                                                   normTile.tileIndex);
       }
     }
@@ -657,7 +657,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, normTile.anim,
                                        normTile.tileIndex);
     }
     else {
@@ -734,13 +734,13 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
 
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
-    fatalerror_tooManyUniqueTiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInSecondary());
   }
 
   // exit if there were any other errors
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during secondary tile assignment");
   }
 }
@@ -758,17 +758,17 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
-    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
-    if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
-      fatalerror_tooManyMetatiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, inputMetatileCount,
+    std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+    if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
+      fatalerror_tooManyMetatiles(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, srcMetatileCount,
                                   ctx.fieldmapConfig.numMetatilesInPrimary);
     }
   }
   else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
-    std::size_t inputMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
-    if (inputMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
-      fatalerror_tooManyMetatiles(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, inputMetatileCount,
+    std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+    if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
+      fatalerror_tooManyMetatiles(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, srcMetatileCount,
                                   ctx.fieldmapConfig.numMetatilesInSecondary());
     }
   }
@@ -848,7 +848,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
      * most reasonably sized tilesets, it would be difficult to reach this condition since there are too many possible
      * allocations to try. Instead it is more likely we hit the depth limit.
      */
-    fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode);
+    fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode);
   }
 
   /*

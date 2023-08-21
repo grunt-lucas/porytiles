@@ -19,15 +19,15 @@ namespace porytiles {
 DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.inputPaths, "height", png.get_height());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.srcPaths, "height", png.get_height());
   }
   if (png.get_width() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.inputPaths, "width", png.get_width());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.srcPaths, "width", png.get_width());
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
-                   "freestanding input dimension not divisible by 8");
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+                   "freestanding source dimension not divisible by 8");
   }
 
   DecompiledTileset decompiledTiles;
@@ -134,8 +134,8 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
-                   "input layer png dimensions invalid");
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+                   "source layer png dimensions invalid");
   }
 
   DecompiledTileset decompiledTiles;
@@ -219,6 +219,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
       topTile.layer = TileLayer::TOP;
       topTile.metatileIndex = metatileIndex;
       topTile.subtile = static_cast<Subtile>(topTileIndex);
+      topTile.attributes = metatileAttributes;
       topTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
@@ -310,7 +311,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during layered tile import");
   }
 
@@ -346,19 +347,19 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
       }
 
       if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
-                       "anim frame input dimension not divisible by 8");
+        die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+                       "anim frame source dimension not divisible by 8");
       }
 
       frameWidths.insert(rawFrame.png.get_width());
       frameHeights.insert(rawFrame.png.get_height());
       if (frameWidths.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                                             rawFrame.animName, rawFrame.frame, "width",
                                                             rawFrame.png.get_width());
       }
       if (frameHeights.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                                             rawFrame.animName, rawFrame.frame, "height",
                                                             rawFrame.png.get_height());
       }

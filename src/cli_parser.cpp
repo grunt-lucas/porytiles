@@ -272,7 +272,7 @@ const std::string COMPILE_HELP =
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
 "    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
 "\n"
-"Compile the tile assets in a given input folder into a Porymap-ready tileset.\n"
+"Compile the tile assets in a given source folder into a Porymap-ready tileset.\n"
 "\n"
 "ARGS\n"
 "    <PRIMARY-PATH>\n"
@@ -285,9 +285,9 @@ const std::string COMPILE_HELP =
 "        Path to a directory containing the source data for a secondary set's partner primary set.\n"
 "        This partner primary set must be a Porytiles-managed tileset.\n"
 "\n"
-"    Input Directory Format\n"
-"        The input directories must conform to the following format. '[]' indicate optional assets.\n"
-"            input/\n"
+"    Source Directory Format\n"
+"        The source directory must conform to the following format. '[]' indicate optional assets.\n"
+"            src/\n"
 "                bottom.png             # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                middle.png             # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
@@ -559,9 +559,9 @@ static void parseCompile(PtContext &ctx, int argc, char **argv)
     fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    ctx.inputPaths.secondaryInputPath = argv[optind++];
+    ctx.srcPaths.secondarySourcePath = argv[optind++];
   }
-  ctx.inputPaths.primaryInputPath = argv[optind++];
+  ctx.srcPaths.primarySourcePath = argv[optind++];
 
   /*
    * Configure warnings and errors per user specification

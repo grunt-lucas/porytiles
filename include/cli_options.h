@@ -72,7 +72,7 @@ constexpr int TARGET_BASE_GAME_VAL = 2000;
 const std::string DUAL_LAYER = "dual-layer";
 const std::string DUAL_LAYER_DESC =
 "        -" + DUAL_LAYER + "\n"
-"             Enable dual-layer compilation mode. The layer type will be inferred from your input\n"
+"             Enable dual-layer compilation mode. The layer type will be inferred from your source\n"
 "             layer PNGs, so compilation will error out if any metatiles contain content on all\n"
 "             three layers. If this option is not supplied, Porytiles assumes you are compiling\n"
 "             a triple-layer tileset.\n";
@@ -81,7 +81,7 @@ constexpr int DUAL_LAYER_VAL = 2001;
 const std::string TRANSPARENCY_COLOR = "transparency-color";
 const std::string TRANSPARENCY_COLOR_DESC =
 "        -" + TRANSPARENCY_COLOR + "=<R,G,B>\n"
-"             Select RGB color <R,G,B> to represent transparency in your layer input PNGs. Defaults\n"
+"             Select RGB color <R,G,B> to represent transparency in your layer source PNGs. Defaults\n"
 "             to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 

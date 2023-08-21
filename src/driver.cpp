@@ -95,7 +95,7 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
     std::filesystem::path keyFrameFile = animDir / "key.png";
     if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
-      fatalerror_missingKeyFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, animDir.filename().string());
+      fatalerror_missingKeyFrameFile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, animDir.filename().string());
     }
     frames.insert(std::pair{0, keyFrameFile});
     pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());
@@ -115,17 +115,17 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
 
     std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
     if (frames.size() == 1) {
-      fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+      fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                               animDir.filename().string(), 0);
     }
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
-        fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+        fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                                 animDir.filename().string(), i - 1);
       }
 
       try {
-        // We do this here so if the input is not a PNG, we can catch and give a better error
+        // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> png{frames.at(i)};
         AnimationPng<png::rgba_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
         framePngs.push_back(animPng);
@@ -138,7 +138,7 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
     animations.push_back(framePngs);
   }
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "found anim frame that was not a png");
   }
 
@@ -164,193 +164,193 @@ buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::ui
 static void driveCompile(PtContext &ctx)
 {
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    if (!std::filesystem::exists(ctx.inputPaths.secondaryInputPath) ||
-        !std::filesystem::is_directory(ctx.inputPaths.secondaryInputPath)) {
-      fatalerror_invalidInputPath(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, ctx.inputPaths.secondaryInputPath);
+    if (!std::filesystem::exists(ctx.srcPaths.secondarySourcePath) ||
+        !std::filesystem::is_directory(ctx.srcPaths.secondarySourcePath)) {
+      fatalerror_invalidSourcePath(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, ctx.srcPaths.secondarySourcePath);
     }
-    if (!std::filesystem::exists(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
+    if (!std::filesystem::exists(ctx.srcPaths.bottomSecondaryTilesheetPath())) {
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.srcPaths.bottomSecondaryTilesheetPath().string()));
     }
-    if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomSecondaryTilesheetPath())) {
+    if (!std::filesystem::is_regular_file(ctx.srcPaths.bottomSecondaryTilesheetPath())) {
       fatalerror(
-          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
+          ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.srcPaths.bottomSecondaryTilesheetPath().string()));
     }
-    if (!std::filesystem::exists(ctx.inputPaths.middleSecondaryTilesheetPath())) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
+    if (!std::filesystem::exists(ctx.srcPaths.middleSecondaryTilesheetPath())) {
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.srcPaths.middleSecondaryTilesheetPath().string()));
     }
-    if (!std::filesystem::is_regular_file(ctx.inputPaths.middleSecondaryTilesheetPath())) {
+    if (!std::filesystem::is_regular_file(ctx.srcPaths.middleSecondaryTilesheetPath())) {
       fatalerror(
-          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
+          ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.srcPaths.middleSecondaryTilesheetPath().string()));
     }
-    if (!std::filesystem::exists(ctx.inputPaths.topSecondaryTilesheetPath())) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.inputPaths.topSecondaryTilesheetPath().string()));
+    if (!std::filesystem::exists(ctx.srcPaths.topSecondaryTilesheetPath())) {
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: file does not exist", ctx.srcPaths.topSecondaryTilesheetPath().string()));
     }
-    if (!std::filesystem::is_regular_file(ctx.inputPaths.topSecondaryTilesheetPath())) {
+    if (!std::filesystem::is_regular_file(ctx.srcPaths.topSecondaryTilesheetPath())) {
       fatalerror(
-          ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-          fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
+          ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+          fmt::format("{}: exists but was not a regular file", ctx.srcPaths.topSecondaryTilesheetPath().string()));
     }
   }
-  if (!std::filesystem::exists(ctx.inputPaths.primaryInputPath) ||
-      !std::filesystem::is_directory(ctx.inputPaths.primaryInputPath)) {
-    fatalerror_invalidInputPath(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, ctx.inputPaths.primaryInputPath);
+  if (!std::filesystem::exists(ctx.srcPaths.primarySourcePath) ||
+      !std::filesystem::is_directory(ctx.srcPaths.primarySourcePath)) {
+    fatalerror_invalidSourcePath(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, ctx.srcPaths.primarySourcePath);
   }
-  if (!std::filesystem::exists(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
+  if (!std::filesystem::exists(ctx.srcPaths.bottomPrimaryTilesheetPath())) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.srcPaths.bottomPrimaryTilesheetPath().string()));
   }
-  if (!std::filesystem::is_regular_file(ctx.inputPaths.bottomPrimaryTilesheetPath())) {
+  if (!std::filesystem::is_regular_file(ctx.srcPaths.bottomPrimaryTilesheetPath())) {
     fatalerror(
-        ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-        fmt::format("{}: exists but was not a regular file", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
+        ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+        fmt::format("{}: exists but was not a regular file", ctx.srcPaths.bottomPrimaryTilesheetPath().string()));
   }
-  if (!std::filesystem::exists(ctx.inputPaths.middlePrimaryTilesheetPath())) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
+  if (!std::filesystem::exists(ctx.srcPaths.middlePrimaryTilesheetPath())) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.srcPaths.middlePrimaryTilesheetPath().string()));
   }
-  if (!std::filesystem::is_regular_file(ctx.inputPaths.middlePrimaryTilesheetPath())) {
+  if (!std::filesystem::is_regular_file(ctx.srcPaths.middlePrimaryTilesheetPath())) {
     fatalerror(
-        ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-        fmt::format("{}: exists but was not a regular file", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
+        ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+        fmt::format("{}: exists but was not a regular file", ctx.srcPaths.middlePrimaryTilesheetPath().string()));
   }
-  if (!std::filesystem::exists(ctx.inputPaths.topPrimaryTilesheetPath())) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.inputPaths.topPrimaryTilesheetPath().string()));
+  if (!std::filesystem::exists(ctx.srcPaths.topPrimaryTilesheetPath())) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: file does not exist", ctx.srcPaths.topPrimaryTilesheetPath().string()));
   }
-  if (!std::filesystem::is_regular_file(ctx.inputPaths.topPrimaryTilesheetPath())) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: exists but was not a regular file", ctx.inputPaths.topPrimaryTilesheetPath().string()));
+  if (!std::filesystem::is_regular_file(ctx.srcPaths.topPrimaryTilesheetPath())) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: exists but was not a regular file", ctx.srcPaths.topPrimaryTilesheetPath().string()));
   }
 
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     try {
-      // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
+      // We do this here so if the source is not a PNG, we can catch and give a better error
+      png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.bottomSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.bottomSecondaryTilesheetPath().string()));
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.srcPaths.bottomSecondaryTilesheetPath().string()));
     }
     try {
-      // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middleSecondaryTilesheetPath()};
+      // We do this here so if the source is not a PNG, we can catch and give a better error
+      png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.middleSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.middleSecondaryTilesheetPath().string()));
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.srcPaths.middleSecondaryTilesheetPath().string()));
     }
     try {
-      // We do this here so if the input is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topSecondaryTilesheetPath()};
+      // We do this here so if the source is not a PNG, we can catch and give a better error
+      png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.topSecondaryTilesheetPath()};
     }
     catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.inputPaths.topSecondaryTilesheetPath().string()));
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{} is not a valid PNG file", ctx.srcPaths.topSecondaryTilesheetPath().string()));
     }
   }
   try {
-    // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
+    // We do this here so if the source is not a PNG, we can catch and give a better error
+    png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.bottomPrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.inputPaths.bottomPrimaryTilesheetPath().string()));
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.srcPaths.bottomPrimaryTilesheetPath().string()));
   }
   try {
-    // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
+    // We do this here so if the source is not a PNG, we can catch and give a better error
+    png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.middlePrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.inputPaths.middlePrimaryTilesheetPath().string()));
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.srcPaths.middlePrimaryTilesheetPath().string()));
   }
   try {
-    // We do this here so if the input is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.inputPaths.topPrimaryTilesheetPath()};
+    // We do this here so if the source is not a PNG, we can catch and give a better error
+    png::image<png::rgba_pixel> tilesheetPng{ctx.srcPaths.topPrimaryTilesheetPath()};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.inputPaths.topPrimaryTilesheetPath().string()));
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{} is not a valid PNG file", ctx.srcPaths.topPrimaryTilesheetPath().string()));
   }
 
   /*
-   * We only read the linked behavior header file from the primary set input. It never makes sense for the secondary
+   * We only read the linked behavior header file from the primary set source. It never makes sense for the secondary
    * set to have a different behavior map than the paired primary, so the user does not need to specify this header in
-   * the secondary set input.
+   * the secondary set source.
    */
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
-  if (std::filesystem::exists(ctx.inputPaths.primaryMetatileBehaviors())) {
-    auto [map, reverse] = getMetatileBehaviorMaps(ctx, ctx.inputPaths.primaryMetatileBehaviors());
+  if (std::filesystem::exists(ctx.srcPaths.primaryMetatileBehaviors())) {
+    auto [map, reverse] = getMetatileBehaviorMaps(ctx, ctx.srcPaths.primaryMetatileBehaviors());
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
   else {
-    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.inputPaths.primaryMetatileBehaviors());
+    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.srcPaths.primaryMetatileBehaviors());
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.inputPaths.primaryInputPath);
-    png::image<png::rgba_pixel> bottomPrimaryPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
-    png::image<png::rgba_pixel> middlePrimaryPng{ctx.inputPaths.middlePrimaryTilesheetPath()};
-    png::image<png::rgba_pixel> topPrimaryPng{ctx.inputPaths.topPrimaryTilesheetPath()};
+    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.srcPaths.primarySourcePath);
+    png::image<png::rgba_pixel> bottomPrimaryPng{ctx.srcPaths.bottomPrimaryTilesheetPath()};
+    png::image<png::rgba_pixel> middlePrimaryPng{ctx.srcPaths.middlePrimaryTilesheetPath()};
+    png::image<png::rgba_pixel> topPrimaryPng{ctx.srcPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.primaryAttributesPath());
+    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.srcPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+      die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
     }
 
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.inputPaths.primaryAnimPath());
+    driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.srcPaths.primaryAnimPath());
     auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
-    pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.inputPaths.secondaryInputPath);
-    png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomSecondaryTilesheetPath()};
-    png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middleSecondaryTilesheetPath()};
-    png::image<png::rgba_pixel> topPng{ctx.inputPaths.topSecondaryTilesheetPath()};
+    pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.srcPaths.secondarySourcePath);
+    png::image<png::rgba_pixel> bottomPng{ctx.srcPaths.bottomSecondaryTilesheetPath()};
+    png::image<png::rgba_pixel> middlePng{ctx.srcPaths.middleSecondaryTilesheetPath()};
+    png::image<png::rgba_pixel> topPng{ctx.srcPaths.topSecondaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
-    auto secondaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.secondaryAttributesPath());
+    auto secondaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.srcPaths.secondaryAttributesPath());
     if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+      die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during secondary attributes import");
     }
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
-    driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.secondaryAnimPath());
+    driveAnimsImport(ctx, decompiledTiles, ctx.srcPaths.secondaryAnimPath());
     ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
   }
   else {
-    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.inputPaths.primaryInputPath);
-    png::image<png::rgba_pixel> bottomPng{ctx.inputPaths.bottomPrimaryTilesheetPath()};
-    png::image<png::rgba_pixel> middlePng{ctx.inputPaths.middlePrimaryTilesheetPath()};
-    png::image<png::rgba_pixel> topPng{ctx.inputPaths.topPrimaryTilesheetPath()};
+    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.srcPaths.primarySourcePath);
+    png::image<png::rgba_pixel> bottomPng{ctx.srcPaths.bottomPrimaryTilesheetPath()};
+    png::image<png::rgba_pixel> middlePng{ctx.srcPaths.middlePrimaryTilesheetPath()};
+    png::image<png::rgba_pixel> topPng{ctx.srcPaths.topPrimaryTilesheetPath()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.inputPaths.primaryAttributesPath());
+    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.srcPaths.primaryAttributesPath());
     if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+      die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
     }
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
-    driveAnimsImport(ctx, decompiledTiles, ctx.inputPaths.primaryAnimPath());
+    driveAnimsImport(ctx, decompiledTiles, ctx.srcPaths.primaryAnimPath());
     compiledTiles = compile(ctx, decompiledTiles);
   }
 
@@ -367,23 +367,23 @@ static void driveCompile(PtContext &ctx)
   std::filesystem::path attribtuesPath = ctx.output.path / attributesFile;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a file", tilesetPath.string()));
   }
   if (std::filesystem::exists(metatilesPath) && !std::filesystem::is_regular_file(metatilesPath)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a file", metatilesPath.string()));
   }
   if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a directory", palettesDir.string()));
   }
   if (std::filesystem::exists(animsPath) && !std::filesystem::is_directory(animsPath)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a directory", animsDir.string()));
   }
   if (std::filesystem::exists(attribtuesPath) && !std::filesystem::is_regular_file(attribtuesPath)) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a file", attribtuesPath.string()));
   }
   std::filesystem::create_directories(palettesPath);
@@ -428,7 +428,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
-  ctx.inputPaths.primaryInputPath = "res/tests/anim_metatiles_2/primary";
+  ctx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
 
   porytiles::drive(ctx);
 
@@ -640,9 +640,9 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
-  ctx.inputPaths.primaryInputPath = "res/tests/anim_metatiles_2/primary";
+  ctx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary"));
-  ctx.inputPaths.secondaryInputPath = "res/tests/anim_metatiles_2/secondary";
+  ctx.srcPaths.secondarySourcePath = "res/tests/anim_metatiles_2/secondary";
 
   porytiles::drive(ctx);
 

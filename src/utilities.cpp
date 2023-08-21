@@ -26,8 +26,7 @@ getMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath)
   std::ifstream behaviorFile{filePath};
 
   if (behaviorFile.fail()) {
-    fatalerror(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: could not open for reading", filePath));
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, fmt::format("{}: could not open for reading", filePath));
   }
 
   std::string line;
@@ -54,7 +53,7 @@ getMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath)
       }
       catch (const std::exception &e) {
         behaviorFile.close();
-        fatalerror_invalidBehaviorValue(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, behaviorName,
+        fatalerror_invalidBehaviorValue(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath, behaviorName,
                                         behaviorValueString, processedUpToLine);
         // here so compiler won't complain
         behaviorVal = 0;
@@ -83,7 +82,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
     in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
   }
   catch (const std::exception &e) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath);
   }
 
   std::string id;
@@ -99,7 +98,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
   bool hasEncounterType = in.has_column("encounterType");
 
   if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath);
   }
 
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
@@ -164,7 +163,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
       }
     }
     catch (const std::exception &e) {
-      fatalerror_invalidIdInCsv(ctx.err, ctx.inputPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
+      fatalerror_invalidIdInCsv(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
       // here so compiler won't complain
       idVal = 0;
     }
@@ -179,7 +178,7 @@ getAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.inputPaths.modeBasedInputPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during attributes CSV parsing");
   }
 
@@ -238,7 +237,7 @@ TEST_CASE("getMetatileBehaviorMaps should parse metatile behaviors as expected")
   CHECK(behaviorReverseMap.at(0xEF) == "MB_UNUSED_EF");
 }
 
-TEST_CASE("getAttributesFromCsv should parse input CSVs as expected")
+TEST_CASE("getAttributesFromCsv should parse source CSVs as expected")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
