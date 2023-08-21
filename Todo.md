@@ -9,7 +9,7 @@
   + CImg is much more maintained, it is also header-only and seems to have a clean interface
   + https://github.com/GreycLab/CImg
 
-+ Decompile compiled tilesets back into three layer PNGs + animated sets
++ `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
