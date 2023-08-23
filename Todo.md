@@ -46,15 +46,15 @@
   + `-max-recurse-count` (or another suitable name) to change the call limit for the palette assign algo
 
 + Set up more CI builds
-  + Windows MSVC?
+  + Windows MSVC? MinGW?
   + set up package caches so installs don't have to run every time
-  + universal MacOS binary?
-    + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
-  + dist scripts that setup a folder for easy github upload, auto set compiler flags as necessary
+    + probably too hard to do with homebrew
+  + finish the script targets in package.sh
     + https://releases.llvm.org/16.0.0/projects/libcxx/docs/UsingLibcxx.html
     + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
     + MacOS:
-      CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi"
+      CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++"
+    + do we want separate targets for both libc++ and libstdc++?
   + better build system? (cmake, autotools, etc)
 
 + provide a way to input primer tiles to improve algorithm efficiency
