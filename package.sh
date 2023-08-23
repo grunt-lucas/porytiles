@@ -7,7 +7,7 @@ macos_aarch64() {
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
   CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1" \
-  LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++ -lc++abi" \
+  LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++" \
   CXX=/opt/homebrew/opt/llvm/bin/clang++ \
   make release-check
   cp release/bin/porytiles "$output_directory/porytiles-$mode"
@@ -24,7 +24,7 @@ macos_amd64() {
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
   CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /usr/local/opt/llvm@16/include/c++/v1" \
-  LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++ -lc++ -lc++abi" \
+  LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++ -lc++" \
   CXX=/usr/local/opt/llvm/bin/clang++ \
   make release-check
   cp release/bin/porytiles "$output_directory/porytiles-$mode"
