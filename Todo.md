@@ -34,6 +34,8 @@
 + Warnings
   + `-Wpalette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
+  + `-Wunused-attribute`
+    + warn user if an attribute is unused, i.e. its index is larger than the last metatile
   + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
