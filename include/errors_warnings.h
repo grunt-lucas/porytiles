@@ -28,12 +28,13 @@ struct ErrorsAndWarnings {
   WarningMode attributeFormatMismatch;
   WarningMode missingAttributesCsv;
   WarningMode missingBehaviorsHeader;
+  WarningMode unusedAttribute;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
-        missingBehaviorsHeader{WarningMode::OFF}
+        missingBehaviorsHeader{WarningMode::OFF}, unusedAttribute{WarningMode::OFF}
   {
   }
 
@@ -45,6 +46,7 @@ struct ErrorsAndWarnings {
     attributeFormatMismatch = setting;
     missingAttributesCsv = setting;
     missingBehaviorsHeader = setting;
+    unusedAttribute = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -67,6 +69,9 @@ struct ErrorsAndWarnings {
     if (missingBehaviorsHeader == WarningMode::WARN) {
       missingBehaviorsHeader = WarningMode::ERR;
     }
+    if (unusedAttribute == WarningMode::WARN) {
+      unusedAttribute = WarningMode::ERR;
+    }
   }
 };
 
@@ -76,6 +81,7 @@ extern const char *const WARN_USED_TRUE_COLOR_MODE;
 extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
 extern const char *const WARN_MISSING_BEHAVIORS_HEADER;
+extern const char *const WARN_UNUSED_ATTRIBUTE;
 
 // Internal compiler errors (due to bug in the compiler)
 void internalerror(std::string message);

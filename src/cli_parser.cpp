@@ -289,18 +289,18 @@ const std::string COMPILE_HELP =
 "    Source Directory Format\n"
 "        The source directory must conform to the following format. '[]' indicate optional assets.\n"
 "            src/\n"
-"                bottom.png             # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                middle.png             # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                top.png                # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                attributes.csv         # missing metatile entries will receive default values\n"
-"                metatile_behaviors.h   # primary sets only, consider symlinking to project metatile_attributes.h\n"
-"                [anims/]               # 'anims' folder is optional\n"
-"                    [anim1/]           # animation names can be arbitrary, but must be unique\n"
-"                        key.png        # you must specify a key frame PNG\n"
-"                        00.png         # you must specify at least one animation frame\n"
-"                        [01.png]       # frames must be named numerically, in order\n"
-"                        ...            # you may specify an arbitrary number of additional frames\n"
-"                    ...                # you may specify an arbitrary number of additional animations\n"
+"                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                [attributes.csv]         # missing metatile entries will receive default values\n"
+"                [metatile_behaviors.h]   # primary sets only, consider symlinking to project metatile_attributes.h\n"
+"                [anims/]                 # 'anims' folder is optional\n"
+"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
+"                        key.png          # you must specify a key frame PNG for each anim\n"
+"                        00.png           # you must specify at least one animation frame for each anim\n"
+"                        [01.png]         # frames must be named numerically, in order\n"
+"                        ...              # you may specify an arbitrary number of additional frames\n"
+"                    ...                  # you may specify an arbitrary number of additional animations\n"
 "\n"
 "OPTIONS\n" +
 "    Driver Options\n" +
@@ -375,6 +375,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       {WNO_MISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WNO_MISSING_ATTRIBUTES_CSV_VAL},
       {WMISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WMISSING_BEHAVIORS_HEADER_VAL},
       {WNO_MISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WNO_MISSING_BEHAVIORS_HEADER_VAL},
+      {WUNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WUNUSED_ATTRIBUTE_VAL},
+      {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
@@ -399,14 +401,17 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   std::optional<bool> warnUsedTrueColorModeOverride{true};
   std::optional<bool> errUsedTrueColorModeOverride{};
 
-  std::optional<bool> warnAttributeFormatMismatchOverride{true};
+  std::optional<bool> warnAttributeFormatMismatchOverride{};
   std::optional<bool> errAttributeFormatMismatchOverride{};
 
-  std::optional<bool> warnMissingAttributesCsvOverride{true};
+  std::optional<bool> warnMissingAttributesCsvOverride{};
   std::optional<bool> errMissingAttributesCsvOverride{};
 
-  std::optional<bool> warnMissingBehaviorsHeaderOverride{true};
+  std::optional<bool> warnMissingBehaviorsHeaderOverride{};
   std::optional<bool> errMissingBehaviorsHeaderOverride{};
+
+  std::optional<bool> warnUnusedAttributeOverride{};
+  std::optional<bool> errUnusedAttributeOverride{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -509,6 +514,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
           errMissingBehaviorsHeaderOverride = true;
         }
+        else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
+          errUnusedAttributeOverride = true;
+        }
         else {
           fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
                                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -534,6 +542,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
         errMissingBehaviorsHeaderOverride = false;
+      }
+      else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
+        errUnusedAttributeOverride = false;
       }
       else {
         fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -578,6 +589,12 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_MISSING_BEHAVIORS_HEADER_VAL:
       warnMissingBehaviorsHeaderOverride = false;
+      break;
+    case WUNUSED_ATTRIBUTE_VAL:
+      warnUnusedAttributeOverride = true;
+      break;
+    case WNO_UNUSED_ATTRIBUTE_VAL:
+      warnUnusedAttributeOverride = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -637,6 +654,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   }
   if (warnMissingBehaviorsHeaderOverride.has_value()) {
     ctx.err.missingBehaviorsHeader = warnMissingBehaviorsHeaderOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnUnusedAttributeOverride.has_value()) {
+    ctx.err.unusedAttribute = warnUnusedAttributeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
 
   // If requested, set all enabled warnings to errors
@@ -716,6 +736,17 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.missingBehaviorsHeader = WarningMode::OFF;
+    }
+  }
+  if (errUnusedAttributeOverride.has_value()) {
+    if (errUnusedAttributeOverride.value()) {
+      ctx.err.unusedAttribute = WarningMode::ERR;
+    }
+    else if ((warnUnusedAttributeOverride.has_value() && warnUnusedAttributeOverride.value()) || enableAllWarnings) {
+      ctx.err.unusedAttribute = WarningMode::WARN;
+    }
+    else {
+      ctx.err.unusedAttribute = WarningMode::OFF;
     }
   }
 
@@ -798,9 +829,9 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 
   SUBCASE("-Wall should enable everything")
@@ -860,7 +891,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
   }
 
-  SUBCASE("Should enable a non-default warn, set all to error, then disable two of the errors")
+  SUBCASE("Should enable a non-default warn, set all to error, then disable the error")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -871,29 +902,26 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufCmd, "compile-primary");
 
     char bufTrueColor[64];
-    strcpy(bufTrueColor, "-Wused-true-color-mode");
+    strcpy(bufTrueColor, "-Wattribute-format-mismatch");
 
     char bufWerror[64];
     strcpy(bufWerror, "-Werror");
 
     char bufNoError[64];
-    strcpy(bufNoError, "-Wno-error=used-true-color-mode");
-
-    char bufNoError2[64];
-    strcpy(bufNoError2, "-Wno-error=attribute-format-mismatch");
+    strcpy(bufNoError, "-Wno-error=attribute-format-mismatch");
 
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufNoError2, bufPath};
-    porytiles::parseCompile(ctx, 6, argv);
+    char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath};
+    porytiles::parseCompile(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 
   SUBCASE("Should enable all warnings, then disable two of them")

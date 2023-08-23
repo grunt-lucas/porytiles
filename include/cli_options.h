@@ -203,6 +203,11 @@ const std::string WNO_MISSING_BEHAVIORS_HEADER = W_GENERAL + "no-" + WARN_MISSIN
 constexpr int WMISSING_BEHAVIORS_HEADER_VAL = 5005;
 constexpr int WNO_MISSING_BEHAVIORS_HEADER_VAL = 6005;
 
+const std::string WUNUSED_ATTRIBUTE = W_GENERAL + WARN_UNUSED_ATTRIBUTE;
+const std::string WNO_UNUSED_ATTRIBUTE = W_GENERAL + "no-" + WARN_UNUSED_ATTRIBUTE;
+constexpr int WUNUSED_ATTRIBUTE_VAL = 5006;
+constexpr int WNO_UNUSED_ATTRIBUTE_VAL = 6006;
+
 // @formatter:on
 // clang-format on
 

@@ -25,6 +25,7 @@ const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
 const char *const WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
+const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
