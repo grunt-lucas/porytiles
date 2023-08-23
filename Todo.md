@@ -26,6 +26,11 @@
   + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
   + is it possible to generate the code and insert it automatically?
 
++ `freestanding` mode for compilation
+  + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
+  + might be useful for some people who drew a scene they want to tile-ize
+  + low-priority feature
+
 + Warnings
   + `-Wpalette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
