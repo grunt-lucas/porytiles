@@ -67,6 +67,7 @@ void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const So
   if (err.printErrors) {
     pt_err("source tiles PNG {} '{}' was not divisible by 8", dimensionName,
            fmt::styled(dimension, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -76,6 +77,7 @@ void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string anim
   err.errCount++;
   if (err.printErrors) {
     pt_err("anim PNG {} '{}' was not divisible by 8", dimensionName, fmt::styled(dimension, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -85,6 +87,7 @@ void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, 
   if (err.printErrors) {
     pt_err("{} layer source PNG height '{}' was not divisible by 16", layerString(layer),
            fmt::styled(height, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -93,6 +96,7 @@ void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_3
   err.errCount++;
   if (err.printErrors) {
     pt_err("{} layer source PNG width '{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -103,6 +107,7 @@ void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::
     pt_err("bottom, middle, top layer source PNG heights '{}, {}, {}' were not equivalent",
            fmt::styled(bottom, fmt::emphasis::bold), fmt::styled(middle, fmt::emphasis::bold),
            fmt::styled(top, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -112,6 +117,7 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
   if (err.printErrors) {
     pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
            fmt::styled(file, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -125,6 +131,7 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("cannot have more than {} unique colors, including the transparency color",
             fmt::styled(PAL_SIZE, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -139,6 +146,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("alpha value must be either {} for opaque or {} for transparent",
             fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold), fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -151,6 +159,7 @@ void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, c
     pt_err("color '{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
            fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
            fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -159,6 +168,7 @@ void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::s
   err.errCount++;
   if (err.printErrors) {
     pt_err("dual-layer inference failed for metatile {}, all three layers had non-transparent content", metatileIndex);
+    pt_println(stderr, "");
   }
 }
 
@@ -167,6 +177,7 @@ void error_invalidCsvRowFormat(ErrorsAndWarnings &err, std::string filePath, std
   err.errCount++;
   if (err.printErrors) {
     pt_err("{}: on line {}: provided columns did not match header", filePath, line);
+    pt_println(stderr, "");
   }
 }
 
@@ -178,6 +189,7 @@ void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath,
            fmt::styled(behavior, fmt::emphasis::bold));
     pt_note("you can import additional recognized behaviors by creating a symbolic link in");
     pt_println(stderr, "      the source folder to `include/constants/metatile_behaviors.h'");
+    pt_println(stderr, "");
   }
 }
 
@@ -188,6 +200,7 @@ void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std:
   if (err.printErrors) {
     pt_err("{}: on line {}: duplicate entry for metatile '{}', first definition on line {}", filePath, line,
            fmt::styled(id, fmt::emphasis::bold), previousLine);
+    pt_println(stderr, "");
   }
 }
 
@@ -196,6 +209,7 @@ void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std:
   err.errCount++;
   if (err.printErrors) {
     pt_err("{}: on line {}: invalid TerrainType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -204,6 +218,7 @@ void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, st
   err.errCount++;
   if (err.printErrors) {
     pt_err("{}: on line {}: invalid EncounterType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -451,6 +466,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
             fmt::styled(previousTileString, fmt::emphasis::bold),
             fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
             fmt::styled(std::get<2>(previousRgba), fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
@@ -460,6 +476,9 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
       fmt::format("animation '{}' key frame tile '{}' was not present in any assignments",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
   printWarning(err, err.keyFrameTileDidNotAppearInAssignment, WARN_KEY_FRAME_DID_NOT_APPEAR, message);
+  if (err.printErrors && err.keyFrameTileDidNotAppearInAssignment != WarningMode::OFF) {
+    pt_println(stderr, "");
+  }
 }
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err)
@@ -468,6 +487,7 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
   printWarning(err, err.usedTrueColorMode, WARN_USED_TRUE_COLOR_MODE, message);
   if (err.printErrors && err.usedTrueColorMode != WarningMode::OFF) {
     pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
+    pt_println(stderr, "");
   }
 }
 
@@ -476,6 +496,9 @@ void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string fil
   printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
                fmt::format("{}: too many attribute columns for base game '{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
+  if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
+    pt_println(stderr, "");
+  }
 }
 
 void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
@@ -485,6 +508,7 @@ void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string file
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
   if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
     pt_note("unspecified columns will receive default values");
+    pt_println(stderr, "");
   }
 }
 
@@ -494,6 +518,7 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
                fmt::format("{}: attributes file did not exist", filePath));
   if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
     pt_note("all attributes will receive default or inferred values");
+    pt_println(stderr, "");
   }
 }
 
@@ -503,6 +528,7 @@ void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePa
                fmt::format("{}: expected behaviors header did not exist", filePath));
   if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
     pt_note("a behaviors header is required in order to parse behavior names in the attributes csv");
+    pt_println(stderr, "");
   }
 }
 
@@ -514,6 +540,7 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
       fmt::format("found attribute for nonexistent metatile ID {}", fmt::styled(metatileId, fmt::emphasis::bold)));
   if (err.printErrors && err.unusedAttribute != WarningMode::OFF) {
     pt_note("{} metatiles found at source path {}", metatileCount, fmt::styled(sourcePath, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
 }
 
