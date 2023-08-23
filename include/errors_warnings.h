@@ -197,6 +197,9 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
 
 void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath);
 
+void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
+                          std::string sourcePath);
+
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
 

@@ -316,12 +316,18 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     }
   }
 
+  std::size_t metatileCount = decompiledTiles.tiles.size() / (ctx.compilerConfig.tripleLayer ? 12 : 8);
+  for (const auto &[metatileId, _] : attributesMap) {
+    if (metatileId > metatileCount - 1) {
+      warn_unusedAttribute(ctx.err, metatileId, metatileCount,
+                           ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode).string());
+    }
+  }
+
   if (ctx.err.errCount > 0) {
     die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during layered tile import");
   }
-
-  // TODO : some way to warn users if the attributesMap contained entries we never used
 
   return decompiledTiles;
 }

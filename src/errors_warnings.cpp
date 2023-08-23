@@ -506,6 +506,17 @@ void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePa
   }
 }
 
+void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
+                          std::string sourcePath)
+{
+  printWarning(
+      err, err.unusedAttribute, WARN_UNUSED_ATTRIBUTE,
+      fmt::format("found attribute for nonexistent metatile ID {}", fmt::styled(metatileId, fmt::emphasis::bold)));
+  if (err.printErrors && err.unusedAttribute != WarningMode::OFF) {
+    pt_note("{} metatiles found at source path {}", metatileCount, fmt::styled(sourcePath, fmt::emphasis::bold));
+  }
+}
+
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
@@ -1055,6 +1066,53 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
                          porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+}
+
+TEST_CASE("warn_unusedAttribute should correctly warn")
+{
+  SUBCASE("it should trigger correctly for a primary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary";
+    ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+
+  SUBCASE("it should trigger correctly for a secondary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
+    ctx.srcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/secondary";
+    ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+    CHECK(ctx.err.errCount == 1);
+  }
+
+  SUBCASE("it should trigger correctly for a dual layer primary set")
+  {
+    porytiles::PtContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.compilerConfig.tripleLayer = false;
+    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
+    ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
+    ctx.err.printErrors = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
     CHECK(ctx.err.errCount == 1);
   }
 }
