@@ -40,6 +40,9 @@
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
 
++ Refactor CLI parsing
+  + many commands share the same set of options, or slight variations
+
 + Options to add
   + `-manage-metatiles-with-porymap` skips generation of `metatiles.bin` and `metatile_attributes.bin`
   + `-max-recurse-count` (or another suitable name) to change the call limit for the palette assign algo

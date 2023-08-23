@@ -228,8 +228,7 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
       // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      fmt::println(stderr, "{}", GLOBAL_HELP);
-      ;
+      fmt::println(stderr, "Try `{} --help' for usage information.", PROGRAM_NAME);
       exit(2);
     }
   }
@@ -588,7 +587,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      fmt::println(stderr, "{}", COMPILE_HELP);
+      // TODO : show correct subcommand here
+      fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PROGRAM_NAME);
       exit(2);
     }
   }
