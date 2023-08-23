@@ -156,7 +156,7 @@ buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::ui
     return std::unordered_map<std::size_t, Attributes>{};
   }
 
-  return getAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
+  return importAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
 }
 
 // static void driveCompileFreestanding(PtContext &ctx) {}
@@ -290,7 +290,7 @@ static void driveCompile(PtContext &ctx)
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.srcPaths.primaryMetatileBehaviors())) {
-    auto [map, reverse] = getMetatileBehaviorMaps(ctx, ctx.srcPaths.primaryMetatileBehaviors());
+    auto [map, reverse] = importMetatileBehaviorMaps(ctx, ctx.srcPaths.primaryMetatileBehaviors());
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }

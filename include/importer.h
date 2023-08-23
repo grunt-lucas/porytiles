@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <png.hpp>
+#include <string>
 #include <unordered_map>
 
 #include "ptcontext.h"
@@ -29,6 +30,13 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
 
 void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
                      DecompiledTileset &tiles);
+
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath);
+
+std::unordered_map<std::size_t, Attributes>
+importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+                        const std::string &filePath);
 
 } // namespace porytiles
 

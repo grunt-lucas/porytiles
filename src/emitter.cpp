@@ -420,7 +420,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/attributes.csv"));
     auto attributesMap =
-        porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2/primary/attributes.csv");
+        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2/primary/attributes.csv");
 
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/bottom.png"));
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/middle.png"));
@@ -503,7 +503,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/attributes.csv"));
     auto attributesMap =
-        porytiles::getAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2_dual/primary/attributes.csv");
+        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2_dual/primary/attributes.csv");
 
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/bottom.png"));
     REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/middle.png"));
