@@ -386,6 +386,10 @@ static void driveCompile(PtContext &ctx)
     fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                fmt::format("'{}' exists in output directory but is not a file", attribtuesPath.string()));
   }
+  /*
+   * TODO : these creates will throw an internalerror if user does not have permissions to make path, this should be a
+   * fatal error, not an internalerror
+   */
   std::filesystem::create_directories(palettesPath);
   std::filesystem::create_directories(animsPath);
 
