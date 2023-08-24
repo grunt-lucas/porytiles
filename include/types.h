@@ -244,6 +244,8 @@ extern const RGBATile RGBA_TILE_WHITE;
 struct GBATile {
   std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
+  GBATile() : colorIndexes{} {}
+
   [[nodiscard]] std::uint8_t getPixel(size_t index) const
   {
     if (index >= TILE_NUM_PIX) {
@@ -289,6 +291,8 @@ namespace porytiles {
 struct GBAPalette {
   std::size_t size;
   std::array<BGR15, PAL_SIZE> colors;
+
+  GBAPalette() : size{}, colors{} {}
 };
 
 /**
