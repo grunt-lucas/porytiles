@@ -297,15 +297,15 @@ struct AssignState {
   std::vector<ColorSet> unassigned;
 };
 
-std::size_t gRecurseCount = 0;
+std::size_t gPaletteAssignCutoffCounter = 0;
 static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
                    const std::vector<ColorSet> &primaryPalettes)
 {
-  gRecurseCount++;
+  gPaletteAssignCutoffCounter++;
   // TODO : this is a horrible hack avert your eyes
-  if (gRecurseCount > ctx.compilerConfig.maxRecurseCount) {
+  if (gPaletteAssignCutoffCounter > ctx.compilerConfig.paletteAssignCutoffThreshold) {
     fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
-                                         ctx.compilerConfig.maxRecurseCount);
+                                         ctx.compilerConfig.paletteAssignCutoffThreshold);
   }
 
   if (state.unassigned.empty()) {
@@ -841,7 +841,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
-  gRecurseCount = 0;
+  gPaletteAssignCutoffCounter = 0;
   bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
     /*
@@ -1500,7 +1500,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 2;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.maxRecurseCount = 20;
+    ctx.compilerConfig.paletteAssignCutoffThreshold = 20;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1521,7 +1521,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    porytiles::gRecurseCount = 0;
+    porytiles::gPaletteAssignCutoffCounter = 0;
     CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
@@ -1536,7 +1536,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 5;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.maxRecurseCount = 200;
+    ctx.compilerConfig.paletteAssignCutoffThreshold = 200;
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
@@ -1557,7 +1557,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    porytiles::gRecurseCount = 0;
+    porytiles::gPaletteAssignCutoffCounter = 0;
     CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
@@ -1574,7 +1574,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.compilerConfig.transparencyColor = porytiles::RGBA_MAGENTA;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.maxRecurseCount = 5;
+  ctx.compilerConfig.paletteAssignCutoffThreshold = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -1628,7 +1628,7 @@ TEST_CASE("compile simple example should perform as expected")
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.maxRecurseCount = 5;
+  ctx.compilerConfig.paletteAssignCutoffThreshold = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));

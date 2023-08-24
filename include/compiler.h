@@ -22,7 +22,7 @@ struct DecompiledIndex {
   DecompiledIndex() : animated{false}, animIndex{0}, tileIndex{0} {}
 };
 
-extern std::size_t gRecurseCount;
+extern std::size_t gPaletteAssignCutoffCounter;
 
 /**
  * TODO : fill in doc comments

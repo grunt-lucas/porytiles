@@ -714,10 +714,12 @@ struct Output {
 struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
-  std::size_t maxRecurseCount;
+  std::size_t paletteAssignCutoffThreshold;
   bool tripleLayer;
 
-  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, maxRecurseCount{2'000'000}, tripleLayer{true} {}
+  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, paletteAssignCutoffThreshold{2'000'000}, tripleLayer{true}
+  {
+  }
 };
 
 struct CompilerContext {
