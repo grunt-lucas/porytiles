@@ -53,23 +53,29 @@ CXX=clang++ make check
 
 Once you've cloned and built Porytiles, try the following little demo.
 
-1. Open a `pokeemerald` project (`pokefirered` and `pokeruby` are also supported via command line options) in Porymap,one that has triple-layer metatiles enabled (Porytiles supports dual-layer metatiles as well, please sit tight for a new tutorial). For now, please use a triple-layer project. If you don't know what this is or how to enable, see here: https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles
+1. Open a `pokeemerald` project (`pokefirered` and `pokeruby` are also supported via command line options) in Porymap. Porytiles supports both dual and triple layer tile project configurations.
 
-1. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesPrimaryTest`.
+2. In Porymap, select `Tools -> New Tileset`. Create a primary set called `PorytilesPrimaryTest`.
 
-2. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary tileset, select `gTileset_PorytilesPrimaryTest`. Then save the map.
+3. In Porymap, right click one of the map groups and create a new map called `PorytilesTestMap`. For this map's primary tileset, select `gTileset_PorytilesPrimaryTest`. Then save the map.
 
-1. Run the following command, replacing `path/to/project` with the path to your project:
+4. Run one of the following commands, depending on the layer type of your project. Replace `<path/to/project>` with the path to your project.
 
+Dual layer:
 ```
-./release/bin/porytiles compile-primary -o path/to/project/data/tilesets/primary/porytiles_primary_test res/tests/anim_metatiles_2/primary
+./release/bin/porytiles compile-primary -dual-layer -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1
+```
+
+Triple layer:
+```
+./release/bin/porytiles compile-primary -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1
 ```
 
 5. In Porymap, select `File -> Reload Project`.
 
 6. The metatile picker on the right should now show a basic tileset! Start mapping on your new map, and then save.
 
-7. Open one of the layer PNGs in `res/tests/anim_metatiles_2/primary` and edit it. Re-run the command from Step 4, and then reload Porymap again like in Step 5. You should see your changes reflected in both the map and the metatile picker.
+7. Open one of the layer PNGs in `res/examples/simple_primary_1` and edit it. Re-run the command from Step 4, and then reload Porymap again like in Step 5. You should see your changes reflected in both the map and the metatile picker.
 
 8. You can stop here and enjoy! Or, if you want to bring in a secondary set as well, please read on.
 
@@ -77,10 +83,15 @@ Once you've cloned and built Porytiles, try the following little demo.
 
 10. In Porymap, make sure `PorytilesTestMap` is open. Use the tileset selector to change `PorytilesTestMap`'s secondary tileset to `gTileset_PorytilesSecondaryTest`. Then save the map.
 
-11. Run the following command, replacing `path/to/project` with the path to your project:
+11. Again, run the command that corresponds to your project's layer type. Replace `<path/to/project>` with the path to your project.
 
+Triple layer:
 ```
-./release/bin/porytiles compile-secondary -o path/to/project/data/tilesets/secondary/porytiles_secondary_test res/tests/anim_metatiles_2/secondary res/tests/anim_metatiles_2/primary
+./release/bin/porytiles compile-secondary -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1
+```
+Dual layer:
+```
+./release/bin/porytiles compile-secondary -dual-layer -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1
 ```
 
 12. In Porymap, select `File -> Reload Project`.
