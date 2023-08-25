@@ -21,33 +21,37 @@ namespace porytiles {
 // Global options
 
 const std::string HELP = "help";
-constexpr char HELP_SHORT = "h"[0];
+const std::string HELP_SHORT = "h";
 const std::string HELP_DESC =
 "    -" + std::string{HELP_SHORT} + ", --" + HELP + "\n"
 "         Print help message.\n";
+constexpr int HELP_VAL = 0000;
 
 const std::string VERBOSE = "verbose";
-constexpr char VERBOSE_SHORT = "v"[0];
+const std::string VERBOSE_SHORT = "v";
 const std::string VERBOSE_DESC =
 "    -" + std::string{VERBOSE_SHORT} + ", --" + VERBOSE + "\n"
 "         Enable verbose logging to stderr.\n";
+constexpr int VERBOSE_VAL = 0001;
 
 const std::string VERSION = "version";
-constexpr char VERSION_SHORT = "V"[0];
+const std::string VERSION_SHORT = "V";
 const std::string VERSION_DESC =
 "    -" + std::string{VERSION_SHORT} + ", --" + VERSION + "\n"
 "         Print version info.\n";
+constexpr int VERSION_VAL = 0002;
 
 
 // Driver options
 
 const std::string OUTPUT = "output";
-constexpr char OUTPUT_SHORT = "o"[0];
+const std::string OUTPUT_SHORT = "o";
 const std::string OUTPUT_DESC =
 "        -" + std::string{OUTPUT_SHORT} + ", -" + OUTPUT + "=<OUTPUT-PATH>\n"
 "             Output compiled files to the directory specified by OUTPUT-PATH. If any element of\n"
 "             OUTPUT-PATH does not exist, it will be created. Defaults to the current working\n"
 "             directory (i.e. `.').\n";
+constexpr int OUTPUT_VAL = 1000;
 
 const std::string TILES_OUTPUT_PAL = "tiles-output-pal";
 const std::string TILES_OUTPUT_PAL_DESC =
@@ -55,7 +59,7 @@ const std::string TILES_OUTPUT_PAL_DESC =
 "             Set the palette mode for the output `tiles.png'. Valid settings are `true-color' or\n"
 "             `greyscale'. These settings are for human visual purposes only and have no effect on\n"
 "             the final in-game tiles. Default value is `greyscale'.\n";
-constexpr int TILES_OUTPUT_PAL_VAL = 1000;
+constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 
 
 // Tileset generation options
@@ -154,10 +158,11 @@ const std::string W_GENERAL_DESC =
 "             right-most specifier will take precedence.\n";
 
 const std::string WNONE = "Wnone";
-constexpr char WNONE_SHORT = "w"[0];
+const std::string WNONE_SHORT = "w";
 const std::string WNONE_DESC =
 "        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
 "             Disable all warnings.\n";
+constexpr int WNONE_VAL = 4001;
 
 const std::string WNO_ERROR = "Wno-error";
 constexpr int WNO_ERROR_VAL = 4003;

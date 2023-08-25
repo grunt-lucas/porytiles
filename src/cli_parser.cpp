@@ -155,8 +155,7 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
 
 // @formatter:off
 // clang-format off
-const std::vector<std::string> GLOBAL_SHORTS = {std::string{HELP_SHORT}, std::string{VERBOSE_SHORT},
-                                                std::string{VERSION_SHORT}};
+const std::vector<std::string> GLOBAL_SHORTS = {};
 const std::string GLOBAL_HELP =
 "porytiles " + VERSION_TAG + " " + RELEASE_DATE + "\n"
 "grunt-lucas <grunt.lucas@yahoo.com>\n"
@@ -202,9 +201,12 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
-  static struct option longOptions[] = {{HELP.c_str(), no_argument, nullptr, HELP_SHORT},
-                                        {VERBOSE.c_str(), no_argument, nullptr, VERBOSE_SHORT},
-                                        {VERSION.c_str(), no_argument, nullptr, VERSION_SHORT},
+  static struct option longOptions[] = {{HELP.c_str(), no_argument, nullptr, HELP_VAL},
+                                        {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
+                                        {VERBOSE.c_str(), no_argument, nullptr, VERBOSE_VAL},
+                                        {VERBOSE_SHORT.c_str(), no_argument, nullptr, VERBOSE_VAL},
+                                        {VERSION.c_str(), no_argument, nullptr, VERSION_VAL},
+                                        {VERSION_SHORT.c_str(), no_argument, nullptr, VERSION_VAL},
                                         {nullptr, no_argument, nullptr, 0}};
 
   while (true) {
@@ -214,15 +216,15 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
       break;
 
     switch (opt) {
-    case VERBOSE_SHORT:
+    case VERBOSE_VAL:
       ctx.verbose = true;
       break;
-    case VERSION_SHORT:
+    case VERSION_VAL:
       fmt::println("{} {} {}", PROGRAM_NAME, VERSION, RELEASE_DATE);
       exit(0);
 
       // Help message upon '-h/--help' goes to stdout
-    case HELP_SHORT:
+    case HELP_VAL:
       fmt::println("{}", GLOBAL_HELP);
       exit(0);
       // Help message on invalid or unknown options goes to stderr and gives error code
@@ -267,7 +269,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
 // ----------------------------
 // @formatter:off
 // clang-format off
-const std::vector<std::string> COMPILE_SHORTS = {std::string{HELP_SHORT}, std::string{OUTPUT_SHORT} + ":", std::string{WNONE_SHORT}};
+const std::vector<std::string> COMPILE_SHORTS = {};
 const std::string COMPILE_HELP =
 "USAGE\n"
 "    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
@@ -340,7 +342,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   std::string shortOptions = "+" + implodedShorts.str();
   static struct option longOptions[] = {
       // Driver options
-      {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_SHORT},
+      {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
+      {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
 
       // Tileset generation options
@@ -358,7 +361,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 
       // Warning and error options
       {WALL.c_str(), no_argument, nullptr, WALL_VAL},
-      {WNONE.c_str(), no_argument, nullptr, WNONE_SHORT},
+      {WNONE.c_str(), no_argument, nullptr, WNONE_VAL},
+      {WNONE_SHORT.c_str(), no_argument, nullptr, WNONE_VAL},
       {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
       {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
 
@@ -379,7 +383,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
 
       // Help
-      {HELP.c_str(), no_argument, nullptr, HELP_SHORT},
+      {HELP.c_str(), no_argument, nullptr, HELP_VAL},
+      {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
 
       {nullptr, no_argument, nullptr, 0}};
 
@@ -440,7 +445,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     switch (opt) {
 
     // Driver options
-    case OUTPUT_SHORT:
+    case OUTPUT_VAL:
       ctx.output.path = optarg;
       break;
     case TILES_OUTPUT_PAL_VAL:
@@ -488,7 +493,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     case WALL_VAL:
       enableAllWarnings = true;
       break;
-    case WNONE_SHORT:
+    case WNONE_VAL:
       disableAllWarnings = true;
       break;
     case WERROR_VAL:
@@ -598,7 +603,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
 
     // Help message upon '-h/--help' goes to stdout
-    case HELP_SHORT:
+    case HELP_VAL:
       fmt::println("{}", COMPILE_HELP);
       exit(0);
     // Help message on invalid or unknown options goes to stderr and gives error code
