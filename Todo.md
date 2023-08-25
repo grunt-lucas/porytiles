@@ -41,9 +41,11 @@
 + Refactor CLI parsing
   + many commands share the same set of options, or slight variations
 
-+ Options to add
++ Options changes
   + `-manage-metatiles-with-porymap` skips generation of `metatiles.bin` and `metatile_attributes.bin`
   + `-palette-assign-cutoff-threshold` (or another suitable name) to change the call limit for the palette assign algo
+  + force long options to use `--`?
+    + rework warning options so `W` is a short option, so `-Wall`, `-Wfoobar`, `-Werror` still work?
 
 + Set up more CI builds
   + Windows MSVC? MinGW?
