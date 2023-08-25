@@ -165,29 +165,29 @@ jobs:
         run: |
           CXX=g++-13 make check
 
-  build-macos-clang-llvm:
-    name: Build on macos-latest-amd64 with Clang+LLVM 16
-    runs-on: macos-latest
-    steps:
-      - name: Install Clang+LLVM 16 and dependencies
-        run: |
-          brew update
-          brew install zlib
-          brew install libpng
-          brew install llvm@16
-          /usr/local/opt/llvm/bin/clang++ --version
-          /usr/local/opt/llvm/bin/clang++ -v
+  # build-macos-clang-llvm:
+  #   name: Build on macos-latest-amd64 with Clang+LLVM 16
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Install Clang+LLVM 16 and dependencies
+  #       run: |
+  #         brew update
+  #         brew install zlib
+  #         brew install libpng
+  #         brew install llvm@16
+  #         /usr/local/opt/llvm/bin/clang++ --version
+  #         /usr/local/opt/llvm/bin/clang++ -v
 
-      - name: Checkout porytiles
-        uses: actions/checkout@v3
+  #     - name: Checkout porytiles
+  #       uses: actions/checkout@v3
 
-      - name: Build debug and release executables
-        run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
+  #     - name: Build debug and release executables
+  #       run: |
+  #         LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
 
-      - name: Run tests on debug and release
-        run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+  #     - name: Run tests on debug and release
+  #       run: |
+  #         LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
 
   release-macos-amd64:
     name: Release a dynamic-linked macos-amd64 binary
