@@ -55,6 +55,10 @@
     + MacOS:
       CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++"
     + do we want separate targets for both libc++ and libstdc++?
+  + static link libc++ and libpng on mac?
+    + https://stackoverflow.com/questions/844819/how-to-static-link-on-os-x
+  + Mac universal binary?
+    + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
   + better build system? (cmake, autotools, etc)
 
 + provide a way to input primer tiles to improve algorithm efficiency
