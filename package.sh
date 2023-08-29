@@ -75,15 +75,15 @@ main() {
     ;;
 
     macos-amd64)
-    macos-amd64
+    macos_amd64
     ;;
 
     linux-aarch64)
-    linux-aarch64
+    linux_aarch64
     ;;
 
     linux-amd64)
-    linux-amd64
+    linux_amd64
     ;;
 
     *)
