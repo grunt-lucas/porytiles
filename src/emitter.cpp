@@ -185,12 +185,17 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
   }
   for (std::size_t i = 0; i < tileset.assignments.size(); i += delta) {
     auto &assignment = tileset.assignments.at(i);
+    std::string behaviorString;
+    if (behaviorReverseMap.contains(assignment.attributes.metatileBehavior)) {
+      behaviorString = behaviorReverseMap.at(assignment.attributes.metatileBehavior);
+    }
+    else {
+      behaviorString = std::to_string(assignment.attributes.metatileBehavior);
+    }
     // TODO : at some point we should support configurable masks and shifts like Porymap does
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
-      // TODO : behaviorReverseMap.at() will throw if the map was empty...
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
-               targetBaseGameString(ctx.targetBaseGame), i / delta,
-               behaviorReverseMap.at(assignment.attributes.metatileBehavior),
+               targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
                layerTypeString(assignment.attributes.layerType));
       // TODO : does this code work as expected on a big-endian machine? I think so...
       std::uint16_t attributeValue =
@@ -200,12 +205,10 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
       out << static_cast<char>(attributeValue >> 8);
     }
     else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      // TODO : behaviorReverseMap.at() will throw if the map was empty...
       pt_logln(
           ctx, stderr,
           "emitted {}-format metatile {} attribute: [ behavior={}, encounterType={}, terrainType={}, layerType={} ]",
-          targetBaseGameString(ctx.targetBaseGame), i / delta,
-          behaviorReverseMap.at(assignment.attributes.metatileBehavior),
+          targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
           encounterTypeString(assignment.attributes.encounterType),
           terrainTypeString(assignment.attributes.terrainType), layerTypeString(assignment.attributes.layerType));
       // TODO : does this code work as expected on a big-endian machine? I think so...
