@@ -16,3 +16,6 @@
     frames that don't actually appear anywhere in the anim, and decompile can warn the user if it decomps an animation
     that doesn't have any frames present in the tiles (which indicates the user will need to manually provide the
     location of the keyframes for that anim, e.g. the water tiles in the vanilla tilesets)
+
+## -Otile-sharing
++ how do we impl this?
