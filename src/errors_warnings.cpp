@@ -311,7 +311,8 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const So
                                           std::size_t maxRecurses)
 {
   if (err.printErrors) {
-    pt_fatal_err("palette assignment exceeded maximum cutoff threshold '{}'", fmt::styled(maxRecurses, fmt::emphasis::bold));
+    pt_fatal_err("palette assignment exceeded maximum cutoff threshold '{}'",
+                 fmt::styled(maxRecurses, fmt::emphasis::bold));
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
