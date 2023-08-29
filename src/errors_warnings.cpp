@@ -311,9 +311,7 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const So
                                           std::size_t maxRecurses)
 {
   if (err.printErrors) {
-    pt_fatal_err("palette assignment exceeded maximum depth '{}'", fmt::styled(maxRecurses, fmt::emphasis::bold));
-    // TODO : impl this CLI option
-    pt_note("you can increase this depth with the '-max-assign-depth' option");
+    pt_fatal_err("palette assignment exceeded maximum cutoff threshold '{}'", fmt::styled(maxRecurses, fmt::emphasis::bold));
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }

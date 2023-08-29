@@ -43,7 +43,6 @@
 
 + Options changes
   + `-manage-metatiles-with-porymap` skips generation of `metatiles.bin` and `metatile_attributes.bin`
-  + `-palette-assign-cutoff-threshold` (or another suitable name) to change the call limit for the palette assign algo
 
 + Set up more CI builds
   + Windows MSVC? MinGW?

@@ -305,6 +305,9 @@ const std::string COMPILE_HELP =
 "                    ...                  # you may specify an arbitrary number of additional animations\n"
 "\n"
 "OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
@@ -312,6 +315,7 @@ TILES_OUTPUT_PAL_DESC + "\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 TRANSPARENCY_COLOR_DESC + "\n" +
+PAL_ASSIGN_CUTOFF_FACTOR_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -350,6 +354,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
       {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
       {TRANSPARENCY_COLOR.c_str(), required_argument, nullptr, TRANSPARENCY_COLOR_VAL},
+      {PAL_ASSIGN_CUTOFF_FACTOR.c_str(), required_argument, nullptr, PAL_ASSIGN_CUTOFF_FACTOR_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -436,6 +441,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   bool palettesTotalOverridden = false;
   std::size_t palettesTotalOverride = 0;
 
+  std::size_t cutoffFactor;
+
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
 
@@ -461,6 +468,11 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
     case TRANSPARENCY_COLOR_VAL:
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
+      break;
+    case PAL_ASSIGN_CUTOFF_FACTOR_VAL:
+      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PAL_ASSIGN_CUTOFF_FACTOR, optarg);
+      // TODO : throw if this factor is too large
+      ctx.compilerConfig.paletteAssignCutoffThreshold = cutoffFactor * 1'000'000;
       break;
 
     // Fieldmap override options

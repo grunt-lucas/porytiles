@@ -85,9 +85,17 @@ constexpr int DUAL_LAYER_VAL = 2001;
 const std::string TRANSPARENCY_COLOR = "transparency-color";
 const std::string TRANSPARENCY_COLOR_DESC =
 "        -" + TRANSPARENCY_COLOR + "=<R,G,B>\n"
-"             Select RGB color <R,G,B> to represent transparency in your layer source PNGs. Defaults\n"
-"             to <255,0,255>.\n";
+"             Select RGB color <R,G,B> to represent transparency in your layer source PNGs.\n"
+"             Defaults to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
+
+const std::string PAL_ASSIGN_CUTOFF_FACTOR = "palette-assign-cutoff-factor";
+const std::string PAL_ASSIGN_CUTOFF_FACTOR_DESC =
+"        -" + PAL_ASSIGN_CUTOFF_FACTOR + "=<FACTOR>\n"
+"             Select the cutoff FACTOR for palette assignment. Defaults to 2, which should be\n"
+"             sufficient for most cases. Increase the number to let the algorithm run for longer\n"
+"             before failing out.\n";
+constexpr int PAL_ASSIGN_CUTOFF_FACTOR_VAL = 2003;
 
 
 // Fieldmap override options
