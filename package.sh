@@ -88,6 +88,7 @@ main() {
 
     *)
     echo "unknown mode: $mode"
+    echo ""
     echo "Valid modes are:"
     echo "    macos-aarch64"
     echo "    macos-amd64"
