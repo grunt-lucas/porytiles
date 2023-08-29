@@ -718,10 +718,11 @@ struct Output {
 struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
-  std::size_t paletteAssignCutoffThreshold;
+  std::size_t paletteAssignTreeExploredNodeCutoff;
   bool tripleLayer;
 
-  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, paletteAssignCutoffThreshold{2'000'000}, tripleLayer{true}
+  CompilerConfig()
+      : mode{}, transparencyColor{RGBA_MAGENTA}, paletteAssignTreeExploredNodeCutoff{2'000'000}, tripleLayer{true}
   {
   }
 };

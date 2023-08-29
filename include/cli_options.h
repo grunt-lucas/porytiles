@@ -89,13 +89,13 @@ const std::string TRANSPARENCY_COLOR_DESC =
 "             Defaults to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
-const std::string PAL_ASSIGN_CUTOFF_FACTOR = "palette-assign-cutoff-factor";
-const std::string PAL_ASSIGN_CUTOFF_FACTOR_DESC =
-"        -" + PAL_ASSIGN_CUTOFF_FACTOR + "=<FACTOR>\n"
-"             Select the cutoff FACTOR for palette assignment. Defaults to 2, which should be\n"
-"             sufficient for most cases. Increase the number to let the algorithm run for longer\n"
-"             before failing out.\n";
-constexpr int PAL_ASSIGN_CUTOFF_FACTOR_VAL = 2003;
+const std::string PAL_ASSIGN_CUTOFF = "palette-assign-cutoff";
+const std::string PAL_ASSIGN_CUTOFF =
+"        -" + PAL_ASSIGN_CUTOFF + "=<FACTOR>\n"
+"             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 2,\n"
+"             which should be sufficient for most cases. Increase the number to let the algorithm\n"
+"             run for longer before failing out.\n";
+constexpr int PAL_ASSIGN_CUTOFF_VAL = 2003;
 
 
 // Fieldmap override options

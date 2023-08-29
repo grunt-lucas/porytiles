@@ -303,9 +303,9 @@ static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet
 {
   gPaletteAssignCutoffCounter++;
   // TODO : this is a horrible hack avert your eyes
-  if (gPaletteAssignCutoffCounter > ctx.compilerConfig.paletteAssignCutoffThreshold) {
+  if (gPaletteAssignCutoffCounter > ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff) {
     fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
-                                         ctx.compilerConfig.paletteAssignCutoffThreshold);
+                                         ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff);
   }
 
   if (state.unassigned.empty()) {
@@ -1500,7 +1500,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 2;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.paletteAssignCutoffThreshold = 20;
+    ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 20;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1536,7 +1536,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 5;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.paletteAssignCutoffThreshold = 200;
+    ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 200;
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
@@ -1574,7 +1574,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.compilerConfig.transparencyColor = porytiles::RGBA_MAGENTA;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.paletteAssignCutoffThreshold = 5;
+  ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -1628,7 +1628,7 @@ TEST_CASE("compile simple example should perform as expected")
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.paletteAssignCutoffThreshold = 5;
+  ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
