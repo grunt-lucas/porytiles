@@ -78,12 +78,21 @@ main() {
     macos-amd64
     ;;
 
+    linux-aarch64)
+    linux-aarch64
+    ;;
+
     linux-amd64)
     linux-amd64
     ;;
 
     *)
     echo "unknown mode: $mode"
+    echo "Valid modes are:"
+    echo "    macos-aarch64"
+    echo "    macos-amd64"
+    echo "    linux-aarch64"
+    echo "    linux-amd64"
     exit 1
     ;;
   esac
