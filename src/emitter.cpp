@@ -243,46 +243,25 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
 
-    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
-      // bottom layer
+    for (std::size_t subtileIndex = 0; subtileIndex < 12; subtileIndex++) {
       std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
-      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
             (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
         std::size_t pixelCol =
             (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
-        bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
-      }
-    }
-    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
-      // middle layer
-      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex + 4;
-      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
-      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
-        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
-        middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
-      }
-    }
-    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
-      // top layer
-      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex + 8;
-      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
-      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
-        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
-        top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+        if (subtileIndex >= 0 && subtileIndex < 4) {
+          bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+        }
+        else if (subtileIndex >= 4 && subtileIndex < 8) {
+          middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+        }
+        else if (subtileIndex >= 8 && subtileIndex < 12) {
+          top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+        }
       }
     }
   }
