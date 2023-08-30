@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "compiler.h"
+#include "decompiler.h"
 #include "importer.h"
 #include "logger.h"
 #include "ptcontext.h"
@@ -230,12 +231,60 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
 }
 
 void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset) {
+                    png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset)
+{
   // TODO : this function needs to receive the attributes map so it knows the number of metatiles
 
-  // For now just assume triple layer
-  for(std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
-    
+  // Assume bottom, middle, top have identical dimensions, driver creates these PNGs so it handles dimensions
+  std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
+
+  // TODO: For now just assume triple layer
+  for (std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
+    size_t metatileRow = metatileIndex / widthInMetatiles;
+    size_t metatileCol = metatileIndex % widthInMetatiles;
+
+    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
+      // bottom layer
+      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
+      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
+      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+        std::size_t pixelRow =
+            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+        std::size_t pixelCol =
+            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
+        bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+      }
+    }
+    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
+      // middle layer
+      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex + 4;
+      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
+      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+        std::size_t pixelRow =
+            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+        std::size_t pixelCol =
+            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
+        middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+      }
+    }
+    for (std::size_t subtileIndex = 0; subtileIndex < 4; subtileIndex++) {
+      // top layer
+      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex + 8;
+      std::size_t tileRow = subtileIndex / METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileCol = subtileIndex % METATILE_TILE_SIDE_LENGTH;
+      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+        std::size_t pixelRow =
+            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+        std::size_t pixelCol =
+            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
+        top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+      }
+    }
   }
 }
 
@@ -581,4 +630,38 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
     std::filesystem::remove_all(parentDir);
   }
+}
+
+TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
+{
+  // TODO : test impl
+}
+
+TEST_CASE("emitDecompiled test code")
+{
+  // TODO : remove this code, here just to temporarily test
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 6;
+  ctx.fieldmapConfig.numPalettesTotal = 13;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+
+  auto decompiledViaAlgorithm = porytiles::decompile(ctx, *compiledPrimary);
+
+  png::image<png::rgba_pixel> bottomPrimaryPng{128, 256};
+  png::image<png::rgba_pixel> middlePrimaryPng{128, 256};
+  png::image<png::rgba_pixel> topPrimaryPng{128, 256};
+  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, *decompiledViaAlgorithm);
+  // bottomPrimaryPng.write("bottom.png");
+  // middlePrimaryPng.write("middle.png");
+  // topPrimaryPng.write("top.png");
 }
