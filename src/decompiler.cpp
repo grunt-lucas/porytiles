@@ -33,6 +33,7 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
     const GBATile &gbaTile = compiledTileset.tiles.at(assignment.tileIndex);
     RGBATile rgbTile =
         makeTile(gbaTile, compiledTileset.palettes.at(assignment.paletteIndex), assignment.hFlip, assignment.vFlip);
+    // TODO : fill in rgbTile attributes here
     decompiled->tiles.push_back(rgbTile);
   }
 
