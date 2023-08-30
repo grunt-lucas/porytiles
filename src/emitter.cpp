@@ -229,6 +229,16 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
   out.flush();
 }
 
+void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
+                    png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset) {
+  // TODO : this function needs to receive the attributes map so it knows the number of metatiles
+
+  // For now just assume triple layer
+  for(std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
+    
+  }
+}
+
 } // namespace porytiles
 
 // --------------------

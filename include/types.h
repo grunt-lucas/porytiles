@@ -223,6 +223,16 @@ struct RGBATile {
     pixels.at(row * TILE_SIDE_LENGTH + col) = value;
   }
 
+  bool equalsAfterBgrConversion(const RGBATile &other)
+  {
+    for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
+      if (rgbaToBgr(this->pixels.at(i)) != rgbaToBgr(other.pixels.at(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
 
   // Ignore the other fields for purposes of ordering the tiles

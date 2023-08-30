@@ -1,8 +1,11 @@
 #include "decompiler.h"
 
 #include <cstdint>
+#include <doctest.h>
 #include <memory>
 
+#include "compiler.h"
+#include "importer.h"
 #include "ptcontext.h"
 #include "types.h"
 
@@ -37,3 +40,28 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
 }
 
 } // namespace porytiles
+
+TEST_CASE("decompile should decompile a basic tileset")
+{
+  porytiles::PtContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 6;
+  ctx.fieldmapConfig.numPalettesTotal = 13;
+  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
+  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/top.png"));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
+  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+
+  auto decompiledViaAlgorithm = porytiles::decompile(ctx, *compiledPrimary);
+
+  CHECK(decompiledViaAlgorithm->tiles.size() == decompiledPrimary.tiles.size());
+  for (std::size_t i = 0; i < decompiledViaAlgorithm->tiles.size(); i++) {
+    CHECK(decompiledViaAlgorithm->tiles.at(i).equalsAfterBgrConversion(decompiledPrimary.tiles.at(i)));
+  }
+}
