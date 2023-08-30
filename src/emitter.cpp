@@ -242,16 +242,15 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   for (std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
-
     for (std::size_t subtileIndex = 0; subtileIndex < 12; subtileIndex++) {
       std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
-      std::size_t tileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
+      std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
+      std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
         std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+            (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
         std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+            (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
         if (subtileIndex >= 0 && subtileIndex < 4) {
           bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
