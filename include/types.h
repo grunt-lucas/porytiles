@@ -199,7 +199,7 @@ struct RGBATile {
     if (col >= TILE_SIDE_LENGTH) {
       throw std::out_of_range{"internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
     }
-    return pixels[row * TILE_SIDE_LENGTH + col];
+    return pixels.at(row * TILE_SIDE_LENGTH + col);
   }
 
   [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const
@@ -210,6 +210,17 @@ struct RGBATile {
       }
     }
     return true;
+  }
+
+  void setPixel(std::size_t row, std::size_t col, const RGBA32 &value)
+  {
+    if (row >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: RGBATile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
+    }
+    if (col >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: RGBATile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
+    }
+    pixels.at(row * TILE_SIDE_LENGTH + col) = value;
   }
 
   auto operator==(const RGBATile &other) const { return this->pixels == other.pixels; }
@@ -253,6 +264,17 @@ struct GBATile {
                               ")"};
     }
     return colorIndexes.at(index);
+  }
+
+  [[nodiscard]] std::uint8_t getPixel(size_t row, size_t col) const
+  {
+    if (row >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: GBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
+    }
+    if (col >= TILE_SIDE_LENGTH) {
+      throw std::out_of_range{"internal: GBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
+    }
+    return colorIndexes.at(row * TILE_SIDE_LENGTH + col);
   }
 
   auto operator<=>(const GBATile &other) const
