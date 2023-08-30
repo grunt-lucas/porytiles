@@ -37,6 +37,8 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
     decompiled->tiles.push_back(rgbTile);
   }
 
+  // TODO : fill in animations
+
   return decompiled;
 }
 
