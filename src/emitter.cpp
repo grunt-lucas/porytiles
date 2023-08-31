@@ -264,6 +264,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
       }
     }
   }
+
+  // TODO : emit attributes as a CSV, we'll need a behaviors map from somewhere for this to work
 }
 
 } // namespace porytiles
