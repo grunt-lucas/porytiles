@@ -144,7 +144,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
                    "source layer png dimensions invalid");
   }
 
-  DecompiledTileset decompiledTiles;
+  DecompiledTileset decompiledTiles{};
 
   // Since all widths and heights are the same, we can just read the bottom layer's width and height
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
@@ -570,6 +570,15 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   }
 
   return attributeMap;
+}
+
+CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
+{
+  CompiledTileset tileset{};
+  //std::ifstream metatiles{tilesetPath / "metatiles.bin"};
+
+
+  return tileset;
 }
 
 } // namespace porytiles
