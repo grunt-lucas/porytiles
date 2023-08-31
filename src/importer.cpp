@@ -12,6 +12,7 @@
 #include <png.hpp>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "errors_warnings.h"
@@ -572,11 +573,58 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
+static std::vector<Assignment> importMetatilesAndAttrs(PtContext &ctx, std::ifstream &metatilesBin,
+                                                       std::ifstream &metatileAttributesBin)
+{
+  std::vector<Assignment> assignments{};
+
+  std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
+  std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
+
+  /*
+   * Each subtile is 2 bytes (u16), so our byte total should be either a multiple of 16 or 24. 16 for dual-layer, since
+   * there are 8 subtiles per metatile. 24 for triple layer, since there are 12 subtiles per metatile.
+   */
+  if (metatileDataBuf.size() % 16 != 0 && metatileDataBuf.size() % 24 != 0) {
+    // TODO : need fatalerror to also work for decompile mode
+    throw std::runtime_error{"decompiler input metatiles.bin corrupted, not valid uint16 data"};
+  }
+
+  std::size_t metatileCount;
+  std::size_t attrBytesToAdvance;
+  if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    if (attributesDataBuf.size() % 4 != 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
+    }
+    metatileCount = attributesDataBuf.size() / 4;
+    attrBytesToAdvance = 4;
+  }
+  else {
+    if (attributesDataBuf.size() % 2 != 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
+    }
+    metatileCount = attributesDataBuf.size() / 2;
+    attrBytesToAdvance = 2;
+  }
+  bool tripleLayer = (metatileDataBuf.size() / 24 == metatileCount);
+
+  for (std::size_t byteIndex = 0; byteIndex < metatileDataBuf.size(); byteIndex += 2) {
+  }
+
+  return assignments;
+}
+
 CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
 {
+  // TODO : who should handle checks for file existence/validity? importer or driver?
   CompiledTileset tileset{};
-  //std::ifstream metatiles{tilesetPath / "metatiles.bin"};
+  std::ifstream metatiles{tilesetPath / "metatiles.bin", std::ios::binary};
+  std::ifstream attributes{tilesetPath / "metatile_attributes.bin", std::ios::binary};
+  png::image<png::index_pixel> tilesheetPng{tilesetPath / "tiles.png"};
 
+  tileset.assignments = importMetatilesAndAttrs(ctx, metatiles, attributes);
 
   return tileset;
 }
