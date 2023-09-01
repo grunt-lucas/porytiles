@@ -29,7 +29,10 @@ void parseOptions(PtContext &ctx, int argc, char *const *argv)
   parseSubcommand(ctx, argc, argv);
 
   switch (ctx.subcommand) {
-  case Subcommand::DECOMPILE:
+  case Subcommand::DECOMPILE_PRIMARY:
+    throw std::runtime_error{"TODO : support decompile command"};
+    break;
+  case Subcommand::DECOMPILE_SECONDARY:
     throw std::runtime_error{"TODO : support decompile command"};
     break;
   case Subcommand::COMPILE_PRIMARY:
@@ -177,7 +180,10 @@ HELP_DESC + "\n" +
 VERBOSE_DESC + "\n" +
 VERSION_DESC + "\n"
 "COMMANDS\n"
-"    decompile\n"
+"    decompile-primary\n"
+"        Under construction.\n"
+"\n"
+"    decompile-secondary\n"
 "        Under construction.\n"
 "\n"
 "    compile-primary\n"
@@ -240,7 +246,8 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
 // |    SUBCOMMAND PARSING    |
 // ----------------------------
 
-const std::string DECOMPILE_COMMAND = "decompile";
+const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
+const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
 const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
 static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
@@ -250,8 +257,11 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
   }
 
   std::string subcommand = argv[optind++];
-  if (subcommand == DECOMPILE_COMMAND) {
-    ctx.subcommand = Subcommand::DECOMPILE;
+  if (subcommand == DECOMPILE_PRIMARY_COMMAND) {
+    ctx.subcommand = Subcommand::DECOMPILE_PRIMARY;
+  }
+  else if (subcommand == DECOMPILE_SECONDARY_COMMAND) {
+    ctx.subcommand = Subcommand::DECOMPILE_SECONDARY;
   }
   else if (subcommand == COMPILE_PRIMARY_COMMAND) {
     ctx.subcommand = Subcommand::COMPILE_PRIMARY;

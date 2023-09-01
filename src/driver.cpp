@@ -426,7 +426,8 @@ static void driveCompile(PtContext &ctx)
 void drive(PtContext &ctx)
 {
   switch (ctx.subcommand) {
-  case Subcommand::DECOMPILE:
+  case Subcommand::DECOMPILE_PRIMARY:
+  case Subcommand::DECOMPILE_SECONDARY:
     driveDecompile(ctx);
     break;
   case Subcommand::COMPILE_PRIMARY:

@@ -605,7 +605,7 @@ namespace porytiles {
 
 enum class TilesOutputPalette { TRUE_COLOR, GREYSCALE };
 
-enum class Subcommand { DECOMPILE, COMPILE_PRIMARY, COMPILE_SECONDARY };
+enum class Subcommand { DECOMPILE_PRIMARY, DECOMPILE_SECONDARY, COMPILE_PRIMARY, COMPILE_SECONDARY };
 
 enum class CompilerMode { PRIMARY, SECONDARY };
 
