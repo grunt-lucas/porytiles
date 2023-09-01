@@ -340,8 +340,9 @@ static void driveCompile(PtContext &ctx)
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.srcPaths.secondaryAnimPath());
-    ctx.compilerContext.pairedPrimaryTiles = std::move(partnerPrimaryTiles);
+    ctx.compilerContext.pairedPrimaryTileset = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
+    ctx.compilerContext.resultTileset = std::move(compiledTiles);
   }
   else {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.srcPaths.primarySourcePath);
@@ -360,6 +361,7 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     driveAnimsImport(ctx, decompiledTiles, ctx.srcPaths.primaryAnimPath());
     compiledTiles = compile(ctx, decompiledTiles);
+    ctx.compilerContext.resultTileset = std::move(compiledTiles);
   }
 
   std::filesystem::path outputPath(ctx.output.path);
@@ -410,16 +412,17 @@ static void driveCompile(PtContext &ctx)
                fmt::format("could not create '{}': {}", animsPath.string(), e.what()));
   }
 
-  drivePaletteEmit(ctx, *compiledTiles, palettesPath);
-  driveTilesEmit(ctx, *compiledTiles, tilesetPath);
-  driveAnimEmit(ctx, compiledTiles->anims, compiledTiles->palettes, animsPath);
+  drivePaletteEmit(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
+  driveTilesEmit(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
+  driveAnimEmit(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
+                animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
-  emitMetatilesBin(ctx, outMetatiles, *compiledTiles);
+  emitMetatilesBin(ctx, outMetatiles, *(ctx.compilerContext.resultTileset));
   outMetatiles.close();
 
   std::ofstream outAttributes{attribtuesPath.string()};
-  emitAttributes(ctx, outAttributes, behaviorReverseMap, *compiledTiles);
+  emitAttributes(ctx, outAttributes, behaviorReverseMap, *(ctx.compilerContext.resultTileset));
   outAttributes.close();
 }
 

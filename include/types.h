@@ -135,6 +135,7 @@ std::string subtileString(Subtile subtile);
 enum class LayerType { NORMAL, COVERED, SPLIT, TRIPLE };
 std::string layerTypeString(LayerType layerType);
 std::uint8_t layerTypeValue(LayerType layerType);
+LayerType layerTypeFromInt(std::uint8_t layerInt);
 
 enum class EncounterType { NONE, LAND, WATER };
 std::uint8_t encounterTypeValue(EncounterType encounterType);
@@ -760,10 +761,11 @@ struct CompilerConfig {
 };
 
 struct CompilerContext {
-  std::unique_ptr<CompiledTileset> pairedPrimaryTiles;
+  std::unique_ptr<CompiledTileset> pairedPrimaryTileset;
+  std::unique_ptr<CompiledTileset> resultTileset;
   std::unordered_map<BGR15, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>> bgrToRgba;
 
-  CompilerContext() : pairedPrimaryTiles{nullptr}, bgrToRgba{} {}
+  CompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr}, bgrToRgba{} {}
 };
 
 } // namespace porytiles

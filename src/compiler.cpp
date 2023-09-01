@@ -620,8 +620,8 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     // Create the GBATile for this tile's key frame
     GBATile keyFrameTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes[paletteIndex]);
 
-    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(keyFrameTile)) {
-      if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(keyFrameTile) == 0) {
+    if (ctx.compilerContext.pairedPrimaryTileset->tileIndexes.contains(keyFrameTile)) {
+      if (ctx.compilerContext.pairedPrimaryTileset->tileIndexes.at(keyFrameTile) == 0) {
         /*
          * Fatal error if the user provided a transparent key frame tile. This is not allowed, since there would be no
          * way to tell if a transparent user provided tile on the layer sheet referred to the true index 0 transparent
@@ -703,9 +703,9 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
       usedKeyFrameTiles.at(gbaTile) = true;
     }
 
-    if (ctx.compilerContext.pairedPrimaryTiles->tileIndexes.contains(gbaTile)) {
+    if (ctx.compilerContext.pairedPrimaryTileset->tileIndexes.contains(gbaTile)) {
       // Tile was in the primary set
-      compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTiles->tileIndexes.at(gbaTile),
+      compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTileset->tileIndexes.at(gbaTile),
                                                   paletteIndex, normTile.hFlip, normTile.vFlip};
     }
     else {
@@ -749,10 +749,10 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
 std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)
 {
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
-      (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTiles->palettes.size())) {
+      (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
     internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize("compiler::compile",
                                                              ctx.fieldmapConfig.numPalettesInPrimary,
-                                                             ctx.compilerContext.pairedPrimaryTiles->palettes.size());
+                                                             ctx.compilerContext.pairedPrimaryTileset->palettes.size());
   }
 
   auto compiled = std::make_unique<CompiledTileset>();
@@ -790,7 +790,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
   const std::unordered_map<BGR15, std::size_t> *primaryColorIndexMap = &emptyPrimaryColorIndexMap;
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-    primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTiles->colorIndexMap);
+    primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTileset->colorIndexMap);
   }
   auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
   compiled->colorIndexMap = colorToIndex;
@@ -830,9 +830,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
      * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
      * palettes.
      */
-    primaryPaletteColorSets.reserve(ctx.compilerContext.pairedPrimaryTiles->palettes.size());
-    for (std::size_t i = 0; i < ctx.compilerContext.pairedPrimaryTiles->palettes.size(); i++) {
-      const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTiles->palettes.at(i);
+    primaryPaletteColorSets.reserve(ctx.compilerContext.pairedPrimaryTileset->palettes.size());
+    for (std::size_t i = 0; i < ctx.compilerContext.pairedPrimaryTileset->palettes.size(); i++) {
+      const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTileset->palettes.at(i);
       primaryPaletteColorSets.emplace_back();
       for (std::size_t j = 1; j < gbaPalette.size; j++) {
         primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
@@ -874,7 +874,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       // Copy the primary set's palettes into this tileset so tiles can use them
       for (std::size_t j = 0; j < PAL_SIZE; j++) {
-        compiled->palettes.at(i).colors.at(j) = ctx.compilerContext.pairedPrimaryTiles->palettes.at(i).colors.at(j);
+        compiled->palettes.at(i).colors.at(j) = ctx.compilerContext.pairedPrimaryTileset->palettes.at(i).colors.at(j);
       }
     }
     for (std::size_t i = ctx.fieldmapConfig.numPalettesInPrimary; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
@@ -1861,7 +1861,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-  ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
+  ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
   // Check that tiles are as expected
@@ -2261,7 +2261,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
-  ctx.compilerContext.pairedPrimaryTiles = std::move(compiledPrimary);
+  ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/bottom.png"));

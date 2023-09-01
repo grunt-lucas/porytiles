@@ -143,6 +143,22 @@ std::uint8_t layerTypeValue(LayerType layerType)
   throw std::runtime_error("types::layerTypeValue reached unreachable code path");
 }
 
+LayerType layerTypeFromInt(std::uint8_t layerInt)
+{
+  switch (layerInt) {
+  case 0:
+    return LayerType::NORMAL;
+  case 1:
+    return LayerType::COVERED;
+  case 2:
+    return LayerType::SPLIT;
+  default:
+    internalerror("types::layerTypeValue unknown LayerType int " + std::to_string(layerInt));
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::layerTypeValue reached unreachable code path");
+}
+
 std::uint8_t encounterTypeValue(EncounterType encounterType)
 {
   switch (encounterType) {

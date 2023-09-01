@@ -15,11 +15,13 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "driver.h"
 #include "errors_warnings.h"
 #include "logger.h"
 #include "ptcontext.h"
 #include "ptexception.h"
 #include "types.h"
+#include "utilities.h"
 
 namespace porytiles {
 
@@ -578,8 +580,8 @@ static std::vector<Assignment> importMetatilesAndAttrs(PtContext &ctx, std::ifst
 {
   std::vector<Assignment> assignments{};
 
-  std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
   std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
+  std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
   /*
    * Each subtile is 2 bytes (u16), so our byte total should be either a multiple of 16 or 24. 16 for dual-layer, since
@@ -591,14 +593,12 @@ static std::vector<Assignment> importMetatilesAndAttrs(PtContext &ctx, std::ifst
   }
 
   std::size_t metatileCount;
-  std::size_t attrBytesToAdvance;
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     if (attributesDataBuf.size() % 4 != 0) {
       // TODO : need fatalerror to also work for decompile mode
       throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
     }
     metatileCount = attributesDataBuf.size() / 4;
-    attrBytesToAdvance = 4;
   }
   else {
     if (attributesDataBuf.size() % 2 != 0) {
@@ -606,11 +606,57 @@ static std::vector<Assignment> importMetatilesAndAttrs(PtContext &ctx, std::ifst
       throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
     }
     metatileCount = attributesDataBuf.size() / 2;
-    attrBytesToAdvance = 2;
   }
   bool tripleLayer = (metatileDataBuf.size() / 24 == metatileCount);
 
-  for (std::size_t byteIndex = 0; byteIndex < metatileDataBuf.size(); byteIndex += 2) {
+  std::size_t metatileIndex = 0;
+  for (std::size_t metatileBinByteIndex = 0; metatileBinByteIndex < metatileDataBuf.size(); metatileBinByteIndex += 2) {
+    Assignment assignment{};
+
+    // Compute the actual metatileIndex
+    metatileIndex = tripleLayer ? metatileBinByteIndex / 24 : metatileBinByteIndex / 16;
+
+    std::uint16_t lowerByte = metatileDataBuf.at(metatileBinByteIndex);
+    std::uint16_t upperByte = metatileDataBuf.at(metatileBinByteIndex + 1);
+    std::uint16_t metatileEntry = (upperByte << 8) | lowerByte;
+    assignment.tileIndex = metatileEntry & 0x03FF;
+    assignment.hFlip = (metatileEntry >> 10) & 0x0001;
+    assignment.vFlip = (metatileEntry >> 11) & 0x0001;
+    assignment.paletteIndex = (metatileEntry >> 12) & 0x000F;
+
+    assignment.attributes.baseGame = ctx.targetBaseGame;
+    if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
+      std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
+      std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
+      std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
+      std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
+      assignment.attributes.metatileBehavior = attribute & 0x000001FF;
+      // TODO : implement FIRERED case
+      throw std::runtime_error{"TODO : implement FIRERED case"};
+    }
+    else {
+      std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * 2));
+      std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * 2) + 1);
+      std::uint16_t attribute = (byte1 << 8) | byte0;
+      assignment.attributes.metatileBehavior = attribute & 0x00FF;
+      assignment.attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
+    }
+    if (tripleLayer) {
+      assignment.attributes.layerType = LayerType::TRIPLE;
+    }
+
+    if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      pt_logln(ctx, stderr, "with Attributes[]");
+    }
+    else {
+      pt_logln(ctx, stderr,
+               "found Assignment[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}]]",
+               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex,
+               assignment.attributes.metatileBehavior, layerTypeString(assignment.attributes.layerType));
+    }
+
+    assignments.push_back(assignment);
   }
 
   return assignments;
@@ -1112,4 +1158,35 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
     CHECK(attributesMap.at(4).terrainType == porytiles::TerrainType::NORMAL);
     CHECK(attributesMap.at(4).encounterType == porytiles::EncounterType::NONE);
   }
+}
+
+TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tileset correctly")
+{
+  porytiles::PtContext compileCtx{};
+  std::filesystem::path parentDir = porytiles::createTmpdir();
+  compileCtx.output.path = parentDir;
+  compileCtx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  compileCtx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
+  compileCtx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
+  porytiles::drive(compileCtx);
+
+  porytiles::PtContext decompileCtx{};
+  porytiles::CompiledTileset importedTileset = porytiles::importCompiledTileset(decompileCtx, parentDir);
+
+  CHECK((compileCtx.compilerContext.resultTileset)->assignments.size() == importedTileset.assignments.size());
+  for (std::size_t assignmentIndex = 0; assignmentIndex < importedTileset.assignments.size(); assignmentIndex++) {
+    const porytiles::Assignment &expectedAssignment =
+        (compileCtx.compilerContext.resultTileset)->assignments.at(assignmentIndex);
+    const porytiles::Assignment &actualAssignment = importedTileset.assignments.at(assignmentIndex);
+    CHECK(expectedAssignment.tileIndex == actualAssignment.tileIndex);
+    CHECK(expectedAssignment.hFlip == actualAssignment.hFlip);
+    CHECK(expectedAssignment.vFlip == actualAssignment.vFlip);
+    CHECK(expectedAssignment.paletteIndex == actualAssignment.paletteIndex);
+    CHECK(expectedAssignment.attributes.metatileBehavior == actualAssignment.attributes.metatileBehavior);
+    CHECK(expectedAssignment.attributes.layerType == actualAssignment.attributes.layerType);
+  }
+
+  std::filesystem::remove_all(parentDir);
 }
