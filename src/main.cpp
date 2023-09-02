@@ -26,17 +26,22 @@ try {
   return 0;
 }
 catch (const porytiles::PtException &e) {
-  // Catch PtException here, these are errors that can reasonably be expected due to bad input, bad files, etc
+  /*
+   * Catch PtException here. This exception is used by the error system to indicate an error it correctly handled and
+   * reported to the user. These errors are typically due to invalid user input. So we can just return 1 here to
+   * indicate a bad exit.
+   */
   return 1;
 }
 catch (const std::exception &e) {
+  /*
+   * Any other exception type indicates an internal compiler error, i.e. an error we did not explicitly handle or
+   * anticipate from library code, or an error we explicitly threw due to an unrecoverable assert failure. This usually
+   * indicates a bug in the compiler. Just dump a helpful message so the user can file an issue on GitHub.
+   */
+
   // New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
   // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
-
-  /*
-   * Any other exception type indicates an internal compiler error -- dump a helpful message so the user can file an
-   * issue in the repo.
-   */
   porytiles::pt_println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
                         fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)),
                         e.what());

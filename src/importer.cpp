@@ -410,15 +410,10 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath)
+importMetatileBehaviorMaps(PtContext &ctx, std::ifstream &behaviorFile)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
-  std::ifstream behaviorFile{filePath};
-
-  if (behaviorFile.fail()) {
-    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, fmt::format("{}: could not open for reading", filePath));
-  }
 
   std::string line;
   std::size_t processedUpToLine = 1;
@@ -444,7 +439,7 @@ importMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath)
       }
       catch (const std::exception &e) {
         behaviorFile.close();
-        fatalerror_invalidBehaviorValue(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath, behaviorName,
+        fatalerror_invalidBehaviorValue(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, behaviorName,
                                         behaviorValueString, processedUpToLine);
         // here so compiler won't complain
         behaviorVal = 0;
@@ -687,7 +682,10 @@ static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, s
 
 CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
 {
-  // TODO : who should handle checks for file existence/validity? importer or driver?
+  /*
+   * TODO : who should handle checks for file existence/validity? importer or driver? I think driver should, so we can
+   * refactor this function later so that it receives everything it needs as ifstreams or png::images
+   */
   CompiledTileset tileset{};
   std::ifstream metatiles{tilesetPath / "metatiles.bin", std::ios::binary};
   std::ifstream attributes{tilesetPath / "metatile_attributes.bin", std::ios::binary};
@@ -1126,7 +1124,8 @@ TEST_CASE("importMetatileBehaviorMaps should parse metatile behaviors as expecte
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
-  auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors.h");
+  std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
+  auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorMaps(ctx, behaviorFile);
 
   CHECK(!behaviorMap.contains("MB_INVALID"));
   CHECK(behaviorMap.at("MB_NORMAL") == 0x00);

@@ -415,16 +415,15 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const SourcePaths &
 }
 
 void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                     std::string filePath, std::string behavior, std::string value, std::size_t line)
+                                     std::string behavior, std::string value, std::size_t line)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: invalid value '{}' for behavior '{}' defined at line {}", filePath,
-                 fmt::styled(value, fmt::emphasis::bold), fmt::styled(behavior, fmt::emphasis::bold), line);
+    pt_fatal_err("invalid value '{}' for behavior '{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
+                 fmt::styled(behavior, fmt::emphasis::bold), line);
     pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
             fmt::styled("id", fmt::emphasis::bold));
   }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
-                            fmt::format("{}: invalid behavior value {}", filePath, value));
+  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid behavior value {}", value));
 }
 
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
@@ -971,15 +970,15 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
   SUBCASE("Invalid integer format 1")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors_invalid_1.h"),
-                         "res/tests/metatile_behaviors_invalid_1.h: invalid behavior value foo",
+    std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value foo",
                          porytiles::PtException);
   }
 
   SUBCASE("Invalid integer format 2")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, "res/tests/metatile_behaviors_invalid_2.h"),
-                         "res/tests/metatile_behaviors_invalid_2.h: invalid behavior value 6bar",
+    std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value 6bar",
                          porytiles::PtException);
   }
 }

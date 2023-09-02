@@ -10,8 +10,10 @@
 #include "types.h"
 
 /**
- * Utility functions for reading input from various file types. Provides utilities for reading a layered or raw
- * tilesheet.
+ * Utility functions for building core Porytiles types from sanitized input types and data structures. The importer
+ * functions don't handle any file checking or input collation. They expect to receive data as ready-to-use ifstreams,
+ * png::images, and other data structures. The driver is responsible for preparing these types and data structures from
+ * the raw input files.
  */
 
 namespace porytiles {
@@ -32,7 +34,7 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
                      DecompiledTileset &tiles);
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorMaps(PtContext &ctx, const std::string &filePath);
+importMetatileBehaviorMaps(PtContext &ctx, std::ifstream &behaviorFile);
 
 std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,

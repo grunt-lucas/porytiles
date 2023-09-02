@@ -298,7 +298,12 @@ static void driveCompile(PtContext &ctx)
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.srcPaths.primaryMetatileBehaviors())) {
-    auto [map, reverse] = importMetatileBehaviorMaps(ctx, ctx.srcPaths.primaryMetatileBehaviors());
+    std::ifstream behaviorFile{ctx.srcPaths.primaryMetatileBehaviors()};
+    if (behaviorFile.fail()) {
+      fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: could not open for reading", ctx.srcPaths.primaryMetatileBehaviors().string()));
+    }
+    auto [map, reverse] = importMetatileBehaviorMaps(ctx, behaviorFile);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
