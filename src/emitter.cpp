@@ -104,13 +104,14 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
       std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
       if (tileIndex < tileset.tiles.size()) {
         const GBATile &tile = tileset.tiles.at(tileIndex);
-        png::byte paletteIndex = tileset.paletteIndexesOfTile.at(tileIndex);
+        png::byte paletteIndex = 0;
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         switch (ctx.output.paletteMode) {
         case TilesOutputPalette::GREYSCALE:
           out[pixelRow][pixelCol] = indexInPalette;
           break;
         case TilesOutputPalette::TRUE_COLOR:
+          paletteIndex = tileset.paletteIndexesOfTile.at(tileIndex);
           out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
           break;
         default:
@@ -118,8 +119,8 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
         }
       }
       else {
-        // Pad out transparent tiles at end of last tiles.png row
-        out[pixelRow][pixelCol] = 0;
+        internalerror(fmt::format("emitter::emitTilesPng tileIndex reached {} which is larger than size {}", tileIndex,
+                                  tileset.tiles.size()));
       }
     }
   }
@@ -360,7 +361,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
 
   const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const size_t imageHeight =
-      porytiles::TILE_SIDE_LENGTH * ((compiledPrimary->tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
+      porytiles::TILE_SIDE_LENGTH * ((compiledPrimary->tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
 
   png::image<png::index_pixel> outPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};
 

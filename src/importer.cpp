@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 #include "driver.h"
+#include "emitter.h"
 #include "errors_warnings.h"
 #include "logger.h"
 #include "ptcontext.h"
@@ -575,8 +576,30 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
-static std::vector<Assignment> importMetatilesAndAttrs(PtContext &ctx, std::ifstream &metatilesBin,
-                                                       std::ifstream &metatileAttributesBin)
+static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image<png::index_pixel> &tiles)
+{
+  std::vector<GBATile> gbaTiles{};
+
+  std::size_t widthInTiles = tiles.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t heightInTiles = tiles.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  for (std::size_t tileIndex = 0; tileIndex < widthInTiles * heightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / widthInTiles;
+    std::size_t tileCol = tileIndex % widthInTiles;
+    GBATile tile{};
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      tile.colorIndexes.at(pixelIndex) = tiles[pixelRow][pixelCol];
+    }
+    gbaTiles.push_back(tile);
+  }
+
+  return gbaTiles;
+}
+
+static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, std::ifstream &metatilesBin,
+                                                               std::ifstream &metatileAttributesBin)
 {
   std::vector<Assignment> assignments{};
 
@@ -670,7 +693,8 @@ CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::pat
   std::ifstream attributes{tilesetPath / "metatile_attributes.bin", std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{tilesetPath / "tiles.png"};
 
-  tileset.assignments = importMetatilesAndAttrs(ctx, metatiles, attributes);
+  tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
+  tileset.assignments = importCompiledMetatilesAndAttrs(ctx, metatiles, attributes);
 
   return tileset;
 }
@@ -1174,6 +1198,9 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
 
   porytiles::PtContext decompileCtx{};
   porytiles::CompiledTileset importedTileset = porytiles::importCompiledTileset(decompileCtx, parentDir);
+
+  CHECK((compileCtx.compilerContext.resultTileset)->tiles.size() == importedTileset.tiles.size());
+  CHECK((compileCtx.compilerContext.resultTileset)->tiles == importedTileset.tiles);
 
   CHECK((compileCtx.compilerContext.resultTileset)->assignments.size() == importedTileset.assignments.size());
   for (std::size_t assignmentIndex = 0; assignmentIndex < importedTileset.assignments.size(); assignmentIndex++) {

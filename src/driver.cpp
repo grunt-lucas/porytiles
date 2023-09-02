@@ -45,7 +45,7 @@ static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
   // TODO : move this function's functionality into emitter
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
-      porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES) + 1);
+      porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
   png::image<png::index_pixel> tilesPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};
 
   emitTilesPng(ctx, tilesPng, compiledTiles);
@@ -476,7 +476,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -583,7 +583,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   actualHeightInTiles = actual_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -599,7 +599,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   actualHeightInTiles = actual_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -615,7 +615,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   actualHeightInTiles = actual_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -630,7 +630,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   actualHeightInTiles = actual_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -645,7 +645,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   actualHeightInTiles = actual_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -690,7 +690,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -794,7 +794,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   actualHeightInTiles = actual_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -810,7 +810,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   actualHeightInTiles = actual_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
@@ -826,7 +826,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   actualHeightInTiles = actual_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
-    std::size_t tileCol = tileIndex % actualHeightInTiles;
+    std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
       std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
       std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);

@@ -918,6 +918,12 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     internalerror_unknownCompilerMode("compiler::compile");
   }
 
+  // Push back transparent tiles to pad out tileset to multiple of 16
+  while (compiled->tiles.size() % 16 != 0) {
+    compiled->tiles.push_back(GBA_TILE_TRANSPARENT);
+    compiled->paletteIndexesOfTile.push_back(0);
+  }
+
   return compiled;
 }
 } // namespace porytiles
@@ -1716,7 +1722,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
   // Check that tiles are as expected
-  CHECK(compiledPrimary->tiles.size() == 5);
+  CHECK(compiledPrimary->tiles.size() == 16);
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/expected_tiles.png"));
   png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
@@ -1729,7 +1735,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   }
 
   // Check that paletteIndexesOfTile are correct
-  CHECK(compiledPrimary->paletteIndexesOfTile.size() == 5);
+  CHECK(compiledPrimary->paletteIndexesOfTile.size() == 16);
   CHECK(compiledPrimary->paletteIndexesOfTile[0] == 0);
   CHECK(compiledPrimary->paletteIndexesOfTile[1] == 2);
   CHECK(compiledPrimary->paletteIndexesOfTile[2] == 1);
@@ -1826,7 +1832,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   CHECK(compiledPrimary->colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_WHITE)] == 4);
 
   // Check that tileIndexes is correct
-  CHECK(compiledPrimary->tileIndexes.size() == compiledPrimary->tiles.size());
+  CHECK(compiledPrimary->tileIndexes.size() == 5);
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[0]] == 0);
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[1]] == 1);
   CHECK(compiledPrimary->tileIndexes[compiledPrimary->tiles[2]] == 2);
@@ -1985,7 +1991,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   CHECK(compiledSecondary->colorIndexMap[porytiles::rgbaToBgr(porytiles::RGBA_GREY)] == 8);
 
   // Check that tileIndexes is correct
-  CHECK(compiledSecondary->tileIndexes.size() == compiledSecondary->tiles.size());
+  CHECK(compiledSecondary->tileIndexes.size() == 6);
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[0]] == 0);
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[1]] == 1);
   CHECK(compiledSecondary->tileIndexes[compiledSecondary->tiles[2]] == 2);
@@ -2052,7 +2058,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
-  CHECK(compiledPrimary->tiles.size() == 10);
+  CHECK(compiledPrimary->tiles.size() == 16);
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/expected_tiles.png"));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/primary/expected_tiles.png"};
@@ -2066,7 +2072,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   }
 
   // Check that paletteIndexesOfTile is correct
-  CHECK(compiledPrimary->paletteIndexesOfTile.size() == 10);
+  CHECK(compiledPrimary->paletteIndexesOfTile.size() == 16);
   CHECK(compiledPrimary->paletteIndexesOfTile[0] == 0);
   CHECK(compiledPrimary->paletteIndexesOfTile[1] == 2);
   CHECK(compiledPrimary->paletteIndexesOfTile[2] == 2);
@@ -2302,7 +2308,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
-  CHECK(compiledSecondary->tiles.size() == 8);
+  CHECK(compiledSecondary->tiles.size() == 16);
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/expected_tiles.png"));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"};
@@ -2316,7 +2322,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   }
 
   // Check that paletteIndexesOfTile is correct
-  CHECK(compiledSecondary->paletteIndexesOfTile.size() == 8);
+  CHECK(compiledSecondary->paletteIndexesOfTile.size() == 16);
   CHECK(compiledSecondary->paletteIndexesOfTile[0] == 5);
   CHECK(compiledSecondary->paletteIndexesOfTile[1] == 5);
   CHECK(compiledSecondary->paletteIndexesOfTile[2] == 5);
