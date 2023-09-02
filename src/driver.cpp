@@ -23,7 +23,7 @@ namespace porytiles {
 static void drivePaletteEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
                              const std::filesystem::path &palettesPath)
 {
-  // TODO : move this function's functionality into emitter
+  // TODO : move this function's functionality into emitter?
   for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
     std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
     fileName += ".pal";
@@ -42,7 +42,7 @@ static void drivePaletteEmit(PtContext &ctx, const CompiledTileset &compiledTile
 static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
                            const std::filesystem::path &tilesetPath)
 {
-  // TODO : move this function's functionality into emitter
+  // TODO : move this function's functionality into emitter?
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
       porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
@@ -55,7 +55,7 @@ static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
 static void driveAnimEmit(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
                           const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
-  // TODO : move this function's functionality into emitter
+  // TODO : move this function's functionality into emitter?
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
     std::filesystem::create_directories(animPath);
@@ -77,7 +77,7 @@ static void driveAnimEmit(PtContext &ctx, const std::vector<CompiledAnimation> &
 
 static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
 {
-  // TODO : move this function's functionality into importer
+  // TODO : move this function's functionality into importer?
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
@@ -153,7 +153,7 @@ static std::unordered_map<std::size_t, Attributes>
 buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                    std::filesystem::path attributesCsvPath)
 {
-  // TODO : move this function's functionality into importer
+  // TODO : move this function's functionality into importer?
   pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
   if (!std::filesystem::exists(attributesCsvPath) || !std::filesystem::is_regular_file(attributesCsvPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping attributes import", attributesCsvPath.string());
@@ -166,7 +166,7 @@ buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::ui
 
 static void driveDecompile(PtContext &ctx)
 {
-  // TODO : impl
+  // TODO : impl driveDecompile
 }
 
 static void driveCompile(PtContext &ctx)

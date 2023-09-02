@@ -615,7 +615,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
-  // TODO : test impl
+  // TODO : test impl emitDecompiled should correctly emit the decompiled tileset files
 }
 
 TEST_CASE("emitDecompiled test code")
