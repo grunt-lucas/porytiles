@@ -3,6 +3,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
+#include <algorithm>
 #include <bitset>
 #include <csv.h>
 #include <doctest.h>
@@ -571,6 +572,22 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
+static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
+                                                      std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
+{
+  std::vector<GBAPalette> palettes{};
+
+  for (std::shared_ptr<std::ifstream> stream : paletteFiles) {
+    std::string line;
+    while (std::getline(*stream, line)) {
+      // TODO : read lines instead of printing
+      std::cout << line << std::endl;
+    }
+  }
+
+  return palettes;
+}
+
 static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image<png::index_pixel> &tiles)
 {
   std::vector<GBATile> gbaTiles{};
@@ -690,9 +707,25 @@ CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::pat
   std::ifstream metatiles{tilesetPath / "metatiles.bin", std::ios::binary};
   std::ifstream attributes{tilesetPath / "metatile_attributes.bin", std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{tilesetPath / "tiles.png"};
+  std::vector<std::shared_ptr<std::ifstream>> paletteFiles{};
+
+  for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
+    std::ostringstream filename;
+    if (index < 10) {
+      filename << "0";
+    }
+    filename << index << ".pal";
+    paletteFiles.push_back(std::make_shared<std::ifstream>(tilesetPath / "palettes" / filename.str()));
+  }
 
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
+  tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   tileset.assignments = importCompiledMetatilesAndAttrs(ctx, metatiles, attributes);
+
+  metatiles.close();
+  attributes.close();
+  std::for_each(paletteFiles.begin(), paletteFiles.end(),
+                [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
 
   return tileset;
 }
@@ -1126,6 +1159,7 @@ TEST_CASE("importMetatileBehaviorMaps should parse metatile behaviors as expecte
 
   std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
   auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorMaps(ctx, behaviorFile);
+  behaviorFile.close();
 
   CHECK(!behaviorMap.contains("MB_INVALID"));
   CHECK(behaviorMap.at("MB_NORMAL") == 0x00);

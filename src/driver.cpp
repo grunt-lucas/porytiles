@@ -304,6 +304,7 @@ static void driveCompile(PtContext &ctx)
                  fmt::format("{}: could not open for reading", ctx.srcPaths.primaryMetatileBehaviors().string()));
     }
     auto [map, reverse] = importMetatileBehaviorMaps(ctx, behaviorFile);
+    behaviorFile.close();
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }

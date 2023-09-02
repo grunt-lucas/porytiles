@@ -973,6 +973,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value foo",
                          porytiles::PtException);
+    behaviorFile.close();
   }
 
   SUBCASE("Invalid integer format 2")
@@ -980,6 +981,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value 6bar",
                          porytiles::PtException);
+    behaviorFile.close();
   }
 }
 

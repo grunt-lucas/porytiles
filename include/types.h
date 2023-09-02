@@ -326,6 +326,9 @@ struct GBAPalette {
   std::array<BGR15, PAL_SIZE> colors;
 
   GBAPalette() : size{}, colors{} {}
+
+  // TODO : should this also look at the size field? we are only really using it for unit testing
+  auto operator==(const GBAPalette &other) const { return this->colors == other.colors; }
 };
 
 /**
