@@ -16,6 +16,20 @@
 
 namespace porytiles {
 
+std::vector<std::string> split(std::string input, const std::string &delimiter)
+{
+  std::vector<std::string> result;
+  size_t pos;
+  std::string token;
+  while ((pos = input.find(delimiter)) != std::string::npos) {
+    token = input.substr(0, pos);
+    result.push_back(token);
+    input.erase(0, pos + delimiter.length());
+  }
+  result.push_back(input);
+  return result;
+}
+
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName)
 {
   return std::filesystem::temp_directory_path() / parentDir / fileName;

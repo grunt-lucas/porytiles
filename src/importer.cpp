@@ -572,6 +572,46 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
+static RGBA32 parseJascLine(const ErrorsAndWarnings &err, const std::string &jascLine)
+{
+  // TODO : this logic duplicates cli_parser::parseRgbColor
+  std::vector<std::string> colorComponents = split(jascLine, " ");
+  if (colorComponents.size() != 3) {
+    // TODO : need fatalerror to also work for decompile mode
+    throw std::runtime_error{"expected valid JASC line in pal file, saw " + jascLine};
+  }
+
+  if (colorComponents[0].at(colorComponents[0].size() - 1) == '\r') {
+    colorComponents[0].pop_back();
+  }
+  if (colorComponents[1].at(colorComponents[1].size() - 1) == '\r') {
+    colorComponents[1].pop_back();
+  }
+  if (colorComponents[2].at(colorComponents[2].size() - 1) == '\r') {
+    colorComponents[2].pop_back();
+  }
+
+  int red = parseInteger<int>(colorComponents[0].c_str());
+  int green = parseInteger<int>(colorComponents[1].c_str());
+  int blue = parseInteger<int>(colorComponents[2].c_str());
+
+  if (red < 0 || red > 255) {
+    // TODO : need fatalerror to also work for decompile mode
+    throw std::runtime_error{"invalid red component: range must be 0 <= red <= 255"};
+  }
+  if (green < 0 || green > 255) {
+    // TODO : need fatalerror to also work for decompile mode
+    throw std::runtime_error{"invalid green component: range must be 0 <= green <= 255"};
+  }
+  if (blue < 0 || blue > 255) {
+    // TODO : need fatalerror to also work for decompile mode
+    throw std::runtime_error{"invalid blue component: range must be 0 <= blue <= 255"};
+  }
+
+  return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
+                ALPHA_OPAQUE};
+}
+
 static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
                                                       std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
 {
@@ -579,9 +619,44 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
 
   for (std::shared_ptr<std::ifstream> stream : paletteFiles) {
     std::string line;
+
+    std::getline(*stream, line);
+    if (line.size() == 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"invalid blank line in pal file"};
+    }
+    line.pop_back();
+    if (line != "JASC-PAL") {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"expected 'JASC-PAL' in pal file, saw " + line};
+    }
+
+    std::getline(*stream, line);
+    if (line.size() == 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"invalid blank line in pal file"};
+    }
+    line.pop_back();
+    if (line != "0100") {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"expected '0100' in pal file, saw " + line};
+    }
+
+    std::getline(*stream, line);
+    if (line.size() == 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"invalid blank line in pal file"};
+    }
+    line.pop_back();
+    if (line != "16") {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"expected '16' in pal file, saw " + line};
+    }
+
     while (std::getline(*stream, line)) {
       // TODO : read lines instead of printing
-      std::cout << line << std::endl;
+      BGR15 bgr = rgbaToBgr(parseJascLine(ctx.err, line));
+      std::cout << bgr << std::endl;
     }
   }
 

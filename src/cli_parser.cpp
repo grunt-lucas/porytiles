@@ -16,6 +16,7 @@
 #include "logger.h"
 #include "program_name.h"
 #include "ptexception.h"
+#include "utilities.h"
 
 namespace porytiles {
 
@@ -63,20 +64,6 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
-}
-
-static std::vector<std::string> split(std::string input, const std::string &delimiter)
-{
-  std::vector<std::string> result;
-  size_t pos;
-  std::string token;
-  while ((pos = input.find(delimiter)) != std::string::npos) {
-    token = input.substr(0, pos);
-    result.push_back(token);
-    input.erase(0, pos + delimiter.length());
-  }
-  result.push_back(input);
-  return result;
 }
 
 static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName, const std::string &colorString)
