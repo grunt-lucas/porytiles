@@ -13,6 +13,11 @@
 
 + in-code TODOs, grep for "TODO :"
 
++ BIG BUG
+  + the corrected pokeemerald primary general tileset cannot compile due to algorithm failure
+  + as far as I can tell, it's because the assignment algo takes a bad branch early and gets stuck
+  + we need either better heuristics, a breadth-first option, or both?
+
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
