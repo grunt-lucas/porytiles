@@ -258,7 +258,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
     ctx.subcommand = Subcommand::COMPILE_SECONDARY;
   }
   else {
-    internalerror("cli_parser::parseSubcommand unrecognized Subcommand");
+    fatalerror_porytilesprefix(ctx.err, "unrecognized subcommand `" + subcommand + "', try `porytiles --help' for usage information");
   }
 }
 
