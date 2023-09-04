@@ -851,6 +851,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
      */
     fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode);
   }
+  pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations", gPaletteAssignCutoffCounter);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
