@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include "compiler.h"
+#include "decompiler.h"
 #include "emitter.h"
 #include "importer.h"
 #include "logger.h"
@@ -166,7 +167,37 @@ buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::ui
 
 static void driveDecompile(PtContext &ctx)
 {
-  // TODO : impl driveDecompile
+  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode,
+               fmt::format("{}: exists but is not a directory", ctx.output.path));
+  }
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    throw std::runtime_error{"TODO : support decompile-secondary"};
+  }
+  if (!std::filesystem::exists(ctx.srcPaths.primarySourcePath) ||
+      !std::filesystem::is_directory(ctx.srcPaths.primarySourcePath)) {
+    fatalerror_invalidSourcePath(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode, ctx.srcPaths.primarySourcePath);
+  }
+
+  // TODO : actually check for existence of files, refactor importer so it receives ifstreams
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    throw std::runtime_error{"TODO : support decompile-secondary"};
+  }
+
+  png::image<png::rgba_pixel> bottomPrimaryPng{128, 1024};
+  png::image<png::rgba_pixel> middlePrimaryPng{128, 1024};
+  png::image<png::rgba_pixel> topPrimaryPng{128, 1024};
+
+  CompiledTileset compiled = importCompiledTileset(ctx, ctx.srcPaths.primarySourcePath);
+  auto decompiled = decompile(ctx, compiled);
+  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, *decompiled);
+
+  std::filesystem::path outputPath(ctx.output.path);
+  std::filesystem::create_directories(outputPath);
+
+  bottomPrimaryPng.write(ctx.output.path + "/bottom.png");
+  middlePrimaryPng.write(ctx.output.path + "/middle.png");
+  topPrimaryPng.write(ctx.output.path + "/top.png");
 }
 
 static void driveCompile(PtContext &ctx)

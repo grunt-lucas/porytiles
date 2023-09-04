@@ -232,6 +232,14 @@ void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerM
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
 }
 
+void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, DecompilerMode mode, std::string message)
+{
+  if (err.printErrors) {
+    pt_fatal_err("{}", message);
+  }
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
+}
+
 void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
@@ -247,6 +255,15 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePath
     pt_fatal_err_prefix("{}: source path does not exist or is not a directory", path);
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
+}
+
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePaths &srcs, DecompilerMode mode,
+                                  std::string path)
+{
+  if (err.printErrors) {
+    pt_fatal_err_prefix("{}: source path does not exist or is not a directory", path);
+  }
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,

@@ -274,7 +274,7 @@ const std::string DECOMPILE_HELP =
 "    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
 "    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
 "\n"
-"Compile the tile assets in a given source folder into a Porymap-ready tileset.\n"
+"Decompile a tileset into its constituent RGBA layer PNGs, RGB anim frames, and attributes.csv.\n"
 "\n"
 "ARGS\n"
 "    <PRIMARY-PATH>\n"
@@ -364,7 +364,7 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
   ctx.srcPaths.primarySourcePath = argv[optind++];
 
   /*
-   * Apply and validate the fieldmap configuration parameters
+   * Apply the target base game
    */
   if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
     ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
