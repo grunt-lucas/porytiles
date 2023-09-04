@@ -60,6 +60,8 @@ void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string contex
 
 void internalerror_unknownCompilerMode(std::string context) { internalerror(context + " unknown CompilerMode"); }
 
+void internalerror_unknownDecompilerMode(std::string context) { internalerror(context + " unknown DecompilerMode"); }
+
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const SourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension)
 {
@@ -554,6 +556,14 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath
 {
   if (err.printErrors) {
     pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
+  }
+  throw PtException{errorMessage};
+}
+
+void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)
+{
+  if (err.printErrors) {
+    pt_println(stderr, "terminating decompilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
   throw PtException{errorMessage};
 }

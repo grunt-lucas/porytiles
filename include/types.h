@@ -610,6 +610,8 @@ enum class Subcommand { DECOMPILE_PRIMARY, DECOMPILE_SECONDARY, COMPILE_PRIMARY,
 
 enum class CompilerMode { PRIMARY, SECONDARY };
 
+enum class DecompilerMode { PRIMARY, SECONDARY };
+
 std::string compilerModeString(CompilerMode mode);
 
 struct FieldmapConfig {
@@ -739,6 +741,7 @@ struct SourcePaths {
   }
 
   std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
 };
 
 struct Output {
@@ -758,6 +761,12 @@ struct CompilerConfig {
       : mode{}, transparencyColor{RGBA_MAGENTA}, paletteAssignTreeExploredNodeCutoff{2'000'000}, tripleLayer{true}
   {
   }
+};
+
+struct DecompilerConfig {
+  DecompilerMode mode;
+
+  DecompilerConfig() : mode{} {}
 };
 
 struct CompilerContext {

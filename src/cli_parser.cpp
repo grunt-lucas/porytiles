@@ -258,7 +258,8 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
     ctx.subcommand = Subcommand::COMPILE_SECONDARY;
   }
   else {
-    fatalerror_porytilesprefix(ctx.err, "unrecognized subcommand `" + subcommand + "', try `porytiles --help' for usage information");
+    fatalerror_porytilesprefix(ctx.err, "unrecognized subcommand `" + subcommand +
+                                            "', try `porytiles --help' for usage information");
   }
 }
 
@@ -303,18 +304,18 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
   std::copy(DECOMPILE_SHORTS.begin(), DECOMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
-  static struct option longOptions[] = {// Driver options
-                                        {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
-                                        {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
+  struct option longOptions[] = {// Driver options
+                                 {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
+                                 {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
 
-                                        // Tileset decompilation options
-                                        {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
+                                 // Tileset decompilation options
+                                 {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
 
-                                        // Help
-                                        {HELP.c_str(), no_argument, nullptr, HELP_VAL},
-                                        {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
+                                 // Help
+                                 {HELP.c_str(), no_argument, nullptr, HELP_VAL},
+                                 {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
 
-                                        {nullptr, no_argument, nullptr, 0}};
+                                 {nullptr, no_argument, nullptr, 0}};
 
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
@@ -463,7 +464,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
   // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
   std::string shortOptions = "+" + implodedShorts.str();
-  static struct option longOptions[] = {
+  struct option longOptions[] = {
       // Driver options
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},

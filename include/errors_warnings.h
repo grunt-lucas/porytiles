@@ -88,6 +88,7 @@ void internalerror(std::string message);
 void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
                                                               std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode(std::string context);
+void internalerror_unknownDecompilerMode(std::string context);
 
 // Regular compilation errors (due to bad user input), regular errors try to die as late as possible
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const SourcePaths &srcs,
@@ -204,6 +205,8 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
+
+void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 

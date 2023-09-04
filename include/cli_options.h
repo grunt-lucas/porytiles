@@ -48,7 +48,7 @@ const std::string OUTPUT = "output";
 const std::string OUTPUT_SHORT = "o";
 const std::string OUTPUT_DESC =
 "        -" + std::string{OUTPUT_SHORT} + ", -" + OUTPUT + "=<OUTPUT-PATH>\n"
-"             Output compiled files to the directory specified by OUTPUT-PATH. If any element of\n"
+"             Output generated files to the directory specified by OUTPUT-PATH. If any element of\n"
 "             OUTPUT-PATH does not exist, it will be created. Defaults to the current working\n"
 "             directory (i.e. `.').\n";
 constexpr int OUTPUT_VAL = 1000;
@@ -67,8 +67,8 @@ constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 const std::string TARGET_BASE_GAME = "target-base-game";
 const std::string TARGET_BASE_GAME_DESC =
 "        -" + TARGET_BASE_GAME + "=<TARGET>\n"
-"             Set the compilation target base game to TARGET. This option affects default values\n"
-"             for the fieldmap parameters, as well as the metatile attribute format. Valid\n"
+"             Set the (de)compilation target base game to TARGET. This option affects default\n"
+"             values for the fieldmap parameters, as well as the metatile attribute format. Valid\n"
 "             settings for TARGET are `pokeemerald', `pokefirered', and `pokeruby'. If this option\n"
 "             is not specified, defaults to `pokeemerald'. See the wiki docs for more information.\n";
 constexpr int TARGET_BASE_GAME_VAL = 2000;
