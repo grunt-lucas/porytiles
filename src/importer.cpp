@@ -653,11 +653,19 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
       throw std::runtime_error{"expected '16' in pal file, saw " + line};
     }
 
+    GBAPalette palette{};
+    /*
+     * Set palette size to 16, there is really no way to truly tell a compiled palette's size, since 0 could have been
+     * an intentional black, or it could mean the color was unset. For decompilation, we don't really care anyway.
+     */
+    palette.size = 16;
+    std::size_t colorIndex = 0;
     while (std::getline(*stream, line)) {
-      // TODO : read lines instead of printing
       BGR15 bgr = rgbaToBgr(parseJascLine(ctx.err, line));
-      std::cout << bgr << std::endl;
+      palette.colors.at(colorIndex) = bgr;
+      colorIndex++;
     }
+    palettes.push_back(palette);
   }
 
   return palettes;
@@ -1321,6 +1329,14 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
     CHECK(expectedAssignment.paletteIndex == actualAssignment.paletteIndex);
     CHECK(expectedAssignment.attributes.metatileBehavior == actualAssignment.attributes.metatileBehavior);
     CHECK(expectedAssignment.attributes.layerType == actualAssignment.attributes.layerType);
+  }
+
+  for (std::size_t palIndex = 0; palIndex < (compileCtx.compilerContext.resultTileset)->palettes.size(); palIndex++) {
+    auto origPal = (compileCtx.compilerContext.resultTileset)->palettes.at(palIndex).colors;
+    auto decompPal = importedTileset.palettes.at(palIndex).colors;
+    for (std::size_t colorIndex = 0; colorIndex < 16; colorIndex++) {
+      CHECK(origPal.at(colorIndex) == decompPal.at(colorIndex));
+    }
   }
 
   std::filesystem::remove_all(parentDir);
