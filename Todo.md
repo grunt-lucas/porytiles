@@ -11,6 +11,8 @@
 
 + `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
 
++ in-code TODOs, grep for "TODO :"
+
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation

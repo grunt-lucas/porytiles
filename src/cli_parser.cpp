@@ -22,6 +22,7 @@ namespace porytiles {
 
 static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv);
 static void parseSubcommand(PtContext &ctx, int argc, char *const *argv);
+static void parseDecompile(PtContext &ctx, int argc, char *const *argv);
 static void parseCompile(PtContext &ctx, int argc, char *const *argv);
 
 void parseOptions(PtContext &ctx, int argc, char *const *argv)
@@ -31,10 +32,10 @@ void parseOptions(PtContext &ctx, int argc, char *const *argv)
 
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
-    throw std::runtime_error{"TODO : support decompile command"};
+    parseDecompile(ctx, argc, argv);
     break;
   case Subcommand::DECOMPILE_SECONDARY:
-    throw std::runtime_error{"TODO : support decompile command"};
+    throw std::runtime_error{"TODO : support decompile-secondary command"};
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
@@ -258,6 +259,127 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
   }
   else {
     internalerror("cli_parser::parseSubcommand unrecognized Subcommand");
+  }
+}
+
+// ------------------------------
+// |    DECOMPILE-X COMMANDS    |
+// ------------------------------
+// @formatter:off
+// clang-format off
+const std::vector<std::string> DECOMPILE_SHORTS = {};
+const std::string DECOMPILE_HELP =
+"USAGE\n"
+"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
+"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
+"\n"
+"Compile the tile assets in a given source folder into a Porymap-ready tileset.\n"
+"\n"
+"ARGS\n"
+"    <PRIMARY-PATH>\n"
+"        Path to a directory containing a compiled primary tileset.\n"
+"\n"
+"    <SECONDARY-PATH>\n"
+"        Path to a directory containing a compiled secondary tileset.\n"
+"\n"
+"    <PARTNER-PRIMARY-PATH>\n"
+"        Path to a directory containing a compiled secondary tileset's compiled partner primary\n"
+"        set.\n"
+"\n"
+"OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+"    Tileset Decompilation Options\n" +
+TARGET_BASE_GAME_DESC + "\n";
+// @formatter:on
+// clang-format on
+
+static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
+{
+  std::ostringstream implodedShorts;
+  std::copy(DECOMPILE_SHORTS.begin(), DECOMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
+  // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
+  std::string shortOptions = "+" + implodedShorts.str();
+  static struct option longOptions[] = {// Driver options
+                                        {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
+                                        {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
+
+                                        // Tileset decompilation options
+                                        {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
+
+                                        // Help
+                                        {HELP.c_str(), no_argument, nullptr, HELP_VAL},
+                                        {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
+
+                                        {nullptr, no_argument, nullptr, 0}};
+
+  while (true) {
+    const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
+
+    if (opt == -1)
+      break;
+
+    switch (opt) {
+
+    // Driver options
+    case OUTPUT_VAL:
+      ctx.output.path = optarg;
+      break;
+
+    // Tileset decompilation options
+    case TARGET_BASE_GAME_VAL:
+      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
+      break;
+
+    // Help message upon '-h/--help' goes to stdout
+    case HELP_VAL:
+      fmt::println("{}", DECOMPILE_HELP);
+      exit(0);
+    // Help message on invalid or unknown options goes to stderr and gives error code
+    case '?':
+    default:
+      // TODO : show correct subcommand here
+      fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PROGRAM_NAME);
+      exit(2);
+    }
+  }
+
+  /*
+   * Die immediately if arguments are invalid, otherwise pack them into the context variable
+   */
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 2) {
+    fatalerror_porytilesprefix(
+        ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles decompile-secondary --help'");
+  }
+  else if (ctx.subcommand != Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 1) {
+    fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles decompile-primary --help'");
+  }
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    ctx.srcPaths.secondarySourcePath = argv[optind++];
+  }
+  ctx.srcPaths.primarySourcePath = argv[optind++];
+
+  /*
+   * Apply and validate the fieldmap configuration parameters
+   */
+  if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
+    ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
+  }
+  else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
+  }
+  else if (ctx.targetBaseGame == TargetBaseGame::RUBY) {
+    ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
+  }
+
+  /*
+   * Die if any errors occurred
+   */
+  if (ctx.err.errCount > 0) {
+    die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
   }
 }
 

@@ -234,12 +234,17 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
 void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
                     png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset)
 {
-  // TODO : this function needs to receive the attributes map so it knows the number of metatiles
+  /*
+   * TODO : this function needs to receive the attributes map so it can determine the layer type. It can do this by
+   * dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count (i.e. the true
+   * metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple. Otherwise, we have
+   * corruption and should fail.
+   */
 
   // Assume bottom, middle, top have identical dimensions, driver creates these PNGs so it handles dimensions
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
 
-  // TODO: For now just assume triple layer
+  // TODO : For now just assume triple layer, but this should handle both cases
   for (std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
