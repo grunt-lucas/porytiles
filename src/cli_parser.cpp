@@ -592,7 +592,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     case PAL_ASSIGN_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PAL_ASSIGN_CUTOFF, optarg);
       // TODO : throw if this factor is too large
-      ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = cutoffFactor * 1'000'000;
+      ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * 1'000'000;
       break;
 
     // Fieldmap override options

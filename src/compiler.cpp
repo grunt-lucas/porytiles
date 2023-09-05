@@ -297,15 +297,14 @@ struct AssignState {
   std::vector<ColorSet> unassigned;
 };
 
-std::size_t gPaletteAssignCutoffCounter = 0;
-static bool assign(const PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
+static bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
                    const std::vector<ColorSet> &primaryPalettes)
 {
-  gPaletteAssignCutoffCounter++;
+  ctx.compilerContext.exploredNodeCounter++;
   // TODO : this is a horrible hack avert your eyes
-  if (gPaletteAssignCutoffCounter > ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff) {
+  if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
     fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
-                                         ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff);
+                                         ctx.compilerConfig.exploredNodeCutoff);
   }
 
   if (state.unassigned.empty()) {
@@ -841,7 +840,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
-  gPaletteAssignCutoffCounter = 0;
+  ctx.compilerContext.exploredNodeCounter = 0;
   bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
   if (!assignSuccessful) {
     /*
@@ -851,7 +850,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
      */
     fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode);
   }
-  pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations", gPaletteAssignCutoffCounter);
+  pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations",
+           ctx.compilerContext.exploredNodeCounter);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
@@ -1500,14 +1500,13 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
 TEST_CASE("assign should correctly assign all normalized palettes or fail if impossible")
 {
-  porytiles::PtContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-
   SUBCASE("It should successfully allocate a simple 2x2 tileset png")
   {
     constexpr int SOLUTION_SIZE = 2;
+    porytiles::PtContext ctx{};
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 20;
+    ctx.compilerConfig.exploredNodeCutoff = 20;
 
     REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1528,7 +1527,6 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    porytiles::gPaletteAssignCutoffCounter = 0;
     CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
@@ -1542,8 +1540,10 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   SUBCASE("It should successfully allocate a large, complex PNG")
   {
     constexpr int SOLUTION_SIZE = 5;
+    porytiles::PtContext ctx{};
+    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-    ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 200;
+    ctx.compilerConfig.exploredNodeCutoff = 200;
 
     REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
@@ -1564,7 +1564,6 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    porytiles::gPaletteAssignCutoffCounter = 0;
     CHECK(porytiles::assign(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
@@ -1581,7 +1580,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.compilerConfig.transparencyColor = porytiles::RGBA_MAGENTA;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 5;
+  ctx.compilerConfig.exploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
@@ -1635,7 +1634,7 @@ TEST_CASE("compile simple example should perform as expected")
   porytiles::PtContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
-  ctx.compilerConfig.paletteAssignTreeExploredNodeCutoff = 5;
+  ctx.compilerConfig.exploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));

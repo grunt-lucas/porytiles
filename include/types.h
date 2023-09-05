@@ -754,13 +754,10 @@ struct Output {
 struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
-  std::size_t paletteAssignTreeExploredNodeCutoff;
+  std::size_t exploredNodeCutoff;
   bool tripleLayer;
 
-  CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, paletteAssignTreeExploredNodeCutoff{2'000'000}, tripleLayer{true}
-  {
-  }
+  CompilerConfig() : mode{}, transparencyColor{RGBA_MAGENTA}, exploredNodeCutoff{2'000'000}, tripleLayer{true} {}
 };
 
 struct DecompilerConfig {
@@ -773,8 +770,9 @@ struct CompilerContext {
   std::unique_ptr<CompiledTileset> pairedPrimaryTileset;
   std::unique_ptr<CompiledTileset> resultTileset;
   std::unordered_map<BGR15, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>> bgrToRgba;
+  std::size_t exploredNodeCounter;
 
-  CompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr}, bgrToRgba{} {}
+  CompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr}, bgrToRgba{}, exploredNodeCounter{} {}
 };
 
 } // namespace porytiles

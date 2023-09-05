@@ -89,7 +89,7 @@ const std::string TRANSPARENCY_COLOR_DESC =
 "             Defaults to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
-const std::string PAL_ASSIGN_CUTOFF = "palette-assign-cutoff";
+const std::string PAL_ASSIGN_CUTOFF = "pal-assign-cutoff";
 const std::string PAL_ASSIGN_CUTOFF_DESC =
 "        -" + PAL_ASSIGN_CUTOFF + "=<FACTOR>\n"
 "             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 2,\n"

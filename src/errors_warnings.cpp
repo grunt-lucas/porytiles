@@ -330,8 +330,11 @@ void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const So
                                           std::size_t maxRecurses)
 {
   if (err.printErrors) {
-    pt_fatal_err("palette assignment exceeded maximum cutoff threshold '{}'",
-                 fmt::styled(maxRecurses, fmt::emphasis::bold));
+    pt_fatal_err("palette assignment explored too many nodes");
+    pt_note("please see the following wiki page for some potential solutions:");
+    pt_println(stderr, "      "
+                       "https://github.com/grunt-lucas/porytiles/wiki/"
+                       "Solving-The-%22Palette-Assignment-Explored-Too-Many-Nodes%22-Error");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
