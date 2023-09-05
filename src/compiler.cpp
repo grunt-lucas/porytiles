@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <deque>
 #include <doctest.h>
 #include <filesystem>
 #include <memory>
@@ -318,7 +319,7 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
   return std::pair{indexedNormTilesWithColorSets, colorSets};
 }
 
-static bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
+static bool assign(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                    const std::vector<ColorSet> &primaryPalettes)
 {
   ctx.compilerContext.exploredNodeCounter++;
@@ -433,12 +434,31 @@ static bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &sol
   return false;
 }
 
-static bool assignBreadthFirst(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
-                   const std::vector<ColorSet> &primaryPalettes)
-{
-  // TODO : impl assignBreadthFirst
-  return false;
-}
+// static bool assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
+//                                const std::vector<ColorSet> &primaryPalettes)
+// {
+//   std::unordered_set<AssignState> visitedStates{};
+//   std::deque<AssignState> stateQueue{};
+//   stateQueue.push_back(initialState);
+//   visitedStates.insert(initialState);
+
+//   while (!stateQueue.empty()) {
+//     // Make a copy and pop the queue front
+//     AssignState currentState = stateQueue.front();
+//     stateQueue.pop_front();
+
+//     if (currentState.unassigned.empty()) {
+//       // No tiles left to assign, found a solution!
+//       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+//                 std::back_inserter(solution));
+//       return true;
+//     }
+
+//     // TODO : impl the rest of assignBreadthFirst
+//   }
+
+//   return false;
+// }
 
 static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
 {
