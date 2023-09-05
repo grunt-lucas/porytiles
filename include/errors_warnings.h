@@ -155,8 +155,8 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings
 void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles);
 
-void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                          std::size_t maxRecurses);
+void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+                                            std::size_t maxRecurses);
 
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode);
 

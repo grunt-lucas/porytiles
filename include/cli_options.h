@@ -89,13 +89,22 @@ const std::string TRANSPARENCY_COLOR_DESC =
 "             Defaults to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
-const std::string PAL_ASSIGN_CUTOFF = "pal-assign-cutoff";
-const std::string PAL_ASSIGN_CUTOFF_DESC =
-"        -" + PAL_ASSIGN_CUTOFF + "=<FACTOR>\n"
-"             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 2,\n"
+// Color assignment config options
+
+const std::string ASSIGN_EXPLORE_CUTOFF = "assign-explore-cutoff";
+const std::string ASSIGN_EXPLORE_CUTOFF_DESC =
+"        -" + ASSIGN_EXPLORE_CUTOFF + "=<FACTOR>\n"
+"             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 4,\n"
 "             which should be sufficient for most cases. Increase the number to let the algorithm\n"
 "             run for longer before failing out.\n";
-constexpr int PAL_ASSIGN_CUTOFF_VAL = 2003;
+constexpr int ASSIGN_EXPLORE_CUTOFF_VAL = 2003;
+
+const std::string ASSIGN_ALGO = "assign-algorithm";
+const std::string ASSIGN_ALGO_DESC =
+"        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
+"             Select the assignment algorithm. Valid options are `depth-first', `breadth-first',\n"
+"             or `try-all'. Default is `try-all'.\n";
+constexpr int ASSIGN_ALGO_VAL = 2004;
 
 
 // Fieldmap override options

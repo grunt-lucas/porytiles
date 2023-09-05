@@ -140,6 +140,28 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
   throw std::runtime_error("cli_parser::parseTargetBaseGame reached unreachable code path");
 }
 
+static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const std::string &optionName,
+                                          const char *optarg)
+{
+  std::string optargString{optarg};
+  if (optargString == "depth-first") {
+    return AssignAlgorithm::DEPTH_FIRST;
+  }
+  else if (optargString == "breadth-first") {
+    return AssignAlgorithm::BREADTH_FIRST;
+  }
+  else if (optargString == "try-all") {
+    return AssignAlgorithm::TRY_ALL;
+  }
+  else {
+    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
+                                                fmt::styled(optargString, fmt::emphasis::bold),
+                                                fmt::styled(optionName, fmt::emphasis::bold)));
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
+}
+
 // --------------------------------
 // |    GLOBAL OPTION PARSING     |
 // --------------------------------
@@ -435,7 +457,9 @@ TILES_OUTPUT_PAL_DESC + "\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 TRANSPARENCY_COLOR_DESC + "\n" +
-PAL_ASSIGN_CUTOFF_DESC + "\n" +
+"    Color Assignment Config Options\n" +
+ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
+ASSIGN_ALGO_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -474,7 +498,10 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
       {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
       {TRANSPARENCY_COLOR.c_str(), required_argument, nullptr, TRANSPARENCY_COLOR_VAL},
-      {PAL_ASSIGN_CUTOFF.c_str(), required_argument, nullptr, PAL_ASSIGN_CUTOFF_VAL},
+
+      // Color assignment config options
+      {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
+      {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -589,10 +616,15 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     case TRANSPARENCY_COLOR_VAL:
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
       break;
-    case PAL_ASSIGN_CUTOFF_VAL:
-      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PAL_ASSIGN_CUTOFF, optarg);
+
+    // Color assignment config options
+    case ASSIGN_EXPLORE_CUTOFF_VAL:
+      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
       // TODO : throw if this factor is too large
       ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * 1'000'000;
+      break;
+    case ASSIGN_ALGO_VAL:
+      ctx.compilerConfig.assignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
       break;
 
     // Fieldmap override options

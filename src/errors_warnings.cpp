@@ -326,8 +326,8 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePat
                             fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
 }
 
-void fatalerror_tooManyAssignmentRecurses(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                          std::size_t maxRecurses)
+void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+                                            std::size_t maxRecurses)
 {
   if (err.printErrors) {
     pt_fatal_err("palette assignment explored too many nodes");

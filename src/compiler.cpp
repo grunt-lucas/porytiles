@@ -38,6 +38,8 @@ struct AssignState {
     return this->hardwarePalettes == other.hardwarePalettes && this->unassigned == other.unassigned;
   }
 };
+
+enum class AssignResult { SUCCESS, EXPLORE_CUTOFF_REACHED, NO_SOLUTION_POSSIBLE };
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::AssignState> {
@@ -65,7 +67,8 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
      * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err on the
      * side of forcing the user to be explicit, especially when it comes to transparency handling.
      */
-    error_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
+    // TODO : actually, make this a warn since decompiled tilesets turn 255 0 255 into 248 0 248
+    // error_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
   }
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
@@ -319,20 +322,18 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
   return std::pair{indexedNormTilesWithColorSets, colorSets};
 }
 
-static bool assign(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
-                   const std::vector<ColorSet> &primaryPalettes)
+static AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
+                                     const std::vector<ColorSet> &primaryPalettes)
 {
   ctx.compilerContext.exploredNodeCounter++;
-  // TODO : this is a horrible hack avert your eyes
   if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
-    fatalerror_tooManyAssignmentRecurses(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
-                                         ctx.compilerConfig.exploredNodeCutoff);
+    return AssignResult::EXPLORE_CUTOFF_REACHED;
   }
 
   if (state.unassigned.empty()) {
     // No tiles left to assign, found a solution!
     std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
-    return true;
+    return AssignResult::SUCCESS;
   }
 
   /*
@@ -363,8 +364,8 @@ static bool assign(PtContext &ctx, AssignState &state, std::vector<ColorSet> &so
         unassignedCopy.pop_back();
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assign(ctx, updatedState, solution, primaryPalettes)) {
-          return true;
+        if (assignDepthFirst(ctx, updatedState, solution, primaryPalettes) == AssignResult::SUCCESS) {
+          return AssignResult::SUCCESS;
         }
       }
     }
@@ -425,40 +426,98 @@ static bool assign(PtContext &ctx, AssignState &state, std::vector<ColorSet> &so
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-    if (assign(ctx, updatedState, solution, primaryPalettes)) {
-      return true;
+    if (assignDepthFirst(ctx, updatedState, solution, primaryPalettes) == AssignResult::SUCCESS) {
+      return AssignResult::SUCCESS;
     }
   }
 
   // No solution found
-  return false;
+  return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-// static bool assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
-//                                const std::vector<ColorSet> &primaryPalettes)
-// {
-//   std::unordered_set<AssignState> visitedStates{};
-//   std::deque<AssignState> stateQueue{};
-//   stateQueue.push_back(initialState);
-//   visitedStates.insert(initialState);
+static AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
+                                       const std::vector<ColorSet> &primaryPalettes)
+{
+  std::unordered_set<AssignState> visitedStates{};
+  std::deque<AssignState> stateQueue{};
+  std::deque<AssignState> lowPriorityQueue{};
+  stateQueue.push_back(initialState);
+  visitedStates.insert(initialState);
 
-//   while (!stateQueue.empty()) {
-//     // Make a copy and pop the queue front
-//     AssignState currentState = stateQueue.front();
-//     stateQueue.pop_front();
+  while (!stateQueue.empty() || !lowPriorityQueue.empty()) {
+    AssignState currentState;
+    ctx.compilerContext.exploredNodeCounter++;
+    if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
+      return AssignResult::EXPLORE_CUTOFF_REACHED;
+    }
 
-//     if (currentState.unassigned.empty()) {
-//       // No tiles left to assign, found a solution!
-//       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
-//                 std::back_inserter(solution));
-//       return true;
-//     }
+    if (!stateQueue.empty()) {
+      currentState = stateQueue.front();
+      stateQueue.pop_front();
+    }
+    else if (!lowPriorityQueue.empty()) {
+      currentState = lowPriorityQueue.front();
+      lowPriorityQueue.pop_front();
+    }
 
-//     // TODO : impl the rest of assignBreadthFirst
-//   }
+    if (currentState.unassigned.empty()) {
+      // No tiles left to assign, found a solution!
+      std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+                std::back_inserter(solution));
+      return AssignResult::SUCCESS;
+    }
 
-//   return false;
-// }
+    ColorSet &toAssign = currentState.unassigned.back();
+    std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+                     [&toAssign](const auto &pal1, const auto &pal2) {
+                       std::size_t pal1IntersectSize = (pal1 & toAssign).count();
+                       std::size_t pal2IntersectSize = (pal2 & toAssign).count();
+                       if (pal1IntersectSize == pal2IntersectSize) {
+                         return pal1.count() < pal2.count();
+                       }
+                       return pal1IntersectSize > pal2IntersectSize;
+                     });
+    bool sawAssignmentWithIntersection = false;
+    for (size_t i = 0; i < currentState.hardwarePalettes.size(); i++) {
+      const ColorSet &palette = currentState.hardwarePalettes.at(i);
+
+      // > PAL_SIZE - 1 because we need to save a slot for transparency
+      if ((palette | toAssign).count() > PAL_SIZE - 1) {
+        continue;
+      }
+
+      if ((palette & toAssign).count() > 0) {
+        sawAssignmentWithIntersection = true;
+      }
+
+      std::vector<ColorSet> unassignedCopy;
+      std::copy(std::begin(currentState.unassigned), std::end(currentState.unassigned),
+                std::back_inserter(unassignedCopy));
+      std::vector<ColorSet> hardwarePalettesCopy;
+      std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+                std::back_inserter(hardwarePalettesCopy));
+      unassignedCopy.pop_back();
+      hardwarePalettesCopy.at(i) |= toAssign;
+      AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
+      if (!visitedStates.contains(updatedState)) {
+        if (sawAssignmentWithIntersection && (palette & toAssign).count() == 0) {
+          /*
+           * Heuristic: if we already saw at least one assignment that had some intersection, put the 0-intersection
+           * branches in a lower-priority queue
+           */
+          lowPriorityQueue.push_back(updatedState);
+          visitedStates.insert(updatedState);
+        }
+        else {
+          stateQueue.push_back(updatedState);
+          visitedStates.insert(updatedState);
+        }
+      }
+    }
+  }
+
+  return AssignResult::NO_SOLUTION_POSSIBLE;
+}
 
 static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
 {
@@ -889,14 +948,30 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
   ctx.compilerContext.exploredNodeCounter = 0;
-  bool assignSuccessful = assign(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
-  if (!assignSuccessful) {
+  AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
+  if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
+    assignResult = assignBreadthFirst(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
+  }
+  else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
+    assignResult = assignDepthFirst(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
+  }
+  else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::TRY_ALL) {
+    throw std::runtime_error{"TODO : support try-all mode"};
+  }
+  else {
+    internalerror("compiler::compile unknown AssignAlgorithm");
+  }
+  if (assignResult == AssignResult::NO_SOLUTION_POSSIBLE) {
     /*
      * If we get here, we know there is truly no possible palette solution since we exhausted every possibility. For
      * most reasonably sized tilesets, it would be difficult to reach this condition since there are too many possible
-     * allocations to try. Instead it is more likely we hit the depth limit.
+     * allocations to try. Instead it is more likely we hit the exploration cutoff case below.
      */
     fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode);
+  }
+  else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
+    fatalerror_assignExploredCutoffReached(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+                                           ctx.compilerConfig.exploredNodeCutoff);
   }
   pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations",
            ctx.compilerContext.exploredNodeCounter);
@@ -1575,7 +1650,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    CHECK(porytiles::assign(ctx, state, solution, {}));
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -1612,7 +1687,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned};
 
-    CHECK(porytiles::assign(ctx, state, solution, {}));
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}));
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
@@ -1630,6 +1705,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.exploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
