@@ -980,8 +980,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     fatalerror_assignExploredCutoffReached(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
                                            ctx.compilerConfig.assignAlgorithm, ctx.compilerConfig.exploredNodeCutoff);
   }
-  pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations",
-           ctx.compilerContext.exploredNodeCounter);
+  pt_logln(ctx, stderr, "{} assigned all NormalizedPalettes successfully after {} iterations",
+           assignAlgorithmString(ctx.compilerConfig.assignAlgorithm), ctx.compilerContext.exploredNodeCounter);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
