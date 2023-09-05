@@ -14,6 +14,7 @@
 #include "cli_options.h"
 #include "errors_warnings.h"
 #include "logger.h"
+#include "palette_assignment.h"
 #include "program_name.h"
 #include "ptexception.h"
 #include "utilities.h"
@@ -618,7 +619,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     case ASSIGN_EXPLORE_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
       // TODO : throw if this factor is too large
-      ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * 1'000'000;
+      ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
       break;
     case ASSIGN_ALGO_VAL:
       ctx.compilerConfig.assignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);

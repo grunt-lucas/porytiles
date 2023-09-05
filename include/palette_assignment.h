@@ -1,6 +1,7 @@
 #ifndef PORYTILES_PALETTE_ASSIGNMENT_H
 #define PORYTILES_PALETTE_ASSIGNMENT_H
 
+#include <cstddef>
 #include <vector>
 
 #include "compiler.h"
@@ -8,6 +9,9 @@
 #include "types.h"
 
 namespace porytiles {
+
+constexpr std::size_t EXPLORATION_CUTOFF_MULTIPLIER = 1'000'000;
+
 struct AssignState {
   /*
    * One color set for each hardware palette, bits in color set will indicate which colors this HW palette will have.

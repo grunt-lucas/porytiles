@@ -14,8 +14,9 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                               const std::vector<ColorSet> &primaryPalettes)
 {
   ctx.compilerContext.exploredNodeCounter++;
-  if (ctx.compilerContext.exploredNodeCounter % 1'000'000 == 0) {
-    pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}", ctx.compilerContext.exploredNodeCounter / 1'000'000);
+  if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
+    pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}",
+             ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER);
   }
   if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
     return AssignResult::EXPLORE_CUTOFF_REACHED;
@@ -147,9 +148,10 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
   while (!stateQueue.empty() || !lowPriorityQueue.empty()) {
     AssignStateIndexOnly currentState;
     ctx.compilerContext.exploredNodeCounter++;
-    if (ctx.compilerContext.exploredNodeCounter % 1'000'000 == 0) {
+    if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
       pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}, stateQueue={}, lowPrioQueue={}",
-               ctx.compilerContext.exploredNodeCounter / 1'000'000, stateQueue.size(), lowPriorityQueue.size());
+               ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER, stateQueue.size(),
+               lowPriorityQueue.size());
     }
     if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
       return AssignResult::EXPLORE_CUTOFF_REACHED;
