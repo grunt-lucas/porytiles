@@ -433,6 +433,13 @@ static bool assign(PtContext &ctx, AssignState state, std::vector<ColorSet> &sol
   return false;
 }
 
+static bool assignBreadthFirst(PtContext &ctx, AssignState state, std::vector<ColorSet> &solution,
+                   const std::vector<ColorSet> &primaryPalettes)
+{
+  // TODO : impl assignBreadthFirst
+  return false;
+}
+
 static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
 {
   GBATile gbaTile{};
