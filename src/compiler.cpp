@@ -364,8 +364,12 @@ static AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::ve
         unassignedCopy.pop_back();
         AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-        if (assignDepthFirst(ctx, updatedState, solution, primaryPalettes) == AssignResult::SUCCESS) {
+        AssignResult result = assignDepthFirst(ctx, updatedState, solution, primaryPalettes);
+        if (result == AssignResult::SUCCESS) {
           return AssignResult::SUCCESS;
+        }
+        else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
+          return AssignResult::EXPLORE_CUTOFF_REACHED;
         }
       }
     }
@@ -426,8 +430,12 @@ static AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::ve
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
 
-    if (assignDepthFirst(ctx, updatedState, solution, primaryPalettes) == AssignResult::SUCCESS) {
+    AssignResult result = assignDepthFirst(ctx, updatedState, solution, primaryPalettes);
+    if (result == AssignResult::SUCCESS) {
       return AssignResult::SUCCESS;
+    }
+    else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
+      return AssignResult::EXPLORE_CUTOFF_REACHED;
     }
   }
 
@@ -477,6 +485,7 @@ static AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState
                        }
                        return pal1IntersectSize > pal2IntersectSize;
                      });
+
     bool sawAssignmentWithIntersection = false;
     for (size_t i = 0; i < currentState.hardwarePalettes.size(); i++) {
       const ColorSet &palette = currentState.hardwarePalettes.at(i);
@@ -946,21 +955,19 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     }
   }
 
-  AssignState state = {tmpHardwarePalettes, unassignedNormPalettes};
+  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes};
   ctx.compilerContext.exploredNodeCounter = 0;
   AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
-  if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
-    assignResult = assignBreadthFirst(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
+  if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
+    assignResult = assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets);
   }
-  else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
-    assignResult = assignDepthFirst(ctx, state, assignedPalsSolution, primaryPaletteColorSets);
-  }
-  else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::TRY_ALL) {
-    throw std::runtime_error{"TODO : support try-all mode"};
+  else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
+    assignResult = assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets);
   }
   else {
     internalerror("compiler::compile unknown AssignAlgorithm");
   }
+
   if (assignResult == AssignResult::NO_SOLUTION_POSSIBLE) {
     /*
      * If we get here, we know there is truly no possible palette solution since we exhausted every possibility. For
@@ -971,7 +978,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
   else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
     fatalerror_assignExploredCutoffReached(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
-                                           ctx.compilerConfig.exploredNodeCutoff);
+                                           ctx.compilerConfig.assignAlgorithm, ctx.compilerConfig.exploredNodeCutoff);
   }
   pt_logln(ctx, stderr, "assigned all NormalizedPalettes successfully after {} iterations",
            ctx.compilerContext.exploredNodeCounter);

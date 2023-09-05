@@ -150,9 +150,6 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
   else if (optargString == "breadth-first") {
     return AssignAlgorithm::BREADTH_FIRST;
   }
-  else if (optargString == "try-all") {
-    return AssignAlgorithm::TRY_ALL;
-  }
   else {
     fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
                                                 fmt::styled(optargString, fmt::emphasis::bold),

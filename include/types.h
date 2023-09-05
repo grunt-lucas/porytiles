@@ -610,11 +610,12 @@ enum class Subcommand { DECOMPILE_PRIMARY, DECOMPILE_SECONDARY, COMPILE_PRIMARY,
 
 enum class CompilerMode { PRIMARY, SECONDARY };
 
-enum class AssignAlgorithm { DEPTH_FIRST, BREADTH_FIRST, TRY_ALL };
+enum class AssignAlgorithm { DEPTH_FIRST, BREADTH_FIRST };
 
 enum class DecompilerMode { PRIMARY, SECONDARY };
 
 std::string compilerModeString(CompilerMode mode);
+std::string assignAlgorithmString(AssignAlgorithm algo);
 
 struct FieldmapConfig {
   // Fieldmap params
@@ -763,8 +764,8 @@ struct CompilerConfig {
   std::size_t exploredNodeCutoff;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::TRY_ALL},
-        exploredNodeCutoff{4'000'000}
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        exploredNodeCutoff{2'000'000}
   {
   }
 };

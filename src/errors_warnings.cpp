@@ -327,10 +327,10 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePat
 }
 
 void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                            std::size_t maxRecurses)
+                                            AssignAlgorithm algo, std::size_t maxRecurses)
 {
   if (err.printErrors) {
-    pt_fatal_err("palette assignment explored too many nodes");
+    pt_fatal_err("{} palette assignment explored too many nodes", assignAlgorithmString(algo));
     pt_note("please see the following wiki page for some potential solutions:");
     pt_println(stderr, "      "
                        "https://github.com/grunt-lucas/porytiles/wiki/"

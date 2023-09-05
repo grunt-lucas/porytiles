@@ -398,6 +398,20 @@ std::string compilerModeString(CompilerMode mode)
   throw std::runtime_error("types::compilerModeString reached unreachable code path");
 }
 
+std::string assignAlgorithmString(AssignAlgorithm algo)
+{
+  switch (algo) {
+  case AssignAlgorithm::DEPTH_FIRST:
+    return "depth-first";
+  case AssignAlgorithm::BREADTH_FIRST:
+    return "breadth-first";
+  default:
+    internalerror_unknownCompilerMode("types::assignAlgorithmString");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::assignAlgorithmString reached unreachable code path");
+}
+
 } // namespace porytiles
 
 // --------------------
