@@ -141,7 +141,7 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
 }
 
 static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const std::string &optionName,
-                                          const char *optarg)
+                                            const char *optarg)
 {
   std::string optargString{optarg};
   if (optargString == "depth-first") {
