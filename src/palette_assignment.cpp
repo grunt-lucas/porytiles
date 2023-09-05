@@ -134,17 +134,18 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
   return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
-                                const std::vector<ColorSet> &primaryPalettes)
+AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &initialState,
+                                         std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
+                                         const std::vector<ColorSet> &unassigneds)
 {
-  std::unordered_set<AssignState> visitedStates{};
-  std::deque<AssignState> stateQueue{};
-  std::deque<AssignState> lowPriorityQueue{};
+  std::unordered_set<AssignStateIndexOnly> visitedStates{};
+  std::deque<AssignStateIndexOnly> stateQueue{};
+  std::deque<AssignStateIndexOnly> lowPriorityQueue{};
   stateQueue.push_back(initialState);
   visitedStates.insert(initialState);
 
   while (!stateQueue.empty() || !lowPriorityQueue.empty()) {
-    AssignState currentState;
+    AssignStateIndexOnly currentState;
     ctx.compilerContext.exploredNodeCounter++;
     if (ctx.compilerContext.exploredNodeCounter % 1'000'000 == 0) {
       pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}, stateQueue={}, lowPrioQueue={}",
@@ -163,14 +164,14 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
       lowPriorityQueue.pop_front();
     }
 
-    if (currentState.unassigned.empty()) {
+    if (currentState.unassignedCount == 0) {
       // No tiles left to assign, found a solution!
       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                 std::back_inserter(solution));
       return AssignResult::SUCCESS;
     }
 
-    ColorSet &toAssign = currentState.unassigned.back();
+    const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
     std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                      [&toAssign](const auto &pal1, const auto &pal2) {
                        std::size_t pal1IntersectSize = (pal1 & toAssign).count();
@@ -194,15 +195,11 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
         sawAssignmentWithIntersection = true;
       }
 
-      std::vector<ColorSet> unassignedCopy;
-      std::copy(std::begin(currentState.unassigned), std::end(currentState.unassigned),
-                std::back_inserter(unassignedCopy));
       std::vector<ColorSet> hardwarePalettesCopy;
       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                 std::back_inserter(hardwarePalettesCopy));
-      unassignedCopy.pop_back();
       hardwarePalettesCopy.at(i) |= toAssign;
-      AssignState updatedState = {hardwarePalettesCopy, unassignedCopy};
+      AssignStateIndexOnly updatedState = {hardwarePalettesCopy, currentState.unassignedCount - 1};
       if (!visitedStates.contains(updatedState)) {
         if (sawAssignmentWithIntersection && (palette & toAssign).count() == 0) {
           /*

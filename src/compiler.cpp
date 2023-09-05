@@ -717,13 +717,15 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
 
   AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes};
+  AssignStateIndexOnly initialStateIndexOnly = {tmpHardwarePalettes, unassignedNormPalettes.size()};
   ctx.compilerContext.exploredNodeCounter = 0;
   AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
   if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
     assignResult = assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets);
   }
   else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
-    assignResult = assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets);
+    assignResult = assignBreadthFirstIndexOnly(ctx, initialStateIndexOnly, assignedPalsSolution,
+                                               primaryPaletteColorSets, unassignedNormPalettes);
   }
   else {
     internalerror("compiler::compile unknown AssignAlgorithm");
