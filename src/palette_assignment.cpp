@@ -189,6 +189,7 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
                      });
 
     bool sawAssignmentWithIntersection = false;
+    // TODO : i < 3 here can compile the firered set, perhaps we need an option for this
     for (size_t i = 0; i < currentState.hardwarePalettes.size(); i++) {
       const ColorSet &palette = currentState.hardwarePalettes.at(i);
 
