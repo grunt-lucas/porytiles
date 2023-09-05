@@ -336,7 +336,7 @@ void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const 
                        "https://github.com/grunt-lucas/porytiles/wiki/"
                        "Solving-The-%22Palette-Assignment-Explored-Too-Many-Nodes%22-Error");
   }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
+  die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
 
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode)
@@ -345,7 +345,7 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
     pt_fatal_err("no possible palette assignment exists for the given sources");
     pt_note("increase the number of allowed palettes or restructure your tiles to use colors more efficiently");
   }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), "no possible palette assignment");
+  die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "no possible palette assignment");
 }
 
 void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
@@ -578,6 +578,14 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath
     pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
   throw PtException{errorMessage};
+}
+
+void die_compilationTerminatedFailHard(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)
+{
+  if (err.printErrors) {
+    pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
+  }
+  std::exit(1);
 }
 
 void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)

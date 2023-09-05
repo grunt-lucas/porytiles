@@ -209,6 +209,8 @@ void die(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 
+void die_compilationTerminatedFailHard(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
+
 void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);

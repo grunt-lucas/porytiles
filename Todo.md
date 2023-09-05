@@ -1,5 +1,7 @@
 # Todo List
 
++ in-code TODOs, grep for "TODO :"
+
 + Continue to create more in-file unit tests that maximize coverage
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
@@ -11,14 +13,12 @@
 
 + `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
 
-+ in-code TODOs, grep for "TODO :"
-
-+ BIG BUG
-  + the corrected pokeemerald primary general tileset cannot compile due to algorithm failure
-  + as far as I can tell, it's because the assignment algo takes a bad branch early and gets stuck
-  + we need either better heuristics, a breadth-first option, or both?
-    + https://courses.engr.illinois.edu/cs225/sp2022/resources/bfs-dfs/
++ More assign algorithms?
+  + Maybe some kind of A*?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
+    + https://realtimecollisiondetection.net/blog/?p=56
+  + Better heuristics to prune unpromising branches
+  + FireRed primary general is uncompilable with current algorithms
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
@@ -43,6 +43,12 @@
 + Warnings
   + `-Wpalette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
+  + `-Wtransprent-color-precision`
+    + warn user if a color collapsed to the transparent color
+  + `-Wno-transparency-present`
+    + warn user if the tileset did not have any of the selected transparency color
+    + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
+      + user may forget to set `-transparency-color` which will break compilation
   + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
