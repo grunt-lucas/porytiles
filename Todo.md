@@ -17,6 +17,8 @@
   + the corrected pokeemerald primary general tileset cannot compile due to algorithm failure
   + as far as I can tell, it's because the assignment algo takes a bad branch early and gets stuck
   + we need either better heuristics, a breadth-first option, or both?
+    + https://courses.engr.illinois.edu/cs225/sp2022/resources/bfs-dfs/
+    + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
