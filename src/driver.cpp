@@ -488,6 +488,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.err.printErrors = false;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   ctx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
@@ -700,6 +701,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.err.printErrors = false;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   ctx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

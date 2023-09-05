@@ -763,7 +763,7 @@ struct CompilerConfig {
   std::size_t exploredNodeCutoff;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::TRY_ALL},
         exploredNodeCutoff{4'000'000}
   {
   }

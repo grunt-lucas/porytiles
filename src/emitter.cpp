@@ -352,6 +352,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
@@ -395,6 +396,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
@@ -461,6 +463,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.err.printErrors = false;
+    ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
@@ -544,6 +547,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.compilerConfig.tripleLayer = false;
     ctx.err.printErrors = false;
+    ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
@@ -630,6 +634,7 @@ TEST_CASE("emitDecompiled test code")
   ctx.fieldmapConfig.numPalettesInPrimary = 6;
   ctx.fieldmapConfig.numPalettesTotal = 13;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));

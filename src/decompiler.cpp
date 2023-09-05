@@ -50,6 +50,7 @@ TEST_CASE("decompile should decompile a basic tileset")
   ctx.fieldmapConfig.numPalettesInPrimary = 6;
   ctx.fieldmapConfig.numPalettesTotal = 13;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
   REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
