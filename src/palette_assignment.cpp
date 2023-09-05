@@ -174,6 +174,10 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
     }
 
     const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
+
+    // TODO : handle secondary sets properly, see how depth-first does it
+    // if (!primaryPalettes.empty())
+
     std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                      [&toAssign](const auto &pal1, const auto &pal2) {
                        std::size_t pal1IntersectSize = (pal1 & toAssign).count();
