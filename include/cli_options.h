@@ -97,14 +97,21 @@ const std::string ASSIGN_EXPLORE_CUTOFF_DESC =
 "             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 2,\n"
 "             which should be sufficient for most cases. Increase the number to let the algorithm\n"
 "             run for longer before failing out.\n";
-constexpr int ASSIGN_EXPLORE_CUTOFF_VAL = 2003;
+constexpr int ASSIGN_EXPLORE_CUTOFF_VAL = 3000;
 
 const std::string ASSIGN_ALGO = "assign-algorithm";
 const std::string ASSIGN_ALGO_DESC =
 "        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Select the assignment algorithm. Valid options are `depth-first' and `breadth-first'.\n"
-"             Default is `depth-first'.\n";
-constexpr int ASSIGN_ALGO_VAL = 2004;
+"             Select the assignment algorithm. Valid options are `dfs' and `bfs'. Default is `dfs'.\n";
+constexpr int ASSIGN_ALGO_VAL = 3001;
+
+const std::string PRUNE_BRANCHES = "prune-branches";
+const std::string PRUNE_BRANCHES_DESC =
+"        -" + PRUNE_BRANCHES + "=<N>\n"
+"             Prune the N least promising branches at each node in the assignment tree search.\n"
+"             Specify `smart' instead of an integer to use a computed `smart' pruning at each node\n"
+"             instead of just a constant integer pruning.\n";
+constexpr int PRUNE_BRANCHES_VAL = 3002;
 
 
 // Fieldmap override options
@@ -115,7 +122,7 @@ const std::string TILES_PRIMARY_OVERRIDE_DESC =
 "             Override the target base game's default number of primary set tiles. The value\n"
 "             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
 "             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
-constexpr int TILES_PRIMARY_OVERRIDE_VAL = 3000;
+constexpr int TILES_PRIMARY_OVERRIDE_VAL = 4000;
 
 const std::string TILES_OVERRIDE_TOTAL = "tiles-total-override";
 const std::string TILES_TOTAL_OVERRIDE_DESC =
@@ -123,7 +130,7 @@ const std::string TILES_TOTAL_OVERRIDE_DESC =
 "             Override the target base game's default number of total tiles. The value specified\n"
 "             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
 "             to 1024 (inherited from `pokeemerald' default target base game).\n";
-constexpr int TILES_TOTAL_OVERRIDE_VAL = 3001;
+constexpr int TILES_TOTAL_OVERRIDE_VAL = 4001;
 
 const std::string METATILES_OVERRIDE_PRIMARY = "metatiles-primary-override";
 const std::string METATILES_PRIMARY_OVERRIDE_DESC =
@@ -131,7 +138,7 @@ const std::string METATILES_PRIMARY_OVERRIDE_DESC =
 "             Override the target base game's default number of primary set metatiles. The value\n"
 "             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
 "             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
-constexpr int METATILES_PRIMARY_OVERRIDE_VAL = 3002;
+constexpr int METATILES_PRIMARY_OVERRIDE_VAL = 4002;
 
 const std::string METATILES_OVERRIDE_TOTAL = "metatiles-total-override";
 const std::string METATILES_TOTAL_OVERRIDE_DESC =
@@ -139,7 +146,7 @@ const std::string METATILES_TOTAL_OVERRIDE_DESC =
 "             Override the target base game's default number of total metatiles. The value specified\n"
 "             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
 "             to 1024 (inherited from `pokeemerald' default target base game).\n";
-constexpr int METATILES_TOTAL_OVERRIDE_VAL = 3003;
+constexpr int METATILES_TOTAL_OVERRIDE_VAL = 4003;
 
 const std::string PALS_PRIMARY_OVERRIDE = "pals-primary-override";
 const std::string PALS_PRIMARY_OVERRIDE_DESC =
@@ -147,7 +154,7 @@ const std::string PALS_PRIMARY_OVERRIDE_DESC =
 "             Override the target base game's default number of primary set palettes. The value\n"
 "             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
 "             Defaults to 6 (inherited from `pokeemerald' default target base game).\n";
-constexpr int PALS_PRIMARY_OVERRIDE_VAL = 3004;
+constexpr int PALS_PRIMARY_OVERRIDE_VAL = 4004;
 
 const std::string PALS_TOTAL_OVERRIDE = "pals-total-override";
 const std::string PALS_TOTAL_OVERRIDE_DESC =
@@ -155,7 +162,7 @@ const std::string PALS_TOTAL_OVERRIDE_DESC =
 "             Override the target base game's default number of total palettes. The value specified\n"
 "             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
 "             Defaults to 13 (inherited from `pokeemerald' default target base game).\n";
-constexpr int PALS_TOTAL_OVERRIDE_VAL = 3005;
+constexpr int PALS_TOTAL_OVERRIDE_VAL = 4005;
 
 
 // Warning options
@@ -164,7 +171,7 @@ const std::string WALL = "Wall";
 const std::string WALL_DESC =
 "        -" + WALL + "\n"
 "             Enable all warnings.\n";
-constexpr int WALL_VAL = 4000;
+constexpr int WALL_VAL = 5000;
 
 const std::string W_GENERAL = "W";
 const std::string W_GENERAL_DESC =
@@ -179,10 +186,10 @@ const std::string WNONE_SHORT = "w";
 const std::string WNONE_DESC =
 "        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
 "             Disable all warnings.\n";
-constexpr int WNONE_VAL = 4001;
+constexpr int WNONE_VAL = 5001;
 
 const std::string WNO_ERROR = "Wno-error";
-constexpr int WNO_ERROR_VAL = 4003;
+constexpr int WNO_ERROR_VAL = 5002;
 
 const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
@@ -192,43 +199,43 @@ const std::string WERROR_DESC =
 "             error to the highest previously seen level. If WARNING is already off, the 'no' form\n"
 "             will no-op. If more than one specifier for the same warning appears on the same\n"
 "             command line, the right-most specifier will take precedence.\n";
-constexpr int WERROR_VAL = 4004;
+constexpr int WERROR_VAL = 5003;
 
 // Specific warnings
 const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + WARN_COLOR_PRECISION_LOSS;
 const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + WARN_COLOR_PRECISION_LOSS;
-constexpr int WCOLOR_PRECISION_LOSS_VAL = 5000;
-constexpr int WNO_COLOR_PRECISION_LOSS_VAL = 6000;
+constexpr int WCOLOR_PRECISION_LOSS_VAL = 50000;
+constexpr int WNO_COLOR_PRECISION_LOSS_VAL = 60000;
 
 const std::string WKEY_FRAME_DID_NOT_APPEAR = W_GENERAL + WARN_KEY_FRAME_DID_NOT_APPEAR;
 const std::string WNO_KEY_FRAME_DID_NOT_APPEAR = W_GENERAL + "no-" + WARN_KEY_FRAME_DID_NOT_APPEAR;
-constexpr int WKEY_FRAME_DID_NOT_APPEAR_VAL = 5001;
-constexpr int WNO_KEY_FRAME_DID_NOT_APPEAR_VAL = 6001;
+constexpr int WKEY_FRAME_DID_NOT_APPEAR_VAL = 50010;
+constexpr int WNO_KEY_FRAME_DID_NOT_APPEAR_VAL = 60010;
 
 const std::string WUSED_TRUE_COLOR_MODE = W_GENERAL + WARN_USED_TRUE_COLOR_MODE;
 const std::string WNO_USED_TRUE_COLOR_MODE = W_GENERAL + "no-" + WARN_USED_TRUE_COLOR_MODE;
-constexpr int WUSED_TRUE_COLOR_MODE_VAL = 5002;
-constexpr int WNO_USED_TRUE_COLOR_MODE_VAL = 6002;
+constexpr int WUSED_TRUE_COLOR_MODE_VAL = 50020;
+constexpr int WNO_USED_TRUE_COLOR_MODE_VAL = 60020;
 
 const std::string WATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + WARN_ATTRIBUTE_FORMAT_MISMATCH;
 const std::string WNO_ATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + "no-" + WARN_ATTRIBUTE_FORMAT_MISMATCH;
-constexpr int WATTRIBUTE_FORMAT_MISMATCH_VAL = 5003;
-constexpr int WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL = 6003;
+constexpr int WATTRIBUTE_FORMAT_MISMATCH_VAL = 50030;
+constexpr int WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL = 60030;
 
 const std::string WMISSING_ATTRIBUTES_CSV = W_GENERAL + WARN_MISSING_ATTRIBUTES_CSV;
 const std::string WNO_MISSING_ATTRIBUTES_CSV = W_GENERAL + "no-" + WARN_MISSING_ATTRIBUTES_CSV;
-constexpr int WMISSING_ATTRIBUTES_CSV_VAL = 5004;
-constexpr int WNO_MISSING_ATTRIBUTES_CSV_VAL = 6004;
+constexpr int WMISSING_ATTRIBUTES_CSV_VAL = 50040;
+constexpr int WNO_MISSING_ATTRIBUTES_CSV_VAL = 60040;
 
 const std::string WMISSING_BEHAVIORS_HEADER = W_GENERAL + WARN_MISSING_BEHAVIORS_HEADER;
 const std::string WNO_MISSING_BEHAVIORS_HEADER = W_GENERAL + "no-" + WARN_MISSING_BEHAVIORS_HEADER;
-constexpr int WMISSING_BEHAVIORS_HEADER_VAL = 5005;
-constexpr int WNO_MISSING_BEHAVIORS_HEADER_VAL = 6005;
+constexpr int WMISSING_BEHAVIORS_HEADER_VAL = 50050;
+constexpr int WNO_MISSING_BEHAVIORS_HEADER_VAL = 60050;
 
 const std::string WUNUSED_ATTRIBUTE = W_GENERAL + WARN_UNUSED_ATTRIBUTE;
 const std::string WNO_UNUSED_ATTRIBUTE = W_GENERAL + "no-" + WARN_UNUSED_ATTRIBUTE;
-constexpr int WUNUSED_ATTRIBUTE_VAL = 5006;
-constexpr int WNO_UNUSED_ATTRIBUTE_VAL = 6006;
+constexpr int WUNUSED_ATTRIBUTE_VAL = 50060;
+constexpr int WNO_UNUSED_ATTRIBUTE_VAL = 60060;
 
 // @formatter:on
 // clang-format on

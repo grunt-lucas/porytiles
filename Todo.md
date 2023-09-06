@@ -17,10 +17,8 @@
   + Maybe some kind of A*?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
     + https://realtimecollisiondetection.net/blog/?p=56
-  + Better heuristics to prune unpromising branches
-  + FireRed primary general is uncompilable with current algorithms
-    + found a solution, cutting off the breadth-first for loop early
-  + So what we need to make this easy on users is some kind of --infer-assign-settings option
+  + More heuristics to prune unpromising branches
+  + --discover-assign-settings option
     + this option will
       + 1. warn users that this will be a slow process
       + 2. try lots of different settings until it finds one that works

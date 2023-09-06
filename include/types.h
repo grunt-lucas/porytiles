@@ -762,10 +762,12 @@ struct CompilerConfig {
   // Palette assignment algorithm configuration
   AssignAlgorithm assignAlgorithm;
   std::size_t exploredNodeCutoff;
+  std::size_t pruneCount;
+  bool smartPrune;
 
   CompilerConfig()
       : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
-        exploredNodeCutoff{2'000'000}
+        exploredNodeCutoff{2'000'000}, pruneCount{0}, smartPrune{false}
   {
   }
 };

@@ -94,7 +94,18 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                      return pal1IntersectSize > pal2IntersectSize;
                    });
 
-  for (size_t i = 0; i < state.hardwarePalettes.size(); i++) {
+  std::size_t stopLimit = state.hardwarePalettes.size();
+  if (ctx.compilerConfig.smartPrune) {
+    throw std::runtime_error{"TODO : impl smart prune"};
+  }
+  else if (ctx.compilerConfig.pruneCount > 0) {
+    if (ctx.compilerConfig.pruneCount >= stopLimit) {
+      // TODO : proper error message
+      throw std::runtime_error{"pruneCount pruned every branch"};
+    }
+    stopLimit -= ctx.compilerConfig.pruneCount;
+  }
+  for (size_t i = 0; i < stopLimit; i++) {
     const ColorSet &palette = state.hardwarePalettes.at(i);
 
     // > PAL_SIZE - 1 because we need to save a slot for transparency
@@ -189,8 +200,18 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
                      });
 
     bool sawAssignmentWithIntersection = false;
-    // TODO : i < 3 here can compile the firered set, perhaps we need an option for this
-    for (size_t i = 0; i < currentState.hardwarePalettes.size(); i++) {
+    std::size_t stopLimit = currentState.hardwarePalettes.size();
+    if (ctx.compilerConfig.smartPrune) {
+      throw std::runtime_error{"TODO : impl smart prune"};
+    }
+    else if (ctx.compilerConfig.pruneCount > 0) {
+      if (ctx.compilerConfig.pruneCount >= stopLimit) {
+        // TODO : proper error message
+        throw std::runtime_error{"pruneCount pruned every branch"};
+      }
+      stopLimit -= ctx.compilerConfig.pruneCount;
+    }
+    for (size_t i = 0; i < stopLimit; i++) {
       const ColorSet &palette = currentState.hardwarePalettes.at(i);
 
       // > PAL_SIZE - 1 because we need to save a slot for transparency
@@ -213,13 +234,6 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
            * Heuristic: if we already saw at least one assignment that had some intersection, put the 0-intersection
            * branches in a lower-priority queue
            */
-          // if (lowPriorityQueue.size() > 500'000) {
-          //   // TODO : make this configurable
-          //   // Clear the lowPrio queue if it gets too big, this is to prevent OOM if we are close to a solution
-          //   pt_logln(ctx, stderr, "lowPrio queue size exceeded threshold {}, clearing...", 500'000);
-          //   lowPriorityQueue.clear();
-          //   pt_logln(ctx, stderr, "lowPrio queue cleared");
-          // }
           lowPriorityQueue.push_back(updatedState);
           visitedStates.insert(updatedState);
         }

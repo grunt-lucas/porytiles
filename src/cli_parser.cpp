@@ -145,10 +145,10 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
                                             const char *optarg)
 {
   std::string optargString{optarg};
-  if (optargString == "depth-first") {
+  if (optargString == "dfs") {
     return AssignAlgorithm::DEPTH_FIRST;
   }
-  else if (optargString == "breadth-first") {
+  else if (optargString == "bfs") {
     return AssignAlgorithm::BREADTH_FIRST;
   }
   else {
@@ -458,6 +458,7 @@ TRANSPARENCY_COLOR_DESC + "\n" +
 "    Color Assignment Config Options\n" +
 ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 ASSIGN_ALGO_DESC + "\n" +
+PRUNE_BRANCHES_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -500,6 +501,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       // Color assignment config options
       {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
       {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
+      {PRUNE_BRANCHES.c_str(), required_argument, nullptr, PRUNE_BRANCHES_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -623,6 +625,14 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
     case ASSIGN_ALGO_VAL:
       ctx.compilerConfig.assignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+      break;
+    case PRUNE_BRANCHES_VAL:
+      if (std::string{optarg} == "smart") {
+        ctx.compilerConfig.smartPrune = true;
+      }
+      else {
+        ctx.compilerConfig.pruneCount = parseIntegralOption<std::size_t>(ctx.err, PRUNE_BRANCHES, optarg);
+      }
       break;
 
     // Fieldmap override options
