@@ -23,6 +23,9 @@
       + 1. warn users that this will be a slow process
       + 2. try lots of different settings until it finds one that works
       + 3. print out what it did, so next time the user can manually fill in the config settings that worked
+  + we will also need a way to specify config params for the paired primary set when compiling in secondary mode
+    + it is possible (and quite likely) that you will have cases where the primary set needs different params
+    + consider a config file in the input folder?
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
