@@ -937,6 +937,10 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     ctx.err.setAllWarnings(WarningMode::OFF);
   }
 
+  if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.pruneCount > 0) {
+    fatalerror_porytilesprefix(ctx.err, fmt::format("found two conflicting configs for `{}' option", PRUNE_BRANCHES));
+  }
+
   /*
    * Apply and validate the fieldmap configuration parameters
    */
