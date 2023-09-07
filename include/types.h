@@ -676,6 +676,7 @@ struct FieldmapConfig {
 struct SourcePaths {
   std::string primarySourcePath;
   std::string secondarySourcePath;
+  std::string metatileBehaviorsPath;
 
   std::filesystem::path bottomPrimaryTilesheetPath() const
   {

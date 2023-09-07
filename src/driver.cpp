@@ -179,25 +179,67 @@ static void driveDecompile(PtContext &ctx)
     fatalerror_invalidSourcePath(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode, ctx.srcPaths.primarySourcePath);
   }
 
-  // TODO : actually check for existence of files, refactor importer so it receives ifstreams
+  if (!std::filesystem::exists(ctx.srcPaths.metatileBehaviorsPath) ||
+      !std::filesystem::is_regular_file(ctx.srcPaths.metatileBehaviorsPath)) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode,
+               fmt::format("{}: behaviors header did not exist or was not a regular file",
+                           ctx.srcPaths.metatileBehaviorsPath));
+  }
+
+  std::ifstream behaviorFile{ctx.srcPaths.metatileBehaviorsPath};
+  if (behaviorFile.fail()) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: could not open for reading", ctx.srcPaths.metatileBehaviorsPath));
+  }
+  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorMaps(ctx, behaviorFile);
+  behaviorFile.close();
+  if (behaviorMap.size() == 0) {
+    // TODO : warn user that behavior map size is 0
+  }
+
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
     throw std::runtime_error{"TODO : support decompile-secondary"};
   }
 
-  png::image<png::rgba_pixel> bottomPrimaryPng{128, 1024};
-  png::image<png::rgba_pixel> middlePrimaryPng{128, 1024};
-  png::image<png::rgba_pixel> topPrimaryPng{128, 1024};
-
-  CompiledTileset compiled = importCompiledTileset(ctx, ctx.srcPaths.primarySourcePath);
+  // TODO : actually check for existence of files, refactor importCompiledTileset so it receives ifstreams
+  auto [compiled, attributesMap] = importCompiledTileset(ctx, ctx.srcPaths.primarySourcePath);
   auto decompiled = decompile(ctx, compiled);
-  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, *decompiled);
 
   std::filesystem::path outputPath(ctx.output.path);
-  std::filesystem::create_directories(outputPath);
+  std::filesystem::path bottomPng("bottom.png");
+  std::filesystem::path middlePng("middle.png");
+  std::filesystem::path topPng("top.png");
+  std::filesystem::path attributesCsv("attributes.csv");
+  std::filesystem::path attribtuesPath = ctx.output.path / attributesCsv;
+  std::filesystem::path bottomPath = ctx.output.path / bottomPng;
+  std::filesystem::path middlePath = ctx.output.path / middlePng;
+  std::filesystem::path topPath = ctx.output.path / topPng;
 
-  bottomPrimaryPng.write(ctx.output.path + "/bottom.png");
-  middlePrimaryPng.write(ctx.output.path + "/middle.png");
-  topPrimaryPng.write(ctx.output.path + "/top.png");
+  if (std::filesystem::exists(attribtuesPath) && !std::filesystem::is_regular_file(attribtuesPath)) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode,
+               fmt::format("'{}' exists in output directory but is not a file", attribtuesPath.string()));
+  }
+
+  try {
+    std::filesystem::create_directories(outputPath);
+  }
+  catch (const std::exception &e) {
+    fatalerror(ctx.err, ctx.srcPaths, ctx.decompilerConfig.mode,
+               fmt::format("could not create '{}': {}", outputPath.string(), e.what()));
+  }
+
+  std::ofstream outAttributes{attribtuesPath.string()};
+  std::size_t metatileCount = attributesMap.size();
+  std::size_t imageHeight = ((metatileCount / 8) + 1) * 16;
+  png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
+  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributes, *decompiled,
+                            attributesMap, behaviorReverseMap);
+  outAttributes.close();
+  bottomPrimaryPng.write(bottomPath);
+  middlePrimaryPng.write(middlePath);
+  topPrimaryPng.write(topPath);
 }
 
 static void driveCompile(PtContext &ctx)
@@ -342,6 +384,9 @@ static void driveCompile(PtContext &ctx)
   else {
     warn_behaviorsHeaderNotSpecified(ctx.err, ctx.srcPaths.primaryMetatileBehaviors());
   }
+  if (behaviorMap.size() == 0) {
+    // TODO : warn user that behavior map size is 0
+  }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -404,14 +449,14 @@ static void driveCompile(PtContext &ctx)
   std::filesystem::path outputPath(ctx.output.path);
   std::filesystem::path palettesDir("palettes");
   std::filesystem::path animsDir("anims");
-  std::filesystem::path tilesetFile("tiles.png");
-  std::filesystem::path metatilesFile("metatiles.bin");
-  std::filesystem::path attributesFile("metatile_attributes.bin");
-  std::filesystem::path tilesetPath = ctx.output.path / tilesetFile;
-  std::filesystem::path metatilesPath = ctx.output.path / metatilesFile;
+  std::filesystem::path tilesPng("tiles.png");
+  std::filesystem::path metatilesBin("metatiles.bin");
+  std::filesystem::path attributesBin("metatile_attributes.bin");
+  std::filesystem::path tilesetPath = ctx.output.path / tilesPng;
+  std::filesystem::path metatilesPath = ctx.output.path / metatilesBin;
   std::filesystem::path palettesPath = ctx.output.path / palettesDir;
   std::filesystem::path animsPath = ctx.output.path / animsDir;
-  std::filesystem::path attribtuesPath = ctx.output.path / attributesFile;
+  std::filesystem::path attribtuesPath = ctx.output.path / attributesBin;
 
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
     fatalerror(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,

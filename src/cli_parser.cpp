@@ -291,8 +291,8 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
 const std::vector<std::string> DECOMPILE_SHORTS = {};
 const std::string DECOMPILE_HELP =
 "USAGE\n"
-"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
-"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
+"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
 "\n"
 "Decompile a tileset into its constituent RGBA layer PNGs, RGB anim frames, and attributes.csv.\n"
 "\n"
@@ -306,6 +306,10 @@ const std::string DECOMPILE_HELP =
 "    <PARTNER-PRIMARY-PATH>\n"
 "        Path to a directory containing a compiled secondary tileset's compiled partner primary\n"
 "        set.\n"
+"\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
 "\n"
 "OPTIONS\n" +
 "    For more detailed information about the options below, check out the options pages here:\n" +
@@ -371,17 +375,19 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
   /*
    * Die immediately if arguments are invalid, otherwise pack them into the context variable
    */
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror_porytilesprefix(
-        ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles decompile-secondary --help'");
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 3) {
+    fatalerror_porytilesprefix(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
+                                        "`porytiles decompile-secondary --help'");
   }
-  else if (ctx.subcommand != Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 1) {
-    fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles decompile-primary --help'");
+  else if (ctx.subcommand != Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 2) {
+    fatalerror_porytilesprefix(
+        ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
     ctx.srcPaths.secondarySourcePath = argv[optind++];
   }
   ctx.srcPaths.primarySourcePath = argv[optind++];
+  ctx.srcPaths.metatileBehaviorsPath = argv[optind++];
 
   /*
    * Apply the target base game

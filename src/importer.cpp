@@ -516,6 +516,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
     Attributes attribute{};
     attribute.baseGame = ctx.targetBaseGame;
+    // TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior map
     if (behaviorMap.contains(behavior)) {
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }
@@ -693,13 +694,12 @@ static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image
   return gbaTiles;
 }
 
-static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, std::ifstream &metatilesBin,
-                                                               std::ifstream &metatileAttributesBin)
+static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
+                                                       std::unordered_map<std::size_t, Attributes> &attributesMap)
 {
   std::vector<Assignment> assignments{};
 
   std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
-  std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
   /*
    * Each subtile is 2 bytes (u16), so our byte total should be either a multiple of 16 or 24. 16 for dual-layer, since
@@ -710,22 +710,7 @@ static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, s
     throw std::runtime_error{"decompiler input metatiles.bin corrupted, not valid uint16 data"};
   }
 
-  std::size_t metatileCount;
-  if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-    if (attributesDataBuf.size() % 4 != 0) {
-      // TODO : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
-    }
-    metatileCount = attributesDataBuf.size() / 4;
-  }
-  else {
-    if (attributesDataBuf.size() % 2 != 0) {
-      // TODO : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
-    }
-    metatileCount = attributesDataBuf.size() / 2;
-  }
-  bool tripleLayer = (metatileDataBuf.size() / 24 == metatileCount);
+  bool tripleLayer = (metatileDataBuf.size() / 24 == attributesMap.size());
 
   std::size_t metatileIndex = 0;
   for (std::size_t metatileBinByteIndex = 0; metatileBinByteIndex < metatileDataBuf.size(); metatileBinByteIndex += 2) {
@@ -743,28 +728,18 @@ static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, s
     assignment.paletteIndex = (metatileEntry >> 12) & 0x000F;
 
     assignment.attributes.baseGame = ctx.targetBaseGame;
-    if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
-      std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
-      std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
-      std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
-      std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
-      assignment.attributes.metatileBehavior = attribute & 0x000001FF;
-      // TODO : implement FIRERED case
-      throw std::runtime_error{"TODO : implement FIRERED case"};
-    }
-    else {
-      std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * 2));
-      std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * 2) + 1);
-      std::uint16_t attribute = (byte1 << 8) | byte0;
-      assignment.attributes.metatileBehavior = attribute & 0x00FF;
-      assignment.attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
-    }
     if (tripleLayer) {
       assignment.attributes.layerType = LayerType::TRIPLE;
     }
+    else {
+      assignment.attributes.layerType = attributesMap.at(metatileIndex).layerType;
+    }
+    assignment.attributes.metatileBehavior = attributesMap.at(metatileIndex).metatileBehavior;
+    assignment.attributes.encounterType = attributesMap.at(metatileIndex).encounterType;
+    assignment.attributes.terrainType = attributesMap.at(metatileIndex).terrainType;
 
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      // TODO : impl log here
       pt_logln(ctx, stderr, "with Attributes[]");
     }
     else {
@@ -780,7 +755,54 @@ static std::vector<Assignment> importCompiledMetatilesAndAttrs(PtContext &ctx, s
   return assignments;
 }
 
-CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
+std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtContext &ctx,
+                                                                             std::ifstream &metatileAttributesBin)
+{
+  std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
+
+  std::unordered_map<std::size_t, Attributes> attributesMap{};
+
+  std::size_t metatileCount;
+  if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    if (attributesDataBuf.size() % 4 != 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
+    }
+    metatileCount = attributesDataBuf.size() / 4;
+  }
+  else {
+    if (attributesDataBuf.size() % 2 != 0) {
+      // TODO : need fatalerror to also work for decompile mode
+      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
+    }
+    metatileCount = attributesDataBuf.size() / 2;
+  }
+
+  for (std::size_t metatileIndex = 0; metatileIndex < metatileCount; metatileIndex++) {
+    Attributes attributes{};
+    if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      // std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
+      // std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
+      // std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
+      // std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
+      // std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
+      // TODO : implement FIRERED case
+      throw std::runtime_error{"TODO : implement FIRERED case"};
+    }
+    else {
+      std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * 2));
+      std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * 2) + 1);
+      std::uint16_t attribute = (byte1 << 8) | byte0;
+      attributes.metatileBehavior = attribute & 0x00FF;
+      attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
+    }
+    attributesMap.insert(std::pair{metatileIndex, attributes});
+  }
+  return attributesMap;
+}
+
+std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
+importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
 {
   /*
    * TODO : who should handle checks for file existence/validity? importer or driver? I think driver should, so we can
@@ -803,14 +825,15 @@ CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::pat
 
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
-  tileset.assignments = importCompiledMetatilesAndAttrs(ctx, metatiles, attributes);
+  auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
+  tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
 
   metatiles.close();
   attributes.close();
   std::for_each(paletteFiles.begin(), paletteFiles.end(),
                 [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
 
-  return tileset;
+  return {tileset, attributesMap};
 }
 
 } // namespace porytiles
@@ -1314,7 +1337,7 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
   porytiles::drive(compileCtx);
 
   porytiles::PtContext decompileCtx{};
-  porytiles::CompiledTileset importedTileset = porytiles::importCompiledTileset(decompileCtx, parentDir);
+  auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(decompileCtx, parentDir);
 
   CHECK((compileCtx.compilerContext.resultTileset)->tiles.size() == importedTileset.tiles.size());
   CHECK((compileCtx.compilerContext.resultTileset)->tiles == importedTileset.tiles);
@@ -1339,6 +1362,8 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
       CHECK(origPal.at(colorIndex) == decompPal.at(colorIndex));
     }
   }
+
+  // TODO : test impl check attributes map
 
   std::filesystem::remove_all(parentDir);
 }

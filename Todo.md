@@ -16,6 +16,11 @@
 
 + `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
 
++ attributes / behavior changes
+  + allow user to specify default behavior value using CLI option `-default-behavior`
+    + this option takes either an int or a string defined in the behavior header
+  + optionally supply behavior header at CLI, otherwise try reading from input folder, otherwise warn user
+
 + More assign algorithms?
   + Maybe some kind of A*?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html

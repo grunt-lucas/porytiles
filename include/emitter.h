@@ -51,7 +51,9 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
  * TODO : fill in doc comment
  */
 void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset);
+                    png::image<png::rgba_pixel> &top, std::ostream &outCsv, const DecompiledTileset &tileset,
+                    std::unordered_map<std::size_t, Attributes> &attributesMap,
+                    const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap);
 
 } // namespace porytiles
 

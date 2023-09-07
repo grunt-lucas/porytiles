@@ -40,7 +40,8 @@ std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                         const std::string &filePath);
 
-CompiledTileset importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath);
+std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
+importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath);
 
 } // namespace porytiles
 

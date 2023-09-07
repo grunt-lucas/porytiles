@@ -232,7 +232,9 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
 }
 
 void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, const DecompiledTileset &tileset)
+                    png::image<png::rgba_pixel> &top, std::ostream &outCsv, const DecompiledTileset &tileset,
+                    std::unordered_map<std::size_t, Attributes> &attributesMap,
+                    const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
   /*
    * TODO : this function needs to receive the attributes map so it can determine the layer type. It can do this by
@@ -272,6 +274,28 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   }
 
   // TODO : emit attributes as a CSV, we'll need a behaviors map from somewhere for this to work
+  if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    outCsv << "id,behavior,terrainType,encounterType" << std::endl;
+    // TODO : impl the rest
+    throw std::runtime_error{"TODO : support FIRERED mode"};
+  }
+  else {
+    outCsv << "id,behavior" << std::endl;
+    for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
+      if (behaviorReverseMap.size() > 0) {
+        if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
+          outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
+        }
+        else {
+          // TODO : print warning that reverse map did not contain a mapping for this behavior
+          outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << std::endl;
+        }
+      }
+      else {
+        outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << std::endl;
+      }
+    }
+  }
 }
 
 } // namespace porytiles
@@ -625,34 +649,4 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
   // TODO : test impl emitDecompiled should correctly emit the decompiled tileset files
-}
-
-TEST_CASE("emitDecompiled test code")
-{
-  // TODO : remove this code, here just to temporarily test
-  porytiles::PtContext ctx{};
-  ctx.fieldmapConfig.numPalettesInPrimary = 6;
-  ctx.fieldmapConfig.numPalettesTotal = 13;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/top.png"));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
-  porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
-
-  auto decompiledViaAlgorithm = porytiles::decompile(ctx, *compiledPrimary);
-
-  png::image<png::rgba_pixel> bottomPrimaryPng{128, 256};
-  png::image<png::rgba_pixel> middlePrimaryPng{128, 256};
-  png::image<png::rgba_pixel> topPrimaryPng{128, 256};
-  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, *decompiledViaAlgorithm);
-  // bottomPrimaryPng.write("bottom.png");
-  // middlePrimaryPng.write("middle.png");
-  // topPrimaryPng.write("top.png");
 }
