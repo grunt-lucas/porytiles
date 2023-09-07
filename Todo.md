@@ -2,6 +2,9 @@
 
 + in-code TODOs, grep for "TODO :"
 
++ Reported test case failure with clang 14.0.0 on Ubuntu
+  + https://discord.com/channels/@me/1148327134343995453/1149142257744748636
+
 + Continue to create more in-file unit tests that maximize coverage
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
