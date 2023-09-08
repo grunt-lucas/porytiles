@@ -33,7 +33,7 @@ constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 // |    DATA TYPES    |
 // --------------------
 
-// TODO : For clang, default spaceship for std::array not yet supported by libc++
+// NOTE : For clang, default spaceship for std::array not yet supported by libc++
 // https://discourse.llvm.org/t/c-spaceship-operator-default-marked-as-deleted-with-std-array-member/66529/5
 // https://reviews.llvm.org/D132265
 // https://reviews.llvm.org/rG254986d2df8d8407b46329e452c16748d29ed4cd
