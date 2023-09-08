@@ -160,7 +160,7 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerS
                                    std::size_t numTiles, std::size_t maxAllowedTiles);
 
 void fatalerror_assignExploreCutoffReached(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                            CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses);
+                                           CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses);
 
 void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                             CompilerMode mode);

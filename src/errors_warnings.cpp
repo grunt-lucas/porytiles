@@ -316,7 +316,7 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerS
 }
 
 void fatalerror_assignExploreCutoffReached(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                            CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses)
+                                           CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses)
 {
   if (err.printErrors) {
     pt_fatal_err("{} palette assignment explored too many nodes", assignAlgorithmString(algo));

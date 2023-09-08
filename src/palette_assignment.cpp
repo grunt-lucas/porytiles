@@ -187,7 +187,9 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
     const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
 
     // TODO : handle secondary sets properly, see how depth-first does it
-    // if (!primaryPalettes.empty())
+    if (!primaryPalettes.empty()) {
+      throw std::runtime_error{"TODO : support secondary set compilation with BFS backend"};
+    }
 
     std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                      [&toAssign](const auto &pal1, const auto &pal2) {

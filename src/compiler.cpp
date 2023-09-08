@@ -740,7 +740,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   }
   else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
     fatalerror_assignExploreCutoffReached(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                           ctx.compilerConfig.assignAlgorithm, ctx.compilerConfig.exploredNodeCutoff);
+                                          ctx.compilerConfig.assignAlgorithm, ctx.compilerConfig.exploredNodeCutoff);
   }
   pt_logln(ctx, stderr, "{} assigned all NormalizedPalettes successfully after {} iterations",
            assignAlgorithmString(ctx.compilerConfig.assignAlgorithm), ctx.compilerContext.exploredNodeCounter);
