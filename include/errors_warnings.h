@@ -29,12 +29,14 @@ struct ErrorsAndWarnings {
   WarningMode missingAttributesCsv;
   WarningMode missingBehaviorsHeader;
   WarningMode unusedAttribute;
+  WarningMode transparencyCollapse;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
-        missingBehaviorsHeader{WarningMode::OFF}, unusedAttribute{WarningMode::OFF}
+        missingBehaviorsHeader{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
+        transparencyCollapse{WarningMode::OFF}
   {
   }
 
@@ -47,6 +49,7 @@ struct ErrorsAndWarnings {
     missingAttributesCsv = setting;
     missingBehaviorsHeader = setting;
     unusedAttribute = setting;
+    transparencyCollapse = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -72,6 +75,9 @@ struct ErrorsAndWarnings {
     if (unusedAttribute == WarningMode::WARN) {
       unusedAttribute = WarningMode::ERR;
     }
+    if (transparencyCollapse == WarningMode::WARN) {
+      transparencyCollapse = WarningMode::ERR;
+    }
   }
 };
 
@@ -82,6 +88,7 @@ extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
 extern const char *const WARN_MISSING_BEHAVIORS_HEADER;
 extern const char *const WARN_UNUSED_ATTRIBUTE;
+extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 
 // Internal compiler errors (due to bug in the compiler)
 void internalerror(std::string message);
@@ -109,10 +116,6 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
 
 void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::uint8_t alpha, std::size_t row,
                              std::size_t col);
-
-void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
-                                                       std::size_t col, const RGBA32 &color,
-                                                       const RGBA32 &transparency);
 
 void error_allThreeLayersHadNonTransparentContent(ErrorsAndWarnings &err, std::size_t metatileIndex);
 
@@ -205,6 +208,9 @@ void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePa
 
 void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
                           std::string sourcePath);
+
+void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
+                                                      std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
 
 // Die functions
 void die(const ErrorsAndWarnings &err, std::string errorMessage);

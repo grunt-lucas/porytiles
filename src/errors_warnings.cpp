@@ -26,6 +26,7 @@ const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
 const char *const WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
 const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
+const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
@@ -148,19 +149,6 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("alpha value must be either {} for opaque or {} for transparent",
             fmt::styled(ALPHA_OPAQUE, fmt::emphasis::bold), fmt::styled(ALPHA_TRANSPARENT, fmt::emphasis::bold));
-    pt_println(stderr, "");
-  }
-}
-
-void error_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
-                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
-{
-  err.errCount++;
-  if (err.printErrors) {
-    std::string tileString = getTilePrettyString(tile);
-    pt_err("color '{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
-           fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
-           fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
 }
@@ -566,6 +554,22 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
   }
 }
 
+void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
+                                                      std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
+{
+  std::string tileString = getTilePrettyString(tile);
+  printWarning(
+      err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
+      fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
+                  fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
+                  fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold)));
+  if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
+    // TODO : add any more info via a note?
+    // pt_note("");
+    pt_println(stderr, "");
+  }
+}
+
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
@@ -692,21 +696,6 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
   CHECK(ctx.err.errCount == 1);
-}
-
-TEST_CASE("error_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses")
-{
-  // TODO : commented out this error for now, will make it a warn
-  // porytiles::PtContext ctx{};
-  // ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-  // ctx.fieldmapConfig.numPalettesInPrimary = 1;
-  // ctx.fieldmapConfig.numPalettesTotal = 2;
-  // ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
-  // ctx.err.printErrors = false;
-  // ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-
-  // CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
-  // CHECK(ctx.err.errCount == 2);
 }
 
 TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly when a dual-layer inference fails")
@@ -1211,4 +1200,20 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
     CHECK(ctx.err.errCount == 1);
   }
+}
+
+TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses")
+{
+  porytiles::PtContext ctx{};
+  ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+  ctx.fieldmapConfig.numPalettesInPrimary = 1;
+  ctx.fieldmapConfig.numPalettesTotal = 2;
+  ctx.compilerSrcPaths.primarySourcePath =
+      "res/tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
+  ctx.err.transparencyCollapse = porytiles::WarningMode::ERR;
+  ctx.err.printErrors = false;
+  ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK(ctx.err.errCount == 2);
 }

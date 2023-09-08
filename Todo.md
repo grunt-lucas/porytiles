@@ -58,8 +58,6 @@
 + Warnings
   + `-Wpalette-alloc-efficiency`
     + warn user if palette allocation was not 100% efficient
-  + `-Wtransprent-color-precision`
-    + warn user if a color collapsed to the transparent color
   + `-Wno-transparency-present`
     + warn user if the tileset did not have any of the selected transparency color
     + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color

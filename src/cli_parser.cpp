@@ -480,7 +480,7 @@ WERROR_DESC + "\n";
 // clang-format on
 
 /*
- * TODO : the warning parsing system here is a dumpster fire
+ * FIXME : the warning parsing system here is a dumpster fire
  */
 static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 {
@@ -534,6 +534,8 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       {WNO_MISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WNO_MISSING_BEHAVIORS_HEADER_VAL},
       {WUNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WUNUSED_ATTRIBUTE_VAL},
       {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
+      {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
+      {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
@@ -570,6 +572,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
 
   std::optional<bool> warnUnusedAttributeOverride{};
   std::optional<bool> errUnusedAttributeOverride{};
+
+  std::optional<bool> warnTransparencyCollapseOverride{};
+  std::optional<bool> errTransparencyCollapseOverride{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -695,6 +700,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
           errUnusedAttributeOverride = true;
         }
+        else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
+          errTransparencyCollapseOverride = true;
+        }
         else {
           fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
                                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -723,6 +731,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
         errUnusedAttributeOverride = false;
+      }
+      else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
+        errTransparencyCollapseOverride = false;
       }
       else {
         fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -773,6 +784,12 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_UNUSED_ATTRIBUTE_VAL:
       warnUnusedAttributeOverride = false;
+      break;
+    case WTRANSPARENCY_COLLAPSE_VAL:
+      warnTransparencyCollapseOverride = true;
+      break;
+    case WNO_TRANSPARENCY_COLLAPSE_VAL:
+      warnTransparencyCollapseOverride = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -835,6 +852,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   }
   if (warnUnusedAttributeOverride.has_value()) {
     ctx.err.unusedAttribute = warnUnusedAttributeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnTransparencyCollapseOverride.has_value()) {
+    ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
 
   // If requested, set all enabled warnings to errors
@@ -925,6 +945,18 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.unusedAttribute = WarningMode::OFF;
+    }
+  }
+  if (errTransparencyCollapseOverride.has_value()) {
+    if (errTransparencyCollapseOverride.value()) {
+      ctx.err.transparencyCollapse = WarningMode::ERR;
+    }
+    else if ((warnTransparencyCollapseOverride.has_value() && warnTransparencyCollapseOverride.value()) ||
+             enableAllWarnings) {
+      ctx.err.transparencyCollapse = WarningMode::WARN;
+    }
+    else {
+      ctx.err.transparencyCollapse = WarningMode::OFF;
     }
   }
 

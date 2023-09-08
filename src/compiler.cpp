@@ -34,8 +34,7 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
      * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err on the
      * side of forcing the user to be explicit, especially when it comes to transparency handling.
      */
-    // TODO : actually, make this a warn since decompiled tilesets turn 255 0 255 into 248 0 248
-    // error_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
+    warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, rgbaFrame, row, col, rgba, transparencyColor);
   }
   /*
    * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
