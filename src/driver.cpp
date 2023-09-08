@@ -22,10 +22,9 @@
 
 namespace porytiles {
 
-static void drivePaletteEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
+static void emitCompiledPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
                              const std::filesystem::path &palettesPath)
 {
-  // TODO : move this function's functionality into emitter?
   for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
     std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
     fileName += ".pal";
@@ -41,10 +40,9 @@ static void drivePaletteEmit(PtContext &ctx, const CompiledTileset &compiledTile
   }
 }
 
-static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
+static void emitCompiledTiles(PtContext &ctx, const CompiledTileset &compiledTiles,
                            const std::filesystem::path &tilesetPath)
 {
-  // TODO : move this function's functionality into emitter?
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
       porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
@@ -54,10 +52,9 @@ static void driveTilesEmit(PtContext &ctx, const CompiledTileset &compiledTiles,
   tilesPng.write(tilesetPath);
 }
 
-static void driveAnimEmit(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
+static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
                           const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
-  // TODO : move this function's functionality into emitter?
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
     std::filesystem::create_directories(animPath);
@@ -77,9 +74,8 @@ static void driveAnimEmit(PtContext &ctx, const std::vector<CompiledAnimation> &
   }
 }
 
-static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
+static void importDecompiledAnims(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
 {
-  // TODO : move this function's functionality into importer?
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
@@ -153,10 +149,9 @@ static void driveAnimsImport(PtContext &ctx, DecompiledTileset &decompTiles, std
 }
 
 static std::unordered_map<std::size_t, Attributes>
-buildAttributesMap(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+importDecompiledAttributes(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                    std::filesystem::path attributesCsvPath)
 {
-  // TODO : move this function's functionality into importer?
   pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
   if (!std::filesystem::exists(attributesCsvPath) || !std::filesystem::is_regular_file(attributesCsvPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping attributes import", attributesCsvPath.string());
@@ -229,7 +224,6 @@ static void driveDecompile(PtContext &ctx)
     throw std::runtime_error{"TODO : support decompile-secondary"};
   }
 
-  // TODO : actually check for existence of files, refactor importCompiledTileset so it receives ifstreams
   std::ifstream metatiles{ctx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
   std::ifstream attributes{ctx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
@@ -449,7 +443,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPrimaryPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
+    auto primaryAttributesMap = importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -457,7 +451,7 @@ static void driveCompile(PtContext &ctx)
 
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    driveAnimsImport(ctx, decompiledPrimaryTiles, ctx.compilerSrcPaths.primaryAnim());
+    importDecompiledAnims(ctx, decompiledPrimaryTiles, ctx.compilerSrcPaths.primaryAnim());
     auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
@@ -466,7 +460,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.topSecondaryTilesheet()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
-    auto secondaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.compilerSrcPaths.secondaryAttributes());
+    auto secondaryAttributesMap = importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.secondaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during secondary attributes import");
@@ -474,7 +468,7 @@ static void driveCompile(PtContext &ctx)
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
-    driveAnimsImport(ctx, decompiledTiles, ctx.compilerSrcPaths.secondaryAnim());
+    importDecompiledAnims(ctx, decompiledTiles, ctx.compilerSrcPaths.secondaryAnim());
     ctx.compilerContext.pairedPrimaryTileset = std::move(partnerPrimaryTiles);
     compiledTiles = compile(ctx, decompiledTiles);
     ctx.compilerContext.resultTileset = std::move(compiledTiles);
@@ -486,7 +480,7 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = buildAttributesMap(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
+    auto primaryAttributesMap = importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -494,7 +488,7 @@ static void driveCompile(PtContext &ctx)
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
-    driveAnimsImport(ctx, decompiledTiles, ctx.compilerSrcPaths.primaryAnim());
+    importDecompiledAnims(ctx, decompiledTiles, ctx.compilerSrcPaths.primaryAnim());
     compiledTiles = compile(ctx, decompiledTiles);
     ctx.compilerContext.resultTileset = std::move(compiledTiles);
   }
@@ -547,9 +541,9 @@ static void driveCompile(PtContext &ctx)
                fmt::format("could not create '{}': {}", animsPath.string(), e.what()));
   }
 
-  drivePaletteEmit(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
-  driveTilesEmit(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
-  driveAnimEmit(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
+  emitCompiledPalettes(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
+  emitCompiledTiles(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
+  emitCompiledAnims(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
                 animsPath);
 
   std::ofstream outMetatiles{metatilesPath.string()};
