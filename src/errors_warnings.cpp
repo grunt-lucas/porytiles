@@ -315,7 +315,7 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerS
                             fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
 }
 
-void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+void fatalerror_assignExploreCutoffReached(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                             CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses)
 {
   if (err.printErrors) {
