@@ -40,8 +40,10 @@ catch (const std::exception &e) {
    * indicates a bug in the compiler. Just dump a helpful message so the user can file an issue on GitHub.
    */
 
-  // New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
-  // Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
+  /*
+   * FEATURE : New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
+   * Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
+   */
   porytiles::pt_println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
                         fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)),
                         e.what());

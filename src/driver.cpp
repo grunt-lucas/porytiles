@@ -154,8 +154,8 @@ static void validateDecompileInputs(PtContext &ctx)
                fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    // TODO : check input paths for decompile-secondary
-    throw std::runtime_error{"TODO : support decompile-secondary"};
+    // FEATURE : check input paths for decompile-secondary
+    throw std::runtime_error{"FEATURE : support decompile-secondary"};
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primarySourcePath) ||
       !std::filesystem::is_directory(ctx.decompilerSrcPaths.primarySourcePath)) {
@@ -361,7 +361,7 @@ importBehaviorsHeader(PtContext &ctx, std::string behaviorHeaderPath)
 {
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
-    // TODO : handle compiler vs decompiler
+    // FIXME : handle compiler vs decompiler
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                fmt::format("{}: could not open for reading", behaviorHeaderPath));
   }
@@ -435,7 +435,7 @@ static void driveDecompile(PtContext &ctx)
   auto [behaviorMap, behaviorReverseMap] = importBehaviorsHeader(ctx, ctx.decompilerSrcPaths.metatileBehaviors);
 
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    throw std::runtime_error{"TODO : support decompile-secondary"};
+    throw std::runtime_error{"FEATURE : support decompile-secondary"};
   }
 
   /*

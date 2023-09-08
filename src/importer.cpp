@@ -516,8 +516,9 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
     Attributes attribute{};
     attribute.baseGame = ctx.targetBaseGame;
-    // TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior
-    // map
+    /*
+     * TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior
+     */
     if (behaviorMap.contains(behavior)) {
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }
@@ -577,10 +578,10 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
 static RGBA32 parseJascLine(const ErrorsAndWarnings &err, const std::string &jascLine)
 {
-  // TODO : this logic duplicates cli_parser::parseRgbColor
+  // FIXME : this logic duplicates cli_parser::parseRgbColor
   std::vector<std::string> colorComponents = split(jascLine, " ");
   if (colorComponents.size() != 3) {
-    // TODO : need fatalerror to also work for decompile mode
+    // FIXME : need fatalerror to also work for decompile mode
     throw std::runtime_error{"expected valid JASC line in pal file, saw " + jascLine};
   }
 
@@ -599,15 +600,15 @@ static RGBA32 parseJascLine(const ErrorsAndWarnings &err, const std::string &jas
   int blue = parseInteger<int>(colorComponents[2].c_str());
 
   if (red < 0 || red > 255) {
-    // TODO : need fatalerror to also work for decompile mode
+    // FIXME : need fatalerror to also work for decompile mode
     throw std::runtime_error{"invalid red component: range must be 0 <= red <= 255"};
   }
   if (green < 0 || green > 255) {
-    // TODO : need fatalerror to also work for decompile mode
+    // FIXME : need fatalerror to also work for decompile mode
     throw std::runtime_error{"invalid green component: range must be 0 <= green <= 255"};
   }
   if (blue < 0 || blue > 255) {
-    // TODO : need fatalerror to also work for decompile mode
+    // FIXME : need fatalerror to also work for decompile mode
     throw std::runtime_error{"invalid blue component: range must be 0 <= blue <= 255"};
   }
 
@@ -625,34 +626,34 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"invalid blank line in pal file"};
     }
     line.pop_back();
     if (line != "JASC-PAL") {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"expected 'JASC-PAL' in pal file, saw " + line};
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"invalid blank line in pal file"};
     }
     line.pop_back();
     if (line != "0100") {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"expected '0100' in pal file, saw " + line};
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"invalid blank line in pal file"};
     }
     line.pop_back();
     if (line != "16") {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"expected '16' in pal file, saw " + line};
     }
 
@@ -708,7 +709,7 @@ static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifst
    * there are 8 subtiles per metatile. 24 for triple layer, since there are 12 subtiles per metatile.
    */
   if (metatileDataBuf.size() % 16 != 0 && metatileDataBuf.size() % 24 != 0) {
-    // TODO : need fatalerror to also work for decompile mode
+    // FIXME : need fatalerror to also work for decompile mode
     throw std::runtime_error{"decompiler input metatiles.bin corrupted, not valid uint16 data"};
   }
 
@@ -741,7 +742,7 @@ static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifst
     assignment.attributes.terrainType = attributesMap.at(metatileIndex).terrainType;
 
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      // TODO : impl log here
+      // TODO : impl log here for FIRERED mode
       pt_logln(ctx, stderr, "with Attributes[]");
     }
     else {
@@ -767,14 +768,14 @@ std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtC
   std::size_t metatileCount;
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     if (attributesDataBuf.size() % 4 != 0) {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
     }
     metatileCount = attributesDataBuf.size() / 4;
   }
   else {
     if (attributesDataBuf.size() % 2 != 0) {
-      // TODO : need fatalerror to also work for decompile mode
+      // FIXME : need fatalerror to also work for decompile mode
       throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
     }
     metatileCount = attributesDataBuf.size() / 2;

@@ -1,6 +1,6 @@
 # Todo List
 
-+ in-code TODOs, grep for "TODO :"
++ in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
 
 + Reported test case failure with clang 14.0.0 on Ubuntu
   + https://discord.com/channels/@me/1148327134343995453/1149142257744748636

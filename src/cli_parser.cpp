@@ -36,7 +36,7 @@ void parseOptions(PtContext &ctx, int argc, char *const *argv)
     parseDecompile(ctx, argc, argv);
     break;
   case Subcommand::DECOMPILE_SECONDARY:
-    throw std::runtime_error{"TODO : support decompile-secondary command"};
+    throw std::runtime_error{"FEATURE : support decompile-secondary command"};
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
@@ -361,7 +361,7 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
     // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      // TODO : show correct subcommand here
+      // FIXME : show correct subcommand here
       fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PROGRAM_NAME);
       exit(2);
     }
@@ -626,7 +626,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     // Color assignment config options
     case ASSIGN_EXPLORE_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
-      // TODO : throw if this factor is too large
+      // FIXME : error if this factor is too large
       ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
       break;
     case ASSIGN_ALGO_VAL:
@@ -799,7 +799,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      // TODO : show correct subcommand here
+      // FIXME : show correct subcommand here
       fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PROGRAM_NAME);
       exit(2);
     }
@@ -1007,7 +1007,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   ctx.validateFieldmapParameters();
 
   if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
-    // TODO : leave this in until Porymap supports 8bpp input images
+    // TODO : change this once Porymap supports 8bpp input images
     warn_usedTrueColorMode(ctx.err);
   }
 

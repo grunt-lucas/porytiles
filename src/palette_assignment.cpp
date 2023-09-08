@@ -80,8 +80,8 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                      std::size_t pal2IntersectSize = (pal2 & toAssign).count();
 
                      /*
-                      * TODO : Instead of just using palette count, maybe can we check for color distance here and try
-                      * to choose the palette that has the "closest" colors to our toAssign palette? That might be a
+                      * FEATURE : Instead of just using palette count, maybe can we check for color distance here and
+                      * try to choose the palette that has the "closest" colors to our toAssign palette? That might be a
                       * good heuristic for attempting to keep similar colors in the same palette. I.e. especially in
                       * cases where there are no palette intersections, it may be better to first try placing the new
                       * colors into a palette with similar colors rather than into the smallest palette. We can put
@@ -100,7 +100,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
   }
   else if (ctx.compilerConfig.pruneCount > 0) {
     if (ctx.compilerConfig.pruneCount >= stopLimit) {
-      // TODO : proper error message
+      // FIXME : proper error message
       throw std::runtime_error{"pruneCount pruned every branch"};
     }
     stopLimit -= ctx.compilerConfig.pruneCount;
@@ -186,7 +186,7 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
 
     const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
 
-    // TODO : handle secondary sets properly, see how depth-first does it
+    // FIXME : handle secondary sets properly, see how depth-first does it
     if (!primaryPalettes.empty()) {
       throw std::runtime_error{"TODO : support secondary set compilation with BFS backend"};
     }
@@ -204,11 +204,12 @@ AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &i
     bool sawAssignmentWithIntersection = false;
     std::size_t stopLimit = currentState.hardwarePalettes.size();
     if (ctx.compilerConfig.smartPrune) {
+      // TODO : impl smart prune feature
       throw std::runtime_error{"TODO : impl smart prune"};
     }
     else if (ctx.compilerConfig.pruneCount > 0) {
       if (ctx.compilerConfig.pruneCount >= stopLimit) {
-        // TODO : proper error message
+        // FIXME : proper error message
         throw std::runtime_error{"pruneCount pruned every branch"};
       }
       stopLimit -= ctx.compilerConfig.pruneCount;

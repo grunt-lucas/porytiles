@@ -130,7 +130,7 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
 {
   for (std::size_t i = 0; i < tileset.assignments.size(); i++) {
     auto &assignment = tileset.assignments.at(i);
-    // TODO : does this code work as expected on a big-endian machine? I think so...
+    // NOTE : does this code work as expected on a big-endian machine? I think so...
     std::uint16_t tileValue =
         static_cast<uint16_t>((assignment.tileIndex & 0x3FF) | ((assignment.hFlip & 1) << 10) |
                               ((assignment.vFlip & 1) << 11) | ((assignment.paletteIndex & 0xF) << 12));
@@ -160,7 +160,7 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
         std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
         const GBATile &tile = animation.frames.at(frameIndex).tiles.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
-        // TODO : how do we handle true-color for anim tiles? no easy way to access tile palette indices
+        // FIXME : how do we handle true-color for anim tiles? no easy way to access tile palette indices
         out[pixelRow][pixelCol] = indexInPalette;
       }
     }
@@ -194,12 +194,12 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
     else {
       behaviorString = std::to_string(assignment.attributes.metatileBehavior);
     }
-    // TODO : at some point we should support configurable masks and shifts like Porymap does
+    // FEATURE : at some point we should support configurable masks and shifts like Porymap does
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
                targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
                layerTypeString(assignment.attributes.layerType));
-      // TODO : does this code work as expected on a big-endian machine? I think so...
+      // NOTE : does this code work as expected on a big-endian machine? I think so...
       std::uint16_t attributeValue =
           static_cast<std::uint16_t>((assignment.attributes.metatileBehavior & 0xFF) |
                                      ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
@@ -213,7 +213,7 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
           targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
           encounterTypeString(assignment.attributes.encounterType),
           terrainTypeString(assignment.attributes.terrainType), layerTypeString(assignment.attributes.layerType));
-      // TODO : does this code work as expected on a big-endian machine? I think so...
+      // NOTE : does this code work as expected on a big-endian machine? I think so...
       std::uint32_t attributeValue =
           static_cast<std::uint32_t>((assignment.attributes.metatileBehavior & 0x1FF) |
                                      ((terrainTypeValue(assignment.attributes.terrainType) & 0x1F) << 9) |
@@ -236,17 +236,15 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                     std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
-  /*
-   * TODO : this function needs to receive the attributes map so it can determine the layer type. It can do this by
-   * dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count (i.e. the true
-   * metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple. Otherwise, we have
-   * corruption and should fail.
-   */
-
   // Assume bottom, middle, top have identical dimensions, driver creates these PNGs so it handles dimensions
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
 
-  // TODO : For now just assume triple layer, but this should handle both cases
+  /*
+   * FIXME : this assumes triple layer, but it should handle both cases
+   * It can do this by dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count
+   * (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple.
+   * Otherwise, we have corruption and should fail.
+   */
   for (std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
@@ -273,10 +271,9 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
     }
   }
 
-  // TODO : emit attributes as a CSV, we'll need a behaviors map from somewhere for this to work
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     outCsv << "id,behavior,terrainType,encounterType" << std::endl;
-    // TODO : impl the rest
+    // TODO : impl the FIRERED case
     throw std::runtime_error{"TODO : support FIRERED mode"};
   }
   else {
