@@ -673,66 +673,66 @@ struct FieldmapConfig {
   }
 };
 
-struct SourcePaths {
+struct CompilerSourcePaths {
   std::string primarySourcePath;
   std::string secondarySourcePath;
-  std::string metatileBehaviorsPath;
+  std::string metatileBehaviors;
 
-  std::filesystem::path bottomPrimaryTilesheetPath() const
+  std::filesystem::path bottomPrimaryTilesheet() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "bottom.png";
   }
 
-  std::filesystem::path middlePrimaryTilesheetPath() const
+  std::filesystem::path middlePrimaryTilesheet() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "middle.png";
   }
 
-  std::filesystem::path topPrimaryTilesheetPath() const
+  std::filesystem::path topPrimaryTilesheet() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "top.png";
   }
 
-  std::filesystem::path bottomSecondaryTilesheetPath() const
+  std::filesystem::path bottomSecondaryTilesheet() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "bottom.png";
   }
 
-  std::filesystem::path middleSecondaryTilesheetPath() const
+  std::filesystem::path middleSecondaryTilesheet() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "middle.png";
   }
 
-  std::filesystem::path topSecondaryTilesheetPath() const
+  std::filesystem::path topSecondaryTilesheet() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "top.png";
   }
 
-  std::filesystem::path primaryAnimPath() const
+  std::filesystem::path primaryAnim() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "anims";
   }
 
-  std::filesystem::path secondaryAnimPath() const
+  std::filesystem::path secondaryAnim() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "anims";
   }
 
-  std::filesystem::path primaryAttributesPath() const
+  std::filesystem::path primaryAttributes() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "attributes.csv";
   }
 
-  std::filesystem::path secondaryAttributesPath() const
+  std::filesystem::path secondaryAttributes() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "attributes.csv";
@@ -745,6 +745,37 @@ struct SourcePaths {
   }
 
   std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
+};
+
+struct DecompilerSourcePaths {
+  std::string primarySourcePath;
+  std::string secondarySourcePath;
+  std::string metatileBehaviors;
+
+  std::filesystem::path primaryMetatilesBin() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / "metatiles.bin";
+  }
+
+  std::filesystem::path primaryAttributesBin() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / "metatile_attributes.bin";
+  }
+
+  std::filesystem::path primaryTilesPng() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / "tiles.png";
+  }
+
+  std::filesystem::path primaryPalettes() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / "palettes";
+  }
+
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
 };
 

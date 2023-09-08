@@ -284,7 +284,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
     for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
       if (behaviorReverseMap.size() > 0) {
         if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
-          outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
+          outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior)
+                 << std::endl;
         }
         else {
           // TODO : print warning that reverse map did not contain a mapping for this behavior

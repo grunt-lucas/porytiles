@@ -384,10 +384,10 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
         ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    ctx.srcPaths.secondarySourcePath = argv[optind++];
+    ctx.decompilerSrcPaths.secondarySourcePath = argv[optind++];
   }
-  ctx.srcPaths.primarySourcePath = argv[optind++];
-  ctx.srcPaths.metatileBehaviorsPath = argv[optind++];
+  ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
+  ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
 
   /*
    * Apply the target base game
@@ -804,9 +804,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    ctx.srcPaths.secondarySourcePath = argv[optind++];
+    ctx.compilerSrcPaths.secondarySourcePath = argv[optind++];
   }
-  ctx.srcPaths.primarySourcePath = argv[optind++];
+  ctx.compilerSrcPaths.primarySourcePath = argv[optind++];
 
   /*
    * Configure warnings and errors per user specification

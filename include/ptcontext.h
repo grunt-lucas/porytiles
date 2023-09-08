@@ -16,7 +16,8 @@ namespace porytiles {
 struct PtContext {
   TargetBaseGame targetBaseGame;
   FieldmapConfig fieldmapConfig;
-  SourcePaths srcPaths;
+  CompilerSourcePaths compilerSrcPaths;
+  DecompilerSourcePaths decompilerSrcPaths;
   Output output;
   CompilerConfig compilerConfig;
   CompilerContext compilerContext;
@@ -28,23 +29,24 @@ struct PtContext {
   bool verbose;
 
   PtContext()
-      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()}, srcPaths{},
-        output{}, compilerConfig{}, compilerContext{}, decompilerConfig{}, err{}, subcommand{}, verbose{false}
+      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
+        compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, compilerContext{}, decompilerConfig{},
+        err{}, subcommand{}, verbose{false}
   {
   }
 
   void validateFieldmapParameters() const
   {
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numTiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numTiles",
                                            fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
     }
     if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numMetatiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numMetatiles",
                                            fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
     }
     if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->srcPaths, this->compilerConfig.mode, "numPalettes",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numPalettes",
                                            fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
     }
   }

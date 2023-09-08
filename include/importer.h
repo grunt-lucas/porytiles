@@ -41,7 +41,9 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
                         const std::string &filePath);
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
-importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath);
+importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+                      png::image<png::index_pixel> &tilesheetPng,
+                      std::vector<std::shared_ptr<std::ifstream>> &paletteFiles);
 
 } // namespace porytiles
 

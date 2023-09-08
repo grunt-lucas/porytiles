@@ -30,14 +30,14 @@ namespace porytiles {
 DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.srcPaths, "height", png.get_height());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
   }
   if (png.get_width() % TILE_SIDE_LENGTH != 0) {
-    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.srcPaths, "width", png.get_width());
+    error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "width", png.get_width());
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "freestanding source dimension not divisible by 8");
   }
 
@@ -145,7 +145,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "source layer png dimensions invalid");
   }
 
@@ -325,12 +325,12 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   for (const auto &[metatileId, _] : attributesMap) {
     if (metatileId > metatileCount - 1) {
       warn_unusedAttribute(ctx.err, metatileId, metatileCount,
-                           ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode).string());
+                           ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode).string());
     }
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during layered tile import");
   }
 
@@ -364,19 +364,19 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
       }
 
       if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                        "anim frame source dimension not divisible by 8");
       }
 
       frameWidths.insert(rawFrame.png.get_width());
       frameHeights.insert(rawFrame.png.get_height());
       if (frameWidths.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
                                                             rawFrame.animName, rawFrame.frame, "width",
                                                             rawFrame.png.get_width());
       }
       if (frameHeights.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
                                                             rawFrame.animName, rawFrame.frame, "height",
                                                             rawFrame.png.get_height());
       }
@@ -440,7 +440,7 @@ importMetatileBehaviorMaps(PtContext &ctx, std::ifstream &behaviorFile)
       }
       catch (const std::exception &e) {
         behaviorFile.close();
-        fatalerror_invalidBehaviorValue(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, behaviorName,
+        fatalerror_invalidBehaviorValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, behaviorName,
                                         behaviorValueString, processedUpToLine);
         // here so compiler won't complain
         behaviorVal = 0;
@@ -469,7 +469,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
     in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
   }
   catch (const std::exception &e) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath);
   }
 
   std::string id;
@@ -485,7 +485,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   bool hasEncounterType = in.has_column("encounterType");
 
   if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath);
   }
 
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
@@ -516,7 +516,8 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
     Attributes attribute{};
     attribute.baseGame = ctx.targetBaseGame;
-    // TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior map
+    // TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior
+    // map
     if (behaviorMap.contains(behavior)) {
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }
@@ -551,7 +552,8 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
       }
     }
     catch (const std::exception &e) {
-      fatalerror_invalidIdInCsv(ctx.err, ctx.srcPaths, ctx.compilerConfig.mode, filePath, id, processedUpToLine);
+      fatalerror_invalidIdInCsv(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath, id,
+                                processedUpToLine);
       // here so compiler won't complain
       idVal = 0;
     }
@@ -566,7 +568,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.srcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during attributes CSV parsing");
   }
 
@@ -802,36 +804,16 @@ std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtC
 }
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
-importCompiledTileset(PtContext &ctx, const std::filesystem::path &tilesetPath)
+importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+                      png::image<png::index_pixel> &tilesheetPng,
+                      std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
 {
-  /*
-   * TODO : who should handle checks for file existence/validity? importer or driver? I think driver should, so we can
-   * refactor this function later so that it receives everything it needs as ifstreams or png::images
-   */
   CompiledTileset tileset{};
-  std::ifstream metatiles{tilesetPath / "metatiles.bin", std::ios::binary};
-  std::ifstream attributes{tilesetPath / "metatile_attributes.bin", std::ios::binary};
-  png::image<png::index_pixel> tilesheetPng{tilesetPath / "tiles.png"};
-  std::vector<std::shared_ptr<std::ifstream>> paletteFiles{};
-
-  for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
-    std::ostringstream filename;
-    if (index < 10) {
-      filename << "0";
-    }
-    filename << index << ".pal";
-    paletteFiles.push_back(std::make_shared<std::ifstream>(tilesetPath / "palettes" / filename.str()));
-  }
 
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
-
-  metatiles.close();
-  attributes.close();
-  std::for_each(paletteFiles.begin(), paletteFiles.end(),
-                [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
 
   return {tileset, attributesMap};
 }
@@ -1333,11 +1315,31 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
   compileCtx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
-  compileCtx.srcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
+  compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
   porytiles::drive(compileCtx);
 
   porytiles::PtContext decompileCtx{};
-  auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(decompileCtx, parentDir);
+  decompileCtx.decompilerSrcPaths.primarySourcePath = parentDir;
+
+  std::ifstream metatiles{decompileCtx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
+  std::ifstream attributes{decompileCtx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
+  png::image<png::index_pixel> tilesheetPng{decompileCtx.decompilerSrcPaths.primaryTilesPng()};
+  std::vector<std::shared_ptr<std::ifstream>> paletteFiles{};
+  for (std::size_t index = 0; index < decompileCtx.fieldmapConfig.numPalettesTotal; index++) {
+    std::ostringstream filename;
+    if (index < 10) {
+      filename << "0";
+    }
+    filename << index << ".pal";
+    std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
+    paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+  }
+  auto [importedTileset, attributesMap] =
+      porytiles::importCompiledTileset(decompileCtx, metatiles, attributes, tilesheetPng, paletteFiles);
+  metatiles.close();
+  attributes.close();
+  std::for_each(paletteFiles.begin(), paletteFiles.end(),
+                [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
 
   CHECK((compileCtx.compilerContext.resultTileset)->tiles.size() == importedTileset.tiles.size());
   CHECK((compileCtx.compilerContext.resultTileset)->tiles == importedTileset.tiles);

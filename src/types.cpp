@@ -356,7 +356,7 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
   return rgba;
 }
 
-std::filesystem::path SourcePaths::modeBasedSrcPath(CompilerMode mode) const
+std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) const
 {
   switch (mode) {
   case CompilerMode::PRIMARY:
@@ -370,7 +370,7 @@ std::filesystem::path SourcePaths::modeBasedSrcPath(CompilerMode mode) const
   throw std::runtime_error("types::InputPaths::modeBasedInputPath (compile) reached unreachable code path");
 }
 
-std::filesystem::path SourcePaths::modeBasedSrcPath(DecompilerMode mode) const
+std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mode) const
 {
   switch (mode) {
   case DecompilerMode::PRIMARY:

@@ -62,7 +62,7 @@ void internalerror_unknownCompilerMode(std::string context) { internalerror(cont
 
 void internalerror_unknownDecompilerMode(std::string context) { internalerror(context + " unknown DecompilerMode"); }
 
-void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const SourcePaths &srcs,
+void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension)
 {
   err.errCount++;
@@ -224,7 +224,7 @@ void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, st
   }
 }
 
-void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode, std::string message)
+void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode, std::string message)
 {
   if (err.printErrors) {
     pt_fatal_err("{}", message);
@@ -232,7 +232,8 @@ void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerM
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
 }
 
-void fatalerror(const ErrorsAndWarnings &err, const SourcePaths &srcs, DecompilerMode mode, std::string message)
+void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
+                std::string message)
 {
   if (err.printErrors) {
     pt_fatal_err("{}", message);
@@ -248,7 +249,7 @@ void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorM
   throw PtException{errorMessage};
 }
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                   std::string path)
 {
   if (err.printErrors) {
@@ -257,7 +258,7 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePath
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePaths &srcs, DecompilerMode mode,
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
                                   std::string path)
 {
   if (err.printErrors) {
@@ -266,8 +267,8 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const SourcePath
   die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
 
-void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                             const std::string &animation, std::size_t index)
+void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                             CompilerMode mode, const std::string &animation, std::size_t index)
 {
   std::string file = std::to_string(index) + ".png";
   if (index < 10) {
@@ -281,7 +282,7 @@ void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const
                             fmt::format("animation {} missing required anim frame file {}", animation, file));
 }
 
-void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                     const std::string &animation)
 {
   if (err.printErrors) {
@@ -291,8 +292,8 @@ void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const SourcePa
                             fmt::format("animation {} missing key frame file", animation));
 }
 
-void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                         std::size_t allowed, std::size_t found)
+void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                         CompilerMode mode, std::size_t allowed, std::size_t found)
 {
   if (err.printErrors) {
     pt_fatal_err("too many unique colors in {} tileset", compilerModeString(mode));
@@ -302,7 +303,7 @@ void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const Sou
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("too many unique colors total"));
 }
 
-void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const SourcePaths &srcs,
+void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                          CompilerMode mode, std::string animName, std::string frame,
                                                          std::string dimensionName, png::uint_32 dimension)
 {
@@ -315,7 +316,7 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings
                             fmt::format("anim {} frame {} dimension {} mismatch", animName, frame, dimensionName));
 }
 
-void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                    std::size_t numTiles, std::size_t maxAllowedTiles)
 {
   if (err.printErrors) {
@@ -326,8 +327,8 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const SourcePat
                             fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
 }
 
-void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                            AssignAlgorithm algo, std::size_t maxRecurses)
+void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                            CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses)
 {
   if (err.printErrors) {
     pt_fatal_err("{} palette assignment explored too many nodes", assignAlgorithmString(algo));
@@ -339,7 +340,8 @@ void fatalerror_assignExploredCutoffReached(const ErrorsAndWarnings &err, const 
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
 
-void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode)
+void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                            CompilerMode mode)
 {
   if (err.printErrors) {
     pt_fatal_err("no possible palette assignment exists for the given sources");
@@ -348,7 +350,7 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "no possible palette assignment");
 }
 
-void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                  std::size_t numMetatiles, std::size_t metatileLimit)
 {
   if (err.printErrors) {
@@ -361,8 +363,8 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const SourcePaths
       fmt::format("too many {} metatiles: {} > {}", compilerModeString(mode), numMetatiles, metatileLimit));
 }
 
-void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                          std::string field, std::size_t primary, std::size_t total)
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                          CompilerMode mode, std::string field, std::size_t primary, std::size_t total)
 {
   if (err.printErrors) {
     pt_fatal_err("invalid configuration {}InPrimary '{}' exceeded {}Total '{}'", field,
@@ -372,8 +374,8 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const So
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
 }
 
-void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                        std::string animName, std::size_t tileIndex)
+void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                        CompilerMode mode, std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
     pt_fatal_err("animation '{}' key frame tile '{}' was transparent", fmt::styled(animName, fmt::emphasis::bold),
@@ -387,7 +389,7 @@ void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const Sour
                             fmt::format("animation {} had a transparent key frame tile", animName));
 }
 
-void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                       std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
@@ -399,8 +401,8 @@ void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const Source
                             fmt::format("animation {} had a duplicate key frame tile", animName));
 }
 
-void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                               std::string animName, std::size_t tileIndex)
+void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                               CompilerMode mode, std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
     pt_fatal_err("animation '{}' key frame tile '{}' was present in the paired primary tileset",
@@ -413,8 +415,8 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
                             fmt::format("animation {} key frame tile present in paired primary", animName));
 }
 
-void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
-                                           std::string filePath)
+void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                           CompilerMode mode, std::string filePath)
 {
   if (err.printErrors) {
     pt_fatal_err("{}: incorrect header row format", filePath);
@@ -424,7 +426,7 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const S
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: incorrect header row format", filePath));
 }
 
-void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                std::string filePath, std::string id, std::size_t line)
 {
   if (err.printErrors) {
@@ -436,7 +438,7 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const SourcePaths &
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const SourcePaths &srcs, CompilerMode mode,
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                      std::string behavior, std::string value, std::size_t line)
 {
   if (err.printErrors) {
@@ -641,7 +643,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -655,7 +657,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -670,7 +672,7 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_invalidAlphaValue";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_invalidAlphaValue";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -684,7 +686,7 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -714,7 +716,7 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
   ctx.compilerConfig.tripleLayer = false;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -819,7 +821,7 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -832,8 +834,8 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/simple_metatiles_1";
-  ctx.srcPaths.secondarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/simple_metatiles_1";
+  ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -848,7 +850,8 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
+    ctx.compilerSrcPaths.primarySourcePath =
+        "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -862,7 +865,7 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
-    ctx.srcPaths.primarySourcePath =
+    ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -878,7 +881,7 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -892,7 +895,7 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath =
+  ctx.compilerSrcPaths.primarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -908,7 +911,7 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath =
+  ctx.compilerSrcPaths.primarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -923,7 +926,7 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -938,7 +941,7 @@ TEST_CASE(
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -952,8 +955,9 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numPalettesTotal = 4;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
-  ctx.srcPaths.secondarySourcePath =
+  ctx.compilerSrcPaths.primarySourcePath =
+      "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
+  ctx.compilerSrcPaths.secondarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1046,7 +1050,7 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
+  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
   ctx.err.colorPrecisionLoss = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1063,7 +1067,8 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
+    ctx.compilerSrcPaths.primarySourcePath =
+        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
     ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1079,9 +1084,9 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath =
+    ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
-    ctx.srcPaths.secondarySourcePath =
+    ctx.compilerSrcPaths.secondarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
     ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
@@ -1129,7 +1134,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1145,8 +1150,9 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
-    ctx.srcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
+    ctx.compilerSrcPaths.primarySourcePath =
+        "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
+    ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1165,7 +1171,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1180,8 +1186,8 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
-    ctx.srcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/secondary";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
+    ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/secondary";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1197,7 +1203,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerConfig.tripleLayer = false;
-    ctx.srcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
+    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
