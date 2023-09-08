@@ -51,12 +51,7 @@ template <typename T>
 static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &optionName, const char *optarg)
 {
   try {
-    size_t pos;
-    T arg = std::stoi(optarg, &pos, 0);
-    if (std::string{optarg}.size() != pos) {
-      // throw here so it catches below and prints an error message
-      throw std::runtime_error{""};
-    }
+    T arg = parseInteger<T>(optarg);
     return arg;
   }
   catch (const std::exception &e) {

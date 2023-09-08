@@ -5,15 +5,17 @@
 #include <string>
 #include <unordered_map>
 
+#define FMT_HEADER_ONLY
+#include <fmt/color.h>
+
 #include "errors_warnings.h"
 #include "ptcontext.h"
 #include "types.h"
 
 namespace porytiles {
 
-template <typename T> static T parseInteger(const char *integerString)
+template <typename T> T parseInteger(const char *integerString)
 {
-  // TODO : rewrite cli_parser::parseIntegralOption to use this function
   try {
     size_t pos;
     T arg = std::stoi(integerString, &pos, 0);
