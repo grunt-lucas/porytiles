@@ -259,12 +259,14 @@ static void validateDecompileOutputs(PtContext &ctx, std::filesystem::path &outp
                fmt::format("'{}' exists in output directory but is not a file", topPath.string()));
   }
 
-  try {
-    std::filesystem::create_directories(outputPath);
-  }
-  catch (const std::exception &e) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("could not create '{}': {}", outputPath.string(), e.what()));
+  if (!outputPath.empty()) {
+    try {
+      std::filesystem::create_directories(outputPath);
+    }
+    catch (const std::exception &e) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("could not create '{}': {}", outputPath.string(), e.what()));
+    }
   }
 }
 
