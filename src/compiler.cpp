@@ -715,17 +715,16 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     }
   }
 
-  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes};
-  AssignStateIndexOnly initialStateIndexOnly = {tmpHardwarePalettes, unassignedNormPalettes.size()};
+  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size()};
   ctx.compilerContext.exploredNodeCounter = 0;
   AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
   if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
-    assignResult = assignDepthFirstIndexOnly(ctx, initialStateIndexOnly, assignedPalsSolution, primaryPaletteColorSets,
-                                             unassignedNormPalettes);
+    assignResult =
+        assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
   }
   else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
-    assignResult = assignBreadthFirstIndexOnly(ctx, initialStateIndexOnly, assignedPalsSolution,
-                                               primaryPaletteColorSets, unassignedNormPalettes);
+    assignResult =
+        assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
   }
   else {
     internalerror("compiler::compile unknown AssignAlgorithm");
@@ -1418,9 +1417,9 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
     std::stable_sort(std::begin(unassigned), std::end(unassigned),
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
-    porytiles::AssignState state = {hardwarePalettes, unassigned};
+    porytiles::AssignState state = {hardwarePalettes, unassigned.size()};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned) == porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -1455,9 +1454,9 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
     std::stable_sort(std::begin(unassigned), std::end(unassigned),
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
-    porytiles::AssignState state = {hardwarePalettes, unassigned};
+    porytiles::AssignState state = {hardwarePalettes, unassigned.size()};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned) == porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
