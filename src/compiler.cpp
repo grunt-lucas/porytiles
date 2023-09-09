@@ -720,7 +720,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   ctx.compilerContext.exploredNodeCounter = 0;
   AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
   if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
-    assignResult = assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets);
+    assignResult = assignDepthFirstIndexOnly(ctx, initialStateIndexOnly, assignedPalsSolution, primaryPaletteColorSets,
+                                             unassignedNormPalettes);
   }
   else if (ctx.compilerConfig.assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
     assignResult = assignBreadthFirstIndexOnly(ctx, initialStateIndexOnly, assignedPalsSolution,

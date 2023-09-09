@@ -188,7 +188,6 @@ AssignResult assignDepthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &sta
         std::vector<ColorSet> hardwarePalettesCopy;
         std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
                   std::back_inserter(hardwarePalettesCopy));
-        hardwarePalettesCopy.at(i) |= toAssign;
         AssignStateIndexOnly updatedState = {hardwarePalettesCopy, state.unassignedCount - 1};
 
         AssignResult result = assignDepthFirstIndexOnly(ctx, updatedState, solution, primaryPalettes, unassigneds);
