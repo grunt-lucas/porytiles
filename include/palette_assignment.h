@@ -76,6 +76,9 @@ template <> struct std::hash<porytiles::AssignStateIndexOnly> {
 namespace porytiles {
 AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                               const std::vector<ColorSet> &primaryPalettes);
+AssignResult assignDepthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &state, std::vector<ColorSet> &solution,
+                                       const std::vector<ColorSet> &primaryPalettes,
+                                       const std::vector<ColorSet> &unassigneds);
 AssignResult assignBreadthFirstIndexOnly(PtContext &ctx, AssignStateIndexOnly &initialState,
                                          std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                                          const std::vector<ColorSet> &unassigneds);
