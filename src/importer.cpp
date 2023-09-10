@@ -425,7 +425,7 @@ importMetatileBehaviorMaps(PtContext &ctx, std::ifstream &behaviorFile)
     while (stringStream >> buffer) {
       tokens.push_back(buffer);
     }
-    if (tokens.size() == 3 && tokens.at(1).starts_with("MB_")) {
+    if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_")) {
       const std::string &behaviorName = tokens.at(1);
       const std::string &behaviorValueString = tokens.at(2);
       std::uint8_t behaviorVal;
@@ -768,15 +768,15 @@ std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtC
   std::size_t metatileCount;
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     if (attributesDataBuf.size() % 4 != 0) {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint32 data"};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 "decompiler input 'metatile_attributes.bin' corrupted, not valid uint32 data");
     }
     metatileCount = attributesDataBuf.size() / 4;
   }
   else {
     if (attributesDataBuf.size() % 2 != 0) {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"decompiler input metatile_attributes.bin corrupted, not valid uint16 data"};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 "decompiler input 'metatile_attributes.bin' corrupted, not valid uint16 data");
     }
     metatileCount = attributesDataBuf.size() / 2;
   }

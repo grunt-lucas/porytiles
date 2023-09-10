@@ -496,7 +496,7 @@ static void driveDecompile(PtContext &ctx)
 
   std::ofstream outAttributes{attributesPath.string()};
   std::size_t metatileCount = attributesMap.size();
-  std::size_t imageHeight = ((metatileCount / 8) + 1) * 16;
+  std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
   png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};

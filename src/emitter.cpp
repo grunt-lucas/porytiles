@@ -240,32 +240,103 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
 
   /*
-   * FIXME : this assumes triple layer, but it should handle both cases
-   * It can do this by dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count
+   * Handle layer type by dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count
    * (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple.
    * Otherwise, we have corruption and should fail.
    */
-  for (std::size_t metatileIndex = 0; metatileIndex < tileset.tiles.size() / 12; metatileIndex++) {
-    size_t metatileRow = metatileIndex / widthInMetatiles;
-    size_t metatileCol = metatileIndex % widthInMetatiles;
-    for (std::size_t subtileIndex = 0; subtileIndex < 12; subtileIndex++) {
-      std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
-      std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
-      std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
-      for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
-        const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
-        if (subtileIndex >= 0 && subtileIndex < 4) {
-          bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+  bool tripleLayer = false;
+  std::size_t divBy8 = tileset.tiles.size() / 8;
+  std::size_t divBy12 = tileset.tiles.size() / 12;
+
+  if (divBy8 == attributesMap.size()) {
+    tripleLayer = false;
+  }
+  else if (divBy12 == attributesMap.size()) {
+    tripleLayer = true;
+  }
+  else {
+    internalerror(fmt::format(
+        "emitter::emitDecompiled tileset.tiles.size()={}, attributesMap.size()={} did not imply a layer type",
+        tileset.tiles.size(), attributesMap.size()));
+  }
+
+  if (tripleLayer) {
+    for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
+      size_t metatileRow = metatileIndex / widthInMetatiles;
+      size_t metatileCol = metatileIndex % widthInMetatiles;
+      for (std::size_t subtileIndex = 0; subtileIndex < 12; subtileIndex++) {
+        std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
+        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
+        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
+        for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) +
+                                 (pixelIndex / TILE_SIDE_LENGTH);
+          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) +
+                                 (pixelIndex % TILE_SIDE_LENGTH);
+          const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
+          if (subtileIndex >= 0 && subtileIndex < 4) {
+            bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+          }
+          else if (subtileIndex >= 4 && subtileIndex < 8) {
+            middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+          }
+          else if (subtileIndex >= 8 && subtileIndex < 12) {
+            top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+          }
         }
-        else if (subtileIndex >= 4 && subtileIndex < 8) {
-          middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
-        }
-        else if (subtileIndex >= 8 && subtileIndex < 12) {
-          top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+      }
+    }
+  }
+  else {
+    for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
+      size_t metatileRow = metatileIndex / widthInMetatiles;
+      size_t metatileCol = metatileIndex % widthInMetatiles;
+      for (std::size_t subtileIndex = 0; subtileIndex < 8; subtileIndex++) {
+        std::size_t globalTileIndex = (metatileIndex * 8) + subtileIndex;
+        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
+        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
+        for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) +
+                                 (pixelIndex / TILE_SIDE_LENGTH);
+          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) +
+                                 (pixelIndex % TILE_SIDE_LENGTH);
+          const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
+          if (attributesMap.at(metatileIndex).layerType == LayerType::COVERED) {
+            if (subtileIndex >= 0 && subtileIndex < 4) {
+              bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            else if (subtileIndex >= 4 && subtileIndex < 8) {
+              middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            // top[pixelRow][pixelCol] = {
+            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
+            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
+          }
+          else if (attributesMap.at(metatileIndex).layerType == LayerType::NORMAL) {
+            if (subtileIndex >= 0 && subtileIndex < 4) {
+              middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            else if (subtileIndex >= 4 && subtileIndex < 8) {
+              top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            // bottom[pixelRow][pixelCol] = {
+            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
+            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
+          }
+          else if (attributesMap.at(metatileIndex).layerType == LayerType::SPLIT) {
+            if (subtileIndex >= 0 && subtileIndex < 4) {
+              bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            else if (subtileIndex >= 4 && subtileIndex < 8) {
+              top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
+            }
+            // middle[pixelRow][pixelCol] = {
+            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
+            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
+          }
+          else {
+            internalerror("emitter::emitDecompiled invalid layer type for dual-layer emit");
+          }
         }
       }
     }
