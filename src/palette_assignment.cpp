@@ -97,8 +97,9 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
   }
   else if (ctx.compilerConfig.pruneCount > 0) {
     if (ctx.compilerConfig.pruneCount >= stopLimit) {
-      // FIXME : proper error message
-      throw std::runtime_error{"pruneCount pruned every branch"};
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("'prune-branches' parameter '{}' pruned every branch",
+                             fmt::styled(ctx.compilerConfig.pruneCount, fmt::emphasis::bold)));
     }
     stopLimit -= ctx.compilerConfig.pruneCount;
   }
@@ -202,8 +203,9 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
     }
     else if (ctx.compilerConfig.pruneCount > 0) {
       if (ctx.compilerConfig.pruneCount >= stopLimit) {
-        // FIXME : proper error message
-        throw std::runtime_error{"pruneCount pruned every branch"};
+        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                   fmt::format("'prune-branches' parameter '{}' pruned every branch",
+                               fmt::styled(ctx.compilerConfig.pruneCount, fmt::emphasis::bold)));
       }
       stopLimit -= ctx.compilerConfig.pruneCount;
     }
