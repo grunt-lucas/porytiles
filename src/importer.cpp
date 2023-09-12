@@ -758,8 +758,8 @@ static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifst
   return assignments;
 }
 
-std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtContext &ctx,
-                                                                             std::ifstream &metatileAttributesBin)
+static std::unordered_map<std::size_t, Attributes>
+importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttributesBin)
 {
   std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
@@ -804,6 +804,15 @@ std::unordered_map<std::size_t, Attributes> importCompiledMetatileAttributes(PtC
   return attributesMap;
 }
 
+static std::vector<CompiledAnimation> importCompiledAnimations(PtContext &ctx)
+{
+  std::vector<CompiledAnimation> anims{};
+
+  // TODO : impl importCompiledAnimations
+
+  return anims;
+}
+
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
                       png::image<png::index_pixel> &tilesheetPng,
@@ -815,6 +824,7 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
+  tileset.anims = importCompiledAnimations(ctx);
 
   return {tileset, attributesMap};
 }
