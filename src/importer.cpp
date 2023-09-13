@@ -804,11 +804,20 @@ importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttribut
   return attributesMap;
 }
 
-static std::vector<CompiledAnimation> importCompiledAnimations(PtContext &ctx)
+// TODO : make this static
+std::vector<CompiledAnimation>
+importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
 {
   std::vector<CompiledAnimation> anims{};
 
-  // TODO : impl importCompiledAnimations
+  for (const auto &frames : compiledAnims) {
+    if (frames.size() == 0) {
+      internalerror("importer::importCompiledAnimations frames.size() was 0");
+    }
+    CompiledAnimation anim{frames.at(0).animName};
+    // TODO : impl importCompiledAnimations
+    anims.push_back(anim);
+  }
 
   return anims;
 }
@@ -824,7 +833,7 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
-  tileset.anims = importCompiledAnimations(ctx);
+  //tileset.anims = importCompiledAnimations(ctx);
 
   return {tileset, attributesMap};
 }
