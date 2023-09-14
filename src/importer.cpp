@@ -815,7 +815,9 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
       internalerror("importer::importCompiledAnimations frames.size() was 0");
     }
     CompiledAnimation anim{frames.at(0).animName};
-    // TODO : impl importCompiledAnimations
+    for (const auto &frame : frames) {
+      // TODO : impl importCompiledAnimations
+    }
     anims.push_back(anim);
   }
 
