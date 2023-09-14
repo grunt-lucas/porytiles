@@ -714,13 +714,13 @@ struct CompilerSourcePaths {
     return path / "top.png";
   }
 
-  std::filesystem::path primaryAnim() const
+  std::filesystem::path primaryAnims() const
   {
     std::filesystem::path path{primarySourcePath};
     return path / "anims";
   }
 
-  std::filesystem::path secondaryAnim() const
+  std::filesystem::path secondaryAnims() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / "anims";
@@ -774,6 +774,12 @@ struct DecompilerSourcePaths {
   {
     std::filesystem::path path{primarySourcePath};
     return path / "palettes";
+  }
+
+  std::filesystem::path primaryAnims() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / "anims";
   }
 
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;

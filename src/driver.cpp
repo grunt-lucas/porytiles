@@ -270,18 +270,20 @@ static void validateDecompileOutputs(PtContext &ctx, std::filesystem::path &outp
   }
 }
 
-static void importDecompiledAnims(PtContext &ctx, DecompiledTileset &decompTiles, std::filesystem::path animationPath)
+static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
+prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
 {
+  std::vector<std::vector<AnimationPng<png::rgba_pixel>>> animations{};
+
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
     pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
-    return;
+    return animations;
   }
   std::vector<std::filesystem::path> animationDirectories;
   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
             std::back_inserter(animationDirectories));
   std::sort(animationDirectories.begin(), animationDirectories.end());
-  std::vector<std::vector<AnimationPng<png::rgba_pixel>>> animations{};
   for (const auto &animDir : animationDirectories) {
     if (!std::filesystem::is_directory(animDir)) {
       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
@@ -341,7 +343,76 @@ static void importDecompiledAnims(PtContext &ctx, DecompiledTileset &decompTiles
                    "found anim frame that was not a png");
   }
 
-  importAnimTiles(ctx, animations, decompTiles);
+  return animations;
+}
+
+static std::vector<std::vector<AnimationPng<png::index_pixel>>>
+prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
+{
+  std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
+
+  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
+  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
+    pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
+    return animations;
+  }
+  std::vector<std::filesystem::path> animationDirectories;
+  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
+            std::back_inserter(animationDirectories));
+  std::sort(animationDirectories.begin(), animationDirectories.end());
+  for (const auto &animDir : animationDirectories) {
+    if (!std::filesystem::is_directory(animDir)) {
+      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
+      continue;
+    }
+
+    // collate all possible animation frame files
+    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
+    std::unordered_map<std::size_t, std::filesystem::path> frames{};
+    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
+      std::string fileName = frameFile.path().filename().string();
+      std::string extension = frameFile.path().extension().string();
+      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+        pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
+        continue;
+      }
+      std::size_t index = std::stoi(fileName, 0, 10) + 1;
+      frames.insert(std::pair{index, frameFile.path()});
+      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+    }
+
+    std::vector<AnimationPng<png::index_pixel>> framePngs{};
+    if (frames.size() == 0) {
+      // TODO : better error
+      throw std::runtime_error{"TODO : error for import decompiled anims"};
+      // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+      //                                         animDir.filename().string(), 0);
+    }
+    for (std::size_t i = 1; i <= frames.size(); i++) {
+      if (!frames.contains(i)) {
+        // TODO : better error
+        throw std::runtime_error{"TODO : error for import decompiled anims"};
+        // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        //                                         animDir.filename().string(), i - 1);
+      }
+
+      try {
+        // We do this here so if the source is not a PNG, we can catch and give a better error
+        png::image<png::index_pixel> png{frames.at(i)};
+        AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
+        framePngs.push_back(animPng);
+      }
+      catch (const std::exception &exception) {
+        // TODO : better error
+        throw std::runtime_error{"TODO : error for import decompiled anims"};
+        // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+      }
+    }
+
+    animations.push_back(framePngs);
+  }
+
+  return animations;
 }
 
 static std::unordered_map<std::size_t, Attributes>
@@ -460,11 +531,13 @@ static void driveDecompile(PtContext &ctx)
     }
     paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
+  auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.primaryAnims());
 
   /*
    * Import the compiled tileset into our data types
    */
-  auto [compiled, attributesMap] = importCompiledTileset(ctx, metatiles, attributes, tilesheetPng, paletteFiles);
+  auto [compiled, attributesMap] =
+      importCompiledTileset(ctx, metatiles, attributes, tilesheetPng, paletteFiles, compiledAnims);
 
   /*
    * Close file stream objects
@@ -547,7 +620,8 @@ static void driveCompile(PtContext &ctx)
 
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    importDecompiledAnims(ctx, decompiledPrimaryTiles, ctx.compilerSrcPaths.primaryAnim());
+    auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
+    importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
     auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
@@ -563,11 +637,12 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during secondary attributes import");
     }
 
-    DecompiledTileset decompiledTiles =
+    DecompiledTileset decompiledSecondaryTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
-    importDecompiledAnims(ctx, decompiledTiles, ctx.compilerSrcPaths.secondaryAnim());
+    auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
+    importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
     ctx.compilerContext.pairedPrimaryTileset = std::move(partnerPrimaryTiles);
-    compiledTiles = compile(ctx, decompiledTiles);
+    compiledTiles = compile(ctx, decompiledSecondaryTiles);
     ctx.compilerContext.resultTileset = std::move(compiledTiles);
   }
   else {
@@ -585,7 +660,8 @@ static void driveCompile(PtContext &ctx)
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
-    importDecompiledAnims(ctx, decompiledTiles, ctx.compilerSrcPaths.primaryAnim());
+    auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
+    importAnimTiles(ctx, animations, decompiledTiles);
     compiledTiles = compile(ctx, decompiledTiles);
     ctx.compilerContext.resultTileset = std::move(compiledTiles);
   }

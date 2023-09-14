@@ -617,7 +617,7 @@ static RGBA32 parseJascLine(const ErrorsAndWarnings &err, const std::string &jas
 }
 
 static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
-                                                      std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
+                                                      const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
 {
   std::vector<GBAPalette> palettes{};
 
@@ -824,8 +824,9 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
-                      png::image<png::index_pixel> &tilesheetPng,
-                      std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
+                      const png::image<png::index_pixel> &tilesheetPng,
+                      const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles,
+                      const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
 {
   CompiledTileset tileset{};
 
@@ -833,7 +834,7 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
-  //tileset.anims = importCompiledAnimations(ctx);
+  tileset.anims = importCompiledAnimations(ctx, compiledAnims);
 
   return {tileset, attributesMap};
 }
@@ -1354,8 +1355,10 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
     std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
     paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
+  // TODO : actually test anims import
   auto [importedTileset, attributesMap] =
-      porytiles::importCompiledTileset(decompileCtx, metatiles, attributes, tilesheetPng, paletteFiles);
+      porytiles::importCompiledTileset(decompileCtx, metatiles, attributes, tilesheetPng, paletteFiles,
+                                       std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
   metatiles.close();
   attributes.close();
   std::for_each(paletteFiles.begin(), paletteFiles.end(),
