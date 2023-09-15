@@ -303,13 +303,19 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
+      /*
+       * FIXME : format is actually 0.png, not 00.png. We used 00.png so that default alphabetical
+       * order would also yield the frame order. However, the frames don't actually follow this
+       * format. It would be better to read and then sort, especially since the decompiler has to
+       * use the 0.png format.
+       */
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
         if (fileName != "key.png") {
           pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
         }
         continue;
       }
-      std::size_t index = std::stoi(fileName, 0, 10) + 1;
+      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
       frames.insert(std::pair{index, frameFile.path()});
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
@@ -372,11 +378,12 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
-      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+      if (!std::regex_match(fileName, std::regex("^[0-9]\\.png$")) &&
+          !std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
         pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
         continue;
       }
-      std::size_t index = std::stoi(fileName, 0, 10) + 1;
+      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
       frames.insert(std::pair{index, frameFile.path()});
       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
     }
@@ -384,14 +391,14 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
     std::vector<AnimationPng<png::index_pixel>> framePngs{};
     if (frames.size() == 0) {
       // TODO : better error
-      throw std::runtime_error{"TODO : error for import decompiled anims"};
+      throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
       // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
       //                                         animDir.filename().string(), 0);
     }
     for (std::size_t i = 1; i <= frames.size(); i++) {
       if (!frames.contains(i)) {
         // TODO : better error
-        throw std::runtime_error{"TODO : error for import decompiled anims"};
+        throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
         // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
         //                                         animDir.filename().string(), i - 1);
       }
@@ -404,7 +411,7 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
       }
       catch (const std::exception &exception) {
         // TODO : better error
-        throw std::runtime_error{"TODO : error for import decompiled anims"};
+        throw std::runtime_error{fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
         // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
       }
     }

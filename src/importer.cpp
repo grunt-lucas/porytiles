@@ -352,14 +352,14 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
     std::string animName = rawAnim.at(0).animName;
     DecompiledAnimation anim{animName};
     for (const auto &rawFrame : rawAnim) {
-      DecompiledAnimFrame animFrame{rawFrame.frame};
+      DecompiledAnimFrame animFrame{rawFrame.frameName};
 
       if (rawFrame.png.get_height() % TILE_SIDE_LENGTH != 0) {
-        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frame, "height",
+        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "height",
                                            rawFrame.png.get_height());
       }
       if (rawFrame.png.get_width() % TILE_SIDE_LENGTH != 0) {
-        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frame, "width",
+        error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "width",
                                            rawFrame.png.get_width());
       }
 
@@ -372,12 +372,12 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
       frameHeights.insert(rawFrame.png.get_height());
       if (frameWidths.size() != 1) {
         fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                                            rawFrame.animName, rawFrame.frame, "width",
+                                                            rawFrame.animName, rawFrame.frameName, "width",
                                                             rawFrame.png.get_width());
       }
       if (frameHeights.size() != 1) {
         fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                                            rawFrame.animName, rawFrame.frame, "height",
+                                                            rawFrame.animName, rawFrame.frameName, "height",
                                                             rawFrame.png.get_height());
       }
 
@@ -389,7 +389,7 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
         RGBATile tile{};
         tile.type = TileType::ANIM;
         tile.anim = rawFrame.animName;
-        tile.frame = rawFrame.frame;
+        tile.frame = rawFrame.frameName;
         tile.tileIndex = tileIndex;
 
         for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
@@ -804,21 +804,65 @@ importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttribut
   return attributesMap;
 }
 
-// TODO : make this static
-std::vector<CompiledAnimation>
-importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
+static std::vector<CompiledAnimation>
+importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims)
 {
   std::vector<CompiledAnimation> anims{};
-
-  for (const auto &frames : compiledAnims) {
-    if (frames.size() == 0) {
+  for (const auto &rawAnim : rawAnims) {
+    std::set<png::uint_32> frameWidths{};
+    std::set<png::uint_32> frameHeights{};
+    if (rawAnim.size() == 0) {
       internalerror("importer::importCompiledAnimations frames.size() was 0");
     }
-    CompiledAnimation anim{frames.at(0).animName};
-    for (const auto &frame : frames) {
-      // TODO : impl importCompiledAnimations
+    CompiledAnimation compiledAnim{rawAnim.at(0).animName};
+    for (const auto &animPng : rawAnim) {
+      CompiledAnimFrame animFrame{animPng.frameName};
+
+      if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
+        // TODO : fill in real error
+        throw std::runtime_error{"TODO : frame.png.get_height() % TILE_SIDE_LENGTH != 0"};
+        // error_animDimensionNotDivisibleBy8(ctx.err, frame.animName, frame.frameName, "height",
+        // frame.png.get_height());
+      }
+      if (animPng.png.get_width() % TILE_SIDE_LENGTH != 0) {
+        // TODO : fill in real error
+        throw std::runtime_error{"TODO : frame.png.get_width() % TILE_SIDE_LENGTH != 0"};
+        // error_animDimensionNotDivisibleBy8(ctx.err, frame.animName, frame.frameName, "width", frame.png.get_width());
+      }
+
+      frameWidths.insert(animPng.png.get_width());
+      frameHeights.insert(animPng.png.get_height());
+      if (frameWidths.size() != 1) {
+        // TODO : fill in real error
+        throw std::runtime_error{"TODO : frameWidths.size() != 1"};
+        // fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        //                                                     frame.animName, frame.frameName, "width",
+        //                                                     frame.png.get_width());
+      }
+      if (frameHeights.size() != 1) {
+        // TODO : fill in real error
+        throw std::runtime_error{"TODO : frameHeights.size() != 1"};
+        // fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        //                                                     frame.animName, frame.frameName, "height",
+        //                                                     frame.png.get_height());
+      }
+
+      std::size_t pngWidthInTiles = animPng.png.get_width() / TILE_SIDE_LENGTH;
+      std::size_t pngHeightInTiles = animPng.png.get_height() / TILE_SIDE_LENGTH;
+      for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
+        std::size_t tileRow = tileIndex / pngWidthInTiles;
+        std::size_t tileCol = tileIndex % pngWidthInTiles;
+        GBATile tile{};
+        for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
+          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
+          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+          tile.colorIndexes[pixelIndex] = animPng.png[pixelRow][pixelCol];
+        }
+        animFrame.tiles.push_back(tile);
+      }
+      compiledAnim.frames.push_back(animFrame);
     }
-    anims.push_back(anim);
+    anims.push_back(compiledAnim);
   }
 
   return anims;
@@ -837,6 +881,17 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
   tileset.anims = importCompiledAnimations(ctx, compiledAnims);
+
+  // for (const auto &anim : tileset.anims) {
+  //   std::cout << "Found anim:" << std::endl;
+  //   std::cout << anim.animName << std::endl;
+  //   for (const auto &frame : anim.frames) {
+  //     std::cout << frame.frameName << std::endl;
+  //   }
+  //   std::cout << "----------------" << std::endl;
+  // }
+
+  // TODO : perform key frame inference here
 
   return {tileset, attributesMap};
 }

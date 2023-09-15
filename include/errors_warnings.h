@@ -101,7 +101,7 @@ void internalerror_unknownDecompilerMode(std::string context);
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension);
 
-void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frame,
+void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string animName, std::string frameName,
                                         std::string dimensionName, png::uint_32 dimension);
 
 void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, png::uint_32 height);
@@ -153,7 +153,7 @@ void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const Com
                                          CompilerMode mode, std::size_t allowed, std::size_t found);
 
 void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                                         CompilerMode mode, std::string animName, std::string frame,
+                                                         CompilerMode mode, std::string animName, std::string frameName,
                                                          std::string dimensionName, png::uint_32 dimension);
 
 void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,

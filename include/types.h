@@ -45,9 +45,10 @@ constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 template <typename T> struct AnimationPng {
   png::image<T> png;
   std::string animName;
-  std::string frame;
+  std::string frameName;
 
-  AnimationPng(png::image<T> png, std::string animName, std::string frame) : png{png}, animName{animName}, frame{frame}
+  AnimationPng(png::image<T> png, std::string animName, std::string frameName)
+      : png{png}, animName{animName}, frameName{frameName}
   {
   }
 };
@@ -714,6 +715,8 @@ struct CompilerSourcePaths {
     return path / "top.png";
   }
 
+  // FIXME : dir name should be 'anim' not 'anims'
+
   std::filesystem::path primaryAnims() const
   {
     std::filesystem::path path{primarySourcePath};
@@ -779,7 +782,7 @@ struct DecompilerSourcePaths {
   std::filesystem::path primaryAnims() const
   {
     std::filesystem::path path{primarySourcePath};
-    return path / "anims";
+    return path / "anim";
   }
 
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
