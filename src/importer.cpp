@@ -882,16 +882,11 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
   tileset.anims = importCompiledAnimations(ctx, compiledAnims);
 
-  // for (const auto &anim : tileset.anims) {
-  //   std::cout << "Found anim:" << std::endl;
-  //   std::cout << anim.animName << std::endl;
-  //   for (const auto &frame : anim.frames) {
-  //     std::cout << frame.frameName << std::endl;
-  //   }
-  //   std::cout << "----------------" << std::endl;
-  // }
-
-  // TODO : perform key frame inference here
+  /*
+   * TODO : perform key frame inference here. We have to determine the key frame in order to
+   * determine which palette each anim is actually using. If key frame inference fails, skip
+   * decompilation of this anim?
+   */
 
   return {tileset, attributesMap};
 }
