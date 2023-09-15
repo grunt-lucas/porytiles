@@ -309,7 +309,7 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
        * format. It would be better to read and then sort, especially since the decompiler has to
        * use the 0.png format.
        */
-      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         if (fileName != "key.png") {
           pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
         }
@@ -378,8 +378,7 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
-      if (!std::regex_match(fileName, std::regex("^[0-9]\\.png$")) &&
-          !std::regex_match(fileName, std::regex("^[0-9][0-9]\\.png$"))) {
+      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
         continue;
       }
@@ -411,7 +410,8 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
       }
       catch (const std::exception &exception) {
         // TODO : better error
-        throw std::runtime_error{fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
+        throw std::runtime_error{
+            fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
         // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
       }
     }

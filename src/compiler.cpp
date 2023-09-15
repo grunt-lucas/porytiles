@@ -1920,20 +1920,20 @@ TEST_CASE("compile function should correctly compile primary set with animated t
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/2.png"}, "flower_white",
       "02.png"};
   porytiles::AnimationPng<png::rgba_pixel> waterKey{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/0.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/01.png"}, "water", "01.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/1.png"}, "water", "01.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2131,20 +2131,20 @@ TEST_CASE("compile function should correctly compile secondary set with animated
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/00.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/01.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/02.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/2.png"}, "flower_white",
       "02.png"};
   porytiles::AnimationPng<png::rgba_pixel> waterKey{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/00.png"}, "water", "00.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/0.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/01.png"}, "water", "01.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/1.png"}, "water", "01.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2183,13 +2183,13 @@ TEST_CASE("compile function should correctly compile secondary set with animated
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/00.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/01.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/02.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/2.png"}, "flower_white",
       "02.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerRedAnim{};
