@@ -10,6 +10,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
+#include "compiler.h"
 #include "driver.h"
 #include "importer.h"
 #include "logger.h"
@@ -629,9 +630,6 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
 /*
  * Test cases that deliberately check for end-to-end error/warning correctness go here
  */
-#include "compiler.h"
-#include "importer.h"
-
 TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
 {
   SUBCASE("it should work for regular tiles")
