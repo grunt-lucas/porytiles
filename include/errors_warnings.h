@@ -133,7 +133,6 @@ void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, st
 void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode, std::string message);
 void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
                 std::string message);
-
 void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
