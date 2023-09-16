@@ -92,8 +92,6 @@ extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 
 // Internal compiler errors (due to bug in the compiler)
 void internalerror(std::string message);
-void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
-                                                              std::size_t primaryPalettesSize);
 void internalerror_unknownCompilerMode(std::string context);
 void internalerror_unknownDecompilerMode(std::string context);
 

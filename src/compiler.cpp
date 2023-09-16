@@ -625,9 +625,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 {
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
-    internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize("compiler::compile",
-                                                             ctx.fieldmapConfig.numPalettesInPrimary,
-                                                             ctx.compilerContext.pairedPrimaryTileset->palettes.size());
+    internalerror(fmt::format(
+        "compiler::compile config.numPalettesInPrimary did not match primary palette set size ({} != {})",
+        ctx.fieldmapConfig.numPalettesInPrimary, ctx.compilerContext.pairedPrimaryTileset->palettes.size()));
   }
 
   auto compiled = std::make_unique<CompiledTileset>();

@@ -52,13 +52,6 @@ static std::string getTilePrettyString(const RGBATile &tile)
 
 void internalerror(std::string message) { throw std::runtime_error(message); }
 
-void internalerror_numPalettesInPrimaryNeqPrimaryPalettesSize(std::string context, std::size_t configNumPalettesPrimary,
-                                                              std::size_t primaryPalettesSize)
-{
-  internalerror("config.numPalettesInPrimary did not match primary palette set size (" +
-                std::to_string(configNumPalettesPrimary) + " != " + std::to_string(primaryPalettesSize) + ")");
-}
-
 void internalerror_unknownCompilerMode(std::string context) { internalerror(context + " unknown CompilerMode"); }
 
 void internalerror_unknownDecompilerMode(std::string context) { internalerror(context + " unknown DecompilerMode"); }
