@@ -134,7 +134,7 @@ void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, C
 void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
                 std::string message);
 
-void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage);
+void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                   std::string path);

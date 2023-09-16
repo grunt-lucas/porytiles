@@ -222,10 +222,10 @@ void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
   die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
 }
 
-void fatalerror_porytilesprefix(const ErrorsAndWarnings &err, std::string errorMessage)
+void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}", errorMessage);
+    pt_fatal_err("{}", errorMessage);
   }
   throw PtException{errorMessage};
 }

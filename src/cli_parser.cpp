@@ -55,9 +55,8 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
     return arg;
   }
   catch (const std::exception &e) {
-    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}': {}",
-                                                fmt::styled(optarg, fmt::emphasis::bold),
-                                                fmt::styled(optionName, fmt::emphasis::bold), e.what()));
+    fatalerror(err, fmt::format("invalid argument '{}' for option '{}': {}", fmt::styled(optarg, fmt::emphasis::bold),
+                                fmt::styled(optionName, fmt::emphasis::bold), e.what()));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
@@ -67,28 +66,25 @@ static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName
 {
   std::vector<std::string> colorComponents = split(colorString, ",");
   if (colorComponents.size() != 3) {
-    fatalerror_porytilesprefix(
-        err, fmt::format("invalid argument '{}' for option '{}': RGB color must have three components",
-                         fmt::styled(colorString, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid argument '{}' for option '{}': RGB color must have three components",
+                                fmt::styled(colorString, fmt::emphasis::bold),
+                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   int red = parseIntegralOption<int>(err, optionName, colorComponents[0].c_str());
   int green = parseIntegralOption<int>(err, optionName, colorComponents[1].c_str());
   int blue = parseIntegralOption<int>(err, optionName, colorComponents[2].c_str());
 
   if (red < 0 || red > 255) {
-    fatalerror_porytilesprefix(
-        err, fmt::format("invalid red component '{}' for option '{}': range must be 0 <= red <= 255",
-                         fmt::styled(red, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid red component '{}' for option '{}': range must be 0 <= red <= 255",
+                                fmt::styled(red, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
   if (green < 0 || green > 255) {
-    fatalerror_porytilesprefix(
-        err, fmt::format("invalid green component '{}' for option '{}': range must be 0 <= green <= 255",
-                         fmt::styled(green, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid green component '{}' for option '{}': range must be 0 <= green <= 255",
+                                fmt::styled(green, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
   if (blue < 0 || blue > 255) {
-    fatalerror_porytilesprefix(
-        err, fmt::format("invalid blue component '{}' for option '{}': range must be 0 <= blue <= 255",
-                         fmt::styled(blue, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid blue component '{}' for option '{}': range must be 0 <= blue <= 255",
+                                fmt::styled(blue, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
 
   return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
@@ -106,9 +102,8 @@ static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err,
     return TilesOutputPalette::GREYSCALE;
   }
   else {
-    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
-                                                fmt::styled(optargString, fmt::emphasis::bold),
-                                                fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseTilesPngPaletteMode reached unreachable code path");
@@ -128,9 +123,8 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
     return TargetBaseGame::RUBY;
   }
   else {
-    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
-                                                fmt::styled(optargString, fmt::emphasis::bold),
-                                                fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseTargetBaseGame reached unreachable code path");
@@ -147,9 +141,8 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
     return AssignAlgorithm::BREADTH_FIRST;
   }
   else {
-    fatalerror_porytilesprefix(err, fmt::format("invalid argument '{}' for option '{}'",
-                                                fmt::styled(optargString, fmt::emphasis::bold),
-                                                fmt::styled(optionName, fmt::emphasis::bold)));
+    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+                                fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
   throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
@@ -256,7 +249,7 @@ const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
 static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
 {
   if ((argc - optind) == 0) {
-    fatalerror_porytilesprefix(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
+    fatalerror(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
   }
 
   std::string subcommand = argv[optind++];
@@ -273,8 +266,7 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
     ctx.subcommand = Subcommand::COMPILE_SECONDARY;
   }
   else {
-    fatalerror_porytilesprefix(ctx.err, "unrecognized subcommand `" + subcommand +
-                                            "', try `porytiles --help' for usage information");
+    fatalerror(ctx.err, "unrecognized subcommand `" + subcommand + "', try `porytiles --help' for usage information");
   }
 }
 
@@ -371,12 +363,11 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
    * Die immediately if arguments are invalid, otherwise pack them into the context variable
    */
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 3) {
-    fatalerror_porytilesprefix(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
-                                        "`porytiles decompile-secondary --help'");
+    fatalerror(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
+                        "`porytiles decompile-secondary --help'");
   }
   else if (ctx.subcommand != Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror_porytilesprefix(
-        ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
+    fatalerror(ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
     ctx.decompilerSrcPaths.secondarySourcePath = argv[optind++];
@@ -704,9 +695,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
           errTransparencyCollapseOverride = true;
         }
         else {
-          fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
-                                                          fmt::styled(std::string{optarg}, fmt::emphasis::bold),
-                                                          fmt::styled(WERROR, fmt::emphasis::bold)));
+          fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+                                          fmt::styled(std::string{optarg}, fmt::emphasis::bold),
+                                          fmt::styled(WERROR, fmt::emphasis::bold)));
         }
       }
       break;
@@ -736,9 +727,9 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
         errTransparencyCollapseOverride = false;
       }
       else {
-        fatalerror_porytilesprefix(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
-                                                        fmt::styled(std::string{optarg}, fmt::emphasis::bold),
-                                                        fmt::styled(WERROR, fmt::emphasis::bold)));
+        fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+                                        fmt::styled(std::string{optarg}, fmt::emphasis::bold),
+                                        fmt::styled(WERROR, fmt::emphasis::bold)));
       }
       break;
 
@@ -809,11 +800,10 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
    * Die immediately if arguments are invalid, otherwise pack them into the context variable
    */
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror_porytilesprefix(
-        ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
+    fatalerror(ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
   }
   else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
-    fatalerror_porytilesprefix(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
+    fatalerror(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     ctx.compilerSrcPaths.secondarySourcePath = argv[optind++];
@@ -971,7 +961,7 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   }
 
   if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.pruneCount > 0) {
-    fatalerror_porytilesprefix(ctx.err, fmt::format("found two conflicting configs for `{}' option", PRUNE_BRANCHES));
+    fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", PRUNE_BRANCHES));
   }
 
   /*
