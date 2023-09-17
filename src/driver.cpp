@@ -544,7 +544,7 @@ static void driveDecompile(PtContext &ctx)
    * Import the compiled tileset into our data types
    */
   auto [compiled, attributesMap] =
-      importCompiledTileset(ctx, metatiles, attributes, tilesheetPng, paletteFiles, compiledAnims);
+      importCompiledTileset(ctx, metatiles, attributes, behaviorReverseMap, tilesheetPng, paletteFiles, compiledAnims);
 
   /*
    * Close file stream objects

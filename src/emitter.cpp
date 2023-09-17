@@ -260,6 +260,9 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
         tileset.tiles.size(), attributesMap.size()));
   }
 
+  /*
+   * Emit the bottom.png, middle.png, and top.png content
+   */
   if (tripleLayer) {
     for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
       size_t metatileRow = metatileIndex / widthInMetatiles;
@@ -342,25 +345,44 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
     }
   }
 
+  /*
+   * Emit the attributes.csv content
+   */
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     outCsv << "id,behavior,terrainType,encounterType" << std::endl;
-    // TODO : impl the FIRERED case
-    throw std::runtime_error{"TODO : support FIRERED mode"};
   }
   else {
     outCsv << "id,behavior" << std::endl;
-    for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
-      if (behaviorReverseMap.size() > 0) {
-        if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
-          outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior)
-                 << std::endl;
-        }
-        else {
-          // TODO : print warning that reverse map did not contain a mapping for this behavior
-          outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << std::endl;
-        }
+  }
+  for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
+    if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+      if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
+        outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << ","
+               << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
+               << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
       }
       else {
+        /*
+         * TODO : print warning that reverse map did not contain a mapping for this behavior, this case also occurs if
+         * the reverse map has 0 size, which may occur if user does not specify a behavior header (right now this is not
+         * allowed, but in the future we may make it allowed)
+         */
+        outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << ","
+               << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
+               << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
+      }
+    }
+    else {
+      if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
+        outCsv << metatileIndex << "," << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior)
+               << std::endl;
+      }
+      else {
+        /*
+         * TODO : print warning that reverse map did not contain a mapping for this behavior, this case also occurs if
+         * the reverse map has 0 size, which may occur if user does not specify a behavior header (right now this is not
+         * allowed, but in the future we may make it allowed)
+         */
         outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << std::endl;
       }
     }

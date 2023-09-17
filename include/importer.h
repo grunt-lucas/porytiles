@@ -42,6 +42,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+                      const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims);

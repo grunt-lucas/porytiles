@@ -697,8 +697,10 @@ static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image
   return gbaTiles;
 }
 
-static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
-                                                       std::unordered_map<std::size_t, Attributes> &attributesMap)
+static std::vector<Assignment>
+importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
+                        std::unordered_map<std::size_t, Attributes> &attributesMap,
+                        const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
   std::vector<Assignment> assignments{};
 
@@ -741,15 +743,24 @@ static std::vector<Assignment> importCompiledMetatiles(PtContext &ctx, std::ifst
     assignment.attributes.encounterType = attributesMap.at(metatileIndex).encounterType;
     assignment.attributes.terrainType = attributesMap.at(metatileIndex).terrainType;
 
+    std::string behaviorString = std::to_string(assignment.attributes.metatileBehavior);
+    if (behaviorReverseMap.contains(assignment.attributes.metatileBehavior)) {
+      behaviorString = behaviorReverseMap.at(assignment.attributes.metatileBehavior);
+    }
+
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      // TODO : impl log here for FIRERED mode
-      pt_logln(ctx, stderr, "with Attributes[]");
+      pt_logln(ctx, stderr,
+               "found Assignment[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}, "
+               "terrainType: {}, encounterType: {}]]",
+               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex, behaviorString,
+               layerTypeString(assignment.attributes.layerType), terrainTypeString(assignment.attributes.terrainType),
+               encounterTypeString(assignment.attributes.encounterType));
     }
     else {
       pt_logln(ctx, stderr,
                "found Assignment[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}]]",
-               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex,
-               assignment.attributes.metatileBehavior, layerTypeString(assignment.attributes.layerType));
+               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex, behaviorString,
+               layerTypeString(assignment.attributes.layerType));
     }
 
     assignments.push_back(assignment);
@@ -870,6 +881,7 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+                      const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
@@ -879,7 +891,7 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
   tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
-  tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap);
+  tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap, behaviorReverseMap);
   tileset.anims = importCompiledAnimations(ctx, compiledAnims);
 
   /*
@@ -1408,9 +1420,9 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
     paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
   // TODO : actually test anims import
-  auto [importedTileset, attributesMap] =
-      porytiles::importCompiledTileset(decompileCtx, metatiles, attributes, tilesheetPng, paletteFiles,
-                                       std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
+  auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
+      decompileCtx, metatiles, attributes, std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
+      std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
   metatiles.close();
   attributes.close();
   std::for_each(paletteFiles.begin(), paletteFiles.end(),
