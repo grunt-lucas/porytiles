@@ -156,7 +156,7 @@ LayerType layerTypeFromInt(std::uint8_t layerInt)
     internalerror("types::layerTypeValue unknown LayerType int " + std::to_string(layerInt));
   }
   // unreachable, here for compiler
-  throw std::runtime_error("types::layerTypeValue reached unreachable code path");
+  throw std::runtime_error("types::layerTypeFromInt reached unreachable code path");
 }
 
 std::uint8_t encounterTypeValue(EncounterType encounterType)
@@ -203,6 +203,22 @@ EncounterType stringToEncounterType(std::string string)
     return EncounterType::WATER;
   }
   throw std::invalid_argument{"invalid EnounterType string"};
+}
+
+EncounterType encounterTypeFromInt(std::uint8_t encounterInt)
+{
+  switch (encounterInt) {
+  case 0:
+    return EncounterType::NONE;
+  case 1:
+    return EncounterType::LAND;
+  case 2:
+    return EncounterType::WATER;
+  default:
+    internalerror("types::encounterTypeFromInt unknown EncounterType int " + std::to_string(encounterInt));
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::encounterTypeFromInt reached unreachable code path");
 }
 
 std::uint8_t terrainTypeValue(TerrainType terrainType)
@@ -257,6 +273,24 @@ TerrainType stringToTerrainType(std::string string)
   }
 
   throw std::invalid_argument{"invalid TerrainType string"};
+}
+
+TerrainType terrainTypeFromInt(std::uint8_t terrainInt)
+{
+  switch (terrainInt) {
+  case 0:
+    return TerrainType::NORMAL;
+  case 1:
+    return TerrainType::GRASS;
+  case 2:
+    return TerrainType::WATER;
+  case 3:
+    return TerrainType::WATERFALL;
+  default:
+    internalerror("types::terrainTypeFromInt unknown TerrainType int " + std::to_string(terrainInt));
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::terrainTypeFromInt reached unreachable code path");
 }
 
 std::string targetBaseGameString(TargetBaseGame game)

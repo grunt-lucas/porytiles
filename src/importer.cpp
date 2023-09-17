@@ -795,13 +795,15 @@ importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttribut
   for (std::size_t metatileIndex = 0; metatileIndex < metatileCount; metatileIndex++) {
     Attributes attributes{};
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      // std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
-      // std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
-      // std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
-      // std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
-      // std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
-      // TODO : implement FIRERED case
-      throw std::runtime_error{"TODO : implement FIRERED case"};
+      std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
+      std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
+      std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
+      std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
+      std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
+      attributes.metatileBehavior = attribute & 0x000001FF;
+      attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
+      attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
+      attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
     }
     else {
       std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * 2));
@@ -1390,7 +1392,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
   }
 }
 
-TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tileset correctly")
+TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tileset correctly")
 {
   porytiles::PtContext compileCtx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
@@ -1455,4 +1457,9 @@ TEST_CASE("importCompiledTileset should import a triple layer pokeemerald tilese
   // TODO : test impl check attributes map
 
   std::filesystem::remove_all(parentDir);
+}
+
+TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly")
+{
+  // TODO : test impl importCompiledTileset should import a dual-layer pokefirered tileset correctly
 }

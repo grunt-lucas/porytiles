@@ -346,6 +346,8 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
       ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
       break;
 
+    // TODO : decompile should have fieldmap override for numTiles, since that affects the offsets in metatiles.bin
+
     // Help message upon '-h/--help' goes to stdout
     case HELP_VAL:
       fmt::println("{}", DECOMPILE_HELP);
