@@ -311,9 +311,6 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
             else if (subtileIndex >= 4 && subtileIndex < 8) {
               middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
             }
-            // top[pixelRow][pixelCol] = {
-            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
-            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
           }
           else if (attributesMap.at(metatileIndex).layerType == LayerType::NORMAL) {
             if (subtileIndex >= 0 && subtileIndex < 4) {
@@ -322,9 +319,6 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
             else if (subtileIndex >= 4 && subtileIndex < 8) {
               top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
             }
-            // bottom[pixelRow][pixelCol] = {
-            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
-            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
           }
           else if (attributesMap.at(metatileIndex).layerType == LayerType::SPLIT) {
             if (subtileIndex >= 0 && subtileIndex < 4) {
@@ -333,9 +327,6 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
             else if (subtileIndex >= 4 && subtileIndex < 8) {
               top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
             }
-            // middle[pixelRow][pixelCol] = {
-            //     ctx.compilerConfig.transparencyColor.red, ctx.compilerConfig.transparencyColor.green,
-            //     ctx.compilerConfig.transparencyColor.blue, ctx.compilerConfig.transparencyColor.alpha};
           }
           else {
             internalerror("emitter::emitDecompiled invalid layer type for dual-layer emit");
