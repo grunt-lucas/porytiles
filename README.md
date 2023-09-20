@@ -63,12 +63,12 @@ Once you've cloned and built Porytiles, try the following little demo.
 
 Dual layer:
 ```
-./release/bin/porytiles compile-primary -dual-layer -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1
+./release/bin/porytiles compile-primary -Wall -dual-layer -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1 res/examples/metatile_behaviors.h
 ```
 
 Triple layer:
 ```
-./release/bin/porytiles compile-primary -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1
+./release/bin/porytiles compile-primary -Wall -o <path/to/project>/data/tilesets/primary/porytiles_primary_test res/examples/simple_primary_1 res/examples/metatile_behaviors.h
 ```
 
 5. In Porymap, select `File -> Reload Project`.
@@ -87,11 +87,11 @@ Triple layer:
 
 Triple layer:
 ```
-./release/bin/porytiles compile-secondary -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1
+./release/bin/porytiles compile-secondary -Wall -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1 res/examples/metatile_behaviors.h
 ```
 Dual layer:
 ```
-./release/bin/porytiles compile-secondary -dual-layer -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1
+./release/bin/porytiles compile-secondary -Wall -dual-layer -o <path/to/project>/data/tilesets/secondary/porytiles_secondary_test res/examples/simple_secondary_1 res/examples/simple_primary_1 res/examples/metatile_behaviors.h
 ```
 
 12. In Porymap, select `File -> Reload Project`.
