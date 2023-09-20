@@ -171,8 +171,6 @@ void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath,
   if (err.printErrors) {
     pt_err("{}: on line {}: unknown metatile behavior '{}'", filePath, line,
            fmt::styled(behavior, fmt::emphasis::bold));
-    pt_note("you can import additional recognized behaviors by creating a symbolic link in");
-    pt_println(stderr, "      the source folder to `include/constants/metatile_behaviors.h'");
     pt_println(stderr, "");
   }
 }

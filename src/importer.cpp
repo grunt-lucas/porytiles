@@ -516,9 +516,6 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
     Attributes attribute{};
     attribute.baseGame = ctx.targetBaseGame;
-    /*
-     * TODO : instead of erroring, warn and input anyway, we want to support case where user did not provide a behavior
-     */
     if (behaviorMap.contains(behavior)) {
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }
