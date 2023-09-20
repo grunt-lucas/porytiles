@@ -335,6 +335,7 @@ struct GBAPalette {
  * A tile assignment, i.e. the representation of a tile within a metatile. Maps a given tile index to a hardware palette
  * index and the corresponding flips.
  */
+// TODO : refactor name of this variable to MetatileEntry
 struct Assignment {
   std::size_t tileIndex;
   std::size_t paletteIndex;

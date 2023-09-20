@@ -15,25 +15,27 @@
   + https://github.com/GreycLab/CImg
 
 + `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
+  + get secondary tileset decompilation working
+  + get anim decompilation working
+    + will require key frame detection / key frame hints at CLI
 
 + attributes / behavior changes
   + allow user to specify default behavior value using CLI option `-default-behavior`
-    + this option takes either an int or a string defined in the behavior header
-  + optionally supply behavior header at CLI, otherwise try reading from input folder, otherwise warn user
+    + this option takes a string defined in the behavior header
+  + mandatory supplied behavior header at CLI
 
 + More assign algorithms?
   + Maybe some kind of A*?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
-  + --discover-assign-settings option
-    + this option will
-      + 1. warn users that this will be a slow process
-      + 2. try lots of different settings until it finds one that works
-      + 3. print out what it did, so next time the user can manually fill in the config settings that worked
+  + Assignment config discovery
+    + default behavior: look for assign.cfg in the input folder, use those settings
+    + if assign.cfg does not exist, warn the user and run the full assignment param search matrix
+    + user can supply --save-assign-config option to force porytiles to search for a valid assign param and save it to input folder
   + we will also need a way to specify config params for the paired primary set when compiling in secondary mode
     + it is possible (and quite likely) that you will have cases where the primary set needs different params
-    + consider a config file in the input folder?
+    + there should be primary versions of the options: --primary-assign-algo=<ALGO>, etc
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
@@ -43,17 +45,6 @@
   + dump pal files and tile.png to CLI, see e.g.:
     + https://github.com/eddieantonio/imgcat
     + https://github.com/stefanhaustein/TerminalImageViewer
-
-+ `dump-anim-code` command
-  + takes input tiles just like `compile-X` commands
-  + instead of outputting all the files, just write C code to the console
-  + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
-  + is it possible to generate the code and insert it automatically?
-
-+ `freestanding` mode for compilation
-  + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
-  + might be useful for some people who drew a scene they want to tile-ize
-  + low-priority feature
 
 + Warnings
   + `-Wpalette-alloc-efficiency`
@@ -66,11 +57,8 @@
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
 
-+ Refactor CLI parsing
-  + many commands share the same set of options, or slight variations
-
-+ Options changes
-  + `-manage-metatiles-with-porymap` skips generation of `metatiles.bin` and `metatile_attributes.bin`
++ Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
+  + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
 
 + Set up more CI builds
   + Windows MSVC? MinGW?
@@ -90,12 +78,27 @@
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
++ `-manage-metatiles-with-porymap` skips generation of `metatiles.bin`
+
++ `-manage-attributes-with-porymap` skips generation of `metatile_attributes.bin`
+
++ `dump-anim-code` command
+  + takes input tiles just like `compile-X` commands
+  + instead of outputting all the files, just write C code to the console
+  + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
+  + is it possible to generate the code and insert it automatically?
+
++ Refactor CLI parsing
+  + many commands share the same set of options, or slight variations
+
++ `freestanding` mode for compilation
+  + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
+  + might be useful for some people who drew a scene they want to tile-ize
+  + low-priority feature
+
 + Set up auto-generated documentation: doxygen? RTD?
 
 + support custom masks and shifts for metatile attributes, see how Porymap does this
-
-+ Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
-  + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
   + https://github.com/tfussell/miniz-cpp
