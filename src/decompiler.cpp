@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <doctest.h>
+#include <filesystem>
 #include <memory>
 
 #include "compiler.h"
