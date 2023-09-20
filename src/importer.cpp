@@ -1403,6 +1403,8 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
+  REQUIRE(std::filesystem::exists("res/tests/metatile_behaviors.h"));
+  compileCtx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   porytiles::drive(compileCtx);
 
   porytiles::PtContext decompileCtx{};

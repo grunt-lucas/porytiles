@@ -602,13 +602,13 @@ static void driveCompile(PtContext &ctx)
   // TODO : this should handle either reading the header from the source folder, or reading it from the CLI
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
-  if (std::filesystem::exists(ctx.compilerSrcPaths.primaryMetatileBehaviors())) {
-    auto [map, reverse] = importBehaviorsHeader(ctx, ctx.compilerSrcPaths.primaryMetatileBehaviors());
+  if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
+    auto [map, reverse] = importBehaviorsHeader(ctx, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
   else {
-    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.compilerSrcPaths.primaryMetatileBehaviors());
+    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.compilerSrcPaths.metatileBehaviors);
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
@@ -733,6 +733,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
+  REQUIRE(std::filesystem::exists("res/tests/metatile_behaviors.h"));
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
 
   porytiles::drive(ctx);
 
@@ -948,6 +950,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary"));
   ctx.compilerSrcPaths.secondarySourcePath = "res/tests/anim_metatiles_2/secondary";
+  REQUIRE(std::filesystem::exists("res/tests/metatile_behaviors.h"));
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
 
   porytiles::drive(ctx);
 

@@ -744,12 +744,6 @@ struct CompilerSourcePaths {
     return path / "attributes.csv";
   }
 
-  std::filesystem::path primaryMetatileBehaviors() const
-  {
-    std::filesystem::path path{primarySourcePath};
-    return path / "metatile_behaviors.h";
-  }
-
   std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
 };
 

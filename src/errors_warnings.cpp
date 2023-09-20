@@ -528,6 +528,7 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
 
 void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath)
 {
+  // FIXME : this should be a fatal error if behavior file does not exist
   printWarning(err, err.missingAttributesCsv, WARN_MISSING_BEHAVIORS_HEADER,
                fmt::format("{}: expected behaviors header did not exist", filePath));
   if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
@@ -1115,6 +1116,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1133,6 +1135,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
     ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1152,6 +1155,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1168,6 +1172,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
     ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1184,6 +1189,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerConfig.tripleLayer = false;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1201,6 +1207,7 @@ TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger corre
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
       "res/tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.transparencyCollapse = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;

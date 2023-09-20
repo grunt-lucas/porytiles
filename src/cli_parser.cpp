@@ -406,8 +406,8 @@ static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
 const std::vector<std::string> COMPILE_SHORTS = {};
 const std::string COMPILE_HELP =
 "USAGE\n"
-"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH\n"
-"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH\n"
+"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
 "\n"
 "Compile the tile assets in a given source folder into a Porymap-ready tileset.\n"
 "\n"
@@ -422,6 +422,10 @@ const std::string COMPILE_HELP =
 "        Path to a directory containing the source data for a secondary set's partner primary set.\n"
 "        This partner primary set must be a Porytiles-managed tileset.\n"
 "\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
+"\n"
 "    Source Directory Format\n"
 "        The source directory must conform to the following format. '[]' indicate optional assets.\n"
 "            src/\n"
@@ -429,7 +433,6 @@ const std::string COMPILE_HELP =
 "                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                [attributes.csv]         # missing metatile entries will receive default values\n"
-"                [metatile_behaviors.h]   # primary sets only, consider symlinking to project metatile_attributes.h\n"
 "                [anims/]                 # 'anims' folder is optional\n"
 "                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
 "                        key.png          # you must specify a key frame PNG for each anim\n"
@@ -801,16 +804,18 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   /*
    * Die immediately if arguments are invalid, otherwise pack them into the context variable
    */
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror(ctx.err, "must specify SECONDARY-PATH and PRIMARY-PATH args, see `porytiles compile-secondary --help'");
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 3) {
+    fatalerror(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles "
+                        "compile-secondary --help'");
   }
-  else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 1) {
-    fatalerror(ctx.err, "must specify PRIMARY-PATH arg, see `porytiles compile-primary --help'");
+  else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
+    fatalerror(ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     ctx.compilerSrcPaths.secondarySourcePath = argv[optind++];
   }
   ctx.compilerSrcPaths.primarySourcePath = argv[optind++];
+  ctx.compilerSrcPaths.metatileBehaviors = argv[optind++];
 
   /*
    * Configure warnings and errors per user specification
@@ -1029,8 +1034,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufPath};
-    porytiles::parseCompile(ctx, 2, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 3, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
@@ -1056,8 +1064,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufWall, bufPath};
-    porytiles::parseCompile(ctx, 3, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufWall, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 4, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
@@ -1086,8 +1097,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath};
-    porytiles::parseCompile(ctx, 4, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::ERR);
@@ -1119,8 +1133,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath};
-    porytiles::parseCompile(ctx, 5, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 6, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
@@ -1152,8 +1169,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufNoMissingBehaviorsHeader, bufPath};
-    porytiles::parseCompile(ctx, 5, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufNoMissingBehaviorsHeader, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 6, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
@@ -1182,8 +1202,11 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
-    char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath};
-    porytiles::parseCompile(ctx, 4, argv);
+    char bufHeader[64];
+    strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
+
+    char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath, bufHeader};
+    porytiles::parseCompile(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
