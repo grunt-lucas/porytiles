@@ -22,7 +22,6 @@
 + attributes / behavior changes
   + allow user to specify default behavior value using CLI option `-default-behavior`
     + this option takes a string defined in the behavior header
-  + mandatory supplied behavior header at CLI
 
 + More assign algorithms?
   + Maybe some kind of A*?
