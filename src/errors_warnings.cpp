@@ -640,6 +640,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -654,6 +655,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -669,6 +671,7 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_invalidAlphaValue";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -683,6 +686,7 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -698,6 +702,7 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -803,6 +808,7 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -817,6 +823,7 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/simple_metatiles_1";
   ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -833,6 +840,7 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -848,6 +856,7 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -863,6 +872,7 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -878,6 +888,7 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -894,6 +905,7 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -908,6 +920,7 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -923,6 +936,7 @@ TEST_CASE(
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -940,6 +954,7 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
       "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
   ctx.compilerSrcPaths.secondarySourcePath =
       "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
@@ -1032,6 +1047,7 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
+  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   ctx.err.colorPrecisionLoss = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
   ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1050,6 +1066,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
@@ -1069,6 +1086,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
     ctx.compilerSrcPaths.secondarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
     ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;

@@ -593,7 +593,7 @@ static void driveCompile(PtContext &ctx)
   validateCompileInputs(ctx);
 
   /*
-   * Import behavior header, if it was supplied.
+   * Import behavior header. If the supplied path does not point to a valid file, bail now.
    *
    * We only read the linked behavior header file from the primary set source. It never makes sense for the secondary
    * set to have a different behavior map than the paired primary, so the user does not need to specify this header in
@@ -608,7 +608,8 @@ static void driveCompile(PtContext &ctx)
     behaviorReverseMap = reverse;
   }
   else {
-    warn_behaviorsHeaderNotSpecified(ctx.err, ctx.compilerSrcPaths.metatileBehaviors);
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("{}: supplied behaviors header did not exist", ctx.compilerSrcPaths.metatileBehaviors));
   }
 
   std::unique_ptr<CompiledTileset> compiledTiles;
