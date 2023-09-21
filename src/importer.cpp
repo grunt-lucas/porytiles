@@ -828,13 +828,6 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
     for (const auto &animPng : rawAnim) {
       CompiledAnimFrame animFrame{animPng.frameName};
 
-      if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                   fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
-                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
-                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
-                               fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
-      }
       if (animPng.png.get_width() % TILE_SIDE_LENGTH != 0) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                    fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
@@ -842,22 +835,29 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
+      if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
+                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
+                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
+                               fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
+      }
 
       frameWidths.insert(animPng.png.get_width());
       frameHeights.insert(animPng.png.get_height());
       if (frameWidths.size() != 1) {
-        // TODO : fill in real error
-        throw std::runtime_error{"TODO : frameWidths.size() != 1"};
-        // fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        //                                                     frame.animName, frame.frameName, "width",
-        //                                                     frame.png.get_width());
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("anim '{}' frame '{}' width '{}' differed from previous frame width",
+                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
+                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
+                               fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
       if (frameHeights.size() != 1) {
-        // TODO : fill in real error
-        throw std::runtime_error{"TODO : frameHeights.size() != 1"};
-        // fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        //                                                     frame.animName, frame.frameName, "height",
-        //                                                     frame.png.get_height());
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("anim '{}' frame '{}' height '{}' differed from previous frame height",
+                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
+                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
+                               fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
       }
 
       std::size_t pngWidthInTiles = animPng.png.get_width() / TILE_SIDE_LENGTH;
