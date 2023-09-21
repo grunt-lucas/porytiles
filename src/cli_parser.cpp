@@ -23,8 +23,7 @@ namespace porytiles {
 
 static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv);
 static void parseSubcommand(PtContext &ctx, int argc, char *const *argv);
-static void parseDecompile(PtContext &ctx, int argc, char *const *argv);
-static void parseCompile(PtContext &ctx, int argc, char *const *argv);
+static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv);
 
 void parseOptions(PtContext &ctx, int argc, char *const *argv)
 {
@@ -33,14 +32,14 @@ void parseOptions(PtContext &ctx, int argc, char *const *argv)
 
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
-    parseDecompile(ctx, argc, argv);
+    parseSubcommandOptions(ctx, argc, argv);
     break;
   case Subcommand::DECOMPILE_SECONDARY:
     throw std::runtime_error{"FEATURE : support decompile-secondary command"};
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
-    parseCompile(ctx, argc, argv);
+    parseSubcommandOptions(ctx, argc, argv);
     break;
   default:
     internalerror("cli_parser::parseOptions unknown subcommand setting");
@@ -148,10 +147,6 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
   throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
 }
 
-// --------------------------------
-// |    GLOBAL OPTION PARSING     |
-// --------------------------------
-
 // @formatter:off
 // clang-format off
 const std::vector<std::string> GLOBAL_SHORTS = {};
@@ -238,10 +233,6 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
   }
 }
 
-// ----------------------------
-// |    SUBCOMMAND PARSING    |
-// ----------------------------
-
 const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
 const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
@@ -270,157 +261,39 @@ static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
   }
 }
 
-// ------------------------------
-// |    DECOMPILE-X COMMANDS    |
-// ------------------------------
-// @formatter:off
-// clang-format off
-const std::vector<std::string> DECOMPILE_SHORTS = {};
-const std::string DECOMPILE_HELP =
-"USAGE\n"
-"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH BEHAVIORS-HEADER\n"
-"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
-"\n"
-"Decompile a tileset into its constituent RGBA layer PNGs, RGB anim frames, and attributes.csv.\n"
-"\n"
-"ARGS\n"
-"    <PRIMARY-PATH>\n"
-"        Path to a directory containing a compiled primary tileset.\n"
-"\n"
-"    <SECONDARY-PATH>\n"
-"        Path to a directory containing a compiled secondary tileset.\n"
-"\n"
-"    <PARTNER-PRIMARY-PATH>\n"
-"        Path to a directory containing a compiled secondary tileset's compiled partner primary\n"
-"        set.\n"
-"\n"
-"    <BEHAVIORS-HEADER>\n"
-"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
-"        project's `include/constants' folder.\n"
-"\n"
-"OPTIONS\n" +
-"    For more detailed information about the options below, check out the options pages here:\n" +
-"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
-"\n" +
-"    Driver Options\n" +
-OUTPUT_DESC + "\n" +
-"    Tileset Decompilation Options\n" +
-TARGET_BASE_GAME_DESC + "\n";
-// @formatter:on
-// clang-format on
-
-static void parseDecompile(PtContext &ctx, int argc, char *const *argv)
-{
-  std::ostringstream implodedShorts;
-  std::copy(DECOMPILE_SHORTS.begin(), DECOMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
-  // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
-  std::string shortOptions = "+" + implodedShorts.str();
-  struct option longOptions[] = {// Driver options
-                                 {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
-                                 {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
-
-                                 // Tileset decompilation options
-                                 {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
-
-                                 // Help
-                                 {HELP.c_str(), no_argument, nullptr, HELP_VAL},
-                                 {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
-
-                                 {nullptr, no_argument, nullptr, 0}};
-
-  while (true) {
-    const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
-
-    if (opt == -1)
-      break;
-
-    switch (opt) {
-
-    // Driver options
-    case OUTPUT_VAL:
-      ctx.output.path = optarg;
-      break;
-
-    // Tileset decompilation options
-    case TARGET_BASE_GAME_VAL:
-      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
-      break;
-
-    // TODO : decompile should have fieldmap override for numTiles, since that affects the offsets in metatiles.bin
-
-    // Help message upon '-h/--help' goes to stdout
-    case HELP_VAL:
-      fmt::println("{}", DECOMPILE_HELP);
-      exit(0);
-    // Help message on invalid or unknown options goes to stderr and gives error code
-    case '?':
-    default:
-      // FIXME : show correct subcommand here
-      fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PROGRAM_NAME);
-      exit(2);
-    }
-  }
-
-  /*
-   * Die immediately if arguments are invalid, otherwise pack them into the context variable
-   */
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 3) {
-    fatalerror(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
-                        "`porytiles decompile-secondary --help'");
-  }
-  else if (ctx.subcommand != Subcommand::DECOMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror(ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
-  }
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    ctx.decompilerSrcPaths.secondarySourcePath = argv[optind++];
-  }
-  ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
-  ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
-
-  /*
-   * Apply the target base game
-   */
-  if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
-    ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
-  }
-  else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-    ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
-  }
-  else if (ctx.targetBaseGame == TargetBaseGame::RUBY) {
-    ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
-  }
-
-  /*
-   * Die if any errors occurred
-   */
-  if (ctx.err.errCount > 0) {
-    die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
-  }
-}
-
-// ----------------------------
-// |    COMPILE-X COMMANDS    |
-// ----------------------------
 // @formatter:off
 // clang-format off
 const std::vector<std::string> COMPILE_SHORTS = {};
 const std::string COMPILE_HELP =
 "USAGE\n"
-"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] PRIMARY-PATH BEHAVIORS-HEADER\n"
-"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SECONDARY-PATH PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] SRC-PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SRC-SECONDARY-PATH SRC-PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] BIN-PRIMARY-PATH BEHAVIORS-HEADER\n"
+"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] BIN-SECONDARY-PATH BIN-PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
 "\n"
-"Compile the tile assets in a given source folder into a Porymap-ready tileset.\n"
+"Compile the tile assets in a given source folder into a Porymap-ready tileset. Decompile a tileset into its\n"
+"constituent RGBA layer PNGs, RGB anim frames, and attributes.csv.\n"
 "\n"
 "ARGS\n"
-"    <PRIMARY-PATH>\n"
+"    <SRC-PRIMARY-PATH>\n"
 "        Path to a directory containing the source data for a primary set.\n"
 "\n"
-"    <SECONDARY-PATH>\n"
+"    <SRC-SECONDARY-PATH>\n"
 "        Path to a directory containing the source data for a secondary set.\n"
 "\n"
-"    <PARTNER-PRIMARY-PATH>\n"
+"    <SRC-PARTNER-PRIMARY-PATH>\n"
 "        Path to a directory containing the source data for a secondary set's partner primary set.\n"
 "        This partner primary set must be a Porytiles-managed tileset.\n"
+"\n"
+"    <BIN-PRIMARY-PATH>\n"
+"        Path to a directory containing a compiled primary tileset.\n"
+"\n"
+"    <BIN-SECONDARY-PATH>\n"
+"        Path to a directory containing a compiled secondary tileset.\n"
+"\n"
+"    <BIN-PARTNER-PRIMARY-PATH>\n"
+"        Path to a directory containing a compiled secondary tileset's compiled partner primary\n"
+"        set.\n"
 "\n"
 "    <BEHAVIORS-HEADER>\n"
 "        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
@@ -433,9 +306,25 @@ const std::string COMPILE_HELP =
 "                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                [attributes.csv]         # missing metatile entries will receive default values\n"
-"                [anims/]                 # 'anims' folder is optional\n"
+"                [anim/]                  # 'anim' folder is optional\n"
 "                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
 "                        key.png          # you must specify a key frame PNG for each anim\n"
+"                        00.png           # you must specify at least one animation frame for each anim\n"
+"                        [01.png]         # frames must be named numerically, in order\n"
+"                        ...              # you may specify an arbitrary number of additional frames\n"
+"                    ...                  # you may specify an arbitrary number of additional animations\n"
+"\n"
+"    Compiled Directory Format\n"
+"        The compiled directory must conform to the following format. '[]' indicate optional assets.\n"
+"            bin/\n"
+"                metatile_attributes.bin  # \n"
+"                metatiles.bin            # \n"
+"                tiles.png                # \n"
+"                palettes                 # \n"
+"                    00.pal               # \n"
+"                    ...                  # \n"
+"                [anim/]                  # 'anim' folder is optional\n"
+"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
 "                        00.png           # you must specify at least one animation frame for each anim\n"
 "                        [01.png]         # frames must be named numerically, in order\n"
 "                        ...              # you may specify an arbitrary number of additional frames\n"
@@ -448,7 +337,7 @@ const std::string COMPILE_HELP =
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
-"    Tileset Generation Options\n" +
+"    Tileset (De)compilation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 TRANSPARENCY_COLOR_DESC + "\n" +
@@ -478,7 +367,7 @@ WERROR_DESC + "\n";
 /*
  * FIXME : the warning parsing system here is a dumpster fire
  */
-static void parseCompile(PtContext &ctx, int argc, char *const *argv)
+static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -795,8 +684,22 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
     // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      // FIXME : show correct subcommand here
-      fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PROGRAM_NAME);
+      if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+        fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PROGRAM_NAME);
+      }
+      else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        fmt::println(stderr, "Try `{} compile-secondary --help' for usage information.", PROGRAM_NAME);
+      }
+      else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+        fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PROGRAM_NAME);
+      }
+      else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+        fmt::println(stderr, "Try `{} decompile-secondary --help' for usage information.", PROGRAM_NAME);
+      }
+      else {
+        internalerror(
+            fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
+      }
       exit(2);
     }
   }
@@ -804,18 +707,55 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
   /*
    * Die immediately if arguments are invalid, otherwise pack them into the context variable
    */
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && (argc - optind) != 3) {
-    fatalerror(ctx.err, "must specify SECONDARY-PATH, PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles "
-                        "compile-secondary --help'");
+  if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+    if ((argc - optind) != 2) {
+      fatalerror(ctx.err,
+                 "must specify SRC-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
+    }
   }
-  else if (ctx.subcommand != Subcommand::COMPILE_SECONDARY && (argc - optind) != 2) {
-    fatalerror(ctx.err, "must specify PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
+  else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    if ((argc - optind) != 3) {
+      fatalerror(ctx.err,
+                 "must specify SRC-SECONDARY-PATH, SRC-PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles "
+                 "compile-secondary --help'");
+    }
   }
+  else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+    if ((argc - optind) != 2) {
+      fatalerror(ctx.err,
+                 "must specify BIN-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
+    }
+  }
+  else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    if ((argc - optind) != 3) {
+      fatalerror(ctx.err, "must specify BIN-SECONDARY-PATH, BIN-PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
+                          "`porytiles decompile-secondary --help'");
+    }
+  }
+  else {
+    internalerror(
+        fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
+  }
+
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     ctx.compilerSrcPaths.secondarySourcePath = argv[optind++];
   }
-  ctx.compilerSrcPaths.primarySourcePath = argv[optind++];
-  ctx.compilerSrcPaths.metatileBehaviors = argv[optind++];
+  else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    ctx.decompilerSrcPaths.secondarySourcePath = argv[optind++];
+  }
+
+  if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    ctx.compilerSrcPaths.primarySourcePath = argv[optind++];
+    ctx.compilerSrcPaths.metatileBehaviors = argv[optind++];
+  }
+  else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
+    ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
+  }
+  else {
+    internalerror(
+        fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
+  }
 
   /*
    * Configure warnings and errors per user specification
@@ -1012,7 +952,11 @@ static void parseCompile(PtContext &ctx, int argc, char *const *argv)
    * Die if any errors occurred
    */
   if (ctx.err.errCount > 0) {
-    die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
+    }
+    // TODO : when more commands are added, change this logic
+    die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
   }
 }
 
@@ -1038,7 +982,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 3, argv);
+    porytiles::parseSubcommandOptions(ctx, 3, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
@@ -1068,7 +1012,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufWall, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 4, argv);
+    porytiles::parseSubcommandOptions(ctx, 4, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
@@ -1101,7 +1045,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 5, argv);
+    porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::ERR);
@@ -1137,7 +1081,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 6, argv);
+    porytiles::parseSubcommandOptions(ctx, 6, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
@@ -1173,7 +1117,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufNoMissingBehaviorsHeader, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 6, argv);
+    porytiles::parseSubcommandOptions(ctx, 6, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
@@ -1206,7 +1150,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
     char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath, bufHeader};
-    porytiles::parseCompile(ctx, 5, argv);
+    porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
