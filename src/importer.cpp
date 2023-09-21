@@ -708,8 +708,8 @@ importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
    * there are 8 subtiles per metatile. 24 for triple layer, since there are 12 subtiles per metatile.
    */
   if (metatileDataBuf.size() % 16 != 0 && metatileDataBuf.size() % 24 != 0) {
-    // FIXME : need fatalerror to also work for decompile mode
-    throw std::runtime_error{"decompiler input metatiles.bin corrupted, not valid uint16 data"};
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+               "decompiler input metatiles.bin corrupted, not valid uint16 data");
   }
 
   bool tripleLayer = (metatileDataBuf.size() / 24 == attributesMap.size());
