@@ -829,15 +829,18 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
       CompiledAnimFrame animFrame{animPng.frameName};
 
       if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
-        // TODO : fill in real error
-        throw std::runtime_error{"TODO : frame.png.get_height() % TILE_SIDE_LENGTH != 0"};
-        // error_animDimensionNotDivisibleBy8(ctx.err, frame.animName, frame.frameName, "height",
-        // frame.png.get_height());
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
+                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
+                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
+                               fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
       }
       if (animPng.png.get_width() % TILE_SIDE_LENGTH != 0) {
-        // TODO : fill in real error
-        throw std::runtime_error{"TODO : frame.png.get_width() % TILE_SIDE_LENGTH != 0"};
-        // error_animDimensionNotDivisibleBy8(ctx.err, frame.animName, frame.frameName, "width", frame.png.get_width());
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
+                               fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
+                               fmt::styled(animFrame.frameName, fmt::emphasis::bold),
+                               fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
 
       frameWidths.insert(animPng.png.get_width());
