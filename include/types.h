@@ -718,18 +718,16 @@ struct CompilerSourcePaths {
     return path / "top.png";
   }
 
-  // FIXME : dir name should be 'anim' not 'anims'
-
   std::filesystem::path primaryAnims() const
   {
     std::filesystem::path path{primarySourcePath};
-    return path / "anims";
+    return path / "anim";
   }
 
   std::filesystem::path secondaryAnims() const
   {
     std::filesystem::path path{secondarySourcePath};
-    return path / "anims";
+    return path / "anim";
   }
 
   std::filesystem::path primaryAttributes() const

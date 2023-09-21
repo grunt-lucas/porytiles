@@ -277,7 +277,7 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
 
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
+    pt_logln(ctx, stderr, "path `{}' does not exist, skipping animations import", animationPath.string());
     return animations;
   }
   std::vector<std::filesystem::path> animationDirectories;
@@ -359,7 +359,7 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
 
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' does not exist, skipping anims import", animationPath.string());
+    pt_logln(ctx, stderr, "path `{}' does not exist, skipping animations import", animationPath.string());
     return animations;
   }
   std::vector<std::filesystem::path> animationDirectories;
@@ -679,7 +679,7 @@ static void driveCompile(PtContext &ctx)
    */
   std::filesystem::path outputPath(ctx.output.path);
   std::filesystem::path palettesDir("palettes");
-  std::filesystem::path animsDir("anims");
+  std::filesystem::path animsDir("anim");
   std::filesystem::path tilesPng("tiles.png");
   std::filesystem::path metatilesBin("metatiles.bin");
   std::filesystem::path attributesBin("metatile_attributes.bin");
@@ -845,20 +845,20 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   fclose(expected);
   fclose(actual);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/01.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/flower_white/02.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/water/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anims/water/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_white/02.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/water/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/water/01.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/02.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/water/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/water/01.png"));
 
   png::image<png::index_pixel> expected_flower_white_00{
-      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/00.png"};
-  png::image<png::index_pixel> actual_flower_white_00{parentDir / "anims/flower_white/00.png"};
+      "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"};
+  png::image<png::index_pixel> actual_flower_white_00{parentDir / "anim/flower_white/00.png"};
   expectedWidthInTiles = expected_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -873,8 +873,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
   png::image<png::index_pixel> expected_flower_white_01{
-      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/01.png"};
-  png::image<png::index_pixel> actual_flower_white_01{parentDir / "anims/flower_white/01.png"};
+      "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"};
+  png::image<png::index_pixel> actual_flower_white_01{parentDir / "anim/flower_white/01.png"};
   expectedWidthInTiles = expected_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -889,8 +889,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
   png::image<png::index_pixel> expected_flower_white_02{
-      "res/tests/anim_metatiles_2/primary/expected_anims/flower_white/02.png"};
-  png::image<png::index_pixel> actual_flower_white_02{parentDir / "anims/flower_white/02.png"};
+      "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"};
+  png::image<png::index_pixel> actual_flower_white_02{parentDir / "anim/flower_white/02.png"};
   expectedWidthInTiles = expected_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -904,8 +904,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
       CHECK(expected_flower_white_02[pixelRow][pixelCol] == actual_flower_white_02[pixelRow][pixelCol]);
     }
   }
-  png::image<png::index_pixel> expected_water_00{"res/tests/anim_metatiles_2/primary/expected_anims/water/00.png"};
-  png::image<png::index_pixel> actual_water_00{parentDir / "anims/water/00.png"};
+  png::image<png::index_pixel> expected_water_00{"res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"};
+  png::image<png::index_pixel> actual_water_00{parentDir / "anim/water/00.png"};
   expectedWidthInTiles = expected_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -919,8 +919,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
       CHECK(expected_water_00[pixelRow][pixelCol] == actual_water_00[pixelRow][pixelCol]);
     }
   }
-  png::image<png::index_pixel> expected_water_01{"res/tests/anim_metatiles_2/primary/expected_anims/water/01.png"};
-  png::image<png::index_pixel> actual_water_01{parentDir / "anims/water/01.png"};
+  png::image<png::index_pixel> expected_water_01{"res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"};
+  png::image<png::index_pixel> actual_water_01{parentDir / "anim/water/01.png"};
   expectedWidthInTiles = expected_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -1063,16 +1063,16 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   fclose(expected);
   fclose(actual);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/01.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/02.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anims/flower_red/02.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/00.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/01.png"));
+  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/02.png"));
 
   png::image<png::index_pixel> expected_flower_red_00{
-      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/00.png"};
-  png::image<png::index_pixel> actual_flower_red_00{parentDir / "anims/flower_red/00.png"};
+      "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"};
+  png::image<png::index_pixel> actual_flower_red_00{parentDir / "anim/flower_red/00.png"};
   expectedWidthInTiles = expected_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -1087,8 +1087,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     }
   }
   png::image<png::index_pixel> expected_flower_red_01{
-      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/01.png"};
-  png::image<png::index_pixel> actual_flower_red_01{parentDir / "anims/flower_red/01.png"};
+      "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"};
+  png::image<png::index_pixel> actual_flower_red_01{parentDir / "anim/flower_red/01.png"};
   expectedWidthInTiles = expected_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -1103,8 +1103,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     }
   }
   png::image<png::index_pixel> expected_flower_red_02{
-      "res/tests/anim_metatiles_2/secondary/expected_anims/flower_red/02.png"};
-  png::image<png::index_pixel> actual_flower_red_02{parentDir / "anims/flower_red/02.png"};
+      "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"};
+  png::image<png::index_pixel> actual_flower_red_02{parentDir / "anim/flower_red/02.png"};
   expectedWidthInTiles = expected_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;

@@ -26,7 +26,7 @@ For detailed documentation about Porytiles features and internal workings, pleas
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
 just like [Poryscript](https://github.com/huderlem/poryscript) takes a `.script` file and generates a corresponding `.inc`
 file as part of your build, Porytiles takes an source folder containing RGBA (or indexed) tile assets and generates a
-corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anims` folder, and a populated
+corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anim` folder, and a populated
 `palettes` folder -- all as part of your build!
 
 For more info, please see

@@ -1913,27 +1913,27 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/water"));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/0.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/1.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/2.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/2.png"}, "flower_white",
       "02.png"};
   porytiles::AnimationPng<png::rgba_pixel> waterKey{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/0.png"}, "water", "00.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/1.png"}, "water", "01.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2124,27 +2124,27 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anims/water"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/flower_white"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/water"));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/key.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/0.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/1.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/flower_white/2.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/2.png"}, "flower_white",
       "02.png"};
   porytiles::AnimationPng<png::rgba_pixel> waterKey{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/key.png"}, "water", "key.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/key.png"}, "water", "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> water00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/0.png"}, "water", "00.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> water01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anims/water/1.png"}, "water", "01.png"};
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2177,19 +2177,19 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anims/flower_red"));
+  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anim/flower_red"));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerRedKey{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/key.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anim/flower_red/key.png"}, "flower_white",
       "key.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed00{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/0.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anim/flower_red/0.png"}, "flower_white",
       "00.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed01{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/1.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anim/flower_red/1.png"}, "flower_white",
       "01.png"};
   porytiles::AnimationPng<png::rgba_pixel> flowerRed02{
-      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anims/flower_red/2.png"}, "flower_white",
+      png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anim/flower_red/2.png"}, "flower_white",
       "02.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerRedAnim{};
