@@ -25,7 +25,6 @@ const char *const WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment"
 const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-const char *const WARN_MISSING_BEHAVIORS_HEADER = "missing-behaviors-header";
 const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
 const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 
@@ -520,17 +519,6 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath)
                fmt::format("{}: attributes file did not exist", filePath));
   if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
     pt_note("all attributes will receive default or inferred values");
-    pt_println(stderr, "");
-  }
-}
-
-void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath)
-{
-  // FIXME : this should be a fatal error if behavior file does not exist
-  printWarning(err, err.missingAttributesCsv, WARN_MISSING_BEHAVIORS_HEADER,
-               fmt::format("{}: expected behaviors header did not exist", filePath));
-  if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
-    pt_note("a behaviors header is required in order to parse behavior names in the attributes csv");
     pt_println(stderr, "");
   }
 }

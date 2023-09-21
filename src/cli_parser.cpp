@@ -415,8 +415,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {WNO_ATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL},
       {WMISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WMISSING_ATTRIBUTES_CSV_VAL},
       {WNO_MISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WNO_MISSING_ATTRIBUTES_CSV_VAL},
-      {WMISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WMISSING_BEHAVIORS_HEADER_VAL},
-      {WNO_MISSING_BEHAVIORS_HEADER.c_str(), no_argument, nullptr, WNO_MISSING_BEHAVIORS_HEADER_VAL},
       {WUNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WUNUSED_ATTRIBUTE_VAL},
       {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
       {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
@@ -451,9 +449,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 
   std::optional<bool> warnMissingAttributesCsvOverride{};
   std::optional<bool> errMissingAttributesCsvOverride{};
-
-  std::optional<bool> warnMissingBehaviorsHeaderOverride{};
-  std::optional<bool> errMissingBehaviorsHeaderOverride{};
 
   std::optional<bool> warnUnusedAttributeOverride{};
   std::optional<bool> errUnusedAttributeOverride{};
@@ -579,9 +574,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
           errMissingAttributesCsvOverride = true;
         }
-        else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
-          errMissingBehaviorsHeaderOverride = true;
-        }
         else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
           errUnusedAttributeOverride = true;
         }
@@ -610,9 +602,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
         errMissingAttributesCsvOverride = false;
-      }
-      else if (strcmp(optarg, WARN_MISSING_BEHAVIORS_HEADER) == 0) {
-        errMissingBehaviorsHeaderOverride = false;
       }
       else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
         errUnusedAttributeOverride = false;
@@ -657,12 +646,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_MISSING_ATTRIBUTES_CSV_VAL:
       warnMissingAttributesCsvOverride = false;
-      break;
-    case WMISSING_BEHAVIORS_HEADER_VAL:
-      warnMissingBehaviorsHeaderOverride = true;
-      break;
-    case WNO_MISSING_BEHAVIORS_HEADER_VAL:
-      warnMissingBehaviorsHeaderOverride = false;
       break;
     case WUNUSED_ATTRIBUTE_VAL:
       warnUnusedAttributeOverride = true;
@@ -784,9 +767,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   if (warnMissingAttributesCsvOverride.has_value()) {
     ctx.err.missingAttributesCsv = warnMissingAttributesCsvOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
-  if (warnMissingBehaviorsHeaderOverride.has_value()) {
-    ctx.err.missingBehaviorsHeader = warnMissingBehaviorsHeaderOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-  }
   if (warnUnusedAttributeOverride.has_value()) {
     ctx.err.unusedAttribute = warnUnusedAttributeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
@@ -859,18 +839,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.missingAttributesCsv = WarningMode::OFF;
-    }
-  }
-  if (errMissingBehaviorsHeaderOverride.has_value()) {
-    if (errMissingBehaviorsHeaderOverride.value()) {
-      ctx.err.missingBehaviorsHeader = WarningMode::ERR;
-    }
-    else if ((warnMissingBehaviorsHeaderOverride.has_value() && warnMissingBehaviorsHeaderOverride.value()) ||
-             enableAllWarnings) {
-      ctx.err.missingBehaviorsHeader = WarningMode::WARN;
-    }
-    else {
-      ctx.err.missingBehaviorsHeader = WarningMode::OFF;
     }
   }
   if (errUnusedAttributeOverride.has_value()) {
@@ -989,7 +957,6 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 
   SUBCASE("-Wall should enable everything")
@@ -1019,7 +986,6 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::WARN);
   }
 
   SUBCASE("-Wall -Werror should enable everything as an error")
@@ -1052,7 +1018,6 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::ERR);
   }
 
   SUBCASE("Should enable a non-default warn, set all to error, then disable the error")
@@ -1088,10 +1053,9 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 
-  SUBCASE("Should enable all warnings, then disable two of them")
+  SUBCASE("Should enable all warnings, then disable one of them")
   {
     porytiles::PtContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -1107,24 +1071,20 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     char bufNoColorPrecisionLoss[64];
     strcpy(bufNoColorPrecisionLoss, "-Wno-color-precision-loss");
 
-    char bufNoMissingBehaviorsHeader[64];
-    strcpy(bufNoMissingBehaviorsHeader, "-Wno-missing-behaviors-header");
-
     char bufPath[64];
     strcpy(bufPath, "/home/foo/pokeemerald");
 
     char bufHeader[64];
     strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
-    char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufNoMissingBehaviorsHeader, bufPath, bufHeader};
-    porytiles::parseSubcommandOptions(ctx, 6, argv);
+    char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufPath, bufHeader};
+    porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
     CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 
   SUBCASE("Global warning disable should work, even if a warning was explicitly enabled")
@@ -1157,6 +1117,5 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.missingBehaviorsHeader == porytiles::WarningMode::OFF);
   }
 }

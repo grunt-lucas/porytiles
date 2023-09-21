@@ -27,7 +27,6 @@ struct ErrorsAndWarnings {
   WarningMode usedTrueColorMode;
   WarningMode attributeFormatMismatch;
   WarningMode missingAttributesCsv;
-  WarningMode missingBehaviorsHeader;
   WarningMode unusedAttribute;
   WarningMode transparencyCollapse;
 
@@ -35,8 +34,7 @@ struct ErrorsAndWarnings {
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
-        missingBehaviorsHeader{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
-        transparencyCollapse{WarningMode::OFF}
+        unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF}
   {
   }
 
@@ -47,7 +45,6 @@ struct ErrorsAndWarnings {
     usedTrueColorMode = setting;
     attributeFormatMismatch = setting;
     missingAttributesCsv = setting;
-    missingBehaviorsHeader = setting;
     unusedAttribute = setting;
     transparencyCollapse = setting;
   }
@@ -69,9 +66,6 @@ struct ErrorsAndWarnings {
     if (missingAttributesCsv == WarningMode::WARN) {
       missingAttributesCsv = WarningMode::ERR;
     }
-    if (missingBehaviorsHeader == WarningMode::WARN) {
-      missingBehaviorsHeader = WarningMode::ERR;
-    }
     if (unusedAttribute == WarningMode::WARN) {
       unusedAttribute = WarningMode::ERR;
     }
@@ -86,7 +80,6 @@ extern const char *const WARN_KEY_FRAME_DID_NOT_APPEAR;
 extern const char *const WARN_USED_TRUE_COLOR_MODE;
 extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
-extern const char *const WARN_MISSING_BEHAVIORS_HEADER;
 extern const char *const WARN_UNUSED_ATTRIBUTE;
 extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 
@@ -200,8 +193,6 @@ void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string fil
 void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
 
 void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
-
-void warn_behaviorsHeaderNotSpecified(ErrorsAndWarnings &err, std::string filePath);
 
 void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
                           std::string sourcePath);
