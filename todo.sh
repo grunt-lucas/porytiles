@@ -5,10 +5,10 @@ set -Eeo pipefail
 usage() {
     cat <<EOF
 Usage: todo.sh all
-       todo.sh TODO
-       todo.sh FIXME
-       todo.sh NOTE
-       todo.sh FEATURE
+       todo.sh {TODO,todo}
+       todo.sh {FIXME,fixme}
+       todo.sh {NOTE,note}
+       todo.sh {FEATURE,feature}
        todo.sh --help
 
 Display TODO related note comments.
@@ -52,13 +52,13 @@ if [[ ${args[0]} == "all" ]]; then
     rg 'FIXME :'
     rg 'NOTE :'
     rg 'FEATURE :'
-elif [[ ${args[0]} == "TODO" ]]; then
+elif [[ ${args[0]} == "TODO" || ${args[0]} == "todo" ]]; then
     rg 'TODO :'
-elif [[ ${args[0]} == "FIXME" ]]; then
+elif [[ ${args[0]} == "FIXME" || ${args[0]} == "fixme" ]]; then
     rg 'FIXME :'
-elif [[ ${args[0]} == "NOTE" ]]; then
+elif [[ ${args[0]} == "NOTE" || ${args[0]} == "note" ]]; then
     rg 'NOTE :'
-elif [[ ${args[0]} == "FEATURE" ]]; then
+elif [[ ${args[0]} == "FEATURE" || ${args[0]} == "feature" ]]; then
     rg 'FEATURE :'
 else
     echo "error: unknown command \`${args[0]}'"
