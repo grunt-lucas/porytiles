@@ -308,6 +308,7 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
        * order would also yield the frame order. However, the frames don't actually follow this
        * format. It would be better to read and then sort, especially since the decompiler has to
        * use the 0.png format.
+       * FIXME : I think this is fixed now, and we can remove the above message, confirm this
        */
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         if (fileName != "key.png") {
