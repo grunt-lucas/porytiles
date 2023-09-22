@@ -415,7 +415,22 @@ std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mod
     internalerror_unknownDecompilerMode("types::InputPaths::modeBasedInputPath");
   }
   // unreachable, here for compiler
-  throw std::runtime_error("types::InputPaths::modeBasedInputPath (decompile) reached unreachable code path");
+  throw std::runtime_error(
+      "types::InputPaths::DecompilerSourcePaths::modeBasedInputPath reached unreachable code path");
+}
+
+std::filesystem::path DecompilerSourcePaths::modeBasedAttrPath(DecompilerMode mode) const
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return primaryAttributesBin();
+  case DecompilerMode::SECONDARY:
+    return secondaryAttributesBin();
+  default:
+    internalerror_unknownDecompilerMode("types::InputPaths::modeBasedAttrPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::DecompilerSourcePaths::modeBasedAttrPath reached unreachable code path");
 }
 
 std::string compilerModeString(CompilerMode mode)

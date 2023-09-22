@@ -353,14 +353,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
       }
       else {
-        /*
-         * TODO : print warning that reverse map did not contain a mapping for this behavior, this case also occurs if
-         * the reverse map has 0 size, which may occur if user does not specify a behavior header (right now this is not
-         * allowed, but in the future we may make it allowed)
-         */
-        outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << ","
-               << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
-               << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
+                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
     else {
@@ -369,14 +363,15 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                << std::endl;
       }
       else {
-        /*
-         * TODO : print warning that reverse map did not contain a mapping for this behavior, this case also occurs if
-         * the reverse map has 0 size, which may occur if user does not specify a behavior header (right now this is not
-         * allowed, but in the future we may make it allowed)
-         */
-        outCsv << metatileIndex << "," << attributesMap.at(metatileIndex).metatileBehavior << std::endl;
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
+                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
+  }
+
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(ctx.decompilerConfig.mode),
+                   "behavior value did not have reverse mapping");
   }
 }
 

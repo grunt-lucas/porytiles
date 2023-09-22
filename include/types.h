@@ -780,7 +780,14 @@ struct DecompilerSourcePaths {
     return path / "anim";
   }
 
+  std::filesystem::path secondaryAttributesBin() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / "metatile_attributes.bin";
+  }
+
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedAttrPath(DecompilerMode mode) const;
 };
 
 struct Output {

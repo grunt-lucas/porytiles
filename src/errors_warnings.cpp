@@ -174,6 +174,17 @@ void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath,
   }
 }
 
+void error_unknownMetatileBehaviorValue(ErrorsAndWarnings &err, std::string filePath, std::size_t entry,
+                                        std::uint16_t behaviorValue)
+{
+  err.errCount++;
+  if (err.printErrors) {
+    pt_err("{}: in metatile entry {}: unmapped metatile behavior value '{}'", filePath, entry,
+           fmt::styled(behaviorValue, fmt::emphasis::bold));
+    pt_println(stderr, "");
+  }
+}
+
 void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::size_t id,
                               std::size_t previousLine)
 {

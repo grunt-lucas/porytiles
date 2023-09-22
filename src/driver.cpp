@@ -581,6 +581,7 @@ static void driveDecompile(PtContext &ctx)
   png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
+  // FIXME : if any errors are thrown in this method, it will partially emit the attr file which is not intuitive
   porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributes, *decompiled,
                             attributesMap, behaviorReverseMap);
   outAttributes.close();

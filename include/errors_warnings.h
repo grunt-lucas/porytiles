@@ -115,6 +115,9 @@ void error_invalidCsvRowFormat(ErrorsAndWarnings &err, std::string filePath, std
 void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath, std::size_t line,
                                    std::string behavior);
 
+void error_unknownMetatileBehaviorValue(ErrorsAndWarnings &err, std::string filePath, std::size_t entry,
+                                        std::uint16_t behaviorValue);
+
 void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::size_t id,
                               std::size_t previousLine);
 
