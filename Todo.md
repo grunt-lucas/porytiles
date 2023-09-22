@@ -22,6 +22,7 @@
 + attributes / behavior changes
   + allow user to specify default behavior value using CLI option `-default-behavior`
     + this option takes a string defined in the behavior header
+  + also have `-default-terrain-type` and `-default-encounter-type`
 
 + More assign algorithms?
   + Maybe some kind of A*?
@@ -31,7 +32,8 @@
   + Assignment config discovery
     + default behavior: look for assign.cfg in the input folder, use those settings
     + if assign.cfg does not exist, warn the user and run the full assignment param search matrix
-    + user can supply --save-assign-config option to force porytiles to search for a valid assign param and save it to input folder
+      + this will be a default-on warning
+    + user can supply --cache-assign-config option to force porytiles to search for a valid assign param and save it to input folder
   + we will also need a way to specify config params for the paired primary set when compiling in secondary mode
     + it is possible (and quite likely) that you will have cases where the primary set needs different params
     + there should be primary versions of the options: --primary-assign-algo=<ALGO>, etc
@@ -77,18 +79,15 @@
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
-+ `-manage-metatiles-with-porymap` skips generation of `metatiles.bin`
++ `-skip-metatile-generation` skips generation of `metatiles.bin`
 
-+ `-manage-attributes-with-porymap` skips generation of `metatile_attributes.bin`
++ `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
 
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
   + instead of outputting all the files, just write C code to the console
   + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
   + is it possible to generate the code and insert it automatically?
-
-+ Refactor CLI parsing
-  + many commands share the same set of options, or slight variations
 
 + `freestanding` mode for compilation
   + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
@@ -98,6 +97,9 @@
 + Set up auto-generated documentation: doxygen? RTD?
 
 + support custom masks and shifts for metatile attributes, see how Porymap does this
+
++ Refactor CLI parsing
+  + CXXOpts lib may be helpful here
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
   + https://github.com/tfussell/miniz-cpp
