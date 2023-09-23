@@ -105,6 +105,7 @@ const std::string ASSIGN_ALGO_DESC =
 "             Select the assignment algorithm. Valid options are `dfs' and `bfs'. Default is `dfs'.\n";
 constexpr int ASSIGN_ALGO_VAL = 3001;
 
+// TODO : swap this around, instead of pruning N most unpromising branches, make it try top N promising branches
 const std::string PRUNE_BRANCHES = "prune-branches";
 const std::string PRUNE_BRANCHES_DESC =
 "        -" + PRUNE_BRANCHES + "=<N>\n"

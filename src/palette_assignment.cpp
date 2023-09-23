@@ -40,7 +40,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
    * secondary tiles to freely use.
    */
   if (!primaryPalettes.empty()) {
-    for (size_t i = 0; i < primaryPalettes.size(); i++) {
+    for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
       const ColorSet &palette = primaryPalettes.at(i);
       if ((palette | toAssign).count() == palette.count()) {
         /*
@@ -180,9 +180,28 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
 
     const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
 
-    // FIXME : handle secondary sets properly, see how depth-first does it
+    bool foundPrimaryMatch = false;
     if (!primaryPalettes.empty()) {
-      throw std::runtime_error{"TODO : support secondary set compilation with BFS backend"};
+      for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
+        const ColorSet &palette = primaryPalettes.at(i);
+        if ((palette | toAssign).count() == palette.count()) {
+          std::vector<ColorSet> hardwarePalettesCopy;
+          std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+                    std::back_inserter(hardwarePalettesCopy));
+          AssignState updatedState = {hardwarePalettesCopy, currentState.unassignedCount - 1};
+          stateQueue.push_back(updatedState);
+          visitedStates.insert(updatedState);
+          foundPrimaryMatch = true;
+        }
+      }
+    }
+
+    /*
+     * If we found a matching primary palette for the current assignment, go ahead and skip ahead to the next toAssign.
+     * No need to process anything further for this toAssign.
+     */
+    if (foundPrimaryMatch) {
+      continue;
     }
 
     std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
