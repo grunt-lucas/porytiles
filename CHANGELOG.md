@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2023-09-23
+
+### Added
+
+- Can now change default transparency color with `-transparency-color` option
+
+- Customizable warning system using GNU-like warning flags
+
+- Basic decompile mode for primary tilesets (secondary tilesets and animation decompilation still a WIP)
+
+- Multiple palette assignment backends controllable via command line options (this system is still a WIP)
+
+### Changed
+
+- Lots of improved error messages
+
+- Behavior header is now mandatorily supplied on the command line
+
 ## [0.0.5] - 2023-08-18
 
 ### Added
@@ -84,7 +102,9 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.5...HEAD
+[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.6...HEAD
+
+[0.0.6]: https://github.com/grunt-lucas/porytiles/compare/0.0.5...0.0.6
 
 [0.0.5]: https://github.com/grunt-lucas/porytiles/compare/0.0.4...0.0.5
 
