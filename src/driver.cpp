@@ -593,15 +593,17 @@ static void driveDecompile(PtContext &ctx)
 
   validateDecompileOutputs(ctx, outputPath, attributesPath, bottomPath, middlePath, topPath);
 
-  std::ofstream outAttributes{attributesPath.string()};
+  std::ostringstream outAttributesContent{};
   std::size_t metatileCount = attributesMap.size();
   std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
   png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
-  // FIXME : if any errors are thrown in this method, it will partially emit the attr file which is not intuitive
-  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributes, *decompiled,
+  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributesContent, *decompiled,
                             attributesMap, behaviorReverseMap);
+
+  std::ofstream outAttributes{attributesPath.string()};
+  outAttributes << outAttributesContent.str();
   outAttributes.close();
   bottomPrimaryPng.write(bottomPath);
   middlePrimaryPng.write(middlePath);
