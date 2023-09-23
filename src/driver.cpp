@@ -442,14 +442,32 @@ importBehaviorsHeader(PtContext &ctx, std::string behaviorHeaderPath)
 {
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
-    // FIXME : handle compiler vs decompiler
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    }
+    else {
+      internalerror("driver::importBehaviorsHeader invalid subcommand");
+    }
   }
   auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorMaps(ctx, behaviorFile);
   behaviorFile.close();
   if (behaviorMap.size() == 0) {
-    // TODO : warn user that behavior map size is 0
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+    }
+    else {
+      internalerror("driver::importBehaviorsHeader invalid subcommand");
+    }
   }
   return std::pair{behaviorMap, behaviorReverseMap};
 }
