@@ -190,7 +190,6 @@ static void validateDecompileInputs(PtContext &ctx)
 
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.metatileBehaviors) ||
       !std::filesystem::is_regular_file(ctx.decompilerSrcPaths.metatileBehaviors)) {
-    // TODO : skip this check if user did not supply a behaviors header
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                fmt::format("{}: behaviors header did not exist or was not a regular file",
                            ctx.decompilerSrcPaths.metatileBehaviors));
