@@ -341,6 +341,7 @@ TILES_OUTPUT_PAL_DESC + "\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 TRANSPARENCY_COLOR_DESC + "\n" +
+DEFAULT_BEHAVIOR_DESC + "\n" +
 "    Color Assignment Config Options\n" +
 ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 ASSIGN_ALGO_DESC + "\n" +
@@ -383,6 +384,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
       {DUAL_LAYER.c_str(), no_argument, nullptr, DUAL_LAYER_VAL},
       {TRANSPARENCY_COLOR.c_str(), required_argument, nullptr, TRANSPARENCY_COLOR_VAL},
+      {DEFAULT_BEHAVIOR.c_str(), required_argument, nullptr, DEFAULT_BEHAVIOR_VAL},
 
       // Color assignment config options
       {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
@@ -501,6 +503,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case TRANSPARENCY_COLOR_VAL:
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
+      break;
+    case DEFAULT_BEHAVIOR_VAL:
+      ctx.compilerConfig.defaultBehavior = std::string{optarg};
       break;
 
     // Color assignment config options

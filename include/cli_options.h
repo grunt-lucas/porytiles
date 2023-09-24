@@ -89,6 +89,13 @@ const std::string TRANSPARENCY_COLOR_DESC =
 "             Defaults to <255,0,255>.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
+const std::string DEFAULT_BEHAVIOR = "default-behavior";
+const std::string DEFAULT_BEHAVIOR_DESC =
+"        -" + DEFAULT_BEHAVIOR + "=<BEHAVIOR>\n"
+"             Select the default behavior for metatiles that do not have an entry in the\n"
+"             'attributes.csv' file. If unspecified, defaults to 'MB_NORMAL'.\n";
+constexpr int DEFAULT_BEHAVIOR_VAL = 2003;
+
 // Color assignment config options
 
 const std::string ASSIGN_EXPLORE_CUTOFF = "assign-explore-cutoff";

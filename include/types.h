@@ -801,6 +801,7 @@ struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
   bool tripleLayer;
+  std::string defaultBehavior;
 
   // Palette assignment algorithm configuration
   AssignAlgorithm assignAlgorithm;
@@ -809,8 +810,8 @@ struct CompilerConfig {
   bool smartPrune;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, assignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
-        exploredNodeCutoff{2'000'000}, pruneCount{0}, smartPrune{false}
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"MB_NORMAL"},
+        assignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, exploredNodeCutoff{2'000'000}, pruneCount{0}, smartPrune{false}
   {
   }
 };
