@@ -25,7 +25,7 @@
   + also have `-default-terrain-type` and `-default-encounter-type`
 
 + More assign algorithms?
-  + Maybe some kind of A*?
+  + Maybe some kind of A-star?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
@@ -76,6 +76,7 @@
   + Mac universal binary?
     + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
   + better build system? (cmake, autotools, etc)
+  + static analysis: https://nrk.neocities.org/articles/c-static-analyzers
 
 + provide a way to input primer tiles to improve algorithm efficiency
 
