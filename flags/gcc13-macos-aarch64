@@ -1,0 +1,3 @@
+export CXX=/opt/homebrew/opt/gcc@13/bin/g++-13
+export CXXFLAGS="-isystem /opt/homebrew/opt/gcc@13/include/c++/13"
+export LDFLAGS="-stdlib=libstdc++ -L/opt/homebrew/opt/gcc@13/lib/gcc/13 -Wl,-ld_classic"
