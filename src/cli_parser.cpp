@@ -345,7 +345,7 @@ DEFAULT_BEHAVIOR_DESC + "\n" +
 "    Color Assignment Config Options\n" +
 ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 ASSIGN_ALGO_DESC + "\n" +
-PRUNE_BRANCHES_DESC + "\n" +
+BEST_BRANCHES_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -389,7 +389,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       // Color assignment config options
       {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
       {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
-      {PRUNE_BRANCHES.c_str(), required_argument, nullptr, PRUNE_BRANCHES_VAL},
+      {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -517,12 +517,16 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     case ASSIGN_ALGO_VAL:
       ctx.compilerConfig.assignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
       break;
-    case PRUNE_BRANCHES_VAL:
+    case BEST_BRANCHES_VAL:
       if (std::string{optarg} == "smart") {
         ctx.compilerConfig.smartPrune = true;
       }
       else {
-        ctx.compilerConfig.pruneCount = parseIntegralOption<std::size_t>(ctx.err, PRUNE_BRANCHES, optarg);
+        ctx.compilerConfig.bestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
+        if (ctx.compilerConfig.bestBranches == 0) {
+          fatalerror(ctx.err,
+                     fmt::format("option '{}' argument cannot be 0", fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+        }
       }
       break;
 
@@ -880,8 +884,8 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     ctx.err.setAllWarnings(WarningMode::OFF);
   }
 
-  if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.pruneCount > 0) {
-    fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", PRUNE_BRANCHES));
+  if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.bestBranches > 0) {
+    fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", BEST_BRANCHES));
   }
 
   /*

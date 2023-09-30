@@ -112,14 +112,13 @@ const std::string ASSIGN_ALGO_DESC =
 "             Select the assignment algorithm. Valid options are `dfs' and `bfs'. Default is `dfs'.\n";
 constexpr int ASSIGN_ALGO_VAL = 3001;
 
-// TODO : swap this around, instead of pruning N most unpromising branches, make it try top N promising branches
-const std::string PRUNE_BRANCHES = "prune-branches";
-const std::string PRUNE_BRANCHES_DESC =
-"        -" + PRUNE_BRANCHES + "=<N>\n"
-"             Prune the N least promising branches at each node in the assignment tree search.\n"
-"             Specify `smart' instead of an integer to use a computed `smart' pruning at each node\n"
-"             instead of just a constant integer pruning.\n";
-constexpr int PRUNE_BRANCHES_VAL = 3002;
+const std::string BEST_BRANCHES = "best-branches";
+const std::string BEST_BRANCHES_DESC =
+"        -" + BEST_BRANCHES + "=<N>\n"
+"             Use only the N most promising branches at each node in the assignment tree search.\n"
+"             Specify `smart' instead of an integer to use a computed `smart' cutoff at each node\n"
+"             instead of just a constant integer cutoff.\n";
+constexpr int BEST_BRANCHES_VAL = 3002;
 
 
 // Fieldmap override options

@@ -1,5 +1,6 @@
 #include "palette_assignment.h"
 
+#include <algorithm>
 #include <deque>
 #include <unordered_set>
 #include <vector>
@@ -91,17 +92,9 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                      return pal1IntersectSize > pal2IntersectSize;
                    });
 
-  std::size_t stopLimit = state.hardwarePalettes.size();
+  std::size_t stopLimit = std::min(state.hardwarePalettes.size(), ctx.compilerConfig.bestBranches);
   if (ctx.compilerConfig.smartPrune) {
     throw std::runtime_error{"TODO : impl smart prune"};
-  }
-  else if (ctx.compilerConfig.pruneCount > 0) {
-    if (ctx.compilerConfig.pruneCount >= stopLimit) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("'prune-branches' parameter '{}' pruned every branch",
-                             fmt::styled(ctx.compilerConfig.pruneCount, fmt::emphasis::bold)));
-    }
-    stopLimit -= ctx.compilerConfig.pruneCount;
   }
   for (size_t i = 0; i < stopLimit; i++) {
     const ColorSet &palette = state.hardwarePalettes.at(i);
@@ -215,18 +208,10 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
                      });
 
     bool sawAssignmentWithIntersection = false;
-    std::size_t stopLimit = currentState.hardwarePalettes.size();
+    std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), ctx.compilerConfig.bestBranches);
     if (ctx.compilerConfig.smartPrune) {
       // TODO : impl smart prune feature
       throw std::runtime_error{"TODO : impl smart prune"};
-    }
-    else if (ctx.compilerConfig.pruneCount > 0) {
-      if (ctx.compilerConfig.pruneCount >= stopLimit) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("'prune-branches' parameter '{}' pruned every branch",
-                               fmt::styled(ctx.compilerConfig.pruneCount, fmt::emphasis::bold)));
-      }
-      stopLimit -= ctx.compilerConfig.pruneCount;
     }
     for (size_t i = 0; i < stopLimit; i++) {
       const ColorSet &palette = currentState.hardwarePalettes.at(i);
