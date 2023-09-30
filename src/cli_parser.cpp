@@ -505,6 +505,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
       break;
     case DEFAULT_BEHAVIOR_VAL:
+      // TODO : finish implementing the -defaultBehavior logic
       ctx.compilerConfig.defaultBehavior = std::string{optarg};
       break;
 
@@ -932,7 +933,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
       die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
     }
-    // TODO : when more commands are added, change this logic
     die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
   }
 }

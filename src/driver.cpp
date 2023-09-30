@@ -620,7 +620,6 @@ static void driveCompile(PtContext &ctx)
    * set to have a different behavior map than the paired primary, so the user does not need to specify this header in
    * the secondary set source.
    */
-  // TODO : this should handle either reading the header from the source folder, or reading it from the CLI
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
