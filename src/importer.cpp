@@ -596,16 +596,16 @@ static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
   int blue = parseInteger<int>(colorComponents[2].c_str());
 
   if (red < 0 || red > 255) {
-    // FIXME : need fatalerror to also work for decompile mode
-    throw std::runtime_error{"invalid red component: range must be 0 <= red <= 255"};
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+               "invalid red component: range must be 0 <= red <= 255");
   }
   if (green < 0 || green > 255) {
-    // FIXME : need fatalerror to also work for decompile mode
-    throw std::runtime_error{"invalid green component: range must be 0 <= green <= 255"};
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+               "invalid red component: range must be 0 <= green <= 255");
   }
   if (blue < 0 || blue > 255) {
-    // FIXME : need fatalerror to also work for decompile mode
-    throw std::runtime_error{"invalid blue component: range must be 0 <= blue <= 255"};
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+               "invalid red component: range must be 0 <= blue <= 255");
   }
 
   return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
@@ -622,35 +622,32 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"invalid blank line in pal file"};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "JASC-PAL") {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"expected 'JASC-PAL' in pal file, saw " + line};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"invalid blank line in pal file"};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "0100") {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"expected '0100' in pal file, saw " + line};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("expected '0100' in pal file, saw '{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"invalid blank line in pal file"};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "16") {
-      // FIXME : need fatalerror to also work for decompile mode
-      throw std::runtime_error{"expected '16' in pal file, saw " + line};
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("expected '16' in pal file, saw '{}'", line));
     }
 
     GBAPalette palette{};
