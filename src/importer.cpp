@@ -573,13 +573,12 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
-static RGBA32 parseJascLine(const ErrorsAndWarnings &err, const std::string &jascLine)
+static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
 {
-  // FIXME : this logic duplicates cli_parser::parseRgbColor
   std::vector<std::string> colorComponents = split(jascLine, " ");
   if (colorComponents.size() != 3) {
-    // FIXME : need fatalerror to also work for decompile mode
-    throw std::runtime_error{"expected valid JASC line in pal file, saw " + jascLine};
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+               fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
   }
 
   if (colorComponents[0].at(colorComponents[0].size() - 1) == '\r') {
@@ -662,7 +661,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
     palette.size = 16;
     std::size_t colorIndex = 0;
     while (std::getline(*stream, line)) {
-      BGR15 bgr = rgbaToBgr(parseJascLine(ctx.err, line));
+      BGR15 bgr = rgbaToBgr(parseJascLine(ctx, line));
       palette.colors.at(colorIndex) = bgr;
       colorIndex++;
     }
