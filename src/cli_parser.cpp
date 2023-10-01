@@ -346,6 +346,9 @@ DEFAULT_BEHAVIOR_DESC + "\n" +
 ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 ASSIGN_ALGO_DESC + "\n" +
 BEST_BRANCHES_DESC + "\n" +
+PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
+PRIMARY_ASSIGN_ALGO_DESC + "\n" +
+PRIMARY_BEST_BRANCHES_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -390,6 +393,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
       {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
       {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
+      {PRIMARY_ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL},
+      {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
+      {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -529,6 +535,15 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
                      fmt::format("option '{}' argument cannot be 0", fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
         }
       }
+      break;
+    case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
+      // TODO : impl primary version of option
+      break;
+    case PRIMARY_ASSIGN_ALGO_VAL:
+      // TODO : impl primary version of option
+      break;
+    case PRIMARY_BEST_BRANCHES_VAL:
+      // TODO : impl primary version of option
       break;
 
     // Fieldmap override options
