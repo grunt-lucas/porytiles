@@ -519,31 +519,71 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     case ASSIGN_EXPLORE_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
       // FIXME : error if this factor is too large
-      ctx.compilerConfig.exploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+      if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+        ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+      }
+      else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        ctx.compilerConfig.secondaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+      }
       break;
     case ASSIGN_ALGO_VAL:
-      ctx.compilerConfig.assignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+      if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+        ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+      }
+      else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        ctx.compilerConfig.secondaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+      }
       break;
     case BEST_BRANCHES_VAL:
-      if (std::string{optarg} == "smart") {
-        ctx.compilerConfig.smartPrune = true;
+      if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+        if (std::string{optarg} == "smart") {
+          ctx.compilerConfig.primarySmartPrune = true;
+        }
+        else {
+          ctx.compilerConfig.primaryBestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
+          if (ctx.compilerConfig.primaryBestBranches == 0) {
+            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+                                            fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+          }
+        }
       }
-      else {
-        ctx.compilerConfig.bestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
-        if (ctx.compilerConfig.bestBranches == 0) {
-          fatalerror(ctx.err,
-                     fmt::format("option '{}' argument cannot be 0", fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+      else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        if (std::string{optarg} == "smart") {
+          ctx.compilerConfig.secondarySmartPrune = true;
+        }
+        else {
+          ctx.compilerConfig.secondaryBestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
+          if (ctx.compilerConfig.secondaryBestBranches == 0) {
+            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+                                            fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+          }
         }
       }
       break;
     case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
-      // TODO : impl primary version of option
+      if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+      }
       break;
     case PRIMARY_ASSIGN_ALGO_VAL:
-      // TODO : impl primary version of option
+      if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, PRIMARY_ASSIGN_ALGO, optarg);
+      }
       break;
     case PRIMARY_BEST_BRANCHES_VAL:
-      // TODO : impl primary version of option
+      if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+        if (std::string{optarg} == "smart") {
+          ctx.compilerConfig.primarySmartPrune = true;
+        }
+        else {
+          ctx.compilerConfig.primaryBestBranches =
+              parseIntegralOption<std::size_t>(ctx.err, PRIMARY_BEST_BRANCHES, optarg);
+          if (ctx.compilerConfig.primaryBestBranches == 0) {
+            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+                                            fmt::styled(PRIMARY_BEST_BRANCHES, fmt::emphasis::bold)));
+          }
+        }
+      }
       break;
 
     // Fieldmap override options
@@ -900,9 +940,10 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     ctx.err.setAllWarnings(WarningMode::OFF);
   }
 
-  if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.bestBranches > 0) {
-    fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", BEST_BRANCHES));
-  }
+  // TODO : should we fail here, or warn the user, or do nothing and just prioritize one over the other?
+  // if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.bestBranches > 0) {
+  //   fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", BEST_BRANCHES));
+  // }
 
   /*
    * Apply and validate the fieldmap configuration parameters
@@ -951,7 +992,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
   }
 }
-
 } // namespace porytiles
 
 TEST_CASE("parseCompile should work as expected with all command lines")

@@ -805,15 +805,20 @@ struct CompilerConfig {
   std::string defaultBehavior;
 
   // Palette assignment algorithm configuration
-  AssignAlgorithm assignAlgorithm;
-  std::size_t exploredNodeCutoff;
-  std::size_t bestBranches;
-  bool smartPrune;
+  AssignAlgorithm primaryAssignAlgorithm;
+  std::size_t primaryExploredNodeCutoff;
+  std::size_t primaryBestBranches;
+  bool primarySmartPrune;
+  AssignAlgorithm secondaryAssignAlgorithm;
+  std::size_t secondaryExploredNodeCutoff;
+  std::size_t secondaryBestBranches;
+  bool secondarySmartPrune;
 
   CompilerConfig()
       : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"MB_NORMAL"},
-        assignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, exploredNodeCutoff{2'000'000}, bestBranches{SIZE_MAX},
-        smartPrune{false}
+        primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, primaryExploredNodeCutoff{2'000'000},
+        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}
   {
   }
 };

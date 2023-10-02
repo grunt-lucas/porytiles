@@ -1395,7 +1395,8 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   compileCtx.output.path = parentDir;
   compileCtx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   compileCtx.err.printErrors = false;
-  compileCtx.compilerConfig.assignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
   REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
   compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

@@ -14,12 +14,21 @@ namespace porytiles {
 AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                               const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds)
 {
+  std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                       ? ctx.compilerConfig.primaryExploredNodeCutoff
+                                       : ctx.compilerConfig.secondaryExploredNodeCutoff;
+  std::size_t bestBranches = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                 ? ctx.compilerConfig.primaryBestBranches
+                                 : ctx.compilerConfig.secondaryBestBranches;
+  bool smartPrune = ctx.compilerConfig.mode == CompilerMode::PRIMARY ? ctx.compilerConfig.primarySmartPrune
+                                                                     : ctx.compilerConfig.secondarySmartPrune;
+
   ctx.compilerContext.exploredNodeCounter++;
   if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
     pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}",
              ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER);
   }
-  if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
+  if (ctx.compilerContext.exploredNodeCounter > exploredNodeCutoff) {
     return AssignResult::EXPLORE_CUTOFF_REACHED;
   }
 
@@ -92,8 +101,8 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                      return pal1IntersectSize > pal2IntersectSize;
                    });
 
-  std::size_t stopLimit = std::min(state.hardwarePalettes.size(), ctx.compilerConfig.bestBranches);
-  if (ctx.compilerConfig.smartPrune) {
+  std::size_t stopLimit = std::min(state.hardwarePalettes.size(), bestBranches);
+  if (smartPrune) {
     throw std::runtime_error{"TODO : impl smart prune"};
   }
   for (size_t i = 0; i < stopLimit; i++) {
@@ -137,6 +146,15 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
 AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
                                 const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds)
 {
+  std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                       ? ctx.compilerConfig.primaryExploredNodeCutoff
+                                       : ctx.compilerConfig.secondaryExploredNodeCutoff;
+  std::size_t bestBranches = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                 ? ctx.compilerConfig.primaryBestBranches
+                                 : ctx.compilerConfig.secondaryBestBranches;
+  bool smartPrune = ctx.compilerConfig.mode == CompilerMode::PRIMARY ? ctx.compilerConfig.primarySmartPrune
+                                                                     : ctx.compilerConfig.secondarySmartPrune;
+
   std::unordered_set<AssignState> visitedStates{};
   std::deque<AssignState> stateQueue{};
   std::deque<AssignState> lowPriorityQueue{};
@@ -151,7 +169,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
                ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER, stateQueue.size(),
                lowPriorityQueue.size());
     }
-    if (ctx.compilerContext.exploredNodeCounter > ctx.compilerConfig.exploredNodeCutoff) {
+    if (ctx.compilerContext.exploredNodeCounter > exploredNodeCutoff) {
       return AssignResult::EXPLORE_CUTOFF_REACHED;
     }
 
@@ -208,8 +226,8 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
                      });
 
     bool sawAssignmentWithIntersection = false;
-    std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), ctx.compilerConfig.bestBranches);
-    if (ctx.compilerConfig.smartPrune) {
+    std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), bestBranches);
+    if (smartPrune) {
       // TODO : impl smart prune feature
       throw std::runtime_error{"TODO : impl smart prune"};
     }

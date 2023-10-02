@@ -34,9 +34,6 @@
     + if assign.cfg does not exist, warn the user and run the full assignment param search matrix
       + this will be a default-on warning
     + user can supply --cache-assign-config option to force porytiles to search for a valid assign param and save it to input folder
-  + we will also need a way to specify config params for the paired primary set when compiling in secondary mode
-    + it is possible (and quite likely) that you will have cases where the primary set needs different params
-    + there should be primary versions of the options: --primary-assign-algo=<ALGO>, etc
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
