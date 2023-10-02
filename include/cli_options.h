@@ -123,19 +123,22 @@ constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF = "primary-assign-explore-cutoff";
 const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC =
 "        -" + PRIMARY_ASSIGN_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Same as '-assign-explore-cutoff', but for the paired primary set.\n";
+"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL = 3003;
 
 const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
 const std::string PRIMARY_ASSIGN_ALGO_DESC =
 "        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Same as '-assign-algorithm', but for the paired primary set.\n";
+"             Same as '-assign-algorithm', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3004;
 
 const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
 const std::string PRIMARY_BEST_BRANCHES_DESC =
 "        -" + PRIMARY_BEST_BRANCHES + "=<N>\n"
-"             Same as '-best-branches', but for the paired primary set.\n";
+"             Same as '-best-branches', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
 
 
