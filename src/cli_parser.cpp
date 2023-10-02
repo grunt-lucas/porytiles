@@ -561,6 +561,8 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
+      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_ASSIGN_EXPLORE_CUTOFF, optarg);
+      // FIXME : error if this factor is too large
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
       }
