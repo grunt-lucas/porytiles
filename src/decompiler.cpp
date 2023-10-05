@@ -54,9 +54,9 @@ TEST_CASE("decompile should decompile a basic tileset")
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};

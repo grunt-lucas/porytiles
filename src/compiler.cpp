@@ -908,7 +908,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/corners.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   porytiles::RGBATile tile = tiles.tiles[0];
@@ -1034,7 +1034,7 @@ TEST_CASE("normalize should return the normal form of the given tile")
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/corners.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   porytiles::RGBATile tile = tiles.tiles[0];
@@ -1062,7 +1062,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
 
@@ -1128,14 +1128,14 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> tilesPng{"res/tests/2x2_pattern_2.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, tilesPng);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_flower_yellow"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_water_1"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_water_1"}));
 
   porytiles::AnimationPng<png::rgba_pixel> white00{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/00.png"},
                                                    "anim_flower_white", "00.png"};
@@ -1246,7 +1246,7 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   std::vector<IndexedNormTile> normalizedTiles = porytiles::normalizeDecompTiles(ctx, tiles);
@@ -1301,7 +1301,7 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 {
   porytiles::PtContext ctx{};
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
@@ -1406,7 +1406,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 20;
 
-    REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
     std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
@@ -1443,7 +1443,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 200;
 
-    REQUIRE(std::filesystem::exists("res/tests/compile_raw_set_1/set.png"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compile_raw_set_1/set.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
     std::vector<IndexedNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
@@ -1482,7 +1482,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   std::vector<IndexedNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
@@ -1537,7 +1537,7 @@ TEST_CASE("compile simple example should perform as expected")
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/2x2_pattern_2.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
   auto compiledTiles = porytiles::compile(ctx, tiles);
@@ -1611,9 +1611,9 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
@@ -1624,7 +1624,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
 
   // Check that tiles are as expected
   CHECK(compiledPrimary->tiles.size() == 16);
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/expected_tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
@@ -1749,9 +1749,9 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_3/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
@@ -1760,9 +1760,9 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/top.png"}));
   png::image<png::rgba_pixel> bottomSecondary{"res/tests/simple_metatiles_3/secondary/bottom.png"};
   png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/secondary/top.png"};
@@ -1773,7 +1773,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
   // Check that tiles are as expected
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_3/secondary/expected_tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
@@ -1910,17 +1910,17 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/water"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/flower_white"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/water"}));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/key.png"}, "flower_white",
@@ -1963,7 +1963,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
   CHECK(compiledPrimary->tiles.size() == 16);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/expected_tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
@@ -2122,17 +2122,17 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_1/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/flower_white"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/primary/anim/water"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/flower_white"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/water"}));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/primary/anim/flower_white/key.png"}, "flower_white",
@@ -2175,16 +2175,16 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/top.png"}));
   png::image<png::rgba_pixel> bottomSecondary{"res/tests/anim_metatiles_1/secondary/bottom.png"};
   png::image<png::rgba_pixel> middleSecondary{"res/tests/anim_metatiles_1/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/anim_metatiles_1/secondary/top.png"};
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/anim/flower_red"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/anim/flower_red"}));
 
   porytiles::AnimationPng<png::rgba_pixel> flowerRedKey{
       png::image<png::rgba_pixel>{"res/tests/anim_metatiles_1/secondary/anim/flower_red/key.png"}, "flower_white",
@@ -2215,7 +2215,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   CHECK(compiledSecondary->tiles.size() == 16);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_1/secondary/expected_tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
     for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {

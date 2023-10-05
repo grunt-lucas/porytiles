@@ -292,7 +292,7 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
     // collate all possible animation frame files
     pt_logln(ctx, stderr, "found animation: {}", animDir.string());
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
-    std::filesystem::path keyFrameFile = animDir / "key.png";
+    std::filesystem::path keyFrameFile = animDir / std::filesystem::path{"key.png"};
     if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
       fatalerror_missingKeyFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
                                      animDir.filename().string());
@@ -753,9 +753,9 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
-  REQUIRE(std::filesystem::exists("res/tests/metatile_behaviors.h"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/metatile_behaviors.h"}));
   ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
 
   porytiles::drive(ctx);
@@ -764,10 +764,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   // Check tiles.png
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_tiles.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_tiles.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_2/primary/expected_tiles.png"};
-  png::image<png::index_pixel> actualPng{parentDir / "tiles.png"};
+  png::image<png::index_pixel> actualPng{parentDir / std::filesystem::path{"tiles.png"}};
 
   std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
   std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
@@ -789,8 +789,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   // Check metatiles.bin
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_metatiles.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatiles.bin"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatiles.bin"}));
   std::FILE *expected;
   std::FILE *actual;
 
@@ -798,7 +798,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   if (expected == NULL) {
     FAIL("std::FILE `expected' was null");
   }
-  actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
+  actual = fopen((parentDir / std::filesystem::path{"metatiles.bin"}).c_str(), "r");
   if (actual == NULL) {
     fclose(expected);
     FAIL("std::FILE `expected' was null");
@@ -831,14 +831,15 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   // Check metatile_attributes.bin
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatile_attributes.bin"));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatile_attributes.bin"}));
 
   expected = fopen("res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin", "r");
   if (expected == NULL) {
     FAIL("std::FILE `expected' was null");
   }
-  actual = fopen((parentDir / "metatile_attributes.bin").c_str(), "r");
+  actual = fopen((parentDir / std::filesystem::path{"metatile_attributes.bin"}).c_str(), "r");
   if (actual == NULL) {
     fclose(expected);
     FAIL("std::FILE `expected' was null");
@@ -866,20 +867,25 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   fclose(expected);
   fclose(actual);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_white/02.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/water/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/water/01.png"));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"}));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"}));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"}));
+  REQUIRE(
+      std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"}));
+  REQUIRE(
+      std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_white/00.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_white/01.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_white/02.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/water/00.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/water/01.png"}));
 
   png::image<png::index_pixel> expected_flower_white_00{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"};
-  png::image<png::index_pixel> actual_flower_white_00{parentDir / "anim/flower_white/00.png"};
+  png::image<png::index_pixel> actual_flower_white_00{parentDir / std::filesystem::path{"anim/flower_white/00.png"}};
   expectedWidthInTiles = expected_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -895,7 +901,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   }
   png::image<png::index_pixel> expected_flower_white_01{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"};
-  png::image<png::index_pixel> actual_flower_white_01{parentDir / "anim/flower_white/01.png"};
+  png::image<png::index_pixel> actual_flower_white_01{parentDir / std::filesystem::path{"anim/flower_white/01.png"}};
   expectedWidthInTiles = expected_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -911,7 +917,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   }
   png::image<png::index_pixel> expected_flower_white_02{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"};
-  png::image<png::index_pixel> actual_flower_white_02{parentDir / "anim/flower_white/02.png"};
+  png::image<png::index_pixel> actual_flower_white_02{parentDir / std::filesystem::path{"anim/flower_white/02.png"}};
   expectedWidthInTiles = expected_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -926,7 +932,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
   png::image<png::index_pixel> expected_water_00{"res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"};
-  png::image<png::index_pixel> actual_water_00{parentDir / "anim/water/00.png"};
+  png::image<png::index_pixel> actual_water_00{parentDir / std::filesystem::path{"anim/water/00.png"}};
   expectedWidthInTiles = expected_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -941,7 +947,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     }
   }
   png::image<png::index_pixel> expected_water_01{"res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"};
-  png::image<png::index_pixel> actual_water_01{parentDir / "anim/water/01.png"};
+  png::image<png::index_pixel> actual_water_01{parentDir / std::filesystem::path{"anim/water/01.png"}};
   expectedWidthInTiles = expected_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -969,11 +975,11 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/secondary"}));
   ctx.compilerSrcPaths.secondarySourcePath = "res/tests/anim_metatiles_2/secondary";
-  REQUIRE(std::filesystem::exists("res/tests/metatile_behaviors.h"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/metatile_behaviors.h"}));
   ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
 
   porytiles::drive(ctx);
@@ -982,10 +988,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   // Check tiles.png
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_tiles.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "tiles.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_tiles.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_2/secondary/expected_tiles.png"};
-  png::image<png::index_pixel> actualPng{parentDir / "tiles.png"};
+  png::image<png::index_pixel> actualPng{parentDir / std::filesystem::path{"tiles.png"}};
 
   std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
   std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
@@ -1007,8 +1013,9 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   // Check metatiles.bin
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_metatiles.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatiles.bin"));
+  REQUIRE(
+      std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatiles.bin"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatiles.bin"}));
   std::FILE *expected;
   std::FILE *actual;
 
@@ -1016,7 +1023,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   if (expected == NULL) {
     FAIL("std::FILE `expected' was null");
   }
-  actual = fopen((parentDir / "metatiles.bin").c_str(), "r");
+  actual = fopen((parentDir / std::filesystem::path{"metatiles.bin"}).c_str(), "r");
   if (actual == NULL) {
     fclose(expected);
     FAIL("std::FILE `expected' was null");
@@ -1050,14 +1057,15 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   // Check metatile_attributes.bin
   // Secondary set doesn't provide a metatile_behaviors.h or an attributes.csv, so default values are used
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"));
-  REQUIRE(std::filesystem::exists(parentDir / "metatile_attributes.bin"));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatile_attributes.bin"}));
 
   expected = fopen("res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin", "r");
   if (expected == NULL) {
     FAIL("std::FILE `expected' was null");
   }
-  actual = fopen((parentDir / "metatile_attributes.bin").c_str(), "r");
+  actual = fopen((parentDir / std::filesystem::path{"metatile_attributes.bin"}).c_str(), "r");
   if (actual == NULL) {
     fclose(expected);
     FAIL("std::FILE `expected' was null");
@@ -1085,16 +1093,19 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   fclose(expected);
   fclose(actual);
 
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"));
-  REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/00.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/01.png"));
-  REQUIRE(std::filesystem::exists(parentDir / "anim/flower_red/02.png"));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"}));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"}));
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_red/00.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_red/01.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"anim/flower_red/02.png"}));
 
   png::image<png::index_pixel> expected_flower_red_00{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"};
-  png::image<png::index_pixel> actual_flower_red_00{parentDir / "anim/flower_red/00.png"};
+  png::image<png::index_pixel> actual_flower_red_00{parentDir / std::filesystem::path{"anim/flower_red/00.png"}};
   expectedWidthInTiles = expected_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -1110,7 +1121,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   }
   png::image<png::index_pixel> expected_flower_red_01{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"};
-  png::image<png::index_pixel> actual_flower_red_01{parentDir / "anim/flower_red/01.png"};
+  png::image<png::index_pixel> actual_flower_red_01{parentDir / std::filesystem::path{"anim/flower_red/01.png"}};
   expectedWidthInTiles = expected_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
@@ -1126,7 +1137,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   }
   png::image<png::index_pixel> expected_flower_red_02{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"};
-  png::image<png::index_pixel> actual_flower_red_02{parentDir / "anim/flower_red/02.png"};
+  png::image<png::index_pixel> actual_flower_red_02{parentDir / std::filesystem::path{"anim/flower_red/02.png"}};
   expectedWidthInTiles = expected_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
   expectedHeightInTiles = expected_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
   actualWidthInTiles = actual_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;

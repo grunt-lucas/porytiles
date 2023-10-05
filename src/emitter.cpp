@@ -456,9 +456,9 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_2/primary/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/top.png"}));
   png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
@@ -501,9 +501,9 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
 
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/bottom.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/middle.png"));
-  REQUIRE(std::filesystem::exists("res/tests/simple_metatiles_1/top.png"));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/top.png"}));
 
   png::image<png::rgba_pixel> bottom{"res/tests/simple_metatiles_1/bottom.png"};
   png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
@@ -559,7 +559,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 {
   SUBCASE("triple layer metatiles")
   {
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
     porytiles::PtContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -573,13 +573,13 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
     std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/attributes.csv"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/attributes.csv"}));
     auto attributesMap =
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2/primary/attributes.csv");
 
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/bottom.png"));
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/middle.png"));
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2/primary/top.png"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/top.png"}));
     png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_2/primary/bottom.png"};
     png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2/primary/top.png"};
@@ -643,7 +643,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
   SUBCASE("dual layer metatiles")
   {
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary"}));
     porytiles::PtContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -658,13 +658,13 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
     std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/attributes.csv"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/attributes.csv"}));
     auto attributesMap =
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/anim_metatiles_2_dual/primary/attributes.csv");
 
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/bottom.png"));
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/middle.png"));
-    REQUIRE(std::filesystem::exists("res/tests/anim_metatiles_2_dual/primary/top.png"));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/top.png"}));
     png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_2_dual/primary/bottom.png"};
     png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_2_dual/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2_dual/primary/top.png"};
