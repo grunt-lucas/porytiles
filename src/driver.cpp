@@ -10,6 +10,7 @@
 #include <regex>
 #include <sstream>
 #include <unordered_map>
+#include <utility>
 
 #include "compiler.h"
 #include "decompiler.h"
