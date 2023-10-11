@@ -633,6 +633,27 @@ static void driveCompile(PtContext &ctx)
                fmt::format("{}: supplied behaviors header did not exist", ctx.compilerSrcPaths.metatileBehaviors));
   }
 
+  /*
+   * Now that we have imported the behavior header, let's parse the argument to -default-behavior option if it was
+   * supplied. If the user provided an integer, just use that. Otherwise, if the user provided a label string, check
+   * it against the behavior header here and replace that label string with the integral value.
+   */
+  try {
+    parseInteger<std::size_t>(ctx.compilerConfig.defaultBehavior.c_str());
+  }
+  catch (const std::exception &e) {
+    // If the parse fails, assume the user provided a behavior label and try to parse
+    if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default behavior '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+    }
+    ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
+  }
+
+  /*
+   * Perform resource import and mode-based compilation.
+   */
   std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);

@@ -29,7 +29,7 @@ template <typename T> T parseInteger(const char *integerString)
     throw std::runtime_error{e.what()};
   }
   // unreachable, here for compiler
-  throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
+  throw std::runtime_error("utilities::parseInteger reached unreachable code path");
 }
 
 std::vector<std::string> split(std::string input, const std::string &delimiter);
