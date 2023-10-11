@@ -93,7 +93,8 @@ const std::string DEFAULT_BEHAVIOR = "default-behavior";
 const std::string DEFAULT_BEHAVIOR_DESC =
 "        -" + DEFAULT_BEHAVIOR + "=<BEHAVIOR>\n"
 "             Select the default behavior for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. If unspecified, defaults to 'MB_NORMAL'.\n";
+"             'attributes.csv' file. You may use either a raw integral value or a metatile behavior\n"
+"             label defined in the provided behaviors header. If unspecified, defaults to '0'.\n";
 constexpr int DEFAULT_BEHAVIOR_VAL = 2003;
 
 // Color assignment config options

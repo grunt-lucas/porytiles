@@ -511,7 +511,10 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
       break;
     case DEFAULT_BEHAVIOR_VAL:
-      // TODO : finish implementing the -defaultBehavior logic
+      /*
+       * TODO FIXME : finish implementing the -default-behavior logic
+       * Can either be integral or a behavior label defined in the behaviors header
+       */
       ctx.compilerConfig.defaultBehavior = std::string{optarg};
       break;
 

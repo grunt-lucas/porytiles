@@ -815,7 +815,7 @@ struct CompilerConfig {
   bool secondarySmartPrune;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"MB_NORMAL"},
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"0"},
         primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, primaryExploredNodeCutoff{2'000'000},
         primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
         secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}
