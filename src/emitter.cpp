@@ -345,6 +345,7 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   else {
     outCsv << "id,behavior" << std::endl;
   }
+  // TODO : if all elements in a row correspond to the selected defaults, skip emitting this row?
   for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
