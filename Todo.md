@@ -30,10 +30,19 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
   + Assignment config discovery
-    + default behavior: look for assign.cfg in the input folder, use those settings
-    + if assign.cfg does not exist, warn the user and run the full assignment param search matrix
-      + this will be a default-on warning
-    + user can supply --cache-assign-config option to force porytiles to search for a valid assign param and save it to input folder
+    + default behavior: look for `assign.cfg` in the input folder, use those settings
+      + format of file: key=value lines, e.g.
+      ```
+      assign-explore-cutoff=3
+      best-branches=2
+      assign-algo=bfs
+      ```
+    + if assign.cfg does not exist, warn the user and run the full assign param search matrix
+      + this will be a default-on warning, `-Wassign-config-not-found`
+    + user can supply --cache-assign-config option to force porytiles to:
+      1. Ignore the values in `assign.cfg`, if present
+      2. Run the full assign param search matrix
+      3. If a valid param setting is found, overwrite `assign.cfg` with these new settings
 
 + `report` command that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
@@ -57,25 +66,28 @@
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
+  + canonical example: Pokémart and Pokécenter roofs are identical tiles with different colorings
+    + ideally, two palettes will be color-aligned such that we only have to save a single indexed roof tile
 
-+ Set up more CI builds
-  + Windows MSVC? MinGW?
++ Improve CI build system
+  + Add Windows MSVC? MinGW?
   + set up package caches so installs don't have to run every time
-    + probably too hard to do with homebrew
+    + probably too hard to do with homebrew, apt
   + finish the script targets in package.sh
     + https://releases.llvm.org/16.0.0/projects/libcxx/docs/UsingLibcxx.html
     + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
-    + MacOS:
-      CXXFLAGS="-isystem /opt/homebrew/opt/llvm@16/include/c++/v1" LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++"
-    + do we want separate targets for both libc++ and libstdc++?
+    + Github CI should call these scripts
+  + static link all libs for the Linux version, do not provide a dynamically linked release binary
+    + if users want one, they can build from source
   + static link libc++ and libpng on mac?
     + https://stackoverflow.com/questions/844819/how-to-static-link-on-os-x
+    + probably too brittle (MacOS syscall interface is not stable), instead provide detailed install instructions
   + Mac universal binary?
     + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
   + better build system? (cmake, autotools, etc)
   + static analysis: https://nrk.neocities.org/articles/c-static-analyzers
 
-+ provide a way to input primer tiles to improve algorithm efficiency?
++ provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes
   + `palette-overrides` folder in the input folder
     + in this folder, numbered JASC PAL files containing exactly 16 colors are copied directly into the final palette
@@ -89,10 +101,6 @@
       + when done correctly, this will help the algorithm find a more optimal solution by "leeching" intelligence from
         human intervention
 
-+ `-skip-metatile-generation` skips generation of `metatiles.bin`
-
-+ `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
-
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
   + instead of outputting all the files, just write C code to the console
@@ -103,12 +111,14 @@
   + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
   + might be useful for some people who drew a scene they want to tile-ize
   + low-priority feature
+  + `-skip-metatile-generation` skips generation of `metatiles.bin`
+  + `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
 
 + Set up auto-generated documentation: doxygen? RTD?
 
 + support custom masks and shifts for metatile attributes, see how Porymap does this
 
-+ Refactor CLI parsing
++ Refactor CLI parsing, it's a mess
   + CXXOpts lib may be helpful here
 
 + Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
