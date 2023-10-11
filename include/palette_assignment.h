@@ -11,6 +11,7 @@
 namespace porytiles {
 
 constexpr std::size_t EXPLORATION_CUTOFF_MULTIPLIER = 1'000'000;
+constexpr std::size_t EXPLORATION_MAX_CUTOFF = 100 * EXPLORATION_CUTOFF_MULTIPLIER;
 
 struct AssignState {
   /*

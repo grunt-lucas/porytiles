@@ -518,12 +518,19 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     // Color assignment config options
     case ASSIGN_EXPLORE_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
-      // FIXME : error if this factor is too large
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
+          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+                                          fmt::styled(ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+        }
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.secondaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        if (ctx.compilerConfig.secondaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
+          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+                                          fmt::styled(ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+        }
       }
       break;
     case ASSIGN_ALGO_VAL:
@@ -562,9 +569,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_ASSIGN_EXPLORE_CUTOFF, optarg);
-      // FIXME : error if this factor is too large
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
+          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+                                          fmt::styled(PRIMARY_ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+        }
       }
       break;
     case PRIMARY_ASSIGN_ALGO_VAL:
