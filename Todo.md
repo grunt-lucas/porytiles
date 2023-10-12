@@ -19,9 +19,6 @@
   + get anim decompilation working
     + will require key frame detection / key frame hints at CLI
 
-+ attributes / behavior changes
-  + implement a `-default-terrain-type` and `-default-encounter-type` that works like `-default-behavior`
-
 + More assign algorithms?
   + Maybe some kind of A-star?
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html

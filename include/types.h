@@ -803,6 +803,8 @@ struct CompilerConfig {
   RGBA32 transparencyColor;
   bool tripleLayer;
   std::string defaultBehavior;
+  std::string defaultEncounterType;
+  std::string defaultTerrainType;
 
   // Palette assignment algorithm configuration
   AssignAlgorithm primaryAssignAlgorithm;
@@ -815,10 +817,11 @@ struct CompilerConfig {
   bool secondarySmartPrune;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"0"},
-        primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, primaryExploredNodeCutoff{2'000'000},
-        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
-        secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"0"}, defaultEncounterType{"0"},
+        defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
+        secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, secondaryExploredNodeCutoff{2'000'000},
+        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}
   {
   }
 };

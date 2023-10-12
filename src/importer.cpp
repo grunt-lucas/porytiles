@@ -155,8 +155,10 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
   std::size_t heightInMetatiles = bottom.get_height() / METATILE_SIDE_LENGTH;
 
-  // grab the supplied default behavior
+  // Grab the supplied default behavior, encounter/terrain types
   std::uint16_t defaultBehavior;
+  EncounterType defaultEncounterType;
+  TerrainType defaultTerrainType;
   try {
     defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
   }
@@ -165,6 +167,26 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
                fmt::format("supplied default behavior '{}' was not valid",
                            fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+  }
+  try {
+    std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+    defaultEncounterType = encounterTypeFromInt(encounterValue);
+  }
+  catch (const std::exception &e) {
+    defaultEncounterType = EncounterType::NONE;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default EncounterType '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+  }
+  try {
+    std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+    defaultTerrainType = terrainTypeFromInt(terrainValue);
+  }
+  catch (const std::exception &e) {
+    defaultTerrainType = TerrainType::NORMAL;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default TerrainType '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
   }
 
   for (size_t metatileIndex = 0; metatileIndex < widthInMetatiles * heightInMetatiles; metatileIndex++) {
@@ -178,11 +200,13 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     Attributes metatileAttributes{};
     metatileAttributes.baseGame = ctx.targetBaseGame;
     metatileAttributes.metatileBehavior = defaultBehavior;
+    metatileAttributes.encounterType = defaultEncounterType;
+    metatileAttributes.terrainType = defaultTerrainType;
     if (attributesMap.contains(metatileIndex)) {
       const Attributes &fromMap = attributesMap.at(metatileIndex);
       metatileAttributes.metatileBehavior = fromMap.metatileBehavior;
-      metatileAttributes.terrainType = fromMap.terrainType;
       metatileAttributes.encounterType = fromMap.encounterType;
+      metatileAttributes.terrainType = fromMap.terrainType;
     }
 
     // Bottom layer

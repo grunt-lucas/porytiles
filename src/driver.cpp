@@ -651,6 +651,38 @@ static void driveCompile(PtContext &ctx)
     ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
   }
 
+  // Bring in the default encounter type and terrain type, if relevant
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+  }
+  catch (const std::exception &e) {
+    // If the parse fails, assume the user provided an encounter label and try to parse
+    try {
+      EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
+      ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default EncounterType '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+    }
+  }
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+  }
+  catch (const std::exception &e) {
+    // If the parse fails, assume the user provided a terrain label and try to parse
+    try {
+      TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
+      ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default TerrainType '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+    }
+  }
+
   /*
    * Perform resource import and mode-based compilation.
    */
