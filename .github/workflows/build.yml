@@ -100,19 +100,19 @@ jobs:
           brew install zlib
           brew install libpng
           brew install llvm@16
-          /usr/local/opt/llvm/bin/clang++ --version
-          /usr/local/opt/llvm/bin/clang++ -v
+          /usr/local/opt/llvm@16/bin/clang++ --version
+          /usr/local/opt/llvm@16/bin/clang++ -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
       - name: Build debug and release executables
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make all
+          LDFLAGS='-L/usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm@16/include/c++/v1' CXX=/usr/local/opt/llvm@16/bin/clang++ make all
 
       - name: Run tests on debug and release
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
+          LDFLAGS='-L/usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm@16/include/c++/v1' CXX=/usr/local/opt/llvm@16/bin/clang++ make check
 
   release-macos-amd64:
     name: Release a dynamically linked macos-amd64 binary
@@ -125,8 +125,8 @@ jobs:
           brew install zlib
           brew install libpng
           brew install llvm@16
-          /usr/local/opt/llvm/bin/clang++ --version
-          /usr/local/opt/llvm/bin/clang++ -v
+          /usr/local/opt/llvm@16/bin/clang++ --version
+          /usr/local/opt/llvm@16/bin/clang++ -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3

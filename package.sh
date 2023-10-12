@@ -18,7 +18,7 @@ macos_aarch64() {
   make clean
   export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1"
   export LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++"
-  export CXX=/opt/homebrew/opt/llvm/bin/clang++
+  export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
   make release-check
   package_release
 }
@@ -29,7 +29,7 @@ macos_amd64() {
   make clean
   export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /usr/local/opt/llvm@16/include/c++/v1"
   export LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++ -lc++"
-  export CXX=/usr/local/opt/llvm/bin/clang++
+  export CXX=/usr/local/opt/llvm@16/bin/clang++
   make release-check
   package_release
 }
