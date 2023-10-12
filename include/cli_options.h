@@ -101,7 +101,7 @@ const std::string DEFAULT_ENCOUNTER_TYPE = "default-encounter-type";
 const std::string DEFAULT_ENCOUNTER_TYPE_DESC =
 "        -" + DEFAULT_ENCOUNTER_TYPE + "=<TYPE>\n"
 "             Select the default encounter type for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. You may use either a raw integral value or an encounter type\n"
+"             'attributes.csv' file. You may use either a raw integral value or an EncounterType\n"
 "             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
 "             '0'.\n";
 constexpr int DEFAULT_ENCOUNTER_TYPE_VAL = 2004;
@@ -110,7 +110,7 @@ const std::string DEFAULT_TERRAIN_TYPE = "default-terrain-type";
 const std::string DEFAULT_TERRAIN_TYPE_DESC =
 "        -" + DEFAULT_TERRAIN_TYPE + "=<TYPE>\n"
 "             Select the default terrain type for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. You may use either a raw integral value or an terrain type\n"
+"             'attributes.csv' file. You may use either a raw integral value or an TerrainType\n"
 "             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
 "             '0'.\n";
 constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2005;
