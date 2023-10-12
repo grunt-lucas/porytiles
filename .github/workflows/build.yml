@@ -34,7 +34,7 @@ jobs:
           CXX=clang++-16 make check
 
   release-linux-amd64:
-    name: Release a dynamic-linked linux-amd64 binary
+    name: Release a statically linked linux-amd64 binary
     runs-on: ubuntu-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -115,7 +115,7 @@ jobs:
           LDFLAGS='-L/usr/local/opt/llvm/lib/c++ -Wl,-rpath,/usr/local/opt/llvm/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm/include/c++/v1' CXX=/usr/local/opt/llvm/bin/clang++ make check
 
   release-macos-amd64:
-    name: Release a dynamic-linked macos-amd64 binary
+    name: Release a dynamically linked macos-amd64 binary
     runs-on: macos-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
