@@ -815,6 +815,8 @@ struct CompilerConfig {
   RGBA32 transparencyColor;
   bool tripleLayer;
   bool cacheAssignConfig;
+  bool providedAssignConfigOverride;
+  bool providedPrimaryAssignConfigOverride;
   std::string defaultBehavior;
   std::string defaultEncounterType;
   std::string defaultTerrainType;
@@ -830,7 +832,8 @@ struct CompilerConfig {
   bool secondarySmartPrune;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssignConfig{false}, defaultBehavior{"0"},
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssignConfig{false},
+        providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false}, defaultBehavior{"0"},
         defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
         primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
         secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, secondaryExploredNodeCutoff{2'000'000},

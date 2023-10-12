@@ -529,6 +529,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 
     // Color assignment config options
     case ASSIGN_EXPLORE_CUTOFF_VAL:
+      ctx.compilerConfig.providedAssignConfigOverride = true;
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
@@ -546,6 +547,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case ASSIGN_ALGO_VAL:
+      ctx.compilerConfig.providedAssignConfigOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
       }
@@ -554,6 +556,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case BEST_BRANCHES_VAL:
+      ctx.compilerConfig.providedAssignConfigOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         if (std::string{optarg} == "smart") {
           ctx.compilerConfig.primarySmartPrune = true;
@@ -580,6 +583,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
+      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
       cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_ASSIGN_EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
@@ -590,11 +594,13 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case PRIMARY_ASSIGN_ALGO_VAL:
+      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, PRIMARY_ASSIGN_ALGO, optarg);
       }
       break;
     case PRIMARY_BEST_BRANCHES_VAL:
+      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         if (std::string{optarg} == "smart") {
           ctx.compilerConfig.primarySmartPrune = true;

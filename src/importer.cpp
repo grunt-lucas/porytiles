@@ -649,6 +649,44 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
+void importAssignmentConfigParameters(PtContext &ctx)
+{
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+      ctx.compilerConfig.providedPrimaryAssignConfigOverride) {
+    /*
+     * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
+     * override. In this case, we don't want to read anything from the assign config. Just return.
+     *
+     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
+     * be read from the config file.
+     */
+    return;
+  }
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
+      ctx.compilerConfig.providedAssignConfigOverride) {
+    /*
+     * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override. In
+     * this case, we don't want to read anything from the assign config. Just return.
+     *
+     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
+     * be read from the config file.
+     */
+    return;
+  }
+  if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+      ctx.compilerConfig.providedAssignConfigOverride) {
+    /*
+     * User is running compile-primary, we are compiling the primary, and user supplied an explicit override. In this
+     * case, we don't want to read anything from the assign config. Just return.
+     *
+     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
+     * be read from the config file.
+     */
+    return;
+  }
+  // TODO : impl importAssignmentConfigParameters
+}
+
 static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
 {
   std::vector<std::string> colorComponents = split(jascLine, " ");

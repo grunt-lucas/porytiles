@@ -685,7 +685,6 @@ static void driveCompile(PtContext &ctx)
   /*
    * Perform resource import and mode-based compilation.
    */
-  std::unique_ptr<CompiledTileset> compiledTiles;
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.compilerSrcPaths.bottomPrimaryTilesheet()};
@@ -703,7 +702,8 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
-    auto partnerPrimaryTiles = compile(ctx, decompiledPrimaryTiles);
+    importAssignmentConfigParameters(ctx);
+    ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
     png::image<png::rgba_pixel> bottomPng{ctx.compilerSrcPaths.bottomSecondaryTilesheet()};
@@ -722,9 +722,8 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
     importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
-    ctx.compilerContext.pairedPrimaryTileset = std::move(partnerPrimaryTiles);
-    compiledTiles = compile(ctx, decompiledSecondaryTiles);
-    ctx.compilerContext.resultTileset = std::move(compiledTiles);
+    importAssignmentConfigParameters(ctx);
+    ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles);
   }
   else {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
@@ -743,8 +742,8 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, animations, decompiledTiles);
-    compiledTiles = compile(ctx, decompiledTiles);
-    ctx.compilerContext.resultTileset = std::move(compiledTiles);
+    importAssignmentConfigParameters(ctx);
+    ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles);
   }
 
   /*
