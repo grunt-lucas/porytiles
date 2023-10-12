@@ -155,46 +155,47 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
   std::size_t heightInMetatiles = bottom.get_height() / METATILE_SIDE_LENGTH;
 
-  // Grab the supplied default behavior, encounter/terrain types
-  std::uint16_t defaultBehavior;
-  EncounterType defaultEncounterType;
-  TerrainType defaultTerrainType;
-  try {
-    defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-  }
-  catch (const std::exception &e) {
-    defaultBehavior = 0;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default behavior '{}' was not valid",
-                           fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
-  }
-  try {
-    std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
-    defaultEncounterType = encounterTypeFromInt(encounterValue);
-  }
-  catch (const std::exception &e) {
-    defaultEncounterType = EncounterType::NONE;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default EncounterType '{}' was not valid",
-                           fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
-  }
-  try {
-    std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
-    defaultTerrainType = terrainTypeFromInt(terrainValue);
-  }
-  catch (const std::exception &e) {
-    defaultTerrainType = TerrainType::NORMAL;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default TerrainType '{}' was not valid",
-                           fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
-  }
-
   for (size_t metatileIndex = 0; metatileIndex < widthInMetatiles * heightInMetatiles; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
     std::vector<RGBATile> bottomTiles{};
     std::vector<RGBATile> middleTiles{};
     std::vector<RGBATile> topTiles{};
+
+    // Grab the supplied default behavior, encounter/terrain types
+    // FIXME : default behavior/encounter/terrain parsing code is duped
+    std::uint16_t defaultBehavior;
+    EncounterType defaultEncounterType;
+    TerrainType defaultTerrainType;
+    try {
+      defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
+    }
+    catch (const std::exception &e) {
+      defaultBehavior = 0;
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default behavior '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+    }
+    try {
+      std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+      defaultEncounterType = encounterTypeFromInt(encounterValue);
+    }
+    catch (const std::exception &e) {
+      defaultEncounterType = EncounterType::NONE;
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default EncounterType '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+    }
+    try {
+      std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+      defaultTerrainType = terrainTypeFromInt(terrainValue);
+    }
+    catch (const std::exception &e) {
+      defaultTerrainType = TerrainType::NORMAL;
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("supplied default TerrainType '{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+    }
 
     // Attributes are per-metatile so we can compute them once here
     Attributes metatileAttributes{};
@@ -533,6 +534,41 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
     warn_tooManyAttributesForTargetGame(ctx.err, filePath, ctx.targetBaseGame);
   }
 
+  // Grab the supplied default behavior, encounter/terrain types
+  // FIXME : default behavior/encounter/terrain parsing code is duped
+  std::uint16_t defaultBehavior;
+  EncounterType defaultEncounterType;
+  TerrainType defaultTerrainType;
+  try {
+    defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
+  }
+  catch (const std::exception &e) {
+    defaultBehavior = 0;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default behavior '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+  }
+  try {
+    std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+    defaultEncounterType = encounterTypeFromInt(encounterValue);
+  }
+  catch (const std::exception &e) {
+    defaultEncounterType = EncounterType::NONE;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default EncounterType '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+  }
+  try {
+    std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+    defaultTerrainType = terrainTypeFromInt(terrainValue);
+  }
+  catch (const std::exception &e) {
+    defaultTerrainType = TerrainType::NORMAL;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default TerrainType '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+  }
+
   // processedUpToLine starts at 1 since we processed the header already, which was on line 1
   std::size_t processedUpToLine = 1;
   while (true) {
@@ -553,6 +589,9 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 
     Attributes attribute{};
     attribute.baseGame = ctx.targetBaseGame;
+    attribute.metatileBehavior = defaultBehavior;
+    attribute.encounterType = defaultEncounterType;
+    attribute.terrainType = defaultTerrainType;
     if (behaviorMap.contains(behavior)) {
       attribute.metatileBehavior = behaviorMap.at(behavior);
     }

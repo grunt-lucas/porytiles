@@ -638,6 +638,7 @@ static void driveCompile(PtContext &ctx)
    * supplied. If the user provided an integer, just use that. Otherwise, if the user provided a label string, check
    * it against the behavior header here and replace that label string with the integral value.
    */
+  // FIXME : default behavior/encounter/terrain parsing code is duped
   try {
     parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
   }
@@ -650,8 +651,6 @@ static void driveCompile(PtContext &ctx)
     }
     ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
   }
-
-  // Bring in the default encounter type and terrain type, if relevant
   try {
     parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
   }
