@@ -305,6 +305,7 @@ const std::string COMPILE_HELP =
 "                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                [assign.cfg]             # cached configuration for palette assignment algorithm\n"
 "                [attributes.csv]         # missing metatile entries will receive default values\n"
 "                [anim/]                  # 'anim' folder is optional\n"
 "                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
@@ -351,6 +352,7 @@ BEST_BRANCHES_DESC + "\n" +
 PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 PRIMARY_ASSIGN_ALGO_DESC + "\n" +
 PRIMARY_BEST_BRANCHES_DESC + "\n" +
+CACHE_ASSIGN_CONFIG_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -400,6 +402,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {PRIMARY_ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL},
       {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
       {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
+      {CACHE_ASSIGN_CONFIG.c_str(), no_argument, nullptr, CACHE_ASSIGN_CONFIG_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -605,6 +608,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
           }
         }
       }
+      break;
+    case CACHE_ASSIGN_CONFIG_VAL:
+      ctx.compilerConfig.cacheAssignConfig = true;
       break;
 
     // Fieldmap override options

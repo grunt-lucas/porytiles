@@ -34,7 +34,7 @@
       ```
     + if assign.cfg does not exist, warn the user and run the full assign param search matrix
       + this will be a default-on warning, `-Wassign-config-not-found`
-    + user can supply --cache-assign-config option to force porytiles to:
+    + user can supply `-cache-assign-config` option to force porytiles to:
       1. Ignore the values in `assign.cfg`, if present
       2. Run the full assign param search matrix
       3. If a valid param setting is found, overwrite `assign.cfg` with these new settings

@@ -115,6 +115,7 @@ const std::string DEFAULT_TERRAIN_TYPE_DESC =
 "             '0'.\n";
 constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2005;
 
+
 // Color assignment config options
 
 const std::string ASSIGN_EXPLORE_CUTOFF = "assign-explore-cutoff";
@@ -159,6 +160,14 @@ const std::string PRIMARY_BEST_BRANCHES_DESC =
 "             Same as '-best-branches', but for the paired primary set. Only to be used\n"
 "             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
+
+const std::string CACHE_ASSIGN_CONFIG = "cache-assign-config";
+const std::string CACHE_ASSIGN_CONFIG_DESC =
+"        -" + CACHE_ASSIGN_CONFIG + "\n"
+"             Ignore the values in the current 'assign.cfg', if present. Run the full palette\n"
+"             assignment parameter search matrix. If a valid setting is found, overwrite the\n"
+"             current 'assign.cfg' settings with the new settings.\n";
+constexpr int CACHE_ASSIGN_CONFIG_VAL = 3006;
 
 
 // Fieldmap override options
