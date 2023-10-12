@@ -68,12 +68,7 @@
   + Add Windows MSVC? MinGW?
   + set up package caches so installs don't have to run every time
     + probably too hard to do with homebrew, apt
-  + finish the script targets in package.sh
-    + https://releases.llvm.org/16.0.0/projects/libcxx/docs/UsingLibcxx.html
-    + https://stackoverflow.com/questions/2579576/i-dir-vs-isystem-dir
-    + Github CI should call these scripts
-  + static link all libs for the Linux version, do not provide a dynamically linked release binary
-    + if users want one, they can build from source
+  + test if the actual scripted release process works properly
   + static link libc++ and libpng on mac?
     + https://stackoverflow.com/questions/844819/how-to-static-link-on-os-x
     + probably too brittle (MacOS syscall interface is not stable), instead provide detailed install instructions
