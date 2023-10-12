@@ -155,6 +155,18 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
   std::size_t heightInMetatiles = bottom.get_height() / METATILE_SIDE_LENGTH;
 
+  // grab the supplied default behavior
+  std::uint16_t defaultBehavior;
+  try {
+    defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
+  }
+  catch (const std::exception &e) {
+    defaultBehavior = 0;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("supplied default behavior '{}' was not valid",
+                           fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+  }
+
   for (size_t metatileIndex = 0; metatileIndex < widthInMetatiles * heightInMetatiles; metatileIndex++) {
     size_t metatileRow = metatileIndex / widthInMetatiles;
     size_t metatileCol = metatileIndex % widthInMetatiles;
@@ -165,6 +177,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
     // Attributes are per-metatile so we can compute them once here
     Attributes metatileAttributes{};
     metatileAttributes.baseGame = ctx.targetBaseGame;
+    metatileAttributes.metatileBehavior = defaultBehavior;
     if (attributesMap.contains(metatileIndex)) {
       const Attributes &fromMap = attributesMap.at(metatileIndex);
       metatileAttributes.metatileBehavior = fromMap.metatileBehavior;

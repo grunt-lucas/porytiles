@@ -20,9 +20,7 @@
     + will require key frame detection / key frame hints at CLI
 
 + attributes / behavior changes
-  + allow user to specify default behavior value using CLI option `-default-behavior`
-    + this option takes a string defined in the behavior header
-  + also have `-default-terrain-type` and `-default-encounter-type`
+  + implement a `-default-terrain-type` and `-default-encounter-type` that works like `-default-behavior`
 
 + More assign algorithms?
   + Maybe some kind of A-star?

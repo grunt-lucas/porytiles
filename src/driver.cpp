@@ -639,7 +639,7 @@ static void driveCompile(PtContext &ctx)
    * it against the behavior header here and replace that label string with the integral value.
    */
   try {
-    parseInteger<std::size_t>(ctx.compilerConfig.defaultBehavior.c_str());
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
   }
   catch (const std::exception &e) {
     // If the parse fails, assume the user provided a behavior label and try to parse
