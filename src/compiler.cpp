@@ -1758,7 +1758,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+  ctx.compilerContext.pairedPrimaryTileset = porytiles::compile(ctx, decompiledPrimary);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/middle.png"}));
@@ -1769,7 +1769,6 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-  ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
   auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary);
 
   // Check that tiles are as expected
