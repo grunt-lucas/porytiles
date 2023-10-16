@@ -2170,8 +2170,7 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
   porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
 
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
-  ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
+  ctx.compilerContext.pairedPrimaryTileset = porytiles::compile(ctx, decompiledPrimary);
   ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/bottom.png"}));
