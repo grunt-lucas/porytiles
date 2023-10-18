@@ -655,32 +655,29 @@ void importAssignmentConfigParameters(PtContext &ctx)
       ctx.compilerConfig.providedPrimaryAssignConfigOverride) {
     /*
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
-     * override. In this case, we don't want to read anything from the assign config. Just return.
+     * override value. In this case, we don't want to read anything from the assign config. Just return.
      *
-     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
-     * be read from the config file.
+     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
      */
     return;
   }
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       ctx.compilerConfig.providedAssignConfigOverride) {
     /*
-     * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override. In
-     * this case, we don't want to read anything from the assign config. Just return.
+     * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
+     * In this case, we don't want to read anything from the assign config. Just return.
      *
-     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
-     * be read from the config file.
+     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
      */
     return;
   }
   if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
       ctx.compilerConfig.providedAssignConfigOverride) {
     /*
-     * User is running compile-primary, we are compiling the primary, and user supplied an explicit override. In this
-     * case, we don't want to read anything from the assign config. Just return.
+     * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
+     * this case, we don't want to read anything from the assign config. Just return.
      *
-     * TODO : this should only override the explicitly provided parameter, not all the parameters. The rest should still
-     * be read from the config file.
+     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
      */
     return;
   }
