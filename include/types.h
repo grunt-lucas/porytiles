@@ -838,8 +838,8 @@ struct CompilerConfig {
         providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false}, defaultBehavior{"0"},
         defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
         primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
-        secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST}, secondaryExploredNodeCutoff{2'000'000},
-        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}, readCachedPrimaryConfig{false},
+        readCachedPrimaryConfig{false}, secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
         readCachedSecondaryConfig{false}
   {
   }
