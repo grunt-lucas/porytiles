@@ -565,9 +565,8 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
 
 void warn_assignConfigOverride(ErrorsAndWarnings &err, std::string path)
 {
-  printWarning(
-      err, err.assignConfigOverride, WARN_ASSIGN_CONFIG_OVERRIDE,
-      fmt::format("{}: ignoring config due to command line override", path));
+  printWarning(err, err.assignConfigOverride, WARN_ASSIGN_CONFIG_OVERRIDE,
+               fmt::format("{}: ignoring config due to command line override", path));
   if (err.printErrors && err.assignConfigOverride != WarningMode::OFF) {
     // TODO : add any more info via a note?
     // pt_note("");

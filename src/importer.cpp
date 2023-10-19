@@ -670,6 +670,7 @@ void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &conf
     return;
   }
   // TODO : impl importPrimaryAssignmentConfigParameters
+  ctx.compilerConfig.readCachedPrimaryConfig = true;
 }
 
 void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
@@ -684,6 +685,7 @@ void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &co
     return;
   }
   // TODO : impl importSecondaryAssignmentConfigParameters
+  ctx.compilerConfig.readCachedSecondaryConfig = true;
 }
 
 static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
