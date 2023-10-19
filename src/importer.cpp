@@ -649,26 +649,15 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
-void importAssignmentConfigParameters(PtContext &ctx)
+void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
       ctx.compilerConfig.providedPrimaryAssignConfigOverride) {
     /*
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
      * override value. In this case, we don't want to read anything from the assign config. Just return.
-     *
-     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
      */
-    return;
-  }
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
-      ctx.compilerConfig.providedAssignConfigOverride) {
-    /*
-     * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
-     * In this case, we don't want to read anything from the assign config. Just return.
-     *
-     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
-     */
+    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.primaryAssignConfig());
     return;
   }
   if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
@@ -676,12 +665,25 @@ void importAssignmentConfigParameters(PtContext &ctx)
     /*
      * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
      * this case, we don't want to read anything from the assign config. Just return.
-     *
-     * TODO : if an assign.cfg exists, we should warn the user that an override is being used
      */
+    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.primaryAssignConfig());
     return;
   }
-  // TODO : impl importAssignmentConfigParameters
+  // TODO : impl importPrimaryAssignmentConfigParameters
+}
+
+void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
+{
+  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
+      ctx.compilerConfig.providedAssignConfigOverride) {
+    /*
+     * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
+     * In this case, we don't want to read anything from the assign config. Just return.
+     */
+    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.secondaryAssignConfig());
+    return;
+  }
+  // TODO : impl importSecondaryAssignmentConfigParameters
 }
 
 static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)

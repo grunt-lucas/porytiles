@@ -702,7 +702,14 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
-    importAssignmentConfigParameters(ctx);
+    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
+      std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig()};
+      if (assignConfigFile.fail()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
+      }
+      importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
+    }
     ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles);
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
@@ -722,7 +729,14 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
     importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
-    importAssignmentConfigParameters(ctx);
+    if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignConfig())) {
+      std::ifstream assignConfigFile{ctx.compilerSrcPaths.secondaryAssignConfig()};
+      if (assignConfigFile.fail()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.secondaryAssignConfig().c_str()));
+      }
+      importSecondaryAssignmentConfigParameters(ctx, assignConfigFile);
+    }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles);
   }
   else {
@@ -742,7 +756,14 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, animations, decompiledTiles);
-    importAssignmentConfigParameters(ctx);
+    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
+      std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig().c_str()};
+      if (assignConfigFile.fail()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
+      }
+      importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
+    }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles);
   }
 

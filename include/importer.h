@@ -40,7 +40,9 @@ std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                         const std::string &filePath);
 
-void importAssignmentConfigParameters(PtContext &ctx);
+void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config);
+
+void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config);
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,

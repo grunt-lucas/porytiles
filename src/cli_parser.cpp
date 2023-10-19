@@ -434,6 +434,8 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
       {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
       {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
+      {WASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WASSIGN_CONFIG_OVERRIDE_VAL},
+      {WNO_ASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WNO_ASSIGN_CONFIG_OVERRIDE_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
@@ -470,6 +472,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 
   std::optional<bool> warnTransparencyCollapseOverride{};
   std::optional<bool> errTransparencyCollapseOverride{};
+
+  std::optional<bool> warnAssignConfigOverride{true};
+  std::optional<bool> errAssignConfigOverride{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -757,6 +762,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     case WNO_TRANSPARENCY_COLLAPSE_VAL:
       warnTransparencyCollapseOverride = false;
       break;
+    case WASSIGN_CONFIG_OVERRIDE_VAL:
+      warnAssignConfigOverride = true;
+      break;
+    case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
+      warnAssignConfigOverride = false;
+      break;
 
     // Help message upon '-h/--help' goes to stdout
     case HELP_VAL:
@@ -871,6 +882,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   if (warnTransparencyCollapseOverride.has_value()) {
     ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  if (warnAssignConfigOverride.has_value()) {
+    ctx.err.assignConfigOverride = warnAssignConfigOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
 
   // If requested, set all enabled warnings to errors
   if (setAllEnabledWarningsToErrors) {
@@ -960,6 +974,17 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.transparencyCollapse = WarningMode::OFF;
+    }
+  }
+  if (errAssignConfigOverride.has_value()) {
+    if (errAssignConfigOverride.value()) {
+      ctx.err.assignConfigOverride = WarningMode::ERR;
+    }
+    else if ((warnAssignConfigOverride.has_value() && warnAssignConfigOverride.value()) || enableAllWarnings) {
+      ctx.err.assignConfigOverride = WarningMode::WARN;
+    }
+    else {
+      ctx.err.assignConfigOverride = WarningMode::OFF;
     }
   }
 

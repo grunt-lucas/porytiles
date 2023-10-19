@@ -27,6 +27,7 @@ const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
 const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
 const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
+const char *const WARN_ASSIGN_CONFIG_OVERRIDE = "assign-config-override";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
@@ -556,6 +557,18 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
                   fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
                   fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold)));
   if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
+    // TODO : add any more info via a note?
+    // pt_note("");
+    pt_println(stderr, "");
+  }
+}
+
+void warn_assignConfigOverride(ErrorsAndWarnings &err, std::string path)
+{
+  printWarning(
+      err, err.assignConfigOverride, WARN_ASSIGN_CONFIG_OVERRIDE,
+      fmt::format("{}: ignoring config due to command line override", path));
+  if (err.printErrors && err.assignConfigOverride != WarningMode::OFF) {
     // TODO : add any more info via a note?
     // pt_note("");
     pt_println(stderr, "");
