@@ -32,21 +32,30 @@
       best-branches=2
       assign-algo=bfs
       ```
+      + if those settings fail, warn the user (non-toggleable warning) and re-run the param search matrix
     + if assign.cfg does not exist, warn the user and run the full assign param search matrix
       + this will be a default-on warning, `-Wassign-config-not-found`
-    + user can supply `-cache-assign-config` option to force porytiles to:
-      1. Ignore the values in `assign.cfg`, if present
-      2. Run the full assign param search matrix
-      3. If a valid param setting is found, overwrite `assign.cfg` with these new settings
+      + if the search matrix fails, error out and print a link to a helpful wiki page
+    + How to handle the manual override options?
+      + I think the manual override option should override that specific option only, and draw the others from the
+        `assign.cfg` file.
+      + I want to move away from the idea that users should be manually tweaking the assignment config settings
+      + If the param search matrix fails, users can try manual options to see if something works. If something does,
+        then they can manually create `assign.cfg` themselves and everything will work at that point
 
-+ `report` command that prints out various statistics
-  + Number of tiles, metatiles, unique colors, etc
-  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
-    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
-  + Print all animation start tiles
-  + dump pal files and tile.png to CLI, see e.g.:
-    + https://github.com/eddieantonio/imgcat
-    + https://github.com/stefanhaustein/TerminalImageViewer
++ provide a way to "prime" palette assignment to improve algorithm efficiency?
+  + idea: two different palette override modes
+  + `palette-overrides` folder in the input folder
+    + in this folder, numbered JASC PAL files containing exactly 16 colors are copied directly into the final palette
+      + e.g. 1.pal will become palette 1
+      + fail build if we can't assign all tiles given the override
+  + `palette-primers`
+    + in this folder, named JASC PAL files that contain an arbitrary number of colors
+      + e.g. grass.pal
+      + turn each palette file here into a dummy normalized tile so each pal file is guaranteed to appear in the same
+        hardware palette, gives users a way to guarantee that certain colors are always together
+      + when done correctly, this will help the algorithm find a more optimal solution by "leeching" intelligence from
+        human intervention
 
 + Warnings
   + `-Wpalette-alloc-efficiency`
@@ -58,6 +67,18 @@
   + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
+
++ Use imgui to create a basic GUI?
+  + https://github.com/ocornut/imgui
+
++ `report` command that prints out various statistics
+  + Number of tiles, metatiles, unique colors, etc
+  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
+    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
+  + Print all animation start tiles
+  + dump pal files and tile.png to CLI, see e.g.:
+    + https://github.com/eddieantonio/imgcat
+    + https://github.com/stefanhaustein/TerminalImageViewer
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
@@ -76,20 +97,6 @@
     + https://stackoverflow.com/questions/67945226/how-to-build-an-intel-binary-on-an-m1-mac-from-the-command-line-with-the-standar
   + better build system? (cmake, autotools, etc)
   + static analysis: https://nrk.neocities.org/articles/c-static-analyzers
-
-+ provide a way to "prime" palette assignment to improve algorithm efficiency?
-  + idea: two different palette override modes
-  + `palette-overrides` folder in the input folder
-    + in this folder, numbered JASC PAL files containing exactly 16 colors are copied directly into the final palette
-      + e.g. 1.pal will become palette 1
-      + fail build if we can't assign all tiles given the override
-  + `palette-primers`
-    + in this folder, named JASC PAL files that contain an arbitrary number of colors
-      + e.g. grass.pal
-      + turn each palette file here into a dummy normalized tile so each pal file is guaranteed to appear in the same
-        hardware palette, gives users a way to guarantee that certain colors are always together
-      + when done correctly, this will help the algorithm find a more optimal solution by "leeching" intelligence from
-        human intervention
 
 + `dump-anim-code` command
   + takes input tiles just like `compile-X` commands
