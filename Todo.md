@@ -38,10 +38,12 @@
       + if the search matrix fails, error out and print a link to a helpful wiki page
     + How to handle the manual override options?
       + I think the manual override option should override that specific option only, and draw the others from the
-        `assign.cfg` file.
+        `assign.cfg` file. If there is no `assign.cfg` file, warn that defaults are being used.
       + I want to move away from the idea that users should be manually tweaking the assignment config settings
       + If the param search matrix fails, users can try manual options to see if something works. If something does,
-        then they can manually create `assign.cfg` themselves and everything will work at that point
+        it will automatically save off an `assign.cfg`. Basically, Porytiles should always automatically write out an
+        `assign.cfg` any time a successful compilation occurs. In most cases, it will write out an identical file so
+        nothing will change.
 
 + provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes
