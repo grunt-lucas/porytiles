@@ -90,12 +90,16 @@ extern const char *const WARN_UNUSED_ATTRIBUTE;
 extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CONFIG_OVERRIDE;
 
-// Internal compiler errors (due to bug in the compiler)
+/*
+ * Internal compiler errors (due to bug in the compiler)
+ */
 void internalerror(std::string message);
 void internalerror_unknownCompilerMode(std::string context);
 void internalerror_unknownDecompilerMode(std::string context);
 
-// Regular compilation errors (due to bad user input), regular errors try to die as late as possible
+/*
+ * Regular compilation errors (due to bad user input), regular errors try to die as late as possible
+ */
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension);
 
@@ -132,7 +136,9 @@ void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std:
 
 void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, std::size_t line, std::string type);
 
-// Fatal compilation errors (due to bad user input), fatal errors die immediately
+/*
+ * Fatal compilation errors (due to bad user input), fatal errors die immediately
+ */
 void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode, std::string message);
 void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
                 std::string message);
@@ -189,7 +195,9 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourc
 void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                      std::string behavior, std::string value, std::size_t line);
 
-// Compilation warnings (due to possible mistakes in user input), compilation can continue
+/*
+ * Compilation warnings (due to possible mistakes in user input), compilation can continue
+ */
 void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
                              const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba);
@@ -212,7 +220,9 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
 
 void warn_assignConfigOverride(ErrorsAndWarnings &err, std::string path);
 
-// Die functions
+/*
+ * Die functions
+ */
 void die(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage);

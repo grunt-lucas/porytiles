@@ -37,8 +37,8 @@
       + this will be a default-on warning, `-Wassign-config-not-found`
       + if the search matrix fails, error out and print a link to a helpful wiki page
     + How to handle the manual override options?
-      + I think the manual override option should override that specific option only, and draw the others from the
-        `assign.cfg` file. If there is no `assign.cfg` file, warn that defaults are being used.
+      + Providing any manual override will force Porytiles to work in manual mode. It will ignore `assign.cfg` entirely,
+        and use the manual CLI values, or defaults if a value is not supplied.
       + I want to move away from the idea that users should be manually tweaking the assignment config settings
       + If the param search matrix fails, users can try manual options to see if something works. If something does,
         it will automatically save off an `assign.cfg`. Basically, Porytiles should always automatically write out an
