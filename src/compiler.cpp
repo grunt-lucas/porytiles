@@ -724,11 +724,11 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
                                        ? ctx.compilerConfig.primaryExploredNodeCutoff
                                        : ctx.compilerConfig.secondaryExploredNodeCutoff;
-  if (assignAlgorithm == AssignAlgorithm::DEPTH_FIRST) {
+  if (assignAlgorithm == AssignAlgorithm::DFS) {
     assignResult =
         assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
   }
-  else if (assignAlgorithm == AssignAlgorithm::BREADTH_FIRST) {
+  else if (assignAlgorithm == AssignAlgorithm::BFS) {
     assignResult =
         assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
   }
@@ -1480,7 +1480,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.primaryExploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1535,7 +1535,7 @@ TEST_CASE("compile simple example should perform as expected")
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.primaryExploredNodeCutoff = 5;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1609,7 +1609,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/middle.png"}));
@@ -1747,7 +1747,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/middle.png"}));
@@ -1907,7 +1907,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/middle.png"}));
@@ -2118,8 +2118,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/middle.png"}));

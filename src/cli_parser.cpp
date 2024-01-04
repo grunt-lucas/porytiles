@@ -133,11 +133,11 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
                                             const char *optarg)
 {
   std::string optargString{optarg};
-  if (optargString == "dfs") {
-    return AssignAlgorithm::DEPTH_FIRST;
+  if (optargString == assignAlgorithmString(AssignAlgorithm::DFS)) {
+    return AssignAlgorithm::DFS;
   }
-  else if (optargString == "bfs") {
-    return AssignAlgorithm::BREADTH_FIRST;
+  else if (optargString == assignAlgorithmString(AssignAlgorithm::BFS)) {
+    return AssignAlgorithm::BFS;
   }
   else {
     fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
@@ -563,7 +563,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     case BEST_BRANCHES_VAL:
       ctx.compilerConfig.providedAssignConfigOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
-        if (std::string{optarg} == "smart") {
+        if (std::string{optarg} == SMART_PRUNE) {
           ctx.compilerConfig.primarySmartPrune = true;
         }
         else {
@@ -575,7 +575,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         }
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-        if (std::string{optarg} == "smart") {
+        if (std::string{optarg} == SMART_PRUNE) {
           ctx.compilerConfig.secondarySmartPrune = true;
         }
         else {

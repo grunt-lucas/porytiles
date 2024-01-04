@@ -3,6 +3,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
+#include <algorithm>
 #include <doctest.h>
 #include <filesystem>
 #include <random>
@@ -28,6 +29,14 @@ std::vector<std::string> split(std::string input, const std::string &delimiter)
   }
   result.push_back(input);
   return result;
+}
+
+void trim(std::string &string)
+{
+  string.erase(string.begin(),
+               std::find_if(string.begin(), string.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+  string.erase(std::find_if(string.rbegin(), string.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(),
+               string.end());
 }
 
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName)

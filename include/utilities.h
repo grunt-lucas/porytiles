@@ -34,6 +34,8 @@ template <typename T> T parseInteger(const char *integerString)
 
 std::vector<std::string> split(std::string input, const std::string &delimiter);
 
+void trim(std::string &string);
+
 std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, const std::string &fileName);
 
 std::filesystem::path createTmpdir();

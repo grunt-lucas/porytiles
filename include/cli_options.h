@@ -139,6 +139,7 @@ const std::string BEST_BRANCHES_DESC =
 "             Specify `smart' instead of an integer to use a computed `smart' cutoff at each node\n"
 "             instead of just a constant integer cutoff.\n";
 constexpr int BEST_BRANCHES_VAL = 3002;
+const std::string SMART_PRUNE = "smart";
 
 const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF = "primary-assign-explore-cutoff";
 const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC =

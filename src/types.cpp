@@ -450,10 +450,10 @@ std::string compilerModeString(CompilerMode mode)
 std::string assignAlgorithmString(AssignAlgorithm algo)
 {
   switch (algo) {
-  case AssignAlgorithm::DEPTH_FIRST:
-    return "depth-first";
-  case AssignAlgorithm::BREADTH_FIRST:
-    return "breadth-first";
+  case AssignAlgorithm::DFS:
+    return "dfs";
+  case AssignAlgorithm::BFS:
+    return "bfs";
   default:
     internalerror_unknownCompilerMode("types::assignAlgorithmString");
   }

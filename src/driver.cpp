@@ -709,6 +709,7 @@ static void driveCompile(PtContext &ctx)
                    fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
       }
       importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
+      assignConfigFile.close();
     }
     ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles);
 
@@ -736,6 +737,7 @@ static void driveCompile(PtContext &ctx)
                    fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.secondaryAssignConfig().c_str()));
       }
       importSecondaryAssignmentConfigParameters(ctx, assignConfigFile);
+      assignConfigFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles);
   }
@@ -763,6 +765,7 @@ static void driveCompile(PtContext &ctx)
                    fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
       }
       importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
+      assignConfigFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles);
   }
@@ -823,8 +826,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.err.printErrors = false;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
@@ -1045,8 +1048,8 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.err.printErrors = false;
-  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

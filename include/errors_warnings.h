@@ -192,8 +192,20 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const C
 void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                std::string filePath, std::string id, std::size_t line);
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode &mode,
                                      std::string behavior, std::string value, std::size_t line);
+
+void fatalerror_assignConfigSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                        const CompilerMode &mode, std::string line, std::size_t lineNumber,
+                                        std::string path);
+
+void fatalerror_assignConfigInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                       const CompilerMode &mode, std::string key, std::size_t lineNumber,
+                                       std::string path);
+
+void fatalerror_assignConfigInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                         const CompilerMode &mode, std::string key, std::string value,
+                                         std::size_t lineNumber, std::string path);
 
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
@@ -218,7 +230,7 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
 
-void warn_assignConfigOverride(ErrorsAndWarnings &err, std::string path);
+void warn_assignConfigOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 /*
  * Die functions

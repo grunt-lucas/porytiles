@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "cli_options.h"
 #include "driver.h"
 #include "emitter.h"
 #include "errors_warnings.h"
@@ -649,6 +650,100 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
+static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std::string assignConfigPath)
+{
+  std::string line;
+  std::size_t processedUpToLine = 1;
+  while (std::getline(config, line)) {
+    trim(line);
+    if (line.at(0) == '#' || line.size() == 0) {
+      // If first char of line is comment marker or the line is blank, skip it.
+      processedUpToLine++;
+      continue;
+    }
+    std::vector<std::string> lineTokens = split(line, "=");
+    if (lineTokens.size() != 2) {
+      fatalerror_assignConfigSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line,
+                                         processedUpToLine, assignConfigPath);
+    }
+    std::string key = lineTokens.at(0);
+    std::string value = lineTokens.at(1);
+    if (key == ASSIGN_ALGO) {
+      if (value == assignAlgorithmString(AssignAlgorithm::DFS)) {
+        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+          ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::DFS;
+        }
+        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+          ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::DFS;
+        }
+      }
+      else if (value == assignAlgorithmString(AssignAlgorithm::BFS)) {
+        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+          ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::BFS;
+        }
+        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+          ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::BFS;
+        }
+      }
+      else {
+        fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                            processedUpToLine, assignConfigPath);
+      }
+    }
+    else if (key == ASSIGN_EXPLORE_CUTOFF) {
+      std::size_t assignExploreValue;
+      try {
+        assignExploreValue = parseInteger<std::size_t>(value.c_str());
+      }
+      catch (const std::exception &e) {
+        assignExploreValue = 0;
+        fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                            processedUpToLine, assignConfigPath);
+      }
+      if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        ctx.compilerConfig.primaryExploredNodeCutoff = assignExploreValue;
+      }
+      else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        ctx.compilerConfig.secondaryExploredNodeCutoff = assignExploreValue;
+      }
+    }
+    else if (key == BEST_BRANCHES) {
+      if (value == SMART_PRUNE) {
+        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+          ctx.compilerConfig.primaryBestBranches = SIZE_MAX;
+          ctx.compilerConfig.primarySmartPrune = true;
+        }
+        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+          ctx.compilerConfig.secondaryBestBranches = SIZE_MAX;
+          ctx.compilerConfig.secondarySmartPrune = true;
+        }
+      }
+      else {
+        std::size_t bestBranchValue;
+        try {
+          bestBranchValue = parseInteger<std::size_t>(value.c_str());
+        }
+        catch (const std::exception &e) {
+          bestBranchValue = 0;
+          fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                              processedUpToLine, assignConfigPath);
+        }
+        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+          ctx.compilerConfig.primaryBestBranches = bestBranchValue;
+        }
+        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+          ctx.compilerConfig.secondaryBestBranches = bestBranchValue;
+        }
+      }
+    }
+    else {
+      fatalerror_assignConfigInvalidKey(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, processedUpToLine,
+                                        assignConfigPath);
+    }
+    processedUpToLine++;
+  }
+}
+
 void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
@@ -657,7 +752,7 @@ void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &conf
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
      * override value. In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.primaryAssignConfig());
+    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
     return;
   }
   if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
@@ -666,10 +761,10 @@ void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &conf
      * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
      * this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.primaryAssignConfig());
+    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
     return;
   }
-  // TODO : impl importPrimaryAssignmentConfigParameters
+  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.primaryAssignConfig());
   ctx.compilerConfig.readCachedPrimaryConfig = true;
 }
 
@@ -681,10 +776,10 @@ void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &co
      * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
      * In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerSrcPaths.secondaryAssignConfig());
+    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
     return;
   }
-  // TODO : impl importSecondaryAssignmentConfigParameters
+  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.secondaryAssignConfig());
   ctx.compilerConfig.readCachedSecondaryConfig = true;
 }
 
@@ -1510,8 +1605,8 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   compileCtx.output.path = parentDir;
   compileCtx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   compileCtx.err.printErrors = false;
-  compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
-  compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DEPTH_FIRST;
+  compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

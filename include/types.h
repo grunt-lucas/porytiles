@@ -615,7 +615,7 @@ enum class Subcommand { DECOMPILE_PRIMARY, DECOMPILE_SECONDARY, COMPILE_PRIMARY,
 
 enum class CompilerMode { PRIMARY, SECONDARY };
 
-enum class AssignAlgorithm { DEPTH_FIRST, BREADTH_FIRST };
+enum class AssignAlgorithm { DFS, BFS };
 
 enum class DecompilerMode { PRIMARY, SECONDARY };
 
@@ -836,9 +836,9 @@ struct CompilerConfig {
   CompilerConfig()
       : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssignConfig{false},
         providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false}, defaultBehavior{"0"},
-        defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
         primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
-        readCachedPrimaryConfig{false}, secondaryAssignAlgorithm{AssignAlgorithm::DEPTH_FIRST},
+        readCachedPrimaryConfig{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
         secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
         readCachedSecondaryConfig{false}
   {
