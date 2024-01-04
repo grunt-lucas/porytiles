@@ -496,10 +496,10 @@ void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::stri
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 {
-  std::string message = "`true-color' mode not yet supported by Porymap";
+  std::string message = "`true-color' mode requires Porymap minimum version 5.2.0";
   printWarning(err, err.usedTrueColorMode, WARN_USED_TRUE_COLOR_MODE, message);
   if (err.printErrors && err.usedTrueColorMode != WarningMode::OFF) {
-    pt_note("Porymap PR #536 (https://github.com/huderlem/porymap/pull/536) will add support for `true-color' mode");
+    pt_note("if you are using an older version of Porymap, either update it or disable `true-color' mode");
     pt_println(stderr, "");
   }
 }
