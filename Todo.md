@@ -25,6 +25,7 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
   + Assignment config discovery
+    ~~~
     + default behavior: look for `assign.cfg` in the input folder, use those settings
       + format of file: key=value lines, e.g.
       ```
@@ -32,7 +33,8 @@
       best-branches=2
       assign-algo=bfs
       ```
-      + if those settings fail, warn the user (non-toggleable warning) and re-run the param search matrix
+    ~~~ this feature is now impl'd
+    + if those settings fail, warn the user (non-toggleable warning) and re-run the param search matrix
     + if assign.cfg does not exist, warn the user and run the full assign param search matrix
       + this will be a default-on warning, `-Wassign-config-not-found`
       + if the search matrix fails, error out and print a link to a helpful wiki page
