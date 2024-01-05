@@ -91,6 +91,13 @@
 
 + Improve CI build system
   + Add Windows MSVC? MinGW?
+    + Apparently it is possible to build a cross-compiled version with minGW on a macbook:
+    ```
+    brew install mingw-w64
+    cd porytiles
+    make clean && CC="x86_64-w64-mingw32-gcc" CXX="x86_64-w64-mingw32-g++" make
+    ```
+    + you can extract this and steal the libpng.a file https://packages.msys2.org/package/mingw-w64-x86_64-libpng
   + set up package caches so installs don't have to run every time
     + probably too hard to do with homebrew, apt
   + test if the actual scripted release process works properly
