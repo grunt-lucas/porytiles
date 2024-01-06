@@ -612,6 +612,9 @@ static void driveDecompile(PtContext &ctx)
 
 static void driveCompile(PtContext &ctx)
 {
+  /*
+   * Checks that the compiler input folder contents exist as expected.
+   */
   validateCompileInputs(ctx);
 
   /*

@@ -121,7 +121,8 @@ constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2005;
 const std::string ASSIGN_ALGO = "assign-algorithm";
 const std::string ASSIGN_ALGO_DESC =
 "        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Select the assignment algorithm. Valid options are `dfs' and `bfs'. Default is `dfs'.\n";
+"             Select the palette assignment algorithm. Valid options are `dfs' and `bfs'. Default\n"
+"             is `dfs'.";
 constexpr int ASSIGN_ALGO_VAL = 3000;
 
 const std::string EXPLORE_CUTOFF = "explore-cutoff";
@@ -137,7 +138,7 @@ const std::string BEST_BRANCHES_DESC =
 "        -" + BEST_BRANCHES + "=<N>\n"
 "             Use only the N most promising branches at each node in the assignment tree search.\n"
 "             Specify `smart' instead of an integer to use a computed `smart' cutoff at each node\n"
-"             instead of just a constant integer cutoff.\n";
+"             instead of a constant integer cutoff. Default is to use all available branches.\n";
 constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string SMART_PRUNE = "smart";
 
