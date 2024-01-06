@@ -25,27 +25,10 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
   + Assignment config discovery
-    ~~~
-    + default behavior: look for `assign.cfg` in the input folder, use those settings
-      + format of file: key=value lines, e.g.
-      ```
-      assign-explore-cutoff=3
-      best-branches=2
-      assign-algo=bfs
-      ```
-    ~~~ this feature is now impl'd
-    + if those settings fail, warn the user (non-toggleable warning) and re-run the param search matrix
-    + if assign.cfg does not exist, warn the user and run the full assign param search matrix
-      + this will be a default-on warning, `-Wassign-config-not-found`
-      + if the search matrix fails, error out and print a link to a helpful wiki page
-    + How to handle the manual override options?
-      + Providing any manual override will force Porytiles to work in manual mode. It will ignore `assign.cfg` entirely,
-        and use the manual CLI values, or defaults if a value is not supplied.
-      + I want to move away from the idea that users should be manually tweaking the assignment config settings
-      + If the param search matrix fails, users can try manual options to see if something works. If something does,
-        it will automatically save off an `assign.cfg`. Basically, Porytiles should always automatically write out an
-        `assign.cfg` any time a successful compilation occurs. In most cases, it will write out an identical file so
-        nothing will change.
+    + If the param search matrix fails, users can try manual options to see if something works. If something does,
+      it will automatically save off an `assign.cfg`. Basically, Porytiles should always automatically write out an
+      `assign.cfg` any time a successful compilation occurs. In most cases, it will write out an identical file so
+      nothing will change.
 
 + provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes

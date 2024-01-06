@@ -453,12 +453,11 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
     }
   }
   else {
-    // TODO : convert to proper warning '-Wassign-config-not-found'
     if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-      pt_warn("{} not found, running matrix", ctx.compilerSrcPaths.primaryAssignConfig().string());
+      warn_missingAssignConfig(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
     }
     else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-      pt_warn("{} not found, running matrix", ctx.compilerSrcPaths.secondaryAssignConfig().string());
+      warn_missingAssignConfig(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
     }
   }
 

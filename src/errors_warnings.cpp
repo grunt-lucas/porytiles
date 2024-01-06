@@ -29,6 +29,7 @@ const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
 const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 const char *const WARN_ASSIGN_CONFIG_OVERRIDE = "assign-config-override";
 const char *const WARN_INVALID_ASSIGN_CONFIG_CACHE = "invalid-assign-config-cache";
+const char *const WARN_MISSING_ASSIGN_CONFIG = "missing-assign-config";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
@@ -646,6 +647,16 @@ void warn_invalidAssignConfigCache(ErrorsAndWarnings &err, const CompilerConfig 
   printWarning(err, err.invalidAssignConfigCache, WARN_INVALID_ASSIGN_CONFIG_CACHE,
                fmt::format("{}: cached compilation settings failed", path));
   if (err.printErrors && err.invalidAssignConfigCache != WarningMode::OFF) {
+    pt_note("running full parameter search matrix, this may take awhile...");
+    pt_println(stderr, "");
+  }
+}
+
+void warn_missingAssignConfig(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path)
+{
+  printWarning(err, err.missingAssignConfig, WARN_MISSING_ASSIGN_CONFIG,
+               fmt::format("{}: cached compilation settings not found", path));
+  if (err.printErrors && err.missingAssignConfig != WarningMode::OFF) {
     pt_note("running full parameter search matrix, this may take awhile...");
     pt_println(stderr, "");
   }

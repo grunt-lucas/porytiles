@@ -445,6 +445,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {WINVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WINVALID_ASSIGN_CONFIG_CACHE_VAL},
       {WNO_INVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL},
 
+      {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
+      {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
+
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
       {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
@@ -486,6 +489,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 
   std::optional<bool> warnInvalidAssignConfigCache{true};
   std::optional<bool> errInvalidAssignConfigCache{};
+
+  std::optional<bool> warnMissingAssignConfig{true};
+  std::optional<bool> errMissingAssignConfig{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -697,6 +703,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
           errInvalidAssignConfigCache = true;
         }
+        else if (strcmp(optarg, WARN_MISSING_ASSIGN_CONFIG) == 0) {
+          errMissingAssignConfig = true;
+        }
         else {
           fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -731,6 +740,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
         errInvalidAssignConfigCache = false;
+      }
+      else if (strcmp(optarg, WARN_MISSING_ASSIGN_CONFIG) == 0) {
+        errMissingAssignConfig = false;
       }
       else {
         fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -793,6 +805,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
       warnInvalidAssignConfigCache = false;
+      break;
+    case WMISSING_ASSIGN_CONFIG_VAL:
+      warnMissingAssignConfig = true;
+      break;
+    case WNO_MISSING_ASSIGN_CONFIG_VAL:
+      warnMissingAssignConfig = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -914,6 +932,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   if (warnInvalidAssignConfigCache.has_value()) {
     ctx.err.invalidAssignConfigCache = warnInvalidAssignConfigCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  if (warnMissingAssignConfig.has_value()) {
+    ctx.err.missingAssignConfig = warnMissingAssignConfig.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
 
   // If requested, set all enabled warnings to errors
   if (setAllEnabledWarningsToErrors) {
@@ -1025,6 +1046,17 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.invalidAssignConfigCache = WarningMode::OFF;
+    }
+  }
+  if (errMissingAssignConfig.has_value()) {
+    if (errMissingAssignConfig.value()) {
+      ctx.err.missingAssignConfig = WarningMode::ERR;
+    }
+    else if ((warnMissingAssignConfig.has_value() && warnMissingAssignConfig.value()) || enableAllWarnings) {
+      ctx.err.missingAssignConfig = WarningMode::WARN;
+    }
+    else {
+      ctx.err.missingAssignConfig = WarningMode::OFF;
     }
   }
 
