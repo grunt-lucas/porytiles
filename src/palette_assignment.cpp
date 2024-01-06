@@ -349,6 +349,48 @@ static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets
   return std::make_tuple(true, assignedPalsSolution, primaryPaletteColorSets);
 }
 
+struct AssignParams {
+  AssignAlgorithm assignAlgorithm;
+  std::size_t exploredNodeCutoff;
+  std::size_t bestBranches;
+  bool smartPrune;
+};
+
+// TODO : add smartPrune entries once that is implemented
+static const std::array<AssignParams, 40> MATRIX{
+    // DFS, 1 million iterations
+    AssignParams{AssignAlgorithm::DFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 3, false},
+    AssignParams{AssignAlgorithm::DFS, 1'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 5, false},
+    AssignParams{AssignAlgorithm::DFS, 1'000'000, 6, false},
+    // BFS, 1 million iterations
+    AssignParams{AssignAlgorithm::BFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 1'000'000, 3, false},
+    AssignParams{AssignAlgorithm::BFS, 1'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 1'000'000, 5, false},
+    AssignParams{AssignAlgorithm::BFS, 1'000'000, 6, false},
+    // DFS, 2 million iterations
+    AssignParams{AssignAlgorithm::DFS, 2'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 2'000'000, 3, false},
+    AssignParams{AssignAlgorithm::DFS, 2'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 2'000'000, 5, false},
+    AssignParams{AssignAlgorithm::DFS, 2'000'000, 6, false},
+    // BFS, 2 million iterations
+    AssignParams{AssignAlgorithm::BFS, 2'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 2'000'000, 3, false},
+    AssignParams{AssignAlgorithm::BFS, 2'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 2'000'000, 5, false},
+    AssignParams{AssignAlgorithm::BFS, 2'000'000, 6, false},
+    // DFS, 4 million iterations
+    AssignParams{AssignAlgorithm::DFS, 4'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 4'000'000, 3, false},
+    AssignParams{AssignAlgorithm::DFS, 4'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 4'000'000, 5, false},
+    AssignParams{AssignAlgorithm::DFS, 4'000'000, 6, false},
+    // BFS, 4 million iterations
+    AssignParams{AssignAlgorithm::BFS, 4'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 4'000'000, 3, false},
+    AssignParams{AssignAlgorithm::BFS, 4'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 4'000'000, 5, false},
+    AssignParams{AssignAlgorithm::BFS, 4'000'000, 6, false},
+    // DFS, 8 million iterations
+    AssignParams{AssignAlgorithm::DFS, 8'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 8'000'000, 3, false},
+    AssignParams{AssignAlgorithm::DFS, 8'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 8'000'000, 5, false},
+    AssignParams{AssignAlgorithm::DFS, 8'000'000, 6, false},
+    // BFS, 8 million iterations
+    AssignParams{AssignAlgorithm::BFS, 8'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 8'000'000, 3, false},
+    AssignParams{AssignAlgorithm::BFS, 8'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 8'000'000, 5, false},
+    AssignParams{AssignAlgorithm::BFS, 8'000'000, 6, false}};
+
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex)
@@ -403,24 +445,51 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
       auto primaryPaletteColorSets = std::get<2>(assignmentResult);
       return std::pair{assignedPalsSolution, primaryPaletteColorSets};
     }
+    if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+      // TODO : convert to real warning
+      pt_warn("{} cached assign settings failed, running matrix", ctx.compilerSrcPaths.primaryAssignConfig().string());
+    }
+    else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+      // TODO : convert to real warning
+      pt_warn("{} cached assign settings failed, running matrix",
+              ctx.compilerSrcPaths.secondaryAssignConfig().string());
+    }
   }
-  // TODO : convert to proper warning
-  pt_warn("running assign param matrix");
-
-  // TODO : actually run the matrix
-  auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
-  bool success = std::get<0>(assignmentResult);
-  auto assignedPalsSolution = std::get<1>(assignmentResult);
-  auto primaryPaletteColorSets = std::get<2>(assignmentResult);
-
-  if (!success) {
-    // The matrix failed, print a sad message
-    // TODO : fill in with real error
-    pt_fatal_err("assign param matrix failed :-(");
-    throw PtException{"assign param matrix failed :-("};
+  else {
+    // TODO : convert to proper warning '-Wassign-config-not-found'
+    if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+      pt_warn("{} not found, running matrix", ctx.compilerSrcPaths.primaryAssignConfig().string());
+    }
+    else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+      pt_warn("{} not found, running matrix", ctx.compilerSrcPaths.secondaryAssignConfig().string());
+    }
   }
 
-  return std::pair{assignedPalsSolution, primaryPaletteColorSets};
+  for (std::size_t index = 0; index < MATRIX.size(); index++) {
+    if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+      ctx.compilerConfig.primaryAssignAlgorithm = MATRIX.at(index).assignAlgorithm;
+      ctx.compilerConfig.primaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
+      ctx.compilerConfig.primaryBestBranches = MATRIX.at(index).bestBranches;
+      ctx.compilerConfig.primarySmartPrune = MATRIX.at(index).smartPrune;
+    }
+    else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+      ctx.compilerConfig.secondaryAssignAlgorithm = MATRIX.at(index).assignAlgorithm;
+      ctx.compilerConfig.secondaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
+      ctx.compilerConfig.secondaryBestBranches = MATRIX.at(index).bestBranches;
+      ctx.compilerConfig.secondarySmartPrune = MATRIX.at(index).smartPrune;
+    }
+    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
+    bool success = std::get<0>(assignmentResult);
+    auto assignedPalsSolution = std::get<1>(assignmentResult);
+    auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+    if (success) {
+      return std::pair{assignedPalsSolution, primaryPaletteColorSets};
+    }
+  }
+  // If we got here, the matrix failed, print a sad message
+  // TODO : fill in with real error
+  pt_fatal_err("assign param matrix failed :-(");
+  throw PtException{"assign param matrix failed :-("};
 }
 
 } // namespace porytiles
