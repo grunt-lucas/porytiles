@@ -446,13 +446,10 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
       return std::pair{assignedPalsSolution, primaryPaletteColorSets};
     }
     if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-      // TODO : convert to real warning
-      pt_warn("{} cached assign settings failed, running matrix", ctx.compilerSrcPaths.primaryAssignConfig().string());
+      warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
     }
     else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-      // TODO : convert to real warning
-      pt_warn("{} cached assign settings failed, running matrix",
-              ctx.compilerSrcPaths.secondaryAssignConfig().string());
+      warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
     }
   }
   else {

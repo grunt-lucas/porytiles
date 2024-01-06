@@ -118,19 +118,19 @@ constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2005;
 
 // Color assignment config options
 
-const std::string ASSIGN_EXPLORE_CUTOFF = "assign-explore-cutoff";
-const std::string ASSIGN_EXPLORE_CUTOFF_DESC =
-"        -" + ASSIGN_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Select the cutoff FACTOR for palette assignment tree node exploration. Defaults to 2,\n"
-"             which should be sufficient for most cases. Increase the number to let the algorithm\n"
-"             run for longer before failing out.\n";
-constexpr int ASSIGN_EXPLORE_CUTOFF_VAL = 3000;
-
 const std::string ASSIGN_ALGO = "assign-algorithm";
 const std::string ASSIGN_ALGO_DESC =
 "        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
 "             Select the assignment algorithm. Valid options are `dfs' and `bfs'. Default is `dfs'.\n";
-constexpr int ASSIGN_ALGO_VAL = 3001;
+constexpr int ASSIGN_ALGO_VAL = 3000;
+
+const std::string EXPLORE_CUTOFF = "explore-cutoff";
+const std::string EXPLORE_CUTOFF_DESC =
+"        -" + EXPLORE_CUTOFF + "=<FACTOR>\n"
+"             Select the cutoff for palette assignment tree node exploration. Defaults to 2000000,\n"
+"             which should be sufficient for most cases. Increase the number to let the algorithm\n"
+"             run for longer before failing out.\n";
+constexpr int EXPLORE_CUTOFF_VAL = 3001;
 
 const std::string BEST_BRANCHES = "best-branches";
 const std::string BEST_BRANCHES_DESC =
@@ -141,19 +141,19 @@ const std::string BEST_BRANCHES_DESC =
 constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string SMART_PRUNE = "smart";
 
-const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF = "primary-assign-explore-cutoff";
-const std::string PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC =
-"        -" + PRIMARY_ASSIGN_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
-constexpr int PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL = 3003;
-
 const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
 const std::string PRIMARY_ASSIGN_ALGO_DESC =
 "        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
 "             Same as '-assign-algorithm', but for the paired primary set. Only to be used\n"
 "             when compiling in secondary mode via 'compile-secondary'.\n";
-constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3004;
+constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3003;
+
+const std::string PRIMARY_EXPLORE_CUTOFF = "primary-explore-cutoff";
+const std::string PRIMARY_EXPLORE_CUTOFF_DESC =
+"        -" + PRIMARY_EXPLORE_CUTOFF + "=<FACTOR>\n"
+"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
+constexpr int PRIMARY_EXPLORE_CUTOFF_VAL = 3004;
 
 const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
 const std::string PRIMARY_BEST_BRANCHES_DESC =
@@ -161,14 +161,6 @@ const std::string PRIMARY_BEST_BRANCHES_DESC =
 "             Same as '-best-branches', but for the paired primary set. Only to be used\n"
 "             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
-
-const std::string CACHE_ASSIGN_CONFIG = "cache-assign-config";
-const std::string CACHE_ASSIGN_CONFIG_DESC =
-"        -" + CACHE_ASSIGN_CONFIG + "\n"
-"             Ignore the values in the current 'assign.cfg', if present. Run the full palette\n"
-"             assignment parameter search matrix. If a valid setting is found, overwrite the\n"
-"             current 'assign.cfg' settings with the new settings.\n";
-constexpr int CACHE_ASSIGN_CONFIG_VAL = 3006;
 
 
 // Fieldmap override options
@@ -298,6 +290,11 @@ const std::string WASSIGN_CONFIG_OVERRIDE = W_GENERAL + WARN_ASSIGN_CONFIG_OVERR
 const std::string WNO_ASSIGN_CONFIG_OVERRIDE = W_GENERAL + "no-" + WARN_ASSIGN_CONFIG_OVERRIDE;
 constexpr int WASSIGN_CONFIG_OVERRIDE_VAL = 50080;
 constexpr int WNO_ASSIGN_CONFIG_OVERRIDE_VAL = 60080;
+
+const std::string WINVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + WARN_INVALID_ASSIGN_CONFIG_CACHE;
+const std::string WNO_INVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + "no-" + WARN_INVALID_ASSIGN_CONFIG_CACHE;
+constexpr int WINVALID_ASSIGN_CONFIG_CACHE_VAL = 50090;
+constexpr int WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL = 60090;
 
 // @formatter:on
 // clang-format on

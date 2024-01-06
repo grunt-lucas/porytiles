@@ -30,13 +30,14 @@ struct ErrorsAndWarnings {
   WarningMode unusedAttribute;
   WarningMode transparencyCollapse;
   WarningMode assignConfigOverride;
+  WarningMode invalidAssignConfigCache;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
-        assignConfigOverride{WarningMode::OFF}
+        assignConfigOverride{WarningMode::OFF}, invalidAssignConfigCache{WarningMode::OFF}
   {
   }
 
@@ -50,6 +51,7 @@ struct ErrorsAndWarnings {
     unusedAttribute = setting;
     transparencyCollapse = setting;
     assignConfigOverride = setting;
+    invalidAssignConfigCache = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -78,6 +80,9 @@ struct ErrorsAndWarnings {
     if (assignConfigOverride == WarningMode::WARN) {
       assignConfigOverride = WarningMode::ERR;
     }
+    if (invalidAssignConfigCache == WarningMode::WARN) {
+      invalidAssignConfigCache = WarningMode::ERR;
+    }
   }
 };
 
@@ -89,6 +94,7 @@ extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
 extern const char *const WARN_UNUSED_ATTRIBUTE;
 extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CONFIG_OVERRIDE;
+extern const char *const WARN_INVALID_ASSIGN_CONFIG_CACHE;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -231,6 +237,8 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
 
 void warn_assignConfigOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+
+void warn_invalidAssignConfigCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 /*
  * Die functions

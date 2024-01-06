@@ -690,7 +690,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
                                             processedUpToLine, assignConfigPath);
       }
     }
-    else if (key == ASSIGN_EXPLORE_CUTOFF) {
+    else if (key == EXPLORE_CUTOFF) {
       std::size_t assignExploreValue;
       try {
         assignExploreValue = parseInteger<std::size_t>(value.c_str());

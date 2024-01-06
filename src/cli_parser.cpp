@@ -338,21 +338,20 @@ const std::string COMPILE_HELP =
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
-"    Tileset (De)compilation Options\n" +
+"    Tileset Compilation & Decompilation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
 TRANSPARENCY_COLOR_DESC + "\n" +
 DEFAULT_BEHAVIOR_DESC + "\n" +
 DEFAULT_ENCOUNTER_TYPE_DESC + "\n" +
 DEFAULT_TERRAIN_TYPE_DESC + "\n" +
-"    Color Assignment Config Options\n" +
-ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
+"    Palette Assignment Config Options\n" +
 ASSIGN_ALGO_DESC + "\n" +
+EXPLORE_CUTOFF_DESC + "\n" +
 BEST_BRANCHES_DESC + "\n" +
-PRIMARY_ASSIGN_EXPLORE_CUTOFF_DESC + "\n" +
 PRIMARY_ASSIGN_ALGO_DESC + "\n" +
+PRIMARY_EXPLORE_CUTOFF_DESC + "\n" +
 PRIMARY_BEST_BRANCHES_DESC + "\n" +
-CACHE_ASSIGN_CONFIG_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -396,13 +395,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {DEFAULT_TERRAIN_TYPE.c_str(), required_argument, nullptr, DEFAULT_TERRAIN_TYPE_VAL},
 
       // Color assignment config options
-      {ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, ASSIGN_EXPLORE_CUTOFF_VAL},
+      {EXPLORE_CUTOFF.c_str(), required_argument, nullptr, EXPLORE_CUTOFF_VAL},
       {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
       {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
-      {PRIMARY_ASSIGN_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL},
+      {PRIMARY_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_EXPLORE_CUTOFF_VAL},
       {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
       {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
-      {CACHE_ASSIGN_CONFIG.c_str(), no_argument, nullptr, CACHE_ASSIGN_CONFIG_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -422,20 +420,30 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       // Specific warnings
       {WCOLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WCOLOR_PRECISION_LOSS_VAL},
       {WNO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WNO_COLOR_PRECISION_LOSS_VAL},
+
       {WKEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WKEY_FRAME_DID_NOT_APPEAR_VAL},
       {WNO_KEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WNO_KEY_FRAME_DID_NOT_APPEAR_VAL},
+
       {WUSED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WUSED_TRUE_COLOR_MODE_VAL},
       {WNO_USED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WNO_USED_TRUE_COLOR_MODE_VAL},
+
       {WATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WATTRIBUTE_FORMAT_MISMATCH_VAL},
       {WNO_ATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL},
+
       {WMISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WMISSING_ATTRIBUTES_CSV_VAL},
       {WNO_MISSING_ATTRIBUTES_CSV.c_str(), no_argument, nullptr, WNO_MISSING_ATTRIBUTES_CSV_VAL},
+
       {WUNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WUNUSED_ATTRIBUTE_VAL},
       {WNO_UNUSED_ATTRIBUTE.c_str(), no_argument, nullptr, WNO_UNUSED_ATTRIBUTE_VAL},
+
       {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
       {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
+
       {WASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WASSIGN_CONFIG_OVERRIDE_VAL},
       {WNO_ASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WNO_ASSIGN_CONFIG_OVERRIDE_VAL},
+
+      {WINVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WINVALID_ASSIGN_CONFIG_CACHE_VAL},
+      {WNO_INVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
@@ -476,6 +484,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   std::optional<bool> warnAssignConfigOverride{true};
   std::optional<bool> errAssignConfigOverride{};
 
+  std::optional<bool> warnInvalidAssignConfigCache{true};
+  std::optional<bool> errInvalidAssignConfigCache{};
+
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
    * start applying the fieldmap config. We want specific fieldmap overrides to take precedence over the general
@@ -494,7 +505,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   bool palettesTotalOverridden = false;
   std::size_t palettesTotalOverride = 0;
 
-  std::size_t cutoffFactor;
+  std::size_t exploreCutoff;
 
   while (true) {
     const auto opt = getopt_long_only(argc, argv, shortOptions.c_str(), longOptions, nullptr);
@@ -512,7 +523,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
       break;
 
-    // Tileset generation options
+    // Tileset compilation & decompilation options
     case TARGET_BASE_GAME_VAL:
       ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
       break;
@@ -533,21 +544,21 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
 
     // Color assignment config options
-    case ASSIGN_EXPLORE_CUTOFF_VAL:
+    case EXPLORE_CUTOFF_VAL:
       ctx.compilerConfig.providedAssignConfigOverride = true;
-      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, ASSIGN_EXPLORE_CUTOFF, optarg);
+      exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
-        ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
           fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
-                                          fmt::styled(ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                                          fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-        ctx.compilerConfig.secondaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        ctx.compilerConfig.secondaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.secondaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
           fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
-                                          fmt::styled(ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                                          fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
       break;
@@ -587,14 +598,14 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         }
       }
       break;
-    case PRIMARY_ASSIGN_EXPLORE_CUTOFF_VAL:
+    case PRIMARY_EXPLORE_CUTOFF_VAL:
       ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
-      cutoffFactor = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_ASSIGN_EXPLORE_CUTOFF, optarg);
+      exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-        ctx.compilerConfig.primaryExploredNodeCutoff = cutoffFactor * EXPLORATION_CUTOFF_MULTIPLIER;
+        ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
           fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
-                                          fmt::styled(PRIMARY_ASSIGN_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                                          fmt::styled(PRIMARY_EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
       break;
@@ -619,9 +630,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
           }
         }
       }
-      break;
-    case CACHE_ASSIGN_CONFIG_VAL:
-      ctx.compilerConfig.cacheAssignConfig = true;
       break;
 
     // Fieldmap override options
@@ -683,6 +691,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
           errTransparencyCollapseOverride = true;
         }
+        else if (strcmp(optarg, WARN_ASSIGN_CONFIG_OVERRIDE) == 0) {
+          errAssignConfigOverride = true;
+        }
+        else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
+          errInvalidAssignConfigCache = true;
+        }
         else {
           fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -711,6 +725,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
         errTransparencyCollapseOverride = false;
+      }
+      else if (strcmp(optarg, WARN_ASSIGN_CONFIG_OVERRIDE) == 0) {
+        errAssignConfigOverride = false;
+      }
+      else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
+        errInvalidAssignConfigCache = false;
       }
       else {
         fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -767,6 +787,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
       warnAssignConfigOverride = false;
+      break;
+    case WINVALID_ASSIGN_CONFIG_CACHE_VAL:
+      warnInvalidAssignConfigCache = true;
+      break;
+    case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
+      warnInvalidAssignConfigCache = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -885,6 +911,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   if (warnAssignConfigOverride.has_value()) {
     ctx.err.assignConfigOverride = warnAssignConfigOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  if (warnInvalidAssignConfigCache.has_value()) {
+    ctx.err.invalidAssignConfigCache = warnInvalidAssignConfigCache.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
 
   // If requested, set all enabled warnings to errors
   if (setAllEnabledWarningsToErrors) {
@@ -985,6 +1014,17 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     }
     else {
       ctx.err.assignConfigOverride = WarningMode::OFF;
+    }
+  }
+  if (errInvalidAssignConfigCache.has_value()) {
+    if (errInvalidAssignConfigCache.value()) {
+      ctx.err.invalidAssignConfigCache = WarningMode::ERR;
+    }
+    else if ((warnInvalidAssignConfigCache.has_value() && warnInvalidAssignConfigCache.value()) || enableAllWarnings) {
+      ctx.err.invalidAssignConfigCache = WarningMode::WARN;
+    }
+    else {
+      ctx.err.invalidAssignConfigCache = WarningMode::OFF;
     }
   }
 
