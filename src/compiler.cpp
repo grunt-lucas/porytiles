@@ -623,6 +623,9 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
 
 std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset)
 {
+  /*
+   * Sanity check for matching paired primary palette sizes when compiling secondary
+   */
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
     internalerror(fmt::format(
@@ -630,8 +633,14 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
         ctx.fieldmapConfig.numPalettesInPrimary, ctx.compilerContext.pairedPrimaryTileset->palettes.size()));
   }
 
+  /*
+   * Create a unique pointer to our CompiledTileset
+   */
   auto compiled = std::make_unique<CompiledTileset>();
 
+  /*
+   * Throw an error if there are too many metatiles in the input
+   */
   if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
     std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
@@ -678,78 +687,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
 
   /*
-   * Run palette assignment:
-   * `assignedPalsSolution' is an out param that the assign function will populate when it finds a solution
+   * Run palette assignment.
    */
-  std::vector<ColorSet> assignedPalsSolution;
-  std::vector<ColorSet> tmpHardwarePalettes;
-  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
-    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
-  }
-  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
-    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
-  }
-  else {
-    internalerror_unknownCompilerMode("compiler::compile");
-  }
-  std::vector<ColorSet> unassignedNormPalettes;
-  std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
-  std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
-                   [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
-  std::vector<ColorSet> primaryPaletteColorSets{};
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-    /*
-     * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
-     * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
-     * palettes.
-     */
-    primaryPaletteColorSets.reserve(ctx.compilerContext.pairedPrimaryTileset->palettes.size());
-    for (std::size_t i = 0; i < ctx.compilerContext.pairedPrimaryTileset->palettes.size(); i++) {
-      const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTileset->palettes.at(i);
-      primaryPaletteColorSets.emplace_back();
-      for (std::size_t j = 1; j < gbaPalette.size; j++) {
-        primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
-      }
-    }
-  }
-
-  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size()};
-  ctx.compilerContext.exploredNodeCounter = 0;
-  AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
-  AssignAlgorithm assignAlgorithm = ctx.compilerConfig.mode == CompilerMode::PRIMARY
-                                        ? ctx.compilerConfig.primaryAssignAlgorithm
-                                        : ctx.compilerConfig.secondaryAssignAlgorithm;
-  std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
-                                       ? ctx.compilerConfig.primaryExploredNodeCutoff
-                                       : ctx.compilerConfig.secondaryExploredNodeCutoff;
-  if (assignAlgorithm == AssignAlgorithm::DFS) {
-    assignResult =
-        assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
-  }
-  else if (assignAlgorithm == AssignAlgorithm::BFS) {
-    assignResult =
-        assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
-  }
-  else {
-    internalerror("compiler::compile unknown AssignAlgorithm");
-  }
-
-  if (assignResult == AssignResult::NO_SOLUTION_POSSIBLE) {
-    /*
-     * If we get here, we know there is truly no possible palette solution since we exhausted every possibility. For
-     * most reasonably sized tilesets, it would be difficult to reach this condition since there are too many possible
-     * allocations to try. Instead it is more likely we hit the exploration cutoff case below.
-     */
-    fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode);
-  }
-  else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
-    fatalerror_assignExploreCutoffReached(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, assignAlgorithm,
-                                          exploredNodeCutoff);
-  }
-  pt_logln(ctx, stderr, "{} assigned all NormalizedPalettes successfully after {} iterations",
-           assignAlgorithmString(assignAlgorithm), ctx.compilerContext.exploredNodeCounter);
+  auto [assignedPalsSolution, primaryPaletteColorSets] = runPaletteAssignmentMatrix(ctx, colorSets, colorToIndex);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
@@ -793,7 +733,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     internalerror_unknownCompilerMode("compiler::compile");
   }
 
-  // Setup the compiled animations
+  /*
+   * Setup the compiled animations
+   */
   compiled->anims.reserve(decompiledTileset.anims.size());
   for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
     compiled->anims.emplace_back(decompiledTileset.anims.at(animIndex).animName);
@@ -817,7 +759,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
     internalerror_unknownCompilerMode("compiler::compile");
   }
 
-  // Push back transparent tiles to pad out tileset to multiple of 16
+  /*
+   * Push back transparent tiles to pad out tileset to multiple of 16
+   */
   while (compiled->tiles.size() % 16 != 0) {
     compiled->tiles.push_back(GBA_TILE_TRANSPARENT);
     compiled->paletteIndexesOfTile.push_back(0);

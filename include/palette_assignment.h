@@ -49,6 +49,9 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                               const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds);
 AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
                                 const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds);
+std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
+runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                           const std::unordered_map<BGR15, std::size_t> &colorToIndex);
 } // namespace porytiles
 
 #endif // PORYTILES_PALETTE_ASSIGNMENT_H

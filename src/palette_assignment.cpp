@@ -10,7 +10,6 @@
 #include "types.h"
 
 namespace porytiles {
-
 AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                               const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds)
 {
@@ -266,6 +265,162 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
   }
 
   return AssignResult::NO_SOLUTION_POSSIBLE;
+}
+
+// std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
+static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                          const std::unordered_map<BGR15, std::size_t> &colorToIndex, bool printErrors)
+{
+  std::vector<ColorSet> assignedPalsSolution{};
+  std::vector<ColorSet> tmpHardwarePalettes{};
+  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
+    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
+  }
+  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+    assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
+    tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
+  }
+  else {
+    internalerror_unknownCompilerMode("compiler::compile");
+  }
+  std::vector<ColorSet> unassignedNormPalettes;
+  std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
+  std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
+                   [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+  std::vector<ColorSet> primaryPaletteColorSets{};
+  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+    /*
+     * Construct ColorSets for the primary palettes, assign can use these to decide if a tile is entirely covered by a
+     * primary palette and hence does not need to extend the search by assigning its colors to one of the new secondary
+     * palettes.
+     */
+    primaryPaletteColorSets.reserve(ctx.compilerContext.pairedPrimaryTileset->palettes.size());
+    for (std::size_t i = 0; i < ctx.compilerContext.pairedPrimaryTileset->palettes.size(); i++) {
+      const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTileset->palettes.at(i);
+      primaryPaletteColorSets.emplace_back();
+      for (std::size_t j = 1; j < gbaPalette.size; j++) {
+        primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
+      }
+    }
+  }
+
+  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size()};
+  ctx.compilerContext.exploredNodeCounter = 0;
+  AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
+  AssignAlgorithm assignAlgorithm = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                        ? ctx.compilerConfig.primaryAssignAlgorithm
+                                        : ctx.compilerConfig.secondaryAssignAlgorithm;
+  std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
+                                       ? ctx.compilerConfig.primaryExploredNodeCutoff
+                                       : ctx.compilerConfig.secondaryExploredNodeCutoff;
+  if (assignAlgorithm == AssignAlgorithm::DFS) {
+    assignResult =
+        assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
+  }
+  else if (assignAlgorithm == AssignAlgorithm::BFS) {
+    assignResult =
+        assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
+  }
+  else {
+    internalerror("palette_assignment::tryAssignment unknown AssignAlgorithm");
+  }
+
+  if (assignResult == AssignResult::NO_SOLUTION_POSSIBLE) {
+    /*
+     * If we get here, we know there is truly no possible palette solution since we exhausted every possibility. For
+     * most reasonably sized tilesets, it would be difficult to reach this condition since there are too many possible
+     * allocations to try. Instead it is more likely we hit the exploration cutoff case below.
+     */
+    if (printErrors) {
+      fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode);
+    }
+    return std::make_tuple(false, assignedPalsSolution, primaryPaletteColorSets);
+  }
+  else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
+    if (printErrors) {
+      fatalerror_assignExploreCutoffReached(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, assignAlgorithm,
+                                            exploredNodeCutoff);
+    }
+    return std::make_tuple(false, assignedPalsSolution, primaryPaletteColorSets);
+  }
+  pt_logln(ctx, stderr, "{} assigned all NormalizedPalettes successfully after {} iterations",
+           assignAlgorithmString(assignAlgorithm), ctx.compilerContext.exploredNodeCounter);
+  return std::make_tuple(true, assignedPalsSolution, primaryPaletteColorSets);
+}
+
+std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
+runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                           const std::unordered_map<BGR15, std::size_t> &colorToIndex)
+{
+  /*
+   * First, we detect if we are in a command line override case. There are three of these.
+   */
+
+  /*
+   * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
+   * this case, we don't want to read anything from the assign config. Just return.
+   */
+  bool primaryOverride = ctx.subcommand == Subcommand::COMPILE_PRIMARY &&
+                         ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+                         ctx.compilerConfig.providedAssignConfigOverride;
+  /*
+   * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
+   * In this case, we don't want to read anything from the assign config. Just return.
+   */
+  bool secondaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
+                           ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
+                           ctx.compilerConfig.providedAssignConfigOverride;
+  /*
+   * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
+   * override value. In this case, we don't want to read anything from the assign config. Just return.
+   */
+  bool pairedPrimaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
+                               ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+                               ctx.compilerConfig.providedPrimaryAssignConfigOverride;
+
+  // If user supplied any command line overrides, we don't want to run the full matrix. Instead, die upon failure.
+  if (primaryOverride || secondaryOverride || pairedPrimaryOverride) {
+    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, true);
+    bool success = std::get<0>(assignmentResult);
+    if (success) {
+      auto assignedPalsSolution = std::get<1>(assignmentResult);
+      auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+      return std::pair{assignedPalsSolution, primaryPaletteColorSets};
+    }
+  }
+
+  if ((ctx.compilerConfig.mode == CompilerMode::PRIMARY && ctx.compilerConfig.readCachedPrimaryConfig) ||
+      (ctx.compilerConfig.mode == CompilerMode::SECONDARY && ctx.compilerConfig.readCachedSecondaryConfig)) {
+    /*
+     * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
+     * potentially save a ton of time.
+     */
+    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
+    bool success = std::get<0>(assignmentResult);
+    if (success) {
+      auto assignedPalsSolution = std::get<1>(assignmentResult);
+      auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+      return std::pair{assignedPalsSolution, primaryPaletteColorSets};
+    }
+  }
+  // TODO : convert to proper warning
+  pt_warn("running assign param matrix");
+
+  // TODO : actually run the matrix
+  auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
+  bool success = std::get<0>(assignmentResult);
+  auto assignedPalsSolution = std::get<1>(assignmentResult);
+  auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+
+  if (!success) {
+    // The matrix failed, print a sad message
+    // TODO : fill in with real error
+    pt_fatal_err("assign param matrix failed :-(");
+    throw PtException{"assign param matrix failed :-("};
+  }
+
+  return std::pair{assignedPalsSolution, primaryPaletteColorSets};
 }
 
 } // namespace porytiles
