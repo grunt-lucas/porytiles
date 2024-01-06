@@ -324,11 +324,7 @@ void fatalerror_assignExploreCutoffReached(const ErrorsAndWarnings &err, const C
                                            CompilerMode mode, AssignAlgorithm algo, std::size_t maxRecurses)
 {
   if (err.printErrors) {
-    pt_fatal_err("{} palette assignment explored too many nodes", assignAlgorithmString(algo));
-    pt_note("please see the following wiki page for some potential solutions:");
-    pt_println(stderr, "      "
-                       "https://github.com/grunt-lucas/porytiles/wiki/"
-                       "Solving-The-%22Palette-Assignment-Explored-Too-Many-Nodes%22-Error");
+    pt_fatal_err("{} palette assignment exploration reached node cutoff", assignAlgorithmString(algo));
   }
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
@@ -337,8 +333,7 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
                                             CompilerMode mode)
 {
   if (err.printErrors) {
-    pt_fatal_err("no possible palette assignment exists for the given sources");
-    pt_note("increase the number of allowed palettes or restructure your tiles to use colors more efficiently");
+    pt_fatal_err("no possible palette assignment exists, given the current assign search params");
   }
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "no possible palette assignment");
 }
