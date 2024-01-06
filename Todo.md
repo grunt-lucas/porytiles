@@ -25,10 +25,8 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
   + Assignment config discovery
-    + If the param search matrix fails, users can try manual options to see if something works. If something does,
-      it will automatically save off an `assign.cfg`. Basically, Porytiles should always automatically write out an
-      `assign.cfg` any time a successful compilation occurs. In most cases, it will write out an identical file so
-      nothing will change.
+    + Porytiles should always automatically write out an `assign.cfg` any time a successful compilation occurs. In most
+      cases, it will write out an identical file so nothing will change.
 
 + provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes

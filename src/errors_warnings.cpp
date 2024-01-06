@@ -473,6 +473,20 @@ void fatalerror_assignConfigInvalidValue(const ErrorsAndWarnings &err, const Com
                             fmt::format("invalid assign value {} for key {}", value, key));
 }
 
+void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                                     const CompilerMode &mode)
+{
+  if (err.printErrors) {
+    pt_fatal_err("palette assignment parameter search matrix failed to find any suitable parameters");
+    pt_note("please see the following wiki page for help with working through this error:");
+    // TODO : fill in wiki page link
+    pt_println(stderr,
+               "      https://wiki-page-link-goes-here.com");
+  }
+  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
+                              fmt::format("palette assign param search matrix failed"));
+}
+
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
                          const std::string &message)
 {

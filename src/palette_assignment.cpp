@@ -483,8 +483,7 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
     }
   }
   // If we got here, the matrix failed, print a sad message
-  // TODO : fill in with real fatal error
-  pt_fatal_err("assign param matrix failed :-(");
+  fatalerror_paletteAssignParamSearchMatrixFailed(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode);
   // unreachable, here for compiler
   throw std::runtime_error("assign param matrix failed :-(");
 }

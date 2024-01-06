@@ -220,6 +220,9 @@ void fatalerror_assignConfigInvalidValue(const ErrorsAndWarnings &err, const Com
                                          const CompilerMode &mode, std::string key, std::string value,
                                          std::size_t lineNumber, std::string path);
 
+void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                                     const CompilerMode &mode);
+
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
  */
