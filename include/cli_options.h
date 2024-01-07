@@ -86,7 +86,7 @@ const std::string TRANSPARENCY_COLOR = "transparency-color";
 const std::string TRANSPARENCY_COLOR_DESC =
 "        -" + TRANSPARENCY_COLOR + "=<R,G,B>\n"
 "             Select RGB color <R,G,B> to represent transparency in your layer source PNGs.\n"
-"             Defaults to <255,0,255>.\n";
+"             Defaults to `255,0,255'.\n";
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
 const std::string DEFAULT_BEHAVIOR = "default-behavior";
@@ -122,7 +122,7 @@ const std::string ASSIGN_ALGO = "assign-algorithm";
 const std::string ASSIGN_ALGO_DESC =
 "        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
 "             Select the palette assignment algorithm. Valid options are `dfs' and `bfs'. Default\n"
-"             is `dfs'.";
+"             is `dfs'.\n";
 constexpr int ASSIGN_ALGO_VAL = 3000;
 
 const std::string EXPLORE_CUTOFF = "explore-cutoff";
