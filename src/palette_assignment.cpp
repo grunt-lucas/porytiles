@@ -434,22 +434,24 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
 
   if ((ctx.compilerConfig.mode == CompilerMode::PRIMARY && ctx.compilerConfig.readCachedPrimaryConfig) ||
       (ctx.compilerConfig.mode == CompilerMode::SECONDARY && ctx.compilerConfig.readCachedSecondaryConfig)) {
-    /*
-     * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
-     * potentially save a ton of time.
-     */
-    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
-    bool success = std::get<0>(assignmentResult);
-    if (success) {
-      auto assignedPalsSolution = std::get<1>(assignmentResult);
-      auto primaryPaletteColorSets = std::get<2>(assignmentResult);
-      return std::pair{assignedPalsSolution, primaryPaletteColorSets};
-    }
-    if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-      warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
-    }
-    else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-      warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
+    if (!ctx.compilerConfig.forceParamSearchMatrix) {
+      /*
+       * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
+       * potentially save a ton of time.
+       */
+      auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
+      bool success = std::get<0>(assignmentResult);
+      if (success) {
+        auto assignedPalsSolution = std::get<1>(assignmentResult);
+        auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+        return std::pair{assignedPalsSolution, primaryPaletteColorSets};
+      }
+      if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
+      }
+      else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
+      }
     }
   }
   else {

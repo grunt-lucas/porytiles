@@ -24,10 +24,6 @@
     + https://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
-  + Assignment config discovery
-    + add two options:
-      + `-force-assign-param-matrix` forces the assign param search matrix to run regardless if `assign.cfg` is preset
-        (and upon finding a successful param set, it will overwrite `assign.cfg`)
 
 + provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes

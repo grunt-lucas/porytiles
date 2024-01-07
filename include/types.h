@@ -815,6 +815,7 @@ struct CompilerConfig {
   RGBA32 transparencyColor;
   bool tripleLayer;
   bool cacheAssignConfig;
+  bool forceParamSearchMatrix;
   bool providedAssignConfigOverride;
   bool providedPrimaryAssignConfigOverride;
   std::string defaultBehavior;
@@ -835,12 +836,12 @@ struct CompilerConfig {
 
   CompilerConfig()
       : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssignConfig{true},
-        providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false}, defaultBehavior{"0"},
-        defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
-        primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
-        readCachedPrimaryConfig{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
-        secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
-        readCachedSecondaryConfig{false}
+        forceParamSearchMatrix{false}, providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false},
+        defaultBehavior{"0"}, defaultEncounterType{"0"}, defaultTerrainType{"0"},
+        primaryAssignAlgorithm{AssignAlgorithm::DFS}, primaryExploredNodeCutoff{2'000'000},
+        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, readCachedPrimaryConfig{false},
+        secondaryAssignAlgorithm{AssignAlgorithm::DFS}, secondaryExploredNodeCutoff{2'000'000},
+        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}, readCachedSecondaryConfig{false}
   {
   }
 };

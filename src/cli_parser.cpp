@@ -353,6 +353,7 @@ PRIMARY_ASSIGN_ALGO_DESC + "\n" +
 PRIMARY_EXPLORE_CUTOFF_DESC + "\n" +
 PRIMARY_BEST_BRANCHES_DESC + "\n" +
 DISABLE_ASSIGN_CONFIG_CACHING_DESC + "\n" +
+FORCE_ASSIGN_PARAM_MATRIX_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
 TILES_TOTAL_OVERRIDE_DESC + "\n" +
@@ -403,6 +404,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
       {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
       {DISABLE_ASSIGN_CONFIG_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CONFIG_CACHING_VAL},
+      {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
@@ -642,6 +644,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case DISABLE_ASSIGN_CONFIG_CACHING_VAL:
       ctx.compilerConfig.cacheAssignConfig = false;
+      break;
+    case FORCE_ASSIGN_PARAM_MATRIX_VAL:
+      ctx.compilerConfig.forceParamSearchMatrix = true;
       break;
 
     // Fieldmap override options

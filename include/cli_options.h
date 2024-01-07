@@ -171,6 +171,13 @@ const std::string DISABLE_ASSIGN_CONFIG_CACHING_DESC =
 "             access to the source folders.\n";
 constexpr int DISABLE_ASSIGN_CONFIG_CACHING_VAL = 3006;
 
+const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
+const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC =
+"        -" + FORCE_ASSIGN_PARAM_MATRIX + "\n"
+"             Force the full palette assignment parameter search matrix to run. If `assign.cfg'\n"
+"             in either source folder, its contents will be ignored.\n";
+constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3007;
+
 // Fieldmap override options
 
 const std::string TILES_PRIMARY_OVERRIDE = "tiles-primary-override";
