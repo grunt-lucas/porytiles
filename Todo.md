@@ -27,6 +27,10 @@
   + Assignment config discovery
     + Porytiles should always automatically write out an `assign.cfg` any time a successful compilation occurs. In most
       cases, it will write out an identical file so nothing will change.
+    + add two options:
+      + `-force-assign-param-matrix` forces the assign param search matrix to run regardless if `assign.cfg` is preset
+        (and upon finding a successful param set, it will overwrite `assign.cfg`)
+      + `-disable-assign-config-caching` will not write out to `assign.cfg` even on a successful compile
 
 + provide a way to "prime" palette assignment to improve algorithm efficiency?
   + idea: two different palette override modes
