@@ -25,8 +25,6 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
   + Assignment config discovery
-    + Porytiles should always automatically write out an `assign.cfg` any time a successful compilation occurs. In most
-      cases, it will write out an identical file so nothing will change.
     + add two options:
       + `-force-assign-param-matrix` forces the assign param search matrix to run regardless if `assign.cfg` is preset
         (and upon finding a successful param set, it will overwrite `assign.cfg`)
