@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2024-01-07
+
+### Added
+
+- Palette assignment parameter search matrix: users no longer have to fiddle with a bunch of annoying options to find
+  something that builds. It should work automatically in the background. Some additional options related to this
+  functionality have been added.
+
+- Added a `default-behavior` option to specify default metatile behavior for missing `attributes.csv` entries
+
+- Also added `default-terrain-type` and `default-encounter-type` options
+
+- Manual palette assignment options now have a `primary-` version for use with `compile-secondary`
+
+### Changed
+
+- Updated libfmt dependency
+
+- Changed `prune-branches` option to `best-branches`, flag now works in reverse. I.e. `best-branches` tells the palette
+  assignment search algorithm to only save the N best branches at each node.
+
 ## [0.0.6] - 2023-09-23
 
 ### Added
@@ -102,7 +123,9 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.6...HEAD
+[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.7...HEAD
+
+[0.0.7]: https://github.com/grunt-lucas/porytiles/compare/0.0.6...0.0.7
 
 [0.0.6]: https://github.com/grunt-lucas/porytiles/compare/0.0.5...0.0.6
 
