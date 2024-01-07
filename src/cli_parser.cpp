@@ -469,6 +469,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   std::optional<bool> warnKeyFrameTileDidNotAppearInAssignmentOverride{};
   std::optional<bool> errKeyFrameTileDidNotAppearInAssignmentOverride{};
 
+  // TODO : Porymap now supports but needs latest version, a future release should default this warning to OFF
   std::optional<bool> warnUsedTrueColorModeOverride{true};
   std::optional<bool> errUsedTrueColorModeOverride{};
 
@@ -1108,7 +1109,6 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   ctx.validateFieldmapParameters();
 
   if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
-    // TODO : change this once Porymap supports 8bpp input images
     warn_usedTrueColorMode(ctx.err);
   }
 

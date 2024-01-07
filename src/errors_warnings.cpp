@@ -444,7 +444,6 @@ void fatalerror_assignConfigSyntaxError(const ErrorsAndWarnings &err, const Comp
 {
   if (err.printErrors) {
     pt_fatal_err("{}: invalid syntax '{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
-    // TODO : remove backtick here, and remove all other backticks: rg '`' src/*
     pt_note("`assign.cfg' expected line syntax is: {}", fmt::styled("key=value", fmt::emphasis::bold));
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid assign syntax {}", line));
