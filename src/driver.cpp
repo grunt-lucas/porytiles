@@ -526,13 +526,15 @@ static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimatio
 
 static void emitCachedAssignConfig(PtContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
 {
-  try {
-    std::ofstream outAssignConfig{assignCfgPath.string()};
+  std::ofstream outAssignConfig{assignCfgPath.string()};
+  if (outAssignConfig.good()) {
+    emitAssignConfig(ctx, mode, outAssignConfig);
   }
-  catch (const std::exception &e) {
+  else {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("could not create '{}': {}", assignCfgPath.string(), e.what()));
+               fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
   }
+  outAssignConfig.close();
 }
 
 static void driveDecompile(PtContext &ctx)

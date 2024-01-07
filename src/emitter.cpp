@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "cli_options.h"
 #include "compiler.h"
 #include "decompiler.h"
 #include "importer.h"
@@ -376,7 +377,19 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   }
 }
 
-void emitAssignConfig(PtContext &ctx, const CompilerMode &mode, std::ostream &out) {}
+void emitAssignConfig(PtContext &ctx, const CompilerMode &mode, std::ostream &out)
+{
+  if (mode == CompilerMode::PRIMARY) {
+    out << ASSIGN_ALGO << "=" << assignAlgorithmString(ctx.compilerConfig.primaryAssignAlgorithm) << std::endl;
+    out << EXPLORE_CUTOFF << "=" << ctx.compilerConfig.primaryExploredNodeCutoff << std::endl;
+    out << BEST_BRANCHES << "=" << ctx.compilerConfig.primaryBestBranches << std::endl;
+  }
+  else if (mode == CompilerMode::SECONDARY) {
+    out << ASSIGN_ALGO << "=" << assignAlgorithmString(ctx.compilerConfig.secondaryAssignAlgorithm) << std::endl;
+    out << EXPLORE_CUTOFF << "=" << ctx.compilerConfig.secondaryExploredNodeCutoff << std::endl;
+    out << BEST_BRANCHES << "=" << ctx.compilerConfig.secondaryBestBranches << std::endl;
+  }
+}
 
 } // namespace porytiles
 
