@@ -376,6 +376,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   }
 }
 
+void emitAssignConfig(PtContext &ctx, const CompilerMode &mode, std::ostream &out) {}
+
 } // namespace porytiles
 
 // --------------------

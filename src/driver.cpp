@@ -524,6 +524,17 @@ static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimatio
   }
 }
 
+static void emitCachedAssignConfig(PtContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
+{
+  try {
+    std::ofstream outAssignConfig{assignCfgPath.string()};
+  }
+  catch (const std::exception &e) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("could not create '{}': {}", assignCfgPath.string(), e.what()));
+  }
+}
+
 static void driveDecompile(PtContext &ctx)
 {
   validateDecompileInputs(ctx);
@@ -715,6 +726,9 @@ static void driveCompile(PtContext &ctx)
       assignConfigFile.close();
     }
     ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles);
+    if (ctx.compilerConfig.cacheAssignConfig) {
+      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
+    }
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
     png::image<png::rgba_pixel> bottomPng{ctx.compilerSrcPaths.bottomSecondaryTilesheet()};
@@ -743,6 +757,9 @@ static void driveCompile(PtContext &ctx)
       assignConfigFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles);
+    if (ctx.compilerConfig.cacheAssignConfig) {
+      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignConfig());
+    }
   }
   else {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
@@ -771,6 +788,9 @@ static void driveCompile(PtContext &ctx)
       assignConfigFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles);
+    if (ctx.compilerConfig.cacheAssignConfig) {
+      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
+    }
   }
 
   /*
@@ -831,6 +851,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.cacheAssignConfig = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
@@ -1053,6 +1074,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.cacheAssignConfig = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

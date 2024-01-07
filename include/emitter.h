@@ -55,6 +55,7 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                     std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap);
 
+void emitAssignConfig(PtContext &ctx, const CompilerMode &mode, std::ostream &out);
 } // namespace porytiles
 
 #endif // PORYTILES_EMITTER_H
