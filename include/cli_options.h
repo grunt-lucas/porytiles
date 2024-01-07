@@ -163,6 +163,13 @@ const std::string PRIMARY_BEST_BRANCHES_DESC =
 "             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
 
+const std::string DISABLE_ASSIGN_CONFIG_CACHING = "disable-assign-config-caching";
+const std::string DISABLE_ASSIGN_CONFIG_CACHING_DESC =
+"        -" + DISABLE_ASSIGN_CONFIG_CACHING + "\n"
+"             Do not write palette assignment search parameters to `assign.cfg' after a successful\n"
+"             compilation. This option may be useful in situations where you do not have write\n"
+"             access to the source folders.\n";
+constexpr int DISABLE_ASSIGN_CONFIG_CACHING_VAL = 3006;
 
 // Fieldmap override options
 
