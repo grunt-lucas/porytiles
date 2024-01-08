@@ -53,7 +53,7 @@
 + Use imgui to create a basic GUI?
   + https://github.com/ocornut/imgui
 
-+ `report` command that prints out various statistics
++ `-print-report` option that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
   + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
     + calculate this by taking the `Number Unique Colors / Number Slots In Use`
@@ -78,7 +78,6 @@
     + you can extract this and steal the libpng.a file https://packages.msys2.org/package/mingw-w64-x86_64-libpng
   + set up package caches so installs don't have to run every time
     + probably too hard to do with homebrew, apt
-  + test if the actual scripted release process works properly
   + static link libc++ and libpng on mac?
     + https://stackoverflow.com/questions/844819/how-to-static-link-on-os-x
     + probably too brittle (MacOS syscall interface is not stable), instead provide detailed install instructions
@@ -87,11 +86,11 @@
   + better build system? (cmake, autotools, etc)
   + static analysis: https://nrk.neocities.org/articles/c-static-analyzers
 
-+ `dump-anim-code` command
-  + takes input tiles just like `compile-X` commands
++ `-dump-anim-code` option
   + instead of outputting all the files, just write C code to the console
   + the C code should be copy-paste-able into `tileset_anims.h/c` and `src/data/tilesets/headers.h`
-  + is it possible to generate the code and insert it automatically?
+  + is it possible to generate the code and insert it automatically? This would be even better. Would need some kind of
+    syntax tree parsing.
 
 + `freestanding` mode for compilation
   + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
@@ -106,6 +105,3 @@
 
 + Refactor CLI parsing, it's a mess
   + CXXOpts lib may be helpful here
-
-+ Support .ora files (which are just fancy zip files) since GIMP can export layers as .ora
-  + https://github.com/tfussell/miniz-cpp
