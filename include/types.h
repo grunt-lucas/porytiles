@@ -755,6 +755,18 @@ struct CompilerSourcePaths {
     return path / std::filesystem::path{"assign.cfg"};
   }
 
+  std::filesystem::path primaryPalettePrimers() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / std::filesystem::path{"palette-primers"};
+  }
+
+  std::filesystem::path secondaryPalettePrimers() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"palette-primers"};
+  }
+
   std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
 };
 

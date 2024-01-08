@@ -632,10 +632,6 @@ static void driveCompile(PtContext &ctx)
 
   /*
    * Import behavior header. If the supplied path does not point to a valid file, bail now.
-   *
-   * We only read the linked behavior header file from the primary set source. It never makes sense for the secondary
-   * set to have a different behavior map than the paired primary, so the user does not need to specify this header in
-   * the secondary set source.
    */
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
@@ -714,6 +710,9 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during primary attributes import");
     }
 
+    // TODO : import palette primers
+    std::vector<std::shared_ptr<std::ifstream>> primaryPalettePrimerFiles{};
+
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
@@ -745,6 +744,9 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during secondary attributes import");
     }
 
+    // TODO : import palette primers
+    std::vector<std::shared_ptr<std::ifstream>> secondaryPalettePrimerFiles{};
+
     DecompiledTileset decompiledSecondaryTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
@@ -775,6 +777,9 @@ static void driveCompile(PtContext &ctx)
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
     }
+
+    // TODO : import palette primers
+    std::vector<std::shared_ptr<std::ifstream>> primaryPalettePrimerFiles{};
 
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
