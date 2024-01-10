@@ -481,7 +481,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
 
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const size_t imageHeight =
@@ -527,7 +527,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
   porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
-  auto compiled = porytiles::compile(ctx, decompiled);
+  auto compiled = porytiles::compile(ctx, decompiled, std::vector<porytiles::RGBATile>{});
 
   std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
   std::ofstream outFile{tmpPath};
@@ -601,7 +601,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
     png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary =
         porytiles::importLayeredTilesFromPngs(ctx, attributesMap, bottomPrimary, middlePrimary, topPrimary);
-    auto compiled = porytiles::compile(ctx, decompiledPrimary);
+    auto compiled = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
     std::ofstream outFile{tmpPath};
@@ -686,7 +686,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
     png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2_dual/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary =
         porytiles::importLayeredTilesFromPngs(ctx, attributesMap, bottomPrimary, middlePrimary, topPrimary);
-    auto compiled = porytiles::compile(ctx, decompiledPrimary);
+    auto compiled = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
     std::ofstream outFile{tmpPath};

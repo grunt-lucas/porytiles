@@ -62,7 +62,7 @@ TEST_CASE("decompile should decompile a basic tileset")
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary);
+  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   auto decompiledViaAlgorithm = porytiles::decompile(ctx, *compiledPrimary);
 

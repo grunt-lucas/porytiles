@@ -27,7 +27,8 @@ extern std::size_t gPaletteAssignCutoffCounter;
 /**
  * TODO : fill in doc comments
  */
-std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset);
+std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset,
+                                         const std::vector<RGBATile> &palettePrimers);
 
 } // namespace porytiles
 
@@ -38,7 +39,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 // ColorSets won't account for transparency color, we will handle that at the end
 using ColorSet = std::bitset<porytiles::MAX_BG_PALETTES *(porytiles::PAL_SIZE - 1)>;
 // using DecompiledIndex = std::size_t;
-using IndexedNormTile = std::pair<porytiles::DecompiledIndex, porytiles::NormalizedTile>;
+using IndexAndNormTile = std::pair<porytiles::DecompiledIndex, porytiles::NormalizedTile>;
 using IndexedNormTileWithColorSet = std::tuple<porytiles::DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
 
 #endif // PORYTILES_COMPILER_H

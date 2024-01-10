@@ -710,13 +710,12 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during primary attributes import");
     }
 
-    // TODO : import palette primers
-    std::vector<std::shared_ptr<std::ifstream>> primaryPalettePrimerFiles{};
-
     DecompiledTileset decompiledPrimaryTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
+    // TODO : import palette primers into RGBA tiles
+    std::vector<RGBATile> primaryPalettePrimers{};
     if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig()};
       if (assignConfigFile.fail()) {
@@ -726,7 +725,7 @@ static void driveCompile(PtContext &ctx)
       importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
       assignConfigFile.close();
     }
-    ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles);
+    ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles, primaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssignConfig) {
       emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
     }
@@ -744,13 +743,12 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during secondary attributes import");
     }
 
-    // TODO : import palette primers
-    std::vector<std::shared_ptr<std::ifstream>> secondaryPalettePrimerFiles{};
-
     DecompiledTileset decompiledSecondaryTiles =
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
     importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
+    // TODO : import palette primers into RGBA tiles
+    std::vector<RGBATile> secondaryPalettePrimers{};
     if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.secondaryAssignConfig()};
       if (assignConfigFile.fail()) {
@@ -760,7 +758,7 @@ static void driveCompile(PtContext &ctx)
       importSecondaryAssignmentConfigParameters(ctx, assignConfigFile);
       assignConfigFile.close();
     }
-    ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles);
+    ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles, secondaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssignConfig) {
       emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignConfig());
     }
@@ -778,13 +776,12 @@ static void driveCompile(PtContext &ctx)
                      "errors generated during primary attributes import");
     }
 
-    // TODO : import palette primers
-    std::vector<std::shared_ptr<std::ifstream>> primaryPalettePrimerFiles{};
-
     DecompiledTileset decompiledTiles =
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, animations, decompiledTiles);
+    // TODO : import palette primers into RGBA tiles
+    std::vector<RGBATile> primaryPalettePrimers{};
     if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig().c_str()};
       if (assignConfigFile.fail()) {
@@ -794,7 +791,7 @@ static void driveCompile(PtContext &ctx)
       importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
       assignConfigFile.close();
     }
-    ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles);
+    ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles, primaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssignConfig) {
       emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
     }
