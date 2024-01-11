@@ -25,19 +25,13 @@
     + https://realtimecollisiondetection.net/blog/?p=56
   + More heuristics to prune unpromising branches
 
-+ provide a way to "prime" palette assignment to improve algorithm efficiency?
-  + idea: two different palette override modes
-  + `palette-overrides` folder in the input folder
-    + in this folder, numbered JASC PAL files containing exactly 16 colors are copied directly into the final palette
-      + e.g. 1.pal will become palette 1
-      + fail build if we can't assign all tiles given the override
-  + `palette-primers`
-    + in this folder, named JASC PAL files that contain an arbitrary number of colors
-      + e.g. grass.pal
-      + turn each palette file here into a dummy normalized tile so each pal file is guaranteed to appear in the same
-        hardware palette, gives users a way to guarantee that certain colors are always together
-      + when done correctly, this will help the algorithm find a more optimal solution by "leeching" intelligence from
-        human intervention
++ `palette-overrides` folder in the input folder
+  + in this folder, numbered JASC PAL files containing exactly 16 colors are copied directly into the final palette
+    + e.g. 1.pal will become palette 1
+    + fail build if we can't assign all tiles given the override
+    + user can put a `-` on a line to indicate that this could be any color
+    + the primary use case for this would be so that users could:
+      + e.g. fix a given color slot in a given palette, sometimes this is nice for certain DNS systems, etc
 
 + Warnings
   + `-Wpalette-alloc-efficiency`
