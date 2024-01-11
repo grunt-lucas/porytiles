@@ -450,7 +450,7 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorMaps(PtContext &ctx, std::ifstream &behaviorFile)
+importMetatileBehaviorHeader(PtContext &ctx, std::ifstream &behaviorFile)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
@@ -783,45 +783,6 @@ void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &co
   ctx.compilerConfig.readCachedSecondaryConfig = true;
 }
 
-static RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
-{
-  std::vector<std::string> colorComponents = split(jascLine, " ");
-  if (colorComponents.size() != 3) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
-  }
-
-  if (colorComponents[0].at(colorComponents[0].size() - 1) == '\r') {
-    colorComponents[0].pop_back();
-  }
-  if (colorComponents[1].at(colorComponents[1].size() - 1) == '\r') {
-    colorComponents[1].pop_back();
-  }
-  if (colorComponents[2].at(colorComponents[2].size() - 1) == '\r') {
-    colorComponents[2].pop_back();
-  }
-
-  int red = parseInteger<int>(colorComponents[0].c_str());
-  int green = parseInteger<int>(colorComponents[1].c_str());
-  int blue = parseInteger<int>(colorComponents[2].c_str());
-
-  if (red < 0 || red > 255) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               "invalid red component: range must be 0 <= red <= 255");
-  }
-  if (green < 0 || green > 255) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               "invalid red component: range must be 0 <= green <= 255");
-  }
-  if (blue < 0 || blue > 255) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               "invalid red component: range must be 0 <= blue <= 255");
-  }
-
-  return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
-                ALPHA_OPAQUE};
-}
-
 static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
                                                       const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
 {
@@ -829,6 +790,11 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
 
   for (std::shared_ptr<std::ifstream> stream : paletteFiles) {
     std::string line;
+
+    /*
+     * TODO : should fatal errors here have better messages? Users shouldn't ever really see these errors, since
+     * compiled palettes will always presumably have correct formatting unless a user has manually messed with one
+     */
 
     std::getline(*stream, line);
     if (line.size() == 0) {
@@ -1109,6 +1075,72 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
    */
 
   return {tileset, attributesMap};
+}
+
+RGBATile importPalettePrimer(PtContext &ctx, std::ifstream &paletteFile)
+{
+  RGBATile primerTile{};
+  primerTile.type = TileType::PRIMER;
+
+  /*
+   * TODO : fatalerrors in this function need better messaging
+   */
+
+  std::string line;
+  std::getline(paletteFile, line);
+  if (line.size() == 0) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+  }
+  line.pop_back();
+  if (line != "JASC-PAL") {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
+  }
+  std::getline(paletteFile, line);
+  if (line.size() == 0) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+  }
+  line.pop_back();
+  if (line != "0100") {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("expected '0100' in pal file, saw '{}'", line));
+  }
+  std::getline(paletteFile, line);
+  if (line.size() == 0) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+  }
+  line.pop_back();
+
+  std::uint8_t paletteSize;
+  try {
+    paletteSize = parseInteger<std::uint8_t>(line.c_str());
+  }
+  catch (const std::exception &e) {
+    paletteSize = 0;
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("invalid palette size line {}", line));
+  }
+  if (paletteSize == 0 || paletteSize > PAL_SIZE - 1) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("invalid palette size {}, must be 1 <= size <= 15", line));
+  }
+
+  std::uint8_t lineCount = 0;
+  while (std::getline(paletteFile, line)) {
+    RGBA32 rgba = parseJascLine(ctx, line);
+    primerTile.pixels.at(lineCount) = rgba;
+    lineCount++;
+    if (lineCount > PAL_SIZE - 1) {
+      break;
+    }
+  }
+
+  if (lineCount != paletteSize) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+               fmt::format("line count {} did not match stated palette size {}", lineCount, paletteSize));
+  }
+
+  return primerTile;
 }
 
 } // namespace porytiles
@@ -1532,14 +1564,14 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   CHECK(tiles.tiles.at(63).attributes.layerType == porytiles::LayerType::NORMAL);
 }
 
-TEST_CASE("importMetatileBehaviorMaps should parse metatile behaviors as expected")
+TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected")
 {
   porytiles::PtContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
-  auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorMaps(ctx, behaviorFile);
+  auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorHeader(ctx, behaviorFile);
   behaviorFile.close();
 
   CHECK(!behaviorMap.contains("MB_INVALID"));

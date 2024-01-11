@@ -34,8 +34,6 @@ const char *const WARN_MISSING_ASSIGN_CONFIG = "missing-assign-config";
 static std::string getTilePrettyString(const RGBATile &tile)
 {
   std::string tileString = "";
-  std::string foo = "{layer: middle, metatile: 2, subtile: northwest} subtile pixel col 2 row 1";
-  std::string bar = "{anim: water, frame: key.png, subtile: 0} subtile pixel col 2 row 1";
   if (tile.type == TileType::LAYERED) {
     tileString = "{layer: " + layerString(tile.layer) + ", metatile: " + std::to_string(tile.metatileIndex) +
                  ", subtile: " + subtileString(tile.subtile) + "}";
@@ -46,6 +44,9 @@ static std::string getTilePrettyString(const RGBATile &tile)
   }
   else if (tile.type == TileType::FREESTANDING) {
     tileString = "{tile: " + std::to_string(tile.tileIndex) + "}";
+  }
+  else if (tile.type == TileType::PRIMER) {
+    tileString = "{tile: " + tile.primer + "}";
   }
   else {
     throw std::runtime_error{"error_warnings::getTilePrettyString unknown TileType"};
@@ -58,6 +59,8 @@ void internalerror(std::string message) { throw std::runtime_error(message); }
 void internalerror_unknownCompilerMode(std::string context) { internalerror(context + " unknown CompilerMode"); }
 
 void internalerror_unknownDecompilerMode(std::string context) { internalerror(context + " unknown DecompilerMode"); }
+
+void internalerror_unknownSubcommand(std::string context) { internalerror(context + " unknown Subcommand"); }
 
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension)
@@ -246,7 +249,7 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSo
                                   std::string path)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path does not exist or is not a directory", path);
+    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
@@ -255,7 +258,7 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const Decompiler
                                   std::string path)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path does not exist or is not a directory", path);
+    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
   }
   die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
@@ -1159,7 +1162,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
   SUBCASE("Invalid integer format 1")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value foo",
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value foo",
                          porytiles::PtException);
     behaviorFile.close();
   }
@@ -1167,7 +1170,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
   SUBCASE("Invalid integer format 2")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorMaps(ctx, behaviorFile), "invalid behavior value 6bar",
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value 6bar",
                          porytiles::PtException);
     behaviorFile.close();
   }

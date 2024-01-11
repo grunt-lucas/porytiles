@@ -66,6 +66,8 @@ std::string tileTypeString(TileType type)
     return "layered";
   case TileType::ANIM:
     return "anim";
+  case TileType::PRIMER:
+    return "primer";
   default:
     internalerror("types::tileTypeString unknown TileType");
   }

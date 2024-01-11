@@ -37,7 +37,7 @@ static void validateCompileInputs(PtContext &ctx)
     }
     if (!std::filesystem::exists(ctx.compilerSrcPaths.bottomSecondaryTilesheet())) {
       fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.compilerSrcPaths.bottomSecondaryTilesheet().string()));
+                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.bottomSecondaryTilesheet().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.bottomSecondaryTilesheet())) {
       fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
@@ -46,7 +46,7 @@ static void validateCompileInputs(PtContext &ctx)
     }
     if (!std::filesystem::exists(ctx.compilerSrcPaths.middleSecondaryTilesheet())) {
       fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.compilerSrcPaths.middleSecondaryTilesheet().string()));
+                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.middleSecondaryTilesheet().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.middleSecondaryTilesheet())) {
       fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
@@ -55,7 +55,7 @@ static void validateCompileInputs(PtContext &ctx)
     }
     if (!std::filesystem::exists(ctx.compilerSrcPaths.topSecondaryTilesheet())) {
       fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file does not exist", ctx.compilerSrcPaths.topSecondaryTilesheet().string()));
+                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.topSecondaryTilesheet().string()));
     }
     if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.topSecondaryTilesheet())) {
       fatalerror(
@@ -70,7 +70,7 @@ static void validateCompileInputs(PtContext &ctx)
   }
   if (!std::filesystem::exists(ctx.compilerSrcPaths.bottomPrimaryTilesheet())) {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.compilerSrcPaths.bottomPrimaryTilesheet().string()));
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.bottomPrimaryTilesheet().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.bottomPrimaryTilesheet())) {
     fatalerror(
@@ -79,7 +79,7 @@ static void validateCompileInputs(PtContext &ctx)
   }
   if (!std::filesystem::exists(ctx.compilerSrcPaths.middlePrimaryTilesheet())) {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.compilerSrcPaths.middlePrimaryTilesheet().string()));
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.middlePrimaryTilesheet().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.middlePrimaryTilesheet())) {
     fatalerror(
@@ -88,7 +88,7 @@ static void validateCompileInputs(PtContext &ctx)
   }
   if (!std::filesystem::exists(ctx.compilerSrcPaths.topPrimaryTilesheet())) {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.compilerSrcPaths.topPrimaryTilesheet().string()));
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.topPrimaryTilesheet().string()));
   }
   if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.topPrimaryTilesheet())) {
     fatalerror(
@@ -165,19 +165,19 @@ static void validateDecompileInputs(PtContext &ctx)
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryMetatilesBin())) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.decompilerSrcPaths.primaryMetatilesBin().string()));
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryMetatilesBin().string()));
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryAttributesBin())) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.decompilerSrcPaths.primaryAttributesBin().string()));
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryAttributesBin().string()));
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryTilesPng())) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file does not exist", ctx.decompilerSrcPaths.primaryTilesPng().string()));
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryTilesPng().string()));
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryPalettes())) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: directory does not exist", ctx.decompilerSrcPaths.primaryPalettes().string()));
+               fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.primaryPalettes().string()));
   }
 
   try {
@@ -270,6 +270,76 @@ static void validateDecompileOutputs(PtContext &ctx, std::filesystem::path &outp
   }
 }
 
+static std::vector<std::vector<AnimationPng<png::index_pixel>>>
+prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
+{
+  std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
+
+  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
+  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
+    pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+    return animations;
+  }
+  std::vector<std::filesystem::path> animationDirectories;
+  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
+            std::back_inserter(animationDirectories));
+  std::sort(animationDirectories.begin(), animationDirectories.end());
+  for (const auto &animDir : animationDirectories) {
+    if (!std::filesystem::is_directory(animDir)) {
+      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
+      continue;
+    }
+
+    // collate all possible animation frame files
+    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
+    std::unordered_map<std::size_t, std::filesystem::path> frames{};
+    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
+      std::string fileName = frameFile.path().filename().string();
+      std::string extension = frameFile.path().extension().string();
+      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
+        pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
+        continue;
+      }
+      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
+      frames.insert(std::pair{index, frameFile.path()});
+      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+    }
+
+    std::vector<AnimationPng<png::index_pixel>> framePngs{};
+    if (frames.size() == 0) {
+      // TODO : better error
+      throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
+      // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+      //                                         animDir.filename().string(), 0);
+    }
+    for (std::size_t i = 1; i <= frames.size(); i++) {
+      if (!frames.contains(i)) {
+        // TODO : better error
+        throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
+        // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        //                                         animDir.filename().string(), i - 1);
+      }
+
+      try {
+        // We do this here so if the source is not a PNG, we can catch and give a better error
+        png::image<png::index_pixel> png{frames.at(i)};
+        AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
+        framePngs.push_back(animPng);
+      }
+      catch (const std::exception &exception) {
+        // TODO : better error
+        throw std::runtime_error{
+            fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
+        // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+      }
+    }
+
+    animations.push_back(framePngs);
+  }
+
+  return animations;
+}
+
 static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
 prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
 {
@@ -277,7 +347,7 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
 
   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' does not exist, skipping animations import", animationPath.string());
+    pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
     return animations;
   }
   std::vector<std::filesystem::path> animationDirectories;
@@ -353,83 +423,13 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
   return animations;
 }
 
-static std::vector<std::vector<AnimationPng<png::index_pixel>>>
-prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
-{
-  std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
-
-  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
-  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' does not exist, skipping animations import", animationPath.string());
-    return animations;
-  }
-  std::vector<std::filesystem::path> animationDirectories;
-  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
-            std::back_inserter(animationDirectories));
-  std::sort(animationDirectories.begin(), animationDirectories.end());
-  for (const auto &animDir : animationDirectories) {
-    if (!std::filesystem::is_directory(animDir)) {
-      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
-      continue;
-    }
-
-    // collate all possible animation frame files
-    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
-    std::unordered_map<std::size_t, std::filesystem::path> frames{};
-    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
-      std::string fileName = frameFile.path().filename().string();
-      std::string extension = frameFile.path().extension().string();
-      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
-        pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
-        continue;
-      }
-      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
-      frames.insert(std::pair{index, frameFile.path()});
-      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
-    }
-
-    std::vector<AnimationPng<png::index_pixel>> framePngs{};
-    if (frames.size() == 0) {
-      // TODO : better error
-      throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
-      // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-      //                                         animDir.filename().string(), 0);
-    }
-    for (std::size_t i = 1; i <= frames.size(); i++) {
-      if (!frames.contains(i)) {
-        // TODO : better error
-        throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
-        // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        //                                         animDir.filename().string(), i - 1);
-      }
-
-      try {
-        // We do this here so if the source is not a PNG, we can catch and give a better error
-        png::image<png::index_pixel> png{frames.at(i)};
-        AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
-        framePngs.push_back(animPng);
-      }
-      catch (const std::exception &exception) {
-        // TODO : better error
-        throw std::runtime_error{
-            fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
-        // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
-      }
-    }
-
-    animations.push_back(framePngs);
-  }
-
-  return animations;
-}
-
 static std::unordered_map<std::size_t, Attributes>
-importDecompiledAttributes(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
-                           std::filesystem::path attributesCsvPath)
+prepareDecompiledAttributesForImport(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+                                     std::filesystem::path attributesCsvPath)
 {
   pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
   if (!std::filesystem::exists(attributesCsvPath) || !std::filesystem::is_regular_file(attributesCsvPath)) {
-    pt_logln(ctx, stderr, "path `{}' does not exist, skipping attributes import", attributesCsvPath.string());
+    pt_logln(ctx, stderr, "path `{}' did not exist, skipping attributes import", attributesCsvPath.string());
     warn_attributesFileNotFound(ctx.err, attributesCsvPath);
     return std::unordered_map<std::size_t, Attributes>{};
   }
@@ -438,7 +438,7 @@ importDecompiledAttributes(PtContext &ctx, const std::unordered_map<std::string,
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importBehaviorsHeader(PtContext &ctx, std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImport(PtContext &ctx, std::string behaviorHeaderPath)
 {
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
@@ -451,10 +451,10 @@ importBehaviorsHeader(PtContext &ctx, std::string behaviorHeaderPath)
                  fmt::format("{}: could not open for reading", behaviorHeaderPath));
     }
     else {
-      internalerror("driver::importBehaviorsHeader invalid subcommand");
+      internalerror("driver::prepareBehaviorsHeaderForImport invalid subcommand");
     }
   }
-  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorMaps(ctx, behaviorFile);
+  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorHeader(ctx, behaviorFile);
   behaviorFile.close();
   if (behaviorMap.size() == 0) {
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -466,10 +466,41 @@ importBehaviorsHeader(PtContext &ctx, std::string behaviorHeaderPath)
                  fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
     }
     else {
-      internalerror("driver::importBehaviorsHeader invalid subcommand");
+      internalerror("driver::prepareBehaviorsHeaderForImport invalid subcommand");
     }
   }
   return std::pair{behaviorMap, behaviorReverseMap};
+}
+
+static std::vector<RGBATile> preparePalettePrimersForImport(PtContext &ctx, std::filesystem::path palettePrimersPath)
+{
+  std::vector<RGBATile> primerTiles{};
+
+  pt_logln(ctx, stderr, "importing palette primers from {}", palettePrimersPath.string());
+  if (!std::filesystem::exists(palettePrimersPath) || !std::filesystem::is_directory(palettePrimersPath)) {
+    pt_logln(ctx, stderr, "path `{}' did not exist, skipping palette primers import", palettePrimersPath.string());
+    return primerTiles;
+  }
+
+  std::vector<std::filesystem::path> primerFiles;
+  std::copy(std::filesystem::directory_iterator(palettePrimersPath), std::filesystem::directory_iterator(),
+            std::back_inserter(primerFiles));
+
+  for (const auto &primerFile : primerFiles) {
+    if (!std::filesystem::is_regular_file(primerFile)) {
+      pt_logln(ctx, stderr, "skipping {} as it is not a regular file", primerFile.string());
+      continue;
+    }
+    std::ifstream fileStream{primerFile};
+    pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
+    // TODO : instead of throwing fatal errors in this function, throw regular errors so we can fail later
+    RGBATile primerTile = importPalettePrimer(ctx, fileStream);
+    primerTile.primer = primerFile.filename().string();
+    primerTiles.push_back(primerTile);
+    fileStream.close();
+  }
+
+  return primerTiles;
 }
 
 static void emitCompiledPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
@@ -544,7 +575,8 @@ static void driveDecompile(PtContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
-  auto [behaviorMap, behaviorReverseMap] = importBehaviorsHeader(ctx, ctx.decompilerSrcPaths.metatileBehaviors);
+  auto [behaviorMap, behaviorReverseMap] =
+      prepareBehaviorsHeaderForImport(ctx, ctx.decompilerSrcPaths.metatileBehaviors);
 
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
     throw std::runtime_error{"FEATURE : support decompile-secondary"};
@@ -566,7 +598,7 @@ static void driveDecompile(PtContext &ctx)
     std::filesystem::path paletteFile = ctx.decompilerSrcPaths.primaryPalettes() / filename.str();
     if (!std::filesystem::exists(paletteFile)) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: file does not exist", paletteFile.string()));
+                 fmt::format("{}: file did not exist", paletteFile.string()));
     }
     paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
@@ -636,7 +668,7 @@ static void driveCompile(PtContext &ctx)
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
-    auto [map, reverse] = importBehaviorsHeader(ctx, ctx.compilerSrcPaths.metatileBehaviors);
+    auto [map, reverse] = prepareBehaviorsHeaderForImport(ctx, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
@@ -704,7 +736,8 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPrimaryPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
+    auto primaryAttributesMap =
+        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -714,8 +747,8 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
     auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
-    // TODO : import palette primers into RGBA tiles
-    std::vector<RGBATile> primaryPalettePrimers{};
+    std::vector<RGBATile> primaryPalettePrimers =
+        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
     if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig()};
       if (assignConfigFile.fail()) {
@@ -737,7 +770,7 @@ static void driveCompile(PtContext &ctx)
     ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
 
     auto secondaryAttributesMap =
-        importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.secondaryAttributes());
+        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.secondaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during secondary attributes import");
@@ -747,8 +780,9 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
     auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
     importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
-    // TODO : import palette primers into RGBA tiles
-    std::vector<RGBATile> secondaryPalettePrimers{};
+    std::vector<RGBATile> secondaryPalettePrimers =
+        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.secondaryPalettePrimers());
+    ;
     if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.secondaryAssignConfig()};
       if (assignConfigFile.fail()) {
@@ -770,7 +804,8 @@ static void driveCompile(PtContext &ctx)
     png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
 
-    auto primaryAttributesMap = importDecompiledAttributes(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
+    auto primaryAttributesMap =
+        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
     if (ctx.err.errCount > 0) {
       die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                      "errors generated during primary attributes import");
@@ -780,8 +815,9 @@ static void driveCompile(PtContext &ctx)
         importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
     auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
     importAnimTiles(ctx, animations, decompiledTiles);
-    // TODO : import palette primers into RGBA tiles
-    std::vector<RGBATile> primaryPalettePrimers{};
+    std::vector<RGBATile> primaryPalettePrimers =
+        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
+    ;
     if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
       std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig().c_str()};
       if (assignConfigFile.fail()) {

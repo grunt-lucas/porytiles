@@ -175,7 +175,7 @@ const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
 const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC =
 "        -" + FORCE_ASSIGN_PARAM_MATRIX + "\n"
 "             Force the full palette assignment parameter search matrix to run. If `assign.cfg'\n"
-"             in either source folder, its contents will be ignored.\n";
+"             exists in either source folder, its contents will be ignored.\n";
 constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3007;
 
 // Fieldmap override options

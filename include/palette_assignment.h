@@ -23,9 +23,13 @@ struct AssignState {
   // The count of unassigned palettes
   std::size_t unassignedCount;
 
+  // The count of unassigned primer palettes
+  std::size_t unassignedPrimerCount;
+
   auto operator==(const AssignState &other) const
   {
-    return this->hardwarePalettes == other.hardwarePalettes && this->unassignedCount == other.unassignedCount;
+    return this->hardwarePalettes == other.hardwarePalettes && this->unassignedCount == other.unassignedCount &&
+           this->unassignedPrimerCount == other.unassignedPrimerCount;
   }
 };
 
@@ -46,11 +50,14 @@ template <> struct std::hash<porytiles::AssignState> {
 
 namespace porytiles {
 AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
-                              const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds);
+                              const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
+                              const std::vector<ColorSet> &unassignedPrimers);
 AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
-                                const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds);
+                                const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
+                                const std::vector<ColorSet> &unassignedPrimers);
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                           const std::vector<ColorSet> &primerColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex);
 } // namespace porytiles
 

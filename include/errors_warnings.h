@@ -109,6 +109,7 @@ extern const char *const WARN_MISSING_ASSIGN_CONFIG;
 void internalerror(std::string message);
 void internalerror_unknownCompilerMode(std::string context);
 void internalerror_unknownDecompilerMode(std::string context);
+void internalerror_unknownSubcommand(std::string context);
 
 /*
  * Regular compilation errors (due to bad user input), regular errors try to die as late as possible

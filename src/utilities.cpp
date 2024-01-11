@@ -68,4 +68,79 @@ std::filesystem::path createTmpdir()
   return path;
 }
 
+RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
+{
+  std::vector<std::string> colorComponents = split(jascLine, " ");
+  if (colorComponents.size() != 3) {
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
+    }
+    else {
+      internalerror_unknownSubcommand("utilities::parseJascLine");
+    }
+  }
+
+  if (colorComponents[0].at(colorComponents[0].size() - 1) == '\r') {
+    colorComponents[0].pop_back();
+  }
+  if (colorComponents[1].at(colorComponents[1].size() - 1) == '\r') {
+    colorComponents[1].pop_back();
+  }
+  if (colorComponents[2].at(colorComponents[2].size() - 1) == '\r') {
+    colorComponents[2].pop_back();
+  }
+
+  int red = parseInteger<int>(colorComponents[0].c_str());
+  int green = parseInteger<int>(colorComponents[1].c_str());
+  int blue = parseInteger<int>(colorComponents[2].c_str());
+
+  if (red < 0 || red > 255) {
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 "invalid red component: range must be 0 <= red <= 255");
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 "invalid red component: range must be 0 <= red <= 255");
+    }
+    else {
+      internalerror_unknownSubcommand("utilities::parseJascLine");
+    }
+  }
+  if (green < 0 || green > 255) {
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 "invalid green component: range must be 0 <= green <= 255");
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 "invalid green component: range must be 0 <= green <= 255");
+    }
+    else {
+      internalerror_unknownSubcommand("utilities::parseJascLine");
+    }
+  }
+  if (blue < 0 || blue > 255) {
+    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+                 "invalid blue component: range must be 0 <= blue <= 255");
+    }
+    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 "invalid blue component: range must be 0 <= blue <= 255");
+    }
+    else {
+      internalerror_unknownSubcommand("utilities::parseJascLine");
+    }
+  }
+
+  return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
+                ALPHA_OPAQUE};
+}
+
 } // namespace porytiles

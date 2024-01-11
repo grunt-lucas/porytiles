@@ -119,7 +119,7 @@ BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
 RGBA32 bgrToRgba(const BGR15 &bgr) noexcept;
 
-enum class TileType { FREESTANDING, LAYERED, ANIM };
+enum class TileType { FREESTANDING, LAYERED, ANIM, PRIMER };
 
 std::string tileTypeString(TileType type);
 
@@ -192,6 +192,9 @@ struct RGBATile {
   // ANIM specific metadata
   std::string anim;
   std::string frame;
+
+  // PRIMER specific metadata
+  std::string primer;
 
   // Metatile attributes for this tile
   Attributes attributes;
@@ -542,6 +545,9 @@ struct NormalizedTile {
   // ANIM specific metadata
   std::string anim;
 
+  // PRIMER specific metadata
+  std::string primer;
+
   // Metatile attributes for this tile
   Attributes attributes;
 
@@ -560,6 +566,7 @@ struct NormalizedTile {
     this->metatileIndex = tile.metatileIndex;
     this->subtile = tile.subtile;
     this->anim = tile.anim;
+    this->primer = tile.primer;
     this->attributes = tile.attributes;
   }
 

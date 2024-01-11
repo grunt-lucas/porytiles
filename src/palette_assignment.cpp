@@ -11,7 +11,8 @@
 
 namespace porytiles {
 AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
-                              const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds)
+                              const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
+                              const std::vector<ColorSet> &unassignedPrimers)
 {
   std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
                                        ? ctx.compilerConfig.primaryExploredNodeCutoff
@@ -24,13 +25,13 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
 
   ctx.compilerContext.exploredNodeCounter++;
   if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
-    pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}",
-             ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER);
+    pt_logln(ctx, stderr, "exploredNodeCounter passed {} iterations", ctx.compilerContext.exploredNodeCounter);
   }
   if (ctx.compilerContext.exploredNodeCounter > exploredNodeCutoff) {
     return AssignResult::EXPLORE_CUTOFF_REACHED;
   }
 
+  // TODO : add state.unassignedPrimersCount == 0
   if (state.unassignedCount == 0) {
     // No tiles left to assign, found a solution!
     std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
@@ -39,9 +40,16 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
 
   /*
    * We will try to assign the last element to one of the 6 hw palettes, last because it is a vector so easier to
-   * add/remove from the end.
+   * add/remove from the end. First we assign all the primer palettes, then we assign the regular palettes.
    */
   const ColorSet &toAssign = unassigneds.at(state.unassignedCount - 1);
+  // TODO : fill this code
+  // if (!unassignedPrimers.empty()) {
+
+  // }
+  // else if (unassignedPrimers.empty() && !unassigneds.empty()) {
+
+  // }
 
   /*
    * If we are assigning a secondary set, we'll want to first check if any of the primary palettes satisfy the color
@@ -62,7 +70,8 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
                   std::back_inserter(hardwarePalettesCopy));
         AssignState updatedState = {hardwarePalettesCopy, state.unassignedCount - 1};
 
-        AssignResult result = assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds);
+        AssignResult result =
+            assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds, unassignedPrimers);
         if (result == AssignResult::SUCCESS) {
           return AssignResult::SUCCESS;
         }
@@ -129,7 +138,8 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
     hardwarePalettesCopy.at(i) |= toAssign;
     AssignState updatedState = {hardwarePalettesCopy, state.unassignedCount - 1};
 
-    AssignResult result = assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds);
+    AssignResult result =
+        assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds, unassignedPrimers);
     if (result == AssignResult::SUCCESS) {
       return AssignResult::SUCCESS;
     }
@@ -143,7 +153,8 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
 }
 
 AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
-                                const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds)
+                                const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
+                                const std::vector<ColorSet> &unassignedPrimers)
 {
   std::size_t exploredNodeCutoff = ctx.compilerConfig.mode == CompilerMode::PRIMARY
                                        ? ctx.compilerConfig.primaryExploredNodeCutoff
@@ -269,6 +280,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
 
 // std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                          const std::vector<ColorSet> &primerColorSets,
                           const std::unordered_map<BGR15, std::size_t> &colorToIndex, bool printErrors)
 {
   std::vector<ColorSet> assignedPalsSolution{};
@@ -285,8 +297,12 @@ static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets
     internalerror_unknownCompilerMode("compiler::compile");
   }
   std::vector<ColorSet> unassignedNormPalettes;
+  std::vector<ColorSet> unassignedPrimerPalettes;
   std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
+  std::copy(std::begin(primerColorSets), std::end(primerColorSets), std::back_inserter(unassignedPrimerPalettes));
   std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
+                   [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+  std::stable_sort(std::begin(unassignedPrimerPalettes), std::end(unassignedPrimerPalettes),
                    [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
   std::vector<ColorSet> primaryPaletteColorSets{};
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
@@ -315,12 +331,12 @@ static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets
                                        ? ctx.compilerConfig.primaryExploredNodeCutoff
                                        : ctx.compilerConfig.secondaryExploredNodeCutoff;
   if (assignAlgorithm == AssignAlgorithm::DFS) {
-    assignResult =
-        assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
+    assignResult = assignDepthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets,
+                                    unassignedNormPalettes, unassignedPrimerPalettes);
   }
   else if (assignAlgorithm == AssignAlgorithm::BFS) {
-    assignResult =
-        assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets, unassignedNormPalettes);
+    assignResult = assignBreadthFirst(ctx, initialState, assignedPalsSolution, primaryPaletteColorSets,
+                                      unassignedNormPalettes, unassignedPrimerPalettes);
   }
   else {
     internalerror("palette_assignment::tryAssignment unknown AssignAlgorithm");
@@ -393,6 +409,7 @@ static const std::array<AssignParams, 40> MATRIX{
 
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+                           const std::vector<ColorSet> &primerColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex)
 {
   /*
@@ -423,11 +440,9 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
 
   // If user supplied any command line overrides, we don't want to run the full matrix. Instead, die upon failure.
   if (primaryOverride || secondaryOverride || pairedPrimaryOverride) {
-    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, true);
-    bool success = std::get<0>(assignmentResult);
+    auto [success, assignedPalsSolution, primaryPaletteColorSets] =
+        tryAssignment(ctx, colorSets, primerColorSets, colorToIndex, true);
     if (success) {
-      auto assignedPalsSolution = std::get<1>(assignmentResult);
-      auto primaryPaletteColorSets = std::get<2>(assignmentResult);
       return std::pair{assignedPalsSolution, primaryPaletteColorSets};
     }
   }
@@ -439,7 +454,7 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
        * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
        * potentially save a ton of time.
        */
-      auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
+      auto assignmentResult = tryAssignment(ctx, colorSets, primerColorSets, colorToIndex, false);
       bool success = std::get<0>(assignmentResult);
       if (success) {
         auto assignedPalsSolution = std::get<1>(assignmentResult);
@@ -476,10 +491,8 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
       ctx.compilerConfig.secondaryBestBranches = MATRIX.at(index).bestBranches;
       ctx.compilerConfig.secondarySmartPrune = MATRIX.at(index).smartPrune;
     }
-    auto assignmentResult = tryAssignment(ctx, colorSets, colorToIndex, false);
-    bool success = std::get<0>(assignmentResult);
-    auto assignedPalsSolution = std::get<1>(assignmentResult);
-    auto primaryPaletteColorSets = std::get<2>(assignmentResult);
+    auto [success, assignedPalsSolution, primaryPaletteColorSets] =
+        tryAssignment(ctx, colorSets, primerColorSets, colorToIndex, false);
     if (success) {
       return std::pair{assignedPalsSolution, primaryPaletteColorSets};
     }

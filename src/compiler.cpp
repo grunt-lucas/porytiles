@@ -147,13 +147,16 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
   return **normalizedTile;
 }
 
-static std::vector<IndexAndNormTile> normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset)
+static std::pair<std::vector<IndexAndNormTile>, std::vector<NormalizedTile>>
+normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset,
+                     const std::vector<RGBATile> &palettePrimers)
 {
   /*
    * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset. We tag the
    * animated tiles first, then tag the regular assignment tiles.
    */
   std::vector<IndexAndNormTile> normalizedTiles;
+  std::vector<NormalizedTile> normalizedPrimers;
 
   for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
     const auto &anim = decompiledTileset.anims.at(animIndex);
@@ -184,17 +187,27 @@ static std::vector<IndexAndNormTile> normalizeDecompTiles(PtContext &ctx, const 
     normalizedTiles.emplace_back(index, normalizedTile);
   }
 
+  for (const auto &primerTile : palettePrimers) {
+    std::vector<RGBATile> singleFramePrimerTile = {primerTile};
+    auto normalizedPrimerTile = normalize(ctx, singleFramePrimerTile);
+    normalizedPrimerTile.copyMetadataFrom(primerTile);
+    DecompiledIndex index{};
+    index.tileIndex = tileIndex++;
+    normalizedPrimers.emplace_back(normalizedPrimerTile);
+  }
+
   if (ctx.err.errCount > 0) {
     die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
                    "errors generated during tile normalization");
   }
 
-  return normalizedTiles;
+  return std::pair{normalizedTiles, normalizedPrimers};
 }
 
 static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
 buildColorIndexMaps(PtContext &ctx, const std::vector<IndexAndNormTile> &normalizedTiles,
-                    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap)
+                    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap,
+                    const std::vector<NormalizedTile> &primerTiles)
 {
   /*
    * Iterate over every color in each tile's NormalizedPalette, adding it to the map if not already present. We end up
@@ -218,6 +231,16 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexAndNormTile> &normali
   std::size_t colorIndex = primaryIndexMap.size();
   for (const auto &[_, normalizedTile] : normalizedTiles) {
     // i starts at 1, since first color in each palette is the transparency color
+    for (int i = 1; i < normalizedTile.palette.size; i++) {
+      const BGR15 &color = normalizedTile.palette.colors[i];
+      bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
+      if (inserted) {
+        indexesToColors.insert(std::pair{colorIndex, color});
+        colorIndex++;
+      }
+    }
+  }
+  for (const auto &normalizedTile : primerTiles) {
     for (int i = 1; i < normalizedTile.palette.size; i++) {
       const BGR15 &color = normalizedTile.palette.colors[i];
       bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
@@ -269,13 +292,16 @@ static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIn
   return colorSet;
 }
 
-static std::pair<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>>
+static std::tuple<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>, std::vector<ColorSet>>
 matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
-                             const std::vector<IndexAndNormTile> &indexedNormalizedTiles)
+                             const std::vector<IndexAndNormTile> &indexedNormalizedTiles,
+                             const std::vector<NormalizedTile> &normalizedPrimers)
 {
   std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets;
   std::unordered_set<ColorSet> uniqueColorSets;
   std::vector<ColorSet> colorSets;
+  std::unordered_set<ColorSet> uniquePrimerColorSets;
+  std::vector<ColorSet> primerColorSets;
   for (const auto &[index, normalizedTile] : indexedNormalizedTiles) {
     // Compute the ColorSet for this normalized tile, then add it to our indexes
     auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
@@ -285,7 +311,18 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
       uniqueColorSets.insert(colorSet);
     }
   }
-  return std::pair{indexedNormTilesWithColorSets, colorSets};
+
+  // Special primer ColorSets
+  for (const auto &normalizedPrimerTile : normalizedPrimers) {
+    // Compute the ColorSet for this normalized tile, then add it to our indexes
+    auto colorSet = toColorSet(colorIndexMap, normalizedPrimerTile.palette);
+    if (!uniquePrimerColorSets.contains(colorSet)) {
+      primerColorSets.push_back(colorSet);
+      uniquePrimerColorSets.insert(colorSet);
+    }
+  }
+
+  return std::tuple{indexedNormTilesWithColorSets, colorSets, primerColorSets};
 }
 
 static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
@@ -665,9 +702,9 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
   /*
    * Build indexed normalized tiles, order of this vector matches the decompiled iteration order, with animated tiles
-   * at the beginning
+   * at the beginning. It also builds a separate vector of normalized primer tiles.
    */
-  std::vector<IndexAndNormTile> indexedNormTiles = normalizeDecompTiles(ctx, decompiledTileset);
+  auto [indexedNormTiles, normalizedPrimers] = normalizeDecompTiles(ctx, decompiledTileset, palettePrimers);
 
   /*
    * Map each unique color to a unique index between 0 and 240 (15 colors per palette * 16 palettes MAX)
@@ -677,7 +714,8 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
     primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTileset->colorIndexMap);
   }
-  auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap);
+  auto [colorToIndex, indexToColor] =
+      buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap, normalizedPrimers);
   compiled->colorIndexMap = colorToIndex;
 
   /*
@@ -685,12 +723,14 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
    * all compilers and platforms. A ColorSet is just a bitset<240> that marks which colors are present (indexes are
    * based on the colorIndexMaps from above)
    */
-  auto [indexedNormTilesWithColorSets, colorSets] = matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+  auto [indexedNormTilesWithColorSets, colorSets, primerColorSets] =
+      matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, normalizedPrimers);
 
   /*
    * Run palette assignment.
    */
-  auto [assignedPalsSolution, primaryPaletteColorSets] = runPaletteAssignmentMatrix(ctx, colorSets, colorToIndex);
+  auto [assignedPalsSolution, primaryPaletteColorSets] =
+      runPaletteAssignmentMatrix(ctx, colorSets, primerColorSets, colorToIndex);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
@@ -1011,7 +1051,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
 
-  std::vector<IndexAndNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
 
   CHECK(indexedNormTiles.size() == 4);
 
@@ -1123,7 +1163,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 
   porytiles::importAnimTiles(ctx, anims, tiles);
 
-  std::vector<IndexAndNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
 
   CHECK(indexedNormTiles.size() == 13);
 
@@ -1194,9 +1234,9 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  std::vector<IndexAndNormTile> normalizedTiles = porytiles::normalizeDecompTiles(ctx, tiles);
+  auto [indexedNormTiles, _] = porytiles::normalizeDecompTiles(ctx, tiles, {});
 
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, normalizedTiles, {});
+  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1249,8 +1289,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  std::vector<IndexAndNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
+  auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
+  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1258,8 +1298,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 3);
 
-  auto [indexedNormTilesWithColorSets, colorSets] =
-      porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+  auto [indexedNormTilesWithColorSets, colorSets, _2] =
+      porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
 
   CHECK(indexedNormTilesWithColorSets.size() == 4);
   // colorSets size is 3 because first and fourth tiles have the same palette
@@ -1354,10 +1394,10 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-    std::vector<IndexAndNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
-    auto [indexedNormTilesWithColorSets, colorSets] =
-        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+    auto [indexedNormTilesWithColorSets, colorSets, _2] =
+        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
 
     // Set up the state struct
     std::vector<ColorSet> solution;
@@ -1368,9 +1408,9 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
     std::stable_sort(std::begin(unassigned), std::end(unassigned),
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
-    porytiles::AssignState state = {hardwarePalettes, unassigned.size()};
+    porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned, {}) == porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -1391,10 +1431,10 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compile_raw_set_1/set.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-    std::vector<IndexAndNormTile> indexedNormTiles = porytiles::normalizeDecompTiles(ctx, tiles);
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {});
-    auto [indexedNormTilesWithColorSets, colorSets] =
-        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles);
+    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
+    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+    auto [indexedNormTilesWithColorSets, colorSets, _2] =
+        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
 
     // Set up the state struct
     std::vector<ColorSet> solution;
@@ -1405,9 +1445,9 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
     std::stable_sort(std::begin(unassigned), std::end(unassigned),
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
-    porytiles::AssignState state = {hardwarePalettes, unassigned.size()};
+    porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned, {}) == porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
@@ -1430,7 +1470,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  std::vector<IndexAndNormTile> indexedNormTiles = normalizeDecompTiles(ctx, tiles);
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
   auto compiledTiles = porytiles::compile(ctx, tiles, std::vector<porytiles::RGBATile>{});
 
   porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, porytiles::NormalizedTile::keyFrameIndex(),

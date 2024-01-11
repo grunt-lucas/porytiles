@@ -40,6 +40,8 @@ std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, con
 
 std::filesystem::path createTmpdir();
 
+RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine);
+
 } // namespace porytiles
 
 #endif // PORYTILES_UTILITIES_H
