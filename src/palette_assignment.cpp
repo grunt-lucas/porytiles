@@ -31,8 +31,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
     return AssignResult::EXPLORE_CUTOFF_REACHED;
   }
 
-  // TODO : add state.unassignedPrimersCount == 0
-  if (state.unassignedCount == 0) {
+  if (state.unassignedPrimerCount == 0 && state.unassignedCount == 0) {
     // No tiles left to assign, found a solution!
     std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
     return AssignResult::SUCCESS;
@@ -42,14 +41,20 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
    * We will try to assign the last element to one of the 6 hw palettes, last because it is a vector so easier to
    * add/remove from the end. First we assign all the primer palettes, then we assign the regular palettes.
    */
-  const ColorSet &toAssign = unassigneds.at(state.unassignedCount - 1);
-  // TODO : fill this code
-  // if (!unassignedPrimers.empty()) {
-
-  // }
-  // else if (unassignedPrimers.empty() && !unassigneds.empty()) {
-
-  // }
+  ColorSet toAssign{};
+  std::size_t newUnassignedPrimerCount = state.unassignedPrimerCount;
+  std::size_t newUnassignedCount = state.unassignedCount;
+  if (state.unassignedPrimerCount != 0) {
+    toAssign = unassignedPrimers.at(state.unassignedPrimerCount - 1);
+    newUnassignedPrimerCount = state.unassignedPrimerCount - 1;
+  }
+  else if (state.unassignedPrimerCount == 0 && state.unassignedCount != 0) {
+    toAssign = unassigneds.at(state.unassignedCount - 1);
+    newUnassignedCount = state.unassignedCount - 1;
+  }
+  else {
+    internalerror("reached bad else clause in palette_assignment::assignDepthFirst");
+  }
 
   /*
    * If we are assigning a secondary set, we'll want to first check if any of the primary palettes satisfy the color
@@ -68,7 +73,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
         std::vector<ColorSet> hardwarePalettesCopy;
         std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
                   std::back_inserter(hardwarePalettesCopy));
-        AssignState updatedState = {hardwarePalettesCopy, state.unassignedCount - 1};
+        AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
 
         AssignResult result =
             assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds, unassignedPrimers);
@@ -136,7 +141,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
     std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
               std::back_inserter(hardwarePalettesCopy));
     hardwarePalettesCopy.at(i) |= toAssign;
-    AssignState updatedState = {hardwarePalettesCopy, state.unassignedCount - 1};
+    AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
 
     AssignResult result =
         assignDepthFirst(ctx, updatedState, solution, primaryPalettes, unassigneds, unassignedPrimers);
@@ -192,14 +197,28 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
       lowPriorityQueue.pop_front();
     }
 
-    if (currentState.unassignedCount == 0) {
+    if (currentState.unassignedPrimerCount == 0 && currentState.unassignedCount == 0) {
       // No tiles left to assign, found a solution!
       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                 std::back_inserter(solution));
       return AssignResult::SUCCESS;
     }
 
-    const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
+    // const ColorSet &toAssign = unassigneds.at(currentState.unassignedCount - 1);
+    ColorSet toAssign{};
+    std::size_t newUnassignedPrimerCount = currentState.unassignedPrimerCount;
+    std::size_t newUnassignedCount = currentState.unassignedCount;
+    if (currentState.unassignedPrimerCount != 0) {
+      toAssign = unassignedPrimers.at(currentState.unassignedPrimerCount - 1);
+      newUnassignedPrimerCount = currentState.unassignedPrimerCount - 1;
+    }
+    else if (currentState.unassignedPrimerCount == 0 && currentState.unassignedCount != 0) {
+      toAssign = unassigneds.at(currentState.unassignedCount - 1);
+      newUnassignedCount = currentState.unassignedCount - 1;
+    }
+    else {
+      internalerror("reached bad else clause in palette_assignment::assignDepthFirst");
+    }
 
     bool foundPrimaryMatch = false;
     if (!primaryPalettes.empty()) {
@@ -209,7 +228,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
           std::vector<ColorSet> hardwarePalettesCopy;
           std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                     std::back_inserter(hardwarePalettesCopy));
-          AssignState updatedState = {hardwarePalettesCopy, currentState.unassignedCount - 1};
+          AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
           stateQueue.push_back(updatedState);
           visitedStates.insert(updatedState);
           foundPrimaryMatch = true;
@@ -257,7 +276,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
       std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
                 std::back_inserter(hardwarePalettesCopy));
       hardwarePalettesCopy.at(i) |= toAssign;
-      AssignState updatedState = {hardwarePalettesCopy, currentState.unassignedCount - 1};
+      AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
       if (!visitedStates.contains(updatedState)) {
         if (sawAssignmentWithIntersection && (palette & toAssign).count() == 0) {
           /*
@@ -278,7 +297,6 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
   return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-// std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets,
                           const std::vector<ColorSet> &primerColorSets,
                           const std::unordered_map<BGR15, std::size_t> &colorToIndex, bool printErrors)
@@ -321,7 +339,7 @@ static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets
     }
   }
 
-  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size()};
+  AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size(), unassignedPrimerPalettes.size()};
   ctx.compilerContext.exploredNodeCounter = 0;
   AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
   AssignAlgorithm assignAlgorithm = ctx.compilerConfig.mode == CompilerMode::PRIMARY
