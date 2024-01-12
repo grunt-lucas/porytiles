@@ -1,6 +1,26 @@
 # Todo List
 
+## 1.0.0 Release Checklist
+
++ Check all in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
+  + Some may need to be addressed before 1.0.0
+
++ Continue to create more in-file unit tests that maximize coverage
+
++ get secondary tileset `decompile` command working
+
++ Warnings
+  + `-Wpalette-alloc-efficiency`
+    + warn user if palette allocation was not 100% efficient
+  + `-Wno-transparency-present`
+    + warn user if the tileset did not have any of the selected transparency color
+    + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
+      + user may forget to set `-transparency-color` which will break compilation
+
+## Post 1.0.0 Ideas
+
 + in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
+  + Some of these can wait for post 1.0.0
 
 + Reported test case failure with clang 14.0.0 on Ubuntu
   + https://discord.com/channels/@me/1148327134343995453/1149142257744748636
@@ -14,10 +34,8 @@
   + CImg is much more maintained, it is also header-only and seems to have a clean interface
   + https://github.com/GreycLab/CImg
 
-+ `decompile` command that takes a compiled tileset and turns it back into Porytiles-compatible sources
-  + get secondary tileset decompilation working
-  + get anim decompilation working
-    + will require key frame detection / key frame hints at CLI
++ get `decompile` command to successfully decompile animations
+  + will require key frame detection / key frame hints at CLI?
 
 + More assign algorithms?
   + Maybe some kind of A-star?
@@ -34,12 +52,6 @@
       + e.g. fix a given color slot in a given palette, sometimes this is nice for certain DNS systems, etc
 
 + Warnings
-  + `-Wpalette-alloc-efficiency`
-    + warn user if palette allocation was not 100% efficient
-  + `-Wno-transparency-present`
-    + warn user if the tileset did not have any of the selected transparency color
-    + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
-      + user may forget to set `-transparency-color` which will break compilation
   + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
