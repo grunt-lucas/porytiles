@@ -17,6 +17,10 @@
     + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
       + user may forget to set `-transparency-color` which will break compilation
 
++ Finish the wiki page
+
++ Create a basic YouTube tutorial series
+
 ## Post 1.0.0 Ideas
 
 + in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
