@@ -252,7 +252,7 @@ buildColorIndexMaps(PtContext &ctx, const std::vector<IndexAndNormTile> &normali
   }
 
   /*
-   * This error is merely a fail-early heuristic. E.g. just because a primary tileset passes this check does not mean
+   * This error is merely a fail-early heuristic. I.e. just because a primary tileset passes this check does not mean
    * it is actually allocatable.
    */
   if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
