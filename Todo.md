@@ -17,8 +17,8 @@
     + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
       + user may forget to set `-transparency-color` which will break compilation
 
-+ `-skip-metatile-generation` skips generation of `metatiles.bin`
-+ `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
++ `-disable-metatile-generation` skips generation of `metatiles.bin`
++ `-disable-attribute-generation` skips generation of `metatile_attributes.bin`
 
 + `-print-report` option that prints out various statistics
   + Number of tiles, metatiles, unique colors, etc
