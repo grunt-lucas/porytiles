@@ -17,6 +17,9 @@
     + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
       + user may forget to set `-transparency-color` which will break compilation
 
++ `-skip-metatile-generation` skips generation of `metatiles.bin`
++ `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
+
 + Finish the wiki page
 
 + Create a basic YouTube tutorial series
@@ -106,8 +109,11 @@
   + freestanding mode would allow input PNG of any dimension, would only generate a tiles.png and pal files
   + might be useful for some people who drew a scene they want to tile-ize
   + low-priority feature
-  + `-skip-metatile-generation` skips generation of `metatiles.bin`
-  + `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
+
++ `generate-metailes` mode
+  + input PNGs of any dimension, e.g. users can "draw" the map the way they want it to look
+  + instead of outputting files for Porymap, output a top, middle, bottom PNG that can then be fed thru `compile-primary`
+    to get the Porymap files
 
 + Set up auto-generated documentation: doxygen? RTD?
 
