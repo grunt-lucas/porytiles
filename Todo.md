@@ -20,7 +20,16 @@
 + `-skip-metatile-generation` skips generation of `metatiles.bin`
 + `-skip-attribute-generation` skips generation of `metatile_attributes.bin`
 
-+ Finish the wiki page
++ `-print-report` option that prints out various statistics
+  + Number of tiles, metatiles, unique colors, etc
+  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
+    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
+  + Print all animation start tiles
+  + dump pal files and tile.png to CLI, see e.g.:
+    + https://github.com/eddieantonio/imgcat
+    + https://github.com/stefanhaustein/TerminalImageViewer
+
++ Finish the wiki pages
 
 + Create a basic YouTube tutorial series
 
@@ -65,15 +74,6 @@
 
 + Use imgui to create a basic GUI?
   + https://github.com/ocornut/imgui
-
-+ `-print-report` option that prints out various statistics
-  + Number of tiles, metatiles, unique colors, etc
-  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
-    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
-  + Print all animation start tiles
-  + dump pal files and tile.png to CLI, see e.g.:
-    + https://github.com/eddieantonio/imgcat
-    + https://github.com/stefanhaustein/TerminalImageViewer
 
 + Detect and exploit opportunities for tile-sharing to reduce size of `tiles.png`
   + hide this behind an optimization flag, `-Otile-sharing` (will make it easier to test)
