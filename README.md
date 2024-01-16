@@ -41,14 +41,8 @@ try to maintain compatibility with that compiler, should you prefer it over Clan
 
 ## Getting Started
 
-First, clone and build Porytiles. (Alternatively, you can skip the build step by downloading a release binary from the
-[Releases](https://github.com/grunt-lucas/porytiles/releases) tab.)
-
-```
-git clone https://github.com/grunt-lucas/porytiles.git
-cd porytiles
-CXX=clang++ make check
-./release/bin/porytiles --help
-```
-
-Once you've cloned and built Porytiles, try the demo steps located [at this wiki page.](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo)
+First, go ahead and follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release).
+Alternatively, intrepid users may choose to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source).
+Once you've got Porytiles working, try the demo steps located [at this wiki page](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo).
+Everything else you need to know about Porytiles can be found [in the wiki](https://github.com/grunt-lucas/porytiles/wiki)
+or [in this video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
