@@ -71,6 +71,7 @@
   + the entire warning parsing system is a hot flaming dumpster fire mess, fix it somehow?
     + https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
   + warnings-as-errors shouldn't bail until the very end, is there an easy way to do this?
+  + clang/gcc will show "And 100 similar warnings..." if there are too many warnings, something like this
 
 + Use imgui to create a basic GUI?
   + https://github.com/ocornut/imgui
