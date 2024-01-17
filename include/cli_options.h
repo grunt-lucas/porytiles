@@ -163,18 +163,18 @@ const std::string PRIMARY_BEST_BRANCHES_DESC =
 "             when compiling in secondary mode via 'compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
 
-const std::string DISABLE_ASSIGN_CONFIG_CACHING = "disable-assign-config-caching";
-const std::string DISABLE_ASSIGN_CONFIG_CACHING_DESC =
-"        -" + DISABLE_ASSIGN_CONFIG_CACHING + "\n"
-"             Do not write palette assignment search parameters to `assign.cfg' after a successful\n"
+const std::string DISABLE_ASSIGN_CACHING = "disable-assign-caching";
+const std::string DISABLE_ASSIGN_CACHING_DESC =
+"        -" + DISABLE_ASSIGN_CACHING + "\n"
+"             Do not write palette assignment search parameters to `assign.cache' after a successful\n"
 "             compilation. This option may be useful in situations where you do not have write\n"
 "             access to the source folders.\n";
-constexpr int DISABLE_ASSIGN_CONFIG_CACHING_VAL = 3006;
+constexpr int DISABLE_ASSIGN_CACHING_VAL = 3006;
 
 const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
 const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC =
 "        -" + FORCE_ASSIGN_PARAM_MATRIX + "\n"
-"             Force the full palette assignment parameter search matrix to run. If `assign.cfg'\n"
+"             Force the full palette assignment parameter search matrix to run. If `assign.cache'\n"
 "             exists in either source folder, its contents will be ignored.\n";
 constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3007;
 
@@ -301,18 +301,18 @@ const std::string WNO_TRANSPARENCY_COLLAPSE = W_GENERAL + "no-" + WARN_TRANSPARE
 constexpr int WTRANSPARENCY_COLLAPSE_VAL = 50070;
 constexpr int WNO_TRANSPARENCY_COLLAPSE_VAL = 60070;
 
-const std::string WASSIGN_CONFIG_OVERRIDE = W_GENERAL + WARN_ASSIGN_CONFIG_OVERRIDE;
-const std::string WNO_ASSIGN_CONFIG_OVERRIDE = W_GENERAL + "no-" + WARN_ASSIGN_CONFIG_OVERRIDE;
+const std::string WASSIGN_CONFIG_OVERRIDE = W_GENERAL + WARN_ASSIGN_CACHE_OVERRIDE;
+const std::string WNO_ASSIGN_CONFIG_OVERRIDE = W_GENERAL + "no-" + WARN_ASSIGN_CACHE_OVERRIDE;
 constexpr int WASSIGN_CONFIG_OVERRIDE_VAL = 50080;
 constexpr int WNO_ASSIGN_CONFIG_OVERRIDE_VAL = 60080;
 
-const std::string WINVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + WARN_INVALID_ASSIGN_CONFIG_CACHE;
-const std::string WNO_INVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + "no-" + WARN_INVALID_ASSIGN_CONFIG_CACHE;
+const std::string WINVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + WARN_INVALID_ASSIGN_CACHE;
+const std::string WNO_INVALID_ASSIGN_CONFIG_CACHE = W_GENERAL + "no-" + WARN_INVALID_ASSIGN_CACHE;
 constexpr int WINVALID_ASSIGN_CONFIG_CACHE_VAL = 50090;
 constexpr int WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL = 60090;
 
-const std::string WMISSING_ASSIGN_CONFIG = W_GENERAL + WARN_MISSING_ASSIGN_CONFIG;
-const std::string WNO_MISSING_ASSIGN_CONFIG = W_GENERAL + "no-" + WARN_MISSING_ASSIGN_CONFIG;
+const std::string WMISSING_ASSIGN_CONFIG = W_GENERAL + WARN_MISSING_ASSIGN_CACHE;
+const std::string WNO_MISSING_ASSIGN_CONFIG = W_GENERAL + "no-" + WARN_MISSING_ASSIGN_CACHE;
 constexpr int WMISSING_ASSIGN_CONFIG_VAL = 50100;
 constexpr int WNO_MISSING_ASSIGN_CONFIG_VAL = 60100;
 

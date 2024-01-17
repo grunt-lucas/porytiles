@@ -52,7 +52,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
 /**
  * TODO : fill in doc comments
  */
-void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config);
+void importPrimaryAssignmentCache(PtContext &ctx, std::ifstream &config);
 
 /**
  * TODO : fill in doc comments

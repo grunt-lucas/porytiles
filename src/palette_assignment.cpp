@@ -440,21 +440,21 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
    */
   bool primaryOverride = ctx.subcommand == Subcommand::COMPILE_PRIMARY &&
                          ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
-                         ctx.compilerConfig.providedAssignConfigOverride;
+                         ctx.compilerConfig.providedAssignCacheOverride;
   /*
    * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
    * In this case, we don't want to read anything from the assign config. Just return.
    */
   bool secondaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
                            ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
-                           ctx.compilerConfig.providedAssignConfigOverride;
+                           ctx.compilerConfig.providedAssignCacheOverride;
   /*
    * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
    * override value. In this case, we don't want to read anything from the assign config. Just return.
    */
   bool pairedPrimaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
                                ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
-                               ctx.compilerConfig.providedPrimaryAssignConfigOverride;
+                               ctx.compilerConfig.providedPrimaryAssignCacheOverride;
 
   // If user supplied any command line overrides, we don't want to run the full matrix. Instead, die upon failure.
   if (primaryOverride || secondaryOverride || pairedPrimaryOverride) {
@@ -465,8 +465,8 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
     }
   }
 
-  if ((ctx.compilerConfig.mode == CompilerMode::PRIMARY && ctx.compilerConfig.readCachedPrimaryConfig) ||
-      (ctx.compilerConfig.mode == CompilerMode::SECONDARY && ctx.compilerConfig.readCachedSecondaryConfig)) {
+  if ((ctx.compilerConfig.mode == CompilerMode::PRIMARY && ctx.compilerConfig.readPrimaryAssignCache) ||
+      (ctx.compilerConfig.mode == CompilerMode::SECONDARY && ctx.compilerConfig.readSecondaryAssignCache)) {
     if (!ctx.compilerConfig.forceParamSearchMatrix) {
       /*
        * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
@@ -480,19 +480,19 @@ runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSet
         return std::pair{assignedPalsSolution, primaryPaletteColorSets};
       }
       if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-        warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
+        warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
       }
       else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-        warn_invalidAssignConfigCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
+        warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
       }
     }
   }
   else {
     if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
-      warn_missingAssignConfig(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
+      warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
     }
     else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
-      warn_missingAssignConfig(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
+      warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
     }
   }
 

@@ -650,7 +650,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
-static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std::string assignConfigPath)
+static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std::string assignCachePath)
 {
   std::string line;
   std::size_t processedUpToLine = 1;
@@ -663,8 +663,8 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
     }
     std::vector<std::string> lineTokens = split(line, "=");
     if (lineTokens.size() != 2) {
-      fatalerror_assignConfigSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line,
-                                         processedUpToLine, assignConfigPath);
+      fatalerror_assignCacheSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line,
+                                         processedUpToLine, assignCachePath);
     }
     std::string key = lineTokens.at(0);
     std::string value = lineTokens.at(1);
@@ -686,8 +686,8 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
         }
       }
       else {
-        fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                            processedUpToLine, assignConfigPath);
+        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                            processedUpToLine, assignCachePath);
       }
     }
     else if (key == EXPLORE_CUTOFF) {
@@ -697,8 +697,8 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
       }
       catch (const std::exception &e) {
         assignExploreValue = 0;
-        fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                            processedUpToLine, assignConfigPath);
+        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                            processedUpToLine, assignCachePath);
       }
       if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = assignExploreValue;
@@ -725,8 +725,8 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
         }
         catch (const std::exception &e) {
           bestBranchValue = 0;
-          fatalerror_assignConfigInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                              processedUpToLine, assignConfigPath);
+          fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
+                                              processedUpToLine, assignCachePath);
         }
         if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryBestBranches = bestBranchValue;
@@ -737,50 +737,50 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
       }
     }
     else {
-      fatalerror_assignConfigInvalidKey(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, processedUpToLine,
-                                        assignConfigPath);
+      fatalerror_assignCacheInvalidKey(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, processedUpToLine,
+                                        assignCachePath);
     }
     processedUpToLine++;
   }
 }
 
-void importPrimaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
+void importPrimaryAssignmentCache(PtContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
-      ctx.compilerConfig.providedPrimaryAssignConfigOverride) {
+      ctx.compilerConfig.providedPrimaryAssignCacheOverride) {
     /*
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
      * override value. In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
+    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
     return;
   }
   if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
-      ctx.compilerConfig.providedAssignConfigOverride) {
+      ctx.compilerConfig.providedAssignCacheOverride) {
     /*
      * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
      * this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignConfig());
+    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
     return;
   }
-  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.primaryAssignConfig());
-  ctx.compilerConfig.readCachedPrimaryConfig = true;
+  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.primaryAssignCache());
+  ctx.compilerConfig.readPrimaryAssignCache = true;
 }
 
 void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
-      ctx.compilerConfig.providedAssignConfigOverride) {
+      ctx.compilerConfig.providedAssignCacheOverride) {
     /*
      * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
      * In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignConfigOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignConfig());
+    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
     return;
   }
-  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.secondaryAssignConfig());
-  ctx.compilerConfig.readCachedSecondaryConfig = true;
+  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.secondaryAssignCache());
+  ctx.compilerConfig.readSecondaryAssignCache = true;
 }
 
 static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
@@ -1643,7 +1643,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   compileCtx.err.printErrors = false;
   compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-  compileCtx.compilerConfig.cacheAssignConfig = false;
+  compileCtx.compilerConfig.cacheAssign = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

@@ -750,16 +750,16 @@ struct CompilerSourcePaths {
     return path / std::filesystem::path{"attributes.csv"};
   }
 
-  std::filesystem::path primaryAssignConfig() const
+  std::filesystem::path primaryAssignCache() const
   {
     std::filesystem::path path{primarySourcePath};
-    return path / std::filesystem::path{"assign.cfg"};
+    return path / std::filesystem::path{"assign.cache"};
   }
 
-  std::filesystem::path secondaryAssignConfig() const
+  std::filesystem::path secondaryAssignCache() const
   {
     std::filesystem::path path{secondarySourcePath};
-    return path / std::filesystem::path{"assign.cfg"};
+    return path / std::filesystem::path{"assign.cache"};
   }
 
   std::filesystem::path primaryPalettePrimers() const
@@ -833,10 +833,10 @@ struct CompilerConfig {
   CompilerMode mode;
   RGBA32 transparencyColor;
   bool tripleLayer;
-  bool cacheAssignConfig;
+  bool cacheAssign;
   bool forceParamSearchMatrix;
-  bool providedAssignConfigOverride;
-  bool providedPrimaryAssignConfigOverride;
+  bool providedAssignCacheOverride;
+  bool providedPrimaryAssignCacheOverride;
   std::string defaultBehavior;
   std::string defaultEncounterType;
   std::string defaultTerrainType;
@@ -846,21 +846,21 @@ struct CompilerConfig {
   std::size_t primaryExploredNodeCutoff;
   std::size_t primaryBestBranches;
   bool primarySmartPrune;
-  bool readCachedPrimaryConfig;
+  bool readPrimaryAssignCache;
   AssignAlgorithm secondaryAssignAlgorithm;
   std::size_t secondaryExploredNodeCutoff;
   std::size_t secondaryBestBranches;
   bool secondarySmartPrune;
-  bool readCachedSecondaryConfig;
+  bool readSecondaryAssignCache;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssignConfig{true},
-        forceParamSearchMatrix{false}, providedAssignConfigOverride{false}, providedPrimaryAssignConfigOverride{false},
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true},
+        forceParamSearchMatrix{false}, providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false},
         defaultBehavior{"0"}, defaultEncounterType{"0"}, defaultTerrainType{"0"},
         primaryAssignAlgorithm{AssignAlgorithm::DFS}, primaryExploredNodeCutoff{2'000'000},
-        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, readCachedPrimaryConfig{false},
+        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, readPrimaryAssignCache{false},
         secondaryAssignAlgorithm{AssignAlgorithm::DFS}, secondaryExploredNodeCutoff{2'000'000},
-        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}, readCachedSecondaryConfig{false}
+        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}, readSecondaryAssignCache{false}
   {
   }
 };

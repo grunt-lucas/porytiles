@@ -29,17 +29,17 @@ struct ErrorsAndWarnings {
   WarningMode missingAttributesCsv;
   WarningMode unusedAttribute;
   WarningMode transparencyCollapse;
-  WarningMode assignConfigOverride;
-  WarningMode invalidAssignConfigCache;
-  WarningMode missingAssignConfig;
+  WarningMode assignCacheOverride;
+  WarningMode invalidAssignCache;
+  WarningMode missingAssignCache;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
-        assignConfigOverride{WarningMode::OFF}, invalidAssignConfigCache{WarningMode::OFF},
-        missingAssignConfig{WarningMode::OFF}
+        assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
+        missingAssignCache{WarningMode::OFF}
   {
   }
 
@@ -52,9 +52,9 @@ struct ErrorsAndWarnings {
     missingAttributesCsv = setting;
     unusedAttribute = setting;
     transparencyCollapse = setting;
-    assignConfigOverride = setting;
-    invalidAssignConfigCache = setting;
-    missingAssignConfig = setting;
+    assignCacheOverride = setting;
+    invalidAssignCache = setting;
+    missingAssignCache = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -80,14 +80,14 @@ struct ErrorsAndWarnings {
     if (transparencyCollapse == WarningMode::WARN) {
       transparencyCollapse = WarningMode::ERR;
     }
-    if (assignConfigOverride == WarningMode::WARN) {
-      assignConfigOverride = WarningMode::ERR;
+    if (assignCacheOverride == WarningMode::WARN) {
+      assignCacheOverride = WarningMode::ERR;
     }
-    if (invalidAssignConfigCache == WarningMode::WARN) {
-      invalidAssignConfigCache = WarningMode::ERR;
+    if (invalidAssignCache == WarningMode::WARN) {
+      invalidAssignCache = WarningMode::ERR;
     }
-    if (missingAssignConfig == WarningMode::WARN) {
-      missingAssignConfig = WarningMode::ERR;
+    if (missingAssignCache == WarningMode::WARN) {
+      missingAssignCache = WarningMode::ERR;
     }
   }
 };
@@ -99,9 +99,9 @@ extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
 extern const char *const WARN_UNUSED_ATTRIBUTE;
 extern const char *const WARN_TRANSPARENCY_COLLAPSE;
-extern const char *const WARN_ASSIGN_CONFIG_OVERRIDE;
-extern const char *const WARN_INVALID_ASSIGN_CONFIG_CACHE;
-extern const char *const WARN_MISSING_ASSIGN_CONFIG;
+extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
+extern const char *const WARN_INVALID_ASSIGN_CACHE;
+extern const char *const WARN_MISSING_ASSIGN_CACHE;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -209,15 +209,15 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourc
 void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode &mode,
                                      std::string behavior, std::string value, std::size_t line);
 
-void fatalerror_assignConfigSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                         const CompilerMode &mode, std::string line, std::size_t lineNumber,
                                         std::string path);
 
-void fatalerror_assignConfigInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                        const CompilerMode &mode, std::string key, std::size_t lineNumber,
                                        std::string path);
 
-void fatalerror_assignConfigInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                          const CompilerMode &mode, std::string key, std::string value,
                                          std::size_t lineNumber, std::string path);
 
@@ -247,11 +247,11 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
 
-void warn_assignConfigOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
-void warn_invalidAssignConfigCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
-void warn_missingAssignConfig(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 /*
  * Die functions

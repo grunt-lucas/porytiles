@@ -555,17 +555,17 @@ static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimatio
   }
 }
 
-static void emitCachedAssignConfig(PtContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
+static void emitAssignCache(PtContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
 {
-  std::ofstream outAssignConfig{assignCfgPath.string()};
-  if (outAssignConfig.good()) {
-    emitAssignConfig(ctx, mode, outAssignConfig);
+  std::ofstream outAssignCache{assignCfgPath.string()};
+  if (outAssignCache.good()) {
+    emitAssignCache(ctx, mode, outAssignCache);
   }
   else {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
                fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
   }
-  outAssignConfig.close();
+  outAssignCache.close();
 }
 
 static void driveDecompile(PtContext &ctx)
@@ -749,18 +749,18 @@ static void driveCompile(PtContext &ctx)
     importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
     std::vector<RGBATile> primaryPalettePrimers =
         preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
-    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
-      std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig()};
-      if (assignConfigFile.fail()) {
+    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignCache())) {
+      std::ifstream assignCacheFile{ctx.compilerSrcPaths.primaryAssignCache()};
+      if (assignCacheFile.fail()) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignCache().c_str()));
       }
-      importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
-      assignConfigFile.close();
+      importPrimaryAssignmentCache(ctx, assignCacheFile);
+      assignCacheFile.close();
     }
     ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles, primaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssignConfig) {
-      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
+    if (ctx.compilerConfig.cacheAssign) {
+      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
     }
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
@@ -783,18 +783,18 @@ static void driveCompile(PtContext &ctx)
     std::vector<RGBATile> secondaryPalettePrimers =
         preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.secondaryPalettePrimers());
     ;
-    if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignConfig())) {
-      std::ifstream assignConfigFile{ctx.compilerSrcPaths.secondaryAssignConfig()};
-      if (assignConfigFile.fail()) {
+    if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignCache())) {
+      std::ifstream assignCacheFile{ctx.compilerSrcPaths.secondaryAssignCache()};
+      if (assignCacheFile.fail()) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.secondaryAssignConfig().c_str()));
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.secondaryAssignCache().c_str()));
       }
-      importSecondaryAssignmentConfigParameters(ctx, assignConfigFile);
-      assignConfigFile.close();
+      importSecondaryAssignmentConfigParameters(ctx, assignCacheFile);
+      assignCacheFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles, secondaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssignConfig) {
-      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignConfig());
+    if (ctx.compilerConfig.cacheAssign) {
+      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignCache());
     }
   }
   else {
@@ -818,18 +818,18 @@ static void driveCompile(PtContext &ctx)
     std::vector<RGBATile> primaryPalettePrimers =
         preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
     ;
-    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignConfig())) {
-      std::ifstream assignConfigFile{ctx.compilerSrcPaths.primaryAssignConfig().c_str()};
-      if (assignConfigFile.fail()) {
+    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignCache())) {
+      std::ifstream assignCacheFile{ctx.compilerSrcPaths.primaryAssignCache().c_str()};
+      if (assignCacheFile.fail()) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignConfig().c_str()));
+                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignCache().c_str()));
       }
-      importPrimaryAssignmentConfigParameters(ctx, assignConfigFile);
-      assignConfigFile.close();
+      importPrimaryAssignmentCache(ctx, assignCacheFile);
+      assignCacheFile.close();
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles, primaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssignConfig) {
-      emitCachedAssignConfig(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignConfig());
+    if (ctx.compilerConfig.cacheAssign) {
+      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
     }
   }
 
@@ -891,7 +891,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-  ctx.compilerConfig.cacheAssignConfig = false;
+  ctx.compilerConfig.cacheAssign = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
@@ -1114,7 +1114,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-  ctx.compilerConfig.cacheAssignConfig = false;
+  ctx.compilerConfig.cacheAssign = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
   ctx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";

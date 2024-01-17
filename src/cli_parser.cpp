@@ -305,7 +305,7 @@ const std::string COMPILE_HELP =
 "                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
 "                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                [assign.cfg]             # cached configuration for palette assignment algorithm\n"
+"                [assign.cache]           # cached configuration for palette assignment algorithm\n"
 "                [attributes.csv]         # missing metatile entries will receive default values\n"
 "                [anim/]                  # `anim' folder is optional\n"
 "                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
@@ -355,7 +355,7 @@ BEST_BRANCHES_DESC + "\n" +
 PRIMARY_ASSIGN_ALGO_DESC + "\n" +
 PRIMARY_EXPLORE_CUTOFF_DESC + "\n" +
 PRIMARY_BEST_BRANCHES_DESC + "\n" +
-DISABLE_ASSIGN_CONFIG_CACHING_DESC + "\n" +
+DISABLE_ASSIGN_CACHING_DESC + "\n" +
 FORCE_ASSIGN_PARAM_MATRIX_DESC + "\n" +
 "    Fieldmap Override Options\n" +
 TILES_PRIMARY_OVERRIDE_DESC + "\n" +
@@ -406,7 +406,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {PRIMARY_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_EXPLORE_CUTOFF_VAL},
       {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
       {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
-      {DISABLE_ASSIGN_CONFIG_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CONFIG_CACHING_VAL},
+      {DISABLE_ASSIGN_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CACHING_VAL},
       {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
 
       // Fieldmap override options
@@ -492,14 +492,14 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   std::optional<bool> warnTransparencyCollapseOverride{};
   std::optional<bool> errTransparencyCollapseOverride{};
 
-  std::optional<bool> warnAssignConfigOverride{true};
-  std::optional<bool> errAssignConfigOverride{};
+  std::optional<bool> warnAssignCacheOverride{true};
+  std::optional<bool> errAssignCacheOverride{};
 
-  std::optional<bool> warnInvalidAssignConfigCache{true};
-  std::optional<bool> errInvalidAssignConfigCache{};
+  std::optional<bool> warnInvalidAssignCache{true};
+  std::optional<bool> errInvalidAssignCache{};
 
-  std::optional<bool> warnMissingAssignConfig{true};
-  std::optional<bool> errMissingAssignConfig{};
+  std::optional<bool> warnMissingAssignCache{true};
+  std::optional<bool> errMissingAssignCache{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -559,7 +559,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
 
     // Color assignment config options
     case EXPLORE_CUTOFF_VAL:
-      ctx.compilerConfig.providedAssignConfigOverride = true;
+      ctx.compilerConfig.providedAssignCacheOverride = true;
       exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
@@ -577,7 +577,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case ASSIGN_ALGO_VAL:
-      ctx.compilerConfig.providedAssignConfigOverride = true;
+      ctx.compilerConfig.providedAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
       }
@@ -586,7 +586,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case BEST_BRANCHES_VAL:
-      ctx.compilerConfig.providedAssignConfigOverride = true;
+      ctx.compilerConfig.providedAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         if (std::string{optarg} == SMART_PRUNE) {
           ctx.compilerConfig.primarySmartPrune = true;
@@ -613,7 +613,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case PRIMARY_EXPLORE_CUTOFF_VAL:
-      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
+      ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
@@ -624,13 +624,13 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       break;
     case PRIMARY_ASSIGN_ALGO_VAL:
-      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
+      ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, PRIMARY_ASSIGN_ALGO, optarg);
       }
       break;
     case PRIMARY_BEST_BRANCHES_VAL:
-      ctx.compilerConfig.providedPrimaryAssignConfigOverride = true;
+      ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         if (std::string{optarg} == "smart") {
           ctx.compilerConfig.primarySmartPrune = true;
@@ -645,8 +645,8 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         }
       }
       break;
-    case DISABLE_ASSIGN_CONFIG_CACHING_VAL:
-      ctx.compilerConfig.cacheAssignConfig = false;
+    case DISABLE_ASSIGN_CACHING_VAL:
+      ctx.compilerConfig.cacheAssign = false;
       break;
     case FORCE_ASSIGN_PARAM_MATRIX_VAL:
       ctx.compilerConfig.forceParamSearchMatrix = true;
@@ -711,14 +711,14 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
           errTransparencyCollapseOverride = true;
         }
-        else if (strcmp(optarg, WARN_ASSIGN_CONFIG_OVERRIDE) == 0) {
-          errAssignConfigOverride = true;
+        else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
+          errAssignCacheOverride = true;
         }
-        else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
-          errInvalidAssignConfigCache = true;
+        else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
+          errInvalidAssignCache = true;
         }
-        else if (strcmp(optarg, WARN_MISSING_ASSIGN_CONFIG) == 0) {
-          errMissingAssignConfig = true;
+        else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
+          errMissingAssignCache = true;
         }
         else {
           fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -749,14 +749,14 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
         errTransparencyCollapseOverride = false;
       }
-      else if (strcmp(optarg, WARN_ASSIGN_CONFIG_OVERRIDE) == 0) {
-        errAssignConfigOverride = false;
+      else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
+        errAssignCacheOverride = false;
       }
-      else if (strcmp(optarg, WARN_INVALID_ASSIGN_CONFIG_CACHE) == 0) {
-        errInvalidAssignConfigCache = false;
+      else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
+        errInvalidAssignCache = false;
       }
-      else if (strcmp(optarg, WARN_MISSING_ASSIGN_CONFIG) == 0) {
-        errMissingAssignConfig = false;
+      else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
+        errMissingAssignCache = false;
       }
       else {
         fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -809,22 +809,22 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       warnTransparencyCollapseOverride = false;
       break;
     case WASSIGN_CONFIG_OVERRIDE_VAL:
-      warnAssignConfigOverride = true;
+      warnAssignCacheOverride = true;
       break;
     case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
-      warnAssignConfigOverride = false;
+      warnAssignCacheOverride = false;
       break;
     case WINVALID_ASSIGN_CONFIG_CACHE_VAL:
-      warnInvalidAssignConfigCache = true;
+      warnInvalidAssignCache = true;
       break;
     case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
-      warnInvalidAssignConfigCache = false;
+      warnInvalidAssignCache = false;
       break;
     case WMISSING_ASSIGN_CONFIG_VAL:
-      warnMissingAssignConfig = true;
+      warnMissingAssignCache = true;
       break;
     case WNO_MISSING_ASSIGN_CONFIG_VAL:
-      warnMissingAssignConfig = false;
+      warnMissingAssignCache = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -940,14 +940,14 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   if (warnTransparencyCollapseOverride.has_value()) {
     ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
-  if (warnAssignConfigOverride.has_value()) {
-    ctx.err.assignConfigOverride = warnAssignConfigOverride.value() ? WarningMode::WARN : WarningMode::OFF;
+  if (warnAssignCacheOverride.has_value()) {
+    ctx.err.assignCacheOverride = warnAssignCacheOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
-  if (warnInvalidAssignConfigCache.has_value()) {
-    ctx.err.invalidAssignConfigCache = warnInvalidAssignConfigCache.value() ? WarningMode::WARN : WarningMode::OFF;
+  if (warnInvalidAssignCache.has_value()) {
+    ctx.err.invalidAssignCache = warnInvalidAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
-  if (warnMissingAssignConfig.has_value()) {
-    ctx.err.missingAssignConfig = warnMissingAssignConfig.value() ? WarningMode::WARN : WarningMode::OFF;
+  if (warnMissingAssignCache.has_value()) {
+    ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
 
   // If requested, set all enabled warnings to errors
@@ -1040,37 +1040,37 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.err.transparencyCollapse = WarningMode::OFF;
     }
   }
-  if (errAssignConfigOverride.has_value()) {
-    if (errAssignConfigOverride.value()) {
-      ctx.err.assignConfigOverride = WarningMode::ERR;
+  if (errAssignCacheOverride.has_value()) {
+    if (errAssignCacheOverride.value()) {
+      ctx.err.assignCacheOverride = WarningMode::ERR;
     }
-    else if ((warnAssignConfigOverride.has_value() && warnAssignConfigOverride.value()) || enableAllWarnings) {
-      ctx.err.assignConfigOverride = WarningMode::WARN;
+    else if ((warnAssignCacheOverride.has_value() && warnAssignCacheOverride.value()) || enableAllWarnings) {
+      ctx.err.assignCacheOverride = WarningMode::WARN;
     }
     else {
-      ctx.err.assignConfigOverride = WarningMode::OFF;
+      ctx.err.assignCacheOverride = WarningMode::OFF;
     }
   }
-  if (errInvalidAssignConfigCache.has_value()) {
-    if (errInvalidAssignConfigCache.value()) {
-      ctx.err.invalidAssignConfigCache = WarningMode::ERR;
+  if (errInvalidAssignCache.has_value()) {
+    if (errInvalidAssignCache.value()) {
+      ctx.err.invalidAssignCache = WarningMode::ERR;
     }
-    else if ((warnInvalidAssignConfigCache.has_value() && warnInvalidAssignConfigCache.value()) || enableAllWarnings) {
-      ctx.err.invalidAssignConfigCache = WarningMode::WARN;
+    else if ((warnInvalidAssignCache.has_value() && warnInvalidAssignCache.value()) || enableAllWarnings) {
+      ctx.err.invalidAssignCache = WarningMode::WARN;
     }
     else {
-      ctx.err.invalidAssignConfigCache = WarningMode::OFF;
+      ctx.err.invalidAssignCache = WarningMode::OFF;
     }
   }
-  if (errMissingAssignConfig.has_value()) {
-    if (errMissingAssignConfig.value()) {
-      ctx.err.missingAssignConfig = WarningMode::ERR;
+  if (errMissingAssignCache.has_value()) {
+    if (errMissingAssignCache.value()) {
+      ctx.err.missingAssignCache = WarningMode::ERR;
     }
-    else if ((warnMissingAssignConfig.has_value() && warnMissingAssignConfig.value()) || enableAllWarnings) {
-      ctx.err.missingAssignConfig = WarningMode::WARN;
+    else if ((warnMissingAssignCache.has_value() && warnMissingAssignCache.value()) || enableAllWarnings) {
+      ctx.err.missingAssignCache = WarningMode::WARN;
     }
     else {
-      ctx.err.missingAssignConfig = WarningMode::OFF;
+      ctx.err.missingAssignCache = WarningMode::OFF;
     }
   }
 
