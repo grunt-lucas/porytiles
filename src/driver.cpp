@@ -782,7 +782,6 @@ static void driveCompile(PtContext &ctx)
     importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
     std::vector<RGBATile> secondaryPalettePrimers =
         preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.secondaryPalettePrimers());
-    ;
     if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignCache())) {
       std::ifstream assignCacheFile{ctx.compilerSrcPaths.secondaryAssignCache()};
       if (assignCacheFile.fail()) {
@@ -817,7 +816,6 @@ static void driveCompile(PtContext &ctx)
     importAnimTiles(ctx, animations, decompiledTiles);
     std::vector<RGBATile> primaryPalettePrimers =
         preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
-    ;
     if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignCache())) {
       std::ifstream assignCacheFile{ctx.compilerSrcPaths.primaryAssignCache().c_str()};
       if (assignCacheFile.fail()) {
