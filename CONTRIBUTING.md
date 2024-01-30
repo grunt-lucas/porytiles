@@ -1,5 +1,5 @@
 # Contributions
-Contributions to Porytiles are always welcome! To contribute, I encourage you to fork Porytiles and then make your
+Contributions to Porytiles are always welcome! To contribute, you are encouraged to fork Porytiles and then make your
 changes in a branch in your fork. You may then submit a cross-repository PR to the main Porytiles repo with your
 feature. Please see below for guidance on how to name your branch.
 
@@ -7,10 +7,13 @@ feature. Please see below for guidance on how to name your branch.
 Branch names in the Porytiles repository should follow the following conventions:
 
 ### Trunk
-The main development trunk is called `trunk`. Extremely small or insignificant changes can be pushed directly to
-`trunk`. Porytiles will create a nightly release based on the tip of the `trunk` branch, so care should be taken
-not to break things on this branch. The unit and integration tests should be comprehensive, and they should abort
-the release if any of them fail.
+The main development trunk is called `trunk`. Small or inconsequential changes (e.g. updating `Todo.md`) can be pushed
+directly to `trunk`. Larger changes should be developed on a `feature/X` or `bugfix/X` branch that is merged back into
+trunk via a well-documented pull request. More on these branches below.
+
+Porytiles will create a nightly release based on the tip of the `trunk` branch, so care should be taken not to break
+things on this branch. The unit and integration tests should be comprehensive, and they should abort the release if any
+of them fail.
 
 ### Release
 Releases should be performed on a parallel branch titled `release/<NAME>`, where name is the semantic version number
