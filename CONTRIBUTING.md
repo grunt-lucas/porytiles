@@ -4,7 +4,7 @@ changes in a branch in your fork. You may then submit a cross-repository PR to t
 feature. Please see below for guidance on how to name your branch.
 
 # Repository Branch Names
-Branch names in the Porytiles repository should follow the following conventions:
+Branch names in the Porytiles repository should follow these conventions:
 
 ### Trunk
 The main development trunk is called `trunk`. Small or inconsequential changes (e.g. updating `Todo.md`) can be pushed
