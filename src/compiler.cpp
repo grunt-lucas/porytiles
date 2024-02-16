@@ -618,7 +618,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
     if (ctx.compilerContext.pairedPrimaryTileset->tileIndexes.contains(gbaTile)) {
       // Tile was in the primary set
       compiled.assignments.at(index.tileIndex) = {ctx.compilerContext.pairedPrimaryTileset->tileIndexes.at(gbaTile),
-                                                  paletteIndex, normTile.hFlip, normTile.vFlip};
+                                                  paletteIndex, normTile.hFlip, normTile.vFlip, normTile.attributes};
     }
     else {
       // Tile was in the secondary set
