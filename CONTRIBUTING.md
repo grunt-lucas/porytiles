@@ -3,34 +3,48 @@ Contributions to Porytiles are always welcome! To contribute, you are encouraged
 changes in a branch in your fork. You may then submit a cross-repository PR to the main Porytiles repo with your
 feature. Please see below for guidance on how to name your branch.
 
-# Repository Branch Names
-Branch names in the Porytiles repository should follow these conventions:
+## Git Workflow and Repository Branch Conventions
+Porytiles's Git workflow and branch name conventions follow the Gitflow model. Porytiles-specific idiosyncracies are
+outlined below. For more on the Gitflow model, [please see this writeup.](https://nvie.com/posts/a-successful-git-branching-model/)
+Contributors should be working on topic branches only. Admins will handle the housekeeping related to the `master`,
+`release`, and `hotfix` branches.
 
-### Trunk
-The main development trunk is called `trunk`. Small or inconsequential changes (e.g. updating `Todo.md`) can be pushed
-directly to `trunk`. Larger changes should be developed on a `feature/X` or `bugfix/X` branch that is merged back into
-trunk via a well-documented pull request. More on these branches below.
+Aside: occasionally, I may push small changes directly to `develop`. This will only happen on occasion, and in cases
+where opening a PR would create unnecessary noise for repository watchers. E.g. if a previous `docs` PR had a typo,
+I may just fix the typo with a direct `develop` push.
 
-Porytiles will create a nightly release based on the tip of the `trunk` branch, so care should be taken not to break
-things on this branch. The unit and integration tests should be comprehensive, and they should abort the release if any
-of them fail.
-
-### Release
-Releases should be performed on a parallel branch titled `release/<NAME>`, where name is the semantic version number
-for this release. The branch should specify a major and minor release, with a placeholder for the revision, since
-multiple revisions may be used on the same branch to hotfix issues. E.g. release branch for `1.12` would look like
-`release/1.12.x`, where the first release tag on this branch would be `1.12.0`. If users find an issue with this release,
-the issue can be fixed on trunk and then cherry picked to create a `1.12.1`, etc release.
+## Topic Branch Conventions
+Some conventions for Porytiles topic branches. Please try to keep branch names compact.
 
 ### Features
-A new feature should be developed on a branch titled `feature/<NAME>`, where `<NAME>` is a hyphenated description of the
-feature. E.g. for a feature branch to add a freestanding compilation mode, the branch name could be:
-`feature/freestanding-compile-mode`.
+A new feature should be developed on a topic branch titled `feature/<NAME>`, where `<NAME>` is a hyphenated description
+of the feature. Following Gitflow, the `feature` branch should be created off the `develop` branch. Please try to keep
+feature branch names compact.
+
+E.g. for a `feature` branch to add a freestanding compilation mode, the branch name could be:
+`feature/freestand-compile`.
 
 ### Bugfixes
-A Bug fix should be developed on a branch titled `bugfix/<NAME>`, where `<NAME>` is a hyphenated description of the bug
-to be fixed. E.g. for a bugfix branch that fixes an attribute issue, the branch name could be:
-`bugfix/broken-attr`.
+A bugfix should be developed on a topic branch titled `bugfix/<NAME>`, where `<NAME>` is a hyphenated description of
+the bug to be fixed. Following Gitflow, the `bugfix` branch should be created off the `develop` branch.
+
+E.g. for a `bugfix` branch that fixes a problem with the attribute file emitter, the branch name could be:
+`bugfix/fix-attr-emit`.
+
+### Documentation
+New documentation should be added on a topic branch titled `docs/<NAME>`, where `<NAME>` is a hyphenated description of
+the doc contents. Following Gitflow, the `docs` branch should be created off the `develop` branch.
+
+E.g. for a `docs` branch that updates the README, the branch name could be:
+`docs/readme-update`.
+
+### Housekeeping
+Repository housekeeping (e.g. Actions changes, general branch management, moving files around, etc) should be done on
+a topic branch titled `house/<NAME>`, where `<NAME>` is a hyphenated description of the housekeeping. Following Gitflow,
+the `house` branch should be created off the `develop` branch.
+
+E.g. for a `house` branch that updates the nightly Actions workflow, the branch name could be:
+`house/nightly-actions-change`
 
 ### Issues
 Branches that address a filed issue should fall into one of the above categories, but use the `<NAME>` to tag the issue.
