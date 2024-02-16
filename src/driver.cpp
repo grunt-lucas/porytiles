@@ -1194,7 +1194,6 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   fclose(actual);
 
   // Check metatile_attributes.bin
-  // Secondary set doesn't provide a metatile_behaviors.h or an attributes.csv, so default values are used
 
   REQUIRE(std::filesystem::exists(
       std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"}));
