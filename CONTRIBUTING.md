@@ -1,15 +1,15 @@
 # Contributions
-Contributions to Porytiles are always welcome! To contribute, you are encouraged to fork Porytiles and then make your
-changes in a branch in your fork. You may then submit a cross-repository PR to the main Porytiles repo with your
-feature. Please see below for guidance on how to name your branch.
+Contributions to Porytiles are always welcome! To contribute, fork Porytiles and then make your changes in a branch in
+your fork. You may then submit a cross-repository PR to the main Porytiles repo with your feature. Please see below for
+guidance on how to name your branch.
 
 ## Git Workflow and Repository Branch Conventions
 Porytiles's Git workflow and branch name conventions follow the Gitflow model. Porytiles-specific idiosyncracies are
 outlined below. For more on the Gitflow model, [please see this writeup.](https://nvie.com/posts/a-successful-git-branching-model/)
 Contributors should be working on topic branches only. Admins will handle the housekeeping related to the `master`,
-`release`, and `hotfix` branches.
+`develop`, `release`, and `hotfix` branches.
 
-Aside: occasionally, I may push small changes directly to `develop`. This will only happen on occasion, and in cases
+Note: occasionally, I may push small changes directly to `develop`. This will only happen on occasion, and in cases
 where opening a PR would create unnecessary noise for repository watchers. E.g. if a previous `docs` PR had a typo,
 I may just fix the typo with a direct `develop` push.
 
@@ -52,3 +52,8 @@ E.g. if Issue #12 reports a bug, the branch to fix this could be called `bugfix/
 feature, the branch to implement this could be called `feature/issue-0027`. If necessary, the title may be extended for
 more specificity. E.g. if `issue-0027` contains both a reported bug and a related feature request, we may have a
 `bugfix/issue-0027-broken-attr` as well as a `feature/issue-0027-generate-attrs`.
+
+## Branch Cleanup
+Please use `git rebase --interactive` to clean up your branch before submitting a PR. If you have a ton of commits with
+tiny changes, WIP descriptions, or bugs, you can use the interactive rebase to pick and squash them into a coherent
+branch history. This way, viewers of the repository can clearly see the changes you made.
