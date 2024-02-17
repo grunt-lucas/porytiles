@@ -63,6 +63,12 @@ llvm-cov-wrapper() {
     fi
 }
 
+if [[ ! -f .porytiles-marker-file ]]
+then
+    echo "Script must run in main Porytiles directory"
+    exit 1
+fi
+
 parse_params "$@"
 
 if [[ ! -f ./debug/bin/porytiles-tests ]]; then

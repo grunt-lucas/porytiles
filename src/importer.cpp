@@ -663,8 +663,8 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
     }
     std::vector<std::string> lineTokens = split(line, "=");
     if (lineTokens.size() != 2) {
-      fatalerror_assignCacheSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line,
-                                         processedUpToLine, assignCachePath);
+      fatalerror_assignCacheSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line, processedUpToLine,
+                                        assignCachePath);
     }
     std::string key = lineTokens.at(0);
     std::string value = lineTokens.at(1);
@@ -687,7 +687,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
       }
       else {
         fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                            processedUpToLine, assignCachePath);
+                                           processedUpToLine, assignCachePath);
       }
     }
     else if (key == EXPLORE_CUTOFF) {
@@ -698,7 +698,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
       catch (const std::exception &e) {
         assignExploreValue = 0;
         fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                            processedUpToLine, assignCachePath);
+                                           processedUpToLine, assignCachePath);
       }
       if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = assignExploreValue;
@@ -726,7 +726,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
         catch (const std::exception &e) {
           bestBranchValue = 0;
           fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                              processedUpToLine, assignCachePath);
+                                             processedUpToLine, assignCachePath);
         }
         if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryBestBranches = bestBranchValue;
@@ -738,7 +738,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
     }
     else {
       fatalerror_assignCacheInvalidKey(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, processedUpToLine,
-                                        assignCachePath);
+                                       assignCachePath);
     }
     processedUpToLine++;
   }

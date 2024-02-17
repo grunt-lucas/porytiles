@@ -854,13 +854,13 @@ struct CompilerConfig {
   bool readSecondaryAssignCache;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true},
-        forceParamSearchMatrix{false}, providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false},
-        defaultBehavior{"0"}, defaultEncounterType{"0"}, defaultTerrainType{"0"},
-        primaryAssignAlgorithm{AssignAlgorithm::DFS}, primaryExploredNodeCutoff{2'000'000},
-        primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, readPrimaryAssignCache{false},
-        secondaryAssignAlgorithm{AssignAlgorithm::DFS}, secondaryExploredNodeCutoff{2'000'000},
-        secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false}, readSecondaryAssignCache{false}
+      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true}, forceParamSearchMatrix{false},
+        providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false}, defaultBehavior{"0"},
+        defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
+        primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
+        readPrimaryAssignCache{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
+        secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
+        readSecondaryAssignCache{false}
   {
   }
 };

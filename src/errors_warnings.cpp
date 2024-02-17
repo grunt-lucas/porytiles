@@ -442,8 +442,8 @@ void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const Compile
 }
 
 void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                        const CompilerMode &mode, std::string line, std::size_t lineNumber,
-                                        std::string path)
+                                       const CompilerMode &mode, std::string line, std::size_t lineNumber,
+                                       std::string path)
 {
   if (err.printErrors) {
     pt_fatal_err("{}: invalid syntax '{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
@@ -453,8 +453,8 @@ void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const Compi
 }
 
 void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                       const CompilerMode &mode, std::string key, std::size_t lineNumber,
-                                       std::string path)
+                                      const CompilerMode &mode, std::string key, std::size_t lineNumber,
+                                      std::string path)
 {
   if (err.printErrors) {
     pt_fatal_err("{}: invalid key '{}' at line {}", path, fmt::styled(key, fmt::emphasis::bold), lineNumber);
@@ -464,8 +464,8 @@ void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const Compil
 }
 
 void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                         const CompilerMode &mode, std::string key, std::string value,
-                                         std::size_t lineNumber, std::string path)
+                                        const CompilerMode &mode, std::string key, std::string value,
+                                        std::size_t lineNumber, std::string path)
 {
   // TODO : make it clearer this error is coming from assign.cache
   if (err.printErrors) {
@@ -614,9 +614,9 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
 
 void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path)
 {
-  printWarning(
-      err, err.assignCacheOverride, WARN_ASSIGN_CACHE_OVERRIDE,
-      fmt::format("{}: ignoring {} `assign.cache' due to command line override", path, compilerModeString(config.mode)));
+  printWarning(err, err.assignCacheOverride, WARN_ASSIGN_CACHE_OVERRIDE,
+               fmt::format("{}: ignoring {} `assign.cache' due to command line override", path,
+                           compilerModeString(config.mode)));
   if (err.printErrors && err.assignCacheOverride != WarningMode::OFF) {
     if (config.mode == CompilerMode::PRIMARY) {
       pt_note("assign-algorithm={}", assignAlgorithmString(config.primaryAssignAlgorithm));
