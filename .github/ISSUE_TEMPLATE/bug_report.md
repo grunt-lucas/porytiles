@@ -21,4 +21,4 @@ Please include:
  - OS [e.g. Ubuntu 22.04, amd64]
  - Porytiles release version: if applicable [e.g. 1.0.0]
  - Commit: if built from source [e.g. 6e38d0427c6e51bbafe735b4242c0bcb1570146a]
- - Compiler: if built from source, which compiler/version did you use [ e.g. GCC 13.1]
+ - Compiler: if built from source, which compiler/version did you use [e.g. GCC 13.1]
