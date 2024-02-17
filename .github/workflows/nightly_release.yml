@@ -12,7 +12,7 @@ jobs:
     - uses: octokit/request-action@v2.x
       id: check_last_run
       with:
-        route: GET /repos/${{github.repository}}/actions/workflows/daily.yml/runs?per_page=1&status=completed
+        route: GET /repos/${{github.repository}}/actions/workflows/nightly_release.yml/runs?per_page=1&status=completed
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: "echo Last nightly build: ${{ fromJson(steps.check_last_run.outputs.data).workflow_runs[0].head_sha }}"
