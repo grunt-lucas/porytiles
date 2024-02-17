@@ -22,13 +22,17 @@ jobs:
 
   create-release-tag:
     name: Create a tag for this release
-    runs-on: 'ubuntu-latest'
-    needs: [check-already-built]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: develop
-      - run: git tag nightly-${{github.sha}}
+      - uses: rickstaa/action-create-tag@v1
+        id: "tag_create"
+        with:
+          tag: nightly-${{github.sha}}
+          tag_exists_error: false
+          message: "Tag for nightly-${{github.sha}}"
 
   nightly-release-linux-amd64:
     name: Release a nightly statically linked linux-amd64 binary
@@ -47,10 +51,10 @@ jobs:
           clang++-16 --version
           clang++-16 -v
 
-      - name: Checkout porytiles develop branch
-        uses: actions/checkout@v3
+      - name: Checkout new Porytiles nightly tag
+        uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: nightly-${{github.sha}}
 
       - name: Create release package
         run: |
@@ -78,10 +82,10 @@ jobs:
           /usr/local/opt/llvm@16/bin/clang++ --version
           /usr/local/opt/llvm@16/bin/clang++ -v
 
-      - name: Checkout porytiles develop branch
-        uses: actions/checkout@v3
+      - name: Checkout new Porytiles nightly tag
+        uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: nightly-${{github.sha}}
 
       - name: Create release package
         run: |
@@ -109,10 +113,10 @@ jobs:
           /opt/homebrew/opt/llvm@16/bin/clang++ --version
           /opt/homebrew/opt/llvm@16/bin/clang++ -v
 
-      - name: Checkout porytiles develop branch
-        uses: actions/checkout@v3
+      - name: Checkout new Porytiles nightly tag
+        uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: nightly-${{github.sha}}
 
       - name: Create release package
         run: |
