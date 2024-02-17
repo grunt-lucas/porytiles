@@ -32,8 +32,7 @@ jobs:
         id: "tag_create"
         with:
           tag: nightly-${{github.sha}}
-          tag_exists_error: false
-          message: "Tag for nightly-${{github.sha}}"
+          tag_exists_error: true
 
   nightly-release-linux-amd64:
     name: Release a nightly statically linked linux-amd64 binary
@@ -64,6 +63,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: nightly-${{github.sha}}
           files: porytiles-linux-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,6 +95,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: nightly-${{github.sha}}
           files: porytiles-macos-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -126,6 +127,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: nightly-${{github.sha}}
           files: porytiles-macos-aarch64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
