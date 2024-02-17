@@ -24,6 +24,7 @@ jobs:
     name: Create a tag for this release
     runs-on: ubuntu-latest
     needs: [check-already-built]
+    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,7 +39,6 @@ jobs:
     name: Release a nightly statically linked linux-amd64 binary
     runs-on: ubuntu-latest
     needs: [create-release-tag]
-    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
@@ -72,7 +72,6 @@ jobs:
     name: Release a nightly dynamically linked macos-amd64 binary
     runs-on: macos-latest
     needs: [create-release-tag]
-    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
@@ -104,7 +103,6 @@ jobs:
     name: Release a nightly dynamically linked macos-aarch64 binary
     runs-on: macos-14
     needs: [create-release-tag]
-    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
