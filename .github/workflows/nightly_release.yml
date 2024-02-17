@@ -23,6 +23,7 @@ jobs:
   create-release-tag:
     name: Create a tag for this release
     runs-on: ubuntu-latest
+    needs: [check-already-built]
     steps:
       - uses: actions/checkout@v4
         with:
