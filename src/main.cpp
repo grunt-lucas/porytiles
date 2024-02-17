@@ -3,10 +3,10 @@
 
 #include <exception>
 
+#include "build_version.h"
 #include "cli_parser.h"
 #include "driver.h"
 #include "logger.h"
-#include "program_name.h"
 #include "ptcontext.h"
 #include "ptexception.h"
 
@@ -46,7 +46,7 @@ catch (const std::exception &e) {
    * FEATURE : New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
    * Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
    */
-  porytiles::pt_println(stderr, "{}: {} {}", porytiles::PROGRAM_NAME,
+  porytiles::pt_println(stderr, "{}: {} {}", PORYTILES_EXECUTABLE,
                         fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)),
                         e.what());
   porytiles::pt_println(stderr, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");

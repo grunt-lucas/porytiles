@@ -210,16 +210,16 @@ void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const Compile
                                      std::string behavior, std::string value, std::size_t line);
 
 void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                        const CompilerMode &mode, std::string line, std::size_t lineNumber,
-                                        std::string path);
-
-void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                       const CompilerMode &mode, std::string key, std::size_t lineNumber,
+                                       const CompilerMode &mode, std::string line, std::size_t lineNumber,
                                        std::string path);
 
+void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                      const CompilerMode &mode, std::string key, std::size_t lineNumber,
+                                      std::string path);
+
 void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                         const CompilerMode &mode, std::string key, std::string value,
-                                         std::size_t lineNumber, std::string path);
+                                        const CompilerMode &mode, std::string key, std::string value,
+                                        std::size_t lineNumber, std::string path);
 
 void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                      const CompilerMode &mode);

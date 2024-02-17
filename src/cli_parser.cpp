@@ -11,11 +11,11 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
+#include "build_version.h"
 #include "cli_options.h"
 #include "errors_warnings.h"
 #include "logger.h"
 #include "palette_assignment.h"
-#include "program_name.h"
 #include "ptexception.h"
 #include "utilities.h"
 
@@ -151,7 +151,7 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
 // clang-format off
 const std::vector<std::string> GLOBAL_SHORTS = {};
 const std::string GLOBAL_HELP =
-"porytiles " + VERSION_TAG + " " + RELEASE_DATE + "\n"
+"porytiles " + std::string{PORYTILES_BUILD_VERSION} + " " + std::string{PORYTILES_BUILD_DATE} + "\n"
 "grunt-lucas <grunt.lucas@yahoo.com>\n"
 "\n"
 "Overworld tileset compiler for use with the pokeruby, pokeemerald, and pokefirered Pokémon\n"
@@ -217,7 +217,7 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.verbose = true;
       break;
     case VERSION_VAL:
-      fmt::println("{} {} {}", PROGRAM_NAME, VERSION, RELEASE_DATE);
+      fmt::println("{} {} {}", PORYTILES_EXECUTABLE, PORYTILES_BUILD_VERSION, PORYTILES_BUILD_DATE);
       exit(0);
 
       // Help message upon '-h/--help' goes to stdout
@@ -227,7 +227,7 @@ static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
       // Help message on invalid or unknown options goes to stderr and gives error code
     case '?':
     default:
-      fmt::println(stderr, "Try `{} --help' for usage information.", PROGRAM_NAME);
+      fmt::println(stderr, "Try `{} --help' for usage information.", PORYTILES_EXECUTABLE);
       exit(2);
     }
   }
@@ -835,16 +835,16 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
     case '?':
     default:
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
-        fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PROGRAM_NAME);
+        fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PORYTILES_EXECUTABLE);
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-        fmt::println(stderr, "Try `{} compile-secondary --help' for usage information.", PROGRAM_NAME);
+        fmt::println(stderr, "Try `{} compile-secondary --help' for usage information.", PORYTILES_EXECUTABLE);
       }
       else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
-        fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PROGRAM_NAME);
+        fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PORYTILES_EXECUTABLE);
       }
       else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-        fmt::println(stderr, "Try `{} decompile-secondary --help' for usage information.", PROGRAM_NAME);
+        fmt::println(stderr, "Try `{} decompile-secondary --help' for usage information.", PORYTILES_EXECUTABLE);
       }
       else {
         internalerror(

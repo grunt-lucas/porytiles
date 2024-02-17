@@ -40,11 +40,11 @@ E.g. for a `docs` branch that updates the README, the branch name could be:
 
 ### Housekeeping
 Repository housekeeping (e.g. Actions changes, general branch management, moving files around, etc) should be done on
-a topic branch titled `house/<NAME>`, where `<NAME>` is a hyphenated description of the housekeeping. Following Gitflow,
-the `house` branch should be created off the `develop` branch.
+a topic branch titled `meta/<NAME>`, where `<NAME>` is a hyphenated description of the housekeeping. Following Gitflow,
+the `meta` branch should be created off the `develop` branch.
 
-E.g. for a `house` branch that updates the nightly Actions workflow, the branch name could be:
-`house/nightly-actions-change`
+E.g. for a `meta` branch that updates the nightly Actions workflow, the branch name could be:
+`meta/nightly-actions-change`
 
 ### Issues
 Branches that address a filed issue should fall into one of the above categories, but use the `<NAME>` to tag the issue.

@@ -8,7 +8,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
 
-#include "program_name.h"
+#include "build_version.h"
 #include "ptcontext.h"
 #include "types.h"
 
@@ -41,7 +41,7 @@ template <typename... T> void pt_print(std::FILE *stream, fmt::format_string<T..
 
 template <typename... T> void pt_msg(std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::print(stream, "{}: {}", PROGRAM_NAME, fmt::format(fmt, std::forward<T>(args)...));
+  fmt::print(stream, "{}: {}", PORYTILES_EXECUTABLE, fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
@@ -52,7 +52,7 @@ template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
 
 template <typename... T> void pt_fatal_err_prefix(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PROGRAM_NAME,
+  fmt::println(stderr, "{}: {} {}", PORYTILES_EXECUTABLE,
                fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
                fmt::format(fmt, std::forward<T>(args)...));
 }

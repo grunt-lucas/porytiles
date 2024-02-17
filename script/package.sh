@@ -16,9 +16,9 @@ macos_aarch64() {
   echo "Packaging release macos-aarch64..."
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
-  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1"
-  export LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++ -lc++"
   export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
+  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1 -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
+  export LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++"
   make release-check
   package_release
 }
@@ -27,9 +27,9 @@ macos_amd64() {
   echo "Packaging release macos-amd64..."
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
-  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /usr/local/opt/llvm@16/include/c++/v1"
-  export LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++ -lc++"
   export CXX=/usr/local/opt/llvm@16/bin/clang++
+  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /usr/local/opt/llvm@16/include/c++/v1 -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
+  export LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++"
   make release-check
   package_release
 }
@@ -38,9 +38,9 @@ linux_aarch64() {
   echo "Packaging release linux-aarch64..."
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
-  export CXXFLAGS=-stdlib=libc++
-  export LDFLAGS="-stdlib=libc++ -static"
   export CXX=clang++-16
+  export CXXFLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
+  export LDFLAGS="-stdlib=libc++ -static"
   make release-check
   package_release
 }
@@ -49,20 +49,14 @@ linux_amd64() {
   echo "Packaging release linux-amd64..."
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
-  export CXXFLAGS=-stdlib=libc++
-  export LDFLAGS="-stdlib=libc++ -static"
   export CXX=clang++-16
+  export CXXFLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
+  export LDFLAGS="-stdlib=libc++ -static"
   make release-check
   package_release
 }
 
 main() {
-  if [[ ! -f .porytiles-marker-file ]]
-  then
-    echo "Package script must run in main Porytiles directory"
-    exit 1
-  fi
-
   if [[ ! -d "$output_directory" ]]
   then
     echo "$output_directory: not a directory"
@@ -99,12 +93,20 @@ main() {
   esac
 }
 
-if [[ "$#" != 2 ]]
+if [[ ! -f .porytiles-marker-file ]]
 then
-  echo "invalid arguments: usage: ./package.sh <mode> <output-directory>"
+    echo "Script must run in main Porytiles directory"
+    exit 1
+fi
+
+if [[ "$#" != 3 ]]
+then
+  echo "invalid arguments: usage: ./package.sh <mode> <build-version> <output-directory>"
   exit 1
 fi
 
 mode=$1
-output_directory=$2
+porytiles_build_version=$2
+output_directory=$3
+porytiles_build_date=$(date -uIseconds)
 main

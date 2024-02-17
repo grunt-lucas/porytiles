@@ -1,0 +1,31 @@
+#ifndef PORYTILES_BUILD_VERSION_H
+#define PORYTILES_BUILD_VERSION_H
+
+namespace porytiles {
+
+#define PORYTILES_STRINGIFY(x) #x
+#define PORYTILES_EXPAND(x) PORYTILES_STRINGIFY(x)
+
+#ifndef PORYTILES_EXECUTABLE_
+#define PORYTILES_EXECUTABLE_ porytiles
+#endif
+
+#ifndef PORYTILES_BUILD_VERSION_
+#define PORYTILES_BUILD_VERSION_ default_build_version
+#endif
+
+// @formatter:off
+// clang-format off
+#ifndef PORYTILES_BUILD_DATE_
+#define PORYTILES_BUILD_DATE_ 1970.01.01T00:00:00+00:00
+#endif
+// @formatter:on
+// clang-format on
+
+#define PORYTILES_EXECUTABLE PORYTILES_EXPAND(PORYTILES_EXECUTABLE_)
+#define PORYTILES_BUILD_VERSION PORYTILES_EXPAND(PORYTILES_BUILD_VERSION_)
+#define PORYTILES_BUILD_DATE PORYTILES_EXPAND(PORYTILES_BUILD_DATE_)
+
+} // namespace porytiles
+
+#endif // PORYTILES_BUILD_VERSION_H
