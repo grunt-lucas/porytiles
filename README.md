@@ -1,6 +1,7 @@
 # Porytiles
 
-[![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Build%20Porytiles/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
+[![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Porytiles%20Develop%20Branch%20Build/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
+[![Actions Status](https://github.com/grunt-lucas/porytiles/workflows/Porytiles%20Nightly%20Release/badge.svg)](https://github.com/grunt-lucas/porytiles/actions)
 
 Overworld tileset compiler for use with the [`pokeemerald`](https://github.com/pret/pokeemerald),
 [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeruby`](https://github.com/pret/pokeruby) Pokémon
