@@ -39,6 +39,7 @@ jobs:
     name: Release a nightly statically linked linux-amd64 binary
     runs-on: ubuntu-latest
     needs: [create-release-tag]
+    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
@@ -72,6 +73,7 @@ jobs:
     name: Release a nightly dynamically linked macos-amd64 binary
     runs-on: macos-latest
     needs: [create-release-tag]
+    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
@@ -103,6 +105,7 @@ jobs:
     name: Release a nightly dynamically linked macos-aarch64 binary
     runs-on: macos-14
     needs: [create-release-tag]
+    if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
@@ -127,5 +130,18 @@ jobs:
         with:
           tag_name: nightly-${{github.sha}}
           files: porytiles-macos-aarch64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  prune-old-nightlies:
+    name: Only keep the latest nightly build
+    runs-on: ubuntu-latest
+    needs: [nightly-release-linux-amd64, nightly-release-macos-amd64, nightly-release-macos-aarch64]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - uses: dev-drprasad/delete-older-releases@v0.3.2
+        with:
+          keep_latest: 1
+          delete_tag_pattern: nightly-.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
