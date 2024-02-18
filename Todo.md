@@ -1,38 +1,5 @@
 # Todo List
 
-## 1.0.0 Release Checklist
-
-+ Check all in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
-  + Some may need to be addressed before 1.0.0
-
-+ Continue to create more in-file unit tests that maximize coverage
-
-+ get secondary tileset `decompile` command working
-
-+ Warnings
-  + `-Wpalette-alloc-efficiency`
-    + warn user if palette allocation was not 100% efficient
-  + `-Wno-transparency-present`
-    + warn user if the tileset did not have any of the selected transparency color
-    + this is a common mistake if user decompiles a vanilla tileset that uses a different transparency color
-      + user may forget to set `-transparency-color` which will break compilation
-
-+ `-disable-metatile-generation` skips generation of `metatiles.bin`
-+ `-disable-attribute-generation` skips generation of `metatile_attributes.bin`
-
-+ `-print-report` option that prints out various statistics
-  + Number of tiles, metatiles, unique colors, etc
-  + Palette efficiency in colors-per-palette-slot: a value of 1 means we did a perfect allocation
-    + calculate this by taking the `Number Unique Colors / Number Slots In Use`
-  + Print all animation start tiles
-  + dump pal files and tile.png to CLI, see e.g.:
-    + https://github.com/eddieantonio/imgcat
-    + https://github.com/stefanhaustein/TerminalImageViewer
-
-+ Finish the wiki pages
-
-+ Create a basic YouTube tutorial series
-
 ## Post 1.0.0 Ideas
 
 + in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
