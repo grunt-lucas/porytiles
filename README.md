@@ -26,10 +26,10 @@ For detailed documentation about Porytiles features and internal workings, pleas
 ## Why Should I Use This Tool?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way:
-just like [Poryscript](https://github.com/huderlem/poryscript) takes a `.script` file and generates a corresponding `.inc`
-file as part of your build, Porytiles takes a source folder containing RGBA (or indexed) tile assets and generates a
-corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anim` folder, and a populated
-`palettes` folder -- all as part of your build!
+[Poryscript](https://github.com/huderlem/poryscript), another popular community tool, takes a `.script` file and generates a
+corresponding `.inc` file. Comparably, Porytiles takes a source folder containing RGBA (or indexed) tile assets and generates
+a corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anim` folder, and a populated `palettes`
+folder -- all as part of your build!
 
 For more info, please see
 [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
@@ -49,4 +49,4 @@ you have further questions, I can be found on the `pret` and `RH Hideout` discor
 Clang+LLVM 16 is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM
 tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have
 support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC 13. I
-try to maintain compatibility with that compiler, should you prefer it over Clang+LLVM.
+try to maintain compatibility with GCC, should you prefer it over Clang+LLVM.
