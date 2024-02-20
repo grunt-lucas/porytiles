@@ -51,7 +51,7 @@ Branches that address a filed issue should fall into one of the above categories
 E.g. if Issue #12 reports a bug, the branch to fix this could be called `bugfix/issue-0012`. If Issue #27 requests a
 feature, the branch to implement this could be called `feature/issue-0027`. If necessary, the title may be extended for
 more specificity. E.g. if `issue-0027` contains both a reported bug and a related feature request, we may have a
-`bugfix/issue-0027-broken-attr` as well as a `feature/issue-0027-generate-attrs`.
+`bugfix/issue-0027/broken-attr` as well as a `feature/issue-0027/generate-attrs`.
 
 ## Branch Cleanup
 Please use `git rebase --interactive` to clean up your branch before submitting a PR. If you have a ton of commits with

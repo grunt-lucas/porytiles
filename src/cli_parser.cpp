@@ -341,6 +341,8 @@ const std::string COMPILE_HELP =
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
+DISABLE_METATILE_GENERATION_DESC + "\n" +
+DISABLE_ATTRIBUTE_GENERATION_DESC + "\n" +
 "    Tileset Compilation & Decompilation Options\n" +
 TARGET_BASE_GAME_DESC + "\n" +
 DUAL_LAYER_DESC + "\n" +
@@ -390,6 +392,8 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
+      {DISABLE_METATILE_GENERATION.c_str(), no_argument, nullptr, DISABLE_METATILE_GENERATION_VAL},
+      {DISABLE_ATTRIBUTE_GENERATION.c_str(), no_argument, nullptr, DISABLE_ATTRIBUTE_GENERATION_VAL},
 
       // Tileset generation options
       {TARGET_BASE_GAME.c_str(), required_argument, nullptr, TARGET_BASE_GAME_VAL},
@@ -535,6 +539,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case TILES_OUTPUT_PAL_VAL:
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
+      break;
+    case DISABLE_METATILE_GENERATION_VAL:
+      ctx.output.disableMetatileGeneration = true;
+      break;
+    case DISABLE_ATTRIBUTE_GENERATION_VAL:
+      ctx.output.disableAttributeGeneration = true;
       break;
 
     // Tileset compilation & decompilation options
