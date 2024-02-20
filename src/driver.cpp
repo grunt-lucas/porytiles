@@ -853,13 +853,17 @@ static void driveCompile(PtContext &ctx)
   emitCompiledAnims(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
                     animsPath);
 
-  std::ofstream outMetatiles{metatilesPath.string()};
-  emitMetatilesBin(ctx, outMetatiles, *(ctx.compilerContext.resultTileset));
-  outMetatiles.close();
+  if (!ctx.output.disableMetatileGeneration) {
+    std::ofstream outMetatiles{metatilesPath.string()};
+    emitMetatilesBin(ctx, outMetatiles, *(ctx.compilerContext.resultTileset));
+    outMetatiles.close();
+  }
 
-  std::ofstream outAttributes{attributesPath.string()};
-  emitAttributes(ctx, outAttributes, behaviorReverseMap, *(ctx.compilerContext.resultTileset));
-  outAttributes.close();
+  if (!ctx.output.disableAttributeGeneration) {
+    std::ofstream outAttributes{attributesPath.string()};
+    emitAttributes(ctx, outAttributes, behaviorReverseMap, *(ctx.compilerContext.resultTileset));
+    outAttributes.close();
+  }
 }
 
 void drive(PtContext &ctx)

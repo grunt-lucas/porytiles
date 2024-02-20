@@ -824,9 +824,15 @@ struct DecompilerSourcePaths {
 
 struct Output {
   TilesOutputPalette paletteMode;
+  bool disableMetatileGeneration;
+  bool disableAttributeGeneration;
   std::string path;
 
-  Output() : paletteMode{TilesOutputPalette::GREYSCALE}, path{} {}
+  Output()
+      : paletteMode{TilesOutputPalette::GREYSCALE}, disableMetatileGeneration{false}, disableAttributeGeneration{false},
+        path{}
+  {
+  }
 };
 
 struct CompilerConfig {

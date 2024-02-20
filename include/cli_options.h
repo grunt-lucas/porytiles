@@ -61,6 +61,20 @@ const std::string TILES_OUTPUT_PAL_DESC =
 "             the final in-game tiles. Default value is `greyscale'.\n";
 constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 
+const std::string DISABLE_METATILE_GENERATION = "disable-metatile-generation";
+const std::string DISABLE_METATILE_GENERATION_DESC =
+"        -" + DISABLE_METATILE_GENERATION + "\n"
+"             Disable generation of `metatiles.bin'. Only enable this if you want to manage\n"
+"             metatiles manually via Porymap.\n";
+constexpr int DISABLE_METATILE_GENERATION_VAL = 1002;
+
+const std::string DISABLE_ATTRIBUTE_GENERATION = "disable-attribute-generation";
+const std::string DISABLE_ATTRIBUTE_GENERATION_DESC =
+"        -" + DISABLE_ATTRIBUTE_GENERATION + "\n"
+"             Disable generation of `metatile_attributes.bin'. Only enable this if you want to\n"
+"             manage metatile attributes manually via Porymap.\n";
+constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1003;
+
 
 // Tileset generation options
 
