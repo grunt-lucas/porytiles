@@ -796,7 +796,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
      * compiled palettes will always presumably have correct formatting unless a user has manually messed with one
      */
 
-    // FIXME : this function assumes the pal file is DOS format, need to fix this
+    // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
 
     std::getline(*stream, line);
     if (line.size() == 0) {
@@ -1088,7 +1088,7 @@ RGBATile importPalettePrimer(PtContext &ctx, std::ifstream &paletteFile)
    * TODO : fatalerrors in this function need better messaging
    */
 
-  // FIXME : this function assumes the pal file is DOS format, need to fix this
+  // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
 
   std::string line;
   std::getline(paletteFile, line);
@@ -1667,7 +1667,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
     paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
-  // TODO : actually test anims import
+  // TODO 1.0.0 : actually test anims import
   auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
       decompileCtx, metatiles, attributes, std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
       std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
@@ -1700,12 +1700,12 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     }
   }
 
-  // TODO : test impl check attributes map
+  // TODO 1.0.0 : test impl check attributes map
 
   std::filesystem::remove_all(parentDir);
 }
 
 TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly")
 {
-  // TODO : test impl importCompiledTileset should import a dual-layer pokefirered tileset correctly
+  // TODO 1.0.0 : test impl importCompiledTileset should import a dual-layer pokefirered tileset correctly
 }

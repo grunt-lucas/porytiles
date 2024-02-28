@@ -150,13 +150,34 @@ static void validateCompileInputs(PtContext &ctx)
 
 static void validateDecompileInputs(PtContext &ctx)
 {
+  // FIXME 1.0.0 : decompileConfig.mode here will be incorrect for secondary decompilation
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
   if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    // FEATURE : check input paths for decompile-secondary
-    throw std::runtime_error{"FEATURE : support decompile-secondary"};
+    // FIXME 1.0.0 : decompileConfig.mode here will be incorrect for secondary decompilation
+    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondarySourcePath) ||
+        !std::filesystem::is_directory(ctx.decompilerSrcPaths.secondarySourcePath)) {
+      fatalerror_invalidSourcePath(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                                   ctx.decompilerSrcPaths.secondarySourcePath);
+    }
+    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryMetatilesBin())) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryMetatilesBin().string()));
+    }
+    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryAttributesBin())) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryAttributesBin().string()));
+    }
+    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryTilesPng())) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryTilesPng().string()));
+    }
+    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryPalettes())) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                 fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.secondaryPalettes().string()));
+    }
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.primarySourcePath) ||
       !std::filesystem::is_directory(ctx.decompilerSrcPaths.primarySourcePath)) {
@@ -307,14 +328,14 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
 
     std::vector<AnimationPng<png::index_pixel>> framePngs{};
     if (frames.size() == 0) {
-      // TODO : better error
+      // TODO 1.0.0 : better error
       throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
       // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
       //                                         animDir.filename().string(), 0);
     }
     for (std::size_t i = 1; i <= frames.size(); i++) {
       if (!frames.contains(i)) {
-        // TODO : better error
+        // TODO 1.0.0 : better error
         throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
         // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
         //                                         animDir.filename().string(), i - 1);
@@ -327,7 +348,7 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
         framePngs.push_back(animPng);
       }
       catch (const std::exception &exception) {
-        // TODO : better error
+        // TODO 1.0.0 : better error
         throw std::runtime_error{
             fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
         // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
@@ -374,11 +395,11 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
       /*
-       * FIXME : format is actually 0.png, not 00.png. We used 00.png so that default alphabetical
+       * FIXME 1.0.0 : format is actually 0.png, not 00.png. We used 00.png so that default alphabetical
        * order would also yield the frame order. However, the frames don't actually follow this
        * format. It would be better to read and then sort, especially since the decompiler has to
        * use the 0.png format.
-       * FIXME : I think this is fixed now, and we can remove the above message, confirm this
+       * FIXME 1.0.0 : I think this is fixed now, and we can remove the above message, confirm this
        */
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         if (fileName != "key.png") {
@@ -578,17 +599,16 @@ static void driveDecompile(PtContext &ctx)
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, ctx.decompilerSrcPaths.metatileBehaviors);
 
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    throw std::runtime_error{"FEATURE : support decompile-secondary"};
-  }
+  pt_logln(ctx, stderr, "importing primary compiled tileset from {}", ctx.decompilerSrcPaths.primarySourcePath);
+  ctx.decompilerConfig.mode = DecompilerMode::PRIMARY;
 
   /*
    * Set up file stream objects
    */
-  std::ifstream metatiles{ctx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
-  std::ifstream attributes{ctx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
-  png::image<png::index_pixel> tilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
-  std::vector<std::shared_ptr<std::ifstream>> paletteFiles{};
+  std::ifstream primaryMetatiles{ctx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
+  std::ifstream primaryAttributes{ctx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
+  png::image<png::index_pixel> primaryTilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
+  std::vector<std::shared_ptr<std::ifstream>> primaryPaletteFiles{};
   for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
     std::ostringstream filename;
     if (index < 10) {
@@ -600,28 +620,75 @@ static void driveDecompile(PtContext &ctx)
       fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                  fmt::format("{}: file did not exist", paletteFile.string()));
     }
-    paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+    primaryPaletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
   }
-  auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.primaryAnims());
+  auto compiledPrimaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.primaryAnims());
 
   /*
    * Import the compiled tileset into our data types
    */
-  auto [compiled, attributesMap] =
-      importCompiledTileset(ctx, metatiles, attributes, behaviorReverseMap, tilesheetPng, paletteFiles, compiledAnims);
+  auto [compiledPrimary, primaryAttributesMap] =
+      importCompiledTileset(ctx, primaryMetatiles, primaryAttributes, behaviorReverseMap, primaryTilesheetPng,
+                            primaryPaletteFiles, compiledPrimaryAnims);
 
   /*
    * Close file stream objects
    */
-  metatiles.close();
-  attributes.close();
-  std::for_each(paletteFiles.begin(), paletteFiles.end(),
+  primaryMetatiles.close();
+  primaryAttributes.close();
+  std::for_each(primaryPaletteFiles.begin(), primaryPaletteFiles.end(),
                 [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
 
   /*
-   * Decompile the compiled tiles
+   * Decompile the compiled primary tiles
    */
-  auto decompiled = decompile(ctx, compiled);
+  ctx.decompilerContext.resultTileset = decompile(ctx, compiledPrimary);
+
+  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    pt_logln(ctx, stderr, "importing secondary compiled tileset from {}", ctx.decompilerSrcPaths.secondarySourcePath);
+    // TODO 1.0.0 : this make_unique is not a great pattern, see if we can do this a different way
+    ctx.decompilerContext.pairedPrimaryTileset = std::make_unique<CompiledTileset>(compiledPrimary);
+    ctx.decompilerConfig.mode = DecompilerMode::SECONDARY;
+
+    std::ifstream secondaryMetatiles{ctx.decompilerSrcPaths.secondaryMetatilesBin(), std::ios::binary};
+    std::ifstream secondaryAttributes{ctx.decompilerSrcPaths.secondaryAttributesBin(), std::ios::binary};
+    png::image<png::index_pixel> secondaryTilesheetPng{ctx.decompilerSrcPaths.secondaryTilesPng()};
+    std::vector<std::shared_ptr<std::ifstream>> secondaryPaletteFiles{};
+    for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
+      std::ostringstream filename;
+      if (index < 10) {
+        filename << "0";
+      }
+      filename << index << ".pal";
+      std::filesystem::path paletteFile = ctx.decompilerSrcPaths.secondaryPalettes() / filename.str();
+      if (!std::filesystem::exists(paletteFile)) {
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+                   fmt::format("{}: file did not exist", paletteFile.string()));
+      }
+      secondaryPaletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+    }
+    auto compiledSecondaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.secondaryAnims());
+
+    /*
+     * Import the compiled tileset into our data types
+     */
+    auto [compiledSecondary, secondaryAttributesMap] =
+        importCompiledTileset(ctx, secondaryMetatiles, secondaryAttributes, behaviorReverseMap, secondaryTilesheetPng,
+                              secondaryPaletteFiles, compiledSecondaryAnims);
+
+    /*
+     * Close file stream objects
+     */
+    secondaryMetatiles.close();
+    secondaryAttributes.close();
+    std::for_each(secondaryPaletteFiles.begin(), secondaryPaletteFiles.end(),
+                  [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
+
+    /*
+     * Decompile the compiled secondary tiles
+     */
+    ctx.decompilerContext.resultTileset = decompile(ctx, compiledSecondary);
+  }
 
   /*
    * Emit output
@@ -639,13 +706,13 @@ static void driveDecompile(PtContext &ctx)
   validateDecompileOutputs(ctx, outputPath, attributesPath, bottomPath, middlePath, topPath);
 
   std::ostringstream outAttributesContent{};
-  std::size_t metatileCount = attributesMap.size();
+  std::size_t metatileCount = primaryAttributesMap.size();
   std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
   png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
   png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
-  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributesContent, *decompiled,
-                            attributesMap, behaviorReverseMap);
+  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributesContent,
+                            *(ctx.decompilerContext.resultTileset), primaryAttributesMap, behaviorReverseMap);
 
   std::ofstream outAttributes{attributesPath.string()};
   outAttributes << outAttributesContent.str();
@@ -729,6 +796,7 @@ static void driveCompile(PtContext &ctx)
   /*
    * Perform resource import and mode-based compilation.
    */
+  // TODO : can this flow be refactored so there is not so much code dupe?
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
     png::image<png::rgba_pixel> bottomPrimaryPng{ctx.compilerSrcPaths.bottomPrimaryTilesheet()};
@@ -902,7 +970,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   porytiles::drive(ctx);
 
-  // TODO : test impl check pal files
+  // TODO 1.0.0 : test impl check pal files
 
   // Check tiles.png
 
@@ -1127,7 +1195,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   porytiles::drive(ctx);
 
-  // TODO : test impl check pal files
+  // TODO 1.0.0 : test impl check pal files
 
   // Check tiles.png
 

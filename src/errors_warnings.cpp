@@ -467,7 +467,7 @@ void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const Comp
                                         const CompilerMode &mode, std::string key, std::string value,
                                         std::size_t lineNumber, std::string path)
 {
-  // TODO : make it clearer this error is coming from assign.cache
+  // TODO 1.0.0 : make it clearer this error is coming from assign.cache
   if (err.printErrors) {
     pt_fatal_err("{}: invalid value '{}' for key '{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
                  fmt::styled(key, fmt::emphasis::bold), lineNumber);
@@ -482,7 +482,7 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
   if (err.printErrors) {
     pt_fatal_err("palette assignment parameter search matrix failed to find any suitable parameters");
     pt_note("please see the following wiki page for help with working through this error:");
-    // TODO : fill in wiki page link
+    // TODO 1.0.0 : fill in wiki page link
     pt_println(stderr, "      https://wiki-page-link-goes-here.com");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("palette assign param search matrix failed"));
@@ -513,7 +513,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba)
 {
-  // TODO : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
+  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   std::string message =
       fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
@@ -598,7 +598,7 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
 {
-  // TODO : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
+  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   printWarning(
       err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,

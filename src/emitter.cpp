@@ -245,6 +245,10 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
    * (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple.
    * Otherwise, we have corruption and should fail.
    */
+  /*
+   * FIXME 1.0.0 : this logic breaks when decompiling some vanilla tilesets, since they pad out their attributes to a full
+   * 512 entries even if there were not 512 real metatiles
+   */
   bool tripleLayer = false;
   std::size_t divBy8 = tileset.tiles.size() / 8;
   std::size_t divBy12 = tileset.tiles.size() / 12;
@@ -256,6 +260,7 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
     tripleLayer = true;
   }
   else {
+    // TODO 1.0.0 : this should have a real error message
     internalerror(fmt::format(
         "emitter::emitDecompiled tileset.tiles.size()={}, attributesMap.size()={} did not imply a layer type",
         tileset.tiles.size(), attributesMap.size()));
@@ -346,7 +351,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   else {
     outCsv << "id,behavior" << std::endl;
   }
-  // TODO : if all elements in a row correspond to the selected defaults, skip emitting this row?
+  // TODO 1.0.0 : if all elements in a row correspond to the selected defaults, skip emitting this row?
+  // FIXME 1.0.0 : compiling porytiles-secondary-tutorial and then decompiling gives incorrect attributes.csv
   for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
@@ -568,7 +574,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
 TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
-  // TODO : test impl emitAnim should correctly emit compiled animation PNG files
+  // TODO 1.0.0 : test impl emitAnim should correctly emit compiled animation PNG files
 }
 
 TEST_CASE("emitAttributes should correctly emit metatile attributes")
@@ -745,5 +751,5 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
-  // TODO : test impl emitDecompiled should correctly emit the decompiled tileset files
+  // TODO 1.0.0 : test impl emitDecompiled should correctly emit the decompiled tileset files
 }

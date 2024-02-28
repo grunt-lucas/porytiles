@@ -812,10 +812,34 @@ struct DecompilerSourcePaths {
     return path / std::filesystem::path{"anim"};
   }
 
+  std::filesystem::path secondaryMetatilesBin() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"metatiles.bin"};
+  }
+
   std::filesystem::path secondaryAttributesBin() const
   {
     std::filesystem::path path{secondarySourcePath};
     return path / std::filesystem::path{"metatile_attributes.bin"};
+  }
+
+  std::filesystem::path secondaryTilesPng() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"tiles.png"};
+  }
+
+  std::filesystem::path secondaryPalettes() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"palettes"};
+  }
+
+  std::filesystem::path secondaryAnims() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"anim"};
   }
 
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
@@ -836,6 +860,7 @@ struct Output {
 };
 
 struct CompilerConfig {
+  // TODO 1.0.0 : refactor to remove this, global mode state too brittle
   CompilerMode mode;
   RGBA32 transparencyColor;
   bool tripleLayer;
@@ -872,6 +897,7 @@ struct CompilerConfig {
 };
 
 struct DecompilerConfig {
+  // TODO 1.0.0 : refactor to remove this, global mode state too brittle
   DecompilerMode mode;
 
   DecompilerConfig() : mode{} {}
@@ -884,6 +910,13 @@ struct CompilerContext {
   std::size_t exploredNodeCounter;
 
   CompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr}, bgrToRgba{}, exploredNodeCounter{} {}
+};
+
+struct DecompilerContext {
+  std::unique_ptr<CompiledTileset> pairedPrimaryTileset;
+  std::unique_ptr<DecompiledTileset> resultTileset;
+
+  DecompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr} {}
 };
 
 } // namespace porytiles

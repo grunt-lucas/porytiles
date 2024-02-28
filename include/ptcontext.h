@@ -22,6 +22,7 @@ struct PtContext {
   CompilerConfig compilerConfig;
   CompilerContext compilerContext;
   DecompilerConfig decompilerConfig;
+  DecompilerContext decompilerContext;
   ErrorsAndWarnings err;
 
   // Command params
@@ -31,7 +32,7 @@ struct PtContext {
   PtContext()
       : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
         compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, compilerContext{}, decompilerConfig{},
-        err{}, subcommand{}, verbose{false}
+        decompilerContext{}, err{}, subcommand{}, verbose{false}
   {
   }
 

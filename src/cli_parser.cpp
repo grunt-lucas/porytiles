@@ -32,11 +32,7 @@ void parseOptions(PtContext &ctx, int argc, char *const *argv)
 
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
-    parseSubcommandOptions(ctx, argc, argv);
-    break;
   case Subcommand::DECOMPILE_SECONDARY:
-    throw std::runtime_error{"FEATURE : support decompile-secondary command"};
-    break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
     parseSubcommandOptions(ctx, argc, argv);

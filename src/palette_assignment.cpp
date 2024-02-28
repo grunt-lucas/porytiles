@@ -116,6 +116,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
 
   std::size_t stopLimit = std::min(state.hardwarePalettes.size(), bestBranches);
   if (smartPrune) {
+    // TODO 1.0.0 : impl smart prune
     throw std::runtime_error{"TODO : impl smart prune"};
   }
   for (size_t i = 0; i < stopLimit; i++) {
@@ -257,7 +258,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
     bool sawAssignmentWithIntersection = false;
     std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), bestBranches);
     if (smartPrune) {
-      // TODO : impl smart prune feature
+      // TODO 1.0.0 : impl smart prune feature
       throw std::runtime_error{"TODO : impl smart prune"};
     }
     for (size_t i = 0; i < stopLimit; i++) {
@@ -390,7 +391,7 @@ struct AssignParams {
   bool smartPrune;
 };
 
-// TODO : add smartPrune entries once that is implemented
+// TODO 1.0.0 : add smartPrune entries once that is implemented
 static const std::array<AssignParams, 40> MATRIX{
     // DFS, 1 million iterations
     AssignParams{AssignAlgorithm::DFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 3, false},

@@ -10,7 +10,7 @@
 #include "ptcontext.h"
 #include "ptexception.h"
 
-// TODO : convert all printed quotes to use same format, i.e. `backtick quote format'
+// TODO 1.0.0 : convert all printed quotes to use same format, i.e. `backtick quote format'
 
 int main(int argc, char **argv)
 try {
