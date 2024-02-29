@@ -19,12 +19,12 @@
 #include "importer.h"
 #include "logger.h"
 #include "palette_assignment.h"
-#include "ptcontext.h"
-#include "ptexception.h"
+#include "porytiles_context.h"
+#include "porytiles_exception.h"
 #include "types.h"
 
 namespace porytiles {
-static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const RGBA32 &transparencyColor,
+static std::size_t insertRGBA(PorytilesContext &ctx, const RGBATile &rgbaFrame, const RGBA32 &transparencyColor,
                               NormalizedPalette &palette, const RGBA32 &rgba, std::size_t row, std::size_t col,
                               bool errWarn)
 {
@@ -84,7 +84,7 @@ static std::size_t insertRGBA(PtContext &ctx, const RGBATile &rgbaFrame, const R
   }
 }
 
-static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
+static NormalizedTile candidate(PorytilesContext &ctx, const RGBA32 &transparencyColor,
                                 const std::vector<RGBATile> &rgbaFrames, bool hFlip, bool vFlip, bool errWarn)
 {
   /*
@@ -113,7 +113,7 @@ static NormalizedTile candidate(PtContext &ctx, const RGBA32 &transparencyColor,
   return candidateTile;
 }
 
-static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgbaFrames)
+static NormalizedTile normalize(PorytilesContext &ctx, const std::vector<RGBATile> &rgbaFrames)
 {
   /*
    * Normalize the given tile by checking each of the 4 possible flip states, and choosing the one that comes first in
@@ -148,7 +148,7 @@ static NormalizedTile normalize(PtContext &ctx, const std::vector<RGBATile> &rgb
 }
 
 static std::pair<std::vector<IndexAndNormTile>, std::vector<NormalizedTile>>
-normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset,
+normalizeDecompTiles(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
                      const std::vector<RGBATile> &palettePrimers)
 {
   /*
@@ -205,7 +205,7 @@ normalizeDecompTiles(PtContext &ctx, const DecompiledTileset &decompiledTileset,
 }
 
 static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
-buildColorIndexMaps(PtContext &ctx, const std::vector<IndexAndNormTile> &normalizedTiles,
+buildColorIndexMaps(PorytilesContext &ctx, const std::vector<IndexAndNormTile> &normalizedTiles,
                     const std::unordered_map<BGR15, std::size_t> &primaryIndexMap,
                     const std::vector<NormalizedTile> &primerTiles)
 {
@@ -344,7 +344,7 @@ static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame,
   return gbaTile;
 }
 
-static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
+static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
                                const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                                const std::vector<ColorSet> &assignedPalsSolution)
 {
@@ -493,7 +493,7 @@ static void assignTilesPrimary(PtContext &ctx, CompiledTileset &compiled,
   }
 }
 
-static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
+static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compiled,
                                  const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                                  const std::vector<ColorSet> &primaryPaletteColorSets,
                                  const std::vector<ColorSet> &assignedPalsSolution)
@@ -658,7 +658,7 @@ static void assignTilesSecondary(PtContext &ctx, CompiledTileset &compiled,
   }
 }
 
-std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset,
+std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
                                          const std::vector<RGBATile> &palettePrimers)
 {
   /*
@@ -818,7 +818,7 @@ std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset
 
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.err.printErrors = false;
 
   porytiles::NormalizedPalette palette1{};
@@ -891,7 +891,7 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 
 TEST_CASE("candidate should return the NormalizedTile with requested flips")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -1017,7 +1017,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
 TEST_CASE("normalize should return the normal form of the given tile")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
@@ -1045,7 +1045,7 @@ TEST_CASE("normalize should return the normal form of the given tile")
 
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1111,7 +1111,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 
 TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> tilesPng{"res/tests/2x2_pattern_2.png"};
@@ -1229,7 +1229,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1284,7 +1284,7 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 
 TEST_CASE("matchNormalizedWithColorSets should return the expected data structures")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
@@ -1386,7 +1386,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   SUBCASE("It should successfully allocate a simple 2x2 tileset png")
   {
     constexpr int SOLUTION_SIZE = 2;
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 20;
@@ -1423,7 +1423,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   SUBCASE("It should successfully allocate a large, complex PNG")
   {
     constexpr int SOLUTION_SIZE = 5;
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 200;
@@ -1459,7 +1459,7 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
 
 TEST_CASE("makeTile should create the expected GBATile from the given NormalizedTile and GBAPalette")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.transparencyColor = porytiles::RGBA_MAGENTA;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
@@ -1515,7 +1515,7 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
 
 TEST_CASE("compile simple example should perform as expected")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.primaryExploredNodeCutoff = 5;
@@ -1590,7 +1590,7 @@ TEST_CASE("compile simple example should perform as expected")
 
 TEST_CASE("compile function should fill out primary CompiledTileset struct with expected values")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -1728,7 +1728,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
 
 TEST_CASE("compile function should fill out secondary CompiledTileset struct with expected values")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -1889,7 +1889,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 
 TEST_CASE("compile function should correctly compile primary set with animated tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -2100,7 +2100,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
 TEST_CASE("compile function should correctly compile secondary set with animated tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;

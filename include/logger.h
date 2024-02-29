@@ -9,20 +9,21 @@
 #include <fmt/color.h>
 
 #include "build_version.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
 
 template <typename... T>
-void pt_logln(const PtContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
+void pt_logln(const PorytilesContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
   if (ctx.verbose) {
     fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
   }
 }
 
-template <typename... T> void pt_log(const PtContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
+template <typename... T>
+void pt_log(const PorytilesContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
   if (ctx.verbose) {
     fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));

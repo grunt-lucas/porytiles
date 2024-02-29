@@ -7,12 +7,12 @@
 
 #include "compiler.h"
 #include "importer.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
 
-static RGBATile makeTile(const GBATile &gbaTile, const GBAPalette &palette, bool hFlip, bool vFlip)
+static RGBATile setTilePixels(const GBATile &gbaTile, const GBAPalette &palette, bool hFlip, bool vFlip)
 {
   RGBATile rgbTile{};
   for (std::size_t row = 0; row < TILE_SIDE_LENGTH; row++) {
@@ -26,7 +26,27 @@ static RGBATile makeTile(const GBATile &gbaTile, const GBAPalette &palette, bool
   return rgbTile;
 }
 
-std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTileset &compiledTileset)
+static RGBATile createDecompiledTile(PorytilesContext &ctx, const std::vector<GBATile> &tiles, std::size_t tileIndex,
+                              const std::vector<GBAPalette> &palettes, std::size_t paletteIndex, const Attributes &attributes, bool hFlip, bool vFlip)
+{
+  RGBATile decompiledTile{};
+  const GBATile &gbaTile = tiles.at(tileIndex);
+  decompiledTile = setTilePixels(gbaTile, palettes.at(paletteIndex), hFlip, vFlip);
+  decompiledTile.attributes = attributes;
+  return decompiledTile;
+}
+
+std::unique_ptr<DecompiledTileset> decompile2(PorytilesContext &ctx, const CompiledTileset &compiledTileset)
+{
+  auto decompiled = std::make_unique<DecompiledTileset>();
+
+  for (const auto &assignment : compiledTileset.assignments) {
+  }
+
+  return decompiled;
+}
+
+std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, const CompiledTileset &compiledTileset)
 {
   auto decompiled = std::make_unique<DecompiledTileset>();
 
@@ -49,15 +69,13 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
       if (ctx.decompilerConfig.mode == DecompilerMode::SECONDARY) {
         const GBATile &gbaTile = ctx.decompilerContext.pairedPrimaryTileset->tiles.at(0);
         // TODO 1.0.0 : handle correctly grabbing from primary palettes
-        RGBATile rgbTile =
-            makeTile(gbaTile, compiledTileset.palettes.at(0), assignment.hFlip, assignment.vFlip);
+        RGBATile rgbTile = setTilePixels(gbaTile, compiledTileset.palettes.at(0), assignment.hFlip, assignment.vFlip);
         rgbTile.attributes = assignment.attributes;
         decompiled->tiles.push_back(rgbTile);
       }
       else {
         const GBATile &gbaTile = compiledTileset.tiles.at(0);
-        RGBATile rgbTile =
-            makeTile(gbaTile, compiledTileset.palettes.at(0), assignment.hFlip, assignment.vFlip);
+        RGBATile rgbTile = setTilePixels(gbaTile, compiledTileset.palettes.at(0), assignment.hFlip, assignment.vFlip);
         rgbTile.attributes = assignment.attributes;
         decompiled->tiles.push_back(rgbTile);
       }
@@ -66,7 +84,7 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
       const GBATile &gbaTile = srcTiles.at(tileIndex);
       // TODO 1.0.0 : handle correctly grabbing from primary palettes if this a secondary tileset
       RGBATile rgbTile =
-          makeTile(gbaTile, compiledTileset.palettes.at(assignment.paletteIndex), assignment.hFlip, assignment.vFlip);
+          setTilePixels(gbaTile, compiledTileset.palettes.at(assignment.paletteIndex), assignment.hFlip, assignment.vFlip);
       rgbTile.attributes = assignment.attributes;
       decompiled->tiles.push_back(rgbTile);
     }
@@ -81,7 +99,7 @@ std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTiles
 
 TEST_CASE("decompile should decompile a basic primary tileset")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 6;
   ctx.fieldmapConfig.numPalettesTotal = 13;
   ctx.fieldmapConfig.numTilesInPrimary = 512;
@@ -111,7 +129,7 @@ TEST_CASE("decompile should decompile a basic primary tileset")
 
 TEST_CASE("decompile should decompile a basic secondary tileset")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 6;
   ctx.fieldmapConfig.numPalettesTotal = 13;
   ctx.fieldmapConfig.numTilesInPrimary = 512;

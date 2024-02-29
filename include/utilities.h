@@ -9,7 +9,7 @@
 #include <fmt/color.h>
 
 #include "errors_warnings.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
@@ -40,7 +40,7 @@ std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, con
 
 std::filesystem::path createTmpdir();
 
-RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine);
+RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine);
 
 } // namespace porytiles
 

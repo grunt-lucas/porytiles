@@ -6,11 +6,11 @@
 #include <vector>
 
 #include "logger.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
-AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
+AssignResult assignDepthFirst(PorytilesContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                               const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
                               const std::vector<ColorSet> &unassignedPrimers)
 {
@@ -158,7 +158,7 @@ AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<Co
   return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
+AssignResult assignBreadthFirst(PorytilesContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
                                 const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers)
 {
@@ -298,7 +298,7 @@ AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::
   return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-static auto tryAssignment(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+static auto tryAssignment(PorytilesContext &ctx, const std::vector<ColorSet> &colorSets,
                           const std::vector<ColorSet> &primerColorSets,
                           const std::unordered_map<BGR15, std::size_t> &colorToIndex, bool printErrors)
 {
@@ -427,7 +427,7 @@ static const std::array<AssignParams, 40> MATRIX{
     AssignParams{AssignAlgorithm::BFS, 8'000'000, 6, false}};
 
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
-runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+runPaletteAssignmentMatrix(PorytilesContext &ctx, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex)
 {

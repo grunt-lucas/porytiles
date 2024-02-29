@@ -21,14 +21,14 @@
 #include "emitter.h"
 #include "errors_warnings.h"
 #include "logger.h"
-#include "ptcontext.h"
-#include "ptexception.h"
+#include "porytiles_context.h"
+#include "porytiles_exception.h"
 #include "types.h"
 #include "utilities.h"
 
 namespace porytiles {
 
-DecompiledTileset importTilesFromPng(PtContext &ctx, const png::image<png::rgba_pixel> &png)
+DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH != 0) {
     error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
@@ -82,7 +82,7 @@ static std::bitset<3> getLayerBitset(const RGBA32 &transparentColor, const RGBAT
   return layers;
 }
 
-static LayerType layerBitsetToLayerType(PtContext &ctx, std::bitset<3> layerBitset, std::size_t metatileIndex)
+static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> layerBitset, std::size_t metatileIndex)
 {
   bool bottomHasContent = layerBitset.test(0);
   bool middleHasContent = layerBitset.test(1);
@@ -116,7 +116,7 @@ static LayerType layerBitsetToLayerType(PtContext &ctx, std::bitset<3> layerBits
   return LayerType::SPLIT;
 }
 
-DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
+DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
                                              const std::unordered_map<std::size_t, Attributes> &attributesMap,
                                              const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
@@ -376,7 +376,7 @@ DecompiledTileset importLayeredTilesFromPngs(PtContext &ctx,
   return decompiledTiles;
 }
 
-void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
+void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
                      DecompiledTileset &tiles)
 {
   std::vector<DecompiledAnimation> anims{};
@@ -450,7 +450,7 @@ void importAnimTiles(PtContext &ctx, const std::vector<std::vector<AnimationPng<
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeader(PtContext &ctx, std::ifstream &behaviorFile)
+importMetatileBehaviorHeader(PorytilesContext &ctx, std::ifstream &behaviorFile)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
@@ -498,7 +498,7 @@ importMetatileBehaviorHeader(PtContext &ctx, std::ifstream &behaviorFile)
 }
 
 std::unordered_map<std::size_t, Attributes>
-importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                         const std::string &filePath)
 {
   std::unordered_map<std::size_t, Attributes> attributeMap{};
@@ -650,7 +650,7 @@ importAttributesFromCsv(PtContext &ctx, const std::unordered_map<std::string, st
   return attributeMap;
 }
 
-static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std::string assignCachePath)
+static void runAssignmentConfigImport(PorytilesContext &ctx, std::ifstream &config, std::string assignCachePath)
 {
   std::string line;
   std::size_t processedUpToLine = 1;
@@ -744,7 +744,7 @@ static void runAssignmentConfigImport(PtContext &ctx, std::ifstream &config, std
   }
 }
 
-void importPrimaryAssignmentCache(PtContext &ctx, std::ifstream &config)
+void importPrimaryAssignmentCache(PorytilesContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
       ctx.compilerConfig.providedPrimaryAssignCacheOverride) {
@@ -768,7 +768,7 @@ void importPrimaryAssignmentCache(PtContext &ctx, std::ifstream &config)
   ctx.compilerConfig.readPrimaryAssignCache = true;
 }
 
-void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &config)
+void importSecondaryAssignmentConfigParameters(PorytilesContext &ctx, std::ifstream &config)
 {
   if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       ctx.compilerConfig.providedAssignCacheOverride) {
@@ -783,12 +783,12 @@ void importSecondaryAssignmentConfigParameters(PtContext &ctx, std::ifstream &co
   ctx.compilerConfig.readSecondaryAssignCache = true;
 }
 
-static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
-                                                      const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles)
+static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx,
+                                                      const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles)
 {
   std::vector<GBAPalette> palettes{};
 
-  for (std::shared_ptr<std::ifstream> stream : paletteFiles) {
+  for (const std::unique_ptr<std::ifstream> &stream : paletteFiles) {
     std::string line;
 
     /*
@@ -846,7 +846,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PtContext &ctx,
   return palettes;
 }
 
-static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image<png::index_pixel> &tiles)
+static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png::image<png::index_pixel> &tiles)
 {
   std::vector<GBATile> gbaTiles{};
 
@@ -869,7 +869,7 @@ static std::vector<GBATile> importCompiledTiles(PtContext &ctx, const png::image
 }
 
 static std::vector<Assignment>
-importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
+importCompiledMetatiles(PorytilesContext &ctx, std::ifstream &metatilesBin,
                         std::unordered_map<std::size_t, Attributes> &attributesMap,
                         const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
@@ -941,7 +941,7 @@ importCompiledMetatiles(PtContext &ctx, std::ifstream &metatilesBin,
 }
 
 static std::unordered_map<std::size_t, Attributes>
-importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttributesBin)
+importCompiledMetatileAttributes(PorytilesContext &ctx, std::ifstream &metatileAttributesBin)
 {
   std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
@@ -989,7 +989,8 @@ importCompiledMetatileAttributes(PtContext &ctx, std::ifstream &metatileAttribut
 }
 
 static std::vector<CompiledAnimation>
-importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims)
+importCompiledAnimations(PorytilesContext &ctx,
+                         const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims)
 {
   std::vector<CompiledAnimation> anims{};
   for (const auto &rawAnim : rawAnims) {
@@ -1056,10 +1057,10 @@ importCompiledAnimations(PtContext &ctx, const std::vector<std::vector<Animation
 }
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
-importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+importCompiledTileset(PorytilesContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
-                      const std::vector<std::shared_ptr<std::ifstream>> &paletteFiles,
+                      const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
 {
   CompiledTileset tileset{};
@@ -1079,7 +1080,7 @@ importCompiledTileset(PtContext &ctx, std::ifstream &metatiles, std::ifstream &a
   return {tileset, attributesMap};
 }
 
-RGBATile importPalettePrimer(PtContext &ctx, std::ifstream &paletteFile)
+RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
 {
   RGBATile primerTile{};
   primerTile.type = TileType::PRIMER;
@@ -1152,7 +1153,7 @@ RGBATile importPalettePrimer(PtContext &ctx, std::ifstream &paletteFile)
 TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset in tile-wise left-to-right, "
           "top-to-bottom order")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_1.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
 
@@ -1197,7 +1198,7 @@ TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset i
 
 TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a DecompiledTileset in correct metatile order")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/middle.png"}));
@@ -1279,7 +1280,7 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
 
 TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow"}));
 
@@ -1473,7 +1474,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
 
 TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset via layer type inference")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.tripleLayer = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/dual_layer_metatiles_1/bottom.png"}));
@@ -1570,7 +1571,7 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
 
 TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -1593,7 +1594,7 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
 
 TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -1636,7 +1637,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
 
 TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tileset correctly")
 {
-  porytiles::PtContext compileCtx{};
+  porytiles::PorytilesContext compileCtx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   compileCtx.output.path = parentDir;
   compileCtx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -1651,13 +1652,13 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   compileCtx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
   porytiles::drive(compileCtx);
 
-  porytiles::PtContext decompileCtx{};
+  porytiles::PorytilesContext decompileCtx{};
   decompileCtx.decompilerSrcPaths.primarySourcePath = parentDir;
 
   std::ifstream metatiles{decompileCtx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
   std::ifstream attributes{decompileCtx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{decompileCtx.decompilerSrcPaths.primaryTilesPng()};
-  std::vector<std::shared_ptr<std::ifstream>> paletteFiles{};
+  std::vector<std::unique_ptr<std::ifstream>> paletteFiles{};
   for (std::size_t index = 0; index < decompileCtx.fieldmapConfig.numPalettesTotal; index++) {
     std::ostringstream filename;
     if (index < 10) {
@@ -1665,7 +1666,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     }
     filename << index << ".pal";
     std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
-    paletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+    paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
   // TODO 1.0.0 : actually test anims import
   auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
@@ -1674,7 +1675,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   metatiles.close();
   attributes.close();
   std::for_each(paletteFiles.begin(), paletteFiles.end(),
-                [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
+                [](const std::unique_ptr<std::ifstream> &stream) { stream->close(); });
 
   CHECK((compileCtx.compilerContext.resultTileset)->tiles.size() == importedTileset.tiles.size());
   CHECK((compileCtx.compilerContext.resultTileset)->tiles == importedTileset.tiles);

@@ -16,16 +16,16 @@
 #include "errors_warnings.h"
 #include "logger.h"
 #include "palette_assignment.h"
-#include "ptexception.h"
+#include "porytiles_exception.h"
 #include "utilities.h"
 
 namespace porytiles {
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv);
-static void parseSubcommand(PtContext &ctx, int argc, char *const *argv);
-static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv);
+static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
+static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv);
+static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
-void parseOptions(PtContext &ctx, int argc, char *const *argv)
+void parseOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   parseGlobalOptions(ctx, argc, argv);
   parseSubcommand(ctx, argc, argv);
@@ -188,7 +188,7 @@ VERSION_DESC + "\n"
 // @formatter:on
 // clang-format on
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
+static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -233,7 +233,7 @@ const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
 const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
 const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
-static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
+static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
 {
   if ((argc - optind) == 0) {
     fatalerror(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
@@ -377,7 +377,7 @@ WERROR_DESC + "\n";
 /*
  * FIXME : the warning parsing system here is a dumpster fire
  */
-static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
+static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -1148,7 +1148,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
   // These tests are full of disgusting and evil hacks, avert your gaze
   SUBCASE("Check that the defaults are correct")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1174,7 +1174,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("-Wall should enable everything")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1203,7 +1203,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("-Wall -Werror should enable everything as an error")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1235,7 +1235,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Should enable a non-default warn, set all to error, then disable the error")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1270,7 +1270,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Should enable all warnings, then disable one of them")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1302,7 +1302,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Global warning disable should work, even if a warning was explicitly enabled")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;

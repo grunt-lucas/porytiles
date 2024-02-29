@@ -17,13 +17,13 @@
 #include "emitter.h"
 #include "importer.h"
 #include "logger.h"
-#include "ptcontext.h"
-#include "ptexception.h"
+#include "porytiles_context.h"
+#include "porytiles_exception.h"
 #include "utilities.h"
 
 namespace porytiles {
 
-static void validateCompileInputs(PtContext &ctx)
+static void validateCompileInputs(PorytilesContext &ctx)
 {
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
     fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
@@ -148,7 +148,7 @@ static void validateCompileInputs(PtContext &ctx)
   }
 }
 
-static void validateDecompileInputs(PtContext &ctx)
+static void validateDecompileInputs(PorytilesContext &ctx)
 {
   // FIXME 1.0.0 : decompileConfig.mode here will be incorrect for secondary decompilation
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
@@ -218,7 +218,7 @@ static void validateDecompileInputs(PtContext &ctx)
   }
 }
 
-static void validateCompileOutputs(PtContext &ctx, std::filesystem::path &attributesPath,
+static void validateCompileOutputs(PorytilesContext &ctx, std::filesystem::path &attributesPath,
                                    std::filesystem::path &tilesetPath, std::filesystem::path &metatilesPath,
                                    std::filesystem::path &palettesPath, std::filesystem::path &animsPath)
 {
@@ -259,7 +259,7 @@ static void validateCompileOutputs(PtContext &ctx, std::filesystem::path &attrib
   }
 }
 
-static void validateDecompileOutputs(PtContext &ctx, std::filesystem::path &outputPath,
+static void validateDecompileOutputs(PorytilesContext &ctx, std::filesystem::path &outputPath,
                                      std::filesystem::path &attributesPath, std::filesystem::path &bottomPath,
                                      std::filesystem::path &middlePath, std::filesystem::path &topPath)
 {
@@ -292,7 +292,7 @@ static void validateDecompileOutputs(PtContext &ctx, std::filesystem::path &outp
 }
 
 static std::vector<std::vector<AnimationPng<png::index_pixel>>>
-prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
+prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
 {
   std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
 
@@ -362,7 +362,7 @@ prepareCompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPat
 }
 
 static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
-prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationPath)
+prepareDecompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
 {
   std::vector<std::vector<AnimationPng<png::rgba_pixel>>> animations{};
 
@@ -445,7 +445,8 @@ prepareDecompiledAnimsForImport(PtContext &ctx, std::filesystem::path animationP
 }
 
 static std::unordered_map<std::size_t, Attributes>
-prepareDecompiledAttributesForImport(PtContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
+prepareDecompiledAttributesForImport(PorytilesContext &ctx,
+                                     const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                                      std::filesystem::path attributesCsvPath)
 {
   pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
@@ -459,7 +460,7 @@ prepareDecompiledAttributesForImport(PtContext &ctx, const std::unordered_map<st
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-prepareBehaviorsHeaderForImport(PtContext &ctx, std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, std::string behaviorHeaderPath)
 {
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
@@ -493,7 +494,8 @@ prepareBehaviorsHeaderForImport(PtContext &ctx, std::string behaviorHeaderPath)
   return std::pair{behaviorMap, behaviorReverseMap};
 }
 
-static std::vector<RGBATile> preparePalettePrimersForImport(PtContext &ctx, std::filesystem::path palettePrimersPath)
+static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ctx,
+                                                            std::filesystem::path palettePrimersPath)
 {
   std::vector<RGBATile> primerTiles{};
 
@@ -524,7 +526,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PtContext &ctx, std:
   return primerTiles;
 }
 
-static void emitCompiledPalettes(PtContext &ctx, const CompiledTileset &compiledTiles,
+static void emitCompiledPalettes(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
                                  const std::filesystem::path &palettesPath)
 {
   for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
@@ -542,7 +544,7 @@ static void emitCompiledPalettes(PtContext &ctx, const CompiledTileset &compiled
   }
 }
 
-static void emitCompiledTiles(PtContext &ctx, const CompiledTileset &compiledTiles,
+static void emitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
                               const std::filesystem::path &tilesetPath)
 {
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
@@ -554,7 +556,7 @@ static void emitCompiledTiles(PtContext &ctx, const CompiledTileset &compiledTil
   tilesPng.write(tilesetPath);
 }
 
-static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
+static void emitCompiledAnims(PorytilesContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
                               const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
   for (const auto &compiledAnim : compiledAnims) {
@@ -576,7 +578,7 @@ static void emitCompiledAnims(PtContext &ctx, const std::vector<CompiledAnimatio
   }
 }
 
-static void emitAssignCache(PtContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
+static void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
 {
   std::ofstream outAssignCache{assignCfgPath.string()};
   if (outAssignCache.good()) {
@@ -589,7 +591,7 @@ static void emitAssignCache(PtContext &ctx, const CompilerMode &mode, const std:
   outAssignCache.close();
 }
 
-static void driveDecompile(PtContext &ctx)
+static void driveDecompile(PorytilesContext &ctx)
 {
   validateDecompileInputs(ctx);
 
@@ -608,7 +610,7 @@ static void driveDecompile(PtContext &ctx)
   std::ifstream primaryMetatiles{ctx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
   std::ifstream primaryAttributes{ctx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
   png::image<png::index_pixel> primaryTilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
-  std::vector<std::shared_ptr<std::ifstream>> primaryPaletteFiles{};
+  std::vector<std::unique_ptr<std::ifstream>> primaryPaletteFiles{};
   for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
     std::ostringstream filename;
     if (index < 10) {
@@ -620,7 +622,7 @@ static void driveDecompile(PtContext &ctx)
       fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                  fmt::format("{}: file did not exist", paletteFile.string()));
     }
-    primaryPaletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+    primaryPaletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
   auto compiledPrimaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.primaryAnims());
 
@@ -637,7 +639,7 @@ static void driveDecompile(PtContext &ctx)
   primaryMetatiles.close();
   primaryAttributes.close();
   std::for_each(primaryPaletteFiles.begin(), primaryPaletteFiles.end(),
-                [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
+                [](const std::unique_ptr<std::ifstream> &stream) { stream->close(); });
 
   /*
    * Decompile the compiled primary tiles
@@ -653,7 +655,7 @@ static void driveDecompile(PtContext &ctx)
     std::ifstream secondaryMetatiles{ctx.decompilerSrcPaths.secondaryMetatilesBin(), std::ios::binary};
     std::ifstream secondaryAttributes{ctx.decompilerSrcPaths.secondaryAttributesBin(), std::ios::binary};
     png::image<png::index_pixel> secondaryTilesheetPng{ctx.decompilerSrcPaths.secondaryTilesPng()};
-    std::vector<std::shared_ptr<std::ifstream>> secondaryPaletteFiles{};
+    std::vector<std::unique_ptr<std::ifstream>> secondaryPaletteFiles{};
     for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
       std::ostringstream filename;
       if (index < 10) {
@@ -665,7 +667,7 @@ static void driveDecompile(PtContext &ctx)
         fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
                    fmt::format("{}: file did not exist", paletteFile.string()));
       }
-      secondaryPaletteFiles.push_back(std::make_shared<std::ifstream>(paletteFile));
+      secondaryPaletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
     }
     auto compiledSecondaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.secondaryAnims());
 
@@ -682,7 +684,7 @@ static void driveDecompile(PtContext &ctx)
     secondaryMetatiles.close();
     secondaryAttributes.close();
     std::for_each(secondaryPaletteFiles.begin(), secondaryPaletteFiles.end(),
-                  [](std::shared_ptr<std::ifstream> stream) { stream->close(); });
+                  [](const std::unique_ptr<std::ifstream> &stream) { stream->close(); });
 
     /*
      * Decompile the compiled secondary tiles
@@ -722,7 +724,7 @@ static void driveDecompile(PtContext &ctx)
   topPrimaryPng.write(topPath);
 }
 
-static void driveCompile(PtContext &ctx)
+static void driveCompile(PorytilesContext &ctx)
 {
   /*
    * Checks that the compiler input folder contents exist as expected.
@@ -934,7 +936,7 @@ static void driveCompile(PtContext &ctx)
   }
 }
 
-void drive(PtContext &ctx)
+void drive(PorytilesContext &ctx)
 {
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
@@ -954,7 +956,7 @@ void drive(PtContext &ctx)
 
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -1177,7 +1179,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary set")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;

@@ -1,5 +1,5 @@
-#ifndef PORYTILES_PT_CONTEXT_H
-#define PORYTILES_PT_CONTEXT_H
+#ifndef PORYTILES_PORYTILES_CONTEXT_H
+#define PORYTILES_PORYTILES_CONTEXT_H
 
 #include <cstddef>
 #include <filesystem>
@@ -8,12 +8,12 @@
 #include <string>
 
 #include "errors_warnings.h"
-#include "ptexception.h"
+#include "porytiles_exception.h"
 #include "types.h"
 
 namespace porytiles {
 
-struct PtContext {
+struct PorytilesContext {
   TargetBaseGame targetBaseGame;
   FieldmapConfig fieldmapConfig;
   CompilerSourcePaths compilerSrcPaths;
@@ -29,7 +29,7 @@ struct PtContext {
   Subcommand subcommand;
   bool verbose;
 
-  PtContext()
+  PorytilesContext()
       : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
         compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, compilerContext{}, decompilerConfig{},
         decompilerContext{}, err{}, subcommand{}, verbose{false}
@@ -55,4 +55,4 @@ struct PtContext {
 
 } // namespace porytiles
 
-#endif // PORYTILES_PT_CONTEXT_H
+#endif // PORYTILES_PORYTILES_CONTEXT_H

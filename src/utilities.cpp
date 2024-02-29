@@ -12,7 +12,7 @@
 #include <string>
 
 #include "logger.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
@@ -68,7 +68,7 @@ std::filesystem::path createTmpdir()
   return path;
 }
 
-RGBA32 parseJascLine(PtContext &ctx, const std::string &jascLine)
+RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
 {
   std::vector<std::string> colorComponents = split(jascLine, " ");
   if (colorComponents.size() != 3) {

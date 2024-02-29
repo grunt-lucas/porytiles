@@ -5,7 +5,7 @@
 #include <memory>
 #include <tuple>
 
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 /**
@@ -27,7 +27,7 @@ extern std::size_t gPaletteAssignCutoffCounter;
 /**
  * TODO : fill in doc comments
  */
-std::unique_ptr<CompiledTileset> compile(PtContext &ctx, const DecompiledTileset &decompiledTileset,
+std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
                                          const std::vector<RGBATile> &palettePrimers);
 
 } // namespace porytiles
