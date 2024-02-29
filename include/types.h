@@ -126,10 +126,12 @@ std::string tileTypeString(TileType type);
 enum class TileLayer { BOTTOM, MIDDLE, TOP };
 
 std::string layerString(TileLayer layer);
+TileLayer indexToLayer(std::size_t index, bool tripleLayer);
 
 enum class Subtile { NORTHWEST = 0, NORTHEAST = 1, SOUTHWEST = 2, SOUTHEAST = 3 };
 
 std::string subtileString(Subtile subtile);
+Subtile indexToSubtile(std::size_t index);
 
 // Normal = Middle/Top
 // Covered = Bottom/Middle
@@ -339,7 +341,7 @@ struct GBAPalette {
  * A tile assignment, i.e. the representation of a tile within a metatile. Maps a given tile index to a hardware palette
  * index and the corresponding flips.
  */
-// TODO : refactor name of this variable to MetatileEntry
+// TODO 1.0.0 : refactor name of this variable to MetatileEntry
 struct Assignment {
   std::size_t tileIndex;
   std::size_t paletteIndex;
@@ -398,6 +400,16 @@ struct CompiledTileset {
       : tiles{}, paletteIndexesOfTile{}, palettes{}, assignments{}, colorIndexMap{}, tileIndexes{}, anims{}
   {
   }
+
+  std::unordered_map<std::size_t, Attributes> generateAttributesMap(bool tripleLayer) const
+  {
+    std::unordered_map<std::size_t, Attributes> attributes{};
+    for (std::size_t assignmentIndex = 0; const auto &assignment : assignments) {
+      attributes.insert(std::pair{assignmentIndex / (tripleLayer ? 12 : 8), assignment.attributes});
+      assignmentIndex++;
+    }
+    return attributes;
+  }
 };
 
 /**
@@ -444,6 +456,8 @@ struct DecompiledTileset {
    * RGBA metatile sheet. The compiler will automatically link it to one of the anim tiles at the start of tiles.png
    */
   std::vector<DecompiledAnimation> anims;
+
+  bool tripleLayer;
 };
 
 /*
@@ -626,8 +640,14 @@ enum class AssignAlgorithm { DFS, BFS };
 
 enum class DecompilerMode { PRIMARY, SECONDARY };
 
+/*
+ * TODO 1.0.0 : combine CompilerMode and DecompilerMode into a single type: CompilationMode
+ * Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
+ */
+
 std::string compilerModeString(CompilerMode mode);
 std::string assignAlgorithmString(AssignAlgorithm algo);
+std::string decompilerModeString(DecompilerMode mode);
 
 struct FieldmapConfig {
   // Fieldmap params
@@ -843,7 +863,11 @@ struct DecompilerSourcePaths {
   }
 
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedTilesPath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedMetatilesPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedAttrPath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedPalettePath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedAnimPath(DecompilerMode mode) const;
 };
 
 struct Output {
@@ -860,7 +884,10 @@ struct Output {
 };
 
 struct CompilerConfig {
-  // TODO 1.0.0 : refactor to remove this, global mode state too brittle
+  /*
+   * TODO 1.0.0 : refactor mode handling - instead of it being a global state we set, it should be a parameter that
+   * the caller must pass into any function that has mode-based functionality
+   */
   CompilerMode mode;
   RGBA32 transparencyColor;
   bool tripleLayer;
@@ -897,10 +924,9 @@ struct CompilerConfig {
 };
 
 struct DecompilerConfig {
-  // TODO 1.0.0 : refactor to remove this, global mode state too brittle
-  DecompilerMode mode;
-
-  DecompilerConfig() : mode{} {}
+  bool normalizeTransparency;
+  RGBA32 normalizeTransparencyColor;
+  DecompilerConfig() : normalizeTransparency{false}, normalizeTransparencyColor{RGBA_MAGENTA} {}
 };
 
 struct CompilerContext {

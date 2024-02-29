@@ -17,7 +17,7 @@ namespace porytiles {
 template <typename T> T parseInteger(const char *integerString)
 {
   try {
-    size_t pos;
+    std::size_t pos;
     T arg = std::stoi(integerString, &pos, 0);
     if (std::string{integerString}.size() != pos) {
       // throw here so it catches below and prints an error message
@@ -40,7 +40,11 @@ std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, con
 
 std::filesystem::path createTmpdir();
 
-RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine);
+RGBA32 parseJascLine(PorytilesContext &ctx, DecompilerMode mode, const std::string &jascLine);
+
+void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
+
+void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
 
 } // namespace porytiles
 

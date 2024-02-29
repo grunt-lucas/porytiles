@@ -148,71 +148,45 @@ static void validateCompileInputs(PorytilesContext &ctx)
   }
 }
 
-static void validateDecompileInputs(PorytilesContext &ctx)
+static void validateDecompileInputs(PorytilesContext &ctx, DecompilerMode mode)
 {
-  // FIXME 1.0.0 : decompileConfig.mode here will be incorrect for secondary decompilation
   if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("{}: exists but is not a directory", ctx.output.path));
   }
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    // FIXME 1.0.0 : decompileConfig.mode here will be incorrect for secondary decompilation
-    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondarySourcePath) ||
-        !std::filesystem::is_directory(ctx.decompilerSrcPaths.secondarySourcePath)) {
-      fatalerror_invalidSourcePath(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                                   ctx.decompilerSrcPaths.secondarySourcePath);
-    }
-    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryMetatilesBin())) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryMetatilesBin().string()));
-    }
-    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryAttributesBin())) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryAttributesBin().string()));
-    }
-    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryTilesPng())) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.secondaryTilesPng().string()));
-    }
-    if (!std::filesystem::exists(ctx.decompilerSrcPaths.secondaryPalettes())) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.secondaryPalettes().string()));
-    }
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedSrcPath(mode)) ||
+      !std::filesystem::is_directory(ctx.decompilerSrcPaths.modeBasedSrcPath(mode))) {
+    fatalerror_invalidSourcePath(ctx.err, ctx.decompilerSrcPaths, mode);
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.primarySourcePath) ||
-      !std::filesystem::is_directory(ctx.decompilerSrcPaths.primarySourcePath)) {
-    fatalerror_invalidSourcePath(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                                 ctx.decompilerSrcPaths.primarySourcePath);
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryMetatilesBin())) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryMetatilesBin().string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedAttrPath(mode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedAttrPath(mode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryAttributesBin())) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryAttributesBin().string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedTilesPath(mode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(mode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryTilesPng())) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.primaryTilesPng().string()));
-  }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.primaryPalettes())) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.primaryPalettes().string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedPalettePath(mode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.modeBasedPalettePath(mode).string()));
   }
 
   try {
     // We do this here so if the source is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(mode)};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.decompilerSrcPaths.primaryTilesPng().string()));
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{} is not a valid PNG file", ctx.decompilerSrcPaths.modeBasedTilesPath(mode).string()));
   }
 
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.metatileBehaviors) ||
       !std::filesystem::is_regular_file(ctx.decompilerSrcPaths.metatileBehaviors)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("{}: behaviors header did not exist or was not a regular file",
                            ctx.decompilerSrcPaths.metatileBehaviors));
   }
@@ -259,24 +233,24 @@ static void validateCompileOutputs(PorytilesContext &ctx, std::filesystem::path 
   }
 }
 
-static void validateDecompileOutputs(PorytilesContext &ctx, std::filesystem::path &outputPath,
+static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode, std::filesystem::path &outputPath,
                                      std::filesystem::path &attributesPath, std::filesystem::path &bottomPath,
                                      std::filesystem::path &middlePath, std::filesystem::path &topPath)
 {
   if (std::filesystem::exists(attributesPath) && !std::filesystem::is_regular_file(attributesPath)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("'{}' exists in output directory but is not a file", attributesPath.string()));
   }
   if (std::filesystem::exists(bottomPath) && !std::filesystem::is_regular_file(bottomPath)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("'{}' exists in output directory but is not a file", bottomPath.string()));
   }
   if (std::filesystem::exists(middlePath) && !std::filesystem::is_regular_file(middlePath)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("'{}' exists in output directory but is not a file", middlePath.string()));
   }
   if (std::filesystem::exists(topPath) && !std::filesystem::is_regular_file(topPath)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                fmt::format("'{}' exists in output directory but is not a file", topPath.string()));
   }
 
@@ -285,7 +259,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, std::filesystem::pat
       std::filesystem::create_directories(outputPath);
     }
     catch (const std::exception &e) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  fmt::format("could not create '{}': {}", outputPath.string(), e.what()));
     }
   }
@@ -460,8 +434,9 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx,
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-prepareBehaviorsHeaderForImport(PorytilesContext &ctx, std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, DecompilerMode mode, std::string behaviorHeaderPath)
 {
+  // FIXME 1.0.0 : this function is a mess, mixing DecompilerMode and CompilerMode paradigms
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -469,7 +444,7 @@ prepareBehaviorsHeaderForImport(PorytilesContext &ctx, std::string behaviorHeade
                  fmt::format("{}: could not open for reading", behaviorHeaderPath));
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  fmt::format("{}: could not open for reading", behaviorHeaderPath));
     }
     else {
@@ -484,7 +459,7 @@ prepareBehaviorsHeaderForImport(PorytilesContext &ctx, std::string behaviorHeade
                  fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
     }
     else {
@@ -526,8 +501,8 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
   return primerTiles;
 }
 
-static void emitCompiledPalettes(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
-                                 const std::filesystem::path &palettesPath)
+static void driveEmitCompiledPalettes(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
+                                      const std::filesystem::path &palettesPath)
 {
   for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
     std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
@@ -544,8 +519,8 @@ static void emitCompiledPalettes(PorytilesContext &ctx, const CompiledTileset &c
   }
 }
 
-static void emitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
-                              const std::filesystem::path &tilesetPath)
+static void driveEmitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
+                                   const std::filesystem::path &tilesetPath)
 {
   const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
@@ -556,8 +531,8 @@ static void emitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &comp
   tilesPng.write(tilesetPath);
 }
 
-static void emitCompiledAnims(PorytilesContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
-                              const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
+static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
+                                   const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
 {
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
@@ -578,7 +553,8 @@ static void emitCompiledAnims(PorytilesContext &ctx, const std::vector<CompiledA
   }
 }
 
-static void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, const std::filesystem::path &assignCfgPath)
+static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode &mode,
+                                 const std::filesystem::path &assignCfgPath)
 {
   std::ofstream outAssignCache{assignCfgPath.string()};
   if (outAssignCache.good()) {
@@ -591,137 +567,152 @@ static void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, con
   outAssignCache.close();
 }
 
-static void driveDecompile(PorytilesContext &ctx)
+static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mode, const DecompiledTileset &tileset,
+                                       const std::unordered_map<size_t, Attributes> &attributesMap,
+                                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
-  validateDecompileInputs(ctx);
+  std::filesystem::path outputPath(ctx.output.path);
+  std::filesystem::path attributesCsvPath("attributes.csv");
+  std::filesystem::path bottomPngPath("bottom.png");
+  std::filesystem::path middlePngPath("middle.png");
+  std::filesystem::path topPngPath("top.png");
+  std::filesystem::path attributesPath = ctx.output.path / attributesCsvPath;
+  std::filesystem::path bottomPath = ctx.output.path / bottomPngPath;
+  std::filesystem::path middlePath = ctx.output.path / middlePngPath;
+  std::filesystem::path topPath = ctx.output.path / topPngPath;
 
-  /*
-   * Import behavior header, if it was supplied
-   */
-  auto [behaviorMap, behaviorReverseMap] =
-      prepareBehaviorsHeaderForImport(ctx, ctx.decompilerSrcPaths.metatileBehaviors);
+  validateDecompileOutputs(ctx, mode, outputPath, attributesPath, bottomPath, middlePath, topPath);
 
-  pt_logln(ctx, stderr, "importing primary compiled tileset from {}", ctx.decompilerSrcPaths.primarySourcePath);
-  ctx.decompilerConfig.mode = DecompilerMode::PRIMARY;
+  std::ostringstream outAttributesContent{};
+  std::size_t metatileCount = attributesMap.size();
+  std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
+  // TODO 1.0.0 : replace the 128s strewn about the code with a named constant METATILE_SHEET_WIDTH or something
+  png::image<png::rgba_pixel> bottomPng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> middlePng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> topPng{128, static_cast<png::uint_32>(imageHeight)};
+  porytiles::emitDecompiled(ctx, mode, bottomPng, middlePng, topPng, outAttributesContent, tileset, attributesMap,
+                            behaviorReverseMap);
+
+  std::ofstream outAttributes{attributesPath.string()};
+  outAttributes << outAttributesContent.str();
+  outAttributes.close();
+  bottomPng.write(bottomPath);
+  middlePng.write(middlePath);
+  topPng.write(topPath);
+}
+
+static std::pair<CompiledTileset, std::unordered_map<size_t, Attributes>>
+driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
+                           std::unordered_map<std::string, uint8_t> &behaviorMap,
+                           std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
+{
+  pt_logln(ctx, stderr, "importing {} compiled tileset from {}", decompilerModeString(mode),
+           ctx.decompilerSrcPaths.primarySourcePath);
 
   /*
    * Set up file stream objects
    */
-  std::ifstream primaryMetatiles{ctx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
-  std::ifstream primaryAttributes{ctx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
-  png::image<png::index_pixel> primaryTilesheetPng{ctx.decompilerSrcPaths.primaryTilesPng()};
-  std::vector<std::unique_ptr<std::ifstream>> primaryPaletteFiles{};
+  std::ifstream metatilesIfStream{ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode), std::ios::binary};
+  std::ifstream attributesIfStream{ctx.decompilerSrcPaths.modeBasedAttrPath(mode), std::ios::binary};
+  png::image<png::index_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(mode)};
+  std::vector<std::unique_ptr<std::ifstream>> paletteFiles{};
   for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
     std::ostringstream filename;
     if (index < 10) {
       filename << "0";
     }
     filename << index << ".pal";
-    std::filesystem::path paletteFile = ctx.decompilerSrcPaths.primaryPalettes() / filename.str();
+    std::filesystem::path paletteFile = ctx.decompilerSrcPaths.modeBasedPalettePath(mode) / filename.str();
     if (!std::filesystem::exists(paletteFile)) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("{}: file did not exist", paletteFile.string()));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("{}: file did not exist", paletteFile.string()));
     }
-    primaryPaletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
+    paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
-  auto compiledPrimaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.primaryAnims());
+  auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.modeBasedAnimPath(mode));
 
   /*
    * Import the compiled tileset into our data types
    */
-  auto [compiledPrimary, primaryAttributesMap] =
-      importCompiledTileset(ctx, primaryMetatiles, primaryAttributes, behaviorReverseMap, primaryTilesheetPng,
-                            primaryPaletteFiles, compiledPrimaryAnims);
+  auto [compiledTileset, attributesMap] = importCompiledTileset(
+      ctx, mode, metatilesIfStream, attributesIfStream, behaviorReverseMap, tilesheetPng, paletteFiles, compiledAnims);
 
   /*
    * Close file stream objects
    */
-  primaryMetatiles.close();
-  primaryAttributes.close();
-  std::for_each(primaryPaletteFiles.begin(), primaryPaletteFiles.end(),
+  metatilesIfStream.close();
+  attributesIfStream.close();
+  std::for_each(paletteFiles.begin(), paletteFiles.end(),
                 [](const std::unique_ptr<std::ifstream> &stream) { stream->close(); });
+
+  return std::pair{compiledTileset, attributesMap};
+}
+
+static std::pair<std::unique_ptr<DecompiledTileset>, std::unordered_map<size_t, Attributes>>
+driveDecompileTileset(PorytilesContext &ctx, DecompilerMode mode, std::unordered_map<std::string, uint8_t> &behaviorMap,
+                      std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
+{
+  auto decompiled = std::make_unique<DecompiledTileset>();
+
+  auto [compiledTileset, attributesMap] = driveCompiledTilesetImport(ctx, mode, behaviorMap, behaviorReverseMap);
+
+  /*
+   * Decompile the compiled tiles
+   */
+  decompiled = decompile(ctx, mode, compiledTileset, attributesMap);
+
+  return std::pair{std::move(decompiled), attributesMap};
+}
+
+static void driveDecompilePrimary(PorytilesContext &ctx)
+{
+  validateDecompileInputs(ctx, DecompilerMode::PRIMARY);
+
+  /*
+   * Import behavior header, if it was supplied
+   */
+  auto [behaviorMap, behaviorReverseMap] =
+      prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
   /*
    * Decompile the compiled primary tiles
    */
-  ctx.decompilerContext.resultTileset = decompile(ctx, compiledPrimary);
-
-  if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-    pt_logln(ctx, stderr, "importing secondary compiled tileset from {}", ctx.decompilerSrcPaths.secondarySourcePath);
-    // TODO 1.0.0 : this make_unique is not a great pattern, see if we can do this a different way
-    ctx.decompilerContext.pairedPrimaryTileset = std::make_unique<CompiledTileset>(compiledPrimary);
-    ctx.decompilerConfig.mode = DecompilerMode::SECONDARY;
-
-    std::ifstream secondaryMetatiles{ctx.decompilerSrcPaths.secondaryMetatilesBin(), std::ios::binary};
-    std::ifstream secondaryAttributes{ctx.decompilerSrcPaths.secondaryAttributesBin(), std::ios::binary};
-    png::image<png::index_pixel> secondaryTilesheetPng{ctx.decompilerSrcPaths.secondaryTilesPng()};
-    std::vector<std::unique_ptr<std::ifstream>> secondaryPaletteFiles{};
-    for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
-      std::ostringstream filename;
-      if (index < 10) {
-        filename << "0";
-      }
-      filename << index << ".pal";
-      std::filesystem::path paletteFile = ctx.decompilerSrcPaths.secondaryPalettes() / filename.str();
-      if (!std::filesystem::exists(paletteFile)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                   fmt::format("{}: file did not exist", paletteFile.string()));
-      }
-      secondaryPaletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
-    }
-    auto compiledSecondaryAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.secondaryAnims());
-
-    /*
-     * Import the compiled tileset into our data types
-     */
-    auto [compiledSecondary, secondaryAttributesMap] =
-        importCompiledTileset(ctx, secondaryMetatiles, secondaryAttributes, behaviorReverseMap, secondaryTilesheetPng,
-                              secondaryPaletteFiles, compiledSecondaryAnims);
-
-    /*
-     * Close file stream objects
-     */
-    secondaryMetatiles.close();
-    secondaryAttributes.close();
-    std::for_each(secondaryPaletteFiles.begin(), secondaryPaletteFiles.end(),
-                  [](const std::unique_ptr<std::ifstream> &stream) { stream->close(); });
-
-    /*
-     * Decompile the compiled secondary tiles
-     */
-    ctx.decompilerContext.resultTileset = decompile(ctx, compiledSecondary);
-  }
+  auto [decompiled, attributesMap] =
+      driveDecompileTileset(ctx, DecompilerMode::PRIMARY, behaviorMap, behaviorReverseMap);
 
   /*
-   * Emit output
+   * Emit the decompiled primary tileset.
    */
-  std::filesystem::path outputPath(ctx.output.path);
-  std::filesystem::path attributesCsv("attributes.csv");
-  std::filesystem::path bottomPng("bottom.png");
-  std::filesystem::path middlePng("middle.png");
-  std::filesystem::path topPng("top.png");
-  std::filesystem::path attributesPath = ctx.output.path / attributesCsv;
-  std::filesystem::path bottomPath = ctx.output.path / bottomPng;
-  std::filesystem::path middlePath = ctx.output.path / middlePng;
-  std::filesystem::path topPath = ctx.output.path / topPng;
+  driveEmitDecompiledTileset(ctx, DecompilerMode::PRIMARY, *decompiled, attributesMap, behaviorReverseMap);
+}
 
-  validateDecompileOutputs(ctx, outputPath, attributesPath, bottomPath, middlePath, topPath);
+static void driveDecompileSecondary(PorytilesContext &ctx)
+{
+  validateDecompileInputs(ctx, DecompilerMode::SECONDARY);
+  validateDecompileInputs(ctx, DecompilerMode::PRIMARY);
 
-  std::ostringstream outAttributesContent{};
-  std::size_t metatileCount = primaryAttributesMap.size();
-  std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
-  png::image<png::rgba_pixel> bottomPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> middlePrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> topPrimaryPng{128, static_cast<png::uint_32>(imageHeight)};
-  porytiles::emitDecompiled(ctx, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng, outAttributesContent,
-                            *(ctx.decompilerContext.resultTileset), primaryAttributesMap, behaviorReverseMap);
+  /*
+   * Import behavior header, if it was supplied
+   */
+  auto [behaviorMap, behaviorReverseMap] =
+      prepareBehaviorsHeaderForImport(ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
-  std::ofstream outAttributes{attributesPath.string()};
-  outAttributes << outAttributesContent.str();
-  outAttributes.close();
-  bottomPrimaryPng.write(bottomPath);
-  middlePrimaryPng.write(middlePath);
-  topPrimaryPng.write(topPath);
+  /*
+   * Import the paired primary tileset.
+   */
+  auto [primaryCompiledTileset, primaryAttributesMap] =
+      driveCompiledTilesetImport(ctx, DecompilerMode::PRIMARY, behaviorMap, behaviorReverseMap);
+
+  /*
+   * Decompile the compiled secondary tiles
+   */
+  ctx.decompilerContext.pairedPrimaryTileset = std::make_unique<CompiledTileset>(primaryCompiledTileset);
+  auto [decompiled, attributesMap] =
+      driveDecompileTileset(ctx, DecompilerMode::SECONDARY, behaviorMap, behaviorReverseMap);
+
+  /*
+   * Emit the decompiled secondary tileset.
+   */
+  driveEmitDecompiledTileset(ctx, DecompilerMode::SECONDARY, *decompiled, attributesMap, behaviorReverseMap);
 }
 
 static void driveCompile(PorytilesContext &ctx)
@@ -737,7 +728,8 @@ static void driveCompile(PorytilesContext &ctx)
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
-    auto [map, reverse] = prepareBehaviorsHeaderForImport(ctx, ctx.compilerSrcPaths.metatileBehaviors);
+    auto [map, reverse] =
+        prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
@@ -830,7 +822,7 @@ static void driveCompile(PorytilesContext &ctx)
     }
     ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles, primaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssign) {
-      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
+      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
     }
 
     pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
@@ -863,7 +855,7 @@ static void driveCompile(PorytilesContext &ctx)
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles, secondaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssign) {
-      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignCache());
+      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignCache());
     }
   }
   else {
@@ -897,7 +889,7 @@ static void driveCompile(PorytilesContext &ctx)
     }
     ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles, primaryPalettePrimers);
     if (ctx.compilerConfig.cacheAssign) {
-      emitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
+      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
     }
   }
 
@@ -918,10 +910,10 @@ static void driveCompile(PorytilesContext &ctx)
 
   validateCompileOutputs(ctx, attributesPath, tilesetPath, metatilesPath, palettesPath, animsPath);
 
-  emitCompiledPalettes(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
-  emitCompiledTiles(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
-  emitCompiledAnims(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
-                    animsPath);
+  driveEmitCompiledPalettes(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
+  driveEmitCompiledTiles(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
+  driveEmitCompiledAnims(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
+                         animsPath);
 
   if (!ctx.output.disableMetatileGeneration) {
     std::ofstream outMetatiles{metatilesPath.string()};
@@ -940,8 +932,10 @@ void drive(PorytilesContext &ctx)
 {
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
+    driveDecompilePrimary(ctx);
+    break;
   case Subcommand::DECOMPILE_SECONDARY:
-    driveDecompile(ctx);
+    driveDecompileSecondary(ctx);
     break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
@@ -1000,84 +994,14 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   }
 
   // Check metatiles.bin
-
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatiles.bin"}));
-  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatiles.bin"}));
-  std::FILE *expected;
-  std::FILE *actual;
-
-  expected = fopen("res/tests/anim_metatiles_2/primary/expected_metatiles.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / std::filesystem::path{"metatiles.bin"}).c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  long expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  long actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  std::uint8_t expectedByte;
-  std::uint8_t actualByte;
-  std::size_t bytesRead;
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
+  porytiles::doctestAssertFileBytesIdentical(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatiles.bin"},
+      parentDir / std::filesystem::path{"metatiles.bin"});
 
   // Check metatile_attributes.bin
-
-  REQUIRE(std::filesystem::exists(
-      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin"}));
-  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatile_attributes.bin"}));
-
-  expected = fopen("res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / std::filesystem::path{"metatile_attributes.bin"}).c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
+  porytiles::doctestAssertFileBytesIdentical(
+      std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_metatile_attributes.bin"},
+      parentDir / std::filesystem::path{"metatile_attributes.bin"});
 
   REQUIRE(std::filesystem::exists(
       std::filesystem::path{"res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"}));
@@ -1225,85 +1149,14 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   }
 
   // Check metatiles.bin
-
-  REQUIRE(
-      std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatiles.bin"}));
-  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatiles.bin"}));
-  std::FILE *expected;
-  std::FILE *actual;
-
-  expected = fopen("res/tests/anim_metatiles_2/secondary/expected_metatiles.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / std::filesystem::path{"metatiles.bin"}).c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  long expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  long actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  std::uint8_t expectedByte;
-  std::uint8_t actualByte;
-  std::size_t bytesRead;
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
+  porytiles::doctestAssertFileBytesIdentical(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatiles.bin"},
+      parentDir / std::filesystem::path{"metatiles.bin"});
 
   // Check metatile_attributes.bin
-
-  REQUIRE(std::filesystem::exists(
-      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"}));
-  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"metatile_attributes.bin"}));
-
-  expected = fopen("res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin", "r");
-  if (expected == NULL) {
-    FAIL("std::FILE `expected' was null");
-  }
-  actual = fopen((parentDir / std::filesystem::path{"metatile_attributes.bin"}).c_str(), "r");
-  if (actual == NULL) {
-    fclose(expected);
-    FAIL("std::FILE `expected' was null");
-  }
-  fseek(expected, 0, SEEK_END);
-  expectedSize = ftell(expected);
-  rewind(expected);
-  fseek(actual, 0, SEEK_END);
-  actualSize = ftell(actual);
-  rewind(actual);
-  CHECK(expectedSize == actualSize);
-
-  for (long i = 0; i < actualSize; i++) {
-    bytesRead = fread(&expectedByte, 1, 1, expected);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    bytesRead = fread(&actualByte, 1, 1, actual);
-    if (bytesRead != 1) {
-      FAIL("did not read exactly 1 byte");
-    }
-    CHECK(expectedByte == actualByte);
-  }
-
-  fclose(expected);
-  fclose(actual);
+  porytiles::doctestAssertFileBytesIdentical(
+      std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_metatile_attributes.bin"},
+      parentDir / std::filesystem::path{"metatile_attributes.bin"});
 
   REQUIRE(std::filesystem::exists(
       std::filesystem::path{"res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"}));
@@ -1363,6 +1216,224 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
       CHECK(expected_flower_red_02[pixelRow][pixelCol] == actual_flower_red_02[pixelRow][pixelCol]);
     }
   }
+
+  std::filesystem::remove_all(parentDir);
+}
+
+TEST_CASE("drive should emit all expected files for compiled_emerald_general")
+{
+  porytiles::PorytilesContext ctx{};
+  std::filesystem::path parentDir = porytiles::createTmpdir();
+  ctx.output.path = parentDir;
+  ctx.subcommand = porytiles::Subcommand::DECOMPILE_PRIMARY;
+  ctx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_general"}));
+  ctx.decompilerSrcPaths.primarySourcePath = "res/tests/compiled_emerald_general";
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/metatile_behaviors.h"}));
+  ctx.decompilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+
+  porytiles::drive(ctx);
+
+  // Check bottom.png
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/bottom.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"bottom.png"}));
+  png::image<png::rgba_pixel> expectedBottomPng{"res/tests/compiled_emerald_general/expected_decompiled/bottom.png"};
+  png::image<png::rgba_pixel> actualBottomPng{parentDir / std::filesystem::path{"bottom.png"}};
+
+  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedBottomWidthInTiles == actualBottomWidthInTiles);
+  CHECK(expectedBottomHeightInTiles == actualBottomHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualBottomWidthInTiles * actualBottomHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualBottomWidthInTiles;
+    std::size_t tileCol = tileIndex % actualBottomWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].red == actualBottomPng[pixelRow][pixelCol].red);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].green == actualBottomPng[pixelRow][pixelCol].green);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].blue == actualBottomPng[pixelRow][pixelCol].blue);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].alpha == actualBottomPng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check middle.png
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/middle.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"middle.png"}));
+  png::image<png::rgba_pixel> expectedMiddlePng{"res/tests/compiled_emerald_general/expected_decompiled/middle.png"};
+  png::image<png::rgba_pixel> actualMiddlePng{parentDir / std::filesystem::path{"middle.png"}};
+
+  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedMiddleWidthInTiles == actualMiddleWidthInTiles);
+  CHECK(expectedMiddleHeightInTiles == actualMiddleHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualMiddleWidthInTiles * actualMiddleHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualMiddleWidthInTiles;
+    std::size_t tileCol = tileIndex % actualMiddleWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].red == actualMiddlePng[pixelRow][pixelCol].red);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].green == actualMiddlePng[pixelRow][pixelCol].green);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].blue == actualMiddlePng[pixelRow][pixelCol].blue);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].alpha == actualMiddlePng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check top.png
+  REQUIRE(
+      std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/top.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"top.png"}));
+  png::image<png::rgba_pixel> expectedTopPng{"res/tests/compiled_emerald_general/expected_decompiled/top.png"};
+  png::image<png::rgba_pixel> actualTopPng{parentDir / std::filesystem::path{"top.png"}};
+
+  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedTopWidthInTiles == actualTopWidthInTiles);
+  CHECK(expectedTopHeightInTiles == actualTopHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualTopWidthInTiles * actualTopHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualTopWidthInTiles;
+    std::size_t tileCol = tileIndex % actualTopWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedTopPng[pixelRow][pixelCol].red == actualTopPng[pixelRow][pixelCol].red);
+      CHECK(expectedTopPng[pixelRow][pixelCol].green == actualTopPng[pixelRow][pixelCol].green);
+      CHECK(expectedTopPng[pixelRow][pixelCol].blue == actualTopPng[pixelRow][pixelCol].blue);
+      CHECK(expectedTopPng[pixelRow][pixelCol].alpha == actualTopPng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check attributes.csv
+  porytiles::doctestAssertFileLinesIdentical(
+      std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/attributes.csv"},
+      parentDir / std::filesystem::path{"attributes.csv"});
+
+  // TODO : test animations once we implement anim decomp
+
+  std::filesystem::remove_all(parentDir);
+}
+
+TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
+{
+  porytiles::PorytilesContext ctx{};
+  std::filesystem::path parentDir = porytiles::createTmpdir();
+  ctx.output.path = parentDir;
+  ctx.subcommand = porytiles::Subcommand::DECOMPILE_SECONDARY;
+  ctx.err.printErrors = false;
+
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_general"}));
+  ctx.decompilerSrcPaths.primarySourcePath = "res/tests/compiled_emerald_general";
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_lilycove"}));
+  ctx.decompilerSrcPaths.secondarySourcePath = "res/tests/compiled_emerald_lilycove";
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/metatile_behaviors.h"}));
+  ctx.decompilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+
+  porytiles::drive(ctx);
+
+  // Check bottom.png
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/compiled_emerald_lilycove/expected_decompiled/bottom.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"bottom.png"}));
+  png::image<png::rgba_pixel> expectedBottomPng{"res/tests/compiled_emerald_lilycove/expected_decompiled/bottom.png"};
+  png::image<png::rgba_pixel> actualBottomPng{parentDir / std::filesystem::path{"bottom.png"}};
+
+  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedBottomWidthInTiles == actualBottomWidthInTiles);
+  CHECK(expectedBottomHeightInTiles == actualBottomHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualBottomWidthInTiles * actualBottomHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualBottomWidthInTiles;
+    std::size_t tileCol = tileIndex % actualBottomWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].red == actualBottomPng[pixelRow][pixelCol].red);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].green == actualBottomPng[pixelRow][pixelCol].green);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].blue == actualBottomPng[pixelRow][pixelCol].blue);
+      CHECK(expectedBottomPng[pixelRow][pixelCol].alpha == actualBottomPng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check middle.png
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/compiled_emerald_lilycove/expected_decompiled/middle.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"middle.png"}));
+  png::image<png::rgba_pixel> expectedMiddlePng{"res/tests/compiled_emerald_lilycove/expected_decompiled/middle.png"};
+  png::image<png::rgba_pixel> actualMiddlePng{parentDir / std::filesystem::path{"middle.png"}};
+
+  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedMiddleWidthInTiles == actualMiddleWidthInTiles);
+  CHECK(expectedMiddleHeightInTiles == actualMiddleHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualMiddleWidthInTiles * actualMiddleHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualMiddleWidthInTiles;
+    std::size_t tileCol = tileIndex % actualMiddleWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].red == actualMiddlePng[pixelRow][pixelCol].red);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].green == actualMiddlePng[pixelRow][pixelCol].green);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].blue == actualMiddlePng[pixelRow][pixelCol].blue);
+      CHECK(expectedMiddlePng[pixelRow][pixelCol].alpha == actualMiddlePng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check top.png
+  REQUIRE(std::filesystem::exists(
+      std::filesystem::path{"res/tests/compiled_emerald_lilycove/expected_decompiled/top.png"}));
+  REQUIRE(std::filesystem::exists(parentDir / std::filesystem::path{"top.png"}));
+  png::image<png::rgba_pixel> expectedTopPng{"res/tests/compiled_emerald_lilycove/expected_decompiled/top.png"};
+  png::image<png::rgba_pixel> actualTopPng{parentDir / std::filesystem::path{"top.png"}};
+
+  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+
+  CHECK(expectedTopWidthInTiles == actualTopWidthInTiles);
+  CHECK(expectedTopHeightInTiles == actualTopHeightInTiles);
+
+  for (std::size_t tileIndex = 0; tileIndex < actualTopWidthInTiles * actualTopHeightInTiles; tileIndex++) {
+    std::size_t tileRow = tileIndex / actualTopWidthInTiles;
+    std::size_t tileCol = tileIndex % actualTopWidthInTiles;
+    for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
+      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      CHECK(expectedTopPng[pixelRow][pixelCol].red == actualTopPng[pixelRow][pixelCol].red);
+      CHECK(expectedTopPng[pixelRow][pixelCol].green == actualTopPng[pixelRow][pixelCol].green);
+      CHECK(expectedTopPng[pixelRow][pixelCol].blue == actualTopPng[pixelRow][pixelCol].blue);
+      CHECK(expectedTopPng[pixelRow][pixelCol].alpha == actualTopPng[pixelRow][pixelCol].alpha);
+    }
+  }
+
+  // Check attributes.csv
+  porytiles::doctestAssertFileLinesIdentical(
+      std::filesystem::path{"res/tests/compiled_emerald_lilycove/expected_decompiled/attributes.csv"},
+      parentDir / std::filesystem::path{"attributes.csv"});
 
   std::filesystem::remove_all(parentDir);
 }

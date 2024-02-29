@@ -783,7 +783,7 @@ void importSecondaryAssignmentConfigParameters(PorytilesContext &ctx, std::ifstr
   ctx.compilerConfig.readSecondaryAssignCache = true;
 }
 
-static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx,
+static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, DecompilerMode mode,
                                                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles)
 {
   std::vector<GBAPalette> palettes{};
@@ -800,32 +800,29 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx,
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "JASC-PAL") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "0100") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("expected '0100' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected '0100' in pal file, saw '{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "16") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 fmt::format("expected '16' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected '16' in pal file, saw '{}'", line));
     }
 
     GBAPalette palette{};
@@ -836,7 +833,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx,
     palette.size = 16;
     std::size_t colorIndex = 0;
     while (std::getline(*stream, line)) {
-      BGR15 bgr = rgbaToBgr(parseJascLine(ctx, line));
+      BGR15 bgr = rgbaToBgr(parseJascLine(ctx, mode, line));
       palette.colors.at(colorIndex) = bgr;
       colorIndex++;
     }
@@ -869,7 +866,7 @@ static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png
 }
 
 static std::vector<Assignment>
-importCompiledMetatiles(PorytilesContext &ctx, std::ifstream &metatilesBin,
+importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatilesBin,
                         std::unordered_map<std::size_t, Attributes> &attributesMap,
                         const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
@@ -882,7 +879,7 @@ importCompiledMetatiles(PorytilesContext &ctx, std::ifstream &metatilesBin,
    * there are 8 subtiles per metatile. 24 for triple layer, since there are 12 subtiles per metatile.
    */
   if (metatileDataBuf.size() % 16 != 0 && metatileDataBuf.size() % 24 != 0) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                "decompiler input metatiles.bin corrupted, not valid uint16 data");
   }
 
@@ -941,7 +938,7 @@ importCompiledMetatiles(PorytilesContext &ctx, std::ifstream &metatilesBin,
 }
 
 static std::unordered_map<std::size_t, Attributes>
-importCompiledMetatileAttributes(PorytilesContext &ctx, std::ifstream &metatileAttributesBin)
+importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatileAttributesBin)
 {
   std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
@@ -950,14 +947,14 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, std::ifstream &metatileA
   std::size_t metatileCount;
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     if (attributesDataBuf.size() % 4 != 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  "decompiler input 'metatile_attributes.bin' corrupted, not valid uint32 data");
     }
     metatileCount = attributesDataBuf.size() / 4;
   }
   else {
     if (attributesDataBuf.size() % 2 != 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  "decompiler input 'metatile_attributes.bin' corrupted, not valid uint16 data");
     }
     metatileCount = attributesDataBuf.size() / 2;
@@ -989,7 +986,7 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, std::ifstream &metatileA
 }
 
 static std::vector<CompiledAnimation>
-importCompiledAnimations(PorytilesContext &ctx,
+importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
                          const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims)
 {
   std::vector<CompiledAnimation> anims{};
@@ -1004,14 +1001,14 @@ importCompiledAnimations(PorytilesContext &ctx,
       CompiledAnimFrame animFrame{animPng.frameName};
 
       if (animPng.png.get_width() % TILE_SIDE_LENGTH != 0) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
       if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
@@ -1021,14 +1018,14 @@ importCompiledAnimations(PorytilesContext &ctx,
       frameWidths.insert(animPng.png.get_width());
       frameHeights.insert(animPng.png.get_height());
       if (frameWidths.size() != 1) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' width '{}' differed from previous frame width",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
       if (frameHeights.size() != 1) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' height '{}' differed from previous frame height",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
@@ -1057,7 +1054,7 @@ importCompiledAnimations(PorytilesContext &ctx,
 }
 
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
-importCompiledTileset(PorytilesContext &ctx, std::ifstream &metatiles, std::ifstream &attributes,
+importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatiles, std::ifstream &attributes,
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
@@ -1066,10 +1063,10 @@ importCompiledTileset(PorytilesContext &ctx, std::ifstream &metatiles, std::ifst
   CompiledTileset tileset{};
 
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
-  tileset.palettes = importCompiledPalettes(ctx, paletteFiles);
-  auto attributesMap = importCompiledMetatileAttributes(ctx, attributes);
-  tileset.assignments = importCompiledMetatiles(ctx, metatiles, attributesMap, behaviorReverseMap);
-  tileset.anims = importCompiledAnimations(ctx, compiledAnims);
+  tileset.palettes = importCompiledPalettes(ctx, mode, paletteFiles);
+  auto attributesMap = importCompiledMetatileAttributes(ctx, mode, attributes);
+  tileset.assignments = importCompiledMetatiles(ctx, mode, metatiles, attributesMap, behaviorReverseMap);
+  tileset.anims = importCompiledAnimations(ctx, mode, compiledAnims);
 
   /*
    * TODO : perform key frame inference here. We have to determine the key frame in order to
@@ -1132,7 +1129,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
 
   std::uint8_t lineCount = 0;
   while (std::getline(paletteFile, line)) {
-    RGBA32 rgba = parseJascLine(ctx, line);
+    RGBA32 rgba = parseJascLine(ctx, DecompilerMode::PRIMARY, line);
     primerTile.pixels.at(lineCount) = rgba;
     lineCount++;
     if (lineCount > PAL_SIZE - 1) {
@@ -1669,9 +1666,10 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
   // TODO 1.0.0 : actually test anims import
-  auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
-      decompileCtx, metatiles, attributes, std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
-      std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
+  auto [importedTileset, attributesMap] =
+      porytiles::importCompiledTileset(decompileCtx, porytiles::DecompilerMode::PRIMARY, metatiles, attributes,
+                                       std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
+                                       std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
   metatiles.close();
   attributes.close();
   std::for_each(paletteFiles.begin(), paletteFiles.end(),

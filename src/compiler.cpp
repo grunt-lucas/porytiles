@@ -666,6 +666,7 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
    */
   if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
+    // FIXME : is this actually an internal error? It seems like a user could force this to happen via bad inputs
     internalerror(fmt::format(
         "compiler::compile config.numPalettesInPrimary did not match primary palette set size ({} != {})",
         ctx.fieldmapConfig.numPalettesInPrimary, ctx.compilerContext.pairedPrimaryTileset->palettes.size()));

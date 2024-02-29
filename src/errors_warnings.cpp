@@ -30,12 +30,13 @@ const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
 const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
+const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
-    tileString = "{layer: " + layerString(tile.layer) + ", metatile: " + std::to_string(tile.metatileIndex) +
+    tileString = "{metatile: " + std::to_string(tile.metatileIndex) + ", layer: " + layerString(tile.layer) +
                  ", subtile: " + subtileString(tile.subtile) + "}";
   }
   else if (tile.type == TileType::ANIM) {
@@ -254,13 +255,13 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSo
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
-                                  std::string path)
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
+    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", srcs.modeBasedSrcPath(mode).string());
   }
-  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode),
+                              fmt::format("invalid source path {}", srcs.modeBasedSrcPath(mode).string()));
 }
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
@@ -668,6 +669,23 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
                fmt::format("{}: cached compilation settings not found", path));
   if (err.printErrors && err.missingAssignCache != WarningMode::OFF) {
     pt_note("running full parameter search matrix, this may take awhile...");
+    pt_println(stderr, "");
+  }
+}
+
+void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
+                           const RGBATile &tile)
+{
+  // TODO 1.0.0 : this warning should show if error came from primary or secondary set
+  // TODO 1.0.0 : add CLI option to display indexes in hex instead of dec
+  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
+  std::string tileString = getTilePrettyString(tile);
+  printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
+               fmt::format("{}: tile index {} out of range (sheet size {})",
+                           fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
+                           tilesheetSize));
+  if (err.printErrors && err.invalidTileIndex != WarningMode::OFF) {
+    pt_note("substituting primary tile 0 (transparent tile) so decompilation can continue");
     pt_println(stderr, "");
   }
 }

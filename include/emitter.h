@@ -50,9 +50,9 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
 /**
  * TODO : fill in doc comment
  */
-void emitDecompiled(PorytilesContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, std::ostream &outCsv, const DecompiledTileset &tileset,
-                    std::unordered_map<std::size_t, Attributes> &attributesMap,
+void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::rgba_pixel> &bottom,
+                    png::image<png::rgba_pixel> &middle, png::image<png::rgba_pixel> &top, std::ostream &outCsv,
+                    const DecompiledTileset &tileset, const std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap);
 
 void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, std::ostream &out);

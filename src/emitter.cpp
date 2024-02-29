@@ -232,44 +232,18 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
   out.flush();
 }
 
-void emitDecompiled(PorytilesContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, std::ostream &outCsv, const DecompiledTileset &tileset,
-                    std::unordered_map<std::size_t, Attributes> &attributesMap,
+void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::rgba_pixel> &bottom,
+                    png::image<png::rgba_pixel> &middle, png::image<png::rgba_pixel> &top, std::ostream &outCsv,
+                    const DecompiledTileset &tileset, const std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
   // Assume bottom, middle, top have identical dimensions, driver creates these PNGs so it handles dimensions
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
 
   /*
-   * Handle layer type by dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count
-   * (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple.
-   * Otherwise, we have corruption and should fail.
-   */
-  /*
-   * FIXME 1.0.0 : this logic breaks when decompiling some vanilla tilesets, since they pad out their attributes to a
-   * full 512 entries even if there were not 512 real metatiles
-   */
-  bool tripleLayer = false;
-  std::size_t divBy8 = tileset.tiles.size() / 8;
-  std::size_t divBy12 = tileset.tiles.size() / 12;
-
-  if (divBy8 == attributesMap.size()) {
-    tripleLayer = false;
-  }
-  else if (divBy12 == attributesMap.size()) {
-    tripleLayer = true;
-  }
-  else {
-    // TODO 1.0.0 : this should have a real error message
-    internalerror(fmt::format(
-        "emitter::emitDecompiled tileset.tiles.size()={}, attributesMap.size()={} did not imply a layer type",
-        tileset.tiles.size(), attributesMap.size()));
-  }
-
-  /*
    * Emit the bottom.png, middle.png, and top.png content
    */
-  if (tripleLayer) {
+  if (tileset.tripleLayer) {
     for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
       size_t metatileRow = metatileIndex / widthInMetatiles;
       size_t metatileCol = metatileIndex % widthInMetatiles;
@@ -352,7 +326,6 @@ void emitDecompiled(PorytilesContext &ctx, png::image<png::rgba_pixel> &bottom, 
     outCsv << "id,behavior" << std::endl;
   }
   // TODO 1.0.0 : if all elements in a row correspond to the selected defaults, skip emitting this row?
-  // FIXME 1.0.0 : compiling porytiles-secondary-tutorial and then decompiling gives incorrect attributes.csv
   for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
@@ -361,8 +334,8 @@ void emitDecompiled(PorytilesContext &ctx, png::image<png::rgba_pixel> &bottom, 
                << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
-                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+                                           attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
     else {
@@ -371,14 +344,14 @@ void emitDecompiled(PorytilesContext &ctx, png::image<png::rgba_pixel> &bottom, 
                << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
-                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+                                           attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(ctx.decompilerConfig.mode),
+    die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                    "behavior value did not have reverse mapping");
   }
 }

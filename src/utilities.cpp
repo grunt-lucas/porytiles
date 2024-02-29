@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <doctest.h>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -68,8 +70,9 @@ std::filesystem::path createTmpdir()
   return path;
 }
 
-RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
+RGBA32 parseJascLine(PorytilesContext &ctx, DecompilerMode mode, const std::string &jascLine)
 {
+  // FIXME 1.0.0 : this function is a mess, mixing DecompilerMode and CompilerMode paradigms
   std::vector<std::string> colorComponents = split(jascLine, " ");
   if (colorComponents.size() != 3) {
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -77,7 +80,7 @@ RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
                  fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
     }
     else {
@@ -105,8 +108,7 @@ RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
                  "invalid red component: range must be 0 <= red <= 255");
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 "invalid red component: range must be 0 <= red <= 255");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid red component: range must be 0 <= red <= 255");
     }
     else {
       internalerror_unknownSubcommand("utilities::parseJascLine");
@@ -118,8 +120,7 @@ RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
                  "invalid green component: range must be 0 <= green <= 255");
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 "invalid green component: range must be 0 <= green <= 255");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid green component: range must be 0 <= green <= 255");
     }
     else {
       internalerror_unknownSubcommand("utilities::parseJascLine");
@@ -131,8 +132,7 @@ RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
                  "invalid blue component: range must be 0 <= blue <= 255");
     }
     else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, ctx.decompilerConfig.mode,
-                 "invalid blue component: range must be 0 <= blue <= 255");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blue component: range must be 0 <= blue <= 255");
     }
     else {
       internalerror_unknownSubcommand("utilities::parseJascLine");
@@ -141,6 +141,79 @@ RGBA32 parseJascLine(PorytilesContext &ctx, const std::string &jascLine)
 
   return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
                 ALPHA_OPAQUE};
+}
+
+void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath)
+{
+  REQUIRE(std::filesystem::exists(expectedPath));
+  REQUIRE(std::filesystem::exists(actualPath));
+  std::FILE *expected;
+  std::FILE *actual;
+  expected = fopen(expectedPath.string().c_str(), "r");
+  if (expected == NULL) {
+    FAIL("std::FILE `expected' was null");
+  }
+  actual = fopen(actualPath.string().c_str(), "r");
+  if (actual == NULL) {
+    fclose(expected);
+    FAIL("std::FILE `expected' was null");
+  }
+  fseek(expected, 0, SEEK_END);
+  long expectedSize = ftell(expected);
+  rewind(expected);
+  fseek(actual, 0, SEEK_END);
+  long actualSize = ftell(actual);
+  rewind(actual);
+  CHECK(expectedSize == actualSize);
+
+  std::uint8_t expectedByte;
+  std::uint8_t actualByte;
+  std::size_t bytesRead;
+  for (long i = 0; i < actualSize; i++) {
+    bytesRead = fread(&expectedByte, 1, 1, expected);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    bytesRead = fread(&actualByte, 1, 1, actual);
+    if (bytesRead != 1) {
+      FAIL("did not read exactly 1 byte");
+    }
+    CHECK(expectedByte == actualByte);
+  }
+  fclose(expected);
+  fclose(actual);
+}
+
+void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath)
+{
+  REQUIRE(std::filesystem::exists(expectedPath));
+  REQUIRE(std::filesystem::exists(actualPath));
+
+  std::string expectedLine;
+  std::string actualLine;
+  std::string dummy;
+  std::size_t expectedLinesCount = 0;
+  std::size_t actualLinesCount = 0;
+  std::ifstream expected{expectedPath};
+  std::ifstream actual{actualPath};
+
+  while (std::getline(expected, dummy)) {
+    expectedLinesCount++;
+  }
+  while (std::getline(actual, dummy)) {
+    actualLinesCount++;
+  }
+  expected.close();
+  expected.clear();
+  actual.close();
+  actual.clear();
+  CHECK(expectedLinesCount == actualLinesCount);
+
+  expected.open(expectedPath);
+  actual.open(actualPath);
+  while (std::getline(expected, expectedLine) && std::getline(actual, actualLine)) {
+    CHECK(expectedLine == actualLine);
+  }
 }
 
 } // namespace porytiles

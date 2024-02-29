@@ -20,8 +20,8 @@ struct PorytilesContext {
   DecompilerSourcePaths decompilerSrcPaths;
   Output output;
   CompilerConfig compilerConfig;
-  CompilerContext compilerContext;
   DecompilerConfig decompilerConfig;
+  CompilerContext compilerContext;
   DecompilerContext decompilerContext;
   ErrorsAndWarnings err;
 
@@ -31,7 +31,7 @@ struct PorytilesContext {
 
   PorytilesContext()
       : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
-        compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, compilerContext{}, decompilerConfig{},
+        compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
         decompilerContext{}, err{}, subcommand{}, verbose{false}
   {
   }
