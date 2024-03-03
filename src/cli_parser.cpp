@@ -16,27 +16,30 @@
 #include "errors_warnings.h"
 #include "logger.h"
 #include "palette_assignment.h"
-#include "ptexception.h"
+#include "porytiles_exception.h"
 #include "utilities.h"
 
 namespace porytiles {
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv);
-static void parseSubcommand(PtContext &ctx, int argc, char *const *argv);
-static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv);
+static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
+static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv);
+static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
-void parseOptions(PtContext &ctx, int argc, char *const *argv)
+/*
+ * TODO 1.0.0 : overhaul this whole system
+ * Each subcommand should have its own help menu and options. We can create a validateSubcommandContext function
+ * to call in each case of the option switch. It checks to see if this option is allowed to pair with this subcommand
+ * via a map-lookup. If not, then fail.
+ */
+
+void parseOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   parseGlobalOptions(ctx, argc, argv);
   parseSubcommand(ctx, argc, argv);
 
   switch (ctx.subcommand) {
   case Subcommand::DECOMPILE_PRIMARY:
-    parseSubcommandOptions(ctx, argc, argv);
-    break;
   case Subcommand::DECOMPILE_SECONDARY:
-    throw std::runtime_error{"FEATURE : support decompile-secondary command"};
-    break;
   case Subcommand::COMPILE_PRIMARY:
   case Subcommand::COMPILE_SECONDARY:
     parseSubcommandOptions(ctx, argc, argv);
@@ -192,7 +195,7 @@ VERSION_DESC + "\n"
 // @formatter:on
 // clang-format on
 
-static void parseGlobalOptions(PtContext &ctx, int argc, char *const *argv)
+static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -237,7 +240,7 @@ const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
 const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
 const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
 const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
-static void parseSubcommand(PtContext &ctx, int argc, char *const *argv)
+static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
 {
   if ((argc - optind) == 0) {
     fatalerror(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
@@ -341,6 +344,7 @@ const std::string COMPILE_HELP =
 "    Driver Options\n" +
 OUTPUT_DESC + "\n" +
 TILES_OUTPUT_PAL_DESC + "\n" +
+NORMALIZE_TRANSPARENCY_DESC + "\n" +
 DISABLE_METATILE_GENERATION_DESC + "\n" +
 DISABLE_ATTRIBUTE_GENERATION_DESC + "\n" +
 "    Tileset Compilation & Decompilation Options\n" +
@@ -381,7 +385,7 @@ WERROR_DESC + "\n";
 /*
  * FIXME : the warning parsing system here is a dumpster fire
  */
-static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
+static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
   std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -392,6 +396,7 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {OUTPUT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
+      {NORMALIZE_TRANSPARENCY.c_str(), optional_argument, nullptr, NORMALIZE_TRANSPARENCY_VAL},
       {DISABLE_METATILE_GENERATION.c_str(), no_argument, nullptr, DISABLE_METATILE_GENERATION_VAL},
       {DISABLE_ATTRIBUTE_GENERATION.c_str(), no_argument, nullptr, DISABLE_ATTRIBUTE_GENERATION_VAL},
 
@@ -459,6 +464,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
       {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
 
+      {WINVALID_TILE_INDEX.c_str(), no_argument, nullptr, WINVALID_TILE_INDEX_VAL},
+      {WNO_INVALID_TILE_INDEX.c_str(), no_argument, nullptr, WNO_INVALID_TILE_INDEX_VAL},
+
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
       {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
@@ -496,14 +504,17 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   std::optional<bool> warnTransparencyCollapseOverride{};
   std::optional<bool> errTransparencyCollapseOverride{};
 
-  std::optional<bool> warnAssignCacheOverride{true};
+  std::optional<bool> warnAssignCacheOverride{};
   std::optional<bool> errAssignCacheOverride{};
 
-  std::optional<bool> warnInvalidAssignCache{true};
+  std::optional<bool> warnInvalidAssignCache{};
   std::optional<bool> errInvalidAssignCache{};
 
-  std::optional<bool> warnMissingAssignCache{true};
+  std::optional<bool> warnMissingAssignCache{};
   std::optional<bool> errMissingAssignCache{};
+
+  std::optional<bool> warnInvalidTileIndex{};
+  std::optional<bool> errInvalidTileIndex{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -539,6 +550,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case TILES_OUTPUT_PAL_VAL:
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
+      break;
+    case NORMALIZE_TRANSPARENCY_VAL:
+      ctx.decompilerConfig.normalizeTransparency = true;
+      if (optarg != NULL) {
+        ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
+      }
       break;
     case DISABLE_METATILE_GENERATION_VAL:
       ctx.output.disableMetatileGeneration = true;
@@ -730,6 +747,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
         else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
           errMissingAssignCache = true;
         }
+        else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
+          errInvalidTileIndex = true;
+        }
         else {
           fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -767,6 +787,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       }
       else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
         errMissingAssignCache = false;
+      }
+      else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
+        errInvalidTileIndex = false;
       }
       else {
         fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
@@ -835,6 +858,12 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       break;
     case WNO_MISSING_ASSIGN_CONFIG_VAL:
       warnMissingAssignCache = false;
+      break;
+    case WINVALID_TILE_INDEX_VAL:
+      warnInvalidTileIndex = true;
+      break;
+    case WNO_INVALID_TILE_INDEX_VAL:
+      warnInvalidTileIndex = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -958,6 +987,9 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
   }
   if (warnMissingAssignCache.has_value()) {
     ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnInvalidTileIndex.has_value()) {
+    ctx.err.invalidTileIndex = warnInvalidTileIndex.value() ? WarningMode::WARN : WarningMode::OFF;
   }
 
   // If requested, set all enabled warnings to errors
@@ -1083,6 +1115,17 @@ static void parseSubcommandOptions(PtContext &ctx, int argc, char *const *argv)
       ctx.err.missingAssignCache = WarningMode::OFF;
     }
   }
+  if (errInvalidTileIndex.has_value()) {
+    if (errInvalidTileIndex.value()) {
+      ctx.err.invalidTileIndex = WarningMode::ERR;
+    }
+    else if ((warnInvalidTileIndex.has_value() && warnInvalidTileIndex.value()) || enableAllWarnings) {
+      ctx.err.invalidTileIndex = WarningMode::WARN;
+    }
+    else {
+      ctx.err.invalidTileIndex = WarningMode::OFF;
+    }
+  }
 
   if (disableAllWarnings) {
     /*
@@ -1152,7 +1195,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
   // These tests are full of disgusting and evil hacks, avert your gaze
   SUBCASE("Check that the defaults are correct")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1178,7 +1221,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("-Wall should enable everything")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1207,7 +1250,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("-Wall -Werror should enable everything as an error")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1239,7 +1282,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Should enable a non-default warn, set all to error, then disable the error")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1274,7 +1317,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Should enable all warnings, then disable one of them")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;
@@ -1306,7 +1349,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
 
   SUBCASE("Global warning disable should work, even if a warning was explicitly enabled")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
     optind = 1;

@@ -9,6 +9,7 @@ Usage: todo.sh all
        todo.sh {FIXME,fixme}
        todo.sh {NOTE,note}
        todo.sh {FEATURE,feature}
+       todo.sh 1.0.0
        todo.sh --help
 
 Display TODO related note comments.
@@ -66,6 +67,11 @@ elif [[ ${args[0]} == "NOTE" || ${args[0]} == "note" ]]; then
     rg 'NOTE :'
 elif [[ ${args[0]} == "FEATURE" || ${args[0]} == "feature" ]]; then
     rg 'FEATURE :'
+elif [[ ${args[0]} == "1.0.0" ]] then
+    rg 'TODO 1.0.0 :'
+    rg 'FIXME 1.0.0 :'
+    rg 'NOTE 1.0.0 :'
+    rg 'FEATURE 1.0.0 :'
 else
     echo "error: unknown command \`${args[0]}'"
     usage_exit_error

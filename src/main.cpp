@@ -7,14 +7,14 @@
 #include "cli_parser.h"
 #include "driver.h"
 #include "logger.h"
-#include "ptcontext.h"
-#include "ptexception.h"
+#include "porytiles_context.h"
+#include "porytiles_exception.h"
 
-// TODO : convert all printed quotes to use same format, i.e. `backtick quote format'
+// TODO 1.0.0 : convert all printed quotes to use same format, i.e. `backtick quote format'
 
 int main(int argc, char **argv)
 try {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   porytiles::parseOptions(ctx, argc, argv);
   porytiles::drive(ctx);
 
@@ -27,10 +27,10 @@ try {
 
   return 0;
 }
-catch (const porytiles::PtException &e) {
+catch (const porytiles::PorytilesException &e) {
   /*
-   * Catch PtException here. This exception is used by the error system to indicate an error it correctly handled and
-   * reported to the user. These errors are typically due to invalid user input. So we can just return 1 here to
+   * Catch PorytilesException here. This exception is used by the error system to indicate an error it correctly handled
+   * and reported to the user. These errors are typically due to invalid user input. So we can just return 1 here to
    * indicate a bad exit.
    */
   return 1;

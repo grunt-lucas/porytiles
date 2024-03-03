@@ -1,5 +1,5 @@
-#ifndef PORYTILES_PTEXCEPTION_H
-#define PORYTILES_PTEXCEPTION_H
+#ifndef PORYTILES_PORYTILES_EXCEPTION_H
+#define PORYTILES_PORYTILES_EXCEPTION_H
 
 #include <stdexcept>
 #include <string>
@@ -11,10 +11,10 @@
 
 namespace porytiles {
 // Generic porytiles exception class
-class PtException : public std::runtime_error {
+class PorytilesException : public std::runtime_error {
 public:
-  explicit PtException(const std::string &msg) : std::runtime_error{msg} {}
+  explicit PorytilesException(const std::string &msg) : std::runtime_error{msg} {}
 };
 } // namespace porytiles
 
-#endif // PORYTILES_PTEXCEPTION_H
+#endif // PORYTILES_PORYTILES_EXCEPTION_H

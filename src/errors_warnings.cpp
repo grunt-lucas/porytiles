@@ -14,7 +14,7 @@
 #include "driver.h"
 #include "importer.h"
 #include "logger.h"
-#include "ptexception.h"
+#include "porytiles_exception.h"
 #include "types.h"
 #include "utilities.h"
 
@@ -30,12 +30,13 @@ const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
 const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
+const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
-    tileString = "{layer: " + layerString(tile.layer) + ", metatile: " + std::to_string(tile.metatileIndex) +
+    tileString = "{metatile: " + std::to_string(tile.metatileIndex) + ", layer: " + layerString(tile.layer) +
                  ", subtile: " + subtileString(tile.subtile) + "}";
   }
   else if (tile.type == TileType::ANIM) {
@@ -242,7 +243,7 @@ void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage)
   if (err.printErrors) {
     pt_fatal_err("{}", errorMessage);
   }
-  throw PtException{errorMessage};
+  throw PorytilesException{errorMessage};
 }
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
@@ -254,13 +255,13 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSo
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
-                                  std::string path)
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode)
 {
   if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
+    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", srcs.modeBasedSrcPath(mode).string());
   }
-  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode),
+                              fmt::format("invalid source path {}", srcs.modeBasedSrcPath(mode).string()));
 }
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
@@ -467,7 +468,7 @@ void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const Comp
                                         const CompilerMode &mode, std::string key, std::string value,
                                         std::size_t lineNumber, std::string path)
 {
-  // TODO : make it clearer this error is coming from assign.cache
+  // TODO 1.0.0 : make it clearer this error is coming from assign.cache
   if (err.printErrors) {
     pt_fatal_err("{}: invalid value '{}' for key '{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
                  fmt::styled(key, fmt::emphasis::bold), lineNumber);
@@ -482,7 +483,7 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
   if (err.printErrors) {
     pt_fatal_err("palette assignment parameter search matrix failed to find any suitable parameters");
     pt_note("please see the following wiki page for help with working through this error:");
-    // TODO : fill in wiki page link
+    // TODO 1.0.0 : fill in wiki page link
     pt_println(stderr, "      https://wiki-page-link-goes-here.com");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("palette assign param search matrix failed"));
@@ -513,7 +514,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
                              const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba)
 {
-  // TODO : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
+  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   std::string message =
       fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
@@ -598,7 +599,7 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
 {
-  // TODO : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
+  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   printWarning(
       err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
@@ -672,12 +673,29 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
   }
 }
 
+void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
+                           const RGBATile &tile)
+{
+  // TODO 1.0.0 : this warning should show if error came from primary or secondary set
+  // TODO 1.0.0 : add CLI option to display indexes in hex instead of dec
+  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
+  std::string tileString = getTilePrettyString(tile);
+  printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
+               fmt::format("{}: tile index {} out of range (sheet size {})",
+                           fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
+                           tilesheetSize));
+  if (err.printErrors && err.invalidTileIndex != WarningMode::OFF) {
+    pt_note("substituting primary tile 0 (transparent tile) so decompilation can continue");
+    pt_println(stderr, "");
+  }
+}
+
 void die(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
     pt_println(stderr, "{}", errorMessage);
   }
-  throw PtException{errorMessage};
+  throw PorytilesException{errorMessage};
 }
 
 void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)
@@ -685,7 +703,7 @@ void die_compilationTerminated(const ErrorsAndWarnings &err, std::string srcPath
   if (err.printErrors) {
     pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
-  throw PtException{errorMessage};
+  throw PorytilesException{errorMessage};
 }
 
 void die_compilationTerminatedFailHard(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)
@@ -701,7 +719,7 @@ void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPa
   if (err.printErrors) {
     pt_println(stderr, "terminating decompilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
-  throw PtException{errorMessage};
+  throw PorytilesException{errorMessage};
 }
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage)
@@ -730,7 +748,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
     }
     pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
-  throw PtException{errorMessage};
+  throw PorytilesException{errorMessage};
 }
 
 } // namespace porytiles
@@ -742,7 +760,7 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
 {
   SUBCASE("it should work for regular tiles")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
@@ -753,13 +771,14 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
-    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 6);
   }
 
   SUBCASE("it should work for anim tiles")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
@@ -770,14 +789,15 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
-    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 4);
   }
 }
 
 TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
@@ -788,13 +808,14 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                       porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 2);
 }
 
 TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -805,13 +826,13 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
 
 TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly when a dual-layer inference fails")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.compilerConfig.tripleLayer = false;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
@@ -823,13 +844,14 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                       porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 2);
 }
 
 TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format is invalid")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -839,21 +861,21 @@ TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format 
   {
     CHECK_THROWS_WITH_AS(
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PtException);
+        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
   SUBCASE("Firered row format, missing field")
   {
     CHECK_THROWS_WITH_AS(
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_2.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PtException);
+        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
 
 TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has an unrecognized behavior")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -862,14 +884,14 @@ TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has
   SUBCASE("Emerald row format, missing metatile behavior")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/unknown_behavior_1.csv"),
-                         "errors generated during attributes CSV parsing", porytiles::PtException);
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
 
 TEST_CASE("error_duplicateAttribute should trigger correctly when two rows specify the same metatile id")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -879,14 +901,14 @@ TEST_CASE("error_duplicateAttribute should trigger correctly when two rows speci
   {
     CHECK_THROWS_WITH_AS(
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/duplicate_definition_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PtException);
+        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
 
 TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifies an invalid TerrainType")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -896,14 +918,14 @@ TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifie
   {
     CHECK_THROWS_WITH_AS(
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_terrain_type_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PtException);
+        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
 
 TEST_CASE("error_invalidEncounterType should trigger correctly when a row specifies an invalid EncounterType")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -913,14 +935,14 @@ TEST_CASE("error_invalidEncounterType should trigger correctly when a row specif
   {
     CHECK_THROWS_WITH_AS(
         porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_encounter_type_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PtException);
+        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular primary tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -931,12 +953,12 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -948,14 +970,14 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in both cases:")
 {
   SUBCASE("when an anim frame is missing")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -968,12 +990,12 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
   }
 
   SUBCASE("when there are no regular frames supplied")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -986,13 +1008,13 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
   }
 }
 
 TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is no key frame supplied")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1003,13 +1025,13 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file", porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame width "
           "is mismatched")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1022,13 +1044,13 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.compilerConfig.cacheAssign = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 01.png dimension width mismatch",
-                       porytiles::PtException);
+                       porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame height "
           "is mismatched")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1041,12 +1063,12 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.compilerConfig.cacheAssign = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
-                       porytiles::PtException);
+                       porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a transparent tile")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1058,13 +1080,13 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
   ctx.compilerConfig.cacheAssign = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 had a transparent key frame tile",
-                       porytiles::PtException);
+                       porytiles::PorytilesException);
 }
 
 TEST_CASE(
     "fatalerror_duplicateKeyFrameTile should trigger when two different animations have a duplicate key frame tile")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1075,13 +1097,14 @@ TEST_CASE(
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile",
+                       porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an animation key frame tile is present in the "
           "paired primary tileset")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1096,12 +1119,12 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
   ctx.compilerConfig.cacheAssign = false;
 
   CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 key frame tile present in paired primary",
-                       porytiles::PtException);
+                       porytiles::PorytilesException);
 }
 
 TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attributes file is missing a header")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -1110,31 +1133,35 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
   SUBCASE("Completely missing header")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_1.csv"),
-                         "res/tests/csv/missing_header_1.csv: incorrect header row format", porytiles::PtException);
+                         "res/tests/csv/missing_header_1.csv: incorrect header row format",
+                         porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing id field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_2.csv"),
-                         "res/tests/csv/missing_header_2.csv: incorrect header row format", porytiles::PtException);
+                         "res/tests/csv/missing_header_2.csv: incorrect header row format",
+                         porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing behavior field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_3.csv"),
-                         "res/tests/csv/missing_header_3.csv: incorrect header row format", porytiles::PtException);
+                         "res/tests/csv/missing_header_3.csv: incorrect header row format",
+                         porytiles::PorytilesException);
   }
 
   SUBCASE("Header has terrainType but missing encounterType")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_4.csv"),
-                         "res/tests/csv/missing_header_4.csv: incorrect header row format", porytiles::PtException);
+                         "res/tests/csv/missing_header_4.csv: incorrect header row format",
+                         porytiles::PorytilesException);
   }
 }
 
 TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attribute csv contains a non-integral value")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -1143,20 +1170,20 @@ TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attrib
   SUBCASE("Invalid integer format 1")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_1.csv"),
-                         "res/tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PtException);
+                         "res/tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PorytilesException);
   }
 
   SUBCASE("Invalid integer format 2")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_2.csv"),
-                         "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PtException);
+                         "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PorytilesException);
   }
 }
 
 TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile behavior header has a non-integral "
           "behavior value")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
@@ -1164,7 +1191,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value foo",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     behaviorFile.close();
   }
 
@@ -1172,14 +1199,14 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value 6bar",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     behaviorFile.close();
   }
 }
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1191,7 +1218,8 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                       porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 3);
 }
 
@@ -1199,7 +1227,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
 {
   SUBCASE("it should trigger correctly for a primary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1213,13 +1241,13 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 
   SUBCASE("it should trigger correctly for a secondary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1235,14 +1263,14 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
 
 TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
   ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
@@ -1250,13 +1278,13 @@ TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
   CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_2.csv"),
-                       "errors generated during attributes CSV parsing", porytiles::PtException);
+                       "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
 
 TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
   ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
@@ -1264,7 +1292,7 @@ TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
   CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv"),
-                       "errors generated during attributes CSV parsing", porytiles::PtException);
+                       "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
 
@@ -1272,7 +1300,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
 {
   SUBCASE("it should trigger correctly for a primary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1285,13 +1313,13 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 
   SUBCASE("it should trigger correctly for a secondary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1306,7 +1334,7 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
-                         porytiles::PtException);
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
@@ -1315,7 +1343,7 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
 {
   SUBCASE("it should trigger correctly for a primary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1327,13 +1355,14 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
-    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 
   SUBCASE("it should trigger correctly for a secondary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1346,13 +1375,14 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
-    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 
   SUBCASE("it should trigger correctly for a dual layer primary set")
   {
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1365,14 +1395,15 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
-    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import", porytiles::PtException);
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                         porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
 
 TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1385,6 +1416,7 @@ TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger corre
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.cacheAssign = false;
 
-  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization", porytiles::PtException);
+  CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                       porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 2);
 }

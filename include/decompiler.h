@@ -3,12 +3,14 @@
 
 #include <memory>
 
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
 
-std::unique_ptr<DecompiledTileset> decompile(PtContext &ctx, const CompiledTileset &compiledTileset);
+std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMode mode,
+                                             const CompiledTileset &compiledTileset,
+                                             const std::unordered_map<std::size_t, Attributes> &attributesMap);
 
 } // namespace porytiles
 

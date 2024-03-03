@@ -61,19 +61,27 @@ const std::string TILES_OUTPUT_PAL_DESC =
 "             the final in-game tiles. Default value is `greyscale'.\n";
 constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 
+const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
+const std::string NORMALIZE_TRANSPARENCY_DESC =
+"        -" + NORMALIZE_TRANSPARENCY + "[=<R,G,B>]\n"
+"             When emitting the decompiled tileset, replace all source transparent colors with\n"
+"             the given RGB color. If no RGB color is supplied, use the default Porytiles\n"
+"             transparency color `255,0,255'. Only works in decompilation modes.\n";
+constexpr int NORMALIZE_TRANSPARENCY_VAL = 1002;
+
 const std::string DISABLE_METATILE_GENERATION = "disable-metatile-generation";
 const std::string DISABLE_METATILE_GENERATION_DESC =
 "        -" + DISABLE_METATILE_GENERATION + "\n"
 "             Disable generation of `metatiles.bin'. Only enable this if you want to manage\n"
 "             metatiles manually via Porymap.\n";
-constexpr int DISABLE_METATILE_GENERATION_VAL = 1002;
+constexpr int DISABLE_METATILE_GENERATION_VAL = 1003;
 
 const std::string DISABLE_ATTRIBUTE_GENERATION = "disable-attribute-generation";
 const std::string DISABLE_ATTRIBUTE_GENERATION_DESC =
 "        -" + DISABLE_ATTRIBUTE_GENERATION + "\n"
 "             Disable generation of `metatile_attributes.bin'. Only enable this if you want to\n"
 "             manage metatile attributes manually via Porymap.\n";
-constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1003;
+constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1004;
 
 
 // Tileset generation options
@@ -109,7 +117,7 @@ const std::string DEFAULT_BEHAVIOR_DESC =
 "             Select the default behavior for metatiles that do not have an entry in the\n"
 "             'attributes.csv' file. You may use either a raw integral value or a metatile behavior\n"
 "             label defined in the provided behaviors header. If unspecified, defaults to '0'.\n";
-constexpr int DEFAULT_BEHAVIOR_VAL = 2003;
+constexpr int DEFAULT_BEHAVIOR_VAL = 2004;
 
 const std::string DEFAULT_ENCOUNTER_TYPE = "default-encounter-type";
 const std::string DEFAULT_ENCOUNTER_TYPE_DESC =
@@ -118,7 +126,7 @@ const std::string DEFAULT_ENCOUNTER_TYPE_DESC =
 "             'attributes.csv' file. You may use either a raw integral value or an EncounterType\n"
 "             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
 "             '0'.\n";
-constexpr int DEFAULT_ENCOUNTER_TYPE_VAL = 2004;
+constexpr int DEFAULT_ENCOUNTER_TYPE_VAL = 2005;
 
 const std::string DEFAULT_TERRAIN_TYPE = "default-terrain-type";
 const std::string DEFAULT_TERRAIN_TYPE_DESC =
@@ -127,7 +135,7 @@ const std::string DEFAULT_TERRAIN_TYPE_DESC =
 "             'attributes.csv' file. You may use either a raw integral value or an TerrainType\n"
 "             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
 "             '0'.\n";
-constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2005;
+constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2006;
 
 
 // Color assignment config options
@@ -329,6 +337,11 @@ const std::string WMISSING_ASSIGN_CONFIG = W_GENERAL + WARN_MISSING_ASSIGN_CACHE
 const std::string WNO_MISSING_ASSIGN_CONFIG = W_GENERAL + "no-" + WARN_MISSING_ASSIGN_CACHE;
 constexpr int WMISSING_ASSIGN_CONFIG_VAL = 50100;
 constexpr int WNO_MISSING_ASSIGN_CONFIG_VAL = 60100;
+
+const std::string WINVALID_TILE_INDEX = W_GENERAL + WARN_INVALID_TILE_INDEX;
+const std::string WNO_INVALID_TILE_INDEX = W_GENERAL + "no-" + WARN_INVALID_TILE_INDEX;
+constexpr int WINVALID_TILE_INDEX_VAL = 50110;
+constexpr int WNO_INVALID_TILE_INDEX_VAL = 60110;
 
 // @formatter:on
 // clang-format on

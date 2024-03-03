@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 /**
@@ -12,7 +12,7 @@
 
 namespace porytiles {
 
-void parseOptions(PtContext &ctx, int argc, char *const *argv);
+void parseOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
 }
 

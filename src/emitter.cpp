@@ -10,7 +10,7 @@
 #include "decompiler.h"
 #include "importer.h"
 #include "logger.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 #include "utilities.h"
 
@@ -18,7 +18,7 @@ namespace porytiles {
 
 constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
-void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette)
+void emitPalette(PorytilesContext &ctx, std::ostream &out, const GBAPalette &palette)
 {
 #if defined(_WIN32) || defined(WIN32)
   out << "JASC-PAL" << std::endl;
@@ -44,7 +44,7 @@ void emitPalette(PtContext &ctx, std::ostream &out, const GBAPalette &palette)
 #endif
 }
 
-void emitZeroedPalette(PtContext &ctx, std::ostream &out)
+void emitZeroedPalette(PorytilesContext &ctx, std::ostream &out)
 {
   GBAPalette palette{};
   palette.colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
@@ -88,7 +88,7 @@ static void configurePngPalette(TilesOutputPalette paletteMode, png::image<png::
   out.set_palette(pngPal);
 }
 
-void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
+void emitTilesPng(PorytilesContext &ctx, png::image<png::index_pixel> &out, const CompiledTileset &tileset)
 {
   configurePngPalette(ctx.output.paletteMode, out, tileset.palettes);
 
@@ -127,7 +127,7 @@ void emitTilesPng(PtContext &ctx, png::image<png::index_pixel> &out, const Compi
   }
 }
 
-void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &tileset)
+void emitMetatilesBin(PorytilesContext &ctx, std::ostream &out, const CompiledTileset &tileset)
 {
   for (std::size_t i = 0; i < tileset.assignments.size(); i++) {
     auto &assignment = tileset.assignments.at(i);
@@ -141,8 +141,8 @@ void emitMetatilesBin(PtContext &ctx, std::ostream &out, const CompiledTileset &
   out.flush();
 }
 
-void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames, const CompiledAnimation &animation,
-              const std::vector<GBAPalette> &palettes)
+void emitAnim(PorytilesContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames,
+              const CompiledAnimation &animation, const std::vector<GBAPalette> &palettes)
 {
   if (outFrames.size() != animation.frames.size()) {
     internalerror("emitter::emitAnim outFrames.size() != animation.frames.size()");
@@ -168,8 +168,8 @@ void emitAnim(PtContext &ctx, std::vector<png::image<png::index_pixel>> &outFram
   }
 }
 
-void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::uint8_t, std::string> behaviorReverseMap,
-                    const CompiledTileset &tileset)
+void emitAttributes(PorytilesContext &ctx, std::ostream &out,
+                    std::unordered_map<std::uint8_t, std::string> behaviorReverseMap, const CompiledTileset &tileset)
 {
   std::size_t delta;
   if (ctx.compilerConfig.tripleLayer) {
@@ -232,39 +232,18 @@ void emitAttributes(PtContext &ctx, std::ostream &out, std::unordered_map<std::u
   out.flush();
 }
 
-void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::image<png::rgba_pixel> &middle,
-                    png::image<png::rgba_pixel> &top, std::ostream &outCsv, const DecompiledTileset &tileset,
-                    std::unordered_map<std::size_t, Attributes> &attributesMap,
+void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::rgba_pixel> &bottom,
+                    png::image<png::rgba_pixel> &middle, png::image<png::rgba_pixel> &top, std::ostream &outCsv,
+                    const DecompiledTileset &tileset, const std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
   // Assume bottom, middle, top have identical dimensions, driver creates these PNGs so it handles dimensions
   std::size_t widthInMetatiles = bottom.get_width() / METATILE_SIDE_LENGTH;
 
   /*
-   * Handle layer type by dividing the tileset.tiles size by 8 and 12, and comparing each result to the attribute count
-   * (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are triple.
-   * Otherwise, we have corruption and should fail.
-   */
-  bool tripleLayer = false;
-  std::size_t divBy8 = tileset.tiles.size() / 8;
-  std::size_t divBy12 = tileset.tiles.size() / 12;
-
-  if (divBy8 == attributesMap.size()) {
-    tripleLayer = false;
-  }
-  else if (divBy12 == attributesMap.size()) {
-    tripleLayer = true;
-  }
-  else {
-    internalerror(fmt::format(
-        "emitter::emitDecompiled tileset.tiles.size()={}, attributesMap.size()={} did not imply a layer type",
-        tileset.tiles.size(), attributesMap.size()));
-  }
-
-  /*
    * Emit the bottom.png, middle.png, and top.png content
    */
-  if (tripleLayer) {
+  if (tileset.tripleLayer) {
     for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
       size_t metatileRow = metatileIndex / widthInMetatiles;
       size_t metatileCol = metatileIndex % widthInMetatiles;
@@ -346,7 +325,7 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
   else {
     outCsv << "id,behavior" << std::endl;
   }
-  // TODO : if all elements in a row correspond to the selected defaults, skip emitting this row?
+  // TODO 1.0.0 : if all elements in a row correspond to the selected defaults, skip emitting this row?
   for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
@@ -355,8 +334,8 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
-                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+                                           attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
     else {
@@ -365,19 +344,19 @@ void emitDecompiled(PtContext &ctx, png::image<png::rgba_pixel> &bottom, png::im
                << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(ctx.decompilerConfig.mode),
-                                           metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+                                           attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(ctx.decompilerConfig.mode),
+    die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                    "behavior value did not have reverse mapping");
   }
 }
 
-void emitAssignCache(PtContext &ctx, const CompilerMode &mode, std::ostream &out)
+void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, std::ostream &out)
 {
   if (mode == CompilerMode::PRIMARY) {
     out << ASSIGN_ALGO << "=" << assignAlgorithmString(ctx.compilerConfig.primaryAssignAlgorithm) << std::endl;
@@ -399,7 +378,7 @@ void emitAssignCache(PtContext &ctx, const CompilerMode &mode, std::ostream &out
 
 TEST_CASE("emitPalette should write the expected JASC pal to the output stream")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   porytiles::GBAPalette palette{};
   palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
   palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
@@ -435,7 +414,7 @@ TEST_CASE("emitPalette should write the expected JASC pal to the output stream")
 
 TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output stream")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
 
   std::string expectedOutput = "JASC-PAL\r\n"
                                "0100\r\n"
@@ -465,7 +444,7 @@ TEST_CASE("emitZeroedPalette should write the expected JASC pal to the output st
 
 TEST_CASE("emitTilesPng should emit the expected tiles.png file")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
@@ -509,7 +488,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
 
 TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on settings")
 {
-  porytiles::PtContext ctx{};
+  porytiles::PorytilesContext ctx{};
   std::filesystem::path parentDir = porytiles::createTmpdir();
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -568,7 +547,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
 TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
-  // TODO : test impl emitAnim should correctly emit compiled animation PNG files
+  // TODO 1.0.0 : test impl emitAnim should correctly emit compiled animation PNG files
 }
 
 TEST_CASE("emitAttributes should correctly emit metatile attributes")
@@ -576,7 +555,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
   SUBCASE("triple layer metatiles")
   {
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -660,7 +639,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
   SUBCASE("dual layer metatiles")
   {
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary"}));
-    porytiles::PtContext ctx{};
+    porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
@@ -745,5 +724,5 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
-  // TODO : test impl emitDecompiled should correctly emit the decompiled tileset files
+  // TODO 1.0.0 : test impl emitDecompiled should correctly emit the decompiled tileset files
 }

@@ -106,7 +106,7 @@ release: $(RELEASE_TARGET) $(RELEASE_TEST_TARGET)
 release-check: release
 	@./$(RELEASE_TEST_TARGET)
 
-release-check-verbose: check-verbose
+release-check-verbose: release
 	@./$(RELEASE_TEST_TARGET) -s
 
 debug: $(DEBUG_TARGET) $(DEBUG_TEST_TARGET)

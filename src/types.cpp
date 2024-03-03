@@ -91,6 +91,27 @@ std::string layerString(TileLayer layer)
   throw std::runtime_error("types::layerString reached unreachable code path");
 }
 
+TileLayer indexToLayer(std::size_t index, bool tripleLayer)
+{
+  if (tripleLayer) {
+    if (index >= 0 && index < 4) {
+      return TileLayer::BOTTOM;
+    }
+    else if (index <= 4 && index < 8) {
+      return TileLayer::MIDDLE;
+    }
+    else {
+      return TileLayer::TOP;
+    }
+  }
+  if (index >= 0 && index < 4) {
+    return TileLayer::BOTTOM;
+  }
+  else {
+    return TileLayer::TOP;
+  }
+}
+
 std::string subtileString(Subtile subtile)
 {
   switch (subtile) {
@@ -107,6 +128,22 @@ std::string subtileString(Subtile subtile)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::subtileString reached unreachable code path");
+}
+
+Subtile indexToSubtile(std::size_t index)
+{
+  if (index % 4 == 0) {
+    return Subtile::NORTHWEST;
+  }
+  else if (index % 4 == 1) {
+    return Subtile::NORTHEAST;
+  }
+  else if (index % 4 == 2) {
+    return Subtile::SOUTHWEST;
+  }
+  else {
+    return Subtile::SOUTHEAST;
+  }
 }
 
 std::string layerTypeString(LayerType layerType)
@@ -421,6 +458,36 @@ std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mod
       "types::InputPaths::DecompilerSourcePaths::modeBasedInputPath reached unreachable code path");
 }
 
+std::filesystem::path DecompilerSourcePaths::modeBasedTilesPath(DecompilerMode mode) const
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return primaryTilesPng();
+  case DecompilerMode::SECONDARY:
+    return secondaryTilesPng();
+  default:
+    internalerror_unknownDecompilerMode("types::InputPaths::modeBasedTilesPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error(
+      "types::InputPaths::DecompilerSourcePaths::modeBasedTilesPath reached unreachable code path");
+}
+
+std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMode mode) const
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return primaryMetatilesBin();
+  case DecompilerMode::SECONDARY:
+    return secondaryMetatilesBin();
+  default:
+    internalerror_unknownDecompilerMode("types::InputPaths::modeBasedMetatilesPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error(
+      "types::InputPaths::DecompilerSourcePaths::modeBasedMetatilesPath reached unreachable code path");
+}
+
 std::filesystem::path DecompilerSourcePaths::modeBasedAttrPath(DecompilerMode mode) const
 {
   switch (mode) {
@@ -433,6 +500,35 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAttrPath(DecompilerMode mo
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::InputPaths::DecompilerSourcePaths::modeBasedAttrPath reached unreachable code path");
+}
+
+std::filesystem::path DecompilerSourcePaths::modeBasedPalettePath(DecompilerMode mode) const
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return primaryPalettes();
+  case DecompilerMode::SECONDARY:
+    return secondaryPalettes();
+  default:
+    internalerror_unknownDecompilerMode("types::InputPaths::modeBasedPalettePath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error(
+      "types::InputPaths::DecompilerSourcePaths::modeBasedPalettePath reached unreachable code path");
+}
+
+std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mode) const
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return primaryAnims();
+  case DecompilerMode::SECONDARY:
+    return secondaryAnims();
+  default:
+    internalerror_unknownDecompilerMode("types::InputPaths::modeBasedAnimPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::DecompilerSourcePaths::modeBasedAnimPath reached unreachable code path");
 }
 
 std::string compilerModeString(CompilerMode mode)
@@ -461,6 +557,20 @@ std::string assignAlgorithmString(AssignAlgorithm algo)
   }
   // unreachable, here for compiler
   throw std::runtime_error("types::assignAlgorithmString reached unreachable code path");
+}
+
+std::string decompilerModeString(DecompilerMode mode)
+{
+  switch (mode) {
+  case DecompilerMode::PRIMARY:
+    return "primary";
+  case DecompilerMode::SECONDARY:
+    return "secondary";
+  default:
+    internalerror_unknownDecompilerMode("types::decompilerModeString");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::decompilerModeString reached unreachable code path");
 }
 
 } // namespace porytiles

@@ -32,6 +32,7 @@ struct ErrorsAndWarnings {
   WarningMode assignCacheOverride;
   WarningMode invalidAssignCache;
   WarningMode missingAssignCache;
+  WarningMode invalidTileIndex;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
@@ -39,7 +40,7 @@ struct ErrorsAndWarnings {
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
         assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
-        missingAssignCache{WarningMode::OFF}
+        missingAssignCache{WarningMode::OFF}, invalidTileIndex{WarningMode::OFF}
   {
   }
 
@@ -55,6 +56,7 @@ struct ErrorsAndWarnings {
     assignCacheOverride = setting;
     invalidAssignCache = setting;
     missingAssignCache = setting;
+    invalidTileIndex = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -89,6 +91,9 @@ struct ErrorsAndWarnings {
     if (missingAssignCache == WarningMode::WARN) {
       missingAssignCache = WarningMode::ERR;
     }
+    if (invalidTileIndex == WarningMode::WARN) {
+      invalidTileIndex = WarningMode::ERR;
+    }
   }
 };
 
@@ -102,6 +107,7 @@ extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
 extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
+extern const char *const WARN_INVALID_TILE_INDEX;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -160,8 +166,8 @@ void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                   std::string path);
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
-                                  std::string path);
+
+void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode);
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                              CompilerMode mode, const std::string &animation, std::size_t index);
@@ -252,6 +258,12 @@ void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &conf
 void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+
+/*
+ * Decompilation warnings (due to possible mistakes in user input), decompilation can continue
+ */
+void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
+                           const RGBATile &tile);
 
 /*
  * Die functions

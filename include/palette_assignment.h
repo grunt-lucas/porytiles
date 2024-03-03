@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "compiler.h"
-#include "ptcontext.h"
+#include "porytiles_context.h"
 #include "types.h"
 
 namespace porytiles {
@@ -49,14 +49,14 @@ template <> struct std::hash<porytiles::AssignState> {
 };
 
 namespace porytiles {
-AssignResult assignDepthFirst(PtContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
+AssignResult assignDepthFirst(PorytilesContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
                               const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
                               const std::vector<ColorSet> &unassignedPrimers);
-AssignResult assignBreadthFirst(PtContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
+AssignResult assignBreadthFirst(PorytilesContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
                                 const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers);
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
-runPaletteAssignmentMatrix(PtContext &ctx, const std::vector<ColorSet> &colorSets,
+runPaletteAssignmentMatrix(PorytilesContext &ctx, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex);
 } // namespace porytiles
