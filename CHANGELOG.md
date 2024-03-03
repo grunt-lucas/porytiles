@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `decompile-secondary` command to decompile secondary tilesets
+
+- `-normalize-transparency` option for the decompile commands
+
+- `-Winvalid-tile-index` for use with the decompile commands
+
+- Options to disable generation of `metatiles.bin` and `metatile_attributes.bin`
+  - `-disable-metatile-generation` and `-disable-attribute-generation`
+
 ### Changed
 
-- Fixed issue [Secondary tileset attributes aren't generated #1](https://github.com/grunt-lucas/porytiles/issues/1)
+- Fixed bug from issue [Secondary tileset attributes aren't generated #1](https://github.com/grunt-lucas/porytiles/issues/1)
 
 ## [0.0.7] - 2024-01-07
 
