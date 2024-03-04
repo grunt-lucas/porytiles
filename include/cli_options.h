@@ -27,6 +27,7 @@ const std::string HELP_DESC =
 "         Print help message.\n";
 constexpr int HELP_VAL = 0000;
 
+// TODO 1.0.0 : verbose flag should have levels, i.e. TRACE,DEBUG,INFO,WARN,ERROR and log functions should accomodate
 const std::string VERBOSE = "verbose";
 const std::string VERBOSE_SHORT = "v";
 const std::string VERBOSE_DESC =
@@ -61,37 +62,29 @@ const std::string TILES_OUTPUT_PAL_DESC =
 "             the final in-game tiles. Default value is `greyscale'.\n";
 constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 
-const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
-const std::string NORMALIZE_TRANSPARENCY_DESC =
-"        -" + NORMALIZE_TRANSPARENCY + "[=<R,G,B>]\n"
-"             When emitting the decompiled tileset, replace all source transparent colors with\n"
-"             the given RGB color. If no RGB color is supplied, use the default Porytiles\n"
-"             transparency color `255,0,255'. Only works in decompilation modes.\n";
-constexpr int NORMALIZE_TRANSPARENCY_VAL = 1002;
-
 const std::string DISABLE_METATILE_GENERATION = "disable-metatile-generation";
 const std::string DISABLE_METATILE_GENERATION_DESC =
 "        -" + DISABLE_METATILE_GENERATION + "\n"
 "             Disable generation of `metatiles.bin'. Only enable this if you want to manage\n"
 "             metatiles manually via Porymap.\n";
-constexpr int DISABLE_METATILE_GENERATION_VAL = 1003;
+constexpr int DISABLE_METATILE_GENERATION_VAL = 1002;
 
 const std::string DISABLE_ATTRIBUTE_GENERATION = "disable-attribute-generation";
 const std::string DISABLE_ATTRIBUTE_GENERATION_DESC =
 "        -" + DISABLE_ATTRIBUTE_GENERATION + "\n"
 "             Disable generation of `metatile_attributes.bin'. Only enable this if you want to\n"
 "             manage metatile attributes manually via Porymap.\n";
-constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1004;
+constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1003;
 
 
-// Tileset generation options
+// Tileset (de)compilation options
 
 const std::string TARGET_BASE_GAME = "target-base-game";
 const std::string TARGET_BASE_GAME_DESC =
 "        -" + TARGET_BASE_GAME + "=<TARGET>\n"
 "             Set the (de)compilation target base game to TARGET. This option affects default\n"
 "             values for the fieldmap parameters, as well as the metatile attribute format. Valid\n"
-"             settings for TARGET are `pokeemerald', `pokefirered', and `pokeruby'. If this option\n"
+"             settings for TARGET are `pokeemerald', `pokefirered', or `pokeruby'. If this option\n"
 "             is not specified, defaults to `pokeemerald'. See the wiki docs for more information.\n";
 constexpr int TARGET_BASE_GAME_VAL = 2000;
 
@@ -137,6 +130,14 @@ const std::string DEFAULT_TERRAIN_TYPE_DESC =
 "             '0'.\n";
 constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2006;
 
+const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
+const std::string NORMALIZE_TRANSPARENCY_DESC =
+"        -" + NORMALIZE_TRANSPARENCY + "[=<R,G,B>]\n"
+"             When emitting the decompiled tileset, replace all source transparent colors with\n"
+"             the given RGB color. If no RGB color is supplied, use the default Porytiles\n"
+"             transparency color `255,0,255'.\n";
+constexpr int NORMALIZE_TRANSPARENCY_VAL = 2007;
+
 
 // Color assignment config options
 
@@ -164,41 +165,41 @@ const std::string BEST_BRANCHES_DESC =
 constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string SMART_PRUNE = "smart";
 
-const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
-const std::string PRIMARY_ASSIGN_ALGO_DESC =
-"        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Same as '-assign-algorithm', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
-constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3003;
-
-const std::string PRIMARY_EXPLORE_CUTOFF = "primary-explore-cutoff";
-const std::string PRIMARY_EXPLORE_CUTOFF_DESC =
-"        -" + PRIMARY_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
-constexpr int PRIMARY_EXPLORE_CUTOFF_VAL = 3004;
-
-const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
-const std::string PRIMARY_BEST_BRANCHES_DESC =
-"        -" + PRIMARY_BEST_BRANCHES + "=<N>\n"
-"             Same as '-best-branches', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
-constexpr int PRIMARY_BEST_BRANCHES_VAL = 3005;
-
 const std::string DISABLE_ASSIGN_CACHING = "disable-assign-caching";
 const std::string DISABLE_ASSIGN_CACHING_DESC =
 "        -" + DISABLE_ASSIGN_CACHING + "\n"
 "             Do not write palette assignment search parameters to `assign.cache' after a successful\n"
 "             compilation. This option may be useful in situations where you do not have write\n"
 "             access to the source folders.\n";
-constexpr int DISABLE_ASSIGN_CACHING_VAL = 3006;
+constexpr int DISABLE_ASSIGN_CACHING_VAL = 3003;
 
 const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
 const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC =
 "        -" + FORCE_ASSIGN_PARAM_MATRIX + "\n"
 "             Force the full palette assignment parameter search matrix to run. If `assign.cache'\n"
 "             exists in either source folder, its contents will be ignored.\n";
-constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3007;
+constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3004;
+
+const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
+const std::string PRIMARY_ASSIGN_ALGO_DESC =
+"        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
+"             Same as '-assign-algorithm', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
+constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3005;
+
+const std::string PRIMARY_EXPLORE_CUTOFF = "primary-explore-cutoff";
+const std::string PRIMARY_EXPLORE_CUTOFF_DESC =
+"        -" + PRIMARY_EXPLORE_CUTOFF + "=<FACTOR>\n"
+"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
+constexpr int PRIMARY_EXPLORE_CUTOFF_VAL = 3006;
+
+const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
+const std::string PRIMARY_BEST_BRANCHES_DESC =
+"        -" + PRIMARY_BEST_BRANCHES + "=<N>\n"
+"             Same as '-best-branches', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via 'compile-secondary'.\n";
+constexpr int PRIMARY_BEST_BRANCHES_VAL = 3007;
 
 // Fieldmap override options
 
@@ -210,25 +211,25 @@ const std::string TILES_PRIMARY_OVERRIDE_DESC =
 "             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
 constexpr int TILES_PRIMARY_OVERRIDE_VAL = 4000;
 
-const std::string TILES_OVERRIDE_TOTAL = "tiles-total-override";
+const std::string TILES_TOTAL_OVERRIDE = "tiles-total-override";
 const std::string TILES_TOTAL_OVERRIDE_DESC =
-"        -" + TILES_OVERRIDE_TOTAL + "=<N>\n"
+"        -" + TILES_TOTAL_OVERRIDE + "=<N>\n"
 "             Override the target base game's default number of total tiles. The value specified\n"
 "             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
 "             to 1024 (inherited from `pokeemerald' default target base game).\n";
 constexpr int TILES_TOTAL_OVERRIDE_VAL = 4001;
 
-const std::string METATILES_OVERRIDE_PRIMARY = "metatiles-primary-override";
+const std::string METATILES_PRIMARY_OVERRIDE = "metatiles-primary-override";
 const std::string METATILES_PRIMARY_OVERRIDE_DESC =
-"        -" + METATILES_OVERRIDE_PRIMARY + "=<N>\n"
+"        -" + METATILES_PRIMARY_OVERRIDE + "=<N>\n"
 "             Override the target base game's default number of primary set metatiles. The value\n"
 "             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
 "             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
 constexpr int METATILES_PRIMARY_OVERRIDE_VAL = 4002;
 
-const std::string METATILES_OVERRIDE_TOTAL = "metatiles-total-override";
+const std::string METATILES_TOTAL_OVERRIDE = "metatiles-total-override";
 const std::string METATILES_TOTAL_OVERRIDE_DESC =
-"        -" + METATILES_OVERRIDE_TOTAL + "=<N>\n"
+"        -" + METATILES_TOTAL_OVERRIDE + "=<N>\n"
 "             Override the target base game's default number of total metatiles. The value specified\n"
 "             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
 "             to 1024 (inherited from `pokeemerald' default target base game).\n";
@@ -287,7 +288,7 @@ const std::string WERROR_DESC =
 "             command line, the right-most specifier will take precedence.\n";
 constexpr int WERROR_VAL = 5003;
 
-// Compiler warnings
+// Compilation warnings
 const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + WARN_COLOR_PRECISION_LOSS;
 const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + WARN_COLOR_PRECISION_LOSS;
 constexpr int WCOLOR_PRECISION_LOSS_VAL = 50000;
@@ -338,7 +339,7 @@ const std::string WNO_MISSING_ASSIGN_CONFIG = W_GENERAL + "no-" + WARN_MISSING_A
 constexpr int WMISSING_ASSIGN_CONFIG_VAL = 50100;
 constexpr int WNO_MISSING_ASSIGN_CONFIG_VAL = 60100;
 
-// Decompiler warnings
+// Decompilation warnings
 const std::string WINVALID_TILE_INDEX = W_GENERAL + WARN_INVALID_TILE_INDEX;
 const std::string WNO_INVALID_TILE_INDEX = W_GENERAL + "no-" + WARN_INVALID_TILE_INDEX;
 constexpr int WINVALID_TILE_INDEX_VAL = 70110;

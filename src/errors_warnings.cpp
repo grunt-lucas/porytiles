@@ -20,6 +20,7 @@
 
 namespace porytiles {
 
+// Compilation warnings
 const char *const WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
 const char *const WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
 const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
@@ -30,6 +31,8 @@ const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
 const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
+
+// Decompilation warnings
 const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
 
 static std::string getTilePrettyString(const RGBATile &tile)
@@ -246,9 +249,18 @@ void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
     pt_fatal_err("{}", errorMessage);
-    pt_println(stderr, "");
   }
   throw PorytilesException{errorMessage};
+}
+
+void fatalerror_unrecognizedOption(const ErrorsAndWarnings &err, std::string option, Subcommand subcommand)
+{
+  if (err.printErrors) {
+    pt_fatal_err("unrecognized option `{}' for subcommand `{}'", option, subcommandString(subcommand));
+    pt_println(stderr, "Try `{} --help' for usage information.", subcommandString(subcommand));
+  }
+  throw PorytilesException{
+      fmt::format("unrecognized option `{}' for subcommand `{}'", option, subcommandString(subcommand))};
 }
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,

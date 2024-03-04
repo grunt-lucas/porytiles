@@ -647,6 +647,7 @@ enum class DecompilerMode { PRIMARY, SECONDARY };
  * Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
  */
 
+std::string subcommandString(Subcommand subcommand);
 std::string compilerModeString(CompilerMode mode);
 std::string assignAlgorithmString(AssignAlgorithm algo);
 std::string decompilerModeString(DecompilerMode mode);

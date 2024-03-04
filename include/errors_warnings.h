@@ -22,6 +22,7 @@ struct ErrorsAndWarnings {
   std::size_t warnCount;
   bool printErrors;
 
+  // Compilation warnings
   WarningMode colorPrecisionLoss;
   WarningMode keyFrameTileDidNotAppearInAssignment;
   WarningMode usedTrueColorMode;
@@ -32,6 +33,8 @@ struct ErrorsAndWarnings {
   WarningMode assignCacheOverride;
   WarningMode invalidAssignCache;
   WarningMode missingAssignCache;
+
+  // Decompilation warnings
   WarningMode invalidTileIndex;
 
   ErrorsAndWarnings()
@@ -46,6 +49,7 @@ struct ErrorsAndWarnings {
 
   void setAllWarnings(WarningMode setting)
   {
+    // Compilation warnings
     colorPrecisionLoss = setting;
     keyFrameTileDidNotAppearInAssignment = setting;
     usedTrueColorMode = setting;
@@ -56,11 +60,14 @@ struct ErrorsAndWarnings {
     assignCacheOverride = setting;
     invalidAssignCache = setting;
     missingAssignCache = setting;
+
+    // Decompilation warnings
     invalidTileIndex = setting;
   }
 
   void setAllEnabledWarningsToErrors()
   {
+    // Compilation warnings
     if (colorPrecisionLoss == WarningMode::WARN) {
       colorPrecisionLoss = WarningMode::ERR;
     }
@@ -91,12 +98,15 @@ struct ErrorsAndWarnings {
     if (missingAssignCache == WarningMode::WARN) {
       missingAssignCache = WarningMode::ERR;
     }
+
+    // Decompilation warnings
     if (invalidTileIndex == WarningMode::WARN) {
       invalidTileIndex = WarningMode::ERR;
     }
   }
 };
 
+// Compilation warnings
 extern const char *const WARN_COLOR_PRECISION_LOSS;
 extern const char *const WARN_KEY_FRAME_DID_NOT_APPEAR;
 extern const char *const WARN_USED_TRUE_COLOR_MODE;
@@ -107,6 +117,8 @@ extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
 extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
+
+// Decompilation warnings
 extern const char *const WARN_INVALID_TILE_INDEX;
 
 /*
@@ -163,6 +175,8 @@ void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, C
 void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode,
                 std::string message);
 void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
+
+void fatalerror_unrecognizedOption(const ErrorsAndWarnings &err, std::string option, Subcommand subcommand);
 
 void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                   std::string path);

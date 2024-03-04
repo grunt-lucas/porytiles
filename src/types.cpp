@@ -531,6 +531,24 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mo
   throw std::runtime_error("types::InputPaths::DecompilerSourcePaths::modeBasedAnimPath reached unreachable code path");
 }
 
+std::string subcommandString(Subcommand subcommand)
+{
+  switch (subcommand) {
+  case Subcommand::COMPILE_PRIMARY:
+    return "compile-primary";
+  case Subcommand::COMPILE_SECONDARY:
+    return "compile-secondary";
+  case Subcommand::DECOMPILE_PRIMARY:
+    return "decompile-primary";
+  case Subcommand::DECOMPILE_SECONDARY:
+    return "decompile-secondary";
+  default:
+    internalerror_unknownSubcommand("types::subcommandString");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::subcommandString reached unreachable code path");
+}
+
 std::string compilerModeString(CompilerMode mode)
 {
   switch (mode) {

@@ -47,7 +47,13 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
      * for the tile and palette indexes. See Petalburg tileset, metatile 0x24A for an example. In-game the garbage
      * tiles are invisible since they are covered by another layer.
      */
-    warn_invalidTileIndex(ctx.err, tileIndex, tiles.size(), decompiledTile);
+    if (tileIndex >= tiles.size()) {
+      warn_invalidTileIndex(ctx.err, tileIndex, tiles.size(), decompiledTile);
+    }
+    if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
+      // TODO 1.0.0 : create real warn_invalidPaletteIndex for this case
+      pt_warn("invalid palette index: {}", paletteIndex);
+    }
     const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
       // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)
       if (mode == DecompilerMode::SECONDARY) {

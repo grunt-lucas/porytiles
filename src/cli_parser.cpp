@@ -7,6 +7,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 #define FMT_HEADER_ONLY
 #include <fmt/color.h>
@@ -26,11 +27,411 @@ static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv);
 static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
 /*
- * TODO 1.0.0 : overhaul this whole system
- * Each subcommand should have its own help menu and options. We can create a validateSubcommandContext function
- * to call in each case of the option switch. It checks to see if this option is allowed to pair with this subcommand
- * via a map-lookup. If not, then fail.
+ * Help menu strings
  */
+// @formatter:off
+// clang-format off
+const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
+const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
+const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
+const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
+
+const std::string GLOBAL_HELP =
+"porytiles " + std::string{PORYTILES_BUILD_VERSION} + " " + std::string{PORYTILES_BUILD_DATE} + "\n"
+"grunt-lucas <grunt.lucas@yahoo.com>\n"
+"\n"
+"Overworld tileset compiler for use with the pokeruby, pokefirered, and pokeemerald Pokémon\n"
+"Generation 3 decompilation projects from pret. Also compatible with pokeemerald-expansion from\n"
+"rh-hideout. Builds Porymap-ready tilesets from RGBA (or indexed) tile assets.\n"
+"\n"
+"Project home page: https://github.com/grunt-lucas/porytiles\n"
+"\n"
+"\n"
+"USAGE\n"
+"    porytiles [GLOBAL OPTIONS] SUBCOMMAND [OPTIONS] [ARGS ...]\n"
+"    porytiles --help\n"
+"    porytiles --version\n"
+"\n"
+"GLOBAL OPTIONS\n" +
+HELP_DESC + "\n" +
+VERBOSE_DESC + "\n" +
+VERSION_DESC + "\n"
+"SUBCOMMANDS\n"
+"    " + COMPILE_PRIMARY_COMMAND + "\n"
+"        Compile a primary tileset. All files are generated in-place at the output location.\n"
+"        Compilation transforms RGBA (or indexed) tile assets into a Porymap-ready tileset.\n"
+"\n"
+"    " + COMPILE_SECONDARY_COMMAND + "\n"
+"        Compile a secondary tileset. All files are generated in-place at the output location.\n"
+"        Compilation transforms RGBA (or indexed) tile assets into a Porymap-ready tileset.\n"
+"\n"
+"    " + DECOMPILE_PRIMARY_COMMAND + "\n"
+"        Decompile a primary tileset. All files are generated in-place at the output location.\n"
+"        Decompilation transforms a Porymap-ready tileset into RGBA tile assets.\n"
+"\n"
+"    " + DECOMPILE_SECONDARY_COMMAND + "\n"
+"        Decompile a secondary tileset. All files are generated in-place at the output location.\n"
+"        Decompilation transforms a Porymap-ready tileset into RGBA tile assets.\n"
+"\n"
+"Run `porytiles SUBCOMMAND --help' for more information about a subcommand and its OPTIONS and ARGS.\n"
+"\n"
+"To get more help with Porytiles, check out the guides at:\n"
+"    https://github.com/grunt-lucas/porytiles/wiki\n"
+"    TODO 1.0.0 : YouTube tutorial playlist link\n"
+"\n"
+"SEE ALSO\n"
+"    https://github.com/pret/pokeruby\n"
+"    https://github.com/pret/pokefirered\n"
+"    https://github.com/pret/pokeemerald\n"
+"    https://github.com/rh-hideout/pokeemerald-expansion\n"
+"    https://github.com/huderlem/porymap\n"
+"\n";
+
+const std::string COMPILATION_INPUT_DIRECTORY_FORMAT =
+"    Compilation Input Directory Format\n"
+"        The compilation input directory must conform to the following format. `[]' indicates\n"
+"        optional assets.\n"
+"            src/\n"
+"                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
+"                [assign.cache]           # cached configuration for palette assignment algorithm\n"
+"                [attributes.csv]         # missing metatile entries will receive default values\n"
+"                [anim/]                  # `anim' folder is optional\n"
+"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
+"                        key.png          # you must specify a key frame PNG for each anim\n"
+"                        00.png           # you must specify at least one animation frame for each anim\n"
+"                        [01.png]         # frames must be named numerically, in order\n"
+"                        ...              # you may specify an arbitrary number of additional frames\n"
+"                    ...                  # you may specify an arbitrary number of additional animations\n"
+"                [palette-primers]        # `palette-primers' folder is optional\n"
+"                    [foliage.pal]        # e.g. a pal file containing all the colors for your trees and grass\n"
+"                    ...                  # you may specify an arbitrary number of additional primer palettes\n";
+
+const std::string DECOMPILATION_INPUT_DIRECTORY_FORMAT =
+"    Decompilation Input Directory Format\n"
+"        The decompilation input directory must conform to the following format. `[]' indicates\n"
+"        optional assets.\n"
+"            bin/\n"
+"                metatile_attributes.bin  # binary file containing attributes of each metatile\n"
+"                metatiles.bin            # binary file containing metatile entries\n"
+"                tiles.png                # indexed png of raw tiles\n"
+"                palettes                 # directory of palette files\n"
+"                    00.pal               # JASC pal file for palette 0\n"
+"                    ...                  # there must be each JASC palette file up to NUM_PALS_TOTAL\n"
+"                [anim/]                  # `anim' folder is optional\n"
+"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
+"                        00.png           # you must specify at least one animation frame for each anim\n"
+"                        [01.png]         # frames must be named numerically, in order\n"
+"                        ...              # you may specify an arbitrary number of additional frames\n"
+"                    ...                  # you may specify an arbitrary number of additional animations\n";
+
+const std::string WARN_OPTIONS_HEADER =
+"    Warning Options\n"
+"        Use these options to enable or disable additional warnings, as well as set specific\n"
+"        warnings as errors. For more information and a full list of available warnings, check:\n"
+"        https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n";
+
+const std::string COMPILE_PRIMARY_HELP =
+"USAGE\n"
+"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] INPUT-PATH BEHAVIORS-HEADER\n"
+"\n"
+"Compile RGBA tile assets into a Porymap-ready primary tileset. `compile-primary' expects an input\n"
+"path containing the target assets organized according to the format outlined in the Compilation\n"
+"Input Directory Format subsection. You must also supply your project's `metatile_behaviors.h' file.\n"
+"By default, `compile-primary' will write output to the current working directory, but you can\n"
+"change this behavior by supplying the `-o' option.\n"
+"\n"
+"ARGS\n"
+"    <INPUT-PATH>\n"
+"        Path to a directory containing the RGBA tile assets for the target primary set. The\n"
+"        directory must conform to the Compilation Input Directory Format outlined below. This\n"
+"        tileset is the `target tileset.'\n"
+"\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
+"\n" +
+COMPILATION_INPUT_DIRECTORY_FORMAT +
+"\n"
+"OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+TILES_OUTPUT_PAL_DESC + "\n" +
+DISABLE_METATILE_GENERATION_DESC + "\n" +
+DISABLE_ATTRIBUTE_GENERATION_DESC + "\n" +
+"    Tileset Compilation Options\n" +
+TARGET_BASE_GAME_DESC + "\n" +
+DUAL_LAYER_DESC + "\n" +
+TRANSPARENCY_COLOR_DESC + "\n" +
+DEFAULT_BEHAVIOR_DESC + "\n" +
+DEFAULT_ENCOUNTER_TYPE_DESC + "\n" +
+DEFAULT_TERRAIN_TYPE_DESC + "\n" +
+"    Palette Assignment Config Options\n" +
+ASSIGN_ALGO_DESC + "\n" +
+EXPLORE_CUTOFF_DESC + "\n" +
+BEST_BRANCHES_DESC + "\n" +
+DISABLE_ASSIGN_CACHING_DESC + "\n" +
+FORCE_ASSIGN_PARAM_MATRIX_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+TILES_PRIMARY_OVERRIDE_DESC + "\n" +
+TILES_TOTAL_OVERRIDE_DESC + "\n" +
+METATILES_PRIMARY_OVERRIDE_DESC + "\n" +
+METATILES_TOTAL_OVERRIDE_DESC + "\n" +
+PALS_PRIMARY_OVERRIDE_DESC + "\n" +
+PALS_TOTAL_OVERRIDE_DESC + "\n" +
+WARN_OPTIONS_HEADER +
+"\n" +
+WALL_DESC + "\n" +
+WNONE_DESC + "\n" +
+W_GENERAL_DESC + "\n" +
+WERROR_DESC + "\n";
+
+const std::string COMPILE_SECONDARY_HELP =
+"USAGE\n"
+"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] INPUT-PATH PRIMARY-INPUT-PATH BEHAVIORS-HEADER\n"
+"\n"
+"Compile RGBA tile assets into a Porymap-ready secondary tileset. `compile-secondary' expects an\n"
+"input path containing the target assets organized according to the format outlined in the\n"
+"Compilation Input Directory Format subsection. You must also supply the RGBA tile assets for a\n"
+"paired primary tileset, so Porytiles can take advantage of the Generation 3 engine's tile re-use\n"
+"system. Like `compile-primary', you must also supply your project's `metatile_behaviors.h' file. By\n"
+"default, `compile-secondary' will write output to the current working directory, but you can change\n"
+"this behavior by supplying the `-o' option.\n"
+"\n"
+"ARGS\n"
+"    <INPUT-PATH>\n"
+"        Path to a directory containing the RGBA tile assets for the target secondary set. The\n"
+"        directory must conform to the Compilation Input Directory Format outlined below. This\n"
+"        tileset is the `target tileset.'\n"
+"\n"
+"    <PRIMARY-INPUT-PATH>\n"
+"        Path to a directory containing the RGBA tile assets for the paired primary set of the\n"
+"        target secondary tileset. The directory must conform to the Compilation Input Directory\n"
+"        Format outlined below.\n"
+"\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
+"\n" +
+COMPILATION_INPUT_DIRECTORY_FORMAT +
+"\n"
+"OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+TILES_OUTPUT_PAL_DESC + "\n" +
+DISABLE_METATILE_GENERATION_DESC + "\n" +
+DISABLE_ATTRIBUTE_GENERATION_DESC + "\n" +
+"    Tileset Compilation Options\n" +
+TARGET_BASE_GAME_DESC + "\n" +
+DUAL_LAYER_DESC + "\n" +
+TRANSPARENCY_COLOR_DESC + "\n" +
+DEFAULT_BEHAVIOR_DESC + "\n" +
+DEFAULT_ENCOUNTER_TYPE_DESC + "\n" +
+DEFAULT_TERRAIN_TYPE_DESC + "\n" +
+"    Palette Assignment Config Options\n" +
+ASSIGN_ALGO_DESC + "\n" +
+EXPLORE_CUTOFF_DESC + "\n" +
+BEST_BRANCHES_DESC + "\n" +
+DISABLE_ASSIGN_CACHING_DESC + "\n" +
+FORCE_ASSIGN_PARAM_MATRIX_DESC + "\n" +
+"    Primary Palette Assignment Config Options\n" +
+PRIMARY_ASSIGN_ALGO_DESC + "\n" +
+PRIMARY_EXPLORE_CUTOFF_DESC + "\n" +
+PRIMARY_BEST_BRANCHES_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+TILES_PRIMARY_OVERRIDE_DESC + "\n" +
+TILES_TOTAL_OVERRIDE_DESC + "\n" +
+METATILES_PRIMARY_OVERRIDE_DESC + "\n" +
+METATILES_TOTAL_OVERRIDE_DESC + "\n" +
+PALS_PRIMARY_OVERRIDE_DESC + "\n" +
+PALS_TOTAL_OVERRIDE_DESC + "\n" +
+WARN_OPTIONS_HEADER +
+"\n" +
+WALL_DESC + "\n" +
+WNONE_DESC + "\n" +
+W_GENERAL_DESC + "\n" +
+WERROR_DESC + "\n";
+
+const std::string DECOMPILE_PRIMARY_HELP =
+"USAGE\n"
+"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] INPUT-PATH BEHAVIORS-HEADER\n"
+"\n"
+"Decompile a Porymap-ready primary tileset back into Porytiles-compatible RGBA tile assets.\n"
+"`decompile-primary' expects an input path containing target compiled tile assets organized\n"
+"according to the format outlined in the Decompilation Input Directory Format subsection. Like the\n"
+"compilation commands, `decompile-primary' requires your project's `metatile_behaviors.h' file. And\n"
+"you can control its output location via the `-o' option.\n"
+"\n"
+"ARGS\n"
+"    <INPUT-PATH>\n"
+"        Path to a directory containing the compiled primary tileset. The directory must conform\n"
+"        to the Decompilation Input Directory Format outlined below. This tileset is the `target\n"
+"        tileset.'\n"
+"\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
+"\n" +
+DECOMPILATION_INPUT_DIRECTORY_FORMAT +
+"\n"
+"OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+"    Tileset Decompilation Options\n" +
+TARGET_BASE_GAME_DESC + "\n" +
+NORMALIZE_TRANSPARENCY_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+TILES_PRIMARY_OVERRIDE_DESC + "\n" +
+TILES_TOTAL_OVERRIDE_DESC + "\n" +
+PALS_PRIMARY_OVERRIDE_DESC + "\n" +
+PALS_TOTAL_OVERRIDE_DESC + "\n" +
+WARN_OPTIONS_HEADER +
+"\n" +
+WALL_DESC + "\n" +
+WNONE_DESC + "\n" +
+W_GENERAL_DESC + "\n" +
+WERROR_DESC + "\n";
+
+const std::string DECOMPILE_SECONDARY_HELP =
+"USAGE\n"
+"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] INPUT-PATH PRIMARY-INPUT-PATH BEHAVIORS-HEADER\n"
+"\n"
+"Decompile a Porymap-ready secondary tileset back into Porytiles-compatible RGBA tile assets.\n"
+"`decompile-secondary' expects an input path containing target compiled tile assets organized\n"
+"according to the format outlined in the Decompilation Input Directory Format subsection. You must\n"
+"also supply the compiled tile assets of the target tileset's paired primary. `decompile-primary'\n"
+"requires your project's `metatile_behaviors.h' file. And you can control its output location via\n"
+"the `-o' option.\n"
+"\n"
+"ARGS\n"
+"    <INPUT-PATH>\n"
+"        Path to a directory containing the compiled secondary tileset. The directory must conform\n"
+"        to the Decompilation Input Directory Format outlined below. This tileset is the `target\n"
+"        tileset.'\n"
+"\n"
+"    <PRIMARY-INPUT-PATH>\n"
+"        Path to a directory containing the compiled paired primary tileset for the target secondary\n"
+"        tileset. The directory must conform to the Decompilation Input Directory Format outlined\n"
+"        below.\n"
+"\n"
+"    <BEHAVIORS-HEADER>\n"
+"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
+"        project's `include/constants' folder.\n"
+"\n" +
+DECOMPILATION_INPUT_DIRECTORY_FORMAT +
+"\n"
+"OPTIONS\n" +
+"    For more detailed information about the options below, check out the options pages here:\n" +
+"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
+"\n" +
+"    Driver Options\n" +
+OUTPUT_DESC + "\n" +
+"    Tileset Decompilation Options\n" +
+TARGET_BASE_GAME_DESC + "\n" +
+NORMALIZE_TRANSPARENCY_DESC + "\n" +
+"    Fieldmap Override Options\n" +
+TILES_PRIMARY_OVERRIDE_DESC + "\n" +
+TILES_TOTAL_OVERRIDE_DESC + "\n" +
+PALS_PRIMARY_OVERRIDE_DESC + "\n" +
+PALS_TOTAL_OVERRIDE_DESC + "\n" +
+WARN_OPTIONS_HEADER +
+"\n" +
+WALL_DESC + "\n" +
+WNONE_DESC + "\n" +
+W_GENERAL_DESC + "\n" +
+WERROR_DESC + "\n";
+// @formatter:on
+// clang-format on
+
+std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcommands = {
+    {HELP,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {OUTPUT,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {TILES_OUTPUT_PAL, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DISABLE_METATILE_GENERATION, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DISABLE_ATTRIBUTE_GENERATION, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {TARGET_BASE_GAME,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {DUAL_LAYER, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {TRANSPARENCY_COLOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DEFAULT_BEHAVIOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DEFAULT_ENCOUNTER_TYPE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DEFAULT_TERRAIN_TYPE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {NORMALIZE_TRANSPARENCY, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {ASSIGN_ALGO, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {EXPLORE_CUTOFF, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {BEST_BRANCHES, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {DISABLE_ASSIGN_CACHING, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {FORCE_ASSIGN_PARAM_MATRIX, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {PRIMARY_ASSIGN_ALGO, {Subcommand::COMPILE_SECONDARY}},
+    {PRIMARY_EXPLORE_CUTOFF, {Subcommand::COMPILE_SECONDARY}},
+    {PRIMARY_BEST_BRANCHES, {Subcommand::COMPILE_SECONDARY}},
+    {TILES_PRIMARY_OVERRIDE,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {TILES_TOTAL_OVERRIDE,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {METATILES_PRIMARY_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {METATILES_TOTAL_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {PALS_PRIMARY_OVERRIDE,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {PALS_TOTAL_OVERRIDE,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {WALL,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {WNONE,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {WNO_ERROR,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    {WERROR,
+     {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,
+      Subcommand::DECOMPILE_SECONDARY}},
+    // Compilation warnings
+    {WCOLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_COLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WKEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_KEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WUSED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_USED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_ATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WUNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_UNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WTRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_TRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_ASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WINVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_INVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    // Decompilation warnings
+    {WINVALID_TILE_INDEX, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {WNO_INVALID_TILE_INDEX, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    // TODO 1.0.0 : this does not correctly handle the -Werror=foo case where foo is an incompatible warning
+};
 
 void parseOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
@@ -150,51 +551,7 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
   throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
 }
 
-// @formatter:off
-// clang-format off
 const std::vector<std::string> GLOBAL_SHORTS = {};
-const std::string GLOBAL_HELP =
-"porytiles " + std::string{PORYTILES_BUILD_VERSION} + " " + std::string{PORYTILES_BUILD_DATE} + "\n"
-"grunt-lucas <grunt.lucas@yahoo.com>\n"
-"\n"
-"Overworld tileset compiler for use with the pokeruby, pokeemerald, and pokefirered Pokémon\n"
-"Generation 3 decompilation projects from pret. Builds Porymap-ready tilesets from RGBA\n"
-"(or indexed) tile assets.\n"
-"\n"
-"Project home page: https://github.com/grunt-lucas/porytiles\n"
-"\n"
-"\n"
-"USAGE\n"
-"    porytiles [OPTIONS] COMMAND [OPTIONS] [ARGS ...]\n"
-"    porytiles --help\n"
-"    porytiles --version\n"
-"\n"
-"OPTIONS\n" +
-HELP_DESC + "\n" +
-VERBOSE_DESC + "\n" +
-VERSION_DESC + "\n"
-"COMMANDS\n"
-"    decompile-primary\n"
-"        Under construction.\n"
-"\n"
-"    decompile-secondary\n"
-"        Under construction.\n"
-"\n"
-"    compile-primary\n"
-"        Compile a complete primary tileset. All files are generated in-place at the output\n"
-"        location.\n"
-"\n"
-"    compile-secondary\n"
-"        Compile a complete secondary tileset. All files are generated in-place at the output\n"
-"        location.\n"
-"\n"
-"Run `porytiles COMMAND --help' for more information about a command.\n"
-"\n"
-"To get more help with porytiles, check out the guides at:\n"
-"    https://github.com/grunt-lucas/porytiles/wiki\n";
-// @formatter:on
-// clang-format on
-
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv)
 {
   std::ostringstream implodedShorts;
@@ -236,10 +593,6 @@ static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *arg
   }
 }
 
-const std::string DECOMPILE_PRIMARY_COMMAND = "decompile-primary";
-const std::string DECOMPILE_SECONDARY_COMMAND = "decompile-secondary";
-const std::string COMPILE_PRIMARY_COMMAND = "compile-primary";
-const std::string COMPILE_SECONDARY_COMMAND = "compile-secondary";
 static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
 {
   if ((argc - optind) == 0) {
@@ -264,124 +617,17 @@ static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
   }
 }
 
-// @formatter:off
-// clang-format off
-const std::vector<std::string> COMPILE_SHORTS = {};
-const std::string COMPILE_HELP =
-"USAGE\n"
-"    porytiles " + COMPILE_PRIMARY_COMMAND + " [OPTIONS] SRC-PRIMARY-PATH BEHAVIORS-HEADER\n"
-"    porytiles " + COMPILE_SECONDARY_COMMAND + " [OPTIONS] SRC-SECONDARY-PATH SRC-PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
-"    porytiles " + DECOMPILE_PRIMARY_COMMAND + " [OPTIONS] BIN-PRIMARY-PATH BEHAVIORS-HEADER\n"
-"    porytiles " + DECOMPILE_SECONDARY_COMMAND + " [OPTIONS] BIN-SECONDARY-PATH BIN-PARTNER-PRIMARY-PATH BEHAVIORS-HEADER\n"
-"\n"
-"Compile the tile assets in a given source folder into a Porymap-ready tileset. Decompile a tileset into its\n"
-"constituent RGBA layer PNGs, RGB anim frames, and attributes.csv.\n"
-"\n"
-"ARGS\n"
-"    <SRC-PRIMARY-PATH>\n"
-"        Path to a directory containing the source data for a primary set.\n"
-"\n"
-"    <SRC-SECONDARY-PATH>\n"
-"        Path to a directory containing the source data for a secondary set.\n"
-"\n"
-"    <SRC-PARTNER-PRIMARY-PATH>\n"
-"        Path to a directory containing the source data for a secondary set's partner primary set.\n"
-"        This partner primary set must be a Porytiles-managed tileset.\n"
-"\n"
-"    <BIN-PRIMARY-PATH>\n"
-"        Path to a directory containing a compiled primary tileset.\n"
-"\n"
-"    <BIN-SECONDARY-PATH>\n"
-"        Path to a directory containing a compiled secondary tileset.\n"
-"\n"
-"    <BIN-PARTNER-PRIMARY-PATH>\n"
-"        Path to a directory containing a compiled secondary tileset's compiled partner primary\n"
-"        set.\n"
-"\n"
-"    <BEHAVIORS-HEADER>\n"
-"        Path to your project's `metatile_behaviors.h' file. This file is likely located in your\n"
-"        project's `include/constants' folder.\n"
-"\n"
-"    Source Directory Format\n"
-"        The source directory must conform to the following format. '[]' indicate optional assets.\n"
-"            src/\n"
-"                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)\n"
-"                [assign.cache]           # cached configuration for palette assignment algorithm\n"
-"                [attributes.csv]         # missing metatile entries will receive default values\n"
-"                [anim/]                  # `anim' folder is optional\n"
-"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
-"                        key.png          # you must specify a key frame PNG for each anim\n"
-"                        00.png           # you must specify at least one animation frame for each anim\n"
-"                        [01.png]         # frames must be named numerically, in order\n"
-"                        ...              # you may specify an arbitrary number of additional frames\n"
-"                    ...                  # you may specify an arbitrary number of additional animations\n"
-"                [palette-primers]        # `palette-primers' folder is optional\n"
-"                    [foliage.pal]        # e.g. a pal file containing all the colors for your trees and grass\n"
-"                    ...                  # you may specify an arbitrary number of additional primer palettes\n"
-"\n"
-"    Compiled Directory Format\n"
-"        The compiled directory must conform to the following format. '[]' indicate optional assets.\n"
-"            bin/\n"
-"                metatile_attributes.bin  # binary file containing attributes of each metatile\n"
-"                metatiles.bin            # binary file containing metatile entries\n"
-"                tiles.png                # indexed png of raw tiles\n"
-"                palettes                 # directory of palette files\n"
-"                    00.pal               # JASC pal file for palette 0\n"
-"                    ...                  # there should be one JASC palette file up to NUM_PALS_TOTAL\n"
-"                [anim/]                  # `anim' folder is optional\n"
-"                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
-"                        00.png           # you must specify at least one animation frame for each anim\n"
-"                        [01.png]         # frames must be named numerically, in order\n"
-"                        ...              # you may specify an arbitrary number of additional frames\n"
-"                    ...                  # you may specify an arbitrary number of additional animations\n"
-"\n"
-"OPTIONS\n" +
-"    For more detailed information about the options below, check out the options pages here:\n" +
-"    https://github.com/grunt-lucas/porytiles/wiki#advanced-usage\n" +
-"\n" +
-"    Driver Options\n" +
-OUTPUT_DESC + "\n" +
-TILES_OUTPUT_PAL_DESC + "\n" +
-NORMALIZE_TRANSPARENCY_DESC + "\n" +
-DISABLE_METATILE_GENERATION_DESC + "\n" +
-DISABLE_ATTRIBUTE_GENERATION_DESC + "\n" +
-"    Tileset Compilation & Decompilation Options\n" +
-TARGET_BASE_GAME_DESC + "\n" +
-DUAL_LAYER_DESC + "\n" +
-TRANSPARENCY_COLOR_DESC + "\n" +
-DEFAULT_BEHAVIOR_DESC + "\n" +
-DEFAULT_ENCOUNTER_TYPE_DESC + "\n" +
-DEFAULT_TERRAIN_TYPE_DESC + "\n" +
-"    Palette Assignment Config Options\n" +
-ASSIGN_ALGO_DESC + "\n" +
-EXPLORE_CUTOFF_DESC + "\n" +
-BEST_BRANCHES_DESC + "\n" +
-PRIMARY_ASSIGN_ALGO_DESC + "\n" +
-PRIMARY_EXPLORE_CUTOFF_DESC + "\n" +
-PRIMARY_BEST_BRANCHES_DESC + "\n" +
-DISABLE_ASSIGN_CACHING_DESC + "\n" +
-FORCE_ASSIGN_PARAM_MATRIX_DESC + "\n" +
-"    Fieldmap Override Options\n" +
-TILES_PRIMARY_OVERRIDE_DESC + "\n" +
-TILES_TOTAL_OVERRIDE_DESC + "\n" +
-METATILES_PRIMARY_OVERRIDE_DESC + "\n" +
-METATILES_TOTAL_OVERRIDE_DESC + "\n" +
-PALS_PRIMARY_OVERRIDE_DESC + "\n" +
-PALS_TOTAL_OVERRIDE_DESC + "\n" +
-"    Warning Options\n" +
-"        Use these options to enable or disable additional warnings, as well as set specific\n" +
-"        warnings as errors. For more information and a full list of available warnings, check:\n" +
-"        https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors\n" +
-"\n" +
-WALL_DESC + "\n" +
-WNONE_DESC + "\n" +
-W_GENERAL_DESC + "\n" +
-WERROR_DESC + "\n";
-// @formatter:on
-// clang-format on
+static void validateSubcommandContext(PorytilesContext &ctx, std::string option)
+{
+  if (!supportedSubcommands.contains(option)) {
+    internalerror(fmt::format("`supportedSubcommands' did not contain mapping for option `{}'", option));
+  }
+  if (!supportedSubcommands.at(option).contains(ctx.subcommand)) {
+    fatalerror_unrecognizedOption(ctx.err, option, ctx.subcommand);
+  }
+}
 
+const std::vector<std::string> COMPILE_SHORTS = {};
 /*
  * FIXME : the warning parsing system here is a dumpster fire
  */
@@ -412,17 +658,17 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {EXPLORE_CUTOFF.c_str(), required_argument, nullptr, EXPLORE_CUTOFF_VAL},
       {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
       {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
+      {DISABLE_ASSIGN_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CACHING_VAL},
+      {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
       {PRIMARY_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_EXPLORE_CUTOFF_VAL},
       {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
       {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
-      {DISABLE_ASSIGN_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CACHING_VAL},
-      {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
 
       // Fieldmap override options
       {TILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, TILES_PRIMARY_OVERRIDE_VAL},
-      {TILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
-      {METATILES_OVERRIDE_PRIMARY.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
-      {METATILES_OVERRIDE_TOTAL.c_str(), required_argument, nullptr, METATILES_TOTAL_OVERRIDE_VAL},
+      {TILES_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, TILES_TOTAL_OVERRIDE_VAL},
+      {METATILES_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, METATILES_PRIMARY_OVERRIDE_VAL},
+      {METATILES_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, METATILES_TOTAL_OVERRIDE_VAL},
       {PALS_PRIMARY_OVERRIDE.c_str(), required_argument, nullptr, PALS_PRIMARY_OVERRIDE_VAL},
       {PALS_TOTAL_OVERRIDE.c_str(), required_argument, nullptr, PALS_TOTAL_OVERRIDE_VAL},
 
@@ -433,7 +679,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {WERROR.c_str(), optional_argument, nullptr, WERROR_VAL},
       {WNO_ERROR.c_str(), required_argument, nullptr, WNO_ERROR_VAL},
 
-      // Specific warnings
+      // Compilation warnings
       {WCOLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WCOLOR_PRECISION_LOSS_VAL},
       {WNO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WNO_COLOR_PRECISION_LOSS_VAL},
 
@@ -464,6 +710,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
       {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
 
+      // Decompilation warnings
       {WINVALID_TILE_INDEX.c_str(), no_argument, nullptr, WINVALID_TILE_INDEX_VAL},
       {WNO_INVALID_TILE_INDEX.c_str(), no_argument, nullptr, WNO_INVALID_TILE_INDEX_VAL},
 
@@ -482,6 +729,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   bool disableAllWarnings = false;
   bool setAllEnabledWarningsToErrors = false;
 
+  // Compilation warnings
   std::optional<bool> warnColorPrecisionLossOverride{};
   std::optional<bool> errColorPrecisionLossOverride{};
 
@@ -513,6 +761,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   std::optional<bool> warnMissingAssignCache{};
   std::optional<bool> errMissingAssignCache{};
 
+  // Decompilation warnings
   std::optional<bool> warnInvalidTileIndex{};
   std::optional<bool> errInvalidTileIndex{};
 
@@ -546,46 +795,58 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
     // Driver options
     case OUTPUT_VAL:
+      validateSubcommandContext(ctx, OUTPUT);
       ctx.output.path = optarg;
       break;
     case TILES_OUTPUT_PAL_VAL:
+      validateSubcommandContext(ctx, TILES_OUTPUT_PAL);
       ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
       break;
+    case DISABLE_METATILE_GENERATION_VAL:
+      validateSubcommandContext(ctx, DISABLE_METATILE_GENERATION);
+      ctx.output.disableMetatileGeneration = true;
+      break;
+    case DISABLE_ATTRIBUTE_GENERATION_VAL:
+      validateSubcommandContext(ctx, DISABLE_ATTRIBUTE_GENERATION);
+      ctx.output.disableAttributeGeneration = true;
+      break;
+
+    // Tileset (de)compilation options
+    case TARGET_BASE_GAME_VAL:
+      validateSubcommandContext(ctx, TARGET_BASE_GAME);
+      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
+      break;
+    case DUAL_LAYER_VAL:
+      validateSubcommandContext(ctx, DUAL_LAYER);
+      ctx.compilerConfig.tripleLayer = false;
+      break;
+    case TRANSPARENCY_COLOR_VAL:
+      validateSubcommandContext(ctx, TRANSPARENCY_COLOR);
+      ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
+      break;
+    case DEFAULT_BEHAVIOR_VAL:
+      validateSubcommandContext(ctx, DEFAULT_BEHAVIOR);
+      ctx.compilerConfig.defaultBehavior = std::string{optarg};
+      break;
+    case DEFAULT_ENCOUNTER_TYPE_VAL:
+      validateSubcommandContext(ctx, DEFAULT_ENCOUNTER_TYPE);
+      ctx.compilerConfig.defaultEncounterType = std::string{optarg};
+      break;
+    case DEFAULT_TERRAIN_TYPE_VAL:
+      validateSubcommandContext(ctx, DEFAULT_TERRAIN_TYPE);
+      ctx.compilerConfig.defaultTerrainType = std::string{optarg};
+      break;
     case NORMALIZE_TRANSPARENCY_VAL:
+      validateSubcommandContext(ctx, NORMALIZE_TRANSPARENCY);
       ctx.decompilerConfig.normalizeTransparency = true;
       if (optarg != NULL) {
         ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
       }
       break;
-    case DISABLE_METATILE_GENERATION_VAL:
-      ctx.output.disableMetatileGeneration = true;
-      break;
-    case DISABLE_ATTRIBUTE_GENERATION_VAL:
-      ctx.output.disableAttributeGeneration = true;
-      break;
-
-    // Tileset compilation & decompilation options
-    case TARGET_BASE_GAME_VAL:
-      ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
-      break;
-    case DUAL_LAYER_VAL:
-      ctx.compilerConfig.tripleLayer = false;
-      break;
-    case TRANSPARENCY_COLOR_VAL:
-      ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
-      break;
-    case DEFAULT_BEHAVIOR_VAL:
-      ctx.compilerConfig.defaultBehavior = std::string{optarg};
-      break;
-    case DEFAULT_ENCOUNTER_TYPE_VAL:
-      ctx.compilerConfig.defaultEncounterType = std::string{optarg};
-      break;
-    case DEFAULT_TERRAIN_TYPE_VAL:
-      ctx.compilerConfig.defaultTerrainType = std::string{optarg};
-      break;
 
     // Color assignment config options
     case EXPLORE_CUTOFF_VAL:
+      validateSubcommandContext(ctx, EXPLORE_CUTOFF);
       ctx.compilerConfig.providedAssignCacheOverride = true;
       exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
@@ -604,6 +865,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       break;
     case ASSIGN_ALGO_VAL:
+      validateSubcommandContext(ctx, ASSIGN_ALGO);
       ctx.compilerConfig.providedAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
@@ -613,6 +875,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       break;
     case BEST_BRANCHES_VAL:
+      validateSubcommandContext(ctx, BEST_BRANCHES);
       ctx.compilerConfig.providedAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         if (std::string{optarg} == SMART_PRUNE) {
@@ -639,7 +902,16 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         }
       }
       break;
+    case DISABLE_ASSIGN_CACHING_VAL:
+      validateSubcommandContext(ctx, DISABLE_ASSIGN_CACHING);
+      ctx.compilerConfig.cacheAssign = false;
+      break;
+    case FORCE_ASSIGN_PARAM_MATRIX_VAL:
+      validateSubcommandContext(ctx, FORCE_ASSIGN_PARAM_MATRIX);
+      ctx.compilerConfig.forceParamSearchMatrix = true;
+      break;
     case PRIMARY_EXPLORE_CUTOFF_VAL:
+      validateSubcommandContext(ctx, PRIMARY_EXPLORE_CUTOFF);
       ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_EXPLORE_CUTOFF, optarg);
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -651,12 +923,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       break;
     case PRIMARY_ASSIGN_ALGO_VAL:
+      validateSubcommandContext(ctx, PRIMARY_ASSIGN_ALGO);
       ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, PRIMARY_ASSIGN_ALGO, optarg);
       }
       break;
     case PRIMARY_BEST_BRANCHES_VAL:
+      validateSubcommandContext(ctx, PRIMARY_BEST_BRANCHES);
       ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         if (std::string{optarg} == "smart") {
@@ -672,51 +946,55 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         }
       }
       break;
-    case DISABLE_ASSIGN_CACHING_VAL:
-      ctx.compilerConfig.cacheAssign = false;
-      break;
-    case FORCE_ASSIGN_PARAM_MATRIX_VAL:
-      ctx.compilerConfig.forceParamSearchMatrix = true;
-      break;
 
     // Fieldmap override options
     case TILES_PRIMARY_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, TILES_PRIMARY_OVERRIDE);
       tilesPrimaryOverridden = true;
       tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
       break;
     case TILES_TOTAL_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, TILES_TOTAL_OVERRIDE);
       tilesTotalOverridden = true;
-      tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_OVERRIDE_TOTAL, optarg);
+      tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_TOTAL_OVERRIDE, optarg);
       break;
     case METATILES_PRIMARY_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, METATILES_PRIMARY_OVERRIDE);
       metatilesPrimaryOverridden = true;
-      metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_OVERRIDE_PRIMARY, optarg);
+      metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_PRIMARY_OVERRIDE, optarg);
       break;
     case METATILES_TOTAL_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, METATILES_TOTAL_OVERRIDE);
       metatilesTotalOverridden = true;
-      metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_OVERRIDE_TOTAL, optarg);
+      metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_TOTAL_OVERRIDE, optarg);
       break;
     case PALS_PRIMARY_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, PALS_PRIMARY_OVERRIDE);
       palettesPrimaryOverridden = true;
       palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_PRIMARY_OVERRIDE, optarg);
       break;
     case PALS_TOTAL_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, PALS_TOTAL_OVERRIDE);
       palettesTotalOverridden = true;
       palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_TOTAL_OVERRIDE, optarg);
       break;
 
     // Warning and error options
     case WALL_VAL:
+      validateSubcommandContext(ctx, WALL);
       enableAllWarnings = true;
       break;
     case WNONE_VAL:
+      validateSubcommandContext(ctx, WNONE);
       disableAllWarnings = true;
       break;
     case WERROR_VAL:
+      validateSubcommandContext(ctx, WERROR);
       if (optarg == NULL) {
         setAllEnabledWarningsToErrors = true;
       }
       else {
+        // Compilation warnings
         if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
           errColorPrecisionLossOverride = true;
         }
@@ -747,6 +1025,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
           errMissingAssignCache = true;
         }
+        // Decompilation warnings
         else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
           errInvalidTileIndex = true;
         }
@@ -758,6 +1037,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       break;
     case WNO_ERROR_VAL:
+      validateSubcommandContext(ctx, WNO_ERROR);
+      // Compilation warnings
       if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
         errColorPrecisionLossOverride = false;
       }
@@ -788,6 +1069,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
         errMissingAssignCache = false;
       }
+      // Decompilation warnings
       else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
         errInvalidTileIndex = false;
       }
@@ -798,97 +1080,123 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       break;
 
-    // Specific warnings
+    // Compilation warnings
     case WCOLOR_PRECISION_LOSS_VAL:
+      validateSubcommandContext(ctx, WCOLOR_PRECISION_LOSS);
       warnColorPrecisionLossOverride = true;
       break;
     case WNO_COLOR_PRECISION_LOSS_VAL:
+      validateSubcommandContext(ctx, WNO_COLOR_PRECISION_LOSS);
       warnColorPrecisionLossOverride = false;
       break;
     case WKEY_FRAME_DID_NOT_APPEAR_VAL:
+      validateSubcommandContext(ctx, WKEY_FRAME_DID_NOT_APPEAR);
       warnKeyFrameTileDidNotAppearInAssignmentOverride = true;
       break;
     case WNO_KEY_FRAME_DID_NOT_APPEAR_VAL:
+      validateSubcommandContext(ctx, WNO_KEY_FRAME_DID_NOT_APPEAR);
       warnKeyFrameTileDidNotAppearInAssignmentOverride = false;
       break;
     case WUSED_TRUE_COLOR_MODE_VAL:
+      validateSubcommandContext(ctx, WUSED_TRUE_COLOR_MODE);
       warnUsedTrueColorModeOverride = true;
       break;
     case WNO_USED_TRUE_COLOR_MODE_VAL:
+      validateSubcommandContext(ctx, WNO_USED_TRUE_COLOR_MODE);
       warnUsedTrueColorModeOverride = false;
       break;
     case WATTRIBUTE_FORMAT_MISMATCH_VAL:
+      validateSubcommandContext(ctx, WATTRIBUTE_FORMAT_MISMATCH);
       warnAttributeFormatMismatchOverride = true;
       break;
     case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
+      validateSubcommandContext(ctx, WNO_ATTRIBUTE_FORMAT_MISMATCH);
       warnAttributeFormatMismatchOverride = false;
       break;
     case WMISSING_ATTRIBUTES_CSV_VAL:
+      validateSubcommandContext(ctx, WMISSING_ATTRIBUTES_CSV);
       warnMissingAttributesCsvOverride = true;
       break;
     case WNO_MISSING_ATTRIBUTES_CSV_VAL:
+      validateSubcommandContext(ctx, WNO_MISSING_ATTRIBUTES_CSV);
       warnMissingAttributesCsvOverride = false;
       break;
     case WUNUSED_ATTRIBUTE_VAL:
+      validateSubcommandContext(ctx, WUNUSED_ATTRIBUTE);
       warnUnusedAttributeOverride = true;
       break;
     case WNO_UNUSED_ATTRIBUTE_VAL:
+      validateSubcommandContext(ctx, WNO_UNUSED_ATTRIBUTE);
       warnUnusedAttributeOverride = false;
       break;
     case WTRANSPARENCY_COLLAPSE_VAL:
+      validateSubcommandContext(ctx, WTRANSPARENCY_COLLAPSE);
       warnTransparencyCollapseOverride = true;
       break;
     case WNO_TRANSPARENCY_COLLAPSE_VAL:
+      validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
       warnTransparencyCollapseOverride = false;
       break;
     case WASSIGN_CONFIG_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, WASSIGN_CONFIG_OVERRIDE);
       warnAssignCacheOverride = true;
       break;
     case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
+      validateSubcommandContext(ctx, WNO_ASSIGN_CONFIG_OVERRIDE);
       warnAssignCacheOverride = false;
       break;
     case WINVALID_ASSIGN_CONFIG_CACHE_VAL:
+      validateSubcommandContext(ctx, WINVALID_ASSIGN_CONFIG_CACHE);
       warnInvalidAssignCache = true;
       break;
     case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
+      validateSubcommandContext(ctx, WNO_INVALID_ASSIGN_CONFIG_CACHE);
       warnInvalidAssignCache = false;
       break;
     case WMISSING_ASSIGN_CONFIG_VAL:
+      validateSubcommandContext(ctx, WMISSING_ASSIGN_CONFIG);
       warnMissingAssignCache = true;
       break;
     case WNO_MISSING_ASSIGN_CONFIG_VAL:
+      validateSubcommandContext(ctx, WNO_MISSING_ASSIGN_CONFIG);
       warnMissingAssignCache = false;
       break;
+    // Decompilation warnings
     case WINVALID_TILE_INDEX_VAL:
+      validateSubcommandContext(ctx, WINVALID_TILE_INDEX);
       warnInvalidTileIndex = true;
       break;
     case WNO_INVALID_TILE_INDEX_VAL:
+      validateSubcommandContext(ctx, WNO_INVALID_TILE_INDEX);
       warnInvalidTileIndex = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
     case HELP_VAL:
-      fmt::println("{}", COMPILE_HELP);
-      exit(0);
-    // Help message on invalid or unknown options goes to stderr and gives error code
-    case '?':
-    default:
+      validateSubcommandContext(ctx, HELP);
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
-        fmt::println(stderr, "Try `{} compile-primary --help' for usage information.", PORYTILES_EXECUTABLE);
+        fmt::println("{}", COMPILE_PRIMARY_HELP);
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-        fmt::println(stderr, "Try `{} compile-secondary --help' for usage information.", PORYTILES_EXECUTABLE);
+        fmt::println("{}", COMPILE_SECONDARY_HELP);
       }
       else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
-        fmt::println(stderr, "Try `{} decompile-primary --help' for usage information.", PORYTILES_EXECUTABLE);
+        fmt::println("{}", DECOMPILE_PRIMARY_HELP);
       }
       else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-        fmt::println(stderr, "Try `{} decompile-secondary --help' for usage information.", PORYTILES_EXECUTABLE);
+        fmt::println("{}", DECOMPILE_SECONDARY_HELP);
       }
       else {
         internalerror(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
       }
+      exit(0);
+    // Help message on invalid or unknown options goes to stderr and gives error code
+    case '?':
+    default:
+      // TODO 1.0.0 : figure out how to use fatalerror_unrecognizedOption here
+      fmt::println(stderr, "Try `{} {} --help' for usage information.", subcommandString(ctx.subcommand),
+                   PORYTILES_EXECUTABLE);
       exit(2);
     }
   }
@@ -898,27 +1206,24 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
    */
   if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
     if ((argc - optind) != 2) {
-      fatalerror(ctx.err,
-                 "must specify SRC-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
+      fatalerror(ctx.err, "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
     }
   }
   else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
     if ((argc - optind) != 3) {
-      fatalerror(ctx.err,
-                 "must specify SRC-SECONDARY-PATH, SRC-PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles "
-                 "compile-secondary --help'");
+      fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
+                          "compile-secondary --help'");
     }
   }
   else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
     if ((argc - optind) != 2) {
-      fatalerror(ctx.err,
-                 "must specify BIN-PRIMARY-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
+      fatalerror(ctx.err, "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
     }
   }
   else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
     if ((argc - optind) != 3) {
-      fatalerror(ctx.err, "must specify BIN-SECONDARY-PATH, BIN-PARTNER-PRIMARY-PATH, BEHAVIORS-HEADER args, see "
-                          "`porytiles decompile-secondary --help'");
+      fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
+                          "decompile-secondary --help'");
     }
   }
   else {
@@ -956,6 +1261,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   }
 
   // Specific warn settings take precedence over general warn settings
+  // Compilation warnings
   if (warnColorPrecisionLossOverride.has_value()) {
     ctx.err.colorPrecisionLoss = warnColorPrecisionLossOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
@@ -988,6 +1294,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   if (warnMissingAssignCache.has_value()) {
     ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  // Decompilation warnings
   if (warnInvalidTileIndex.has_value()) {
     ctx.err.invalidTileIndex = warnInvalidTileIndex.value() ? WarningMode::WARN : WarningMode::OFF;
   }
@@ -998,6 +1305,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   }
 
   // Specific err settings take precedence over warns
+  // Compilation warnings
   if (errColorPrecisionLossOverride.has_value()) {
     if (errColorPrecisionLossOverride.value()) {
       ctx.err.colorPrecisionLoss = WarningMode::ERR;
@@ -1115,6 +1423,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       ctx.err.missingAssignCache = WarningMode::OFF;
     }
   }
+  // Decompilation warnings
   if (errInvalidTileIndex.has_value()) {
     if (errInvalidTileIndex.value()) {
       ctx.err.invalidTileIndex = WarningMode::ERR;
