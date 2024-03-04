@@ -30,10 +30,10 @@ namespace porytiles {
 
 DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png::rgba_pixel> &png)
 {
-  if (png.get_height() % TILE_SIDE_LENGTH != 0) {
+  if (png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
     error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
   }
-  if (png.get_width() % TILE_SIDE_LENGTH != 0) {
+  if (png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
     error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "width", png.get_width());
   }
 
@@ -44,8 +44,8 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png
 
   DecompiledTileset decompiledTiles;
 
-  std::size_t pngWidthInTiles = png.get_width() / TILE_SIDE_LENGTH;
-  std::size_t pngHeightInTiles = png.get_height() / TILE_SIDE_LENGTH;
+  std::size_t pngWidthInTiles = png.get_width() / TILE_SIDE_LENGTH_PIX;
+  std::size_t pngHeightInTiles = png.get_height() / TILE_SIDE_LENGTH_PIX;
 
   for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / pngWidthInTiles;
@@ -54,8 +54,8 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png
     tile.type = TileType::FREESTANDING;
     tile.tileIndex = tileIndex;
     for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH_PIX) + (pixelIndex / TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
       tile.pixels[pixelIndex].red = png[pixelRow][pixelCol].red;
       tile.pixels[pixelIndex].green = png[pixelRow][pixelCol].green;
       tile.pixels[pixelIndex].blue = png[pixelRow][pixelCol].blue;
@@ -212,10 +212,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
 
     // Bottom layer
-    for (std::size_t bottomTileIndex = 0; bottomTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
-         bottomTileIndex++) {
-      std::size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH;
+    for (std::size_t bottomTileIndex = 0;
+         bottomTileIndex < METATILE_TILE_SIDE_LENGTH_TILES * METATILE_TILE_SIDE_LENGTH_TILES; bottomTileIndex++) {
+      std::size_t tileRow = bottomTileIndex / METATILE_TILE_SIDE_LENGTH_TILES;
+      std::size_t tileCol = bottomTileIndex % METATILE_TILE_SIDE_LENGTH_TILES;
       RGBATile bottomTile{};
       bottomTile.type = TileType::LAYERED;
       bottomTile.layer = TileLayer::BOTTOM;
@@ -223,10 +223,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
       bottomTile.subtile = static_cast<Subtile>(bottomTileIndex);
       bottomTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex / TILE_SIDE_LENGTH_PIX);
+        std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex % TILE_SIDE_LENGTH_PIX);
         bottomTile.pixels[pixelIndex].red = bottom[pixelRow][pixelCol].red;
         bottomTile.pixels[pixelIndex].green = bottom[pixelRow][pixelCol].green;
         bottomTile.pixels[pixelIndex].blue = bottom[pixelRow][pixelCol].blue;
@@ -236,10 +236,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
 
     // Middle layer
-    for (std::size_t middleTileIndex = 0; middleTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
-         middleTileIndex++) {
-      std::size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH;
+    for (std::size_t middleTileIndex = 0;
+         middleTileIndex < METATILE_TILE_SIDE_LENGTH_TILES * METATILE_TILE_SIDE_LENGTH_TILES; middleTileIndex++) {
+      std::size_t tileRow = middleTileIndex / METATILE_TILE_SIDE_LENGTH_TILES;
+      std::size_t tileCol = middleTileIndex % METATILE_TILE_SIDE_LENGTH_TILES;
       RGBATile middleTile{};
       middleTile.type = TileType::LAYERED;
       middleTile.layer = TileLayer::MIDDLE;
@@ -247,10 +247,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
       middleTile.subtile = static_cast<Subtile>(middleTileIndex);
       middleTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex / TILE_SIDE_LENGTH_PIX);
+        std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex % TILE_SIDE_LENGTH_PIX);
         middleTile.pixels[pixelIndex].red = middle[pixelRow][pixelCol].red;
         middleTile.pixels[pixelIndex].green = middle[pixelRow][pixelCol].green;
         middleTile.pixels[pixelIndex].blue = middle[pixelRow][pixelCol].blue;
@@ -260,10 +260,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
 
     // Top layer
-    for (std::size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+    for (std::size_t topTileIndex = 0; topTileIndex < METATILE_TILE_SIDE_LENGTH_TILES * METATILE_TILE_SIDE_LENGTH_TILES;
          topTileIndex++) {
-      std::size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH;
-      std::size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH;
+      std::size_t tileRow = topTileIndex / METATILE_TILE_SIDE_LENGTH_TILES;
+      std::size_t tileCol = topTileIndex % METATILE_TILE_SIDE_LENGTH_TILES;
       RGBATile topTile{};
       topTile.type = TileType::LAYERED;
       topTile.layer = TileLayer::TOP;
@@ -272,10 +272,10 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
       topTile.attributes = metatileAttributes;
       topTile.attributes = metatileAttributes;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow =
-            (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol =
-            (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (tileRow * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex / TILE_SIDE_LENGTH_PIX);
+        std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (tileCol * TILE_SIDE_LENGTH_PIX) +
+                               (pixelIndex % TILE_SIDE_LENGTH_PIX);
         topTile.pixels[pixelIndex].red = top[pixelRow][pixelCol].red;
         topTile.pixels[pixelIndex].green = top[pixelRow][pixelCol].green;
         topTile.pixels[pixelIndex].blue = top[pixelRow][pixelCol].blue;
@@ -393,11 +393,11 @@ void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<Animat
     for (const auto &rawFrame : rawAnim) {
       DecompiledAnimFrame animFrame{rawFrame.frameName};
 
-      if (rawFrame.png.get_height() % TILE_SIDE_LENGTH != 0) {
+      if (rawFrame.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
         error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "height",
                                            rawFrame.png.get_height());
       }
-      if (rawFrame.png.get_width() % TILE_SIDE_LENGTH != 0) {
+      if (rawFrame.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
         error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "width",
                                            rawFrame.png.get_width());
       }
@@ -420,8 +420,8 @@ void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<Animat
                                                             rawFrame.png.get_height());
       }
 
-      std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH;
-      std::size_t pngHeightInTiles = rawFrame.png.get_height() / TILE_SIDE_LENGTH;
+      std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH_PIX;
+      std::size_t pngHeightInTiles = rawFrame.png.get_height() / TILE_SIDE_LENGTH_PIX;
       for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
         std::size_t tileRow = tileIndex / pngWidthInTiles;
         std::size_t tileCol = tileIndex % pngWidthInTiles;
@@ -432,8 +432,8 @@ void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<Animat
         tile.tileIndex = tileIndex;
 
         for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH_PIX) + (pixelIndex / TILE_SIDE_LENGTH_PIX);
+          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
           tile.pixels[pixelIndex].red = rawFrame.png[pixelRow][pixelCol].red;
           tile.pixels[pixelIndex].green = rawFrame.png[pixelRow][pixelCol].green;
           tile.pixels[pixelIndex].blue = rawFrame.png[pixelRow][pixelCol].blue;
@@ -847,16 +847,18 @@ static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png
 {
   std::vector<GBATile> gbaTiles{};
 
-  std::size_t widthInTiles = tiles.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t heightInTiles = tiles.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t widthInTiles = tiles.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t heightInTiles = tiles.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   for (std::size_t tileIndex = 0; tileIndex < widthInTiles * heightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / widthInTiles;
     std::size_t tileCol = tileIndex % widthInTiles;
     GBATile tile{};
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       tile.colorIndexes.at(pixelIndex) = tiles[pixelRow][pixelCol];
     }
     gbaTiles.push_back(tile);
@@ -873,6 +875,8 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
   std::vector<Assignment> assignments{};
 
   std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
+
+  // TODO 1.0.0 : replace magic numbers in this function with named constants
 
   /*
    * Each subtile is 2 bytes (u16), so our byte total should be either a multiple of 16 or 24. 16 for dual-layer, since
@@ -1000,14 +1004,14 @@ importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
     for (const auto &animPng : rawAnim) {
       CompiledAnimFrame animFrame{animPng.frameName};
 
-      if (animPng.png.get_width() % TILE_SIDE_LENGTH != 0) {
+      if (animPng.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
-      if (animPng.png.get_height() % TILE_SIDE_LENGTH != 0) {
+      if (animPng.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                    fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
@@ -1032,15 +1036,15 @@ importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
                                fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
       }
 
-      std::size_t pngWidthInTiles = animPng.png.get_width() / TILE_SIDE_LENGTH;
-      std::size_t pngHeightInTiles = animPng.png.get_height() / TILE_SIDE_LENGTH;
+      std::size_t pngWidthInTiles = animPng.png.get_width() / TILE_SIDE_LENGTH_PIX;
+      std::size_t pngHeightInTiles = animPng.png.get_height() / TILE_SIDE_LENGTH_PIX;
       for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
         std::size_t tileRow = tileIndex / pngWidthInTiles;
         std::size_t tileCol = tileIndex % pngWidthInTiles;
         GBATile tile{};
         for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+          std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH_PIX) + (pixelIndex / TILE_SIDE_LENGTH_PIX);
+          std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
           tile.colorIndexes[pixelIndex] = animPng.png[pixelRow][pixelCol];
         }
         animFrame.tiles.push_back(tile);

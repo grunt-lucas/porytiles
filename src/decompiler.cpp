@@ -18,10 +18,10 @@ static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTil
                               bool hFlip, bool vFlip)
 {
   RGBATile rgbTile{};
-  for (std::size_t row = 0; row < TILE_SIDE_LENGTH; row++) {
-    for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
-      std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
-      std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
+  for (std::size_t row = 0; row < TILE_SIDE_LENGTH_PIX; row++) {
+    for (std::size_t col = 0; col < TILE_SIDE_LENGTH_PIX; col++) {
+      std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH_PIX - 1 - row : row;
+      std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH_PIX - 1 - col : col;
       std::uint8_t pixel = gbaTile.getPixel(rowWithFlip, colWithFlip);
       RGBA32 rgb{};
       if (pixel == 0 && ctx.decompilerConfig.normalizeTransparency) {
@@ -78,13 +78,13 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
    * count (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are
    * triple. Otherwise, we have corruption and should fail.
    */
-  std::size_t divBy8 = compiledTileset.assignments.size() / 8;
-  std::size_t divBy12 = compiledTileset.assignments.size() / 12;
+  std::size_t dualImpliedMetatileCount = compiledTileset.assignments.size() / TILES_PER_METATILE_DUAL;
+  std::size_t tripleImpliedMetatileCount = compiledTileset.assignments.size() / TILES_PER_METATILE_TRIPLE;
 
-  if (divBy8 == attributesMap.size()) {
+  if (dualImpliedMetatileCount == attributesMap.size()) {
     decompiledTileset->tripleLayer = false;
   }
-  else if (divBy12 == attributesMap.size()) {
+  else if (tripleImpliedMetatileCount == attributesMap.size()) {
     decompiledTileset->tripleLayer = true;
   }
   else {
@@ -101,7 +101,8 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     RGBATile decompiledTile{};
     decompiledTile.type = TileType::LAYERED;
     decompiledTile.metatileIndex = metatileIndex;
-    std::size_t tileIndexWithinMetatile = assignmentCount % (decompiledTileset->tripleLayer ? 12 : 8);
+    std::size_t tileIndexWithinMetatile =
+        assignmentCount % (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
     decompiledTile.subtile = indexToSubtile(tileIndexWithinMetatile);
     decompiledTile.layer = indexToLayer(tileIndexWithinMetatile, decompiledTileset->tripleLayer);
 
@@ -128,7 +129,8 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     // Update tile tracking
     assignmentCount++;
-    metatileIndex = assignmentCount / (decompiledTileset->tripleLayer ? 12 : 8);
+    metatileIndex =
+        assignmentCount / (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
   }
 
   // TODO : fill in animations

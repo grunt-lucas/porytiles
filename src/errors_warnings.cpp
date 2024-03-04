@@ -34,6 +34,8 @@ const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
+  // TODO 1.0.0 : add CLI option to display indexes in hex instead of dec?
+  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
     tileString = "{metatile: " + std::to_string(tile.metatileIndex) + ", layer: " + layerString(tile.layer) +
@@ -225,6 +227,7 @@ void fatalerror(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, C
 {
   if (err.printErrors) {
     pt_fatal_err("{}", message);
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
 }
@@ -234,6 +237,7 @@ void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
 {
   if (err.printErrors) {
     pt_fatal_err("{}", message);
+    pt_println(stderr, "");
   }
   die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), message);
 }
@@ -242,6 +246,7 @@ void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage)
 {
   if (err.printErrors) {
     pt_fatal_err("{}", errorMessage);
+    pt_println(stderr, "");
   }
   throw PorytilesException{errorMessage};
 }
@@ -251,6 +256,7 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSo
 {
   if (err.printErrors) {
     pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
 }
@@ -259,6 +265,7 @@ void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const Decompiler
 {
   if (err.printErrors) {
     pt_fatal_err_prefix("{}: source path did not exist or is not a directory", srcs.modeBasedSrcPath(mode).string());
+    pt_println(stderr, "");
   }
   die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode),
                               fmt::format("invalid source path {}", srcs.modeBasedSrcPath(mode).string()));
@@ -274,6 +281,7 @@ void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const
   if (err.printErrors) {
     pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
                  fmt::styled(file, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("animation {} missing required anim frame file {}", animation, file));
@@ -284,6 +292,7 @@ void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const Compiler
 {
   if (err.printErrors) {
     pt_fatal_err("animation '{}' was missing key frame file", fmt::styled(animation, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("animation {} missing key frame file", animation));
@@ -296,6 +305,7 @@ void fatalerror_tooManyUniqueColorsTotal(const ErrorsAndWarnings &err, const Com
     pt_fatal_err("too many unique colors in {} tileset", compilerModeString(mode));
     pt_note("{} allowed based on fieldmap configuration, but found {}", fmt::styled(allowed, fmt::emphasis::bold),
             fmt::styled(found, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("too many unique colors total"));
 }
@@ -308,6 +318,7 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings
     pt_fatal_err("animation '{}' frame '{}' {} '{}' did not match previous frame {}s",
                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(frame, fmt::emphasis::bold), dimensionName,
                  fmt::styled(dimension, fmt::emphasis::bold), dimensionName);
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("anim {} frame {} dimension {} mismatch", animName, frame, dimensionName));
@@ -319,6 +330,7 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerS
   if (err.printErrors) {
     pt_fatal_err("unique tile count '{}' exceeded limit of '{}'", fmt::styled(numTiles, fmt::emphasis::bold),
                  fmt::styled(maxAllowedTiles, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("too many unique tiles in {} tileset", compilerModeString(mode)));
@@ -329,6 +341,7 @@ void fatalerror_assignExploreCutoffReached(const ErrorsAndWarnings &err, const C
 {
   if (err.printErrors) {
     pt_fatal_err("{} palette assignment exploration reached node cutoff", assignAlgorithmString(algo));
+    pt_println(stderr, "");
   }
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "too many assignment recurses");
 }
@@ -338,6 +351,7 @@ void fatalerror_noPossiblePaletteAssignment(const ErrorsAndWarnings &err, const 
 {
   if (err.printErrors) {
     pt_fatal_err("no possible palette assignment exists, given the current assign search params");
+    pt_println(stderr, "");
   }
   die_compilationTerminatedFailHard(err, srcs.modeBasedSrcPath(mode), "no possible palette assignment");
 }
@@ -349,6 +363,7 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const CompilerSou
     pt_fatal_err("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
                  fmt::styled(numMetatiles, fmt::emphasis::bold), compilerModeString(mode),
                  fmt::styled(metatileLimit, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(
       err, srcs.modeBasedSrcPath(mode),
@@ -361,6 +376,7 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const Co
   if (err.printErrors) {
     pt_fatal_err("invalid configuration {}InPrimary '{}' exceeded {}Total '{}'", field,
                  fmt::styled(primary, fmt::emphasis::bold), field, fmt::styled(total, fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
@@ -376,6 +392,7 @@ void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const Comp
             "sheet");
     pt_println(stderr, "      referred to the true index 0 transparent tile, or if it was a reference into this "
                        "particular animation");
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("animation {} had a transparent key frame tile", animName));
@@ -388,6 +405,7 @@ void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const Compil
     pt_fatal_err("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
     pt_note("key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("animation {} had a duplicate key frame tile", animName));
@@ -402,6 +420,7 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
     pt_note("this is an error because it renders the animation inoperable, any reference to the key tile in the");
     pt_println(stderr,
                "      secondary layer sheet will be linked to primary tileset instead of the intended animation");
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("animation {} key frame tile present in paired primary", animName));
@@ -414,6 +433,7 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const C
     pt_fatal_err("{}: incorrect header row format", filePath);
     pt_note("valid headers are '{}' or '{}'", fmt::styled("id,behavior", fmt::emphasis::bold),
             fmt::styled("id,behavior,terrainType,encounterType", fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: incorrect header row format", filePath));
 }
@@ -426,6 +446,7 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourc
                  fmt::styled("id", fmt::emphasis::bold), line);
     pt_note("column '{}' must contain an integral value (both decimal and hexidecimal notations are permitted)",
             fmt::styled("id", fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
@@ -438,6 +459,7 @@ void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const Compile
                  fmt::styled(behavior, fmt::emphasis::bold), line);
     pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
             fmt::styled("id", fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid behavior value {}", value));
 }
@@ -449,6 +471,7 @@ void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const Compi
   if (err.printErrors) {
     pt_fatal_err("{}: invalid syntax '{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
     pt_note("`assign.cache' expected line syntax is: {}", fmt::styled("key=value", fmt::emphasis::bold));
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid assign syntax {}", line));
 }
@@ -460,6 +483,7 @@ void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const Compil
   if (err.printErrors) {
     pt_fatal_err("{}: invalid key '{}' at line {}", path, fmt::styled(key, fmt::emphasis::bold), lineNumber);
     pt_note("`assign.cache' expects keys to match the color assignment config options");
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid assign key {}", key));
 }
@@ -468,10 +492,10 @@ void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const Comp
                                         const CompilerMode &mode, std::string key, std::string value,
                                         std::size_t lineNumber, std::string path)
 {
-  // TODO 1.0.0 : make it clearer this error is coming from assign.cache
   if (err.printErrors) {
     pt_fatal_err("{}: invalid value '{}' for key '{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
                  fmt::styled(key, fmt::emphasis::bold), lineNumber);
+    pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
                             fmt::format("invalid assign value {} for key {}", value, key));
@@ -677,8 +701,6 @@ void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::s
                            const RGBATile &tile)
 {
   // TODO 1.0.0 : this warning should show if error came from primary or secondary set
-  // TODO 1.0.0 : add CLI option to display indexes in hex instead of dec
-  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
   std::string tileString = getTilePrettyString(tile);
   printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
                fmt::format("{}: tile index {} out of range (sheet size {})",

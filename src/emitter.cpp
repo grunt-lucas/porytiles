@@ -95,14 +95,14 @@ void emitTilesPng(PorytilesContext &ctx, png::image<png::index_pixel> &out, cons
   /*
    * Set up the tileset PNG based on the tiles list and then write it to `tiles.png`.
    */
-  std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
-  std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
+  std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH_PIX;
+  std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / pngWidthInTiles;
     std::size_t tileCol = tileIndex % pngWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+      std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH_PIX) + (pixelIndex / TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
       if (tileIndex < tileset.tiles.size()) {
         const GBATile &tile = tileset.tiles.at(tileIndex);
         png::byte paletteIndex = 0;
@@ -151,14 +151,14 @@ void emitAnim(PorytilesContext &ctx, std::vector<png::image<png::index_pixel>> &
   for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
     png::image<png::index_pixel> &out = outFrames.at(frameIndex);
     configurePngPalette(TilesOutputPalette::GREYSCALE, out, palettes);
-    std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH;
-    std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH;
+    std::size_t pngWidthInTiles = out.get_width() / TILE_SIDE_LENGTH_PIX;
+    std::size_t pngHeightInTiles = out.get_height() / TILE_SIDE_LENGTH_PIX;
     for (std::size_t tileIndex = 0; tileIndex < pngWidthInTiles * pngHeightInTiles; tileIndex++) {
       std::size_t tileRow = tileIndex / pngWidthInTiles;
       std::size_t tileCol = tileIndex % pngWidthInTiles;
       for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-        std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH) + (pixelIndex / TILE_SIDE_LENGTH);
-        std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH) + (pixelIndex % TILE_SIDE_LENGTH);
+        std::size_t pixelRow = (tileRow * TILE_SIDE_LENGTH_PIX) + (pixelIndex / TILE_SIDE_LENGTH_PIX);
+        std::size_t pixelCol = (tileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
         const GBATile &tile = animation.frames.at(frameIndex).tiles.at(tileIndex);
         png::byte indexInPalette = tile.getPixel(pixelIndex);
         // FIXME : how do we handle true-color for anim tiles? no easy way to access tile palette indices
@@ -249,13 +249,13 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
       size_t metatileCol = metatileIndex % widthInMetatiles;
       for (std::size_t subtileIndex = 0; subtileIndex < 12; subtileIndex++) {
         std::size_t globalTileIndex = (metatileIndex * 12) + subtileIndex;
-        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
-        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
+        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH_TILES;
+        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH_TILES;
         for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) +
-                                 (pixelIndex / TILE_SIDE_LENGTH);
-          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) +
-                                 (pixelIndex % TILE_SIDE_LENGTH);
+          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH_PIX) +
+                                 (pixelIndex / TILE_SIDE_LENGTH_PIX);
+          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH_PIX) +
+                                 (pixelIndex % TILE_SIDE_LENGTH_PIX);
           const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
           if (subtileIndex >= 0 && subtileIndex < 4) {
             bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
@@ -276,13 +276,13 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
       size_t metatileCol = metatileIndex % widthInMetatiles;
       for (std::size_t subtileIndex = 0; subtileIndex < 8; subtileIndex++) {
         std::size_t globalTileIndex = (metatileIndex * 8) + subtileIndex;
-        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH;
-        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH;
+        std::size_t layerTileRow = (subtileIndex % 4) / METATILE_TILE_SIDE_LENGTH_TILES;
+        std::size_t layerTileCol = (subtileIndex % 4) % METATILE_TILE_SIDE_LENGTH_TILES;
         for (std::size_t pixelIndex = 0; pixelIndex < TILE_NUM_PIX; pixelIndex++) {
-          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH) +
-                                 (pixelIndex / TILE_SIDE_LENGTH);
-          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH) +
-                                 (pixelIndex % TILE_SIDE_LENGTH);
+          std::size_t pixelRow = (metatileRow * METATILE_SIDE_LENGTH) + (layerTileRow * TILE_SIDE_LENGTH_PIX) +
+                                 (pixelIndex / TILE_SIDE_LENGTH_PIX);
+          std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) + (layerTileCol * TILE_SIDE_LENGTH_PIX) +
+                                 (pixelIndex % TILE_SIDE_LENGTH_PIX);
           const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
           if (attributesMap.at(metatileIndex).layerType == LayerType::COVERED) {
             if (subtileIndex >= 0 && subtileIndex < 4) {
@@ -462,9 +462,9 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
 
   auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
-  const size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
+  const size_t imageWidth = porytiles::TILE_SIDE_LENGTH_PIX * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const size_t imageHeight =
-      porytiles::TILE_SIDE_LENGTH * ((compiledPrimary->tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
+      porytiles::TILE_SIDE_LENGTH_PIX * ((compiledPrimary->tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
 
   png::image<png::index_pixel> outPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};
 

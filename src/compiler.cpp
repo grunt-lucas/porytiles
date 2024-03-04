@@ -98,10 +98,10 @@ static NormalizedTile candidate(PorytilesContext &ctx, const RGBA32 &transparenc
 
   std::size_t frame = 0;
   for (const auto &rgba : rgbaFrames) {
-    for (std::size_t row = 0; row < TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < TILE_SIDE_LENGTH; col++) {
-        std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH - 1 - row : row;
-        std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH - 1 - col : col;
+    for (std::size_t row = 0; row < TILE_SIDE_LENGTH_PIX; row++) {
+      for (std::size_t col = 0; col < TILE_SIDE_LENGTH_PIX; col++) {
+        std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH_PIX - 1 - row : row;
+        std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH_PIX - 1 - col : col;
         std::size_t pixelValue = insertRGBA(ctx, rgba, transparencyColor, candidateTile.palette,
                                             rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn);
         candidateTile.setPixel(frame, row, col, pixelValue);
@@ -1613,10 +1613,10 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
-    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
-        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
-              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
+        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH_PIX)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH_PIX)]);
       }
     }
   }
@@ -1762,10 +1762,10 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
-    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
-        CHECK(compiledSecondary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
-              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
+        CHECK(compiledSecondary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH_PIX)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH_PIX)]);
       }
     }
   }
@@ -1952,10 +1952,10 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/primary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
-    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
-        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
-              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
+        CHECK(compiledPrimary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH_PIX)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH_PIX)]);
       }
     }
   }
@@ -2204,10 +2204,10 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"}));
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_1/secondary/expected_tiles.png"};
   for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
-    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH; row++) {
-      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH; col++) {
-        CHECK(compiledSecondary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH)] ==
-              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH)]);
+    for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
+      for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
+        CHECK(compiledSecondary->tiles[tileIndex].colorIndexes[col + (row * porytiles::TILE_SIDE_LENGTH_PIX)] ==
+              expectedPng[row][col + (tileIndex * porytiles::TILE_SIDE_LENGTH_PIX)]);
       }
     }
   }

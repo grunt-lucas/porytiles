@@ -287,7 +287,7 @@ const std::string WERROR_DESC =
 "             command line, the right-most specifier will take precedence.\n";
 constexpr int WERROR_VAL = 5003;
 
-// Specific warnings
+// Compiler warnings
 const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + WARN_COLOR_PRECISION_LOSS;
 const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + WARN_COLOR_PRECISION_LOSS;
 constexpr int WCOLOR_PRECISION_LOSS_VAL = 50000;
@@ -338,10 +338,11 @@ const std::string WNO_MISSING_ASSIGN_CONFIG = W_GENERAL + "no-" + WARN_MISSING_A
 constexpr int WMISSING_ASSIGN_CONFIG_VAL = 50100;
 constexpr int WNO_MISSING_ASSIGN_CONFIG_VAL = 60100;
 
+// Decompiler warnings
 const std::string WINVALID_TILE_INDEX = W_GENERAL + WARN_INVALID_TILE_INDEX;
 const std::string WNO_INVALID_TILE_INDEX = W_GENERAL + "no-" + WARN_INVALID_TILE_INDEX;
-constexpr int WINVALID_TILE_INDEX_VAL = 50110;
-constexpr int WNO_INVALID_TILE_INDEX_VAL = 60110;
+constexpr int WINVALID_TILE_INDEX_VAL = 70110;
+constexpr int WNO_INVALID_TILE_INDEX_VAL = 80110;
 
 // @formatter:on
 // clang-format on

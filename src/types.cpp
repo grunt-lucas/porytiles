@@ -404,7 +404,7 @@ std::ostream &operator<<(std::ostream &os, const RGBATile &tile)
 {
   os << "{";
   for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
-    if (i % TILE_SIDE_LENGTH == 0) {
+    if (i % TILE_SIDE_LENGTH_PIX == 0) {
       os << "[" << i / 8 << "]=";
     }
     os << tile.pixels[i] << ";";

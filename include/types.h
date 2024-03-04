@@ -21,13 +21,15 @@
  */
 
 namespace porytiles {
-constexpr std::size_t TILE_SIDE_LENGTH = 8;
-constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH * TILE_SIDE_LENGTH;
-constexpr std::size_t METATILE_TILE_SIDE_LENGTH = 2;
-constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH * METATILE_TILE_SIDE_LENGTH;
+constexpr std::size_t TILE_SIDE_LENGTH_PIX = 8;
+constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH_PIX * TILE_SIDE_LENGTH_PIX;
+constexpr std::size_t METATILE_TILE_SIDE_LENGTH_TILES = 2;
+constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH_PIX * METATILE_TILE_SIDE_LENGTH_TILES;
 constexpr std::size_t METATILES_IN_ROW = 8;
 constexpr std::size_t PAL_SIZE = 16;
 constexpr std::size_t MAX_BG_PALETTES = 16;
+constexpr std::size_t TILES_PER_METATILE_DUAL = 8;
+constexpr std::size_t TILES_PER_METATILE_TRIPLE = 12;
 constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 
 // --------------------
@@ -203,13 +205,13 @@ struct RGBATile {
 
   [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
   {
-    if (row >= TILE_SIDE_LENGTH) {
+    if (row >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
     }
-    if (col >= TILE_SIDE_LENGTH) {
+    if (col >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: RGBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
     }
-    return pixels.at(row * TILE_SIDE_LENGTH + col);
+    return pixels.at(row * TILE_SIDE_LENGTH_PIX + col);
   }
 
   [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const
@@ -224,13 +226,13 @@ struct RGBATile {
 
   void setPixel(std::size_t row, std::size_t col, const RGBA32 &value)
   {
-    if (row >= TILE_SIDE_LENGTH) {
+    if (row >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: RGBATile::setPixel row argument out of bounds (" + std::to_string(row) + ")"};
     }
-    if (col >= TILE_SIDE_LENGTH) {
+    if (col >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: RGBATile::setPixel col argument out of bounds (" + std::to_string(col) + ")"};
     }
-    pixels.at(row * TILE_SIDE_LENGTH + col) = value;
+    pixels.at(row * TILE_SIDE_LENGTH_PIX + col) = value;
   }
 
   bool equalsAfterBgrConversion(const RGBATile &other)
@@ -288,13 +290,13 @@ struct GBATile {
 
   [[nodiscard]] std::uint8_t getPixel(size_t row, size_t col) const
   {
-    if (row >= TILE_SIDE_LENGTH) {
+    if (row >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: GBATile::getPixel row argument out of bounds (" + std::to_string(row) + ")"};
     }
-    if (col >= TILE_SIDE_LENGTH) {
+    if (col >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: GBATile::getPixel col argument out of bounds (" + std::to_string(col) + ")"};
     }
-    return colorIndexes.at(row * TILE_SIDE_LENGTH + col);
+    return colorIndexes.at(row * TILE_SIDE_LENGTH_PIX + col);
   }
 
   auto operator<=>(const GBATile &other) const
@@ -592,15 +594,15 @@ struct NormalizedTile {
       throw std::out_of_range{"internal: NormalizedTile::setPixel frame argument out of bounds (" +
                               std::to_string(frame) + " >= " + std::to_string(frames.size()) + ")"};
     }
-    if (row >= TILE_SIDE_LENGTH) {
+    if (row >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: NormalizedTile::setPixel row argument out of bounds (" + std::to_string(row) +
                               ")"};
     }
-    if (col >= TILE_SIDE_LENGTH) {
+    if (col >= TILE_SIDE_LENGTH_PIX) {
       throw std::out_of_range{"internal: NormalizedTile::setPixel col argument out of bounds (" + std::to_string(col) +
                               ")"};
     }
-    frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH + col] = value;
+    frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH_PIX + col] = value;
   }
 
   const NormalizedPixels &keyFrame() const { return frames.at(keyFrameIndex()); }
