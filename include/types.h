@@ -643,8 +643,11 @@ enum class AssignAlgorithm { DFS, BFS };
 enum class DecompilerMode { PRIMARY, SECONDARY };
 
 /*
- * TODO 1.0.0 : combine CompilerMode and DecompilerMode into a single type: CompilationMode
- * Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
+ * TODO 1.0.0 : combine CompilerMode and DecompilerMode into a single type: CompilationMode ?
+ */
+
+/*
+ * TODO 1.0.0 : Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
  */
 
 std::string subcommandString(Subcommand subcommand);
@@ -749,18 +752,6 @@ struct CompilerSourcePaths {
     return path / std::filesystem::path{"top.png"};
   }
 
-  std::filesystem::path primaryAnims() const
-  {
-    std::filesystem::path path{primarySourcePath};
-    return path / std::filesystem::path{"anim"};
-  }
-
-  std::filesystem::path secondaryAnims() const
-  {
-    std::filesystem::path path{secondarySourcePath};
-    return path / std::filesystem::path{"anim"};
-  }
-
   std::filesystem::path primaryAttributes() const
   {
     std::filesystem::path path{primarySourcePath};
@@ -771,6 +762,18 @@ struct CompilerSourcePaths {
   {
     std::filesystem::path path{secondarySourcePath};
     return path / std::filesystem::path{"attributes.csv"};
+  }
+
+  std::filesystem::path primaryAnims() const
+  {
+    std::filesystem::path path{primarySourcePath};
+    return path / std::filesystem::path{"anim"};
+  }
+
+  std::filesystem::path secondaryAnims() const
+  {
+    std::filesystem::path path{secondarySourcePath};
+    return path / std::filesystem::path{"anim"};
   }
 
   std::filesystem::path primaryAssignCache() const
@@ -798,6 +801,14 @@ struct CompilerSourcePaths {
   }
 
   std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedBottomTilesheetPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedMiddleTilesheetPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
+  // TODO 1.0.0 : refactor name to modeBasedAttributePath
+  std::filesystem::path modeBasedAttrPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
+  std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
 };
 
 struct DecompilerSourcePaths {
@@ -868,6 +879,7 @@ struct DecompilerSourcePaths {
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedTilesPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedMetatilesPath(DecompilerMode mode) const;
+  // TODO 1.0.0 : refactor name to modeBasedAttributePath
   std::filesystem::path modeBasedAttrPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedPalettePath(DecompilerMode mode) const;
   std::filesystem::path modeBasedAnimPath(DecompilerMode mode) const;
@@ -887,11 +899,6 @@ struct Output {
 };
 
 struct CompilerConfig {
-  /*
-   * TODO 1.0.0 : refactor mode handling - instead of it being a global state we set, it should be a parameter that
-   * the caller must pass into any function that has mode-based functionality
-   */
-  CompilerMode mode;
   RGBA32 transparencyColor;
   bool tripleLayer;
   bool cacheAssign;
@@ -915,7 +922,7 @@ struct CompilerConfig {
   bool readSecondaryAssignCache;
 
   CompilerConfig()
-      : mode{}, transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true}, forceParamSearchMatrix{false},
+      : transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true}, forceParamSearchMatrix{false},
         providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false}, defaultBehavior{"0"},
         defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
         primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},

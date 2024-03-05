@@ -443,6 +443,98 @@ std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) c
   throw std::runtime_error("types::InputPaths::modeBasedInputPath (compile) reached unreachable code path");
 }
 
+std::filesystem::path CompilerSourcePaths::modeBasedBottomTilesheetPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return bottomPrimaryTilesheet();
+  case CompilerMode::SECONDARY:
+    return bottomSecondaryTilesheet();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedBottomTilesheetPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedBottomTilesheetPath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedMiddleTilesheetPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return middlePrimaryTilesheet();
+  case CompilerMode::SECONDARY:
+    return middleSecondaryTilesheet();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedMiddleTilesheetPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedMiddleTilesheetPath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return topPrimaryTilesheet();
+  case CompilerMode::SECONDARY:
+    return topSecondaryTilesheet();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedTopTilesheetPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedTopTilesheetPath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedAttrPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return primaryAttributes();
+  case CompilerMode::SECONDARY:
+    return secondaryAttributes();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedAttrPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedAttrPath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedAnimPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return primaryAnims();
+  case CompilerMode::SECONDARY:
+    return secondaryAnims();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedAnimPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedAnimPath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedAssignCachePath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return primaryAssignCache();
+  case CompilerMode::SECONDARY:
+    return secondaryAssignCache();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedAssignCachePath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedAssignCachePath (compile) reached unreachable code path");
+}
+std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMode mode) const
+{
+  switch (mode) {
+  case CompilerMode::PRIMARY:
+    return primaryPalettePrimers();
+  case CompilerMode::SECONDARY:
+    return secondaryPalettePrimers();
+  default:
+    internalerror_unknownCompilerMode("types::InputPaths::modeBasedPalettePrimerPath");
+  }
+  // unreachable, here for compiler
+  throw std::runtime_error("types::InputPaths::modeBasedPalettePrimerPath (compile) reached unreachable code path");
+}
+
 std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mode) const
 {
   switch (mode) {

@@ -53,6 +53,7 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
     if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
       // TODO 1.0.0 : create real warn_invalidPaletteIndex for this case
       pt_warn("invalid palette index: {}", paletteIndex);
+      pt_println(stderr, "");
     }
     const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
       // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)
@@ -153,7 +154,6 @@ TEST_CASE("decompile should decompile a basic primary tileset")
   ctx.fieldmapConfig.numPalettesTotal = 13;
   ctx.fieldmapConfig.numTilesInPrimary = 512;
   ctx.fieldmapConfig.numTilesTotal = 1024;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.tripleLayer = true;
@@ -165,8 +165,10 @@ TEST_CASE("decompile should decompile a basic primary tileset")
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
+  auto compiledPrimary =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   auto decompiledViaAlgorithm =
       porytiles::decompile(ctx, porytiles::DecompilerMode::PRIMARY, *compiledPrimary,
@@ -196,9 +198,10 @@ TEST_CASE("decompile should decompile a basic secondary tileset")
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
+  auto compiledPrimary =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
   ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/secondary/bottom.png"}));
@@ -208,9 +211,10 @@ TEST_CASE("decompile should decompile a basic secondary tileset")
   png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_2/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_2/secondary/top.png"};
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
-  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-  auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary, std::vector<porytiles::RGBATile>{});
+      ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
+      bottomSecondary, middleSecondary, topSecondary);
+  auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
+                                              std::vector<porytiles::RGBATile>{});
 
   ctx.decompilerContext.pairedPrimaryTileset = std::move(ctx.compilerContext.pairedPrimaryTileset);
   auto decompiledViaAlgorithm =

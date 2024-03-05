@@ -10,8 +10,6 @@
 #include "porytiles_context.h"
 #include "porytiles_exception.h"
 
-// TODO 1.0.0 : convert all printed quotes to use same format, i.e. `backtick quote format'
-
 int main(int argc, char **argv)
 try {
   porytiles::PorytilesContext ctx{};

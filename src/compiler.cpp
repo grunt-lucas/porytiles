@@ -148,7 +148,7 @@ static NormalizedTile normalize(PorytilesContext &ctx, const std::vector<RGBATil
 }
 
 static std::pair<std::vector<IndexAndNormTile>, std::vector<NormalizedTile>>
-normalizeDecompTiles(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
+normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTileset &decompiledTileset,
                      const std::vector<RGBATile> &palettePrimers)
 {
   /*
@@ -197,17 +197,16 @@ normalizeDecompTiles(PorytilesContext &ctx, const DecompiledTileset &decompiledT
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                    "errors generated during tile normalization");
   }
 
   return std::pair{normalizedTiles, normalizedPrimers};
 }
 
-static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
-buildColorIndexMaps(PorytilesContext &ctx, const std::vector<IndexAndNormTile> &normalizedTiles,
-                    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap,
-                    const std::vector<NormalizedTile> &primerTiles)
+static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>> buildColorIndexMaps(
+    PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<IndexAndNormTile> &normalizedTiles,
+    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap, const std::vector<NormalizedTile> &primerTiles)
 {
   /*
    * Iterate over every color in each tile's NormalizedPalette, adding it to the map if not already present. We end up
@@ -255,17 +254,17 @@ buildColorIndexMaps(PorytilesContext &ctx, const std::vector<IndexAndNormTile> &
    * This error is merely a fail-early heuristic. I.e. just because a primary tileset passes this check does not mean
    * it is actually allocatable.
    */
-  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+  if (compilerMode == CompilerMode::PRIMARY) {
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, allowed, colorIndex);
     }
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  else if (compilerMode == CompilerMode::SECONDARY) {
     // use numPalettesTotal since secondary tiles can use colors from the primary set
     std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
     if (colorIndex > allowed) {
-      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, allowed, colorIndex);
+      fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, allowed, colorIndex);
     }
   }
   else {
@@ -391,7 +390,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
        * to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile, or if it was
        * a reference into this particular animation.
        */
-      fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, normTile.anim,
                                          normTile.tileIndex);
     }
 
@@ -412,7 +411,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
       usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, normTile.anim,
                                        normTile.tileIndex);
     }
     else {
@@ -482,13 +481,13 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
 
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
-    fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInPrimary);
   }
 
   // exit if there were any other errors
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
                    "errors generated during primary tile assignment");
   }
 }
@@ -539,7 +538,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
          * way to tell if a transparent user provided tile on the layer sheet referred to the true index 0 transparent
          * tile, or if it was a reference into this particular animation.
          */
-        fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, normTile.anim,
+        fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, normTile.anim,
                                            normTile.tileIndex);
       }
       else {
@@ -548,7 +547,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
          * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary tile
          * as opposed to the animation.
          */
-        fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, normTile.anim,
+        fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, normTile.anim,
                                                   normTile.tileIndex);
       }
     }
@@ -570,7 +569,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
       usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
     }
     else if (tileIndexes.contains(keyFrameTile)) {
-      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, normTile.anim,
+      fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, normTile.anim,
                                        normTile.tileIndex);
     }
     else {
@@ -647,24 +646,25 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
 
   // error out if there were too many unique tiles
   if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
-    fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, compiled.tiles.size(),
+    fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, compiled.tiles.size(),
                                   ctx.fieldmapConfig.numTilesInSecondary());
   }
 
   // exit if there were any other errors
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
                    "errors generated during secondary tile assignment");
   }
 }
 
-std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
+std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode compilerMode,
+                                         const DecompiledTileset &decompiledTileset,
                                          const std::vector<RGBATile> &palettePrimers)
 {
   /*
    * Sanity check for matching paired primary palette sizes when compiling secondary
    */
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
+  if (compilerMode == CompilerMode::SECONDARY &&
       (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
     // FIXME : is this actually an internal error? It seems like a user could force this to happen via bad inputs
     internalerror(fmt::format(
@@ -680,19 +680,19 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
   /*
    * Throw an error if there are too many metatiles in the input
    */
-  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+  if (compilerMode == CompilerMode::PRIMARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
     std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
-      fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, srcMetatileCount,
+      fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, compilerMode, srcMetatileCount,
                                   ctx.fieldmapConfig.numMetatilesInPrimary);
     }
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  else if (compilerMode == CompilerMode::SECONDARY) {
     compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
     std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
     if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
-      fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, srcMetatileCount,
+      fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, compilerMode, srcMetatileCount,
                                   ctx.fieldmapConfig.numMetatilesInSecondary());
     }
   }
@@ -705,18 +705,19 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
    * Build indexed normalized tiles, order of this vector matches the decompiled iteration order, with animated tiles
    * at the beginning. It also builds a separate vector of normalized primer tiles.
    */
-  auto [indexedNormTiles, normalizedPrimers] = normalizeDecompTiles(ctx, decompiledTileset, palettePrimers);
+  auto [indexedNormTiles, normalizedPrimers] =
+      normalizeDecompTiles(ctx, compilerMode, decompiledTileset, palettePrimers);
 
   /*
    * Map each unique color to a unique index between 0 and 240 (15 colors per palette * 16 palettes MAX)
    */
   std::unordered_map<BGR15, std::size_t> emptyPrimaryColorIndexMap;
   const std::unordered_map<BGR15, std::size_t> *primaryColorIndexMap = &emptyPrimaryColorIndexMap;
-  if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  if (compilerMode == CompilerMode::SECONDARY) {
     primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTileset->colorIndexMap);
   }
   auto [colorToIndex, indexToColor] =
-      buildColorIndexMaps(ctx, indexedNormTiles, *primaryColorIndexMap, normalizedPrimers);
+      buildColorIndexMaps(ctx, compilerMode, indexedNormTiles, *primaryColorIndexMap, normalizedPrimers);
   compiled->colorIndexMap = colorToIndex;
 
   /*
@@ -731,13 +732,13 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
    * Run palette assignment.
    */
   auto [assignedPalsSolution, primaryPaletteColorSets] =
-      runPaletteAssignmentMatrix(ctx, colorSets, primerColorSets, colorToIndex);
+      runPaletteAssignmentMatrix(ctx, compilerMode, colorSets, primerColorSets, colorToIndex);
 
   /*
    * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
    * and so we may need to do something fancier here so that the colors align correctly.
    */
-  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+  if (compilerMode == CompilerMode::PRIMARY) {
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       ColorSet palAssignments = assignedPalsSolution.at(i);
       compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
@@ -751,7 +752,7 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
       compiled->palettes.at(i).size = colorIndex;
     }
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  else if (compilerMode == CompilerMode::SECONDARY) {
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
       // Copy the primary set's palettes into this tileset so tiles can use them
       for (std::size_t j = 0; j < PAL_SIZE; j++) {
@@ -791,10 +792,10 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const Decompiled
   /*
    * Build the tile assignments.
    */
-  if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+  if (compilerMode == CompilerMode::PRIMARY) {
     assignTilesPrimary(ctx, *compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
   }
-  else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+  else if (compilerMode == CompilerMode::SECONDARY) {
     assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets, assignedPalsSolution);
   }
   else {
@@ -896,7 +897,7 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips")
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
   porytiles::RGBATile tile = tiles.tiles[0];
 
   SUBCASE("case: no flips")
@@ -1022,7 +1023,7 @@ TEST_CASE("normalize should return the normal form of the given tile")
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/corners.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/corners.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
   porytiles::RGBATile tile = tiles.tiles[0];
 
   std::vector<porytiles::RGBATile> singleFrameTile = {tile};
@@ -1050,9 +1051,9 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
 
-  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
 
   CHECK(indexedNormTiles.size() == 4);
 
@@ -1117,7 +1118,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> tilesPng{"res/tests/2x2_pattern_2.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, tilesPng);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, tilesPng);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow"}));
@@ -1162,9 +1163,9 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
   anims.push_back(yellowAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(ctx, anims, tiles);
+  porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, tiles);
 
-  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
 
   CHECK(indexedNormTiles.size() == 13);
 
@@ -1234,10 +1235,11 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  auto [indexedNormTiles, _] = porytiles::normalizeDecompTiles(ctx, tiles, {});
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+  auto [indexedNormTiles, _] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
 
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+  auto [colorToIndex, indexToColor] =
+      porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1289,9 +1291,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
-  auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+  auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+  auto [colorToIndex, indexToColor] =
+      porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
 
   CHECK(colorToIndex.size() == 4);
   CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1388,15 +1391,15 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 2;
     porytiles::PorytilesContext ctx{};
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 20;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [colorToIndex, indexToColor] =
+        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
     auto [indexedNormTilesWithColorSets, colorSets, _2] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
 
@@ -1411,7 +1414,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned, {}) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, porytiles::CompilerMode::PRIMARY, state, solution, {}, unassigned, {}) ==
+          porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 1);
     CHECK(solution.at(1).count() == 3);
@@ -1425,15 +1429,15 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
   {
     constexpr int SOLUTION_SIZE = 5;
     porytiles::PorytilesContext ctx{};
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
     ctx.compilerConfig.primaryExploredNodeCutoff = 200;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compile_raw_set_1/set.png"}));
     png::image<png::rgba_pixel> png1{"res/tests/compile_raw_set_1/set.png"};
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, tiles, {});
-    auto [colorToIndex, indexToColor] = porytiles::buildColorIndexMaps(ctx, indexedNormTiles, {}, {});
+    porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [colorToIndex, indexToColor] =
+        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
     auto [indexedNormTilesWithColorSets, colorSets, _2] =
         porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
 
@@ -1448,7 +1452,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
                      [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
     porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
-    CHECK(porytiles::assignDepthFirst(ctx, state, solution, {}, unassigned, {}) == porytiles::AssignResult::SUCCESS);
+    CHECK(porytiles::assignDepthFirst(ctx, porytiles::CompilerMode::PRIMARY, state, solution, {}, unassigned, {}) ==
+          porytiles::AssignResult::SUCCESS);
     CHECK(solution.size() == SOLUTION_SIZE);
     CHECK(solution.at(0).count() == 11);
     CHECK(solution.at(1).count() == 12);
@@ -1465,14 +1470,14 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.primaryExploredNodeCutoff = 5;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, tiles, {});
-  auto compiledTiles = porytiles::compile(ctx, tiles, std::vector<porytiles::RGBATile>{});
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+  auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+  auto compiledTiles =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, std::vector<porytiles::RGBATile>{});
 
   porytiles::GBATile tile0 = porytiles::makeTile(indexedNormTiles[0].second, porytiles::NormalizedTile::keyFrameIndex(),
                                                  compiledTiles->palettes[0]);
@@ -1520,13 +1525,13 @@ TEST_CASE("compile simple example should perform as expected")
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numTilesInPrimary = 4;
   ctx.compilerConfig.primaryExploredNodeCutoff = 5;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_2.png"};
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
-  auto compiledTiles = porytiles::compile(ctx, tiles, std::vector<porytiles::RGBATile>{});
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+  auto compiledTiles =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, std::vector<porytiles::RGBATile>{});
 
   // Check that compiled palettes are as expected
   CHECK(compiledTiles->palettes.at(0).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
@@ -1594,7 +1599,6 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
@@ -1604,9 +1608,11 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
 
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+  auto compiledPrimary =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   // Check that tiles are as expected
   CHECK(compiledPrimary->tiles.size() == 16);
@@ -1732,7 +1738,6 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/primary/bottom.png"}));
@@ -1742,10 +1747,11 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_3/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_3/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
 
   ctx.compilerContext.pairedPrimaryTileset =
-      porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/middle.png"}));
@@ -1754,9 +1760,10 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
   png::image<png::rgba_pixel> middleSecondary{"res/tests/simple_metatiles_3/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/simple_metatiles_3/secondary/top.png"};
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
-  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-  auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary, std::vector<porytiles::RGBATile>{});
+      ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
+      bottomSecondary, middleSecondary, topSecondary);
+  auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
+                                              std::vector<porytiles::RGBATile>{});
 
   // Check that tiles are as expected
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_3/secondary/expected_tiles.png"}));
@@ -1893,7 +1900,6 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/bottom.png"}));
@@ -1903,7 +1909,8 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/flower_white"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/water"}));
@@ -1943,9 +1950,10 @@ TEST_CASE("compile function should correctly compile primary set with animated t
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
+  porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, decompiledPrimary);
 
-  auto compiledPrimary = porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+  auto compiledPrimary =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   CHECK(compiledPrimary->tiles.size() == 16);
 
@@ -2104,7 +2112,6 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   porytiles::PorytilesContext ctx{};
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
@@ -2115,7 +2122,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_1/primary/middle.png"};
   png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_1/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary, middlePrimary, topPrimary);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/flower_white"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/primary/anim/water"}));
@@ -2155,11 +2163,10 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   anims.push_back(flowerWhiteAnim);
   anims.push_back(waterAnim);
 
-  porytiles::importAnimTiles(ctx, anims, decompiledPrimary);
+  porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, decompiledPrimary);
 
   ctx.compilerContext.pairedPrimaryTileset =
-      porytiles::compile(ctx, decompiledPrimary, std::vector<porytiles::RGBATile>{});
-  ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/bottom.png"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/middle.png"}));
@@ -2168,7 +2175,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   png::image<png::rgba_pixel> middleSecondary{"res/tests/anim_metatiles_1/secondary/middle.png"};
   png::image<png::rgba_pixel> topSecondary{"res/tests/anim_metatiles_1/secondary/top.png"};
   porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomSecondary, middleSecondary, topSecondary);
+      ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
+      bottomSecondary, middleSecondary, topSecondary);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_1/secondary/anim/flower_red"}));
 
@@ -2195,9 +2203,10 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> animsSecondary{};
   animsSecondary.push_back(flowerRedAnim);
 
-  porytiles::importAnimTiles(ctx, animsSecondary, decompiledSecondary);
+  porytiles::importAnimTiles(ctx, porytiles::CompilerMode::SECONDARY, animsSecondary, decompiledSecondary);
 
-  auto compiledSecondary = porytiles::compile(ctx, decompiledSecondary, std::vector<porytiles::RGBATile>{});
+  auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
+                                              std::vector<porytiles::RGBATile>{});
 
   CHECK(compiledSecondary->tiles.size() == 16);
 

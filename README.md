@@ -9,13 +9,6 @@ Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for
 
 For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) or [the video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
 
-## Table of Contents
-- [Porytiles](#porytiles)
-  - [Table of Contents](#table-of-contents)
-  - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
-  - [Getting Started](#getting-started)
-  - [Compiler Information](#compiler-information)
-
 ## Why Should I Use This Tool?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way: [Poryscript](https://github.com/huderlem/poryscript), another popular community tool, takes a `.script` file and generates a corresponding `.inc` file. Comparably, Porytiles takes a source folder containing RGBA (or indexed) tile assets and generates a corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anim` folder, and a populated `palettes` folder -- all as part of your build!

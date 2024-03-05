@@ -178,11 +178,6 @@ void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
 
 void fatalerror_unrecognizedOption(const ErrorsAndWarnings &err, std::string option, Subcommand subcommand);
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
-                                  std::string path);
-
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode);
-
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                              CompilerMode mode, const std::string &animation, std::size_t index);
 
@@ -211,6 +206,10 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const CompilerSou
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                           CompilerMode mode, std::string field, std::size_t primary, std::size_t total);
 
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                          DecompilerMode mode, std::string field, std::size_t primary,
+                                          std::size_t total);
+
 void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                         CompilerMode mode, std::string animName, std::size_t tileIndex);
 
@@ -226,8 +225,15 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const C
 void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                std::string filePath, std::string id, std::size_t line);
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode &mode,
-                                     std::string behavior, std::string value, std::size_t line);
+void fatalerror_invalidBehaviorValueCompiler(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                             CompilerMode mode, std::string behavior, std::string value,
+                                             std::size_t line);
+
+// FIXME 1.0.0 : combine these two somehow
+
+void fatalerror_invalidBehaviorValueDecompiler(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                               DecompilerMode mode, std::string behavior, std::string value,
+                                               std::size_t line);
 
 void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                        const CompilerMode &mode, std::string line, std::size_t lineNumber,
@@ -267,7 +273,8 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
 void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
                                                       std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
 
-void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config,
+                              std::string path);
 
 void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 

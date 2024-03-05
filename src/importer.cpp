@@ -28,7 +28,8 @@
 
 namespace porytiles {
 
-DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png::rgba_pixel> &png)
+DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compilerMode,
+                                     const png::image<png::rgba_pixel> &png)
 {
   if (png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
     error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
@@ -38,7 +39,7 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, const png::image<png
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                    "freestanding source dimension not divisible by 8");
   }
 
@@ -116,7 +117,7 @@ static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> la
   return LayerType::SPLIT;
 }
 
-DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
+DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode compilerMode,
                                              const std::unordered_map<std::size_t, Attributes> &attributesMap,
                                              const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
@@ -146,8 +147,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
-                   "source layer png dimensions invalid");
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), "source layer png dimensions invalid");
   }
 
   DecompiledTileset decompiledTiles{};
@@ -173,8 +173,8 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
     catch (const std::exception &e) {
       defaultBehavior = 0;
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default behavior '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                 fmt::format("supplied default behavior `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
     }
     try {
@@ -183,8 +183,8 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
     catch (const std::exception &e) {
       defaultEncounterType = EncounterType::NONE;
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default EncounterType '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                 fmt::format("supplied default EncounterType `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
     }
     try {
@@ -193,8 +193,8 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
     }
     catch (const std::exception &e) {
       defaultTerrainType = TerrainType::NORMAL;
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default TerrainType '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                 fmt::format("supplied default TerrainType `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
     }
 
@@ -364,20 +364,20 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx,
   for (const auto &[metatileId, _] : attributesMap) {
     if (metatileId > metatileCount - 1) {
       warn_unusedAttribute(ctx.err, metatileId, metatileCount,
-                           ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode).string());
+                           ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string());
     }
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                    "errors generated during layered tile import");
   }
 
   return decompiledTiles;
 }
 
-void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
-                     DecompiledTileset &tiles)
+void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
+                     const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
 {
   std::vector<DecompiledAnimation> anims{};
 
@@ -403,19 +403,19 @@ void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<Animat
       }
 
       if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "anim frame source dimension not divisible by 8");
       }
 
       frameWidths.insert(rawFrame.png.get_width());
       frameHeights.insert(rawFrame.png.get_height());
       if (frameWidths.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, compilerMode,
                                                             rawFrame.animName, rawFrame.frameName, "width",
                                                             rawFrame.png.get_width());
       }
       if (frameHeights.size() != 1) {
-        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, compilerMode,
                                                             rawFrame.animName, rawFrame.frameName, "height",
                                                             rawFrame.png.get_height());
       }
@@ -450,7 +450,7 @@ void importAnimTiles(PorytilesContext &ctx, const std::vector<std::vector<Animat
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeader(PorytilesContext &ctx, std::ifstream &behaviorFile)
+importMetatileBehaviorHeaderCompiler(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
@@ -479,8 +479,57 @@ importMetatileBehaviorHeader(PorytilesContext &ctx, std::ifstream &behaviorFile)
       }
       catch (const std::exception &e) {
         behaviorFile.close();
-        fatalerror_invalidBehaviorValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, behaviorName,
-                                        behaviorValueString, processedUpToLine);
+        fatalerror_invalidBehaviorValueCompiler(ctx.err, ctx.compilerSrcPaths, compilerMode, behaviorName,
+                                                behaviorValueString, processedUpToLine);
+        // here so compiler won't complain
+        behaviorVal = 0;
+      }
+      if (behaviorVal != 0xFF) {
+        // Check for MB_INVALID above, only insert if it was a valid MB
+        behaviorMap.insert(std::pair{behaviorName, behaviorVal});
+        behaviorReverseMap.insert(std::pair{behaviorVal, behaviorName});
+      }
+    }
+    processedUpToLine++;
+  }
+  behaviorFile.close();
+
+  return std::pair{behaviorMap, behaviorReverseMap};
+}
+
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorHeaderDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode,
+                                       std::ifstream &behaviorFile)
+{
+  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
+
+  std::string line;
+  std::size_t processedUpToLine = 1;
+  while (std::getline(behaviorFile, line)) {
+    std::string buffer;
+    std::stringstream stringStream(line);
+    std::vector<std::string> tokens{};
+    while (stringStream >> buffer) {
+      tokens.push_back(buffer);
+    }
+    if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_")) {
+      const std::string &behaviorName = tokens.at(1);
+      const std::string &behaviorValueString = tokens.at(2);
+      std::uint8_t behaviorVal;
+      try {
+        std::size_t pos;
+        behaviorVal = std::stoi(behaviorValueString, &pos, 0);
+        if (std::string{behaviorValueString}.size() != pos) {
+          behaviorFile.close();
+          // throw here so it catches below and prints an error message
+          throw std::runtime_error{""};
+        }
+      }
+      catch (const std::exception &e) {
+        behaviorFile.close();
+        fatalerror_invalidBehaviorValueDecompiler(ctx.err, ctx.decompilerSrcPaths, decompilerMode, behaviorName,
+                                                  behaviorValueString, processedUpToLine);
         // here so compiler won't complain
         behaviorVal = 0;
       }
@@ -498,8 +547,8 @@ importMetatileBehaviorHeader(PorytilesContext &ctx, std::ifstream &behaviorFile)
 }
 
 std::unordered_map<std::size_t, Attributes>
-importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
-                        const std::string &filePath)
+importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
+                        const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath)
 {
   std::unordered_map<std::size_t, Attributes> attributeMap{};
   std::unordered_map<std::size_t, std::size_t> lineFirstSeen{};
@@ -508,7 +557,7 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
     in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
   }
   catch (const std::exception &e) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
   }
 
   std::string id;
@@ -524,7 +573,7 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
   bool hasEncounterType = in.has_column("encounterType");
 
   if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
-    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath);
+    fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
   }
 
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
@@ -545,8 +594,8 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
   }
   catch (const std::exception &e) {
     defaultBehavior = 0;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default behavior '{}' was not valid",
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("supplied default behavior `{}' was not valid",
                            fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
   }
   try {
@@ -555,8 +604,8 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
   }
   catch (const std::exception &e) {
     defaultEncounterType = EncounterType::NONE;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default EncounterType '{}' was not valid",
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("supplied default EncounterType `{}' was not valid",
                            fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
   }
   try {
@@ -565,8 +614,8 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
   }
   catch (const std::exception &e) {
     defaultTerrainType = TerrainType::NORMAL;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("supplied default TerrainType '{}' was not valid",
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("supplied default TerrainType `{}' was not valid",
                            fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
   }
 
@@ -627,8 +676,7 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
       }
     }
     catch (const std::exception &e) {
-      fatalerror_invalidIdInCsv(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, filePath, id,
-                                processedUpToLine);
+      fatalerror_invalidIdInCsv(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath, id, processedUpToLine);
       // here so compiler won't complain
       idVal = 0;
     }
@@ -643,14 +691,15 @@ importAttributesFromCsv(PorytilesContext &ctx, const std::unordered_map<std::str
   }
 
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                    "errors generated during attributes CSV parsing");
   }
 
   return attributeMap;
 }
 
-static void runAssignmentConfigImport(PorytilesContext &ctx, std::ifstream &config, std::string assignCachePath)
+static void runAssignmentConfigImport(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &config,
+                                      std::string assignCachePath)
 {
   std::string line;
   std::size_t processedUpToLine = 1;
@@ -663,31 +712,39 @@ static void runAssignmentConfigImport(PorytilesContext &ctx, std::ifstream &conf
     }
     std::vector<std::string> lineTokens = split(line, "=");
     if (lineTokens.size() != 2) {
-      fatalerror_assignCacheSyntaxError(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, line, processedUpToLine,
+      fatalerror_assignCacheSyntaxError(ctx.err, ctx.compilerSrcPaths, compilerMode, line, processedUpToLine,
                                         assignCachePath);
     }
     std::string key = lineTokens.at(0);
     std::string value = lineTokens.at(1);
     if (key == ASSIGN_ALGO) {
       if (value == assignAlgorithmString(AssignAlgorithm::DFS)) {
-        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        if (compilerMode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::DFS;
         }
-        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        else if (compilerMode == CompilerMode::SECONDARY) {
           ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::DFS;
+        }
+        else {
+          internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
+                                    static_cast<int>(compilerMode)));
         }
       }
       else if (value == assignAlgorithmString(AssignAlgorithm::BFS)) {
-        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        if (compilerMode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::BFS;
         }
-        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        else if (compilerMode == CompilerMode::SECONDARY) {
           ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::BFS;
+        }
+        else {
+          internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
+                                    static_cast<int>(compilerMode)));
         }
       }
       else {
-        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                           processedUpToLine, assignCachePath);
+        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value, processedUpToLine,
+                                           assignCachePath);
       }
     }
     else if (key == EXPLORE_CUTOFF) {
@@ -697,25 +754,33 @@ static void runAssignmentConfigImport(PorytilesContext &ctx, std::ifstream &conf
       }
       catch (const std::exception &e) {
         assignExploreValue = 0;
-        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                           processedUpToLine, assignCachePath);
+        fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value, processedUpToLine,
+                                           assignCachePath);
       }
-      if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+      if (compilerMode == CompilerMode::PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = assignExploreValue;
       }
-      else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+      else if (compilerMode == CompilerMode::SECONDARY) {
         ctx.compilerConfig.secondaryExploredNodeCutoff = assignExploreValue;
+      }
+      else {
+        internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
+                                  static_cast<int>(compilerMode)));
       }
     }
     else if (key == BEST_BRANCHES) {
       if (value == SMART_PRUNE) {
-        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        if (compilerMode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryBestBranches = SIZE_MAX;
           ctx.compilerConfig.primarySmartPrune = true;
         }
-        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        else if (compilerMode == CompilerMode::SECONDARY) {
           ctx.compilerConfig.secondaryBestBranches = SIZE_MAX;
           ctx.compilerConfig.secondarySmartPrune = true;
+        }
+        else {
+          internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
+                                    static_cast<int>(compilerMode)));
         }
       }
       else {
@@ -725,65 +790,73 @@ static void runAssignmentConfigImport(PorytilesContext &ctx, std::ifstream &conf
         }
         catch (const std::exception &e) {
           bestBranchValue = 0;
-          fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, value,
-                                             processedUpToLine, assignCachePath);
+          fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value, processedUpToLine,
+                                             assignCachePath);
         }
-        if (ctx.compilerConfig.mode == CompilerMode::PRIMARY) {
+        if (compilerMode == CompilerMode::PRIMARY) {
           ctx.compilerConfig.primaryBestBranches = bestBranchValue;
         }
-        else if (ctx.compilerConfig.mode == CompilerMode::SECONDARY) {
+        else if (compilerMode == CompilerMode::SECONDARY) {
           ctx.compilerConfig.secondaryBestBranches = bestBranchValue;
+        }
+        else {
+          internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
+                                    static_cast<int>(compilerMode)));
         }
       }
     }
     else {
-      fatalerror_assignCacheInvalidKey(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, key, processedUpToLine,
+      fatalerror_assignCacheInvalidKey(ctx.err, ctx.compilerSrcPaths, compilerMode, key, processedUpToLine,
                                        assignCachePath);
     }
     processedUpToLine++;
   }
 }
 
-void importPrimaryAssignmentCache(PorytilesContext &ctx, std::ifstream &config)
+void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
+                           std::ifstream &config)
 {
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+  if (parentCompilerMode == CompilerMode::SECONDARY && compilerMode == CompilerMode::PRIMARY &&
       ctx.compilerConfig.providedPrimaryAssignCacheOverride) {
     /*
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
      * override value. In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
+    warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
     return;
   }
-  if (ctx.subcommand == Subcommand::COMPILE_PRIMARY && ctx.compilerConfig.mode == CompilerMode::PRIMARY &&
+  if (parentCompilerMode == CompilerMode::PRIMARY && compilerMode == CompilerMode::PRIMARY &&
       ctx.compilerConfig.providedAssignCacheOverride) {
     /*
      * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value. In
      * this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
+    warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
     return;
   }
-  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.primaryAssignCache());
-  ctx.compilerConfig.readPrimaryAssignCache = true;
-}
-
-void importSecondaryAssignmentConfigParameters(PorytilesContext &ctx, std::ifstream &config)
-{
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY && ctx.compilerConfig.mode == CompilerMode::SECONDARY &&
+  if (parentCompilerMode == CompilerMode::SECONDARY && compilerMode == CompilerMode::SECONDARY &&
       ctx.compilerConfig.providedAssignCacheOverride) {
     /*
      * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
      * In this case, we don't want to read anything from the assign config. Just return.
      */
-    warn_assignCacheOverride(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
+    warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
     return;
   }
-  runAssignmentConfigImport(ctx, config, ctx.compilerSrcPaths.secondaryAssignCache());
-  ctx.compilerConfig.readSecondaryAssignCache = true;
+  runAssignmentConfigImport(ctx, compilerMode, config, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
+  if (compilerMode == CompilerMode::PRIMARY) {
+    ctx.compilerConfig.readPrimaryAssignCache = true;
+  }
+  else if (compilerMode == CompilerMode::SECONDARY) {
+    ctx.compilerConfig.readSecondaryAssignCache = true;
+  }
+  else {
+    internalerror(
+        fmt::format("importer::importAssignmentCache unknown CompilerMode: {}", static_cast<int>(compilerMode)));
+  }
 }
 
-static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, DecompilerMode mode,
+static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, DecompilerMode decompilerMode,
                                                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles)
 {
   std::vector<GBAPalette> palettes{};
@@ -800,29 +873,32 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "JASC-PAL") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+                 fmt::format("expected `JASC-PAL' in pal file, saw `{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "0100") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected '0100' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+                 fmt::format("expected `0100' in pal file, saw `{}'", line));
     }
 
     std::getline(*stream, line);
     if (line.size() == 0) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "invalid blank line in pal file");
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
     }
     line.pop_back();
     if (line != "16") {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, fmt::format("expected '16' in pal file, saw '{}'", line));
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+                 fmt::format("expected `16' in pal file, saw `{}'", line));
     }
 
     GBAPalette palette{};
@@ -833,7 +909,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
     palette.size = 16;
     std::size_t colorIndex = 0;
     while (std::getline(*stream, line)) {
-      BGR15 bgr = rgbaToBgr(parseJascLine(ctx, mode, line));
+      BGR15 bgr = rgbaToBgr(parseJascLineDecompiler(ctx, decompilerMode, line));
       palette.colors.at(colorIndex) = bgr;
       colorIndex++;
     }
@@ -952,14 +1028,14 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
     if (attributesDataBuf.size() % 4 != 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                 "decompiler input 'metatile_attributes.bin' corrupted, not valid uint32 data");
+                 "decompiler input `metatile_attributes.bin' corrupted, not valid uint32 data");
     }
     metatileCount = attributesDataBuf.size() / 4;
   }
   else {
     if (attributesDataBuf.size() % 2 != 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                 "decompiler input 'metatile_attributes.bin' corrupted, not valid uint16 data");
+                 "decompiler input `metatile_attributes.bin' corrupted, not valid uint16 data");
     }
     metatileCount = attributesDataBuf.size() / 2;
   }
@@ -1006,14 +1082,14 @@ importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
 
       if (animPng.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
+                   fmt::format("anim `{}' frame `{}' width `{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
       if (animPng.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
+                   fmt::format("anim `{}' frame `{}' height `{}' was not divisible by 8",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
@@ -1023,14 +1099,14 @@ importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
       frameHeights.insert(animPng.png.get_height());
       if (frameWidths.size() != 1) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("anim '{}' frame '{}' width '{}' differed from previous frame width",
+                   fmt::format("anim `{}' frame `{}' width `{}' differed from previous frame width",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
       }
       if (frameHeights.size() != 1) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("anim '{}' frame '{}' height '{}' differed from previous frame height",
+                   fmt::format("anim `{}' frame `{}' height `{}' differed from previous frame height",
                                fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
                                fmt::styled(animFrame.frameName, fmt::emphasis::bold),
                                fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
@@ -1081,7 +1157,7 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
   return {tileset, attributesMap};
 }
 
-RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
+RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile)
 {
   RGBATile primerTile{};
   primerTile.type = TileType::PRIMER;
@@ -1095,25 +1171,24 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
   std::string line;
   std::getline(paletteFile, line);
   if (line.size() == 0) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
   }
   line.pop_back();
   if (line != "JASC-PAL") {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("expected 'JASC-PAL' in pal file, saw '{}'", line));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("expected `JASC-PAL' in pal file, saw `{}'", line));
   }
   std::getline(paletteFile, line);
   if (line.size() == 0) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
   }
   line.pop_back();
   if (line != "0100") {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("expected '0100' in pal file, saw '{}'", line));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, fmt::format("expected `0100' in pal file, saw `{}'", line));
   }
   std::getline(paletteFile, line);
   if (line.size() == 0) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode, "invalid blank line in pal file");
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
   }
   line.pop_back();
 
@@ -1123,17 +1198,16 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
   }
   catch (const std::exception &e) {
     paletteSize = 0;
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("invalid palette size line {}", line));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, fmt::format("invalid palette size line {}", line));
   }
   if (paletteSize == 0 || paletteSize > PAL_SIZE - 1) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                fmt::format("invalid palette size {}, must be 1 <= size <= 15", line));
   }
 
   std::uint8_t lineCount = 0;
   while (std::getline(paletteFile, line)) {
-    RGBA32 rgba = parseJascLine(ctx, DecompilerMode::PRIMARY, line);
+    RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line);
     primerTile.pixels.at(lineCount) = rgba;
     lineCount++;
     if (lineCount > PAL_SIZE - 1) {
@@ -1142,7 +1216,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, std::ifstream &paletteFile)
   }
 
   if (lineCount != paletteSize) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                fmt::format("line count {} did not match stated palette size {}", lineCount, paletteSize));
   }
 
@@ -1158,7 +1232,7 @@ TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset i
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_1.png"}));
   png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
 
-  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, png1);
+  porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
 
   // Tile 0 should have blue stripe from top left to bottom right
   CHECK(tiles.tiles[0].pixels[0] == porytiles::RGBA_BLUE);
@@ -1210,7 +1284,8 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
   png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
+      top);
 
   // Metatile 0 bottom layer
   CHECK(tiles.tiles[0] == porytiles::RGBA_TILE_RED);
@@ -1316,7 +1391,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
 
   porytiles::DecompiledTileset tiles{};
 
-  porytiles::importAnimTiles(ctx, anims, tiles);
+  porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, tiles);
 
   CHECK(tiles.anims.size() == 2);
   CHECK(tiles.anims.at(0).size() == 3);
@@ -1325,150 +1400,174 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   // white flower, frame 0
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile0.png"}));
   png::image<png::rgba_pixel> frame0Tile0Png{"res/tests/anim_flower_white/expected/frame0_tile0.png"};
-  porytiles::DecompiledTileset frame0Tile0 = porytiles::importTilesFromPng(ctx, frame0Tile0Png);
+  porytiles::DecompiledTileset frame0Tile0 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0) == frame0Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile1.png"}));
   png::image<png::rgba_pixel> frame0Tile1Png{"res/tests/anim_flower_white/expected/frame0_tile1.png"};
-  porytiles::DecompiledTileset frame0Tile1 = porytiles::importTilesFromPng(ctx, frame0Tile1Png);
+  porytiles::DecompiledTileset frame0Tile1 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1) == frame0Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile2.png"}));
   png::image<png::rgba_pixel> frame0Tile2Png{"res/tests/anim_flower_white/expected/frame0_tile2.png"};
-  porytiles::DecompiledTileset frame0Tile2 = porytiles::importTilesFromPng(ctx, frame0Tile2Png);
+  porytiles::DecompiledTileset frame0Tile2 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2) == frame0Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile3.png"}));
   png::image<png::rgba_pixel> frame0Tile3Png{"res/tests/anim_flower_white/expected/frame0_tile3.png"};
-  porytiles::DecompiledTileset frame0Tile3 = porytiles::importTilesFromPng(ctx, frame0Tile3Png);
+  porytiles::DecompiledTileset frame0Tile3 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3) == frame0Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // white flower, frame 1
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile0.png"}));
   png::image<png::rgba_pixel> frame1Tile0Png{"res/tests/anim_flower_white/expected/frame1_tile0.png"};
-  porytiles::DecompiledTileset frame1Tile0 = porytiles::importTilesFromPng(ctx, frame1Tile0Png);
+  porytiles::DecompiledTileset frame1Tile0 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0) == frame1Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile1.png"}));
   png::image<png::rgba_pixel> frame1Tile1Png{"res/tests/anim_flower_white/expected/frame1_tile1.png"};
-  porytiles::DecompiledTileset frame1Tile1 = porytiles::importTilesFromPng(ctx, frame1Tile1Png);
+  porytiles::DecompiledTileset frame1Tile1 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1) == frame1Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile2.png"}));
   png::image<png::rgba_pixel> frame1Tile2Png{"res/tests/anim_flower_white/expected/frame1_tile2.png"};
-  porytiles::DecompiledTileset frame1Tile2 = porytiles::importTilesFromPng(ctx, frame1Tile2Png);
+  porytiles::DecompiledTileset frame1Tile2 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2) == frame1Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile3.png"}));
   png::image<png::rgba_pixel> frame1Tile3Png{"res/tests/anim_flower_white/expected/frame1_tile3.png"};
-  porytiles::DecompiledTileset frame1Tile3 = porytiles::importTilesFromPng(ctx, frame1Tile3Png);
+  porytiles::DecompiledTileset frame1Tile3 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3) == frame1Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // white flower, frame 2
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile0.png"}));
   png::image<png::rgba_pixel> frame2Tile0Png{"res/tests/anim_flower_white/expected/frame2_tile0.png"};
-  porytiles::DecompiledTileset frame2Tile0 = porytiles::importTilesFromPng(ctx, frame2Tile0Png);
+  porytiles::DecompiledTileset frame2Tile0 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0) == frame2Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile1.png"}));
   png::image<png::rgba_pixel> frame2Tile1Png{"res/tests/anim_flower_white/expected/frame2_tile1.png"};
-  porytiles::DecompiledTileset frame2Tile1 = porytiles::importTilesFromPng(ctx, frame2Tile1Png);
+  porytiles::DecompiledTileset frame2Tile1 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1) == frame2Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile2.png"}));
   png::image<png::rgba_pixel> frame2Tile2Png{"res/tests/anim_flower_white/expected/frame2_tile2.png"};
-  porytiles::DecompiledTileset frame2Tile2 = porytiles::importTilesFromPng(ctx, frame2Tile2Png);
+  porytiles::DecompiledTileset frame2Tile2 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2) == frame2Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile3.png"}));
   png::image<png::rgba_pixel> frame2Tile3Png{"res/tests/anim_flower_white/expected/frame2_tile3.png"};
-  porytiles::DecompiledTileset frame2Tile3 = porytiles::importTilesFromPng(ctx, frame2Tile3Png);
+  porytiles::DecompiledTileset frame2Tile3 =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3) == frame2Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 0
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile0.png"}));
   png::image<png::rgba_pixel> frame0Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile0.png"};
-  porytiles::DecompiledTileset frame0Tile0_yellow = porytiles::importTilesFromPng(ctx, frame0Tile0Png_yellow);
+  porytiles::DecompiledTileset frame0Tile0_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0) == frame0Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile1.png"}));
   png::image<png::rgba_pixel> frame0Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile1.png"};
-  porytiles::DecompiledTileset frame0Tile1_yellow = porytiles::importTilesFromPng(ctx, frame0Tile1Png_yellow);
+  porytiles::DecompiledTileset frame0Tile1_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1) == frame0Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile2.png"}));
   png::image<png::rgba_pixel> frame0Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile2.png"};
-  porytiles::DecompiledTileset frame0Tile2_yellow = porytiles::importTilesFromPng(ctx, frame0Tile2Png_yellow);
+  porytiles::DecompiledTileset frame0Tile2_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2) == frame0Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile3.png"}));
   png::image<png::rgba_pixel> frame0Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile3.png"};
-  porytiles::DecompiledTileset frame0Tile3_yellow = porytiles::importTilesFromPng(ctx, frame0Tile3Png_yellow);
+  porytiles::DecompiledTileset frame0Tile3_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3) == frame0Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 1
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile0.png"}));
   png::image<png::rgba_pixel> frame1Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile0.png"};
-  porytiles::DecompiledTileset frame1Tile0_yellow = porytiles::importTilesFromPng(ctx, frame1Tile0Png_yellow);
+  porytiles::DecompiledTileset frame1Tile0_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0) == frame1Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile1.png"}));
   png::image<png::rgba_pixel> frame1Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile1.png"};
-  porytiles::DecompiledTileset frame1Tile1_yellow = porytiles::importTilesFromPng(ctx, frame1Tile1Png_yellow);
+  porytiles::DecompiledTileset frame1Tile1_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1) == frame1Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile2.png"}));
   png::image<png::rgba_pixel> frame1Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile2.png"};
-  porytiles::DecompiledTileset frame1Tile2_yellow = porytiles::importTilesFromPng(ctx, frame1Tile2Png_yellow);
+  porytiles::DecompiledTileset frame1Tile2_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2) == frame1Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile3.png"}));
   png::image<png::rgba_pixel> frame1Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile3.png"};
-  porytiles::DecompiledTileset frame1Tile3_yellow = porytiles::importTilesFromPng(ctx, frame1Tile3Png_yellow);
+  porytiles::DecompiledTileset frame1Tile3_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3) == frame1Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 2
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile0.png"}));
   png::image<png::rgba_pixel> frame2Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile0.png"};
-  porytiles::DecompiledTileset frame2Tile0_yellow = porytiles::importTilesFromPng(ctx, frame2Tile0Png_yellow);
+  porytiles::DecompiledTileset frame2Tile0_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0) == frame2Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile1.png"}));
   png::image<png::rgba_pixel> frame2Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile1.png"};
-  porytiles::DecompiledTileset frame2Tile1_yellow = porytiles::importTilesFromPng(ctx, frame2Tile1Png_yellow);
+  porytiles::DecompiledTileset frame2Tile1_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1) == frame2Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile2.png"}));
   png::image<png::rgba_pixel> frame2Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile2.png"};
-  porytiles::DecompiledTileset frame2Tile2_yellow = porytiles::importTilesFromPng(ctx, frame2Tile2Png_yellow);
+  porytiles::DecompiledTileset frame2Tile2_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2) == frame2Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile3.png"}));
   png::image<png::rgba_pixel> frame2Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile3.png"};
-  porytiles::DecompiledTileset frame2Tile3_yellow = porytiles::importTilesFromPng(ctx, frame2Tile3Png_yellow);
+  porytiles::DecompiledTileset frame2Tile3_yellow =
+      porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3) == frame2Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 }
@@ -1487,7 +1586,8 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   png::image<png::rgba_pixel> top{"res/tests/dual_layer_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
-      ctx, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle, top);
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
+      top);
 
   // Metatile 0
   CHECK(tiles.tiles.at(0).attributes.layerType == porytiles::LayerType::COVERED);
@@ -1573,11 +1673,11 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
 TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
-  auto [behaviorMap, behaviorReverseMap] = porytiles::importMetatileBehaviorHeader(ctx, behaviorFile);
+  auto [behaviorMap, behaviorReverseMap] =
+      porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile);
   behaviorFile.close();
 
   CHECK(!behaviorMap.contains("MB_INVALID"));
@@ -1596,14 +1696,14 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
 TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("It should parse an Emerald-style attributes CSV correctly")
   {
-    auto attributesMap = porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv");
+    auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/correct_1.csv");
     CHECK_FALSE(attributesMap.contains(0));
     CHECK_FALSE(attributesMap.contains(1));
     CHECK_FALSE(attributesMap.contains(2));
@@ -1618,7 +1718,8 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
 
   SUBCASE("It should parse a Firered-style attributes CSV correctly")
   {
-    auto attributesMap = porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_2.csv");
+    auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/correct_2.csv");
     CHECK_FALSE(attributesMap.contains(0));
     CHECK_FALSE(attributesMap.contains(1));
     CHECK(attributesMap.contains(2));

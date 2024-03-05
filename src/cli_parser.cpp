@@ -458,7 +458,7 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
     return arg;
   }
   catch (const std::exception &e) {
-    fatalerror(err, fmt::format("invalid argument '{}' for option '{}': {}", fmt::styled(optarg, fmt::emphasis::bold),
+    fatalerror(err, fmt::format("invalid argument `{}' for option `{}': {}", fmt::styled(optarg, fmt::emphasis::bold),
                                 fmt::styled(optionName, fmt::emphasis::bold), e.what()));
   }
   // unreachable, here for compiler
@@ -469,7 +469,7 @@ static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName
 {
   std::vector<std::string> colorComponents = split(colorString, ",");
   if (colorComponents.size() != 3) {
-    fatalerror(err, fmt::format("invalid argument '{}' for option '{}': RGB color must have three components",
+    fatalerror(err, fmt::format("invalid argument `{}' for option `{}': RGB color must have three components",
                                 fmt::styled(colorString, fmt::emphasis::bold),
                                 fmt::styled(optionName, fmt::emphasis::bold)));
   }
@@ -478,15 +478,15 @@ static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName
   int blue = parseIntegralOption<int>(err, optionName, colorComponents[2].c_str());
 
   if (red < 0 || red > 255) {
-    fatalerror(err, fmt::format("invalid red component '{}' for option '{}': range must be 0 <= red <= 255",
+    fatalerror(err, fmt::format("invalid red component `{}' for option `{}': range must be 0 <= red <= 255",
                                 fmt::styled(red, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
   if (green < 0 || green > 255) {
-    fatalerror(err, fmt::format("invalid green component '{}' for option '{}': range must be 0 <= green <= 255",
+    fatalerror(err, fmt::format("invalid green component `{}' for option `{}': range must be 0 <= green <= 255",
                                 fmt::styled(green, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
   if (blue < 0 || blue > 255) {
-    fatalerror(err, fmt::format("invalid blue component '{}' for option '{}': range must be 0 <= blue <= 255",
+    fatalerror(err, fmt::format("invalid blue component `{}' for option `{}': range must be 0 <= blue <= 255",
                                 fmt::styled(blue, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
   }
 
@@ -505,7 +505,7 @@ static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err,
     return TilesOutputPalette::GREYSCALE;
   }
   else {
-    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+    fatalerror(err, fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                 fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
@@ -526,7 +526,7 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
     return TargetBaseGame::RUBY;
   }
   else {
-    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+    fatalerror(err, fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                 fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
@@ -544,7 +544,7 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
     return AssignAlgorithm::BFS;
   }
   else {
-    fatalerror(err, fmt::format("invalid argument '{}' for option '{}'", fmt::styled(optargString, fmt::emphasis::bold),
+    fatalerror(err, fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                 fmt::styled(optionName, fmt::emphasis::bold)));
   }
   // unreachable, here for compiler
@@ -852,14 +852,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+          fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
                                           fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
       else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.secondaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.secondaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+          fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
                                           fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
@@ -884,7 +884,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         else {
           ctx.compilerConfig.primaryBestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
           if (ctx.compilerConfig.primaryBestBranches == 0) {
-            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+            fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
                                             fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
           }
         }
@@ -896,7 +896,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         else {
           ctx.compilerConfig.secondaryBestBranches = parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
           if (ctx.compilerConfig.secondaryBestBranches == 0) {
-            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+            fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
                                             fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
           }
         }
@@ -917,7 +917,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
         if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-          fatalerror(ctx.err, fmt::format("option '{}' argument cannot be > 100",
+          fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
                                           fmt::styled(PRIMARY_EXPLORE_CUTOFF, fmt::emphasis::bold)));
         }
       }
@@ -940,7 +940,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
           ctx.compilerConfig.primaryBestBranches =
               parseIntegralOption<std::size_t>(ctx.err, PRIMARY_BEST_BRANCHES, optarg);
           if (ctx.compilerConfig.primaryBestBranches == 0) {
-            fatalerror(ctx.err, fmt::format("option '{}' argument cannot be 0",
+            fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
                                             fmt::styled(PRIMARY_BEST_BRANCHES, fmt::emphasis::bold)));
           }
         }
@@ -1030,7 +1030,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
           errInvalidTileIndex = true;
         }
         else {
-          fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+          fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
                                           fmt::styled(std::string{optarg}, fmt::emphasis::bold),
                                           fmt::styled(WERROR, fmt::emphasis::bold)));
         }
@@ -1074,7 +1074,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         errInvalidTileIndex = false;
       }
       else {
-        fatalerror(ctx.err, fmt::format("invalid argument '{}' for option '{}'",
+        fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
                                         fmt::styled(std::string{optarg}, fmt::emphasis::bold),
                                         fmt::styled(WERROR, fmt::emphasis::bold)));
       }
@@ -1481,7 +1481,22 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   if (palettesTotalOverridden) {
     ctx.fieldmapConfig.numPalettesTotal = palettesTotalOverride;
   }
-  ctx.validateFieldmapParameters();
+
+  if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
+    ctx.validateFieldmapParameters(CompilerMode::PRIMARY);
+  }
+  else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    ctx.validateFieldmapParameters(CompilerMode::SECONDARY);
+  }
+  else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+    ctx.validateFieldmapParameters(DecompilerMode::PRIMARY);
+  }
+  else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    ctx.validateFieldmapParameters(DecompilerMode::SECONDARY);
+  }
+  else {
+    internalerror("cli_parser::parseSubcommandOptions unknown subcommand");
+  }
 
   if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
     warn_usedTrueColorMode(ctx.err);

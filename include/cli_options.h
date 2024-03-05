@@ -108,26 +108,26 @@ const std::string DEFAULT_BEHAVIOR = "default-behavior";
 const std::string DEFAULT_BEHAVIOR_DESC =
 "        -" + DEFAULT_BEHAVIOR + "=<BEHAVIOR>\n"
 "             Select the default behavior for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. You may use either a raw integral value or a metatile behavior\n"
-"             label defined in the provided behaviors header. If unspecified, defaults to '0'.\n";
+"             `attributes.csv' file. You may use either a raw integral value or a metatile behavior\n"
+"             label defined in the provided behaviors header. If unspecified, defaults to `0'.\n";
 constexpr int DEFAULT_BEHAVIOR_VAL = 2004;
 
 const std::string DEFAULT_ENCOUNTER_TYPE = "default-encounter-type";
 const std::string DEFAULT_ENCOUNTER_TYPE_DESC =
 "        -" + DEFAULT_ENCOUNTER_TYPE + "=<TYPE>\n"
 "             Select the default encounter type for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. You may use either a raw integral value or an EncounterType\n"
-"             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
-"             '0'.\n";
+"             `attributes.csv' file. You may use either a raw integral value or an EncounterType\n"
+"             label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to\n"
+"             `0'.\n";
 constexpr int DEFAULT_ENCOUNTER_TYPE_VAL = 2005;
 
 const std::string DEFAULT_TERRAIN_TYPE = "default-terrain-type";
 const std::string DEFAULT_TERRAIN_TYPE_DESC =
 "        -" + DEFAULT_TERRAIN_TYPE + "=<TYPE>\n"
 "             Select the default terrain type for metatiles that do not have an entry in the\n"
-"             'attributes.csv' file. You may use either a raw integral value or an TerrainType\n"
-"             label defined in the 'include/global.fieldmap.h' file. If unspecified, defaults to\n"
-"             '0'.\n";
+"             `attributes.csv' file. You may use either a raw integral value or an TerrainType\n"
+"             label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to\n"
+"             `0'.\n";
 constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2006;
 
 const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
@@ -183,22 +183,22 @@ constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3004;
 const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
 const std::string PRIMARY_ASSIGN_ALGO_DESC =
 "        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Same as '-assign-algorithm', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
+"             Same as `-assign-algorithm', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via `compile-secondary'.\n";
 constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3005;
 
 const std::string PRIMARY_EXPLORE_CUTOFF = "primary-explore-cutoff";
 const std::string PRIMARY_EXPLORE_CUTOFF_DESC =
 "        -" + PRIMARY_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Same as '-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
+"             Same as `-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via `compile-secondary'.\n";
 constexpr int PRIMARY_EXPLORE_CUTOFF_VAL = 3006;
 
 const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
 const std::string PRIMARY_BEST_BRANCHES_DESC =
 "        -" + PRIMARY_BEST_BRANCHES + "=<N>\n"
-"             Same as '-best-branches', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via 'compile-secondary'.\n";
+"             Same as `-best-branches', but for the paired primary set. Only to be used\n"
+"             when compiling in secondary mode via `compile-secondary'.\n";
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3007;
 
 // Fieldmap override options
@@ -263,8 +263,8 @@ constexpr int WALL_VAL = 5000;
 const std::string W_GENERAL = "W";
 const std::string W_GENERAL_DESC =
 "        -" + W_GENERAL + "<WARNING>, -" + W_GENERAL + "no-<WARNING>\n"
-"             Explicitly enable warning WARNING, or explicitly disable it if the 'no' form of the\n"
-"             option is specified. If WARNING is already off, the 'no' form will no-op. If more\n"
+"             Explicitly enable warning WARNING, or explicitly disable it if the `no' form of the\n"
+"             option is specified. If WARNING is already off, the `no' form will no-op. If more\n"
 "             than one specifier for the same warning appears on the same command line, the\n"
 "             right-most specifier will take precedence.\n";
 
@@ -282,8 +282,8 @@ const std::string WERROR = "Werror";
 const std::string WERROR_DESC =
 "        -" + WERROR + "[=<WARNING>], -" + WNO_ERROR + "=<WARNING>\n"
 "             Force all enabled warnings to generate errors, or optionally force WARNING to enable\n"
-"             as an error. If the 'no' form of the option is specified, downgrade WARNING from an\n"
-"             error to the highest previously seen level. If WARNING is already off, the 'no' form\n"
+"             as an error. If the `no' form of the option is specified, downgrade WARNING from an\n"
+"             error to the highest previously seen level. If WARNING is already off, the `no' form\n"
 "             will no-op. If more than one specifier for the same warning appears on the same\n"
 "             command line, the right-most specifier will take precedence.\n";
 constexpr int WERROR_VAL = 5003;

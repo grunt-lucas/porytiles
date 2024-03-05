@@ -73,7 +73,7 @@ void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const Co
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("source tiles PNG {} '{}' was not divisible by 8", dimensionName,
+    pt_err("source tiles PNG {} `{}' was not divisible by 8", dimensionName,
            fmt::styled(dimension, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -84,7 +84,7 @@ void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string anim
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("anim PNG {} '{}' was not divisible by 8", dimensionName, fmt::styled(dimension, fmt::emphasis::bold));
+    pt_err("anim PNG {} `{}' was not divisible by 8", dimensionName, fmt::styled(dimension, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
 }
@@ -93,7 +93,7 @@ void error_layerHeightNotDivisibleBy16(ErrorsAndWarnings &err, TileLayer layer, 
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{} layer source PNG height '{}' was not divisible by 16", layerString(layer),
+    pt_err("{} layer source PNG height `{}' was not divisible by 16", layerString(layer),
            fmt::styled(height, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -103,7 +103,7 @@ void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_3
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{} layer source PNG width '{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+    pt_err("{} layer source PNG width `{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
 }
@@ -112,7 +112,7 @@ void error_layerHeightsMustEq(ErrorsAndWarnings &err, png::uint_32 bottom, png::
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("bottom, middle, top layer source PNG heights '{}, {}, {}' were not equivalent",
+    pt_err("bottom, middle, top layer source PNG heights `{}, {}, {}' were not equivalent",
            fmt::styled(bottom, fmt::emphasis::bold), fmt::styled(middle, fmt::emphasis::bold),
            fmt::styled(top, fmt::emphasis::bold));
     pt_println(stderr, "");
@@ -123,7 +123,7 @@ void error_animFrameWasNotAPng(ErrorsAndWarnings &err, const std::string &animat
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("animation '{}' frame file '{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
+    pt_err("animation `{}' frame file `{}' was not a valid PNG file", fmt::styled(animation, fmt::emphasis::bold),
            fmt::styled(file, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -149,7 +149,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   err.errCount++;
   if (err.printErrors) {
     std::string tileString = getTilePrettyString(tile);
-    pt_err("invalid alpha value '{}' at {} subtile pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
+    pt_err("invalid alpha value `{}' at {} subtile pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("alpha value must be either {} for opaque or {} for transparent",
@@ -180,7 +180,7 @@ void error_unknownMetatileBehavior(ErrorsAndWarnings &err, std::string filePath,
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{}: on line {}: unknown metatile behavior '{}'", filePath, line,
+    pt_err("{}: on line {}: unknown metatile behavior `{}'", filePath, line,
            fmt::styled(behavior, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -191,7 +191,7 @@ void error_unknownMetatileBehaviorValue(ErrorsAndWarnings &err, std::string file
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{}: in metatile entry {}: unmapped metatile behavior value '{}'", filePath, entry,
+    pt_err("{}: in metatile entry {}: unmapped metatile behavior value `{}'", filePath, entry,
            fmt::styled(behaviorValue, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -202,7 +202,7 @@ void error_duplicateAttribute(ErrorsAndWarnings &err, std::string filePath, std:
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{}: on line {}: duplicate entry for metatile '{}', first definition on line {}", filePath, line,
+    pt_err("{}: on line {}: duplicate entry for metatile `{}', first definition on line {}", filePath, line,
            fmt::styled(id, fmt::emphasis::bold), previousLine);
     pt_println(stderr, "");
   }
@@ -212,7 +212,7 @@ void error_invalidTerrainType(ErrorsAndWarnings &err, std::string filePath, std:
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{}: on line {}: invalid TerrainType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+    pt_err("{}: on line {}: invalid TerrainType `{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
 }
@@ -221,7 +221,7 @@ void error_invalidEncounterType(ErrorsAndWarnings &err, std::string filePath, st
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{}: on line {}: invalid EncounterType '{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
+    pt_err("{}: on line {}: invalid EncounterType `{}'", filePath, line, fmt::styled(type, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
 }
@@ -263,26 +263,6 @@ void fatalerror_unrecognizedOption(const ErrorsAndWarnings &err, std::string opt
       fmt::format("unrecognized option `{}' for subcommand `{}'", option, subcommandString(subcommand))};
 }
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
-                                  std::string path)
-{
-  if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", path);
-    pt_println(stderr, "");
-  }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid source path {}", path));
-}
-
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode)
-{
-  if (err.printErrors) {
-    pt_fatal_err_prefix("{}: source path did not exist or is not a directory", srcs.modeBasedSrcPath(mode).string());
-    pt_println(stderr, "");
-  }
-  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode),
-                              fmt::format("invalid source path {}", srcs.modeBasedSrcPath(mode).string()));
-}
-
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                              CompilerMode mode, const std::string &animation, std::size_t index)
 {
@@ -291,7 +271,7 @@ void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const
     file = "0" + file;
   }
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' was missing expected frame file '{}'", fmt::styled(animation, fmt::emphasis::bold),
+    pt_fatal_err("animation `{}' was missing expected frame file `{}'", fmt::styled(animation, fmt::emphasis::bold),
                  fmt::styled(file, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -303,7 +283,7 @@ void fatalerror_missingKeyFrameFile(const ErrorsAndWarnings &err, const Compiler
                                     const std::string &animation)
 {
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' was missing key frame file", fmt::styled(animation, fmt::emphasis::bold));
+    pt_fatal_err("animation `{}' was missing key frame file", fmt::styled(animation, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
@@ -327,7 +307,7 @@ void fatalerror_animFrameDimensionsDoNotMatchOtherFrames(const ErrorsAndWarnings
                                                          std::string dimensionName, png::uint_32 dimension)
 {
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' frame '{}' {} '{}' did not match previous frame {}s",
+    pt_fatal_err("animation `{}' frame `{}' {} `{}' did not match previous frame {}s",
                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(frame, fmt::emphasis::bold), dimensionName,
                  fmt::styled(dimension, fmt::emphasis::bold), dimensionName);
     pt_println(stderr, "");
@@ -340,7 +320,7 @@ void fatalerror_tooManyUniqueTiles(const ErrorsAndWarnings &err, const CompilerS
                                    std::size_t numTiles, std::size_t maxAllowedTiles)
 {
   if (err.printErrors) {
-    pt_fatal_err("unique tile count '{}' exceeded limit of '{}'", fmt::styled(numTiles, fmt::emphasis::bold),
+    pt_fatal_err("unique tile count `{}' exceeded limit of `{}'", fmt::styled(numTiles, fmt::emphasis::bold),
                  fmt::styled(maxAllowedTiles, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -372,7 +352,7 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const CompilerSou
                                  std::size_t numMetatiles, std::size_t metatileLimit)
 {
   if (err.printErrors) {
-    pt_fatal_err("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
+    pt_fatal_err("source metatile count of `{}' exceeded the {} tileset limit of `{}'",
                  fmt::styled(numMetatiles, fmt::emphasis::bold), compilerModeString(mode),
                  fmt::styled(metatileLimit, fmt::emphasis::bold));
     pt_println(stderr, "");
@@ -386,7 +366,7 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const Co
                                           CompilerMode mode, std::string field, std::size_t primary, std::size_t total)
 {
   if (err.printErrors) {
-    pt_fatal_err("invalid configuration {}InPrimary '{}' exceeded {}Total '{}'", field,
+    pt_fatal_err("invalid configuration {}InPrimary `{}' exceeded {}Total `{}'", field,
                  fmt::styled(primary, fmt::emphasis::bold), field, fmt::styled(total, fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -394,11 +374,24 @@ void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const Co
                             fmt::format("invalid config {}: {} > {}", field, primary, total));
 }
 
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                          DecompilerMode mode, std::string field, std::size_t primary,
+                                          std::size_t total)
+{
+  if (err.printErrors) {
+    pt_fatal_err("invalid configuration {}InPrimary `{}' exceeded {}Total `{}'", field,
+                 fmt::styled(primary, fmt::emphasis::bold), field, fmt::styled(total, fmt::emphasis::bold));
+    pt_println(stderr, "");
+  }
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode),
+                              fmt::format("invalid config {}: {} > {}", field, primary, total));
+}
+
 void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                         CompilerMode mode, std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' key frame tile '{}' was transparent", fmt::styled(animName, fmt::emphasis::bold),
+    pt_fatal_err("animation `{}' key frame tile `{}' was transparent", fmt::styled(animName, fmt::emphasis::bold),
                  fmt::styled(tileIndex, fmt::emphasis::bold));
     pt_note("this is not allowed, since there would be no way to tell if a transparent user-provided tile on the layer "
             "sheet");
@@ -414,7 +407,7 @@ void fatalerror_duplicateKeyFrameTile(const ErrorsAndWarnings &err, const Compil
                                       std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
+    pt_fatal_err("animation `{}' key frame tile `{}' duplicated another key frame tile in this tileset",
                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
     pt_note("key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
     pt_println(stderr, "");
@@ -427,7 +420,7 @@ void fatalerror_keyFramePresentInPairedPrimary(const ErrorsAndWarnings &err, con
                                                CompilerMode mode, std::string animName, std::size_t tileIndex)
 {
   if (err.printErrors) {
-    pt_fatal_err("animation '{}' key frame tile '{}' was present in the paired primary tileset",
+    pt_fatal_err("animation `{}' key frame tile `{}' was present in the paired primary tileset",
                  fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
     pt_note("this is an error because it renders the animation inoperable, any reference to the key tile in the");
     pt_println(stderr,
@@ -443,7 +436,7 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const C
 {
   if (err.printErrors) {
     pt_fatal_err("{}: incorrect header row format", filePath);
-    pt_note("valid headers are '{}' or '{}'", fmt::styled("id,behavior", fmt::emphasis::bold),
+    pt_note("valid headers are `{}' or `{}'", fmt::styled("id,behavior", fmt::emphasis::bold),
             fmt::styled("id,behavior,terrainType,encounterType", fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -454,20 +447,35 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourc
                                std::string filePath, std::string id, std::size_t line)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: invalid value '{}' for column '{}' at line {}", filePath, fmt::styled(id, fmt::emphasis::bold),
+    pt_fatal_err("{}: invalid value `{}' for column `{}' at line {}", filePath, fmt::styled(id, fmt::emphasis::bold),
                  fmt::styled("id", fmt::emphasis::bold), line);
-    pt_note("column '{}' must contain an integral value (both decimal and hexidecimal notations are permitted)",
+    pt_note("column `{}' must contain an integral value (both decimal and hexidecimal notations are permitted)",
             fmt::styled("id", fmt::emphasis::bold));
     pt_println(stderr, "");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode &mode,
-                                     std::string behavior, std::string value, std::size_t line)
+void fatalerror_invalidBehaviorValueCompiler(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
+                                             CompilerMode mode, std::string behavior, std::string value,
+                                             std::size_t line)
 {
   if (err.printErrors) {
-    pt_fatal_err("invalid value '{}' for behavior '{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
+    pt_fatal_err("invalid value `{}' for behavior `{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
+                 fmt::styled(behavior, fmt::emphasis::bold), line);
+    pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
+            fmt::styled("id", fmt::emphasis::bold));
+    pt_println(stderr, "");
+  }
+  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid behavior value {}", value));
+}
+
+void fatalerror_invalidBehaviorValueDecompiler(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                               DecompilerMode mode, std::string behavior, std::string value,
+                                               std::size_t line)
+{
+  if (err.printErrors) {
+    pt_fatal_err("invalid value `{}' for behavior `{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
                  fmt::styled(behavior, fmt::emphasis::bold), line);
     pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
             fmt::styled("id", fmt::emphasis::bold));
@@ -481,7 +489,7 @@ void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const Compi
                                        std::string path)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: invalid syntax '{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
+    pt_fatal_err("{}: invalid syntax `{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
     pt_note("`assign.cache' expected line syntax is: {}", fmt::styled("key=value", fmt::emphasis::bold));
     pt_println(stderr, "");
   }
@@ -493,7 +501,7 @@ void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const Compil
                                       std::string path)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: invalid key '{}' at line {}", path, fmt::styled(key, fmt::emphasis::bold), lineNumber);
+    pt_fatal_err("{}: invalid key `{}' at line {}", path, fmt::styled(key, fmt::emphasis::bold), lineNumber);
     pt_note("`assign.cache' expects keys to match the color assignment config options");
     pt_println(stderr, "");
   }
@@ -505,7 +513,7 @@ void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const Comp
                                         std::size_t lineNumber, std::string path)
 {
   if (err.printErrors) {
-    pt_fatal_err("{}: invalid value '{}' for key '{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
+    pt_fatal_err("{}: invalid value `{}' for key `{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
                  fmt::styled(key, fmt::emphasis::bold), lineNumber);
     pt_println(stderr, "");
   }
@@ -553,13 +561,13 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   std::string message =
-      fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
+      fmt::format("color `{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
                   fmt::styled(rgba.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
                   fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
   printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
   if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
     std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
-    pt_note("previously saw '{}' at {} subtile pixel col {}, row {}",
+    pt_note("previously saw `{}' at {} subtile pixel col {}, row {}",
             fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
             fmt::styled(previousTileString, fmt::emphasis::bold),
             fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
@@ -571,7 +579,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
 {
   std::string message =
-      fmt::format("animation '{}' key frame tile '{}' was not present in any assignments",
+      fmt::format("animation `{}' key frame tile `{}' was not present in any assignments",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
   printWarning(err, err.keyFrameTileDidNotAppearInAssignment, WARN_KEY_FRAME_DID_NOT_APPEAR, message);
   if (err.printErrors && err.keyFrameTileDidNotAppearInAssignment != WarningMode::OFF) {
@@ -592,7 +600,7 @@ void warn_usedTrueColorMode(ErrorsAndWarnings &err)
 void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
   printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
-               fmt::format("{}: too many attribute columns for base game '{}'", filePath,
+               fmt::format("{}: too many attribute columns for base game `{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
   if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
     pt_println(stderr, "");
@@ -602,7 +610,7 @@ void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string fil
 void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame)
 {
   printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
-               fmt::format("{}: too few attribute columns for base game '{}'", filePath,
+               fmt::format("{}: too few attribute columns for base game `{}'", filePath,
                            fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
   if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
     pt_note("unspecified columns will receive default values");
@@ -639,7 +647,7 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
   std::string tileString = getTilePrettyString(tile);
   printWarning(
       err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
-      fmt::format("color '{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
+      fmt::format("color `{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
                   fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
                   fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold)));
   if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
@@ -649,13 +657,13 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
   }
 }
 
-void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path)
+void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config, std::string path)
 {
-  printWarning(err, err.assignCacheOverride, WARN_ASSIGN_CACHE_OVERRIDE,
-               fmt::format("{}: ignoring {} `assign.cache' due to command line override", path,
-                           compilerModeString(config.mode)));
+  printWarning(
+      err, err.assignCacheOverride, WARN_ASSIGN_CACHE_OVERRIDE,
+      fmt::format("{}: ignoring {} `assign.cache' due to command line override", path, compilerModeString(mode)));
   if (err.printErrors && err.assignCacheOverride != WarningMode::OFF) {
-    if (config.mode == CompilerMode::PRIMARY) {
+    if (mode == CompilerMode::PRIMARY) {
       pt_note("assign-algorithm={}", assignAlgorithmString(config.primaryAssignAlgorithm));
       pt_note("explored-node-cutoff={}", config.primaryExploredNodeCutoff);
       if (config.primaryBestBranches == SIZE_MAX) {
@@ -670,7 +678,7 @@ void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &conf
         }
       }
     }
-    else if (config.mode == CompilerMode::SECONDARY) {
+    else if (mode == CompilerMode::SECONDARY) {
       pt_note("assign-algorithm={}", assignAlgorithmString(config.secondaryAssignAlgorithm));
       pt_note("explored-node-cutoff={}", config.secondaryExploredNodeCutoff);
       if (config.secondaryBestBranches == SIZE_MAX) {
@@ -886,23 +894,22 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
 TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format is invalid")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Emerald row format, missing field")
   {
-    CHECK_THROWS_WITH_AS(
-        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/incorrect_row_format_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
   SUBCASE("Firered row format, missing field")
   {
-    CHECK_THROWS_WITH_AS(
-        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/incorrect_row_format_2.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/incorrect_row_format_2.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
@@ -910,14 +917,14 @@ TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format 
 TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has an unrecognized behavior")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Emerald row format, missing metatile behavior")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/unknown_behavior_1.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/unknown_behavior_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
@@ -926,16 +933,15 @@ TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has
 TEST_CASE("error_duplicateAttribute should trigger correctly when two rows specify the same metatile id")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Duplicate metatile definition test 1")
   {
-    CHECK_THROWS_WITH_AS(
-        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/duplicate_definition_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/duplicate_definition_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
 }
@@ -943,16 +949,15 @@ TEST_CASE("error_duplicateAttribute should trigger correctly when two rows speci
 TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifies an invalid TerrainType")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Invalid TerrainType test 1")
   {
-    CHECK_THROWS_WITH_AS(
-        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_terrain_type_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/invalid_terrain_type_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
@@ -960,16 +965,15 @@ TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifie
 TEST_CASE("error_invalidEncounterType should trigger correctly when a row specifies an invalid EncounterType")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Invalid EncounterType test 1")
   {
-    CHECK_THROWS_WITH_AS(
-        porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_encounter_type_1.csv"),
-        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/invalid_encounter_type_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
 }
@@ -1159,35 +1163,38 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
 TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attributes file is missing a header")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Completely missing header")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_1.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/missing_header_1.csv"),
                          "res/tests/csv/missing_header_1.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing id field")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_2.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/missing_header_2.csv"),
                          "res/tests/csv/missing_header_2.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing behavior field")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_3.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/missing_header_3.csv"),
                          "res/tests/csv/missing_header_3.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header has terrainType but missing encounterType")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/missing_header_4.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/missing_header_4.csv"),
                          "res/tests/csv/missing_header_4.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
@@ -1196,20 +1203,21 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
 TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attribute csv contains a non-integral value")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
   SUBCASE("Invalid integer format 1")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_1.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/invalid_id_column_1.csv"),
                          "res/tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PorytilesException);
   }
 
   SUBCASE("Invalid integer format 2")
   {
-    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/invalid_id_column_2.csv"),
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "res/tests/csv/invalid_id_column_2.csv"),
                          "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PorytilesException);
   }
 }
@@ -1218,22 +1226,23 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
           "behavior value")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
 
   SUBCASE("Invalid integer format 1")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value foo",
-                         porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(
+        porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+        "invalid behavior value foo", porytiles::PorytilesException);
     behaviorFile.close();
   }
 
   SUBCASE("Invalid integer format 2")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
-    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, behaviorFile), "invalid behavior value 6bar",
-                         porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(
+        porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+        "invalid behavior value 6bar", porytiles::PorytilesException);
     behaviorFile.close();
   }
 }
@@ -1305,13 +1314,13 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
 TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
   ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
   ctx.targetBaseGame = porytiles::TargetBaseGame::EMERALD;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
-  CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_2.csv"),
+  CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                          "res/tests/csv/correct_2.csv"),
                        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
@@ -1319,13 +1328,13 @@ TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
 {
   porytiles::PorytilesContext ctx{};
-  ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
   ctx.err.printErrors = false;
   ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
   ctx.targetBaseGame = porytiles::TargetBaseGame::FIRERED;
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
-  CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, behaviorMap, "res/tests/csv/correct_1.csv"),
+  CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                          "res/tests/csv/correct_1.csv"),
                        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
