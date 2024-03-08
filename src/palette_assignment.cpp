@@ -115,10 +115,19 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
 
   std::size_t stopLimit = std::min(state.hardwarePalettes.size(), bestBranches);
   if (smartPrune) {
-    // TODO 1.0.0 : impl smart prune
-    throw std::runtime_error{"TODO : impl smart prune"};
+    // Shrink stopLimit so it ends after the first empty hardware palette
+    for (std::size_t i = 0; i < stopLimit; i++) {
+      auto pal = state.hardwarePalettes.at(i);
+      std::size_t palIntersectSize = (pal & toAssign).count();
+      if (palIntersectSize == 0) {
+        stopLimit = i + 1;
+        break;
+      }
+    }
   }
-  for (size_t i = 0; i < stopLimit; i++) {
+  // Ensure stopLimit does not exceed the palette list size
+  stopLimit = std::min(state.hardwarePalettes.size(), stopLimit);
+  for (std::size_t i = 0; i < stopLimit; i++) {
     const ColorSet &palette = state.hardwarePalettes.at(i);
 
     // > PAL_SIZE - 1 because we need to save a slot for transparency
@@ -257,9 +266,18 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
     bool sawAssignmentWithIntersection = false;
     std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), bestBranches);
     if (smartPrune) {
-      // TODO 1.0.0 : impl smart prune feature
-      throw std::runtime_error{"TODO : impl smart prune"};
+      // Shrink stopLimit so it ends after the first empty hardware palette
+      for (std::size_t i = 0; i < stopLimit; i++) {
+        auto pal = currentState.hardwarePalettes.at(i);
+        std::size_t palIntersectSize = (pal & toAssign).count();
+        if (palIntersectSize == 0) {
+          stopLimit = i + 1;
+          break;
+        }
+      }
     }
+    // Ensure stopLimit does not exceed the palette list size
+    stopLimit = std::min(currentState.hardwarePalettes.size(), stopLimit);
     for (size_t i = 0; i < stopLimit; i++) {
       const ColorSet &palette = currentState.hardwarePalettes.at(i);
 
@@ -389,37 +407,44 @@ struct AssignParams {
   bool smartPrune;
 };
 
-// TODO 1.0.0 : add smartPrune entries once that is implemented
-static const std::array<AssignParams, 40> MATRIX{
+static const std::array<AssignParams, 48> MATRIX{
     // DFS, 1 million iterations
+    AssignParams{AssignAlgorithm::DFS, 1'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::DFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 3, false},
     AssignParams{AssignAlgorithm::DFS, 1'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 5, false},
     AssignParams{AssignAlgorithm::DFS, 1'000'000, 6, false},
     // BFS, 1 million iterations
+    AssignParams{AssignAlgorithm::BFS, 1'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::BFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 1'000'000, 3, false},
     AssignParams{AssignAlgorithm::BFS, 1'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 1'000'000, 5, false},
     AssignParams{AssignAlgorithm::BFS, 1'000'000, 6, false},
     // DFS, 2 million iterations
+    AssignParams{AssignAlgorithm::DFS, 2'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::DFS, 2'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 2'000'000, 3, false},
     AssignParams{AssignAlgorithm::DFS, 2'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 2'000'000, 5, false},
     AssignParams{AssignAlgorithm::DFS, 2'000'000, 6, false},
     // BFS, 2 million iterations
+    AssignParams{AssignAlgorithm::BFS, 2'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::BFS, 2'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 2'000'000, 3, false},
     AssignParams{AssignAlgorithm::BFS, 2'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 2'000'000, 5, false},
     AssignParams{AssignAlgorithm::BFS, 2'000'000, 6, false},
     // DFS, 4 million iterations
+    AssignParams{AssignAlgorithm::DFS, 4'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::DFS, 4'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 4'000'000, 3, false},
     AssignParams{AssignAlgorithm::DFS, 4'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 4'000'000, 5, false},
     AssignParams{AssignAlgorithm::DFS, 4'000'000, 6, false},
     // BFS, 4 million iterations
+    AssignParams{AssignAlgorithm::BFS, 4'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::BFS, 4'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 4'000'000, 3, false},
     AssignParams{AssignAlgorithm::BFS, 4'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 4'000'000, 5, false},
     AssignParams{AssignAlgorithm::BFS, 4'000'000, 6, false},
     // DFS, 8 million iterations
+    AssignParams{AssignAlgorithm::DFS, 8'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::DFS, 8'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 8'000'000, 3, false},
     AssignParams{AssignAlgorithm::DFS, 8'000'000, 4, false}, AssignParams{AssignAlgorithm::DFS, 8'000'000, 5, false},
     AssignParams{AssignAlgorithm::DFS, 8'000'000, 6, false},
     // BFS, 8 million iterations
+    AssignParams{AssignAlgorithm::BFS, 8'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::BFS, 8'000'000, 2, false}, AssignParams{AssignAlgorithm::BFS, 8'000'000, 3, false},
     AssignParams{AssignAlgorithm::BFS, 8'000'000, 4, false}, AssignParams{AssignAlgorithm::BFS, 8'000'000, 5, false},
     AssignParams{AssignAlgorithm::BFS, 8'000'000, 6, false}};
