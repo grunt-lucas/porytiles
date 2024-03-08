@@ -37,22 +37,20 @@ const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
-  // TODO 1.0.0 : add CLI option to display indexes in hex instead of dec?
   // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
-    tileString = "{metatile: " + std::to_string(tile.metatileIndex) + ", layer: " + layerString(tile.layer) +
-                 ", subtile: " + subtileString(tile.subtile) + "}";
+    tileString = fmt::format("metatile 0x{:x} ({}), {}, {}", tile.metatileIndex, tile.metatileIndex,
+                             layerString(tile.layer), subtileString(tile.subtile));
   }
   else if (tile.type == TileType::ANIM) {
-    tileString =
-        "{anim: " + tile.anim + ", frame: " + tile.frame + ", subtile: " + std::to_string(tile.tileIndex) + "}";
+    tileString = fmt::format("anim {}, {}, frame {}", tile.anim, tile.frame, tile.tileIndex);
   }
   else if (tile.type == TileType::FREESTANDING) {
-    tileString = "{tile: " + std::to_string(tile.tileIndex) + "}";
+    tileString = fmt::format("tile 0x{:x} ({})", tile.tileIndex, tile.tileIndex);
   }
   else if (tile.type == TileType::PRIMER) {
-    tileString = "{tile: " + tile.primer + "}";
+    tileString = fmt::format("primer {}", tile.primer);
   }
   else {
     throw std::runtime_error{"error_warnings::getTilePrettyString unknown TileType"};
@@ -134,7 +132,7 @@ void error_tooManyUniqueColorsInTile(ErrorsAndWarnings &err, const RGBATile &til
   err.errCount++;
   if (err.printErrors) {
     std::string tileString = getTilePrettyString(tile);
-    pt_err("too many unique colors, threw at {} subtile pixel col {}, row {}",
+    pt_err("too many unique colors, threw at `{}' subtile pixel col {}, row {}",
            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("cannot have more than {} unique colors, including the transparency color",
@@ -149,7 +147,7 @@ void error_invalidAlphaValue(ErrorsAndWarnings &err, const RGBATile &tile, std::
   err.errCount++;
   if (err.printErrors) {
     std::string tileString = getTilePrettyString(tile);
-    pt_err("invalid alpha value `{}' at {} subtile pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
+    pt_err("invalid alpha value `{}' at `{}' subtile pixel col {}, row {}", fmt::styled(alpha, fmt::emphasis::bold),
            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
            fmt::styled(row, fmt::emphasis::bold));
     pt_note("alpha value must be either {} for opaque or {} for transparent",
@@ -561,13 +559,13 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   std::string message =
-      fmt::format("color `{}' at {} subtile pixel col {}, row {} collapsed to duplicate BGR",
+      fmt::format("color `{}' at `{}' subtile pixel col {}, row {} collapsed to duplicate BGR",
                   fmt::styled(rgba.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
                   fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
   printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
   if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
     std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
-    pt_note("previously saw `{}' at {} subtile pixel col {}, row {}",
+    pt_note("previously saw `{}' at `{}' subtile pixel col {}, row {}",
             fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
             fmt::styled(previousTileString, fmt::emphasis::bold),
             fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
@@ -647,7 +645,7 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, co
   std::string tileString = getTilePrettyString(tile);
   printWarning(
       err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
-      fmt::format("color `{}' at {} subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
+      fmt::format("color `{}' at `{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
                   fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
                   fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold)));
   if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
@@ -723,7 +721,7 @@ void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::s
   // TODO 1.0.0 : this warning should show if error came from primary or secondary set
   std::string tileString = getTilePrettyString(tile);
   printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
-               fmt::format("{}: tile index {} out of range (sheet size {})",
+               fmt::format("`{}': tile index {} out of range (sheet size {})",
                            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
                            tilesheetSize));
   if (err.printErrors && err.invalidTileIndex != WarningMode::OFF) {
