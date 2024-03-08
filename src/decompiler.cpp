@@ -81,12 +81,12 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
   auto decompiledTileset = std::make_unique<DecompiledTileset>();
 
   /*
-   * Infer layer type by dividing the compiled assignments size by 8 and 12, and comparing each result to the attribute
-   * count (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we are
-   * triple. Otherwise, we have corruption and should fail.
+   * Infer layer type by dividing the compiled metatile entries size by 8 and 12, and comparing each result to the
+   * attribute count (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we
+   * are triple. Otherwise, we have corruption and should fail.
    */
-  std::size_t dualImpliedMetatileCount = compiledTileset.assignments.size() / TILES_PER_METATILE_DUAL;
-  std::size_t tripleImpliedMetatileCount = compiledTileset.assignments.size() / TILES_PER_METATILE_TRIPLE;
+  std::size_t dualImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_DUAL;
+  std::size_t tripleImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_TRIPLE;
 
   if (dualImpliedMetatileCount == attributesMap.size()) {
     decompiledTileset->tripleLayer = false;
@@ -97,47 +97,49 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
   else {
     // TODO 1.0.0 : we should create a custom warning here so users know what happened
     // TODO 1.0.0 : handle this via CLI flag?
-    internalerror(fmt::format("emitter::emitDecompiled compiledTileset.assignments.size()={}, attributesMap.size()={} "
-                              "did not imply a layer type",
-                              compiledTileset.assignments.size(), attributesMap.size()));
+    internalerror(
+        fmt::format("emitter::emitDecompiled compiledTileset.metatileEntries.size()={}, attributesMap.size()={} "
+                    "did not imply a layer type",
+                    compiledTileset.metatileEntries.size(), attributesMap.size()));
   }
 
   std::size_t metatileIndex = 0;
-  for (std::size_t assignmentCount = 0; const auto &assignment : compiledTileset.assignments) {
+  for (std::size_t entryIndex = 0; const auto &metatileEntry : compiledTileset.metatileEntries) {
     // Set decomp tile metadata
     RGBATile decompiledTile{};
     decompiledTile.type = TileType::LAYERED;
     decompiledTile.metatileIndex = metatileIndex;
     std::size_t tileIndexWithinMetatile =
-        assignmentCount % (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
+        entryIndex % (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
     decompiledTile.subtile = indexToSubtile(tileIndexWithinMetatile);
     decompiledTile.layer = indexToLayer(tileIndexWithinMetatile, decompiledTileset->tripleLayer);
 
     // In secondary mode, we need to determine which compiled tileset this tile comes from: paired primary or secondary
     if (mode == DecompilerMode::SECONDARY) {
-      if (assignment.tileIndex < ctx.fieldmapConfig.numTilesInPrimary) {
+      if (metatileEntry.tileIndex < ctx.fieldmapConfig.numTilesInPrimary) {
         setDecompTileFields(ctx, mode, decompiledTile, ctx.decompilerContext.pairedPrimaryTileset->tiles,
-                            assignment.tileIndex, ctx.decompilerContext.pairedPrimaryTileset->palettes,
-                            assignment.paletteIndex, assignment.attributes, assignment.hFlip, assignment.vFlip);
+                            metatileEntry.tileIndex, ctx.decompilerContext.pairedPrimaryTileset->palettes,
+                            metatileEntry.paletteIndex, metatileEntry.attributes, metatileEntry.hFlip,
+                            metatileEntry.vFlip);
       }
       else {
         setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles,
-                            assignment.tileIndex - ctx.fieldmapConfig.numTilesInPrimary, compiledTileset.palettes,
-                            assignment.paletteIndex, assignment.attributes, assignment.hFlip, assignment.vFlip);
+                            metatileEntry.tileIndex - ctx.fieldmapConfig.numTilesInPrimary, compiledTileset.palettes,
+                            metatileEntry.paletteIndex, metatileEntry.attributes, metatileEntry.hFlip,
+                            metatileEntry.vFlip);
       }
     }
     // For primary mode, we can just use the straight parameters
     else {
-      setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles, assignment.tileIndex,
-                          compiledTileset.palettes, assignment.paletteIndex, assignment.attributes, assignment.hFlip,
-                          assignment.vFlip);
+      setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles, metatileEntry.tileIndex,
+                          compiledTileset.palettes, metatileEntry.paletteIndex, metatileEntry.attributes,
+                          metatileEntry.hFlip, metatileEntry.vFlip);
     }
     decompiledTileset->tiles.push_back(decompiledTile);
 
     // Update tile tracking
-    assignmentCount++;
-    metatileIndex =
-        assignmentCount / (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
+    entryIndex++;
+    metatileIndex = entryIndex / (decompiledTileset->tripleLayer ? TILES_PER_METATILE_TRIPLE : TILES_PER_METATILE_DUAL);
   }
 
   // TODO : fill in animations

@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Options to disable generation of `metatiles.bin` and `metatile_attributes.bin`
   - `-disable-metatile-generation` and `-disable-attribute-generation`
 
+- Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per vertex
+   - assign config search matrix now tries smart prune before trying a constant prune
+
 ### Changed
 
 - Fixed bug from issue [Secondary tileset attributes aren't generated #1](https://github.com/grunt-lucas/porytiles/issues/1)

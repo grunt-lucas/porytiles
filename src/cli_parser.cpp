@@ -1195,8 +1195,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     case '?':
     default:
       // TODO 1.0.0 : figure out how to use fatalerror_unrecognizedOption here
-      fmt::println(stderr, "Try `{} {} --help' for usage information.", subcommandString(ctx.subcommand),
-                   PORYTILES_EXECUTABLE);
+      fmt::println(stderr, "Try `{} {} --help' for usage information.", PORYTILES_EXECUTABLE,
+                   subcommandString(ctx.subcommand));
       exit(2);
     }
   }

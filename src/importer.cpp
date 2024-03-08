@@ -943,12 +943,12 @@ static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png
   return gbaTiles;
 }
 
-static std::vector<Assignment>
+static std::vector<MetatileEntry>
 importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatilesBin,
                         std::unordered_map<std::size_t, Attributes> &attributesMap,
                         const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
 {
-  std::vector<Assignment> assignments{};
+  std::vector<MetatileEntry> metatileEntries{};
 
   std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
 
@@ -967,54 +967,55 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
 
   std::size_t metatileIndex = 0;
   for (std::size_t metatileBinByteIndex = 0; metatileBinByteIndex < metatileDataBuf.size(); metatileBinByteIndex += 2) {
-    Assignment assignment{};
+    MetatileEntry metatileEntry{};
 
     // Compute the actual metatileIndex
     metatileIndex = tripleLayer ? metatileBinByteIndex / 24 : metatileBinByteIndex / 16;
 
     std::uint16_t lowerByte = metatileDataBuf.at(metatileBinByteIndex);
     std::uint16_t upperByte = metatileDataBuf.at(metatileBinByteIndex + 1);
-    std::uint16_t metatileEntry = (upperByte << 8) | lowerByte;
-    assignment.tileIndex = metatileEntry & 0x03FF;
-    assignment.hFlip = (metatileEntry >> 10) & 0x0001;
-    assignment.vFlip = (metatileEntry >> 11) & 0x0001;
-    assignment.paletteIndex = (metatileEntry >> 12) & 0x000F;
+    std::uint16_t entryBits = (upperByte << 8) | lowerByte;
+    metatileEntry.tileIndex = entryBits & 0x03FF;
+    metatileEntry.hFlip = (entryBits >> 10) & 0x0001;
+    metatileEntry.vFlip = (entryBits >> 11) & 0x0001;
+    metatileEntry.paletteIndex = (entryBits >> 12) & 0x000F;
 
-    assignment.attributes.baseGame = ctx.targetBaseGame;
+    metatileEntry.attributes.baseGame = ctx.targetBaseGame;
     if (tripleLayer) {
-      assignment.attributes.layerType = LayerType::TRIPLE;
+      metatileEntry.attributes.layerType = LayerType::TRIPLE;
     }
     else {
-      assignment.attributes.layerType = attributesMap.at(metatileIndex).layerType;
+      metatileEntry.attributes.layerType = attributesMap.at(metatileIndex).layerType;
     }
-    assignment.attributes.metatileBehavior = attributesMap.at(metatileIndex).metatileBehavior;
-    assignment.attributes.encounterType = attributesMap.at(metatileIndex).encounterType;
-    assignment.attributes.terrainType = attributesMap.at(metatileIndex).terrainType;
+    metatileEntry.attributes.metatileBehavior = attributesMap.at(metatileIndex).metatileBehavior;
+    metatileEntry.attributes.encounterType = attributesMap.at(metatileIndex).encounterType;
+    metatileEntry.attributes.terrainType = attributesMap.at(metatileIndex).terrainType;
 
-    std::string behaviorString = std::to_string(assignment.attributes.metatileBehavior);
-    if (behaviorReverseMap.contains(assignment.attributes.metatileBehavior)) {
-      behaviorString = behaviorReverseMap.at(assignment.attributes.metatileBehavior);
+    std::string behaviorString = std::to_string(metatileEntry.attributes.metatileBehavior);
+    if (behaviorReverseMap.contains(metatileEntry.attributes.metatileBehavior)) {
+      behaviorString = behaviorReverseMap.at(metatileEntry.attributes.metatileBehavior);
     }
 
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       pt_logln(ctx, stderr,
-               "found Assignment[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}, "
+               "found MetatileEntry[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}, "
                "terrainType: {}, encounterType: {}]]",
-               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex, behaviorString,
-               layerTypeString(assignment.attributes.layerType), terrainTypeString(assignment.attributes.terrainType),
-               encounterTypeString(assignment.attributes.encounterType));
+               metatileEntry.tileIndex, metatileEntry.hFlip, metatileEntry.vFlip, metatileEntry.paletteIndex,
+               behaviorString, layerTypeString(metatileEntry.attributes.layerType),
+               terrainTypeString(metatileEntry.attributes.terrainType),
+               encounterTypeString(metatileEntry.attributes.encounterType));
     }
     else {
       pt_logln(ctx, stderr,
-               "found Assignment[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}]]",
-               assignment.tileIndex, assignment.hFlip, assignment.vFlip, assignment.paletteIndex, behaviorString,
-               layerTypeString(assignment.attributes.layerType));
+               "found MetatileEntry[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}]]",
+               metatileEntry.tileIndex, metatileEntry.hFlip, metatileEntry.vFlip, metatileEntry.paletteIndex,
+               behaviorString, layerTypeString(metatileEntry.attributes.layerType));
     }
 
-    assignments.push_back(assignment);
+    metatileEntries.push_back(metatileEntry);
   }
 
-  return assignments;
+  return metatileEntries;
 }
 
 static std::unordered_map<std::size_t, Attributes>
@@ -1145,7 +1146,7 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
   tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
   tileset.palettes = importCompiledPalettes(ctx, mode, paletteFiles);
   auto attributesMap = importCompiledMetatileAttributes(ctx, mode, attributes);
-  tileset.assignments = importCompiledMetatiles(ctx, mode, metatiles, attributesMap, behaviorReverseMap);
+  tileset.metatileEntries = importCompiledMetatiles(ctx, mode, metatiles, attributesMap, behaviorReverseMap);
   tileset.anims = importCompiledAnimations(ctx, mode, compiledAnims);
 
   /*
@@ -1783,17 +1784,17 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   CHECK((compileCtx.compilerContext.resultTileset)->tiles.size() == importedTileset.tiles.size());
   CHECK((compileCtx.compilerContext.resultTileset)->tiles == importedTileset.tiles);
 
-  CHECK((compileCtx.compilerContext.resultTileset)->assignments.size() == importedTileset.assignments.size());
-  for (std::size_t assignmentIndex = 0; assignmentIndex < importedTileset.assignments.size(); assignmentIndex++) {
-    const porytiles::Assignment &expectedAssignment =
-        (compileCtx.compilerContext.resultTileset)->assignments.at(assignmentIndex);
-    const porytiles::Assignment &actualAssignment = importedTileset.assignments.at(assignmentIndex);
-    CHECK(expectedAssignment.tileIndex == actualAssignment.tileIndex);
-    CHECK(expectedAssignment.hFlip == actualAssignment.hFlip);
-    CHECK(expectedAssignment.vFlip == actualAssignment.vFlip);
-    CHECK(expectedAssignment.paletteIndex == actualAssignment.paletteIndex);
-    CHECK(expectedAssignment.attributes.metatileBehavior == actualAssignment.attributes.metatileBehavior);
-    CHECK(expectedAssignment.attributes.layerType == actualAssignment.attributes.layerType);
+  CHECK((compileCtx.compilerContext.resultTileset)->metatileEntries.size() == importedTileset.metatileEntries.size());
+  for (std::size_t entryIndex = 0; entryIndex < importedTileset.metatileEntries.size(); entryIndex++) {
+    const porytiles::MetatileEntry &expectedEntry =
+        (compileCtx.compilerContext.resultTileset)->metatileEntries.at(entryIndex);
+    const porytiles::MetatileEntry &actualEntry = importedTileset.metatileEntries.at(entryIndex);
+    CHECK(expectedEntry.tileIndex == actualEntry.tileIndex);
+    CHECK(expectedEntry.hFlip == actualEntry.hFlip);
+    CHECK(expectedEntry.vFlip == actualEntry.vFlip);
+    CHECK(expectedEntry.paletteIndex == actualEntry.paletteIndex);
+    CHECK(expectedEntry.attributes.metatileBehavior == actualEntry.attributes.metatileBehavior);
+    CHECK(expectedEntry.attributes.layerType == actualEntry.attributes.layerType);
   }
 
   for (std::size_t palIndex = 0; palIndex < (compileCtx.compilerContext.resultTileset)->palettes.size(); palIndex++) {

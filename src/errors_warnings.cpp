@@ -22,6 +22,7 @@ namespace porytiles {
 
 // Compilation warnings
 const char *const WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
+// TODO 1.0.0 : change name of this warning, assignment is outdated terminology, prefer metatile entry
 const char *const WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
 const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
@@ -577,7 +578,7 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
 void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
 {
   std::string message =
-      fmt::format("animation `{}' key frame tile `{}' was not present in any assignments",
+      fmt::format("animation `{}' key frame tile `{}' was not present in any metatile entries",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
   printWarning(err, err.keyFrameTileDidNotAppearInAssignment, WARN_KEY_FRAME_DID_NOT_APPEAR, message);
   if (err.printErrors && err.keyFrameTileDidNotAppearInAssignment != WarningMode::OFF) {

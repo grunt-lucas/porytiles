@@ -129,12 +129,12 @@ void emitTilesPng(PorytilesContext &ctx, png::image<png::index_pixel> &out, cons
 
 void emitMetatilesBin(PorytilesContext &ctx, std::ostream &out, const CompiledTileset &tileset)
 {
-  for (std::size_t i = 0; i < tileset.assignments.size(); i++) {
-    auto &assignment = tileset.assignments.at(i);
+  for (std::size_t i = 0; i < tileset.metatileEntries.size(); i++) {
+    auto &metatileEntry = tileset.metatileEntries.at(i);
     // NOTE : does this code work as expected on a big-endian machine? I think so...
     std::uint16_t tileValue =
-        static_cast<uint16_t>((assignment.tileIndex & 0x3FF) | ((assignment.hFlip & 1) << 10) |
-                              ((assignment.vFlip & 1) << 11) | ((assignment.paletteIndex & 0xF) << 12));
+        static_cast<uint16_t>((metatileEntry.tileIndex & 0x3FF) | ((metatileEntry.hFlip & 1) << 10) |
+                              ((metatileEntry.vFlip & 1) << 11) | ((metatileEntry.paletteIndex & 0xF) << 12));
     out << static_cast<char>(tileValue);
     out << static_cast<char>(tileValue >> 8);
   }
@@ -174,36 +174,36 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
   std::size_t delta;
   if (ctx.compilerConfig.tripleLayer) {
     delta = 12;
-    if (tileset.assignments.size() % 12 != 0) {
-      internalerror("emitter::emitAttributes tileset.assignments size '" + std::to_string(tileset.assignments.size()) +
-                    "' was not divisible by 12");
+    if (tileset.metatileEntries.size() % 12 != 0) {
+      internalerror("emitter::emitAttributes tileset.metatileEntries size '" +
+                    std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 12");
     }
   }
   else {
     delta = 8;
-    if (tileset.assignments.size() % 8 != 0) {
-      internalerror("emitter::emitAttributes tileset.assignments size '" + std::to_string(tileset.assignments.size()) +
-                    "' was not divisible by 8");
+    if (tileset.metatileEntries.size() % 8 != 0) {
+      internalerror("emitter::emitAttributes tileset.metatileEntries size '" +
+                    std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 8");
     }
   }
-  for (std::size_t i = 0; i < tileset.assignments.size(); i += delta) {
-    auto &assignment = tileset.assignments.at(i);
+  for (std::size_t i = 0; i < tileset.metatileEntries.size(); i += delta) {
+    auto &metatileEntry = tileset.metatileEntries.at(i);
     std::string behaviorString;
-    if (behaviorReverseMap.contains(assignment.attributes.metatileBehavior)) {
-      behaviorString = behaviorReverseMap.at(assignment.attributes.metatileBehavior);
+    if (behaviorReverseMap.contains(metatileEntry.attributes.metatileBehavior)) {
+      behaviorString = behaviorReverseMap.at(metatileEntry.attributes.metatileBehavior);
     }
     else {
-      behaviorString = std::to_string(assignment.attributes.metatileBehavior);
+      behaviorString = std::to_string(metatileEntry.attributes.metatileBehavior);
     }
     // FEATURE : at some point we should support configurable masks and shifts like Porymap does
     if (ctx.targetBaseGame == TargetBaseGame::RUBY || ctx.targetBaseGame == TargetBaseGame::EMERALD) {
       pt_logln(ctx, stderr, "emitted {}-format metatile {} attribute: [ behavior={}, layerType={} ]",
                targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
-               layerTypeString(assignment.attributes.layerType));
+               layerTypeString(metatileEntry.attributes.layerType));
       // NOTE : does this code work as expected on a big-endian machine? I think so...
       std::uint16_t attributeValue =
-          static_cast<std::uint16_t>((assignment.attributes.metatileBehavior & 0xFF) |
-                                     ((layerTypeValue(assignment.attributes.layerType) & 0xF) << 12));
+          static_cast<std::uint16_t>((metatileEntry.attributes.metatileBehavior & 0xFF) |
+                                     ((layerTypeValue(metatileEntry.attributes.layerType) & 0xF) << 12));
       out << static_cast<char>(attributeValue);
       out << static_cast<char>(attributeValue >> 8);
     }
@@ -212,14 +212,14 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
           ctx, stderr,
           "emitted {}-format metatile {} attribute: [ behavior={}, encounterType={}, terrainType={}, layerType={} ]",
           targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
-          encounterTypeString(assignment.attributes.encounterType),
-          terrainTypeString(assignment.attributes.terrainType), layerTypeString(assignment.attributes.layerType));
+          encounterTypeString(metatileEntry.attributes.encounterType),
+          terrainTypeString(metatileEntry.attributes.terrainType), layerTypeString(metatileEntry.attributes.layerType));
       // NOTE : does this code work as expected on a big-endian machine? I think so...
       std::uint32_t attributeValue =
-          static_cast<std::uint32_t>((assignment.attributes.metatileBehavior & 0x1FF) |
-                                     ((terrainTypeValue(assignment.attributes.terrainType) & 0x1F) << 9) |
-                                     ((encounterTypeValue(assignment.attributes.encounterType) & 0x7) << 24) |
-                                     ((layerTypeValue(assignment.attributes.layerType) & 0x3) << 29));
+          static_cast<std::uint32_t>((metatileEntry.attributes.metatileBehavior & 0x1FF) |
+                                     ((terrainTypeValue(metatileEntry.attributes.terrainType) & 0x1F) << 9) |
+                                     ((encounterTypeValue(metatileEntry.attributes.encounterType) & 0x7) << 24) |
+                                     ((layerTypeValue(metatileEntry.attributes.layerType) & 0x3) << 29));
       out << static_cast<char>(attributeValue);
       out << static_cast<char>(attributeValue >> 8);
       out << static_cast<char>(attributeValue >> 16);

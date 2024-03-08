@@ -343,8 +343,7 @@ struct GBAPalette {
  * A tile assignment, i.e. the representation of a tile within a metatile. Maps a given tile index to a hardware palette
  * index and the corresponding flips.
  */
-// TODO 1.0.0 : refactor name of this variable to MetatileEntry
-struct Assignment {
+struct MetatileEntry {
   std::size_t tileIndex;
   std::size_t paletteIndex;
   bool hFlip;
@@ -386,29 +385,28 @@ struct CompiledAnimation {
  * The `palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
  * `numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
  *
- * The `assignments' vector contains the actual tile palette assignments and flips which can be used to construct the
- * final metatiles.
+ * The `metatileEntries' vector contains metatile entries, which are just a tile index, palette index, and flips.
  */
 struct CompiledTileset {
   std::vector<GBATile> tiles;
   std::vector<std::size_t> paletteIndexesOfTile;
   std::vector<GBAPalette> palettes;
-  std::vector<Assignment> assignments;
+  std::vector<MetatileEntry> metatileEntries;
   std::unordered_map<BGR15, std::size_t> colorIndexMap;
   std::unordered_map<GBATile, std::size_t> tileIndexes;
   std::vector<CompiledAnimation> anims;
 
   CompiledTileset()
-      : tiles{}, paletteIndexesOfTile{}, palettes{}, assignments{}, colorIndexMap{}, tileIndexes{}, anims{}
+      : tiles{}, paletteIndexesOfTile{}, palettes{}, metatileEntries{}, colorIndexMap{}, tileIndexes{}, anims{}
   {
   }
 
   std::unordered_map<std::size_t, Attributes> generateAttributesMap(bool tripleLayer) const
   {
     std::unordered_map<std::size_t, Attributes> attributes{};
-    for (std::size_t assignmentIndex = 0; const auto &assignment : assignments) {
-      attributes.insert(std::pair{assignmentIndex / (tripleLayer ? 12 : 8), assignment.attributes});
-      assignmentIndex++;
+    for (std::size_t entryIndex = 0; const auto &metatileEntry : metatileEntries) {
+      attributes.insert(std::pair{entryIndex / (tripleLayer ? 12 : 8), metatileEntry.attributes});
+      entryIndex++;
     }
     return attributes;
   }
