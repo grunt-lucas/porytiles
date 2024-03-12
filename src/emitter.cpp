@@ -334,7 +334,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttributePath(mode), metatileIndex,
                                            attributesMap.at(metatileIndex).metatileBehavior);
       }
     }
@@ -344,7 +344,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                << std::endl;
       }
       else {
-        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttrPath(mode), metatileIndex,
+        error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttributePath(mode), metatileIndex,
                                            attributesMap.at(metatileIndex).metatileBehavior);
       }
     }

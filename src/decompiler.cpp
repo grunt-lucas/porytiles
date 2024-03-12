@@ -48,7 +48,7 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
      * tiles are invisible since they are covered by another layer.
      */
     if (tileIndex >= tiles.size()) {
-      warn_invalidTileIndex(ctx.err, tileIndex, tiles.size(), decompiledTile);
+      warn_invalidTileIndex(ctx.err, mode, tileIndex, tiles.size(), decompiledTile);
     }
     if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
       // TODO 1.0.0 : create real warn_invalidPaletteIndex for this case

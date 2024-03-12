@@ -998,7 +998,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
           errColorPrecisionLossOverride = true;
         }
-        else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
+        else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
           errKeyFrameTileDidNotAppearInAssignmentOverride = true;
         }
         else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
@@ -1042,7 +1042,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
         errColorPrecisionLossOverride = false;
       }
-      else if (strcmp(optarg, WARN_KEY_FRAME_DID_NOT_APPEAR) == 0) {
+      else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
         errKeyFrameTileDidNotAppearInAssignmentOverride = false;
       }
       else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
@@ -1266,7 +1266,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     ctx.err.colorPrecisionLoss = warnColorPrecisionLossOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
   if (warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
-    ctx.err.keyFrameTileDidNotAppearInAssignment =
+    ctx.err.keyFrameNoMatchingTile =
         warnKeyFrameTileDidNotAppearInAssignmentOverride.value() ? WarningMode::WARN : WarningMode::OFF;
   }
   if (warnUsedTrueColorModeOverride.has_value()) {
@@ -1320,15 +1320,15 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   }
   if (errKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
     if (errKeyFrameTileDidNotAppearInAssignmentOverride.value()) {
-      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+      ctx.err.keyFrameNoMatchingTile = WarningMode::ERR;
     }
     else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
               warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
              enableAllWarnings) {
-      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::WARN;
+      ctx.err.keyFrameNoMatchingTile = WarningMode::WARN;
     }
     else {
-      ctx.err.keyFrameTileDidNotAppearInAssignment = WarningMode::OFF;
+      ctx.err.keyFrameNoMatchingTile = WarningMode::OFF;
     }
   }
   if (errUsedTrueColorModeOverride.has_value()) {
@@ -1537,7 +1537,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 3, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
@@ -1566,7 +1566,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 4, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
@@ -1598,7 +1598,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::ERR);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::ERR);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
@@ -1633,7 +1633,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 6, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
@@ -1665,7 +1665,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::WARN);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
@@ -1697,7 +1697,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
     porytiles::parseSubcommandOptions(ctx, 5, argv);
 
     CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-    CHECK(ctx.err.keyFrameTileDidNotAppearInAssignment == porytiles::WarningMode::OFF);
+    CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
     CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
     CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
     CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);

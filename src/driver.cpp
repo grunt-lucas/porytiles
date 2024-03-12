@@ -104,10 +104,10 @@ static void validateDecompileInputs(PorytilesContext &ctx, DecompilerMode decomp
         ctx.err, ctx.decompilerSrcPaths, decompilerMode,
         fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedAttrPath(decompilerMode))) {
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode))) {
     fatalerror(
         ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-        fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedAttrPath(decompilerMode).string()));
+        fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string()));
   }
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode))) {
     fatalerror(
@@ -322,13 +322,6 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, CompilerMode compilerMode
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
-      /*
-       * FIXME 1.0.0 : format is actually 0.png, not 00.png. We used 00.png so that default alphabetical
-       * order would also yield the frame order. However, the frames don't actually follow this
-       * format. It would be better to read and then sort, especially since the decompiler has to
-       * use the 0.png format.
-       * FIXME 1.0.0 : I think this is fixed now, and we can remove the above message, confirm this
-       */
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         if (fileName != "key.png") {
           pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
@@ -606,7 +599,7 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
    * Set up file stream objects
    */
   std::ifstream metatilesIfStream{ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode), std::ios::binary};
-  std::ifstream attributesIfStream{ctx.decompilerSrcPaths.modeBasedAttrPath(mode), std::ios::binary};
+  std::ifstream attributesIfStream{ctx.decompilerSrcPaths.modeBasedAttributePath(mode), std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(mode)};
   std::vector<std::unique_ptr<std::ifstream>> paletteFiles{};
   for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
@@ -654,7 +647,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
   png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
 
   auto attributesMap = prepareDecompiledAttributesForImport(ctx, compilerMode, behaviorMap,
-                                                            ctx.compilerSrcPaths.modeBasedAttrPath(compilerMode));
+                                                            ctx.compilerSrcPaths.modeBasedAttributePath(compilerMode));
   if (ctx.err.errCount > 0) {
     die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                    fmt::format("errors generated during {} attributes import", compilerModeString(compilerMode)));

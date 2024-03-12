@@ -802,8 +802,7 @@ struct CompilerSourcePaths {
   std::filesystem::path modeBasedBottomTilesheetPath(CompilerMode mode) const;
   std::filesystem::path modeBasedMiddleTilesheetPath(CompilerMode mode) const;
   std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
-  // TODO 1.0.0 : refactor name to modeBasedAttributePath
-  std::filesystem::path modeBasedAttrPath(CompilerMode mode) const;
+  std::filesystem::path modeBasedAttributePath(CompilerMode mode) const;
   std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
   std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
   std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
@@ -877,8 +876,7 @@ struct DecompilerSourcePaths {
   std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedTilesPath(DecompilerMode mode) const;
   std::filesystem::path modeBasedMetatilesPath(DecompilerMode mode) const;
-  // TODO 1.0.0 : refactor name to modeBasedAttributePath
-  std::filesystem::path modeBasedAttrPath(DecompilerMode mode) const;
+  std::filesystem::path modeBasedAttributePath(DecompilerMode mode) const;
   std::filesystem::path modeBasedPalettePath(DecompilerMode mode) const;
   std::filesystem::path modeBasedAnimPath(DecompilerMode mode) const;
 };

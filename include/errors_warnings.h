@@ -24,7 +24,7 @@ struct ErrorsAndWarnings {
 
   // Compilation warnings
   WarningMode colorPrecisionLoss;
-  WarningMode keyFrameTileDidNotAppearInAssignment;
+  WarningMode keyFrameNoMatchingTile;
   WarningMode usedTrueColorMode;
   WarningMode attributeFormatMismatch;
   WarningMode missingAttributesCsv;
@@ -39,7 +39,7 @@ struct ErrorsAndWarnings {
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
+        keyFrameNoMatchingTile{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
         assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
@@ -51,7 +51,7 @@ struct ErrorsAndWarnings {
   {
     // Compilation warnings
     colorPrecisionLoss = setting;
-    keyFrameTileDidNotAppearInAssignment = setting;
+    keyFrameNoMatchingTile = setting;
     usedTrueColorMode = setting;
     attributeFormatMismatch = setting;
     missingAttributesCsv = setting;
@@ -71,8 +71,8 @@ struct ErrorsAndWarnings {
     if (colorPrecisionLoss == WarningMode::WARN) {
       colorPrecisionLoss = WarningMode::ERR;
     }
-    if (keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
-      keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+    if (keyFrameNoMatchingTile == WarningMode::WARN) {
+      keyFrameNoMatchingTile = WarningMode::ERR;
     }
     if (usedTrueColorMode == WarningMode::WARN) {
       usedTrueColorMode = WarningMode::ERR;
@@ -108,7 +108,7 @@ struct ErrorsAndWarnings {
 
 // Compilation warnings
 extern const char *const WARN_COLOR_PRECISION_LOSS;
-extern const char *const WARN_KEY_FRAME_DID_NOT_APPEAR;
+extern const char *const WARN_KEY_FRAME_NO_MATCHING_TILE;
 extern const char *const WARN_USED_TRUE_COLOR_MODE;
 extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
@@ -253,11 +253,11 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
  */
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba,
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile, std::size_t row,
+                             std::size_t col, const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba);
 
-void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
+void warn_keyFrameNoMatchingTile(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err);
 
@@ -270,8 +270,9 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
 void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
                           std::string sourcePath);
 
-void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
-                                                      std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
+void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile,
+                                                      std::size_t row, std::size_t col, const RGBA32 &color,
+                                                      const RGBA32 &transparency);
 
 void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config,
                               std::string path);
@@ -283,8 +284,8 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue
  */
-void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
-                           const RGBATile &tile);
+void warn_invalidTileIndex(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
+                           std::size_t tilesheetSize, const RGBATile &tile);
 
 /*
  * Die functions

@@ -482,7 +482,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMod
   // unreachable, here for compiler
   throw std::runtime_error("types::InputPaths::modeBasedTopTilesheetPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedAttrPath(CompilerMode mode) const
+std::filesystem::path CompilerSourcePaths::modeBasedAttributePath(CompilerMode mode) const
 {
   switch (mode) {
   case CompilerMode::PRIMARY:
@@ -580,7 +580,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMo
       "types::InputPaths::DecompilerSourcePaths::modeBasedMetatilesPath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedAttrPath(DecompilerMode mode) const
+std::filesystem::path DecompilerSourcePaths::modeBasedAttributePath(DecompilerMode mode) const
 {
   switch (mode) {
   case DecompilerMode::PRIMARY:

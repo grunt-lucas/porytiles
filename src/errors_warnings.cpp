@@ -22,8 +22,7 @@ namespace porytiles {
 
 // Compilation warnings
 const char *const WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
-// TODO 1.0.0 : change name of this warning, assignment is outdated terminology, prefer metatile entry
-const char *const WARN_KEY_FRAME_DID_NOT_APPEAR = "key-frame-missing-assignment";
+const char *const WARN_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
 const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
@@ -553,16 +552,15 @@ static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const 
   }
 }
 
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba,
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile, std::size_t row,
+                             std::size_t col, const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba)
 {
-  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
-  std::string message =
-      fmt::format("color `{}' at `{}' subtile pixel col {}, row {} collapsed to duplicate BGR",
-                  fmt::styled(rgba.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
-                  fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
+  std::string message = fmt::format("color `{}' at {} `{}' subtile pixel col {}, row {} collapsed to duplicate BGR",
+                                    fmt::styled(rgba.jasc(), fmt::emphasis::bold), compilerModeString(mode),
+                                    fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
+                                    fmt::styled(row, fmt::emphasis::bold));
   printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
   if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
     std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
@@ -575,13 +573,13 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::
   }
 }
 
-void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
+void warn_keyFrameNoMatchingTile(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex)
 {
   std::string message =
       fmt::format("animation `{}' key frame tile `{}' was not present in any metatile entries",
                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
-  printWarning(err, err.keyFrameTileDidNotAppearInAssignment, WARN_KEY_FRAME_DID_NOT_APPEAR, message);
-  if (err.printErrors && err.keyFrameTileDidNotAppearInAssignment != WarningMode::OFF) {
+  printWarning(err, err.keyFrameNoMatchingTile, WARN_KEY_FRAME_NO_MATCHING_TILE, message);
+  if (err.printErrors && err.keyFrameNoMatchingTile != WarningMode::OFF) {
     pt_println(stderr, "");
   }
 }
@@ -639,16 +637,17 @@ void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::s
   }
 }
 
-void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
-                                                      std::size_t col, const RGBA32 &color, const RGBA32 &transparency)
+void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile,
+                                                      std::size_t row, std::size_t col, const RGBA32 &color,
+                                                      const RGBA32 &transparency)
 {
-  // TODO 1.0.0 : this should display some info regarding primary vs. secondary as well as the layer (bot, mid, top)
   std::string tileString = getTilePrettyString(tile);
   printWarning(
       err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
-      fmt::format("color `{}' at `{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
-                  fmt::styled(color.jasc(), fmt::emphasis::bold), fmt::styled(tileString, fmt::emphasis::bold),
-                  fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold)));
+      fmt::format("color `{}' at {} `{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
+                  fmt::styled(color.jasc(), fmt::emphasis::bold), compilerModeString(mode),
+                  fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
+                  fmt::styled(row, fmt::emphasis::bold)));
   if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
     pt_note(
         "if you did not intend this to be a transparent pixel, please edit the color on the respective layer sheet");
@@ -716,13 +715,12 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
   }
 }
 
-void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
-                           const RGBATile &tile)
+void warn_invalidTileIndex(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
+                           std::size_t tilesheetSize, const RGBATile &tile)
 {
-  // TODO 1.0.0 : this warning should show if error came from primary or secondary set
   std::string tileString = getTilePrettyString(tile);
   printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
-               fmt::format("`{}': tile index {} out of range (sheet size {})",
+               fmt::format("{} `{}': tile index {} out of range (sheet size {})", decompilerModeString(mode),
                            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
                            tilesheetSize));
   if (err.printErrors && err.invalidTileIndex != WarningMode::OFF) {
@@ -1276,7 +1274,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.compilerSrcPaths.primarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
     ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
-    ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
+    ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1298,7 +1296,7 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.compilerSrcPaths.secondarySourcePath =
         "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
     ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
-    ctx.err.keyFrameTileDidNotAppearInAssignment = porytiles::WarningMode::ERR;
+    ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
