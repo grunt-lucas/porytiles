@@ -2357,3 +2357,82 @@ TEST_CASE("compile function should correctly compile secondary set with animated
   CHECK(compiledSecondary->anims.at(0).frames.at(2).tiles.size() == 4);
   CHECK(compiledSecondary->anims.at(0).frames.at(3).tiles.size() == 4);
 }
+
+TEST_CASE("primer tiles should change output of primary compile function")
+{
+  porytiles::PorytilesContext ctx{};
+  ctx.fieldmapConfig.numPalettesInPrimary = 4;
+  ctx.fieldmapConfig.numPalettesTotal = 6;
+  ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+  ctx.compilerConfig.primarySmartPrune = true;
+  ctx.compilerConfig.cacheAssign = false;
+
+  // Import decompiled tiles
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/palette_primer_1/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/palette_primer_1/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/palette_primer_1/top.png"}));
+  png::image<png::rgba_pixel> bottomPrimary{"res/tests/palette_primer_1/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"res/tests/palette_primer_1/bottom.png"};
+  png::image<png::rgba_pixel> topPrimary{"res/tests/palette_primer_1/bottom.png"};
+  porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
+      ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+      middlePrimary, topPrimary);
+
+  // Import palette primer
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/palette_primer_1/palette-primers/primer.pal"}));
+  std::ifstream primerIfstream{std::filesystem::path{"res/tests/palette_primer_1/palette-primers/primer.pal"}};
+  porytiles::RGBATile primerTile =
+      porytiles::importPalettePrimer(ctx, porytiles::CompilerMode::PRIMARY, primerIfstream);
+  std::vector<porytiles::RGBATile> palettePrimers{};
+  palettePrimers.push_back(primerTile);
+  primerIfstream.close();
+
+  // Compile with no primer
+  auto compiledNoPrimer =
+      porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, std::vector<porytiles::RGBATile>{});
+
+  // Confirm compiled no primer is as expected
+  CHECK(compiledNoPrimer->palettes.at(0).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+  CHECK(compiledNoPrimer->palettes.at(0).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 255, 0}));
+  CHECK(compiledNoPrimer->palettes.at(0).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 0}));
+  CHECK(compiledNoPrimer->palettes.at(0).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledNoPrimer->palettes.at(1).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+  CHECK(compiledNoPrimer->palettes.at(1).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 255, 255}));
+  CHECK(compiledNoPrimer->palettes.at(1).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 255, 0}));
+  CHECK(compiledNoPrimer->palettes.at(1).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledNoPrimer->palettes.at(2).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+  CHECK(compiledNoPrimer->palettes.at(2).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledNoPrimer->palettes.at(2).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 255}));
+  CHECK(compiledNoPrimer->palettes.at(2).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledNoPrimer->palettes.at(3).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+  CHECK(compiledNoPrimer->palettes.at(3).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{128, 128, 128}));
+  CHECK(compiledNoPrimer->palettes.at(3).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 255, 255}));
+  CHECK(compiledNoPrimer->palettes.at(3).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+
+  // Compile with primer
+  auto compiledPrimer = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, palettePrimers);
+
+  // Confirm compiled with primer is as expected
+  for (std::size_t i = 0; i < 3; i++) {
+    CHECK(compiledPrimer->palettes.at(i).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    for (std::size_t j = 1; j < porytiles::PAL_SIZE; j++) {
+      CHECK(compiledPrimer->palettes.at(i).colors.at(j) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+    }
+  }
+  CHECK(compiledPrimer->palettes.at(3).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 255, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 255, 255}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(4) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 255, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(5) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(6) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 255}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(7) == porytiles::rgbaToBgr(porytiles::RGBA32{128, 128, 128}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(8) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 255, 255}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(9) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(10) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(11) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(12) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(13) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(14) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+  CHECK(compiledPrimer->palettes.at(3).colors.at(15) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+}
