@@ -48,12 +48,10 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
      * tiles are invisible since they are covered by another layer.
      */
     if (tileIndex >= tiles.size()) {
-      warn_invalidTileIndex(ctx.err, mode, tileIndex, tiles.size(), decompiledTile);
+      warn_tileIndexOutOfRange(ctx.err, mode, tileIndex, tiles.size(), decompiledTile);
     }
     if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-      // TODO 1.0.0 : create real warn_invalidPaletteIndex for this case
-      pt_warn("invalid palette index: {}", paletteIndex);
-      pt_println(stderr, "");
+      warn_paletteIndexOutOfRange(ctx.err, mode, paletteIndex, ctx.fieldmapConfig.numPalettesTotal, decompiledTile);
     }
     const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
       // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)

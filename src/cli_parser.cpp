@@ -118,7 +118,7 @@ const std::string DECOMPILATION_INPUT_DIRECTORY_FORMAT =
 "                tiles.png                # indexed png of raw tiles\n"
 "                palettes                 # directory of palette files\n"
 "                    00.pal               # JASC pal file for palette 0\n"
-"                    ...                  # there must be each JASC palette file up to NUM_PALS_TOTAL\n"
+"                    ...                  # number of pal files must match base game pals total count\n"
 "                [anim/]                  # `anim' folder is optional\n"
 "                    [anim1/]             # animation names can be arbitrary, but must be unique\n"
 "                        00.png           # you must specify at least one animation frame for each anim\n"
@@ -266,8 +266,8 @@ const std::string DECOMPILE_PRIMARY_HELP =
 "Decompile a Porymap-ready primary tileset back into Porytiles-compatible RGBA tile assets.\n"
 "`decompile-primary' expects an input path containing target compiled tile assets organized\n"
 "according to the format outlined in the Decompilation Input Directory Format subsection. Like the\n"
-"compilation commands, `decompile-primary' requires your project's `metatile_behaviors.h' file. And\n"
-"you can control its output location via the `-o' option.\n"
+"compilation commands, `decompile-primary' requires your project's `metatile_behaviors.h' file.\n"
+"You can control its output location via the `-o' option.\n"
 "\n"
 "ARGS\n"
 "    <INPUT-PATH>\n"
@@ -309,9 +309,9 @@ const std::string DECOMPILE_SECONDARY_HELP =
 "Decompile a Porymap-ready secondary tileset back into Porytiles-compatible RGBA tile assets.\n"
 "`decompile-secondary' expects an input path containing target compiled tile assets organized\n"
 "according to the format outlined in the Decompilation Input Directory Format subsection. You must\n"
-"also supply the compiled tile assets of the target tileset's paired primary. `decompile-primary'\n"
-"requires your project's `metatile_behaviors.h' file. And you can control its output location via\n"
-"the `-o' option.\n"
+"also supply the compiled tile assets of the target tileset's paired primary. `decompile-secondary'\n"
+"requires your project's `metatile_behaviors.h' file. You can control its output location via the\n"
+"`-o' option.\n"
 "\n"
 "ARGS\n"
 "    <INPUT-PATH>\n"
@@ -428,8 +428,10 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     // Decompilation warnings
-    {WINVALID_TILE_INDEX, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
-    {WNO_INVALID_TILE_INDEX, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {WTILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {WNO_TILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {WPALETTE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {WNO_PALETTE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     // TODO 1.0.0 : this does not correctly handle the -Werror=foo case where foo is an incompatible warning
 };
 
@@ -711,8 +713,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
 
       // Decompilation warnings
-      {WINVALID_TILE_INDEX.c_str(), no_argument, nullptr, WINVALID_TILE_INDEX_VAL},
-      {WNO_INVALID_TILE_INDEX.c_str(), no_argument, nullptr, WNO_INVALID_TILE_INDEX_VAL},
+      {WTILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WTILE_INDEX_OUT_OF_RANGE_VAL},
+      {WNO_TILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_TILE_INDEX_OUT_OF_RANGE_VAL},
+
+      {WPALETTE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WPALETTE_INDEX_OUT_OF_RANGE_VAL},
+      {WNO_PALETTE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL},
 
       // Help
       {HELP.c_str(), no_argument, nullptr, HELP_VAL},
@@ -762,8 +767,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   std::optional<bool> errMissingAssignCache{};
 
   // Decompilation warnings
-  std::optional<bool> warnInvalidTileIndex{};
-  std::optional<bool> errInvalidTileIndex{};
+  std::optional<bool> warnTileIndexOutOfRange{};
+  std::optional<bool> errTileIndexOutOfRange{};
+
+  std::optional<bool> warnPaletteIndexOutOfRange{};
+  std::optional<bool> errPaletteIndexOutOfRange{};
 
   /*
    * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -1026,8 +1034,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
           errMissingAssignCache = true;
         }
         // Decompilation warnings
-        else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
-          errInvalidTileIndex = true;
+        else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
+          errTileIndexOutOfRange = true;
+        }
+        else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+          errPaletteIndexOutOfRange = true;
         }
         else {
           fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
@@ -1070,8 +1081,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         errMissingAssignCache = false;
       }
       // Decompilation warnings
-      else if (strcmp(optarg, WARN_INVALID_TILE_INDEX) == 0) {
-        errInvalidTileIndex = false;
+      else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
+        errTileIndexOutOfRange = false;
+      }
+      else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+        errPaletteIndexOutOfRange = false;
       }
       else {
         fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
@@ -1162,13 +1176,21 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       warnMissingAssignCache = false;
       break;
     // Decompilation warnings
-    case WINVALID_TILE_INDEX_VAL:
-      validateSubcommandContext(ctx, WINVALID_TILE_INDEX);
-      warnInvalidTileIndex = true;
+    case WTILE_INDEX_OUT_OF_RANGE_VAL:
+      validateSubcommandContext(ctx, WTILE_INDEX_OUT_OF_RANGE);
+      warnTileIndexOutOfRange = true;
       break;
-    case WNO_INVALID_TILE_INDEX_VAL:
-      validateSubcommandContext(ctx, WNO_INVALID_TILE_INDEX);
-      warnInvalidTileIndex = false;
+    case WNO_TILE_INDEX_OUT_OF_RANGE_VAL:
+      validateSubcommandContext(ctx, WNO_TILE_INDEX_OUT_OF_RANGE);
+      warnTileIndexOutOfRange = false;
+      break;
+    case WPALETTE_INDEX_OUT_OF_RANGE_VAL:
+      validateSubcommandContext(ctx, WPALETTE_INDEX_OUT_OF_RANGE);
+      warnPaletteIndexOutOfRange = true;
+      break;
+    case WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL:
+      validateSubcommandContext(ctx, WNO_PALETTE_INDEX_OUT_OF_RANGE);
+      warnPaletteIndexOutOfRange = false;
       break;
 
     // Help message upon '-h/--help' goes to stdout
@@ -1295,8 +1317,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
   // Decompilation warnings
-  if (warnInvalidTileIndex.has_value()) {
-    ctx.err.invalidTileIndex = warnInvalidTileIndex.value() ? WarningMode::WARN : WarningMode::OFF;
+  if (warnTileIndexOutOfRange.has_value()) {
+    ctx.err.tileIndexOutOfRange = warnTileIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
+  if (warnPaletteIndexOutOfRange.has_value()) {
+    ctx.err.paletteIndexOutOfRange = warnPaletteIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
   }
 
   // If requested, set all enabled warnings to errors
@@ -1424,15 +1449,26 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     }
   }
   // Decompilation warnings
-  if (errInvalidTileIndex.has_value()) {
-    if (errInvalidTileIndex.value()) {
-      ctx.err.invalidTileIndex = WarningMode::ERR;
+  if (errTileIndexOutOfRange.has_value()) {
+    if (errTileIndexOutOfRange.value()) {
+      ctx.err.tileIndexOutOfRange = WarningMode::ERR;
     }
-    else if ((warnInvalidTileIndex.has_value() && warnInvalidTileIndex.value()) || enableAllWarnings) {
-      ctx.err.invalidTileIndex = WarningMode::WARN;
+    else if ((warnTileIndexOutOfRange.has_value() && warnTileIndexOutOfRange.value()) || enableAllWarnings) {
+      ctx.err.tileIndexOutOfRange = WarningMode::WARN;
     }
     else {
-      ctx.err.invalidTileIndex = WarningMode::OFF;
+      ctx.err.tileIndexOutOfRange = WarningMode::OFF;
+    }
+  }
+  if (errPaletteIndexOutOfRange.has_value()) {
+    if (errPaletteIndexOutOfRange.value()) {
+      ctx.err.paletteIndexOutOfRange = WarningMode::ERR;
+    }
+    else if ((warnPaletteIndexOutOfRange.has_value() && warnPaletteIndexOutOfRange.value()) || enableAllWarnings) {
+      ctx.err.paletteIndexOutOfRange = WarningMode::WARN;
+    }
+    else {
+      ctx.err.paletteIndexOutOfRange = WarningMode::OFF;
     }
   }
 
@@ -1445,11 +1481,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     enableAllWarnings = false;
     ctx.err.setAllWarnings(WarningMode::OFF);
   }
-
-  // TODO : should we fail here, or warn the user, or do nothing and just prioritize one over the other?
-  // if (ctx.compilerConfig.smartPrune && ctx.compilerConfig.bestBranches > 0) {
-  //   fatalerror(ctx.err, fmt::format("found two conflicting configs for `{}' option", BEST_BRANCHES));
-  // }
 
   /*
    * Apply and validate the fieldmap configuration parameters

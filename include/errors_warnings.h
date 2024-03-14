@@ -35,7 +35,8 @@ struct ErrorsAndWarnings {
   WarningMode missingAssignCache;
 
   // Decompilation warnings
-  WarningMode invalidTileIndex;
+  WarningMode tileIndexOutOfRange;
+  WarningMode paletteIndexOutOfRange;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
@@ -43,7 +44,8 @@ struct ErrorsAndWarnings {
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
         assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
-        missingAssignCache{WarningMode::OFF}, invalidTileIndex{WarningMode::OFF}
+        missingAssignCache{WarningMode::OFF}, tileIndexOutOfRange{WarningMode::OFF},
+        paletteIndexOutOfRange{WarningMode::OFF}
   {
   }
 
@@ -62,7 +64,8 @@ struct ErrorsAndWarnings {
     missingAssignCache = setting;
 
     // Decompilation warnings
-    invalidTileIndex = setting;
+    tileIndexOutOfRange = setting;
+    paletteIndexOutOfRange = setting;
   }
 
   void setAllEnabledWarningsToErrors()
@@ -100,8 +103,11 @@ struct ErrorsAndWarnings {
     }
 
     // Decompilation warnings
-    if (invalidTileIndex == WarningMode::WARN) {
-      invalidTileIndex = WarningMode::ERR;
+    if (tileIndexOutOfRange == WarningMode::WARN) {
+      tileIndexOutOfRange = WarningMode::ERR;
+    }
+    if (paletteIndexOutOfRange == WarningMode::WARN) {
+      paletteIndexOutOfRange = WarningMode::ERR;
     }
   }
 };
@@ -119,7 +125,8 @@ extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
 
 // Decompilation warnings
-extern const char *const WARN_INVALID_TILE_INDEX;
+extern const char *const WARN_TILE_INDEX_OUT_OF_RANGE;
+extern const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -284,8 +291,11 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue
  */
-void warn_invalidTileIndex(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
-                           std::size_t tilesheetSize, const RGBATile &tile);
+void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
+                              std::size_t tilesheetSize, const RGBATile &tile);
+
+void warn_paletteIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t paletteIndex,
+                                 std::size_t numPalettesTotal, const RGBATile &tile);
 
 /*
  * Die functions

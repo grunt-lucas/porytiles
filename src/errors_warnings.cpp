@@ -33,7 +33,8 @@ const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
 
 // Decompilation warnings
-const char *const WARN_INVALID_TILE_INDEX = "invalid-tile-index";
+const char *const WARN_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
+const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
@@ -715,16 +716,30 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
   }
 }
 
-void warn_invalidTileIndex(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
-                           std::size_t tilesheetSize, const RGBATile &tile)
+void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
+                              std::size_t tilesheetSize, const RGBATile &tile)
 {
   std::string tileString = getTilePrettyString(tile);
-  printWarning(err, err.invalidTileIndex, WARN_INVALID_TILE_INDEX,
-               fmt::format("{} `{}': tile index {} out of range (sheet size {})", decompilerModeString(mode),
+  printWarning(err, err.tileIndexOutOfRange, WARN_TILE_INDEX_OUT_OF_RANGE,
+               fmt::format("{} `{}': tile index {} out of range (sheet size = {})", decompilerModeString(mode),
                            fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
                            tilesheetSize));
-  if (err.printErrors && err.invalidTileIndex != WarningMode::OFF) {
+  if (err.printErrors && err.tileIndexOutOfRange != WarningMode::OFF) {
     pt_note("substituting primary tile 0 (transparent tile) so decompilation can continue");
+    pt_println(stderr, "");
+  }
+}
+
+void warn_paletteIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t paletteIndex,
+                                 std::size_t numPalettesTotal, const RGBATile &tile)
+{
+  std::string tileString = getTilePrettyString(tile);
+  printWarning(err, err.paletteIndexOutOfRange, WARN_PALETTE_INDEX_OUT_OF_RANGE,
+               fmt::format("{} `{}': palette index {} out of range (numPalettesTotal = {})", decompilerModeString(mode),
+                           fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(paletteIndex, fmt::emphasis::bold),
+                           numPalettesTotal));
+  if (err.printErrors && err.paletteIndexOutOfRange != WarningMode::OFF) {
+    pt_note("substituting palette 0 so decompilation can continue");
     pt_println(stderr, "");
   }
 }
