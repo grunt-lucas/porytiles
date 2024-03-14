@@ -455,9 +455,11 @@ void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourc
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("{}: invalid id {}", filePath, id));
 }
 
-void fatalerror_invalidBehaviorValueCompiler(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                             CompilerMode mode, std::string behavior, std::string value,
-                                             std::size_t line)
+static void fatalerror_invalidBehaviorValueHelper(const ErrorsAndWarnings &err, const CompilerSourcePaths *compilerSrcs,
+                                                  const DecompilerSourcePaths *decompilerSrcs,
+                                                  const CompilerMode *compilerMode,
+                                                  const DecompilerMode *decompilerMode, std::string behavior,
+                                                  std::string value, std::size_t line)
 {
   if (err.printErrors) {
     pt_fatal_err("invalid value `{}' for behavior `{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
@@ -466,21 +468,29 @@ void fatalerror_invalidBehaviorValueCompiler(const ErrorsAndWarnings &err, const
             fmt::styled("id", fmt::emphasis::bold));
     pt_println(stderr, "");
   }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid behavior value {}", value));
+  if (compilerMode != nullptr && compilerSrcs != nullptr) {
+    die_compilationTerminated(err, compilerSrcs->modeBasedSrcPath(*compilerMode),
+                              fmt::format("invalid behavior value {}", value));
+  }
+  else if (decompilerMode != nullptr && decompilerSrcs != nullptr) {
+    die_decompilationTerminated(err, decompilerSrcs->modeBasedSrcPath(*decompilerMode),
+                                fmt::format("invalid behavior value {}", value));
+  }
+  else {
+    internalerror("errors_warnings::fatalerror_invalidBehaviorValueHelper invalid call parameters");
+  }
 }
 
-void fatalerror_invalidBehaviorValueDecompiler(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
-                                               DecompilerMode mode, std::string behavior, std::string value,
-                                               std::size_t line)
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
+                                     std::string behavior, std::string value, std::size_t line)
 {
-  if (err.printErrors) {
-    pt_fatal_err("invalid value `{}' for behavior `{}' defined at line {}", fmt::styled(value, fmt::emphasis::bold),
-                 fmt::styled(behavior, fmt::emphasis::bold), line);
-    pt_note("behavior must be an integral value (both decimal and hexidecimal notations are permitted)",
-            fmt::styled("id", fmt::emphasis::bold));
-    pt_println(stderr, "");
-  }
-  die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid behavior value {}", value));
+  fatalerror_invalidBehaviorValueHelper(err, &srcs, nullptr, &mode, nullptr, behavior, value, line);
+}
+
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                     DecompilerMode mode, std::string behavior, std::string value, std::size_t line)
+{
+  fatalerror_invalidBehaviorValueHelper(err, nullptr, &srcs, nullptr, &mode, behavior, value, line);
 }
 
 void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
@@ -1243,18 +1253,16 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
   SUBCASE("Invalid integer format 1")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
-    CHECK_THROWS_WITH_AS(
-        porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
-        "invalid behavior value foo", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+                         "invalid behavior value foo", porytiles::PorytilesException);
     behaviorFile.close();
   }
 
   SUBCASE("Invalid integer format 2")
   {
     std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
-    CHECK_THROWS_WITH_AS(
-        porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
-        "invalid behavior value 6bar", porytiles::PorytilesException);
+    CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+                         "invalid behavior value 6bar", porytiles::PorytilesException);
     behaviorFile.close();
   }
 }

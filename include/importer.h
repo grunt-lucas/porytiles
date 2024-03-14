@@ -44,16 +44,13 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
  * TODO : fill in doc comments
  */
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeaderCompiler(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile);
-
-// FIXME 1.0.0 : combine above and below functions somehow, too much code dupe
+importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile);
 
 /**
  * TODO : fill in doc comments
  */
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeaderDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode,
-                                       std::ifstream &behaviorFile);
+importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile);
 
 /**
  * TODO : fill in doc comments

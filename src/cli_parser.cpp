@@ -353,6 +353,8 @@ WERROR_DESC + "\n";
 // @formatter:on
 // clang-format on
 
+// TODO 1.0.0 : add an EXAMPLES section to each help menu
+
 std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcommands = {
     {HELP,
      {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY, Subcommand::DECOMPILE_PRIMARY,

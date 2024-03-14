@@ -5,6 +5,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <png.hpp>
 #include <regex>
@@ -379,42 +380,65 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx, CompilerMode compile
   return importAttributesFromCsv(ctx, compilerMode, behaviorMap, attributesCsvPath.string());
 }
 
-/*
- * FIXME 1.0.0 : combine these two versions somehow
- */
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-prepareBehaviorsHeaderForImportCompile(PorytilesContext &ctx, CompilerMode compilerMode, std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode *compilerMode,
+                                      const DecompilerMode *decompilerMode, std::string behaviorHeaderPath)
 {
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-               fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    if (compilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
+                 fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    }
+    else if (decompilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
+                 fmt::format("{}: could not open for reading", behaviorHeaderPath));
+    }
+    else {
+      internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+    }
   }
-  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorHeaderCompiler(ctx, compilerMode, behaviorFile);
+  auto [behaviorMap, behaviorReverseMap] = std::invoke(
+      [&]() -> std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>> {
+        if (compilerMode != nullptr) {
+          return importMetatileBehaviorHeader(ctx, *compilerMode, behaviorFile);
+        }
+        else if (decompilerMode != nullptr) {
+          return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
+        }
+        else {
+          internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+        }
+        // unreachable, here for compiler
+        throw std::runtime_error("driver::prepareBehaviorsHeaderForImportHelper reached unreachable code path");
+      });
   behaviorFile.close();
   if (behaviorMap.size() == 0) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-               fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+    if (compilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
+                 fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+    }
+    else if (decompilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
+                 fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+    }
+    else {
+      internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+    }
   }
   return std::pair{behaviorMap, behaviorReverseMap};
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-prepareBehaviorsHeaderForImportDecompile(PorytilesContext &ctx, DecompilerMode decompilerMode,
-                                         std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, CompilerMode compilerMode, std::string behaviorHeaderPath)
 {
-  std::ifstream behaviorFile{behaviorHeaderPath};
-  if (behaviorFile.fail()) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-               fmt::format("{}: could not open for reading", behaviorHeaderPath));
-  }
-  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorHeaderDecompiler(ctx, decompilerMode, behaviorFile);
-  behaviorFile.close();
-  if (behaviorMap.size() == 0) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-               fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
-  }
-  return std::pair{behaviorMap, behaviorReverseMap};
+  return prepareBehaviorsHeaderForImportHelper(ctx, &compilerMode, nullptr, behaviorHeaderPath);
+}
+
+static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, DecompilerMode decompilerMode, std::string behaviorHeaderPath)
+{
+  return prepareBehaviorsHeaderForImportHelper(ctx, nullptr, &decompilerMode, behaviorHeaderPath);
 }
 
 static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ctx, CompilerMode compilerMode,
@@ -706,7 +730,7 @@ static void driveDecompilePrimary(PorytilesContext &ctx)
    */
   // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
-      prepareBehaviorsHeaderForImportDecompile(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
+      prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
   /*
    * Decompile the compiled primary tiles
@@ -729,8 +753,8 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
    * Import behavior header, if it was supplied
    */
   // TODO 1.0.0 : better error message if file did not exist? see compile version
-  auto [behaviorMap, behaviorReverseMap] = prepareBehaviorsHeaderForImportDecompile(
-      ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
+  auto [behaviorMap, behaviorReverseMap] =
+      prepareBehaviorsHeaderForImport(ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
   /*
    * Import the paired primary tileset.
@@ -765,7 +789,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
     auto [map, reverse] =
-        prepareBehaviorsHeaderForImportCompile(ctx, CompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
+        prepareBehaviorsHeaderForImport(ctx, CompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
@@ -856,7 +880,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
     auto [map, reverse] =
-        prepareBehaviorsHeaderForImportCompile(ctx, CompilerMode::SECONDARY, ctx.compilerSrcPaths.metatileBehaviors);
+        prepareBehaviorsHeaderForImport(ctx, CompilerMode::SECONDARY, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }

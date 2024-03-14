@@ -449,8 +449,9 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
   tiles.anims = anims;
 }
 
-std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeaderCompiler(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile)
+static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compilerMode, DecompilerMode *decompilerMode,
+                                   std::ifstream &behaviorFile)
 {
   std::unordered_map<std::string, std::uint8_t> behaviorMap{};
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
@@ -479,8 +480,17 @@ importMetatileBehaviorHeaderCompiler(PorytilesContext &ctx, CompilerMode compile
       }
       catch (const std::exception &e) {
         behaviorFile.close();
-        fatalerror_invalidBehaviorValueCompiler(ctx.err, ctx.compilerSrcPaths, compilerMode, behaviorName,
-                                                behaviorValueString, processedUpToLine);
+        if (compilerMode != nullptr) {
+          fatalerror_invalidBehaviorValue(ctx.err, ctx.compilerSrcPaths, *compilerMode, behaviorName,
+                                          behaviorValueString, processedUpToLine);
+        }
+        else if (decompilerMode != nullptr) {
+          fatalerror_invalidBehaviorValue(ctx.err, ctx.decompilerSrcPaths, *decompilerMode, behaviorName,
+                                          behaviorValueString, processedUpToLine);
+        }
+        else {
+          internalerror("importer::importMetatileBehaviorHeader both compilerMode and decompilerMode were null");
+        }
         // here so compiler won't complain
         behaviorVal = 0;
       }
@@ -498,52 +508,15 @@ importMetatileBehaviorHeaderCompiler(PorytilesContext &ctx, CompilerMode compile
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeaderDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode,
-                                       std::ifstream &behaviorFile)
+importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile)
 {
-  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
-  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
+  return importMetatileBehaviorHeaderHelper(ctx, &compilerMode, nullptr, behaviorFile);
+}
 
-  std::string line;
-  std::size_t processedUpToLine = 1;
-  while (std::getline(behaviorFile, line)) {
-    std::string buffer;
-    std::stringstream stringStream(line);
-    std::vector<std::string> tokens{};
-    while (stringStream >> buffer) {
-      tokens.push_back(buffer);
-    }
-    if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_")) {
-      const std::string &behaviorName = tokens.at(1);
-      const std::string &behaviorValueString = tokens.at(2);
-      std::uint8_t behaviorVal;
-      try {
-        std::size_t pos;
-        behaviorVal = std::stoi(behaviorValueString, &pos, 0);
-        if (std::string{behaviorValueString}.size() != pos) {
-          behaviorFile.close();
-          // throw here so it catches below and prints an error message
-          throw std::runtime_error{""};
-        }
-      }
-      catch (const std::exception &e) {
-        behaviorFile.close();
-        fatalerror_invalidBehaviorValueDecompiler(ctx.err, ctx.decompilerSrcPaths, decompilerMode, behaviorName,
-                                                  behaviorValueString, processedUpToLine);
-        // here so compiler won't complain
-        behaviorVal = 0;
-      }
-      if (behaviorVal != 0xFF) {
-        // Check for MB_INVALID above, only insert if it was a valid MB
-        behaviorMap.insert(std::pair{behaviorName, behaviorVal});
-        behaviorReverseMap.insert(std::pair{behaviorVal, behaviorName});
-      }
-    }
-    processedUpToLine++;
-  }
-  behaviorFile.close();
-
-  return std::pair{behaviorMap, behaviorReverseMap};
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile)
+{
+  return importMetatileBehaviorHeaderHelper(ctx, nullptr, &decompilerMode, behaviorFile);
 }
 
 std::unordered_map<std::size_t, Attributes>
@@ -1678,7 +1651,7 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
 
   std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
   auto [behaviorMap, behaviorReverseMap] =
-      porytiles::importMetatileBehaviorHeaderCompiler(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile);
+      porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile);
   behaviorFile.close();
 
   CHECK(!behaviorMap.contains("MB_INVALID"));
