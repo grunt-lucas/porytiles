@@ -221,75 +221,76 @@ static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode,
   }
 }
 
-static std::vector<std::vector<AnimationPng<png::index_pixel>>>
-prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
-{
-  std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
+// TODO : uncomment this when we implement animation decompilation
+// static std::vector<std::vector<AnimationPng<png::index_pixel>>>
+// prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
+// {
+//   std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
 
-  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
-  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
-    return animations;
-  }
-  std::vector<std::filesystem::path> animationDirectories;
-  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
-            std::back_inserter(animationDirectories));
-  std::sort(animationDirectories.begin(), animationDirectories.end());
-  for (const auto &animDir : animationDirectories) {
-    if (!std::filesystem::is_directory(animDir)) {
-      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
-      continue;
-    }
+//   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
+//   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
+//     pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+//     return animations;
+//   }
+//   std::vector<std::filesystem::path> animationDirectories;
+//   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
+//             std::back_inserter(animationDirectories));
+//   std::sort(animationDirectories.begin(), animationDirectories.end());
+//   for (const auto &animDir : animationDirectories) {
+//     if (!std::filesystem::is_directory(animDir)) {
+//       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
+//       continue;
+//     }
 
-    // collate all possible animation frame files
-    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
-    std::unordered_map<std::size_t, std::filesystem::path> frames{};
-    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
-      std::string fileName = frameFile.path().filename().string();
-      std::string extension = frameFile.path().extension().string();
-      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
-        pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
-        continue;
-      }
-      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
-      frames.insert(std::pair{index, frameFile.path()});
-      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
-    }
+//     // collate all possible animation frame files
+//     pt_logln(ctx, stderr, "found animation: {}", animDir.string());
+//     std::unordered_map<std::size_t, std::filesystem::path> frames{};
+//     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
+//       std::string fileName = frameFile.path().filename().string();
+//       std::string extension = frameFile.path().extension().string();
+//       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
+//         pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
+//         continue;
+//       }
+//       std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
+//       frames.insert(std::pair{index, frameFile.path()});
+//       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+//     }
 
-    std::vector<AnimationPng<png::index_pixel>> framePngs{};
-    if (frames.size() == 0) {
-      // TODO 1.0.0 : better error
-      throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
-      // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-      //                                         animDir.filename().string(), 0);
-    }
-    for (std::size_t i = 1; i <= frames.size(); i++) {
-      if (!frames.contains(i)) {
-        // TODO 1.0.0 : better error
-        throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
-        // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        //                                         animDir.filename().string(), i - 1);
-      }
+//     std::vector<AnimationPng<png::index_pixel>> framePngs{};
+//     if (frames.size() == 0) {
+//       // FIXME : real error message here
+//       throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
+//       // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+//       //                                         animDir.filename().string(), 0);
+//     }
+//     for (std::size_t i = 1; i <= frames.size(); i++) {
+//       if (!frames.contains(i)) {
+//         // FIXME : real error message here
+//         throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
+//         // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+//         //                                         animDir.filename().string(), i - 1);
+//       }
 
-      try {
-        // We do this here so if the source is not a PNG, we can catch and give a better error
-        png::image<png::index_pixel> png{frames.at(i)};
-        AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
-        framePngs.push_back(animPng);
-      }
-      catch (const std::exception &exception) {
-        // TODO 1.0.0 : better error
-        throw std::runtime_error{
-            fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
-        // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
-      }
-    }
+//       try {
+//         // We do this here so if the source is not a PNG, we can catch and give a better error
+//         png::image<png::index_pixel> png{frames.at(i)};
+//         AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
+//         framePngs.push_back(animPng);
+//       }
+//       catch (const std::exception &exception) {
+//         // FIXME : real error message here
+//         throw std::runtime_error{
+//             fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
+//         // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+//       }
+//     }
 
-    animations.push_back(framePngs);
-  }
+//     animations.push_back(framePngs);
+//   }
 
-  return animations;
-}
+//   return animations;
+// }
 
 static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
 prepareDecompiledAnimsForImport(PorytilesContext &ctx, CompilerMode compilerMode, std::filesystem::path animationPath)
@@ -638,13 +639,15 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
     }
     paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
-  auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.modeBasedAnimPath(mode));
+  // TODO : bring this back to implement anim decompilation
+  // auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.modeBasedAnimPath(mode));
 
   /*
    * Import the compiled tileset into our data types
    */
-  auto [compiledTileset, attributesMap] = importCompiledTileset(
-      ctx, mode, metatilesIfStream, attributesIfStream, behaviorReverseMap, tilesheetPng, paletteFiles, compiledAnims);
+  // TODO : last param is empty atm, replace it with imported compiledAnims
+  auto [compiledTileset, attributesMap] = importCompiledTileset(ctx, mode, metatilesIfStream, attributesIfStream,
+                                                                behaviorReverseMap, tilesheetPng, paletteFiles, {});
 
   /*
    * Close file stream objects

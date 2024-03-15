@@ -30,6 +30,9 @@ constexpr std::size_t PAL_SIZE = 16;
 constexpr std::size_t MAX_BG_PALETTES = 16;
 constexpr std::size_t TILES_PER_METATILE_DUAL = 8;
 constexpr std::size_t TILES_PER_METATILE_TRIPLE = 12;
+constexpr std::size_t BYTES_PER_METATILE_ENTRY = 2;
+constexpr std::size_t BYTES_PER_ATTRIBUTE_FIRERED = 4;
+constexpr std::size_t BYTES_PER_ATTRIBUTE_EMERALD = 2; // RUBY also uses this value
 constexpr std::uint8_t INVALID_INDEX_PIXEL_VALUE = 255;
 
 // --------------------

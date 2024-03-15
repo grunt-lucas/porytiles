@@ -876,10 +876,11 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
 
     GBAPalette palette{};
     /*
-     * Set palette size to 16, there is really no way to truly tell a compiled palette's size, since 0 could have been
-     * an intentional black, or it could mean the color was unset. For decompilation, we don't really care anyway.
+     * Set palette size to PAL_SIZE (16). There is really no way to truly tell a compiled palette's size, since 0 could
+     * have been an intentional black, or it could mean the color was unset. For decompilation, we don't really care
+     * anyway.
      */
-    palette.size = 16;
+    palette.size = PAL_SIZE;
     std::size_t colorIndex = 0;
     while (std::getline(*stream, line)) {
       BGR15 bgr = rgbaToBgr(parseJascLineDecompiler(ctx, decompilerMode, line));
@@ -925,25 +926,26 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
 
   std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
 
-  // TODO 1.0.0 : replace magic numbers in this function with named constants
-
   /*
    * Each subtile is 2 bytes (u16), so our byte total should be either a multiple of 16 or 24. 16 for dual-layer, since
    * there are 8 subtiles per metatile. 24 for triple layer, since there are 12 subtiles per metatile.
    */
-  if (metatileDataBuf.size() % 16 != 0 && metatileDataBuf.size() % 24 != 0) {
+  if (metatileDataBuf.size() % (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_DUAL) != 0 &&
+      metatileDataBuf.size() % (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_TRIPLE) != 0) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                "decompiler input metatiles.bin corrupted, not valid uint16 data");
   }
 
-  bool tripleLayer = (metatileDataBuf.size() / 24 == attributesMap.size());
+  bool tripleLayer =
+      (metatileDataBuf.size() / (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_TRIPLE) == attributesMap.size());
 
   std::size_t metatileIndex = 0;
   for (std::size_t metatileBinByteIndex = 0; metatileBinByteIndex < metatileDataBuf.size(); metatileBinByteIndex += 2) {
     MetatileEntry metatileEntry{};
 
     // Compute the actual metatileIndex
-    metatileIndex = tripleLayer ? metatileBinByteIndex / 24 : metatileBinByteIndex / 16;
+    metatileIndex = tripleLayer ? metatileBinByteIndex / (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_TRIPLE)
+                                : metatileBinByteIndex / (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_DUAL);
 
     std::uint16_t lowerByte = metatileDataBuf.at(metatileBinByteIndex);
     std::uint16_t upperByte = metatileDataBuf.at(metatileBinByteIndex + 1);
@@ -1000,27 +1002,27 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
 
   std::size_t metatileCount;
   if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-    if (attributesDataBuf.size() % 4 != 0) {
+    if (attributesDataBuf.size() % BYTES_PER_ATTRIBUTE_FIRERED != 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  "decompiler input `metatile_attributes.bin' corrupted, not valid uint32 data");
     }
-    metatileCount = attributesDataBuf.size() / 4;
+    metatileCount = attributesDataBuf.size() / BYTES_PER_ATTRIBUTE_FIRERED;
   }
   else {
-    if (attributesDataBuf.size() % 2 != 0) {
+    if (attributesDataBuf.size() % BYTES_PER_ATTRIBUTE_EMERALD != 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                  "decompiler input `metatile_attributes.bin' corrupted, not valid uint16 data");
     }
-    metatileCount = attributesDataBuf.size() / 2;
+    metatileCount = attributesDataBuf.size() / BYTES_PER_ATTRIBUTE_EMERALD;
   }
 
   for (std::size_t metatileIndex = 0; metatileIndex < metatileCount; metatileIndex++) {
     Attributes attributes{};
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
-      std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * 4));
-      std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * 4) + 1);
-      std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * 4) + 2);
-      std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * 4) + 3);
+      std::uint32_t byte0 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_FIRERED));
+      std::uint32_t byte1 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_FIRERED) + 1);
+      std::uint32_t byte2 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_FIRERED) + 2);
+      std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_FIRERED) + 3);
       std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
       attributes.metatileBehavior = attribute & 0x000001FF;
       attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
@@ -1028,8 +1030,8 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
       attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
     }
     else {
-      std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * 2));
-      std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * 2) + 1);
+      std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD));
+      std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD) + 1);
       std::uint16_t attribute = (byte1 << 8) | byte0;
       attributes.metatileBehavior = attribute & 0x00FF;
       attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
