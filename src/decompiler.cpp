@@ -14,6 +14,11 @@
 
 namespace porytiles {
 
+/*
+ * FIXME 1.0.0 : decompiler will break if attribute format is wonky, see rusturf_tunnel example from Josh
+ * To fix this, we should add out-of-range warnings like we did for the tile and palette indexes
+ */
+
 static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTile, const GBAPalette &palette,
                               bool hFlip, bool vFlip)
 {

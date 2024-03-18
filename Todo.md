@@ -2,6 +2,9 @@
 
 ## Post 1.0.0 Ideas
 
++ BIG BUG: apparently writing to pal 12 is not great, it is sometimes used by overworld shop menus:
+  + https://discord.com/channels/976252009114140682/976252039380209694/1223264978010902588
+
 + in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
   + Some of these can wait for post 1.0.0
 
