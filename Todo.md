@@ -12,6 +12,7 @@
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
 + Add more `--verbose` logs to stderr
+  + verbose flag should have levels, i.e. TRACE,DEBUG,INFO,WARN,ERROR, use spdlog library
 
 + swap out png++ library for CImg
   + CImg is much more maintained, it is also header-only and seems to have a clean interface
@@ -19,6 +20,9 @@
 
 + get `decompile` command to successfully decompile animations
   + will require key frame detection / key frame hints at CLI?
+
++ support custom masks and shifts for metatile attributes, see how Porymap does this
+  + this would be an amazing feature to support those who have a customized attribute setup
 
 + More assign algorithms?
   + Maybe some kind of A-star?
@@ -84,8 +88,6 @@
     to get the Porymap files
 
 + Set up auto-generated documentation: doxygen? RTD?
-
-+ support custom masks and shifts for metatile attributes, see how Porymap does this
 
 + Refactor CLI parsing, it's a mess
   + CXXOpts lib may be helpful here

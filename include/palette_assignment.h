@@ -49,14 +49,15 @@ template <> struct std::hash<porytiles::AssignState> {
 };
 
 namespace porytiles {
-AssignResult assignDepthFirst(PorytilesContext &ctx, AssignState &state, std::vector<ColorSet> &solution,
-                              const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
-                              const std::vector<ColorSet> &unassignedPrimers);
-AssignResult assignBreadthFirst(PorytilesContext &ctx, AssignState &initialState, std::vector<ColorSet> &solution,
-                                const std::vector<ColorSet> &primaryPalettes, const std::vector<ColorSet> &unassigneds,
+AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
+                              std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
+                              const std::vector<ColorSet> &unassigneds, const std::vector<ColorSet> &unassignedPrimers);
+AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &initialState,
+                                std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
+                                const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers);
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
-runPaletteAssignmentMatrix(PorytilesContext &ctx, const std::vector<ColorSet> &colorSets,
+runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex);
 } // namespace porytiles

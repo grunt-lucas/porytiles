@@ -22,8 +22,9 @@ struct ErrorsAndWarnings {
   std::size_t warnCount;
   bool printErrors;
 
+  // Compilation warnings
   WarningMode colorPrecisionLoss;
-  WarningMode keyFrameTileDidNotAppearInAssignment;
+  WarningMode keyFrameNoMatchingTile;
   WarningMode usedTrueColorMode;
   WarningMode attributeFormatMismatch;
   WarningMode missingAttributesCsv;
@@ -32,22 +33,27 @@ struct ErrorsAndWarnings {
   WarningMode assignCacheOverride;
   WarningMode invalidAssignCache;
   WarningMode missingAssignCache;
-  WarningMode invalidTileIndex;
+
+  // Decompilation warnings
+  WarningMode tileIndexOutOfRange;
+  WarningMode paletteIndexOutOfRange;
 
   ErrorsAndWarnings()
       : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameTileDidNotAppearInAssignment{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
+        keyFrameNoMatchingTile{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
         assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
-        missingAssignCache{WarningMode::OFF}, invalidTileIndex{WarningMode::OFF}
+        missingAssignCache{WarningMode::OFF}, tileIndexOutOfRange{WarningMode::OFF},
+        paletteIndexOutOfRange{WarningMode::OFF}
   {
   }
 
   void setAllWarnings(WarningMode setting)
   {
+    // Compilation warnings
     colorPrecisionLoss = setting;
-    keyFrameTileDidNotAppearInAssignment = setting;
+    keyFrameNoMatchingTile = setting;
     usedTrueColorMode = setting;
     attributeFormatMismatch = setting;
     missingAttributesCsv = setting;
@@ -56,16 +62,20 @@ struct ErrorsAndWarnings {
     assignCacheOverride = setting;
     invalidAssignCache = setting;
     missingAssignCache = setting;
-    invalidTileIndex = setting;
+
+    // Decompilation warnings
+    tileIndexOutOfRange = setting;
+    paletteIndexOutOfRange = setting;
   }
 
   void setAllEnabledWarningsToErrors()
   {
+    // Compilation warnings
     if (colorPrecisionLoss == WarningMode::WARN) {
       colorPrecisionLoss = WarningMode::ERR;
     }
-    if (keyFrameTileDidNotAppearInAssignment == WarningMode::WARN) {
-      keyFrameTileDidNotAppearInAssignment = WarningMode::ERR;
+    if (keyFrameNoMatchingTile == WarningMode::WARN) {
+      keyFrameNoMatchingTile = WarningMode::ERR;
     }
     if (usedTrueColorMode == WarningMode::WARN) {
       usedTrueColorMode = WarningMode::ERR;
@@ -91,14 +101,20 @@ struct ErrorsAndWarnings {
     if (missingAssignCache == WarningMode::WARN) {
       missingAssignCache = WarningMode::ERR;
     }
-    if (invalidTileIndex == WarningMode::WARN) {
-      invalidTileIndex = WarningMode::ERR;
+
+    // Decompilation warnings
+    if (tileIndexOutOfRange == WarningMode::WARN) {
+      tileIndexOutOfRange = WarningMode::ERR;
+    }
+    if (paletteIndexOutOfRange == WarningMode::WARN) {
+      paletteIndexOutOfRange = WarningMode::ERR;
     }
   }
 };
 
+// Compilation warnings
 extern const char *const WARN_COLOR_PRECISION_LOSS;
-extern const char *const WARN_KEY_FRAME_DID_NOT_APPEAR;
+extern const char *const WARN_KEY_FRAME_NO_MATCHING_TILE;
 extern const char *const WARN_USED_TRUE_COLOR_MODE;
 extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
@@ -107,7 +123,10 @@ extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
 extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
-extern const char *const WARN_INVALID_TILE_INDEX;
+
+// Decompilation warnings
+extern const char *const WARN_TILE_INDEX_OUT_OF_RANGE;
+extern const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -164,10 +183,7 @@ void fatalerror(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
                 std::string message);
 void fatalerror(const ErrorsAndWarnings &err, std::string errorMessage);
 
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
-                                  std::string path);
-
-void fatalerror_invalidSourcePath(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode);
+void fatalerror_unrecognizedOption(const ErrorsAndWarnings &err, std::string option, Subcommand subcommand);
 
 void fatalerror_missingRequiredAnimFrameFile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                              CompilerMode mode, const std::string &animation, std::size_t index);
@@ -197,6 +213,10 @@ void fatalerror_tooManyMetatiles(const ErrorsAndWarnings &err, const CompilerSou
 void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                           CompilerMode mode, std::string field, std::size_t primary, std::size_t total);
 
+void fatalerror_misconfiguredPrimaryTotal(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                          DecompilerMode mode, std::string field, std::size_t primary,
+                                          std::size_t total);
+
 void fatalerror_transparentKeyFrameTile(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                         CompilerMode mode, std::string animName, std::size_t tileIndex);
 
@@ -212,8 +232,11 @@ void fatalerror_invalidAttributesCsvHeader(const ErrorsAndWarnings &err, const C
 void fatalerror_invalidIdInCsv(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                std::string filePath, std::string id, std::size_t line);
 
-void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode &mode,
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, CompilerMode mode,
                                      std::string behavior, std::string value, std::size_t line);
+
+void fatalerror_invalidBehaviorValue(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                     DecompilerMode mode, std::string behavior, std::string value, std::size_t line);
 
 void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                        const CompilerMode &mode, std::string line, std::size_t lineNumber,
@@ -233,11 +256,11 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
  */
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row, std::size_t col,
-                             const BGR15 &bgr, const RGBA32 &rgba,
+void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile, std::size_t row,
+                             std::size_t col, const BGR15 &bgr, const RGBA32 &rgba,
                              const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba);
 
-void warn_keyFrameTileDidNotAppearInAssignment(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
+void warn_keyFrameNoMatchingTile(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
 
 void warn_usedTrueColorMode(ErrorsAndWarnings &err);
 
@@ -250,10 +273,12 @@ void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
 void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
                           std::string sourcePath);
 
-void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, const RGBATile &tile, std::size_t row,
-                                                      std::size_t col, const RGBA32 &color, const RGBA32 &transparency);
+void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile,
+                                                      std::size_t row, std::size_t col, const RGBA32 &color,
+                                                      const RGBA32 &transparency);
 
-void warn_assignCacheOverride(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config,
+                              std::string path);
 
 void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
@@ -262,8 +287,11 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue
  */
-void warn_invalidTileIndex(ErrorsAndWarnings &err, std::size_t tileIndex, std::size_t tilesheetSize,
-                           const RGBATile &tile);
+void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
+                              std::size_t tilesheetSize, const RGBATile &tile);
+
+void warn_paletteIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t paletteIndex,
+                                 std::size_t numPalettesTotal, const RGBATile &tile);
 
 /*
  * Die functions

@@ -40,7 +40,9 @@ std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir, con
 
 std::filesystem::path createTmpdir();
 
-RGBA32 parseJascLine(PorytilesContext &ctx, DecompilerMode mode, const std::string &jascLine);
+RGBA32 parseJascLineCompiler(PorytilesContext &ctx, CompilerMode compilerMode, const std::string &jascLine);
+
+RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode, const std::string &jascLine);
 
 void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
 

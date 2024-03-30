@@ -5,6 +5,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <png.hpp>
 #include <regex>
@@ -23,213 +24,164 @@
 
 namespace porytiles {
 
-static void validateCompileInputs(PorytilesContext &ctx)
+static void validateCompileInputs(PorytilesContext &ctx, CompilerMode compilerMode)
 {
-  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: exists but is not a directory", ctx.output.path));
+  if (!std::filesystem::exists(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode)) ||
+      !std::filesystem::is_directory(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: source path did not exist or is not a directory",
+                           ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string()));
   }
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    if (!std::filesystem::exists(ctx.compilerSrcPaths.secondarySourcePath) ||
-        !std::filesystem::is_directory(ctx.compilerSrcPaths.secondarySourcePath)) {
-      fatalerror_invalidSourcePath(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                   ctx.compilerSrcPaths.secondarySourcePath);
-    }
-    if (!std::filesystem::exists(ctx.compilerSrcPaths.bottomSecondaryTilesheet())) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.bottomSecondaryTilesheet().string()));
-    }
-    if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.bottomSecondaryTilesheet())) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: exists but was not a regular file",
-                             ctx.compilerSrcPaths.bottomSecondaryTilesheet().string()));
-    }
-    if (!std::filesystem::exists(ctx.compilerSrcPaths.middleSecondaryTilesheet())) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.middleSecondaryTilesheet().string()));
-    }
-    if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.middleSecondaryTilesheet())) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: exists but was not a regular file",
-                             ctx.compilerSrcPaths.middleSecondaryTilesheet().string()));
-    }
-    if (!std::filesystem::exists(ctx.compilerSrcPaths.topSecondaryTilesheet())) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{}: file did not exist", ctx.compilerSrcPaths.topSecondaryTilesheet().string()));
-    }
-    if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.topSecondaryTilesheet())) {
-      fatalerror(
-          ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-          fmt::format("{}: exists but was not a regular file", ctx.compilerSrcPaths.topSecondaryTilesheet().string()));
-    }
+  if (!std::filesystem::exists(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: file did not exist",
+                           ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.compilerSrcPaths.primarySourcePath) ||
-      !std::filesystem::is_directory(ctx.compilerSrcPaths.primarySourcePath)) {
-    fatalerror_invalidSourcePath(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                 ctx.compilerSrcPaths.primarySourcePath);
+  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: exists but was not a regular file",
+                           ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.compilerSrcPaths.bottomPrimaryTilesheet())) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.bottomPrimaryTilesheet().string()));
+  if (!std::filesystem::exists(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: file did not exist",
+                           ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
   }
-  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.bottomPrimaryTilesheet())) {
+  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: exists but was not a regular file",
+                           ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+  }
+  if (!std::filesystem::exists(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
     fatalerror(
-        ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        fmt::format("{}: exists but was not a regular file", ctx.compilerSrcPaths.bottomPrimaryTilesheet().string()));
+        ctx.err, ctx.compilerSrcPaths, compilerMode,
+        fmt::format("{}: file did not exist", ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.compilerSrcPaths.middlePrimaryTilesheet())) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.middlePrimaryTilesheet().string()));
-  }
-  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.middlePrimaryTilesheet())) {
-    fatalerror(
-        ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        fmt::format("{}: exists but was not a regular file", ctx.compilerSrcPaths.middlePrimaryTilesheet().string()));
-  }
-  if (!std::filesystem::exists(ctx.compilerSrcPaths.topPrimaryTilesheet())) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.topPrimaryTilesheet().string()));
-  }
-  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.topPrimaryTilesheet())) {
-    fatalerror(
-        ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        fmt::format("{}: exists but was not a regular file", ctx.compilerSrcPaths.topPrimaryTilesheet().string()));
+  if (!std::filesystem::is_regular_file(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: exists but was not a regular file",
+                           ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
   }
 
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    try {
-      // We do this here so if the source is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.bottomSecondaryTilesheet()};
-    }
-    catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.bottomSecondaryTilesheet().string()));
-    }
-    try {
-      // We do this here so if the source is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.middleSecondaryTilesheet()};
-    }
-    catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.middleSecondaryTilesheet().string()));
-    }
-    try {
-      // We do this here so if the source is not a PNG, we can catch and give a better error
-      png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.topSecondaryTilesheet()};
-    }
-    catch (const std::exception &exception) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.topSecondaryTilesheet().string()));
-    }
+  try {
+    // We do this here so if the source is not a PNG, we can catch and give a better error
+    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode)};
+  }
+  catch (const std::exception &exception) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{} is not a valid PNG file",
+                           ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
   }
   try {
     // We do this here so if the source is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.bottomPrimaryTilesheet()};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode)};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.bottomPrimaryTilesheet().string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{} is not a valid PNG file",
+                           ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
   }
   try {
     // We do this here so if the source is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.middlePrimaryTilesheet()};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.middlePrimaryTilesheet().string()));
-  }
-  try {
-    // We do this here so if the source is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
-  }
-  catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{} is not a valid PNG file", ctx.compilerSrcPaths.topPrimaryTilesheet().string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{} is not a valid PNG file",
+                           ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
   }
 }
 
-static void validateDecompileInputs(PorytilesContext &ctx, DecompilerMode mode)
+static void validateDecompileInputs(PorytilesContext &ctx, DecompilerMode decompilerMode)
 {
-  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{}: exists but is not a directory", ctx.output.path));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode)) ||
+      !std::filesystem::is_directory(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+               fmt::format("{}: source path did not exist or is not a directory",
+                           ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedSrcPath(mode)) ||
-      !std::filesystem::is_directory(ctx.decompilerSrcPaths.modeBasedSrcPath(mode))) {
-    fatalerror_invalidSourcePath(ctx.err, ctx.decompilerSrcPaths, mode);
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode))) {
+    fatalerror(
+        ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+        fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode))) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode).string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode))) {
+    fatalerror(
+        ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+        fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedAttrPath(mode))) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedAttrPath(mode).string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode))) {
+    fatalerror(
+        ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+        fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
   }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedTilesPath(mode))) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(mode).string()));
-  }
-  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedPalettePath(mode))) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{}: directory did not exist", ctx.decompilerSrcPaths.modeBasedPalettePath(mode).string()));
+  if (!std::filesystem::exists(ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode))) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+               fmt::format("{}: directory did not exist",
+                           ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode).string()));
   }
 
   try {
     // We do this here so if the source is not a PNG, we can catch and give a better error
-    png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(mode)};
+    png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode)};
   }
   catch (const std::exception &exception) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("{} is not a valid PNG file", ctx.decompilerSrcPaths.modeBasedTilesPath(mode).string()));
+    fatalerror(
+        ctx.err, ctx.decompilerSrcPaths, decompilerMode,
+        fmt::format("{} is not a valid PNG file", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
   }
 
   if (!std::filesystem::exists(ctx.decompilerSrcPaths.metatileBehaviors) ||
       !std::filesystem::is_regular_file(ctx.decompilerSrcPaths.metatileBehaviors)) {
-    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
                fmt::format("{}: behaviors header did not exist or was not a regular file",
                            ctx.decompilerSrcPaths.metatileBehaviors));
   }
 }
 
-static void validateCompileOutputs(PorytilesContext &ctx, std::filesystem::path &attributesPath,
-                                   std::filesystem::path &tilesetPath, std::filesystem::path &metatilesPath,
-                                   std::filesystem::path &palettesPath, std::filesystem::path &animsPath)
+static void validateCompileOutputs(PorytilesContext &ctx, CompilerMode compilerMode,
+                                   std::filesystem::path &attributesPath, std::filesystem::path &tilesetPath,
+                                   std::filesystem::path &metatilesPath, std::filesystem::path &palettesPath,
+                                   std::filesystem::path &animsPath)
 {
+  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("{}: exists but is not a directory", ctx.output.path));
+  }
   if (std::filesystem::exists(attributesPath) && !std::filesystem::is_regular_file(attributesPath)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("'{}' exists but is not a file", attributesPath.string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("`{}' exists but is not a file", attributesPath.string()));
   }
   if (std::filesystem::exists(tilesetPath) && !std::filesystem::is_regular_file(tilesetPath)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("'{}' exists but is not a file", tilesetPath.string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("`{}' exists but is not a file", tilesetPath.string()));
   }
   if (std::filesystem::exists(metatilesPath) && !std::filesystem::is_regular_file(metatilesPath)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("'{}' exists but is not a file", metatilesPath.string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("`{}' exists but is not a file", metatilesPath.string()));
   }
   if (std::filesystem::exists(palettesPath) && !std::filesystem::is_directory(palettesPath)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("'{}' exists but is not a directory", palettesPath.string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("`{}' exists but is not a directory", palettesPath.string()));
   }
   if (std::filesystem::exists(animsPath) && !std::filesystem::is_directory(animsPath)) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("'{}' exists but is not a directory", animsPath.string()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("`{}' exists but is not a directory", animsPath.string()));
   }
 
   try {
     std::filesystem::create_directories(palettesPath);
   }
   catch (const std::exception &e) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("could not create '{}': {}", palettesPath.string(), e.what()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("could not create `{}': {}", palettesPath.string(), e.what()));
   }
   try {
     std::filesystem::create_directories(animsPath);
   }
   catch (const std::exception &e) {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("could not create '{}': {}", animsPath.string(), e.what()));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+               fmt::format("could not create `{}': {}", animsPath.string(), e.what()));
   }
 }
 
@@ -237,21 +189,25 @@ static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode,
                                      std::filesystem::path &attributesPath, std::filesystem::path &bottomPath,
                                      std::filesystem::path &middlePath, std::filesystem::path &topPath)
 {
+  if (std::filesystem::exists(ctx.output.path) && !std::filesystem::is_directory(ctx.output.path)) {
+    fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+               fmt::format("{}: exists but is not a directory", ctx.output.path));
+  }
   if (std::filesystem::exists(attributesPath) && !std::filesystem::is_regular_file(attributesPath)) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("'{}' exists in output directory but is not a file", attributesPath.string()));
+               fmt::format("`{}' exists in output directory but is not a file", attributesPath.string()));
   }
   if (std::filesystem::exists(bottomPath) && !std::filesystem::is_regular_file(bottomPath)) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("'{}' exists in output directory but is not a file", bottomPath.string()));
+               fmt::format("`{}' exists in output directory but is not a file", bottomPath.string()));
   }
   if (std::filesystem::exists(middlePath) && !std::filesystem::is_regular_file(middlePath)) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("'{}' exists in output directory but is not a file", middlePath.string()));
+               fmt::format("`{}' exists in output directory but is not a file", middlePath.string()));
   }
   if (std::filesystem::exists(topPath) && !std::filesystem::is_regular_file(topPath)) {
     fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-               fmt::format("'{}' exists in output directory but is not a file", topPath.string()));
+               fmt::format("`{}' exists in output directory but is not a file", topPath.string()));
   }
 
   if (!outputPath.empty()) {
@@ -260,83 +216,84 @@ static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode,
     }
     catch (const std::exception &e) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                 fmt::format("could not create '{}': {}", outputPath.string(), e.what()));
+                 fmt::format("could not create `{}': {}", outputPath.string(), e.what()));
     }
   }
 }
 
-static std::vector<std::vector<AnimationPng<png::index_pixel>>>
-prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
-{
-  std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
+// TODO : uncomment this when we implement animation decompilation
+// static std::vector<std::vector<AnimationPng<png::index_pixel>>>
+// prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
+// {
+//   std::vector<std::vector<AnimationPng<png::index_pixel>>> animations{};
 
-  pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
-  if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-    pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
-    return animations;
-  }
-  std::vector<std::filesystem::path> animationDirectories;
-  std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
-            std::back_inserter(animationDirectories));
-  std::sort(animationDirectories.begin(), animationDirectories.end());
-  for (const auto &animDir : animationDirectories) {
-    if (!std::filesystem::is_directory(animDir)) {
-      pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
-      continue;
-    }
+//   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
+//   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
+//     pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+//     return animations;
+//   }
+//   std::vector<std::filesystem::path> animationDirectories;
+//   std::copy(std::filesystem::directory_iterator(animationPath), std::filesystem::directory_iterator(),
+//             std::back_inserter(animationDirectories));
+//   std::sort(animationDirectories.begin(), animationDirectories.end());
+//   for (const auto &animDir : animationDirectories) {
+//     if (!std::filesystem::is_directory(animDir)) {
+//       pt_logln(ctx, stderr, "skipping regular file: {}", animDir.string());
+//       continue;
+//     }
 
-    // collate all possible animation frame files
-    pt_logln(ctx, stderr, "found animation: {}", animDir.string());
-    std::unordered_map<std::size_t, std::filesystem::path> frames{};
-    for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
-      std::string fileName = frameFile.path().filename().string();
-      std::string extension = frameFile.path().extension().string();
-      if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
-        pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
-        continue;
-      }
-      std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
-      frames.insert(std::pair{index, frameFile.path()});
-      pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
-    }
+//     // collate all possible animation frame files
+//     pt_logln(ctx, stderr, "found animation: {}", animDir.string());
+//     std::unordered_map<std::size_t, std::filesystem::path> frames{};
+//     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
+//       std::string fileName = frameFile.path().filename().string();
+//       std::string extension = frameFile.path().extension().string();
+//       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
+//         pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
+//         continue;
+//       }
+//       std::size_t index = std::stoi(fileName, nullptr, 10) + 1;
+//       frames.insert(std::pair{index, frameFile.path()});
+//       pt_logln(ctx, stderr, "found frame file: {}, index={}", frameFile.path().string(), index);
+//     }
 
-    std::vector<AnimationPng<png::index_pixel>> framePngs{};
-    if (frames.size() == 0) {
-      // TODO 1.0.0 : better error
-      throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
-      // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-      //                                         animDir.filename().string(), 0);
-    }
-    for (std::size_t i = 1; i <= frames.size(); i++) {
-      if (!frames.contains(i)) {
-        // TODO 1.0.0 : better error
-        throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
-        // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-        //                                         animDir.filename().string(), i - 1);
-      }
+//     std::vector<AnimationPng<png::index_pixel>> framePngs{};
+//     if (frames.size() == 0) {
+//       // FIXME : real error message here
+//       throw std::runtime_error{"TODO : error for import decompiled anims frames.size() == 0"};
+//       // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+//       //                                         animDir.filename().string(), 0);
+//     }
+//     for (std::size_t i = 1; i <= frames.size(); i++) {
+//       if (!frames.contains(i)) {
+//         // FIXME : real error message here
+//         throw std::runtime_error{"TODO : error for import decompiled anims !frames.contains(i)"};
+//         // fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+//         //                                         animDir.filename().string(), i - 1);
+//       }
 
-      try {
-        // We do this here so if the source is not a PNG, we can catch and give a better error
-        png::image<png::index_pixel> png{frames.at(i)};
-        AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
-        framePngs.push_back(animPng);
-      }
-      catch (const std::exception &exception) {
-        // TODO 1.0.0 : better error
-        throw std::runtime_error{
-            fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
-        // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
-      }
-    }
+//       try {
+//         // We do this here so if the source is not a PNG, we can catch and give a better error
+//         png::image<png::index_pixel> png{frames.at(i)};
+//         AnimationPng<png::index_pixel> animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
+//         framePngs.push_back(animPng);
+//       }
+//       catch (const std::exception &exception) {
+//         // FIXME : real error message here
+//         throw std::runtime_error{
+//             fmt::format("TODO : error for import decompiled anims, frame index {} was not PNG", i)};
+//         // error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+//       }
+//     }
 
-    animations.push_back(framePngs);
-  }
+//     animations.push_back(framePngs);
+//   }
 
-  return animations;
-}
+//   return animations;
+// }
 
 static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
-prepareDecompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
+prepareDecompiledAnimsForImport(PorytilesContext &ctx, CompilerMode compilerMode, std::filesystem::path animationPath)
 {
   std::vector<std::vector<AnimationPng<png::rgba_pixel>>> animations{};
 
@@ -360,21 +317,13 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path ani
     std::unordered_map<std::size_t, std::filesystem::path> frames{};
     std::filesystem::path keyFrameFile = animDir / std::filesystem::path{"key.png"};
     if (!std::filesystem::exists(keyFrameFile) || !std::filesystem::is_regular_file(keyFrameFile)) {
-      fatalerror_missingKeyFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                     animDir.filename().string());
+      fatalerror_missingKeyFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode, animDir.filename().string());
     }
     frames.insert(std::pair{0, keyFrameFile});
     pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());
     for (const auto &frameFile : std::filesystem::directory_iterator(animDir)) {
       std::string fileName = frameFile.path().filename().string();
       std::string extension = frameFile.path().extension().string();
-      /*
-       * FIXME 1.0.0 : format is actually 0.png, not 00.png. We used 00.png so that default alphabetical
-       * order would also yield the frame order. However, the frames don't actually follow this
-       * format. It would be better to read and then sort, especially since the decompiler has to
-       * use the 0.png format.
-       * FIXME 1.0.0 : I think this is fixed now, and we can remove the above message, confirm this
-       */
       if (!std::regex_match(fileName, std::regex("^[0-9][0-9]*\\.png$"))) {
         if (fileName != "key.png") {
           pt_logln(ctx, stderr, "skipping file: {}", frameFile.path().string());
@@ -388,12 +337,12 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path ani
 
     std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
     if (frames.size() == 1) {
-      fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                                              animDir.filename().string(), 0);
+      fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode, animDir.filename().string(),
+                                              0);
     }
     for (std::size_t i = 0; i < frames.size(); i++) {
       if (!frames.contains(i)) {
-        fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+        fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode,
                                                 animDir.filename().string(), i - 1);
       }
 
@@ -411,15 +360,14 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path ani
     animations.push_back(framePngs);
   }
   if (ctx.err.errCount > 0) {
-    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
-                   "found anim frame that was not a png");
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), "found anim frame that was not a png");
   }
 
   return animations;
 }
 
 static std::unordered_map<std::size_t, Attributes>
-prepareDecompiledAttributesForImport(PorytilesContext &ctx,
+prepareDecompiledAttributesForImport(PorytilesContext &ctx, CompilerMode compilerMode,
                                      const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
                                      std::filesystem::path attributesCsvPath)
 {
@@ -430,46 +378,71 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx,
     return std::unordered_map<std::size_t, Attributes>{};
   }
 
-  return importAttributesFromCsv(ctx, behaviorMap, attributesCsvPath.string());
+  return importAttributesFromCsv(ctx, compilerMode, behaviorMap, attributesCsvPath.string());
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-prepareBehaviorsHeaderForImport(PorytilesContext &ctx, DecompilerMode mode, std::string behaviorHeaderPath)
+prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode *compilerMode,
+                                      const DecompilerMode *decompilerMode, std::string behaviorHeaderPath)
 {
-  // FIXME 1.0.0 : this function is a mess, mixing DecompilerMode and CompilerMode paradigms
   std::ifstream behaviorFile{behaviorHeaderPath};
   if (behaviorFile.fail()) {
-    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+    if (compilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
                  fmt::format("{}: could not open for reading", behaviorHeaderPath));
     }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+    else if (decompilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
                  fmt::format("{}: could not open for reading", behaviorHeaderPath));
     }
     else {
-      internalerror("driver::prepareBehaviorsHeaderForImport invalid subcommand");
+      internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
     }
   }
-  auto [behaviorMap, behaviorReverseMap] = importMetatileBehaviorHeader(ctx, behaviorFile);
+  auto [behaviorMap, behaviorReverseMap] = std::invoke(
+      [&]() -> std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>> {
+        if (compilerMode != nullptr) {
+          return importMetatileBehaviorHeader(ctx, *compilerMode, behaviorFile);
+        }
+        else if (decompilerMode != nullptr) {
+          return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
+        }
+        else {
+          internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+        }
+        // unreachable, here for compiler
+        throw std::runtime_error("driver::prepareBehaviorsHeaderForImportHelper reached unreachable code path");
+      });
   behaviorFile.close();
   if (behaviorMap.size() == 0) {
-    if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+    if (compilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
                  fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
     }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
-      fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
+    else if (decompilerMode != nullptr) {
+      fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
                  fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
     }
     else {
-      internalerror("driver::prepareBehaviorsHeaderForImport invalid subcommand");
+      internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
     }
   }
   return std::pair{behaviorMap, behaviorReverseMap};
 }
 
-static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ctx,
+static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, CompilerMode compilerMode, std::string behaviorHeaderPath)
+{
+  return prepareBehaviorsHeaderForImportHelper(ctx, &compilerMode, nullptr, behaviorHeaderPath);
+}
+
+static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+prepareBehaviorsHeaderForImport(PorytilesContext &ctx, DecompilerMode decompilerMode, std::string behaviorHeaderPath)
+{
+  return prepareBehaviorsHeaderForImportHelper(ctx, nullptr, &decompilerMode, behaviorHeaderPath);
+}
+
+static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ctx, CompilerMode compilerMode,
                                                             std::filesystem::path palettePrimersPath)
 {
   std::vector<RGBATile> primerTiles{};
@@ -492,7 +465,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
     std::ifstream fileStream{primerFile};
     pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
     // TODO : instead of throwing fatal errors in this function, throw regular errors so we can fail later
-    RGBATile primerTile = importPalettePrimer(ctx, fileStream);
+    RGBATile primerTile = importPalettePrimer(ctx, compilerMode, fileStream);
     primerTile.primer = primerFile.filename().string();
     primerTiles.push_back(primerTile);
     fileStream.close();
@@ -522,9 +495,9 @@ static void driveEmitCompiledPalettes(PorytilesContext &ctx, const CompiledTiles
 static void driveEmitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
                                    const std::filesystem::path &tilesetPath)
 {
-  const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * porytiles::TILES_PNG_WIDTH_IN_TILES;
+  const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH_PIX * porytiles::TILES_PNG_WIDTH_IN_TILES;
   const std::size_t imageHeight =
-      porytiles::TILE_SIDE_LENGTH * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
+      porytiles::TILE_SIDE_LENGTH_PIX * ((compiledTiles.tiles.size() / porytiles::TILES_PNG_WIDTH_IN_TILES));
   png::image<png::index_pixel> tilesPng{static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight)};
 
   emitTilesPng(ctx, tilesPng, compiledTiles);
@@ -537,8 +510,8 @@ static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<Comp
   for (const auto &compiledAnim : compiledAnims) {
     std::filesystem::path animPath = animsPath / compiledAnim.animName;
     std::filesystem::create_directories(animPath);
-    const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH * compiledAnim.keyFrame().tiles.size();
-    const std::size_t imageHeight = porytiles::TILE_SIDE_LENGTH;
+    const std::size_t imageWidth = porytiles::TILE_SIDE_LENGTH_PIX * compiledAnim.keyFrame().tiles.size();
+    const std::size_t imageHeight = porytiles::TILE_SIDE_LENGTH_PIX;
     std::vector<png::image<png::index_pixel>> outFrames{};
     for (std::size_t frameIndex = 0; frameIndex < compiledAnim.frames.size(); frameIndex++) {
       outFrames.emplace_back(static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight));
@@ -553,18 +526,56 @@ static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<Comp
   }
 }
 
-static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode &mode,
+static void driveEmitAssignCache(PorytilesContext &ctx, CompilerMode compilerMode,
                                  const std::filesystem::path &assignCfgPath)
 {
   std::ofstream outAssignCache{assignCfgPath.string()};
   if (outAssignCache.good()) {
-    emitAssignCache(ctx, mode, outAssignCache);
+    emitAssignCache(ctx, compilerMode, outAssignCache);
   }
   else {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
+    fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
   }
   outAssignCache.close();
+}
+
+static void driveEmitCompiledTileset(PorytilesContext &ctx, CompilerMode compilerMode, const CompiledTileset &tileset,
+                                     const std::unordered_map<size_t, Attributes> &attributesMap,
+                                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
+{
+  /*
+   * Emit output
+   */
+  std::filesystem::path outputPath(ctx.output.path);
+  std::filesystem::path palettesDir("palettes");
+  std::filesystem::path animsDir("anim");
+  std::filesystem::path tilesPng("tiles.png");
+  std::filesystem::path metatilesBin("metatiles.bin");
+  std::filesystem::path attributesBin("metatile_attributes.bin");
+  std::filesystem::path tilesetPath = ctx.output.path / tilesPng;
+  std::filesystem::path metatilesPath = ctx.output.path / metatilesBin;
+  std::filesystem::path palettesPath = ctx.output.path / palettesDir;
+  std::filesystem::path animsPath = ctx.output.path / animsDir;
+  std::filesystem::path attributesPath = ctx.output.path / attributesBin;
+
+  validateCompileOutputs(ctx, compilerMode, attributesPath, tilesetPath, metatilesPath, palettesPath, animsPath);
+
+  driveEmitCompiledPalettes(ctx, tileset, palettesPath);
+  driveEmitCompiledTiles(ctx, tileset, tilesetPath);
+  driveEmitCompiledAnims(ctx, tileset.anims, tileset.palettes, animsPath);
+
+  if (!ctx.output.disableMetatileGeneration) {
+    std::ofstream outMetatiles{metatilesPath.string()};
+    emitMetatilesBin(ctx, outMetatiles, tileset);
+    outMetatiles.close();
+  }
+
+  if (!ctx.output.disableAttributeGeneration) {
+    std::ofstream outAttributes{attributesPath.string()};
+    emitAttributes(ctx, outAttributes, behaviorReverseMap, tileset);
+    outAttributes.close();
+  }
 }
 
 static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mode, const DecompiledTileset &tileset,
@@ -613,7 +624,7 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
    * Set up file stream objects
    */
   std::ifstream metatilesIfStream{ctx.decompilerSrcPaths.modeBasedMetatilesPath(mode), std::ios::binary};
-  std::ifstream attributesIfStream{ctx.decompilerSrcPaths.modeBasedAttrPath(mode), std::ios::binary};
+  std::ifstream attributesIfStream{ctx.decompilerSrcPaths.modeBasedAttributePath(mode), std::ios::binary};
   png::image<png::index_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(mode)};
   std::vector<std::unique_ptr<std::ifstream>> paletteFiles{};
   for (std::size_t index = 0; index < ctx.fieldmapConfig.numPalettesTotal; index++) {
@@ -628,13 +639,15 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
     }
     paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
-  auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.modeBasedAnimPath(mode));
+  // TODO : bring this back to implement anim decompilation
+  // auto compiledAnims = prepareCompiledAnimsForImport(ctx, ctx.decompilerSrcPaths.modeBasedAnimPath(mode));
 
   /*
    * Import the compiled tileset into our data types
    */
-  auto [compiledTileset, attributesMap] = importCompiledTileset(
-      ctx, mode, metatilesIfStream, attributesIfStream, behaviorReverseMap, tilesheetPng, paletteFiles, compiledAnims);
+  // TODO : last param is empty atm, replace it with imported compiledAnims
+  auto [compiledTileset, attributesMap] = importCompiledTileset(ctx, mode, metatilesIfStream, attributesIfStream,
+                                                                behaviorReverseMap, tilesheetPng, paletteFiles, {});
 
   /*
    * Close file stream objects
@@ -647,12 +660,60 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
   return std::pair{compiledTileset, attributesMap};
 }
 
+static std::pair<std::unique_ptr<CompiledTileset>, std::unordered_map<size_t, Attributes>>
+driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
+                    std::unordered_map<std::string, uint8_t> &behaviorMap,
+                    std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
+{
+  auto compiledTileset = std::make_unique<CompiledTileset>();
+
+  pt_logln(ctx, stderr, "importing {} tiles from {}", compilerModeString(compilerMode),
+           ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string());
+  png::image<png::rgba_pixel> bottomPng{ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode)};
+  png::image<png::rgba_pixel> middlePng{ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode)};
+  png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
+
+  auto attributesMap = prepareDecompiledAttributesForImport(ctx, compilerMode, behaviorMap,
+                                                            ctx.compilerSrcPaths.modeBasedAttributePath(compilerMode));
+  if (ctx.err.errCount > 0) {
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                   fmt::format("errors generated during {} attributes import", compilerModeString(compilerMode)));
+  }
+
+  DecompiledTileset decompiledTiles =
+      importLayeredTilesFromPngs(ctx, compilerMode, attributesMap, bottomPng, middlePng, topPng);
+  auto animations =
+      prepareDecompiledAnimsForImport(ctx, compilerMode, ctx.compilerSrcPaths.modeBasedAnimPath(compilerMode));
+  importAnimTiles(ctx, compilerMode, animations, decompiledTiles);
+  std::vector<RGBATile> palettePrimers =
+      preparePalettePrimersForImport(ctx, compilerMode, ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode));
+  if (std::filesystem::exists(ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode))) {
+    std::ifstream assignCacheFile{ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode)};
+    if (assignCacheFile.fail()) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                 fmt::format("{}: could not open for reading",
+                             ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).c_str()));
+    }
+    importAssignmentCache(ctx, compilerMode, parentCompilerMode, assignCacheFile);
+    assignCacheFile.close();
+  }
+  compiledTileset = compile(ctx, compilerMode, decompiledTiles, palettePrimers);
+  if (ctx.compilerConfig.cacheAssign) {
+    driveEmitAssignCache(ctx, compilerMode, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
+  }
+
+  return std::pair{std::move(compiledTileset), attributesMap};
+}
+
 static std::pair<std::unique_ptr<DecompiledTileset>, std::unordered_map<size_t, Attributes>>
 driveDecompileTileset(PorytilesContext &ctx, DecompilerMode mode, std::unordered_map<std::string, uint8_t> &behaviorMap,
                       std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
 {
   auto decompiled = std::make_unique<DecompiledTileset>();
 
+  /*
+   * Import the compiled tileset and attributes map from the given input paths.
+   */
   auto [compiledTileset, attributesMap] = driveCompiledTilesetImport(ctx, mode, behaviorMap, behaviorReverseMap);
 
   /*
@@ -670,6 +731,7 @@ static void driveDecompilePrimary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
+  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
@@ -693,6 +755,7 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
+  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
@@ -715,12 +778,12 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
   driveEmitDecompiledTileset(ctx, DecompilerMode::SECONDARY, *decompiled, attributesMap, behaviorReverseMap);
 }
 
-static void driveCompile(PorytilesContext &ctx)
+static void driveCompilePrimary(PorytilesContext &ctx)
 {
   /*
    * Checks that the compiler input folder contents exist as expected.
    */
-  validateCompileInputs(ctx);
+  validateCompileInputs(ctx, CompilerMode::PRIMARY);
 
   /*
    * Import behavior header. If the supplied path does not point to a valid file, bail now.
@@ -729,29 +792,32 @@ static void driveCompile(PorytilesContext &ctx)
   std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
   if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
     auto [map, reverse] =
-        prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
+        prepareBehaviorsHeaderForImport(ctx, CompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
     behaviorMap = map;
     behaviorReverseMap = reverse;
   }
   else {
-    fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-               fmt::format("{}: supplied behaviors header did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+    fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
   }
 
   /*
-   * Now that we have imported the behavior header, let's parse the argument to -default-behavior option if it was
+   * Now that we have imported the behavior header, let's parse the arguments to the -default-X options if they were
    * supplied. If the user provided an integer, just use that. Otherwise, if the user provided a label string, check
-   * it against the behavior header here and replace that label string with the integral value.
+   * it against the behavior header or terrain/encounter type tables and replace that string with the integral value.
    */
   // FIXME : default behavior/encounter/terrain parsing code is duped
   try {
     parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
   }
   catch (const std::exception &e) {
-    // If the parse fails, assume the user provided a behavior label and try to parse
+    /*
+     * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the mappings
+     * from the behaviors header.
+     */
     if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default behavior '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
+                 fmt::format("supplied default behavior `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
     }
     ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
@@ -760,14 +826,17 @@ static void driveCompile(PorytilesContext &ctx)
     parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
   }
   catch (const std::exception &e) {
-    // If the parse fails, assume the user provided an encounter label and try to parse
+    /*
+     * If the integer parse fails, assume the user provided an encounter label and try to parse that based on the
+     * mappings from the encounter table.
+     */
     try {
       EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
       ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
     }
     catch (const std::exception &e1) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default EncounterType '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
+                 fmt::format("supplied default EncounterType `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
     }
   }
@@ -775,157 +844,123 @@ static void driveCompile(PorytilesContext &ctx)
     parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
   }
   catch (const std::exception &e) {
-    // If the parse fails, assume the user provided a terrain label and try to parse
+    /*
+     * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
+     * mappings from the terrain table.
+     */
     try {
       TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
       ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
     }
     catch (const std::exception &e1) {
-      fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                 fmt::format("supplied default TerrainType '{}' was not valid",
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
+                 fmt::format("supplied default TerrainType `{}' was not valid",
                              fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
     }
   }
 
+  auto [compiledTileset, attributesMap] =
+      driveCompileTileset(ctx, CompilerMode::PRIMARY, CompilerMode::PRIMARY, behaviorMap, behaviorReverseMap);
+
+  ctx.compilerContext.resultTileset = std::move(compiledTileset);
+
+  driveEmitCompiledTileset(ctx, CompilerMode::PRIMARY, *(ctx.compilerContext.resultTileset), attributesMap,
+                           behaviorReverseMap);
+}
+
+static void driveCompileSecondary(PorytilesContext &ctx)
+{
   /*
-   * Perform resource import and mode-based compilation.
+   * Checks that the compiler input folder contents exist as expected.
    */
-  // TODO : can this flow be refactored so there is not so much code dupe?
-  if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
-    png::image<png::rgba_pixel> bottomPrimaryPng{ctx.compilerSrcPaths.bottomPrimaryTilesheet()};
-    png::image<png::rgba_pixel> middlePrimaryPng{ctx.compilerSrcPaths.middlePrimaryTilesheet()};
-    png::image<png::rgba_pixel> topPrimaryPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
+  validateCompileInputs(ctx, CompilerMode::SECONDARY);
+  validateCompileInputs(ctx, CompilerMode::PRIMARY);
 
-    auto primaryAttributesMap =
-        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
-    if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
-                     "errors generated during primary attributes import");
-    }
-
-    DecompiledTileset decompiledPrimaryTiles =
-        importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPrimaryPng, middlePrimaryPng, topPrimaryPng);
-    auto primaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
-    importAnimTiles(ctx, primaryAnimations, decompiledPrimaryTiles);
-    std::vector<RGBATile> primaryPalettePrimers =
-        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
-    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignCache())) {
-      std::ifstream assignCacheFile{ctx.compilerSrcPaths.primaryAssignCache()};
-      if (assignCacheFile.fail()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignCache().c_str()));
-      }
-      importPrimaryAssignmentCache(ctx, assignCacheFile);
-      assignCacheFile.close();
-    }
-    ctx.compilerContext.pairedPrimaryTileset = compile(ctx, decompiledPrimaryTiles, primaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssign) {
-      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
-    }
-
-    pt_logln(ctx, stderr, "importing secondary tiles from {}", ctx.compilerSrcPaths.secondarySourcePath);
-    png::image<png::rgba_pixel> bottomPng{ctx.compilerSrcPaths.bottomSecondaryTilesheet()};
-    png::image<png::rgba_pixel> middlePng{ctx.compilerSrcPaths.middleSecondaryTilesheet()};
-    png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.topSecondaryTilesheet()};
-    ctx.compilerConfig.mode = porytiles::CompilerMode::SECONDARY;
-
-    auto secondaryAttributesMap =
-        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.secondaryAttributes());
-    if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
-                     "errors generated during secondary attributes import");
-    }
-
-    DecompiledTileset decompiledSecondaryTiles =
-        importLayeredTilesFromPngs(ctx, secondaryAttributesMap, bottomPng, middlePng, topPng);
-    auto secondaryAnimations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.secondaryAnims());
-    importAnimTiles(ctx, secondaryAnimations, decompiledSecondaryTiles);
-    std::vector<RGBATile> secondaryPalettePrimers =
-        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.secondaryPalettePrimers());
-    if (std::filesystem::exists(ctx.compilerSrcPaths.secondaryAssignCache())) {
-      std::ifstream assignCacheFile{ctx.compilerSrcPaths.secondaryAssignCache()};
-      if (assignCacheFile.fail()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.secondaryAssignCache().c_str()));
-      }
-      importSecondaryAssignmentConfigParameters(ctx, assignCacheFile);
-      assignCacheFile.close();
-    }
-    ctx.compilerContext.resultTileset = compile(ctx, decompiledSecondaryTiles, secondaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssign) {
-      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.secondaryAssignCache());
-    }
+  /*
+   * Import behavior header. If the supplied path does not point to a valid file, bail now.
+   */
+  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
+  if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
+    auto [map, reverse] =
+        prepareBehaviorsHeaderForImport(ctx, CompilerMode::SECONDARY, ctx.compilerSrcPaths.metatileBehaviors);
+    behaviorMap = map;
+    behaviorReverseMap = reverse;
   }
   else {
-    pt_logln(ctx, stderr, "importing primary tiles from {}", ctx.compilerSrcPaths.primarySourcePath);
-    png::image<png::rgba_pixel> bottomPng{ctx.compilerSrcPaths.bottomPrimaryTilesheet()};
-    png::image<png::rgba_pixel> middlePng{ctx.compilerSrcPaths.middlePrimaryTilesheet()};
-    png::image<png::rgba_pixel> topPng{ctx.compilerSrcPaths.topPrimaryTilesheet()};
-    ctx.compilerConfig.mode = porytiles::CompilerMode::PRIMARY;
-
-    auto primaryAttributesMap =
-        prepareDecompiledAttributesForImport(ctx, behaviorMap, ctx.compilerSrcPaths.primaryAttributes());
-    if (ctx.err.errCount > 0) {
-      die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(ctx.compilerConfig.mode),
-                     "errors generated during primary attributes import");
-    }
-
-    DecompiledTileset decompiledTiles =
-        importLayeredTilesFromPngs(ctx, primaryAttributesMap, bottomPng, middlePng, topPng);
-    auto animations = prepareDecompiledAnimsForImport(ctx, ctx.compilerSrcPaths.primaryAnims());
-    importAnimTiles(ctx, animations, decompiledTiles);
-    std::vector<RGBATile> primaryPalettePrimers =
-        preparePalettePrimersForImport(ctx, ctx.compilerSrcPaths.primaryPalettePrimers());
-    if (std::filesystem::exists(ctx.compilerSrcPaths.primaryAssignCache())) {
-      std::ifstream assignCacheFile{ctx.compilerSrcPaths.primaryAssignCache().c_str()};
-      if (assignCacheFile.fail()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, ctx.compilerConfig.mode,
-                   fmt::format("{}: could not open for reading", ctx.compilerSrcPaths.primaryAssignCache().c_str()));
-      }
-      importPrimaryAssignmentCache(ctx, assignCacheFile);
-      assignCacheFile.close();
-    }
-    ctx.compilerContext.resultTileset = compile(ctx, decompiledTiles, primaryPalettePrimers);
-    if (ctx.compilerConfig.cacheAssign) {
-      driveEmitAssignCache(ctx, ctx.compilerConfig.mode, ctx.compilerSrcPaths.primaryAssignCache());
-    }
+    fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
   }
 
   /*
-   * Emit output
+   * Now that we have imported the behavior header, let's parse the arguments to the -default-X options if they were
+   * supplied. If the user provided an integer, just use that. Otherwise, if the user provided a label string, check
+   * it against the behavior header or terrain/encounter type tables and replace that string with the integral value.
    */
-  std::filesystem::path outputPath(ctx.output.path);
-  std::filesystem::path palettesDir("palettes");
-  std::filesystem::path animsDir("anim");
-  std::filesystem::path tilesPng("tiles.png");
-  std::filesystem::path metatilesBin("metatiles.bin");
-  std::filesystem::path attributesBin("metatile_attributes.bin");
-  std::filesystem::path tilesetPath = ctx.output.path / tilesPng;
-  std::filesystem::path metatilesPath = ctx.output.path / metatilesBin;
-  std::filesystem::path palettesPath = ctx.output.path / palettesDir;
-  std::filesystem::path animsPath = ctx.output.path / animsDir;
-  std::filesystem::path attributesPath = ctx.output.path / attributesBin;
-
-  validateCompileOutputs(ctx, attributesPath, tilesetPath, metatilesPath, palettesPath, animsPath);
-
-  driveEmitCompiledPalettes(ctx, *(ctx.compilerContext.resultTileset), palettesPath);
-  driveEmitCompiledTiles(ctx, *(ctx.compilerContext.resultTileset), tilesetPath);
-  driveEmitCompiledAnims(ctx, (ctx.compilerContext.resultTileset)->anims, (ctx.compilerContext.resultTileset)->palettes,
-                         animsPath);
-
-  if (!ctx.output.disableMetatileGeneration) {
-    std::ofstream outMetatiles{metatilesPath.string()};
-    emitMetatilesBin(ctx, outMetatiles, *(ctx.compilerContext.resultTileset));
-    outMetatiles.close();
+  // FIXME : default behavior/encounter/terrain parsing code is duped
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the mappings
+     * from the behaviors header.
+     */
+    if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default behavior `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+    }
+    ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
+  }
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided an encounter label and try to parse that based on the
+     * mappings from the encounter table.
+     */
+    try {
+      EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
+      ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default EncounterType `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+    }
+  }
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
+     * mappings from the terrain table.
+     */
+    try {
+      TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
+      ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default TerrainType `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+    }
   }
 
-  if (!ctx.output.disableAttributeGeneration) {
-    std::ofstream outAttributes{attributesPath.string()};
-    emitAttributes(ctx, outAttributes, behaviorReverseMap, *(ctx.compilerContext.resultTileset));
-    outAttributes.close();
-  }
+  auto [compiledPairedPrimaryTileset, pairedPrimaryAttributesMap] =
+      driveCompileTileset(ctx, CompilerMode::PRIMARY, CompilerMode::SECONDARY, behaviorMap, behaviorReverseMap);
+  ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPairedPrimaryTileset);
+
+  auto [compiledTileset, attributesMap] =
+      driveCompileTileset(ctx, CompilerMode::SECONDARY, CompilerMode::SECONDARY, behaviorMap, behaviorReverseMap);
+
+  ctx.compilerContext.resultTileset = std::move(compiledTileset);
+
+  driveEmitCompiledTileset(ctx, CompilerMode::SECONDARY, *(ctx.compilerContext.resultTileset), attributesMap,
+                           behaviorReverseMap);
 }
 
 void drive(PorytilesContext &ctx)
@@ -938,8 +973,10 @@ void drive(PorytilesContext &ctx)
     driveDecompileSecondary(ctx);
     break;
   case Subcommand::COMPILE_PRIMARY:
+    driveCompilePrimary(ctx);
+    break;
   case Subcommand::COMPILE_SECONDARY:
-    driveCompile(ctx);
+    driveCompileSecondary(ctx);
     break;
   default:
     internalerror("driver::drive unknown subcommand setting");
@@ -975,10 +1012,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_2/primary/expected_tiles.png"};
   png::image<png::index_pixel> actualPng{parentDir / std::filesystem::path{"tiles.png"}};
 
-  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedWidthInTiles == actualWidthInTiles);
   CHECK(expectedHeightInTiles == actualHeightInTiles);
@@ -987,8 +1024,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
     }
   }
@@ -1022,78 +1061,88 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
   png::image<png::index_pixel> expected_flower_white_00{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/00.png"};
   png::image<png::index_pixel> actual_flower_white_00{parentDir / std::filesystem::path{"anim/flower_white/00.png"}};
-  expectedWidthInTiles = expected_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_white_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_white_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_white_00[pixelRow][pixelCol] == actual_flower_white_00[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_flower_white_01{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/01.png"};
   png::image<png::index_pixel> actual_flower_white_01{parentDir / std::filesystem::path{"anim/flower_white/01.png"}};
-  expectedWidthInTiles = expected_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_white_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_white_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_white_01[pixelRow][pixelCol] == actual_flower_white_01[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_flower_white_02{
       "res/tests/anim_metatiles_2/primary/expected_anim/flower_white/02.png"};
   png::image<png::index_pixel> actual_flower_white_02{parentDir / std::filesystem::path{"anim/flower_white/02.png"}};
-  expectedWidthInTiles = expected_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_white_02.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_white_02.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_white_02[pixelRow][pixelCol] == actual_flower_white_02[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_water_00{"res/tests/anim_metatiles_2/primary/expected_anim/water/00.png"};
   png::image<png::index_pixel> actual_water_00{parentDir / std::filesystem::path{"anim/water/00.png"}};
-  expectedWidthInTiles = expected_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_water_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_water_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_water_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_water_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_water_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_water_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_water_00[pixelRow][pixelCol] == actual_water_00[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_water_01{"res/tests/anim_metatiles_2/primary/expected_anim/water/01.png"};
   png::image<png::index_pixel> actual_water_01{parentDir / std::filesystem::path{"anim/water/01.png"}};
-  expectedWidthInTiles = expected_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_water_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_water_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_water_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_water_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_water_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_water_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_water_01[pixelRow][pixelCol] == actual_water_01[pixelRow][pixelCol]);
     }
   }
@@ -1130,10 +1179,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   png::image<png::index_pixel> expectedPng{"res/tests/anim_metatiles_2/secondary/expected_tiles.png"};
   png::image<png::index_pixel> actualPng{parentDir / std::filesystem::path{"tiles.png"}};
 
-  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedWidthInTiles = expectedPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedHeightInTiles = expectedPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualWidthInTiles = actualPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualHeightInTiles = actualPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedWidthInTiles == actualWidthInTiles);
   CHECK(expectedHeightInTiles == actualHeightInTiles);
@@ -1142,8 +1191,10 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedPng[pixelRow][pixelCol] == actualPng[pixelRow][pixelCol]);
     }
   }
@@ -1171,48 +1222,54 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
   png::image<png::index_pixel> expected_flower_red_00{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/00.png"};
   png::image<png::index_pixel> actual_flower_red_00{parentDir / std::filesystem::path{"anim/flower_red/00.png"}};
-  expectedWidthInTiles = expected_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_red_00.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_red_00.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_red_00[pixelRow][pixelCol] == actual_flower_red_00[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_flower_red_01{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/01.png"};
   png::image<png::index_pixel> actual_flower_red_01{parentDir / std::filesystem::path{"anim/flower_red/01.png"}};
-  expectedWidthInTiles = expected_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_red_01.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_red_01.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_red_01[pixelRow][pixelCol] == actual_flower_red_01[pixelRow][pixelCol]);
     }
   }
   png::image<png::index_pixel> expected_flower_red_02{
       "res/tests/anim_metatiles_2/secondary/expected_anim/flower_red/02.png"};
   png::image<png::index_pixel> actual_flower_red_02{parentDir / std::filesystem::path{"anim/flower_red/02.png"}};
-  expectedWidthInTiles = expected_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
-  expectedHeightInTiles = expected_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
-  actualWidthInTiles = actual_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH;
-  actualHeightInTiles = actual_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH;
+  expectedWidthInTiles = expected_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  expectedHeightInTiles = expected_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualWidthInTiles = actual_flower_red_02.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  actualHeightInTiles = actual_flower_red_02.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
   for (std::size_t tileIndex = 0; tileIndex < actualWidthInTiles * actualHeightInTiles; tileIndex++) {
     std::size_t tileRow = tileIndex / actualWidthInTiles;
     std::size_t tileCol = tileIndex % actualWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expected_flower_red_02[pixelRow][pixelCol] == actual_flower_red_02[pixelRow][pixelCol]);
     }
   }
@@ -1242,10 +1299,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
   png::image<png::rgba_pixel> expectedBottomPng{"res/tests/compiled_emerald_general/expected_decompiled/bottom.png"};
   png::image<png::rgba_pixel> actualBottomPng{parentDir / std::filesystem::path{"bottom.png"}};
 
-  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedBottomWidthInTiles == actualBottomWidthInTiles);
   CHECK(expectedBottomHeightInTiles == actualBottomHeightInTiles);
@@ -1254,8 +1311,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
     std::size_t tileRow = tileIndex / actualBottomWidthInTiles;
     std::size_t tileCol = tileIndex % actualBottomWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedBottomPng[pixelRow][pixelCol].red == actualBottomPng[pixelRow][pixelCol].red);
       CHECK(expectedBottomPng[pixelRow][pixelCol].green == actualBottomPng[pixelRow][pixelCol].green);
       CHECK(expectedBottomPng[pixelRow][pixelCol].blue == actualBottomPng[pixelRow][pixelCol].blue);
@@ -1270,10 +1329,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
   png::image<png::rgba_pixel> expectedMiddlePng{"res/tests/compiled_emerald_general/expected_decompiled/middle.png"};
   png::image<png::rgba_pixel> actualMiddlePng{parentDir / std::filesystem::path{"middle.png"}};
 
-  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedMiddleWidthInTiles == actualMiddleWidthInTiles);
   CHECK(expectedMiddleHeightInTiles == actualMiddleHeightInTiles);
@@ -1282,8 +1341,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
     std::size_t tileRow = tileIndex / actualMiddleWidthInTiles;
     std::size_t tileCol = tileIndex % actualMiddleWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].red == actualMiddlePng[pixelRow][pixelCol].red);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].green == actualMiddlePng[pixelRow][pixelCol].green);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].blue == actualMiddlePng[pixelRow][pixelCol].blue);
@@ -1298,10 +1359,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
   png::image<png::rgba_pixel> expectedTopPng{"res/tests/compiled_emerald_general/expected_decompiled/top.png"};
   png::image<png::rgba_pixel> actualTopPng{parentDir / std::filesystem::path{"top.png"}};
 
-  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedTopWidthInTiles == actualTopWidthInTiles);
   CHECK(expectedTopHeightInTiles == actualTopHeightInTiles);
@@ -1310,8 +1371,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
     std::size_t tileRow = tileIndex / actualTopWidthInTiles;
     std::size_t tileCol = tileIndex % actualTopWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedTopPng[pixelRow][pixelCol].red == actualTopPng[pixelRow][pixelCol].red);
       CHECK(expectedTopPng[pixelRow][pixelCol].green == actualTopPng[pixelRow][pixelCol].green);
       CHECK(expectedTopPng[pixelRow][pixelCol].blue == actualTopPng[pixelRow][pixelCol].blue);
@@ -1353,10 +1416,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
   png::image<png::rgba_pixel> expectedBottomPng{"res/tests/compiled_emerald_lilycove/expected_decompiled/bottom.png"};
   png::image<png::rgba_pixel> actualBottomPng{parentDir / std::filesystem::path{"bottom.png"}};
 
-  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedBottomWidthInTiles = expectedBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedBottomHeightInTiles = expectedBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualBottomWidthInTiles = actualBottomPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualBottomHeightInTiles = actualBottomPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedBottomWidthInTiles == actualBottomWidthInTiles);
   CHECK(expectedBottomHeightInTiles == actualBottomHeightInTiles);
@@ -1365,8 +1428,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
     std::size_t tileRow = tileIndex / actualBottomWidthInTiles;
     std::size_t tileCol = tileIndex % actualBottomWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedBottomPng[pixelRow][pixelCol].red == actualBottomPng[pixelRow][pixelCol].red);
       CHECK(expectedBottomPng[pixelRow][pixelCol].green == actualBottomPng[pixelRow][pixelCol].green);
       CHECK(expectedBottomPng[pixelRow][pixelCol].blue == actualBottomPng[pixelRow][pixelCol].blue);
@@ -1381,10 +1446,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
   png::image<png::rgba_pixel> expectedMiddlePng{"res/tests/compiled_emerald_lilycove/expected_decompiled/middle.png"};
   png::image<png::rgba_pixel> actualMiddlePng{parentDir / std::filesystem::path{"middle.png"}};
 
-  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedMiddleWidthInTiles = expectedMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedMiddleHeightInTiles = expectedMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualMiddleWidthInTiles = actualMiddlePng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualMiddleHeightInTiles = actualMiddlePng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedMiddleWidthInTiles == actualMiddleWidthInTiles);
   CHECK(expectedMiddleHeightInTiles == actualMiddleHeightInTiles);
@@ -1393,8 +1458,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
     std::size_t tileRow = tileIndex / actualMiddleWidthInTiles;
     std::size_t tileCol = tileIndex % actualMiddleWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].red == actualMiddlePng[pixelRow][pixelCol].red);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].green == actualMiddlePng[pixelRow][pixelCol].green);
       CHECK(expectedMiddlePng[pixelRow][pixelCol].blue == actualMiddlePng[pixelRow][pixelCol].blue);
@@ -1409,10 +1476,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
   png::image<png::rgba_pixel> expectedTopPng{"res/tests/compiled_emerald_lilycove/expected_decompiled/top.png"};
   png::image<png::rgba_pixel> actualTopPng{parentDir / std::filesystem::path{"top.png"}};
 
-  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH;
-  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH;
+  std::size_t expectedTopWidthInTiles = expectedTopPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t expectedTopHeightInTiles = expectedTopPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualTopWidthInTiles = actualTopPng.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
+  std::size_t actualTopHeightInTiles = actualTopPng.get_height() / porytiles::TILE_SIDE_LENGTH_PIX;
 
   CHECK(expectedTopWidthInTiles == actualTopWidthInTiles);
   CHECK(expectedTopHeightInTiles == actualTopHeightInTiles);
@@ -1421,8 +1488,10 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
     std::size_t tileRow = tileIndex / actualTopWidthInTiles;
     std::size_t tileCol = tileIndex % actualTopWidthInTiles;
     for (std::size_t pixelIndex = 0; pixelIndex < porytiles::TILE_NUM_PIX; pixelIndex++) {
-      std::size_t pixelRow = (tileRow * porytiles::TILE_SIDE_LENGTH) + (pixelIndex / porytiles::TILE_SIDE_LENGTH);
-      std::size_t pixelCol = (tileCol * porytiles::TILE_SIDE_LENGTH) + (pixelIndex % porytiles::TILE_SIDE_LENGTH);
+      std::size_t pixelRow =
+          (tileRow * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex / porytiles::TILE_SIDE_LENGTH_PIX);
+      std::size_t pixelCol =
+          (tileCol * porytiles::TILE_SIDE_LENGTH_PIX) + (pixelIndex % porytiles::TILE_SIDE_LENGTH_PIX);
       CHECK(expectedTopPng[pixelRow][pixelCol].red == actualTopPng[pixelRow][pixelCol].red);
       CHECK(expectedTopPng[pixelRow][pixelCol].green == actualTopPng[pixelRow][pixelCol].green);
       CHECK(expectedTopPng[pixelRow][pixelCol].blue == actualTopPng[pixelRow][pixelCol].blue);

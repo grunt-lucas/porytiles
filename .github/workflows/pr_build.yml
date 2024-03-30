@@ -63,9 +63,9 @@ jobs:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
           brew update
-          brew install zlib
-          brew install libpng
-          brew install llvm@16
+          brew install zlib || true
+          brew install libpng || true
+          brew install llvm@16 || true
           /usr/local/opt/llvm@16/bin/clang++ --version
           /usr/local/opt/llvm@16/bin/clang++ -v
 
@@ -87,9 +87,9 @@ jobs:
       - name: Install Clang+LLVM 16 and dependencies
         run: |
           brew update
-          brew install zlib
-          brew install libpng
-          brew install llvm@16
+          brew install zlib || true
+          brew install libpng || true
+          brew install llvm@16 || true
           /opt/homebrew/opt/llvm@16/bin/clang++ --version
           /opt/homebrew/opt/llvm@16/bin/clang++ -v
 

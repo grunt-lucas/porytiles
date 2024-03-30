@@ -36,18 +36,33 @@ struct PorytilesContext {
   {
   }
 
-  void validateFieldmapParameters() const
+  void validateFieldmapParameters(CompilerMode compilerMode) const
   {
     if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numTiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numTiles",
                                            fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
     }
     if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numMetatiles",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numMetatiles",
                                            fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
     }
     if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, this->compilerConfig.mode, "numPalettes",
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numPalettes",
+                                           fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
+    }
+  }
+  void validateFieldmapParameters(DecompilerMode decompilerMode) const
+  {
+    if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
+                                           fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+    }
+    if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numMetatiles",
+                                           fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
+    }
+    if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
+      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numPalettes",
                                            fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
     }
   }

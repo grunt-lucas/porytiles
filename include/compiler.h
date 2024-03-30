@@ -27,7 +27,8 @@ extern std::size_t gPaletteAssignCutoffCounter;
 /**
  * TODO : fill in doc comments
  */
-std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, const DecompiledTileset &decompiledTileset,
+std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode compilerMode,
+                                         const DecompiledTileset &decompiledTileset,
                                          const std::vector<RGBATile> &palettePrimers);
 
 } // namespace porytiles
