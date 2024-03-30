@@ -27,9 +27,6 @@ const std::string HELP_DESC =
 "         Print help message.\n";
 constexpr int HELP_VAL = 0000;
 
-/*
- * TODO 1.0.0 : verbose flag should have levels, i.e. TRACE,DEBUG,INFO,WARN,ERROR, use spdlog library
- */
 const std::string VERBOSE = "verbose";
 const std::string VERBOSE_SHORT = "v";
 const std::string VERBOSE_DESC =

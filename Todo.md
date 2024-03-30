@@ -2,9 +2,6 @@
 
 ## Post 1.0.0 Ideas
 
-+ BIG BUG: apparently writing to pal 12 is not great, it is sometimes used by overworld shop menus:
-  + https://discord.com/channels/976252009114140682/976252039380209694/1223264978010902588
-
 + in-code TODOs, FIXMEs, FEATUREs, use todo.sh to find them
   + Some of these can wait for post 1.0.0
 
@@ -15,6 +12,7 @@
   + https://github.com/doctest/doctest/tree/master (progress on this is going well)
 
 + Add more `--verbose` logs to stderr
+  + verbose flag should have levels, i.e. TRACE,DEBUG,INFO,WARN,ERROR, use spdlog library
 
 + swap out png++ library for CImg
   + CImg is much more maintained, it is also header-only and seems to have a clean interface
@@ -22,6 +20,9 @@
 
 + get `decompile` command to successfully decompile animations
   + will require key frame detection / key frame hints at CLI?
+
++ support custom masks and shifts for metatile attributes, see how Porymap does this
+  + this would be an amazing feature to support those who have a customized attribute setup
 
 + More assign algorithms?
   + Maybe some kind of A-star?
@@ -87,8 +88,6 @@
     to get the Porymap files
 
 + Set up auto-generated documentation: doxygen? RTD?
-
-+ support custom masks and shifts for metatile attributes, see how Porymap does this
 
 + Refactor CLI parsing, it's a mess
   + CXXOpts lib may be helpful here
