@@ -45,7 +45,7 @@ endif
 
 # TODO : include -Wextra, broken right now due to issue in png++ lib
 CXXFLAGS             += -Wall -Wpedantic -Werror -std=c++20 -DPNG_SKIP_SETJMP_CHECK -DCSV_IO_NO_THREAD
-CXXFLAGS             += -I$(INCLUDE) $(shell pkg-config --cflags libpng) -Ilibs/doctest-2.4.11 -Ilibs/png++-0.2.9 -Ilibs/fmt-10.1.1/include -Ilibs/fast-cpp-csv-parser
+CXXFLAGS             += -I$(INCLUDE) $(shell pkg-config --cflags libpng) $(shell pkg-config --cflags zlib) -Ilibs/doctest-2.4.11 -Ilibs/png++-0.2.9 -Ilibs/fmt-10.1.1/include -Ilibs/fast-cpp-csv-parser
 ifneq '' '$(findstring g++,$(COMPILER_VERSION))'
 # If GCC, do O1, G++13 O2+ is broken when compiling libfmt code, see `potential-gcc-bug' branch
 # The reason this happens is:
@@ -58,7 +58,7 @@ else
 endif
 CXXFLAGS_DEBUG       := $(CXXFLAGS) -O0 -g $(CXXFLAGS_COVERAGE)
 
-LDFLAGS              += $(shell pkg-config --libs-only-L libpng) -lpng -lz
+LDFLAGS              += $(shell pkg-config --libs-only-L libpng) $(shell pkg-config --libs-only-L zlib) -lpng -lz
 LDFLAGS_RELEASE      := $(LDFLAGS)
 LDFLAGS_DEBUG        := $(LDFLAGS) $(LDFLAGS_COVERAGE)
 
