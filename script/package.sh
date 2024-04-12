@@ -23,13 +23,14 @@ macos_aarch64() {
   package_release
 }
 
+# Homebrew on GitHub AMD64 MacOS runners seems to have moved to /opt/homebrew?
 macos_amd64() {
   echo "Packaging release macos-amd64..."
   mkdir -p "$output_directory/porytiles-$mode"
   make clean
-  export CXX=/usr/local/opt/llvm@16/bin/clang++
-  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /usr/local/opt/llvm@16/include/c++/v1 -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
-  export LDFLAGS="-L /usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++"
+  export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
+  export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1 -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}"
+  export LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++"
   make release-check
   package_release
 }

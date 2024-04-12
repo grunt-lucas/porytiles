@@ -81,8 +81,8 @@ jobs:
           brew install zlib || true
           brew install libpng || true
           brew install llvm@16 || true
-          /usr/local/opt/llvm@16/bin/clang++ --version
-          /usr/local/opt/llvm@16/bin/clang++ -v
+          /opt/homebrew/opt/llvm@16/bin/clang++ --version
+          /opt/homebrew/opt/llvm@16/bin/clang++ -v
 
       - name: Checkout new Porytiles nightly tag
         uses: actions/checkout@v4

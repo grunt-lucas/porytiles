@@ -66,19 +66,19 @@ jobs:
           brew install zlib || true
           brew install libpng || true
           brew install llvm@16 || true
-          /usr/local/opt/llvm@16/bin/clang++ --version
-          /usr/local/opt/llvm@16/bin/clang++ -v
+          /opt/homebrew/opt/llvm@16/bin/clang++ --version
+          /opt/homebrew/opt/llvm@16/bin/clang++ -v
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
       - name: Build debug and release executables
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm@16/include/c++/v1' CXX=/usr/local/opt/llvm@16/bin/clang++ make all
+          LDFLAGS='-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++' CXXFLAGS='-I/opt/homebrew/opt/llvm@16/include/c++/v1' CXX=/opt/homebrew/opt/llvm@16/bin/clang++ make all
 
       - name: Run tests on debug and release
         run: |
-          LDFLAGS='-L/usr/local/opt/llvm@16/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@16/lib/c++' CXXFLAGS='-I/usr/local/opt/llvm@16/include/c++/v1' CXX=/usr/local/opt/llvm@16/bin/clang++ make check
+          LDFLAGS='-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++' CXXFLAGS='-I/opt/homebrew/opt/llvm@16/include/c++/v1' CXX=/opt/homebrew/opt/llvm@16/bin/clang++ make check
 
   dev-build-macos-aarch4-clang-llvm:
     name: Develop branch on macos-14-aarch64 with Clang+LLVM 16
