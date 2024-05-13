@@ -5,7 +5,7 @@
 
 Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret/pokeruby), [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeemerald`](https://github.com/pret/pokeemerald) Pokémon Generation 3 decompilation projects from [`pret`](https://github.com/pret). Also compatible with [`pokeemerald-expansion`](https://github.com/rh-hideout/pokeemerald-expansion) from [`rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready tilesets from RGBA (or indexed) tile assets.
 
-Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest stable version, or check out the [`trunk`](https://github.com/grunt-lucas/porytiles/tree/trunk) branch to get the upcoming changes listed in the [changelog](https://github.com/grunt-lucas/porytiles/blob/trunk/CHANGELOG.md).
+Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop) branch, grab the nightly release instead.
 
 For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) or [the video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
 
