@@ -34,7 +34,9 @@ jobs:
 
   dev-build-linux-amd64-gcc:
     name: Develop branch on ubuntu-latest-amd64 with GCC 13
-    runs-on: ubuntu-latest
+    # As of 14-Jun-2024 need ubuntu-24.04 since GitHub removed GCC13 from ubuntu-latest
+    # https://github.com/actions/runner-images/issues/9866
+    runs-on: ubuntu-24.04
     steps:
       - name: Install GCC 13 and dependencies
         run: |
