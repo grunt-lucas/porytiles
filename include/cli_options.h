@@ -2,6 +2,8 @@
 #define PORYTILES_CLI_OPTIONS_H
 
 #include <string>
+#define FMT_HEADER_ONLY
+#include <fmt/color.h>
 
 #include "errors_warnings.h"
 
@@ -18,273 +20,395 @@ namespace porytiles {
 // clang-format off
 
 
-// Global options
+/*
+ * Global Options
+ *
+ * These options are displayed in the global help menu. They must be supplied before the
+ * subcommand.
+ */
 
 const std::string HELP = "help";
 const std::string HELP_SHORT = "h";
-const std::string HELP_DESC =
-"    -" + std::string{HELP_SHORT} + ", --" + HELP + "\n"
-"         Print help message.\n";
+const std::string HELP_DESC = std::string{fmt::format(R"(
+    -{}, --{}
+        Print help message.
+)",
+HELP_SHORT, HELP
+)}.substr(1);
 constexpr int HELP_VAL = 0000;
 
 const std::string VERBOSE = "verbose";
 const std::string VERBOSE_SHORT = "v";
-const std::string VERBOSE_DESC =
-"    -" + std::string{VERBOSE_SHORT} + ", --" + VERBOSE + "\n"
-"         Enable verbose logging to stderr.\n";
+const std::string VERBOSE_DESC = std::string{fmt::format(R"(
+    -{}, --{}
+        Enable verbose logging to stderr.
+)",
+VERBOSE_SHORT, VERBOSE
+)}.substr(1);
 constexpr int VERBOSE_VAL = 0001;
 
 const std::string VERSION = "version";
 const std::string VERSION_SHORT = "V";
-const std::string VERSION_DESC =
-"    -" + std::string{VERSION_SHORT} + ", --" + VERSION + "\n"
-"         Print version info.\n";
+const std::string VERSION_DESC = std::string{fmt::format(R"(
+    -{}, --{}
+        Print version info.
+)",
+VERSION_SHORT, VERSION
+)}.substr(1);
 constexpr int VERSION_VAL = 0002;
 
 
-// Driver options
+/*
+ * Driver Options
+ *
+ * These options control driver output. It's a bit of a catch-all category.
+ */
 
 const std::string OUTPUT = "output";
 const std::string OUTPUT_SHORT = "o";
-const std::string OUTPUT_DESC =
-"        -" + std::string{OUTPUT_SHORT} + ", -" + OUTPUT + "=<OUTPUT-PATH>\n"
-"             Output generated files to the directory specified by OUTPUT-PATH. If any element of\n"
-"             OUTPUT-PATH does not exist, it will be created. Defaults to the current working\n"
-"             directory (i.e. `.').\n";
+const std::string OUTPUT_DESC = std::string{fmt::format(R"(
+        -{}, -{}=<OUTPUT-PATH>
+            Output generated files to the directory specified by OUTPUT-PATH. If any element of
+            OUTPUT-PATH does not exist, it will be created. Defaults to the current working
+            directory (i.e. `.').
+)",
+OUTPUT_SHORT, OUTPUT
+)}.substr(1);
 constexpr int OUTPUT_VAL = 1000;
 
 const std::string TILES_OUTPUT_PAL = "tiles-output-pal";
-const std::string TILES_OUTPUT_PAL_DESC =
-"        -" + TILES_OUTPUT_PAL + "=<MODE>\n"
-"             Set the palette mode for the output `tiles.png'. Valid settings are `true-color' or\n"
-"             `greyscale'. These settings are for human visual purposes only and have no effect on\n"
-"             the final in-game tiles. Default value is `greyscale'.\n";
+const std::string TILES_OUTPUT_PAL_DESC = std::string{fmt::format(R"(
+        -{}=<MODE>
+            Set the palette mode for the output `tiles.png'. Valid settings are `true-color' or
+            `greyscale'. These settings are for human visual purposes only and have no effect on
+            the final in-game tiles. Default value is `greyscale'.
+)",
+TILES_OUTPUT_PAL
+)}.substr(1);
 constexpr int TILES_OUTPUT_PAL_VAL = 1001;
 
 const std::string DISABLE_METATILE_GENERATION = "disable-metatile-generation";
-const std::string DISABLE_METATILE_GENERATION_DESC =
-"        -" + DISABLE_METATILE_GENERATION + "\n"
-"             Disable generation of `metatiles.bin'. Only enable this if you want to manage\n"
-"             metatiles manually via Porymap.\n";
+const std::string DISABLE_METATILE_GENERATION_DESC = std::string{fmt::format(R"(
+        -{}
+            Disable generation of `metatiles.bin'. Only enable this if you want to manage
+            metatiles manually via Porymap.
+)",
+DISABLE_METATILE_GENERATION
+)}.substr(1);
 constexpr int DISABLE_METATILE_GENERATION_VAL = 1002;
 
 const std::string DISABLE_ATTRIBUTE_GENERATION = "disable-attribute-generation";
-const std::string DISABLE_ATTRIBUTE_GENERATION_DESC =
-"        -" + DISABLE_ATTRIBUTE_GENERATION + "\n"
-"             Disable generation of `metatile_attributes.bin'. Only enable this if you want to\n"
-"             manage metatile attributes manually via Porymap.\n";
+const std::string DISABLE_ATTRIBUTE_GENERATION_DESC = std::string{fmt::format(R"(
+        -{}
+            Disable generation of `metatile_attributes.bin'. Only enable this if you want to
+            manage metatile attributes manually via Porymap.
+)",
+DISABLE_ATTRIBUTE_GENERATION
+)}.substr(1);
 constexpr int DISABLE_ATTRIBUTE_GENERATION_VAL = 1003;
 
 
-// Tileset (de)compilation options
+/*
+ * Tileset Compilation and Decompilation Options
+ *
+ * These options change parameters specifically related to the compilation or decompilation process.
+ */
 
 const std::string TARGET_BASE_GAME = "target-base-game";
-const std::string TARGET_BASE_GAME_DESC =
-"        -" + TARGET_BASE_GAME + "=<TARGET>\n"
-"             Set the (de)compilation target base game to TARGET. This option affects default\n"
-"             values for the fieldmap parameters, as well as the metatile attribute format. Valid\n"
-"             settings for TARGET are `pokeemerald', `pokefirered', or `pokeruby'. If this option\n"
-"             is not specified, defaults to `pokeemerald'. See the wiki docs for more information.\n";
+const std::string TARGET_BASE_GAME_DESC = std::string{fmt::format(R"(
+        -{}=<TARGET>
+            Set the (de)compilation target base game to TARGET. This option affects default
+            values for the fieldmap parameters, as well as the metatile attribute format. Valid
+            settings for TARGET are `pokeemerald', `pokefirered', or `pokeruby'. If this option
+            is not specified, defaults to `pokeemerald'. See the wiki docs for more information.
+)",
+TARGET_BASE_GAME
+)}.substr(1);
 constexpr int TARGET_BASE_GAME_VAL = 2000;
 
 const std::string DUAL_LAYER = "dual-layer";
-const std::string DUAL_LAYER_DESC =
-"        -" + DUAL_LAYER + "\n"
-"             Enable dual-layer compilation mode. The layer type will be inferred from your source\n"
-"             layer PNGs, so compilation will error out if any metatiles contain content on all\n"
-"             three layers. If this option is not supplied, Porytiles assumes you are compiling\n"
-"             a triple-layer tileset.\n";
+const std::string DUAL_LAYER_DESC = std::string{fmt::format(R"(
+        -{}
+            Enable dual-layer compilation mode. The layer type will be inferred from your source
+            layer PNGs, so compilation will error out if any metatiles contain content on all
+            three layers. If this option is not supplied, Porytiles assumes you are compiling
+            a triple-layer tileset.
+)",
+DUAL_LAYER
+)}.substr(1);
 constexpr int DUAL_LAYER_VAL = 2001;
 
 const std::string TRANSPARENCY_COLOR = "transparency-color";
-const std::string TRANSPARENCY_COLOR_DESC =
-"        -" + TRANSPARENCY_COLOR + "=<R,G,B>\n"
-"             Select RGB color <R,G,B> to represent transparency in your layer source PNGs.\n"
-"             Defaults to `255,0,255'.\n";
+const std::string TRANSPARENCY_COLOR_DESC = std::string{fmt::format(R"(
+        -{}=<R,G,B>
+            Select RGB color <R,G,B> to represent transparency in your layer source PNGs.
+            Defaults to `255,0,255'.
+)",
+TRANSPARENCY_COLOR
+)}.substr(1);
 constexpr int TRANSPARENCY_COLOR_VAL = 2002;
 
 const std::string DEFAULT_BEHAVIOR = "default-behavior";
-const std::string DEFAULT_BEHAVIOR_DESC =
-"        -" + DEFAULT_BEHAVIOR + "=<BEHAVIOR>\n"
-"             Select the default behavior for metatiles that do not have an entry in the\n"
-"             `attributes.csv' file. You may use either a raw integral value or a metatile behavior\n"
-"             label defined in the provided behaviors header. If unspecified, defaults to `0'.\n";
+const std::string DEFAULT_BEHAVIOR_DESC = std::string{fmt::format(R"(
+        -{}=<BEHAVIOR>
+            Select the default behavior for metatiles that do not have an entry in the
+            `attributes.csv' file. You may use either a raw integral value or a metatile behavior
+            label defined in the provided behaviors header. If unspecified, defaults to `0'.
+)",
+DEFAULT_BEHAVIOR
+)}.substr(1);
 constexpr int DEFAULT_BEHAVIOR_VAL = 2004;
 
 const std::string DEFAULT_ENCOUNTER_TYPE = "default-encounter-type";
-const std::string DEFAULT_ENCOUNTER_TYPE_DESC =
-"        -" + DEFAULT_ENCOUNTER_TYPE + "=<TYPE>\n"
-"             Select the default encounter type for metatiles that do not have an entry in the\n"
-"             `attributes.csv' file. You may use either a raw integral value or an EncounterType\n"
-"             label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to\n"
-"             `0'.\n";
+const std::string DEFAULT_ENCOUNTER_TYPE_DESC = std::string{fmt::format(R"(
+        -{}=<TYPE>
+            Select the default encounter type for metatiles that do not have an entry in the
+            `attributes.csv' file. You may use either a raw integral value or an EncounterType
+            label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to
+            `0'.
+)",
+DEFAULT_ENCOUNTER_TYPE
+)}.substr(1);
 constexpr int DEFAULT_ENCOUNTER_TYPE_VAL = 2005;
 
 const std::string DEFAULT_TERRAIN_TYPE = "default-terrain-type";
-const std::string DEFAULT_TERRAIN_TYPE_DESC =
-"        -" + DEFAULT_TERRAIN_TYPE + "=<TYPE>\n"
-"             Select the default terrain type for metatiles that do not have an entry in the\n"
-"             `attributes.csv' file. You may use either a raw integral value or an TerrainType\n"
-"             label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to\n"
-"             `0'.\n";
+const std::string DEFAULT_TERRAIN_TYPE_DESC = std::string{fmt::format(R"(
+        -{}=<TYPE>
+            Select the default terrain type for metatiles that do not have an entry in the
+            `attributes.csv' file. You may use either a raw integral value or an TerrainType
+            label defined in the `include/global.fieldmap.h' file. If unspecified, defaults to
+            `0'.
+)",
+DEFAULT_TERRAIN_TYPE
+)}.substr(1);
 constexpr int DEFAULT_TERRAIN_TYPE_VAL = 2006;
 
 const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
-const std::string NORMALIZE_TRANSPARENCY_DESC =
-"        -" + NORMALIZE_TRANSPARENCY + "[=<R,G,B>]\n"
-"             When emitting the decompiled tileset, replace all source transparent colors with\n"
-"             the given RGB color. If no RGB color is supplied, use the default Porytiles\n"
-"             transparency color `255,0,255'.\n";
+const std::string NORMALIZE_TRANSPARENCY_DESC = std::string{fmt::format(R"(
+        -{}[=<R,G,B>]
+            When emitting the decompiled tileset, replace all source transparent colors with
+            the given RGB color. If no RGB color is supplied, use the default Porytiles
+            transparency color `255,0,255'.
+)",
+NORMALIZE_TRANSPARENCY
+)}.substr(1);
 constexpr int NORMALIZE_TRANSPARENCY_VAL = 2007;
 
 
-// Color assignment config options
+/*
+ * Color Assignment Config Options
+ *
+ * These options adjust parameters for the palette assignment algorithm.
+ */
 
 const std::string ASSIGN_ALGO = "assign-algorithm";
-const std::string ASSIGN_ALGO_DESC =
-"        -" + ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Select the palette assignment algorithm. Valid options are `dfs' and `bfs'. Default\n"
-"             is `dfs'.\n";
+const std::string ASSIGN_ALGO_DESC = std::string{fmt::format(R"(
+        -{}=<ALGORITHM>
+            Select the palette assignment algorithm. Valid options are `dfs' and `bfs'. Default
+            is `dfs'.
+)",
+ASSIGN_ALGO
+)}.substr(1);
 constexpr int ASSIGN_ALGO_VAL = 3000;
 
 const std::string EXPLORE_CUTOFF = "explore-cutoff";
-const std::string EXPLORE_CUTOFF_DESC =
-"        -" + EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Select the cutoff for palette assignment tree node exploration. Defaults to 2000000,\n"
-"             which should be sufficient for most cases. Increase the number to let the algorithm\n"
-"             run for longer before failing out.\n";
+const std::string EXPLORE_CUTOFF_DESC = std::string{fmt::format(R"(
+        -{}=<FACTOR>
+            Select the cutoff for palette assignment tree node exploration. Defaults to 2000000,
+            which should be sufficient for most cases. Increase the number to let the algorithm
+            run for longer before failing out.
+)",
+EXPLORE_CUTOFF
+)}.substr(1);
 constexpr int EXPLORE_CUTOFF_VAL = 3001;
 
 const std::string BEST_BRANCHES = "best-branches";
-const std::string BEST_BRANCHES_DESC =
-"        -" + BEST_BRANCHES + "=<N>\n"
-"             Use only the N most promising branches at each node in the assignment tree search.\n"
-"             Specify `smart' instead of an integer to use a computed `smart' cutoff at each node\n"
-"             instead of a constant integer cutoff. Default is to use all available branches.\n";
+const std::string BEST_BRANCHES_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Use only the N most promising branches at each node in the assignment tree search.
+            Specify `smart' instead of an integer to use a computed `smart' cutoff at each node
+            instead of a constant integer cutoff. Default is to use all available branches.
+)",
+BEST_BRANCHES
+)}.substr(1);
 constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string SMART_PRUNE = "smart";
 
 const std::string DISABLE_ASSIGN_CACHING = "disable-assign-caching";
-const std::string DISABLE_ASSIGN_CACHING_DESC =
-"        -" + DISABLE_ASSIGN_CACHING + "\n"
-"             Do not write palette assignment search parameters to `assign.cache' after a successful\n"
-"             compilation. This option may be useful in situations where you do not have write\n"
-"             access to the source folders.\n";
+const std::string DISABLE_ASSIGN_CACHING_DESC = std::string{fmt::format(R"(
+        -{}
+            Do not write palette assignment search parameters to `assign.cache' after a successful
+            compilation.
+)",
+DISABLE_ASSIGN_CACHING
+)}.substr(1);
 constexpr int DISABLE_ASSIGN_CACHING_VAL = 3003;
 
 const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
-const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC =
-"        -" + FORCE_ASSIGN_PARAM_MATRIX + "\n"
-"             Force the full palette assignment parameter search matrix to run. If `assign.cache'\n"
-"             exists in either source folder, its contents will be ignored.\n";
+const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC = std::string{fmt::format(R"(
+        -{}
+            Force the full palette assignment parameter search matrix to run. If `assign.cache'
+            exists in either source folder, its contents will be ignored.
+)",
+FORCE_ASSIGN_PARAM_MATRIX
+)}.substr(1);
 constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3004;
 
 const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
-const std::string PRIMARY_ASSIGN_ALGO_DESC =
-"        -" + PRIMARY_ASSIGN_ALGO + "=<ALGORITHM>\n"
-"             Same as `-assign-algorithm', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via `compile-secondary'.\n";
+const std::string PRIMARY_ASSIGN_ALGO_DESC = std::string{fmt::format(R"(
+        -{}=<FACTOR>
+            Same as `-assign-algorithm', but for the paired primary set. Only to be used
+            when compiling in secondary mode via `compile-secondary'.
+)",
+PRIMARY_ASSIGN_ALGO
+)}.substr(1);
 constexpr int PRIMARY_ASSIGN_ALGO_VAL = 3005;
 
 const std::string PRIMARY_EXPLORE_CUTOFF = "primary-explore-cutoff";
-const std::string PRIMARY_EXPLORE_CUTOFF_DESC =
-"        -" + PRIMARY_EXPLORE_CUTOFF + "=<FACTOR>\n"
-"             Same as `-assign-explore-cutoff', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via `compile-secondary'.\n";
+const std::string PRIMARY_EXPLORE_CUTOFF_DESC = std::string{fmt::format(R"(
+        -{}=<FACTOR>
+            Same as `-assign-explore-cutoff', but for the paired primary set. Only to be used
+            when compiling in secondary mode via `compile-secondary'.
+)",
+PRIMARY_EXPLORE_CUTOFF
+)}.substr(1);
 constexpr int PRIMARY_EXPLORE_CUTOFF_VAL = 3006;
 
 const std::string PRIMARY_BEST_BRANCHES = "primary-best-branches";
-const std::string PRIMARY_BEST_BRANCHES_DESC =
-"        -" + PRIMARY_BEST_BRANCHES + "=<N>\n"
-"             Same as `-best-branches', but for the paired primary set. Only to be used\n"
-"             when compiling in secondary mode via `compile-secondary'.\n";
+const std::string PRIMARY_BEST_BRANCHES_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Same as `-best-branches', but for the paired primary set. Only to be used
+            when compiling in secondary mode via `compile-secondary'.
+)",
+PRIMARY_BEST_BRANCHES
+)}.substr(1);
 constexpr int PRIMARY_BEST_BRANCHES_VAL = 3007;
 
-// Fieldmap override options
+
+/*
+ * Fieldmap Override Options
+ *
+ * These options override the `fieldmap.h' parameters that are automatically set by the target base
+ * game.
+ */
 
 const std::string TILES_PRIMARY_OVERRIDE = "tiles-primary-override";
-const std::string TILES_PRIMARY_OVERRIDE_DESC =
-"        -" + TILES_PRIMARY_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of primary set tiles. The value\n"
-"             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
-"             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
+const std::string TILES_PRIMARY_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of primary set tiles. The value
+            specified here should match the corresponding value in your project's `fieldmap.h'.
+            Defaults to 512 (inherited from `pokeemerald' default target base game).
+)",
+TILES_PRIMARY_OVERRIDE
+)}.substr(1);
 constexpr int TILES_PRIMARY_OVERRIDE_VAL = 4000;
 
 const std::string TILES_TOTAL_OVERRIDE = "tiles-total-override";
-const std::string TILES_TOTAL_OVERRIDE_DESC =
-"        -" + TILES_TOTAL_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of total tiles. The value specified\n"
-"             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
-"             to 1024 (inherited from `pokeemerald' default target base game).\n";
+const std::string TILES_TOTAL_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of total tiles. The value specified
+            here should match the corresponding value in your project's `fieldmap.h'. Defaults
+            to 1024 (inherited from `pokeemerald' default target base game).
+)",
+TILES_TOTAL_OVERRIDE
+)}.substr(1);
 constexpr int TILES_TOTAL_OVERRIDE_VAL = 4001;
 
 const std::string METATILES_PRIMARY_OVERRIDE = "metatiles-primary-override";
-const std::string METATILES_PRIMARY_OVERRIDE_DESC =
-"        -" + METATILES_PRIMARY_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of primary set metatiles. The value\n"
-"             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
-"             Defaults to 512 (inherited from `pokeemerald' default target base game).\n";
+const std::string METATILES_PRIMARY_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of primary set metatiles. The value
+            specified here should match the corresponding value in your project's `fieldmap.h'.
+            Defaults to 512 (inherited from `pokeemerald' default target base game).
+)",
+METATILES_PRIMARY_OVERRIDE
+)}.substr(1);
 constexpr int METATILES_PRIMARY_OVERRIDE_VAL = 4002;
 
 const std::string METATILES_TOTAL_OVERRIDE = "metatiles-total-override";
-const std::string METATILES_TOTAL_OVERRIDE_DESC =
-"        -" + METATILES_TOTAL_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of total metatiles. The value specified\n"
-"             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
-"             to 1024 (inherited from `pokeemerald' default target base game).\n";
+const std::string METATILES_TOTAL_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of total metatiles. The value specified
+            here should match the corresponding value in your project's `fieldmap.h'. Defaults
+            to 1024 (inherited from `pokeemerald' default target base game).
+)",
+METATILES_TOTAL_OVERRIDE
+)}.substr(1);
 constexpr int METATILES_TOTAL_OVERRIDE_VAL = 4003;
 
 const std::string PALS_PRIMARY_OVERRIDE = "pals-primary-override";
-const std::string PALS_PRIMARY_OVERRIDE_DESC =
-"        -" + PALS_PRIMARY_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of primary set palettes. The value\n"
-"             specified here should match the corresponding value in your project's `fieldmap.h'.\n"
-"             Defaults to 6 (inherited from `pokeemerald' default target base game).\n";
+const std::string PALS_PRIMARY_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of primary set palettes. The value
+            specified here should match the corresponding value in your project's `fieldmap.h'.
+            Defaults to 6 (inherited from `pokeemerald' default target base game).
+)",
+PALS_PRIMARY_OVERRIDE
+)}.substr(1);
 constexpr int PALS_PRIMARY_OVERRIDE_VAL = 4004;
 
 const std::string PALS_TOTAL_OVERRIDE = "pals-total-override";
-const std::string PALS_TOTAL_OVERRIDE_DESC =
-"        -" + PALS_TOTAL_OVERRIDE + "=<N>\n"
-"             Override the target base game's default number of total palettes. The value specified\n"
-"             here should match the corresponding value in your project's `fieldmap.h'. Defaults\n"
-"             Defaults to 13 (inherited from `pokeemerald' default target base game).\n";
+const std::string PALS_TOTAL_OVERRIDE_DESC = std::string{fmt::format(R"(
+        -{}=<N>
+            Override the target base game's default number of total palettes. The value specified
+            here should match the corresponding value in your project's `fieldmap.h'. Defaults
+            Defaults to 13 (inherited from `pokeemerald' default target base game).
+)",
+PALS_TOTAL_OVERRIDE
+)}.substr(1);
 constexpr int PALS_TOTAL_OVERRIDE_VAL = 4005;
 
 
-// Warning options
+/*
+ * Warning Options
+ *
+ * These options enable/disable various warnings.
+ */
 
 const std::string WALL = "Wall";
-const std::string WALL_DESC =
-"        -" + WALL + "\n"
-"             Enable all warnings.\n";
+const std::string WALL_DESC = std::string{fmt::format(R"(
+        -{}
+            Enable all warnings.
+)",
+WALL
+)}.substr(1);
 constexpr int WALL_VAL = 5000;
 
 const std::string W_GENERAL = "W";
-const std::string W_GENERAL_DESC =
-"        -" + W_GENERAL + "<WARNING>, -" + W_GENERAL + "no-<WARNING>\n"
-"             Explicitly enable warning WARNING, or explicitly disable it if the `no' form of the\n"
-"             option is specified. If WARNING is already off, the `no' form will no-op. If more\n"
-"             than one specifier for the same warning appears on the same command line, the\n"
-"             right-most specifier will take precedence.\n";
+const std::string W_GENERAL_DESC = std::string{fmt::format(R"(
+        -{}<WARNING>, -{}no-<WARNING>
+            Explicitly enable warning WARNING, or explicitly disable it if the `no' form of the
+            option is specified. If WARNING is already off, the `no' form will no-op. If more
+            than one specifier for the same warning appears on the same command line, the
+            right-most specifier will take precedence.
+)",
+W_GENERAL, W_GENERAL
+)}.substr(1);
 
 const std::string WNONE = "Wnone";
 const std::string WNONE_SHORT = "w";
-const std::string WNONE_DESC =
-"        -" + std::string{WNONE_SHORT} + ", -" + WNONE + "\n"
-"             Disable all warnings.\n";
+const std::string WNONE_DESC = std::string{fmt::format(R"(
+        -{}, -{}
+            Disable all warnings.
+)",
+WNONE_SHORT, WNONE
+)}.substr(1);
 constexpr int WNONE_VAL = 5001;
 
 const std::string WNO_ERROR = "Wno-error";
 constexpr int WNO_ERROR_VAL = 5002;
 
 const std::string WERROR = "Werror";
-const std::string WERROR_DESC =
-"        -" + WERROR + "[=<WARNING>], -" + WNO_ERROR + "=<WARNING>\n"
-"             Force all enabled warnings to generate errors, or optionally force WARNING to enable\n"
-"             as an error. If the `no' form of the option is specified, downgrade WARNING from an\n"
-"             error to the highest previously seen level. If WARNING is already off, the `no' form\n"
-"             will no-op. If more than one specifier for the same warning appears on the same\n"
-"             command line, the right-most specifier will take precedence.\n";
+const std::string WERROR_DESC = std::string{fmt::format(R"(
+        -{}[=<WARNING>], -{}=<WARNING>
+            Force all enabled warnings to generate errors, or optionally force WARNING to enable
+            as an error. If the `no' form of the option is specified, downgrade WARNING from an
+            error to the highest previously seen level. If WARNING is already off, the `no' form
+            will no-op. If more than one specifier for the same warning appears on the same
+            command line, the right-most specifier will take precedence.
+)",
+WERROR, WNO_ERROR
+)}.substr(1);
 constexpr int WERROR_VAL = 5003;
 
 // Compilation warnings
