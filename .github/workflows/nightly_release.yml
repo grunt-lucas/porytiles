@@ -105,7 +105,7 @@ jobs:
   prune-old-nightlies:
     name: Only keep the latest nightly build
     runs-on: ubuntu-latest
-    needs: [nightly-release-linux-amd64, nightly-release-macos-amd64, nightly-release-macos-aarch64]
+    needs: [nightly-release-linux-amd64, nightly-release-macos-aarch64]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - uses: dev-drprasad/delete-older-releases@v0.3.2
