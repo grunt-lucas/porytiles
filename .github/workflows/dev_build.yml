@@ -7,7 +7,7 @@ on:
 
 jobs:
   dev-build-linux-amd64-clang-llvm:
-    name: Develop branch build on ubuntu-latest-amd64 with Clang+LLVM 16
+    name: Develop branch build on linux-amd64 with Clang+LLVM 16
     runs-on: ubuntu-latest
     steps:
       - name: Install Clang+LLVM 16 and dependencies
@@ -33,7 +33,7 @@ jobs:
           CXX=clang++-16 make check
 
   dev-build-linux-amd64-gcc:
-    name: Develop branch on ubuntu-latest-amd64 with GCC 13
+    name: Develop branch on linux-amd64 with GCC 13
     # As of 14-Jun-2024 need ubuntu-24.04 since GitHub removed GCC13 from ubuntu-latest
     # https://github.com/actions/runner-images/issues/9866
     runs-on: ubuntu-24.04
@@ -58,33 +58,10 @@ jobs:
         run: |
           CXX=g++-13 make check
 
-  dev-build-macos-amd64-clang-llvm:
-    name: Develop branch on macos-latest-amd64 with Clang+LLVM 16
-    runs-on: macos-latest
-    steps:
-      - name: Install Clang+LLVM 16 and dependencies
-        run: |
-          brew update
-          brew install zlib || true
-          brew install libpng || true
-          brew install llvm@16 || true
-          /opt/homebrew/opt/llvm@16/bin/clang++ --version
-          /opt/homebrew/opt/llvm@16/bin/clang++ -v
-
-      - name: Checkout porytiles
-        uses: actions/checkout@v3
-
-      - name: Build debug and release executables
-        run: |
-          LDFLAGS='-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++' CXXFLAGS='-I/opt/homebrew/opt/llvm@16/include/c++/v1' CXX=/opt/homebrew/opt/llvm@16/bin/clang++ make all
-
-      - name: Run tests on debug and release
-        run: |
-          LDFLAGS='-L/opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++' CXXFLAGS='-I/opt/homebrew/opt/llvm@16/include/c++/v1' CXX=/opt/homebrew/opt/llvm@16/bin/clang++ make check
-
   dev-build-macos-aarch4-clang-llvm:
-    name: Develop branch on macos-14-aarch64 with Clang+LLVM 16
-    runs-on: macos-14
+    name: Develop branch on macos-aarch64 with Clang+LLVM 16
+    runs-on: macos-latest
+    # GitHub removed Intel Mac runners, so macos-latest is now aarch64
     steps:
       - name: Install Clang+LLVM 16 and dependencies
         run: |

@@ -69,41 +69,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-macos-amd64:
-    name: Release a nightly dynamically linked macos-amd64 binary
-    runs-on: macos-latest
-    needs: [create-release-tag]
-    if: needs.check-already-built.outputs.last_sha != github.sha
-    steps:
-      - name: Install Clang+LLVM 16 and dependencies
-        run: |
-          brew update
-          brew install zlib || true
-          brew install libpng || true
-          brew install llvm@16 || true
-          /opt/homebrew/opt/llvm@16/bin/clang++ --version
-          /opt/homebrew/opt/llvm@16/bin/clang++ -v
-
-      - name: Checkout new Porytiles nightly tag
-        uses: actions/checkout@v4
-        with:
-          ref: nightly-${{github.sha}}
-
-      - name: Create release package
-        run: |
-          ./script/package.sh macos-amd64 nightly-${{github.sha}} .
-
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: nightly-${{github.sha}}
-          files: porytiles-macos-amd64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   nightly-release-macos-aarch64:
     name: Release a nightly dynamically linked macos-aarch64 binary
-    runs-on: macos-14
+    runs-on: macos-latest
+    # GitHub removed Intel Mac runners, so macos-latest is now aarch64
     needs: [create-release-tag]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
