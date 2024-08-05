@@ -914,7 +914,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       else {
         // TODO 1.0.0 : remove this deprecation warning
         pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
-        pt_println(stderr, "         It is now the default Porytiles behavior, so you no longer need to specify this option.");
+        pt_println(stderr,
+                   "         It is now the default Porytiles behavior, so you no longer need to specify this option.");
         pt_println(stderr, "         In a future version, it will be removed.");
       }
       break;
