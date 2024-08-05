@@ -19,6 +19,7 @@ namespace porytiles {
 // @formatter:off
 // clang-format off
 
+// TODO 1.0.0 : make option descriptions fit in 80 col limit?
 
 /*
  * Global Options
@@ -187,12 +188,24 @@ const std::string NORMALIZE_TRANSPARENCY = "normalize-transparency";
 const std::string NORMALIZE_TRANSPARENCY_DESC = std::string{fmt::format(R"(
         -{}[=<R,G,B>]
             When emitting the decompiled tileset, replace all source transparent colors with
-            the given RGB color. If no RGB color is supplied, use the default Porytiles
-            transparency color `255,0,255'.
+            the given RGB color. The default Porytiles behavior is equivalent to:
+            `-normalize-transparency=255,0,255', which is best suited for decompiling the vanilla
+            tilesets.
 )",
 NORMALIZE_TRANSPARENCY
 )}.substr(1);
 constexpr int NORMALIZE_TRANSPARENCY_VAL = 2007;
+
+const std::string PRESERVE_TRANSPARENCY = "preserve-transparency";
+const std::string PRESERVE_TRANSPARENCY_DESC = std::string{fmt::format(R"(
+        -{}
+            Preserve the original transparency colors in the source tileset. This option may be
+            useful when decompiling custom tilesets for which you are already satisfied with the
+            transparency configuration.
+)",
+PRESERVE_TRANSPARENCY
+)}.substr(1);
+constexpr int PRESERVE_TRANSPARENCY_VAL = 2008;
 
 
 /*

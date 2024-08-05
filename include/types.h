@@ -935,7 +935,7 @@ struct CompilerConfig {
 struct DecompilerConfig {
   bool normalizeTransparency;
   RGBA32 normalizeTransparencyColor;
-  DecompilerConfig() : normalizeTransparency{false}, normalizeTransparencyColor{RGBA_MAGENTA} {}
+  DecompilerConfig() : normalizeTransparency{true}, normalizeTransparencyColor{RGBA_MAGENTA} {}
 };
 
 struct CompilerContext {

@@ -324,6 +324,7 @@ OPTIONS
     Tileset Decompilation Options
 {}
 {}
+{}
     Fieldmap Override Options
 {}
 {}
@@ -340,7 +341,7 @@ DECOMPILE_PRIMARY_COMMAND, DECOMPILATION_INPUT_DIRECTORY_FORMAT,
 // Driver options
 OUTPUT_DESC,
 // Tileset decompilation options
-TARGET_BASE_GAME_DESC, NORMALIZE_TRANSPARENCY_DESC,
+TARGET_BASE_GAME_DESC, NORMALIZE_TRANSPARENCY_DESC, PRESERVE_TRANSPARENCY_DESC,
 // Fieldmap override options
 TILES_PRIMARY_OVERRIDE_DESC, TILES_TOTAL_OVERRIDE_DESC, PALS_PRIMARY_OVERRIDE_DESC, PALS_TOTAL_OVERRIDE_DESC,
 // Warning options
@@ -383,6 +384,7 @@ OPTIONS
     Tileset Decompilation Options
 {}
 {}
+{}
     Fieldmap Override Options
 {}
 {}
@@ -399,7 +401,7 @@ DECOMPILE_SECONDARY_COMMAND, DECOMPILATION_INPUT_DIRECTORY_FORMAT,
 // Driver options
 OUTPUT_DESC,
 // Tileset decompilation options
-TARGET_BASE_GAME_DESC, NORMALIZE_TRANSPARENCY_DESC,
+TARGET_BASE_GAME_DESC, NORMALIZE_TRANSPARENCY_DESC, PRESERVE_TRANSPARENCY_DESC,
 // Fieldmap override options
 TILES_PRIMARY_OVERRIDE_DESC, TILES_TOTAL_OVERRIDE_DESC, PALS_PRIMARY_OVERRIDE_DESC, PALS_TOTAL_OVERRIDE_DESC,
 // Warning options
@@ -429,6 +431,7 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {DEFAULT_ENCOUNTER_TYPE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {DEFAULT_TERRAIN_TYPE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {NORMALIZE_TRANSPARENCY, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
+    {PRESERVE_TRANSPARENCY, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     {ASSIGN_ALGO, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {EXPLORE_CUTOFF, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {BEST_BRANCHES, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
@@ -702,6 +705,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {OUTPUT_SHORT.c_str(), required_argument, nullptr, OUTPUT_VAL},
       {TILES_OUTPUT_PAL.c_str(), required_argument, nullptr, TILES_OUTPUT_PAL_VAL},
       {NORMALIZE_TRANSPARENCY.c_str(), optional_argument, nullptr, NORMALIZE_TRANSPARENCY_VAL},
+      {PRESERVE_TRANSPARENCY.c_str(), no_argument, nullptr, PRESERVE_TRANSPARENCY_VAL},
       {DISABLE_METATILE_GENERATION.c_str(), no_argument, nullptr, DISABLE_METATILE_GENERATION_VAL},
       {DISABLE_ATTRIBUTE_GENERATION.c_str(), no_argument, nullptr, DISABLE_ATTRIBUTE_GENERATION_VAL},
 
@@ -907,6 +911,16 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       if (optarg != NULL) {
         ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
       }
+      else {
+        // TODO 1.0.0 : remove this deprecation warning
+        pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
+        pt_println(stderr, "         It is now the default Porytiles behavior, so you no longer need to specify this option.");
+        pt_println(stderr, "         In a future version, it will be removed.");
+      }
+      break;
+    case PRESERVE_TRANSPARENCY_VAL:
+      validateSubcommandContext(ctx, PRESERVE_TRANSPARENCY);
+      ctx.decompilerConfig.normalizeTransparency = false;
       break;
 
     // Color assignment config options
