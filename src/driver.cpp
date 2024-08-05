@@ -1284,6 +1284,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::DECOMPILE_PRIMARY;
   ctx.err.printErrors = false;
+  ctx.decompilerConfig.normalizeTransparency = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_general"}));
   ctx.decompilerSrcPaths.primarySourcePath = "res/tests/compiled_emerald_general";
@@ -1399,6 +1400,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
   ctx.output.path = parentDir;
   ctx.subcommand = porytiles::Subcommand::DECOMPILE_SECONDARY;
   ctx.err.printErrors = false;
+  ctx.decompilerConfig.normalizeTransparency = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/compiled_emerald_general"}));
   ctx.decompilerSrcPaths.primarySourcePath = "res/tests/compiled_emerald_general";
