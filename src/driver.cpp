@@ -221,6 +221,18 @@ static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode,
   }
 }
 
+static TilesetType guessPairedPrimaryTilesetType(PorytilesContext &ctx)
+{
+  // If we find a bottom, middle, top PNG then assume this is a Porytiles-format tileset
+  if (std::filesystem::exists(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(CompilerMode::PRIMARY)) &&
+      std::filesystem::exists(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(CompilerMode::PRIMARY)) &&
+      std::filesystem::exists(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(CompilerMode::PRIMARY))) {
+    return TilesetType::PORYTILES;
+  }
+  // Otherwise, just assume it's a Porymap-format tileset
+  return TilesetType::PORYMAP;
+}
+
 // TODO : uncomment this when we implement animation decompilation
 // static std::vector<std::vector<AnimationPng<png::index_pixel>>>
 // prepareCompiledAnimsForImport(PorytilesContext &ctx, std::filesystem::path animationPath)
@@ -868,7 +880,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
                            behaviorReverseMap);
 }
 
-static void driveCompileSecondary(PorytilesContext &ctx)
+static void driveCompileSecondaryDecompiledPairedPrimary(PorytilesContext &ctx)
 {
   /*
    * Checks that the compiler input folder contents exist as expected.
@@ -963,6 +975,104 @@ static void driveCompileSecondary(PorytilesContext &ctx)
                            behaviorReverseMap);
 }
 
+static void driveCompileSecondaryCompiledPairedPrimary(PorytilesContext &ctx)
+{
+  /*
+   * Checks that the compiler input folder contents exist as expected.
+   */
+  validateCompileInputs(ctx, CompilerMode::SECONDARY);
+  // FIXME 1.0.0 : this will give decompiler error messages if it fails, this is a kludge
+  validateDecompileInputs(ctx, DecompilerMode::PRIMARY);
+
+  /*
+   * Import behavior header. If the supplied path does not point to a valid file, bail now.
+   */
+  std::unordered_map<std::string, std::uint8_t> behaviorMap{};
+  std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
+  if (std::filesystem::exists(ctx.compilerSrcPaths.metatileBehaviors)) {
+    auto [map, reverse] =
+        prepareBehaviorsHeaderForImport(ctx, CompilerMode::SECONDARY, ctx.compilerSrcPaths.metatileBehaviors);
+    behaviorMap = map;
+    behaviorReverseMap = reverse;
+  }
+  else {
+    fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+               fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+  }
+
+  /*
+   * Now that we have imported the behavior header, let's parse the arguments to the -default-X options if they were
+   * supplied. If the user provided an integer, just use that. Otherwise, if the user provided a label string, check
+   * it against the behavior header or terrain/encounter type tables and replace that string with the integral value.
+   */
+  // FIXME : default behavior/encounter/terrain parsing code is duped
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the mappings
+     * from the behaviors header.
+     */
+    if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default behavior `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+    }
+    ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
+  }
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided an encounter label and try to parse that based on the
+     * mappings from the encounter table.
+     */
+    try {
+      EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
+      ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default EncounterType `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+    }
+  }
+  try {
+    parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
+  }
+  catch (const std::exception &e) {
+    /*
+     * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
+     * mappings from the terrain table.
+     */
+    try {
+      TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
+      ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
+    }
+    catch (const std::exception &e1) {
+      fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
+                 fmt::format("supplied default TerrainType `{}' was not valid",
+                             fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+    }
+  }
+
+  // FIXME 1.0.0 : this will give decompiler error messages if it fails, this is a kludge
+  // FIXME : this won't actually work, since the compiledTilesetImport does not fill in the colorIndexMap
+  auto [compiledPairedPrimaryTileset, primaryAttributesMap] =
+      driveCompiledTilesetImport(ctx, DecompilerMode::PRIMARY, behaviorMap, behaviorReverseMap);
+  ctx.compilerContext.pairedPrimaryTileset = std::make_unique<CompiledTileset>(compiledPairedPrimaryTileset);
+
+  auto [compiledTileset, attributesMap] =
+      driveCompileTileset(ctx, CompilerMode::SECONDARY, CompilerMode::SECONDARY, behaviorMap, behaviorReverseMap);
+
+  ctx.compilerContext.resultTileset = std::move(compiledTileset);
+
+  driveEmitCompiledTileset(ctx, CompilerMode::SECONDARY, *(ctx.compilerContext.resultTileset), attributesMap,
+                           behaviorReverseMap);
+}
+
 void drive(PorytilesContext &ctx)
 {
   switch (ctx.subcommand) {
@@ -976,7 +1086,12 @@ void drive(PorytilesContext &ctx)
     driveCompilePrimary(ctx);
     break;
   case Subcommand::COMPILE_SECONDARY:
-    driveCompileSecondary(ctx);
+    if (guessPairedPrimaryTilesetType(ctx) == TilesetType::PORYTILES) {
+      driveCompileSecondaryDecompiledPairedPrimary(ctx);
+    }
+    else {
+      driveCompileSecondaryCompiledPairedPrimary(ctx);
+    }
     break;
   default:
     internalerror("driver::drive unknown subcommand setting");

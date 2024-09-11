@@ -161,6 +161,13 @@ TerrainType terrainTypeFromInt(std::uint8_t terrainInt);
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
 std::string targetBaseGameString(TargetBaseGame game);
 
+/*
+ * TODO : remove this once we have a saner driver system. For now, we'll use
+ * this type to return a result from our tileset type detection function. We'll
+ * use the new lingo of Porytiles,Porymap as opposed to decompiled,compiled.
+ */
+enum class TilesetType { PORYTILES, PORYMAP };
+
 struct Attributes {
   TargetBaseGame baseGame;
   LayerType layerType;
