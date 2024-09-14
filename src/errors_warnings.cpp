@@ -542,6 +542,16 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("palette assign param search matrix failed"));
 }
 
+void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode)
+{
+  if (err.printErrors) {
+    pt_fatal_err("no layer type was implied by the supplied metatiles and attributes");
+    pt_note("either you forgot to supply the correct `-target-base-game' option, or a file is corrupted");
+    pt_println(stderr, "");
+  }
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("no implied layer type"));
+}
+
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
                          const std::string &message)
 {
