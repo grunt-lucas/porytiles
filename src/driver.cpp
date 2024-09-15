@@ -731,7 +731,6 @@ static void driveDecompilePrimary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
-  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
@@ -755,7 +754,6 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
-  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
 

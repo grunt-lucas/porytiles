@@ -954,7 +954,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
       }
       else {
-        // TODO 1.0.0 : remove this deprecation warning
+        // TODO : remove this deprecation warning at some point in the future
         pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
         pt_println(stderr,
                    "         It is now the default Porytiles behavior, so you no longer need to specify this option.");

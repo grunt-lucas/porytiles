@@ -644,11 +644,11 @@ enum class AssignAlgorithm { DFS, BFS };
 enum class DecompilerMode { PRIMARY, SECONDARY };
 
 /*
- * TODO 1.0.0 : combine CompilerMode and DecompilerMode into a single type: CompilationMode ?
+ * TODO : combine CompilerMode and DecompilerMode into a single type: CompilationMode ?
  */
 
 /*
- * TODO 1.0.0 : Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
+ * TODO : Remove all checks against Subcommand type in the codebase, prefer explicit CompilationMode parameters
  */
 
 std::string subcommandString(Subcommand subcommand);
