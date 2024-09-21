@@ -485,7 +485,10 @@ struct NormalizedPixels {
   }
 
   auto operator==(const NormalizedPixels &other) const { return this->colorIndexes == other.colorIndexes; }
+
+  friend std::ostream& operator<<(std::ostream &os, const NormalizedPixels &p);
 };
+
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::NormalizedPixels> {

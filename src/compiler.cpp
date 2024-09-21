@@ -347,6 +347,16 @@ static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame,
   return gbaTile;
 }
 
+std::ostream& operator<<(std::ostream &os, const NormalizedPixels &p)
+{
+    os << "[";
+    for (auto pixel : p.colorIndexes) {
+      os << std::to_string(pixel) << ",";
+    }
+    os << "]";
+    return os;
+}
+
 static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
                                const std::vector<IndexedNormTileWithColorSet> &indexedNormTilesWithColorSets,
                                const std::vector<ColorSet> &assignedPalsSolution)
@@ -363,6 +373,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
    * Process animated tiles, we want frame 0 of each animation to be at the beginning of the tiles.png in a stable
    * location.
    */
+  std::cout << "---------------------------- ANIMS ----------------------------" << std::endl;
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -384,6 +395,9 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
       internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
+    std::cout << "palIndex: " << paletteIndex << std::endl;
+    std::cout << "colorset: " << colorSet << std::endl;
+    std::cout << "pix: " << normTile.frames.at(0) << std::endl;
 
     // Create the GBATile for this tile's key frame
     GBATile keyFrameTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
@@ -435,6 +449,8 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
    * metatile entries to the animation tile bank at the beginning of tile.png. Regular tiles will be added and linked at
    * this time.
    */
+  int i = 0;
+  std::cout << "---------------------------- TILES ----------------------------" << std::endl;
   for (const auto &indexedNormTile : indexedNormTilesWithColorSets) {
     auto index = std::get<0>(indexedNormTile);
     auto &normTile = std::get<1>(indexedNormTile);
@@ -454,12 +470,19 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
       internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
     }
     std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
+    if (i == 64 || i == 65 || i == 66 || i == 67) {
+      std::cout << "palIndex: " << paletteIndex << std::endl;
+      std::cout << "colorset: " << colorSet << std::endl;
+      std::cout << "pix: " << normTile.frames.at(0) << std::endl;
+    }
     GBATile gbaTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
 
     if (usedKeyFrameTiles.contains(gbaTile)) {
       // if this gbaTile was present in key frames, mark it as used
       usedKeyFrameTiles.at(gbaTile) = true;
+      std::cout << "found used key frame tile: " << i << std::endl;
     }
+    i++;
 
     // insert only updates the map if the key is not already present
     auto inserted = tileIndexes.insert({gbaTile, compiled.tiles.size()});
