@@ -10,6 +10,7 @@ Usage: todo.sh all
        todo.sh {NOTE,note}
        todo.sh {FEATURE,feature}
        todo.sh 1.0.0
+       todo.sh tests
        todo.sh --help
 
 Display TODO related note comments.
@@ -55,10 +56,20 @@ fi
 parse_params "$@"
 
 if [[ ${args[0]} == "all" ]]; then
+    # regular
     rg 'TODO :'
     rg 'FIXME :'
     rg 'NOTE :'
     rg 'FEATURE :'
+
+    # 1.0.0
+    rg 'TODO 1.0.0 :'
+    rg 'FIXME 1.0.0 :'
+    rg 'NOTE 1.0.0 :'
+    rg 'FEATURE 1.0.0 :'
+
+    # tests
+    rg 'TODO tests :'
 elif [[ ${args[0]} == "TODO" || ${args[0]} == "todo" ]]; then
     rg 'TODO :'
 elif [[ ${args[0]} == "FIXME" || ${args[0]} == "fixme" ]]; then
@@ -72,6 +83,8 @@ elif [[ ${args[0]} == "1.0.0" ]] then
     rg 'FIXME 1.0.0 :'
     rg 'NOTE 1.0.0 :'
     rg 'FEATURE 1.0.0 :'
+elif [[ ${args[0]} == "tests" ]] then
+    rg 'TODO tests :'
 else
     echo "error: unknown command \`${args[0]}'"
     usage_exit_error

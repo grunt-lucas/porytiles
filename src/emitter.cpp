@@ -559,7 +559,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
 TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
-  // TODO 1.0.0 : test impl emitAnim should correctly emit compiled animation PNG files
+  // TODO tests : (emitAnim should correctly emit compiled animation PNG files)
 }
 
 TEST_CASE("emitAttributes should correctly emit metatile attributes")
@@ -736,5 +736,5 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
-  // TODO 1.0.0 : test impl emitDecompiled should correctly emit the decompiled tileset files
+  // TODO tests : (emitDecompiled should correctly emit the decompiled tileset files)
 }

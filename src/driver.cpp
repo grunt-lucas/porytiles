@@ -1001,7 +1001,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   porytiles::drive(ctx);
 
-  // TODO 1.0.0 : test impl check pal files
+  // TODO tests : (drive should emit all expected files...) test palette files are correct
 
   // Check tiles.png
 
@@ -1168,7 +1168,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   porytiles::drive(ctx);
 
-  // TODO 1.0.0 : test impl check pal files
+  // TODO tests : (drive should emit all expected files...) test palette files are correct
 
   // Check tiles.png
 
@@ -1386,7 +1386,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
       std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/attributes.csv"},
       parentDir / std::filesystem::path{"attributes.csv"});
 
-  // TODO : test animations once we implement anim decomp
+  // TODO tests : (drive should emit all expected files) test animations once we implement anim decomp
 
   std::filesystem::remove_all(parentDir);
 }
