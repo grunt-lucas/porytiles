@@ -2446,3 +2446,14 @@ TEST_CASE("primer tiles should change output of primary compile function")
   CHECK(compiledPrimer->palettes.at(3).colors.at(14) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
   CHECK(compiledPrimer->palettes.at(3).colors.at(15) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
 }
+
+TEST_CASE("compile should successfully link all key frame tiles even when the animated version contains additional colors")
+{
+  /*
+   * This test case is designed to expose the buggy behavior described in this issue:
+   *    https://github.com/grunt-lucas/porytiles/issues/60
+   * Once fixed, we should see correct linking of all key frame tiles present on the layer sheets.
+   */
+  // TODO 1.0.0 : test impl compile should successfully link all key frame tiles
+  CHECK(0 == 0);
+}
