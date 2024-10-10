@@ -597,10 +597,9 @@ static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mod
   std::ostringstream outAttributesContent{};
   std::size_t metatileCount = attributesMap.size();
   std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
-  // TODO 1.0.0 : replace the 128s strewn about the code with a named constant METATILE_SHEET_WIDTH or something
-  png::image<png::rgba_pixel> bottomPng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> middlePng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> topPng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> bottomPng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> middlePng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> topPng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
   porytiles::emitDecompiled(ctx, mode, bottomPng, middlePng, topPng, outAttributesContent, tileset, attributesMap,
                             behaviorReverseMap);
 

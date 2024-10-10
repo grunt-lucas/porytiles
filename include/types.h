@@ -26,6 +26,7 @@ constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH_PIX * TILE_SIDE_LENGTH_PIX
 constexpr std::size_t METATILE_TILE_SIDE_LENGTH_TILES = 2;
 constexpr std::size_t METATILE_SIDE_LENGTH = TILE_SIDE_LENGTH_PIX * METATILE_TILE_SIDE_LENGTH_TILES;
 constexpr std::size_t METATILES_IN_ROW = 8;
+constexpr std::size_t METATILE_SHEET_WIDTH = METATILE_SIDE_LENGTH * METATILES_IN_ROW;
 constexpr std::size_t PAL_SIZE = 16;
 constexpr std::size_t MAX_BG_PALETTES = 16;
 constexpr std::size_t TILES_PER_METATILE_DUAL = 8;

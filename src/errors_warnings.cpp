@@ -38,7 +38,7 @@ const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range"
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
-  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
+  // TODO : display indexes according to offsets? (so they match up with Porymap?)
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
     tileString = fmt::format("metatile 0x{:x} ({}), {}, {}", tile.metatileIndex, tile.metatileIndex,
@@ -102,7 +102,7 @@ void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_3
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{} layer source PNG width `{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+    pt_err("{} layer source PNG width `{}' was not {}", layerString(layer), fmt::styled(width, fmt::emphasis::bold), METATILE_SHEET_WIDTH);
     pt_println(stderr, "");
   }
 }
