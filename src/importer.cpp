@@ -836,14 +836,14 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
 
   for (const std::unique_ptr<std::ifstream> &stream : paletteFiles) {
     std::string line;
-
     /*
      * TODO : should fatal errors here have better messages? Users shouldn't ever really see these errors, since
      * compiled palettes will always presumably have correct formatting unless a user has manually messed with one
      */
-
-    // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
-
+    /*
+    * FIXME : this function assumes the pal file is DOS format, need to fix this
+    * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
+    */
     std::getline(*stream, line);
     if (line.size() == 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
@@ -1142,7 +1142,10 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, s
    * TODO : fatalerrors in this function need better messaging
    */
 
-  // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
+  /*
+   * FIXME : this function assumes the pal file is DOS format, need to fix this
+   * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
+   */
 
   std::string line;
   std::getline(paletteFile, line);
