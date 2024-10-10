@@ -14,11 +14,6 @@
 
 namespace porytiles {
 
-/*
- * FIXME 1.0.0 : decompiler will break if attribute format is wonky, see rusturf_tunnel example from Josh
- * To fix this, we should add out-of-range warnings like we did for the tile and palette indexes
- */
-
 static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTile, const GBAPalette &palette,
                               bool hFlip, bool vFlip)
 {
@@ -88,8 +83,8 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
    * attribute count (i.e. the true metatile count). If division by 8 matches, then we are dual layer. If 12 matches, we
    * are triple. Otherwise, we have corruption and should fail.
    */
-  std::size_t dualImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_DUAL;
-  std::size_t tripleImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_TRIPLE;
+  auto dualImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_DUAL;
+  auto tripleImpliedMetatileCount = compiledTileset.metatileEntries.size() / TILES_PER_METATILE_TRIPLE;
 
   if (dualImpliedMetatileCount == attributesMap.size()) {
     decompiledTileset->tripleLayer = false;
@@ -98,12 +93,7 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     decompiledTileset->tripleLayer = true;
   }
   else {
-    // TODO 1.0.0 : we should create a custom warning here so users know what happened
-    // TODO 1.0.0 : handle this via CLI flag?
-    internalerror(
-        fmt::format("emitter::emitDecompiled compiledTileset.metatileEntries.size()={}, attributesMap.size()={} "
-                    "did not imply a layer type",
-                    compiledTileset.metatileEntries.size(), attributesMap.size()));
+    fatalerror_noImpliedLayerType(ctx.err, ctx.decompilerSrcPaths, mode);
   }
 
   std::size_t metatileIndex = 0;

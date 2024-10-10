@@ -40,9 +40,10 @@ const std::string GLOBAL_HELP = std::string{fmt::format(R"(
 porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 
-Overworld tileset compiler for use with the pokeruby, pokefirered, and pokeemerald Pokémon
-Generation 3 decompilation projects from pret. Also compatible with pokeemerald-expansion from
-rh-hideout. Builds Porymap-ready tilesets from RGBA (or indexed) tile assets.
+Overworld tileset compiler for use with the pokeruby, pokefirered, and
+pokeemerald Pokémon Generation 3 decompilation projects from pret. Also
+compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
+tilesets from RGBA (or indexed) tile assets.
 
 Project home page: https://github.com/grunt-lucas/porytiles
 
@@ -59,22 +60,27 @@ GLOBAL OPTIONS
 
 SUBCOMMANDS
     {}
-        Compile a primary tileset. All files are generated in-place at the output location.
-        Compilation transforms RGBA (or indexed) tile assets into a Porymap-ready tileset.
+        Compile a primary tileset. All files are generated in-place at the
+        output location. Compilation transforms RGBA (or indexed) tile assets
+        into a Porymap-ready tileset.
 
     {}
-        Compile a secondary tileset. All files are generated in-place at the output location.
-        Compilation transforms RGBA (or indexed) tile assets into a Porymap-ready tileset.
+        Compile a secondary tileset. All files are generated in-place at the
+        output location. Compilation transforms RGBA (or indexed) tile assets
+        into a Porymap-ready tileset.
 
     {}
-        Decompile a primary tileset. All files are generated in-place at the output location.
-        Decompilation transforms a Porymap-ready tileset into RGBA tile assets.
+        Decompile a primary tileset. All files are generated in-place at the
+        output location. Decompilation transforms a Porymap-ready tileset into
+        RGBA tile assets.
 
     {}
-        Decompile a secondary tileset. All files are generated in-place at the output location.
-        Decompilation transforms a Porymap-ready tileset into RGBA tile assets.
+        Decompile a secondary tileset. All files are generated in-place at the
+        output location. Decompilation transforms a Porymap-ready tileset into
+        RGBA tile assets.
 
-Run `porytiles SUBCOMMAND --help' for more information about a subcommand and its OPTIONS and ARGS.
+Run `porytiles SUBCOMMAND --help' for more information about a subcommand and
+its OPTIONS and ARGS.
 
 To get more help with Porytiles, check out the guides at:
     https://github.com/grunt-lucas/porytiles/wiki
@@ -93,50 +99,77 @@ COMPILE_PRIMARY_COMMAND, COMPILE_SECONDARY_COMMAND, DECOMPILE_PRIMARY_COMMAND, D
 
 const std::string COMPILATION_INPUT_DIRECTORY_FORMAT = std::string{fmt::format(R"(
     Compilation Input Directory Format
-        The compilation input directory must conform to the following format. `[]' indicates
-        optional assets.
+        The compilation input directory must conform to the following format.
+        `[]' indicates optional assets.
             src/
-                bottom.png               # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)
-                middle.png               # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)
-                top.png                  # top metatile layer (RGBA, 8-bit, or 16-bit indexed)
-                [assign.cache]           # cached configuration for palette assignment algorithm
-                [attributes.csv]         # missing metatile entries will receive default values
-                [anim/]                  # `anim' folder is optional
-                    [anim1/]             # animation names can be arbitrary, but must be unique
-                        key.png          # you must specify a key frame PNG for each anim
-                        00.png           # you must specify at least one animation frame for each anim
-                        [01.png]         # frames must be named numerically, in order
-                        ...              # you may specify an arbitrary number of additional frames
-                    ...                  # you may specify an arbitrary number of additional animations
-                [palette-primers]        # `palette-primers' folder is optional
-                    [foliage.pal]        # e.g. a pal file containing all the colors for your trees and grass
-                    ...                  # you may specify an arbitrary number of additional primer palettes
+                # bottom metatile layer (RGBA, 8-bit, or 16-bit indexed)
+                bottom.png
+                # middle metatile layer (RGBA, 8-bit, or 16-bit indexed)
+                middle.png
+                # top metatile layer (RGBA, 8-bit, or 16-bit indexed)
+                top.png
+                # cached configuration for palette assignment algorithm
+                [assign.cache]
+                # missing metatile entries will receive default values
+                [attributes.csv]
+                [anim/]
+                    # animation names can be arbitrary, but must be unique
+                    [anim1/]
+                        # you must specify a key frame PNG for each anim
+                        key.png
+                        # you must specify at least a 00.png anim frame
+                        00.png
+                        # frames must be named numerically, in order
+                        [01.png]
+                        # you may specify an arbitrary number of frames
+                        ...
+                    # you may specify an arbitrary number of animations
+                    ...
+                 # `palette-primers' folder is optional
+                [palette-primers]
+                    # e.g. a pal file containing all the colors for your foliage
+                    [foliage.pal]
+                    # you may specify an arbitrary number of primer palettes
+                    ...
 )"
 )}.substr(1);
 
 const std::string DECOMPILATION_INPUT_DIRECTORY_FORMAT = std::string{fmt::format(R"(
     Decompilation Input Directory Format\n"
-        The decompilation input directory must conform to the following format. `[]' indicates
-        optional assets.
+        The decompilation input directory must conform to the following format.
+        `[]' indicates optional assets.
             bin/
-                metatile_attributes.bin  # binary file containing attributes of each metatile
-                metatiles.bin            # binary file containing metatile entries
-                tiles.png                # indexed png of raw tiles
-                palettes                 # directory of palette files
-                    00.pal               # JASC pal file for palette 0
-                    ...                  # number of pal files must match base game pals total count
-                [anim/]                  # `anim' folder is optional
-                    [anim1/]             # animation names can be arbitrary, but must be unique
-                        00.png           # you must specify at least one animation frame for each anim
-                        [01.png]         # frames must be named numerically, in order
-                        ...              # you may specify an arbitrary number of additional frames
-                    ...                  # you may specify an arbitrary number of additional animations
+                # binary file containing attributes of each metatile
+                metatile_attributes.bin
+                # binary file containing metatile entries
+                metatiles.bin
+                # indexed png of raw tiles
+                tiles.png
+                # directory of palette files
+                palettes
+                    # JASC pal file for palette 0
+                    00.pal
+                    # number of pal files must match base game pals total count
+                    ...
+                # `anim' folder is optional
+                [anim/]
+                    # animation names can be arbitrary, but must be unique
+                    [anim1/]
+                        # you must specify at least a 00.png anim frame
+                        00.png
+                        # frames must be named numerically, in order
+                        [01.png]
+                        # you may specify an arbitrary number of frames
+                        ...
+                    # you may specify an arbitrary number of animations
+                    ...
 )"
 )}.substr(1);
 
 const std::string WARN_OPTIONS_HEADER = std::string{fmt::format(R"(
-        Use these options to enable or disable additional warnings, as well as set specific
-        warnings as errors. For more information and a full list of available warnings, check:
+        Use these options to enable or disable additional warnings, as well as
+        set specific warnings as errors. For more information and a full list of
+        available warnings, check:
         https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors
 )"
 )}.substr(1);
@@ -145,26 +178,28 @@ const std::string COMPILE_PRIMARY_HELP = std::string{fmt::format(R"(
 USAGE
     porytiles {} [OPTIONS] INPUT-PATH BEHAVIORS-HEADER
 
-Compile RGBA tile assets into a Porymap-ready primary tileset. `compile-primary' expects an input
-path containing the target assets organized according to the format outlined in the Compilation
-Input Directory Format subsection. You must also supply your project's `metatile_behaviors.h' file.
-By default, `compile-primary' will write output to the current working directory, but you can
-change this behavior by supplying the `-o' option.
+Compile RGBA tile assets into a Porymap-ready primary tileset. `compile-primary'
+expects an input path containing the target assets organized according to the
+format outlined in the Compilation Input Directory Format subsection. You must
+also supply your project's `metatile_behaviors.h' file. By default,
+`compile-primary' will write output to the current working directory, but you
+can change this behavior by supplying the `-o' option.
 
 ARGS
     <INPUT-PATH>
-        Path to a directory containing the RGBA tile assets for the target primary set. The
-        directory must conform to the Compilation Input Directory Format outlined below. This
-        tileset is the `target tileset.'
+        Path to a directory containing the RGBA tile assets for the target
+        primary set. The directory must conform to the Compilation Input
+        Directory Format outlined below. This tileset is the `target tileset.'
 
     <BEHAVIORS-HEADER>
-        Path to your project's `metatile_behaviors.h' file. This file is likely located in your
-        project's `include/constants' folder.
+        Path to your project's `metatile_behaviors.h' file. This file is likely
+        located in your project's `include/constants' folder.
 
 {}
 OPTIONS
-    For more detailed information about the options below, check out the options pages here:
-    https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
+    For more detailed information about the options below, check out the options
+    pages here:
+      https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
 
     Driver Options
 {}
@@ -215,33 +250,36 @@ const std::string COMPILE_SECONDARY_HELP = std::string{fmt::format(R"(
 USAGE
     porytiles {} [OPTIONS] INPUT-PATH PRIMARY-INPUT-PATH BEHAVIORS-HEADER
 
-Compile RGBA tile assets into a Porymap-ready secondary tileset. `compile-secondary' expects an
-input path containing the target assets organized according to the format outlined in the
-Compilation Input Directory Format subsection. You must also supply the RGBA tile assets for a
-paired primary tileset, so Porytiles can take advantage of the Generation 3 engine's tile re-use
-system. Like `compile-primary', you must also supply your project's `metatile_behaviors.h' file. By
-default, `compile-secondary' will write output to the current working directory, but you can change
-this behavior by supplying the `-o' option.
+Compile RGBA tile assets into a Porymap-ready secondary tileset.
+`compile-secondary' expects an input path containing the target assets organized
+according to the format outlined in the Compilation Input Directory Format
+subsection. You must also supply the RGBA tile assets for a paired primary
+tileset, so Porytiles can take advantage of the Generation 3 engine's tile
+re-use system. Like `compile-primary', you must also supply your project's
+`metatile_behaviors.h' file. By default, `compile-secondary' will write output
+to the current working directory, but you can change this behavior by supplying
+the `-o' option.
 
 ARGS
     <INPUT-PATH>
-        Path to a directory containing the RGBA tile assets for the target secondary set. The
-        directory must conform to the Compilation Input Directory Format outlined below. This
-        tileset is the `target tileset.'
+        Path to a directory containing the RGBA tile assets for the target
+        secondary set. The directory must conform to the Compilation Input
+        Directory Format outlined below. This tileset is the `target tileset.'
 
     <PRIMARY-INPUT-PATH>
-        Path to a directory containing the RGBA tile assets for the paired primary set of the
-        target secondary tileset. The directory must conform to the Compilation Input Directory
-        Format outlined below.
+        Path to a directory containing the RGBA tile assets for the paired
+        primary set of the target secondary tileset. The directory must conform
+        to the Compilation Input Directory Format outlined below.
 
     <BEHAVIORS-HEADER>
-        Path to your project's `metatile_behaviors.h' file. This file is likely located in your
-        project's `include/constants' folder.
+        Path to your project's `metatile_behaviors.h' file. This file is likely
+        located in your project's `include/constants' folder.
 
 {}
 OPTIONS
-    For more detailed information about the options below, check out the options pages here:
-    https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
+    For more detailed information about the options below, check out the options
+    pages here:
+      https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
 
     Driver Options
 {}
@@ -298,26 +336,28 @@ const std::string DECOMPILE_PRIMARY_HELP = std::string{fmt::format(R"(
 USAGE
     porytiles {} [OPTIONS] INPUT-PATH BEHAVIORS-HEADER
 
-Decompile a Porymap-ready primary tileset back into Porytiles-compatible RGBA tile assets.
-`decompile-primary' expects an input path containing target compiled tile assets organized
-according to the format outlined in the Decompilation Input Directory Format subsection. Like the
-compilation commands, `decompile-primary' requires your project's `metatile_behaviors.h' file.
-You can control its output location via the `-o' option.
+Decompile a Porymap-ready primary tileset back into Porytiles-compatible RGBA
+tile assets. `decompile-primary' expects an input path containing target
+compiled tile assets organized according to the format outlined in the
+Decompilation Input Directory Format subsection. Like the compilation commands,
+`decompile-primary' requires your project's `metatile_behaviors.h' file. You can
+control its output location via the `-o' option.
 
 ARGS
     <INPUT-PATH>
-        Path to a directory containing the compiled primary tileset. The directory must conform
-        to the Decompilation Input Directory Format outlined below. This tileset is the `target
-        tileset.'
+        Path to a directory containing the compiled primary tileset. The
+        directory must conform to the Decompilation Input Directory Format
+        outlined below. This tileset is the `target tileset.'
 
     <BEHAVIORS-HEADER>
-        Path to your project's `metatile_behaviors.h' file. This file is likely located in your
-        project's `include/constants' folder.
+        Path to your project's `metatile_behaviors.h' file. This file is likely
+        located in your project's `include/constants' folder.
 
 {}
 OPTIONS
-    For more detailed information about the options below, check out the options pages here:
-    https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
+    For more detailed information about the options below, check out the options
+    pages here:
+      https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
 
     Driver Options
 {}
@@ -352,32 +392,34 @@ const std::string DECOMPILE_SECONDARY_HELP = std::string{fmt::format(R"(
 USAGE
     porytiles {} [OPTIONS] INPUT-PATH PRIMARY-INPUT-PATH BEHAVIORS-HEADER
 
-Decompile a Porymap-ready secondary tileset back into Porytiles-compatible RGBA tile assets.
-`decompile-secondary' expects an input path containing target compiled tile assets organized
-according to the format outlined in the Decompilation Input Directory Format subsection. You must
-also supply the compiled tile assets of the target tileset's paired primary. `decompile-secondary'
-requires your project's `metatile_behaviors.h' file. You can control its output location via the
-`-o' option.
+Decompile a Porymap-ready secondary tileset back into Porytiles-compatible RGBA
+tile assets. `decompile-secondary' expects an input path containing target
+compiled tile assets organized according to the format outlined in the
+Decompilation Input Directory Format subsection. You must also supply the
+compiled tile assets of the target tileset's paired primary.
+`decompile-secondary' requires your project's `metatile_behaviors.h' file. You
+can control its output location via the `-o' option.
 
 ARGS
     <INPUT-PATH>
-        Path to a directory containing the compiled secondary tileset. The directory must conform
-        to the Decompilation Input Directory Format outlined below. This tileset is the `target
-        tileset.'
+        Path to a directory containing the compiled secondary tileset. The
+        directory must conform to the Decompilation Input Directory Format
+        outlined below. This tileset is the `target tileset.'
 
     <PRIMARY-INPUT-PATH>
-        Path to a directory containing the compiled paired primary tileset for the target secondary
-        tileset. The directory must conform to the Decompilation Input Directory Format outlined
-        below.
+        Path to a directory containing the compiled paired primary tileset for
+        the target secondary tileset. The directory must conform to the
+        Decompilation Input Directory Format outlined below.
 
     <BEHAVIORS-HEADER>
-        Path to your project's `metatile_behaviors.h' file. This file is likely located in your
-        project's `include/constants' folder.
+        Path to your project's `metatile_behaviors.h' file. This file is likely
+        located in your project's `include/constants' folder.
 
 {}
 OPTIONS
-    For more detailed information about the options below, check out the options pages here:
-    https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
+    For more detailed information about the options below, check out the options
+    pages here:
+      https://github.com/grunt-lucas/porytiles/wiki#advanced-topics
 
     Driver Options
 {}
@@ -912,7 +954,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
       }
       else {
-        // TODO 1.0.0 : remove this deprecation warning
+        // TODO : remove this deprecation warning at some point in the future
         pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
         pt_println(stderr,
                    "         It is now the default Porytiles behavior, so you no longer need to specify this option.");

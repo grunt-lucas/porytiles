@@ -38,7 +38,7 @@ const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range"
 
 static std::string getTilePrettyString(const RGBATile &tile)
 {
-  // TODO 1.0.0 : add CLI option to display indexes according to offsets? (so they match up with Porymap?)
+  // TODO : display indexes according to offsets? (so they match up with Porymap?)
   std::string tileString = "";
   if (tile.type == TileType::LAYERED) {
     tileString = fmt::format("metatile 0x{:x} ({}), {}, {}", tile.metatileIndex, tile.metatileIndex,
@@ -102,7 +102,7 @@ void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_3
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{} layer source PNG width `{}' was not 128", layerString(layer), fmt::styled(width, fmt::emphasis::bold));
+    pt_err("{} layer source PNG width `{}' was not {}", layerString(layer), fmt::styled(width, fmt::emphasis::bold), METATILE_SHEET_WIDTH);
     pt_println(stderr, "");
   }
 }
@@ -540,6 +540,16 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
     pt_println(stderr, "      https://wiki-page-link-goes-here.com");
   }
   die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("palette assign param search matrix failed"));
+}
+
+void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs, DecompilerMode mode)
+{
+  if (err.printErrors) {
+    pt_fatal_err("no layer type was implied by the supplied metatiles and attributes");
+    pt_note("either you forgot to supply the correct `-target-base-game' option, or a file is corrupted");
+    pt_println(stderr, "");
+  }
+  die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("no implied layer type"));
 }
 
 static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,

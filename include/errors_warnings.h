@@ -253,6 +253,9 @@ void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const Comp
 void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                      const CompilerMode &mode);
 
+void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
+                                   DecompilerMode mode);
+
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
  */

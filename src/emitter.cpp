@@ -325,7 +325,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
   else {
     outCsv << "id,behavior" << std::endl;
   }
-  // TODO 1.0.0 : if all elements in a row correspond to the selected defaults, skip emitting this row?
+  // TODO : if all elements in a row correspond to the selected defaults, skip emitting this row?
   for (std::size_t metatileIndex = 0; metatileIndex < attributesMap.size(); metatileIndex++) {
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
       if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
@@ -559,7 +559,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
 TEST_CASE("emitAnim should correctly emit compiled animation PNG files")
 {
-  // TODO 1.0.0 : test impl emitAnim should correctly emit compiled animation PNG files
+  // TODO tests : (emitAnim should correctly emit compiled animation PNG files)
 }
 
 TEST_CASE("emitAttributes should correctly emit metatile attributes")
@@ -736,5 +736,5 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files")
 {
-  // TODO 1.0.0 : test impl emitDecompiled should correctly emit the decompiled tileset files
+  // TODO tests : (emitDecompiled should correctly emit the decompiled tileset files)
 }

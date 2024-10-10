@@ -597,10 +597,9 @@ static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mod
   std::ostringstream outAttributesContent{};
   std::size_t metatileCount = attributesMap.size();
   std::size_t imageHeight = std::ceil(metatileCount / 8.0) * 16;
-  // TODO 1.0.0 : replace the 128s strewn about the code with a named constant METATILE_SHEET_WIDTH or something
-  png::image<png::rgba_pixel> bottomPng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> middlePng{128, static_cast<png::uint_32>(imageHeight)};
-  png::image<png::rgba_pixel> topPng{128, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> bottomPng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> middlePng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
+  png::image<png::rgba_pixel> topPng{METATILE_SHEET_WIDTH, static_cast<png::uint_32>(imageHeight)};
   porytiles::emitDecompiled(ctx, mode, bottomPng, middlePng, topPng, outAttributesContent, tileset, attributesMap,
                             behaviorReverseMap);
 
@@ -731,7 +730,6 @@ static void driveDecompilePrimary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
-  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::PRIMARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
@@ -755,7 +753,6 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
   /*
    * Import behavior header, if it was supplied
    */
-  // TODO 1.0.0 : better error message if file did not exist? see compile version
   auto [behaviorMap, behaviorReverseMap] =
       prepareBehaviorsHeaderForImport(ctx, DecompilerMode::SECONDARY, ctx.decompilerSrcPaths.metatileBehaviors);
 
@@ -1003,7 +1000,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
 
   porytiles::drive(ctx);
 
-  // TODO 1.0.0 : test impl check pal files
+  // TODO tests : (drive should emit all expected files...) test palette files are correct
 
   // Check tiles.png
 
@@ -1170,7 +1167,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
 
   porytiles::drive(ctx);
 
-  // TODO 1.0.0 : test impl check pal files
+  // TODO tests : (drive should emit all expected files...) test palette files are correct
 
   // Check tiles.png
 
@@ -1388,7 +1385,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
       std::filesystem::path{"res/tests/compiled_emerald_general/expected_decompiled/attributes.csv"},
       parentDir / std::filesystem::path{"attributes.csv"});
 
-  // TODO : test animations once we implement anim decomp
+  // TODO tests : (drive should emit all expected files) test animations once we implement anim decomp
 
   std::filesystem::remove_all(parentDir);
 }

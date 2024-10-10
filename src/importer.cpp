@@ -836,14 +836,14 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
 
   for (const std::unique_ptr<std::ifstream> &stream : paletteFiles) {
     std::string line;
-
     /*
      * TODO : should fatal errors here have better messages? Users shouldn't ever really see these errors, since
      * compiled palettes will always presumably have correct formatting unless a user has manually messed with one
      */
-
-    // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
-
+    /*
+    * FIXME : this function assumes the pal file is DOS format, need to fix this
+    * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
+    */
     std::getline(*stream, line);
     if (line.size() == 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
@@ -1142,7 +1142,10 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, s
    * TODO : fatalerrors in this function need better messaging
    */
 
-  // FIXME 1.0.0 : this function assumes the pal file is DOS format, need to fix this
+  /*
+   * FIXME : this function assumes the pal file is DOS format, need to fix this
+   * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
+   */
 
   std::string line;
   std::getline(paletteFile, line);
@@ -1746,7 +1749,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
     paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
   }
-  // TODO 1.0.0 : actually test anims import
+  // TODO tests : (importCompiledTileset should import a triple-layer...) actually test anims import
   auto [importedTileset, attributesMap] =
       porytiles::importCompiledTileset(decompileCtx, porytiles::DecompilerMode::PRIMARY, metatiles, attributes,
                                        std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
@@ -1780,12 +1783,12 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     }
   }
 
-  // TODO 1.0.0 : test impl check attributes map
+  // TODO tests : (importCompiledTileset should import a triple-layer...) check attributes map correctness
 
   std::filesystem::remove_all(parentDir);
 }
 
 TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly")
 {
-  // TODO 1.0.0 : test impl importCompiledTileset should import a dual-layer pokefirered tileset correctly
+  // TODO tests : (importCompiledTileset should import a dual-layer pokefirered tileset correctly)
 }
