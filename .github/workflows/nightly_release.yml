@@ -69,10 +69,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-macos-aarch64:
-    name: Release a nightly dynamically linked macos-aarch64 binary
+  nightly-release-macos-arm64:
+    name: Release a nightly dynamically linked macos-arm64 binary
     runs-on: macos-latest
-    # GitHub removed Intel Mac runners, so macos-latest is now aarch64
+    # GitHub removed Intel Mac runners, so macos-latest is now arm64
     needs: [create-release-tag]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
@@ -92,20 +92,20 @@ jobs:
 
       - name: Create release package
         run: |
-          ./script/package.sh macos-aarch64 nightly-${{github.sha}} .
+          ./script/package.sh macos-arm64 nightly-${{github.sha}} .
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: porytiles-macos-aarch64.zip
+          files: porytiles-macos-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   prune-old-nightlies:
     name: Only keep the latest nightly build
     runs-on: ubuntu-latest
-    needs: [nightly-release-linux-amd64, nightly-release-macos-aarch64]
+    needs: [nightly-release-linux-amd64, nightly-release-macos-arm64]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - uses: dev-drprasad/delete-older-releases@v0.3.2

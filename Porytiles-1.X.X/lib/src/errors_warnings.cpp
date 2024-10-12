@@ -102,7 +102,8 @@ void error_layerWidthNeq128(ErrorsAndWarnings &err, TileLayer layer, png::uint_3
 {
   err.errCount++;
   if (err.printErrors) {
-    pt_err("{} layer source PNG width `{}' was not {}", layerString(layer), fmt::styled(width, fmt::emphasis::bold), METATILE_SHEET_WIDTH);
+    pt_err("{} layer source PNG width `{}' was not {}", layerString(layer), fmt::styled(width, fmt::emphasis::bold),
+           METATILE_SHEET_WIDTH);
     pt_println(stderr, "");
   }
 }

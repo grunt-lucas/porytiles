@@ -2,7 +2,6 @@
 #define PORYTILES_ERRORS_WARNINGS_H
 
 #include <cstddef>
-#include <png.hpp>
 #include <string>
 
 #include "types.h"

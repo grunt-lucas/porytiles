@@ -3,12 +3,12 @@
 
 #include <exception>
 
-#include "build_version.h"
-#include "cli_parser.h"
-#include "driver.h"
-#include "logger.h"
-#include "porytiles_context.h"
-#include "porytiles_exception.h"
+#include "porytiles/build_version.h"
+#include "porytiles/cli_parser.h"
+#include "porytiles/driver.h"
+#include "porytiles/logger.h"
+#include "porytiles/porytiles_context.h"
+#include "porytiles/porytiles_exception.h"
 
 int main(int argc, char **argv)
 try {

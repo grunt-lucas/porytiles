@@ -1,3 +1,0 @@
-export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
-export CXXFLAGS="-nostdinc++ -nostdlib++ -isystem /opt/homebrew/opt/llvm@16/include/c++/v1"
-export LDFLAGS="-L /opt/homebrew/opt/llvm@16/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm@16/lib/c++"
