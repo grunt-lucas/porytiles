@@ -841,9 +841,9 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
      * compiled palettes will always presumably have correct formatting unless a user has manually messed with one
      */
     /*
-    * FIXME : this function assumes the pal file is DOS format, need to fix this
-    * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
-    */
+     * FIXME : this function assumes the pal file is DOS format, need to fix this
+     * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
+     */
     std::getline(*stream, line);
     if (line.size() == 0) {
       fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
