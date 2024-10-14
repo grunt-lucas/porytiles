@@ -1,4 +1,4 @@
-name: Porytiles PR Build
+name: Porytiles PR / Develop Build
 on:
   pull_request:
     branches: [ "develop" ]
@@ -29,7 +29,7 @@ jobs:
 
       - name: Build the project
         run: |
-          cd Porytiles-1.X.X
+          cd Porytiles-1.x
           export CXX=clang++-16
           cmake -B build
           cd build
@@ -37,7 +37,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./Porytiles-1.X.X/build/test/PorytilesTestSuite
+          ./Porytiles-1.x/build/test/PorytilesTestSuite
 
   build-linux-amd64-gcc:
     name: Build on linux-amd64 with gcc
@@ -61,7 +61,7 @@ jobs:
 
       - name: Build the project
         run: |
-          cd Porytiles-1.X.X
+          cd Porytiles-1.x
           export CXX=g++-13
           cmake -B build
           cd build
@@ -69,7 +69,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./Porytiles-1.X.X/build/test/PorytilesTestSuite
+          ./Porytiles-1.x/build/test/PorytilesTestSuite
 
   build-macos-arm64-clang-llvm:
     name: Build on macos-arm64 with clang
@@ -93,7 +93,7 @@ jobs:
       # package versions deeply buried in some ancient MacOS system framework
       - name: Build the project
         run: |
-          cd Porytiles-1.X.X
+          cd Porytiles-1.x
           export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
           cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
           cd build
@@ -101,4 +101,4 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./Porytiles-1.X.X/build/test/PorytilesTestSuite
+          ./Porytiles-1.x/build/test/PorytilesTestSuite

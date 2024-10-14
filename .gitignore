@@ -4,7 +4,7 @@
 .DS_Store
 
 # Build artifacts and executables
-Porytiles-1.X.X/build/**
+Porytiles-1.x/build/**
 
 # LLVM coverage files
 default.profraw

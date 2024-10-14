@@ -5,13 +5,15 @@ set -eu
 # FIXME : build version and date not correctly passed, need to find idiomatic CMake way to handle this
 
 package_release() {
-  cp Porytiles-1.X.X/build/cli/porytiles "$output_directory/porytiles-$mode"
-  cp Porytiles-1.X.X/build/test/PorytilesTestSuite "$output_directory/porytiles-$mode"
+  cp Porytiles-1.x/build/cli/porytiles "$output_directory/porytiles-$mode"
+  cp Porytiles-1.x/build/test/PorytilesTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
   cp LICENSE "$output_directory/porytiles-$mode"
-  cp -r res "$output_directory/porytiles-$mode"
-  cp -r Porytiles-1.X.X/vendor "$output_directory/porytiles-$mode"
+  mkdir -p "$output_directory/porytiles-$mode/Resources"
+  cp -r Resources/Examples "$output_directory/porytiles-$mode/Resources"
+  cp -r Resources/Tests "$output_directory/porytiles-$mode/Resources"
+  cp -r Porytiles-1.x/vendor "$output_directory/porytiles-$mode"
 
   # Run the tests, bail package script if they fail
   pushd "$output_directory/porytiles-$mode"
@@ -25,7 +27,7 @@ package_release() {
 macos_arm64() {
   echo "Packaging release macos-arm64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  cd Porytiles-1.X.X
+  cd Porytiles-1.x
   export CXX="/opt/homebrew/opt/llvm@16/bin/clang++"
   cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
@@ -37,7 +39,7 @@ macos_arm64() {
 linux_aarch64() {
   echo "Packaging release linux-aarch64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  cd Porytiles-1.X.X
+  cd Porytiles-1.x
   export CXX="clang++-16"
   cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
@@ -49,7 +51,7 @@ linux_aarch64() {
 linux_amd64() {
   echo "Packaging release linux-amd64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  cd Porytiles-1.X.X
+  cd Porytiles-1.x
   export CXX="clang++-16"
   cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
