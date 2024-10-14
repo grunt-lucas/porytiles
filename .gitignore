@@ -5,10 +5,6 @@
 
 # Build artifacts and executables
 Porytiles-1.X.X/build/**
-build/**
-release/**
-debug/**
-*.dSYM
 
 # LLVM coverage files
 default.profraw

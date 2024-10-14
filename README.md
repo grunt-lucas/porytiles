@@ -9,7 +9,7 @@ Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for
 
 For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) or [the video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
 
-![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/img/PokemonHearth.png?raw=true)
+![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Wiki/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles.*
 
 ## Why Should I Use This Tool?
@@ -25,3 +25,6 @@ First, go ahead and follow [the release installation instructions in the wiki](h
 ## Compiler Information
 
 Clang+LLVM 16 is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC 13. I try to maintain compatibility with GCC, should you prefer it over Clang+LLVM.
+
+## Note For Aseprite Users
+GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection of [useful scripts here.](https://github.com/PKGaspi/AsepriteScripts) Of particular interest is this [`export_layers`](https://github.com/PKGaspi/AsepriteScripts/blob/main/scripts/gaspi/export_layers.lua) script, which allows you to save each sprite layer to a different file. This may be useful, since Porytiles requires each tile layer in a separate PNG file.
