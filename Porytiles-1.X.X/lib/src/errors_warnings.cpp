@@ -839,8 +839,8 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -857,8 +857,8 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -876,8 +876,8 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles")
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_invalidAlphaValue";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_invalidAlphaValue";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -894,8 +894,8 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_animFrameWasNotAPng";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_animFrameWasNotAPng";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -912,8 +912,8 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
   ctx.compilerConfig.tripleLayer = false;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -934,14 +934,14 @@ TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format 
   SUBCASE("Emerald row format, missing field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/incorrect_row_format_1.csv"),
+                                                            "Resources/Tests/csv/incorrect_row_format_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
   SUBCASE("Firered row format, missing field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/incorrect_row_format_2.csv"),
+                                                            "Resources/Tests/csv/incorrect_row_format_2.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
@@ -957,7 +957,7 @@ TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has
   SUBCASE("Emerald row format, missing metatile behavior")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/unknown_behavior_1.csv"),
+                                                            "Resources/Tests/csv/unknown_behavior_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
@@ -973,7 +973,7 @@ TEST_CASE("error_duplicateAttribute should trigger correctly when two rows speci
   SUBCASE("Duplicate metatile definition test 1")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/duplicate_definition_1.csv"),
+                                                            "Resources/Tests/csv/duplicate_definition_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
   }
@@ -989,7 +989,7 @@ TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifie
   SUBCASE("Invalid TerrainType test 1")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/invalid_terrain_type_1.csv"),
+                                                            "Resources/Tests/csv/invalid_terrain_type_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
@@ -1005,7 +1005,7 @@ TEST_CASE("error_invalidEncounterType should trigger correctly when a row specif
   SUBCASE("Invalid EncounterType test 1")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/invalid_encounter_type_1.csv"),
+                                                            "Resources/Tests/csv/invalid_encounter_type_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 1);
   }
@@ -1017,8 +1017,8 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1033,9 +1033,9 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
   ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/simple_metatiles_1";
-  ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/simple_metatiles_1";
+  ctx.compilerSrcPaths.secondarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1053,8 +1053,8 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath =
-        "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+        "Resources/Tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1071,8 +1071,8 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath =
-        "res/tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+        "Resources/Tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1089,8 +1089,8 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1107,8 +1107,8 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
-      "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+      "Resources/Tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1126,8 +1126,8 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
-      "res/tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+      "Resources/Tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1143,8 +1143,8 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1161,8 +1161,8 @@ TEST_CASE(
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1180,10 +1180,10 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
   ctx.fieldmapConfig.numPalettesInPrimary = 2;
   ctx.fieldmapConfig.numPalettesTotal = 4;
   ctx.compilerSrcPaths.primarySourcePath =
-      "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
+      "Resources/Tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
   ctx.compilerSrcPaths.secondarySourcePath =
-      "res/tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+      "Resources/Tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1203,32 +1203,32 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
   SUBCASE("Completely missing header")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/missing_header_1.csv"),
-                         "res/tests/csv/missing_header_1.csv: incorrect header row format",
+                                                            "Resources/Tests/csv/missing_header_1.csv"),
+                         "Resources/Tests/csv/missing_header_1.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing id field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/missing_header_2.csv"),
-                         "res/tests/csv/missing_header_2.csv: incorrect header row format",
+                                                            "Resources/Tests/csv/missing_header_2.csv"),
+                         "Resources/Tests/csv/missing_header_2.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header missing behavior field")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/missing_header_3.csv"),
-                         "res/tests/csv/missing_header_3.csv: incorrect header row format",
+                                                            "Resources/Tests/csv/missing_header_3.csv"),
+                         "Resources/Tests/csv/missing_header_3.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 
   SUBCASE("Header has terrainType but missing encounterType")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/missing_header_4.csv"),
-                         "res/tests/csv/missing_header_4.csv: incorrect header row format",
+                                                            "Resources/Tests/csv/missing_header_4.csv"),
+                         "Resources/Tests/csv/missing_header_4.csv: incorrect header row format",
                          porytiles::PorytilesException);
   }
 }
@@ -1243,15 +1243,15 @@ TEST_CASE("fatalerror_invalidIdInCsv should trigger when the id column in attrib
   SUBCASE("Invalid integer format 1")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/invalid_id_column_1.csv"),
-                         "res/tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PorytilesException);
+                                                            "Resources/Tests/csv/invalid_id_column_1.csv"),
+                         "Resources/Tests/csv/invalid_id_column_1.csv: invalid id foo", porytiles::PorytilesException);
   }
 
   SUBCASE("Invalid integer format 2")
   {
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/invalid_id_column_2.csv"),
-                         "res/tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PorytilesException);
+                                                            "Resources/Tests/csv/invalid_id_column_2.csv"),
+                         "Resources/Tests/csv/invalid_id_column_2.csv: invalid id 6bar", porytiles::PorytilesException);
   }
 }
 
@@ -1263,7 +1263,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
   SUBCASE("Invalid integer format 1")
   {
-    std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_1.h"};
+    std::ifstream behaviorFile{"Resources/Tests/metatile_behaviors_invalid_1.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
                          "invalid behavior value foo", porytiles::PorytilesException);
     behaviorFile.close();
@@ -1271,7 +1271,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
   SUBCASE("Invalid integer format 2")
   {
-    std::ifstream behaviorFile{"res/tests/metatile_behaviors_invalid_2.h"};
+    std::ifstream behaviorFile{"Resources/Tests/metatile_behaviors_invalid_2.h"};
     CHECK_THROWS_WITH_AS(porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
                          "invalid behavior value 6bar", porytiles::PorytilesException);
     behaviorFile.close();
@@ -1284,8 +1284,8 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
   ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
-  ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_colorPrecisionLoss";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_colorPrecisionLoss";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.colorPrecisionLoss = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1306,8 +1306,8 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath =
-        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+        "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1326,10 +1326,10 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath =
-        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
+        "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
     ctx.compilerSrcPaths.secondarySourcePath =
-        "res/tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+        "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1351,7 +1351,7 @@ TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn")
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
   CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                          "res/tests/csv/correct_2.csv"),
+                                                          "Resources/Tests/csv/correct_2.csv"),
                        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
@@ -1365,7 +1365,7 @@ TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn")
 
   std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
   CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                          "res/tests/csv/correct_1.csv"),
+                                                          "Resources/Tests/csv/correct_1.csv"),
                        "errors generated during attributes CSV parsing", porytiles::PorytilesException);
   CHECK(ctx.err.errCount == 1);
 }
@@ -1378,8 +1378,8 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1398,9 +1398,9 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerSrcPaths.primarySourcePath =
-        "res/tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
-    ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+        "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
+    ctx.compilerSrcPaths.secondarySourcePath = "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1421,8 +1421,8 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1440,9 +1440,9 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
-    ctx.compilerSrcPaths.secondarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/secondary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
+    ctx.compilerSrcPaths.secondarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1461,8 +1461,8 @@ TEST_CASE("warn_unusedAttribute should correctly warn")
     ctx.fieldmapConfig.numPalettesInPrimary = 2;
     ctx.fieldmapConfig.numPalettesTotal = 4;
     ctx.compilerConfig.tripleLayer = false;
-    ctx.compilerSrcPaths.primarySourcePath = "res/tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
-    ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1482,8 +1482,8 @@ TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger corre
   ctx.fieldmapConfig.numPalettesInPrimary = 1;
   ctx.fieldmapConfig.numPalettesTotal = 2;
   ctx.compilerSrcPaths.primarySourcePath =
-      "res/tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
-  ctx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+      "Resources/Tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
+  ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   ctx.err.transparencyCollapse = porytiles::WarningMode::ERR;
   ctx.err.printErrors = false;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;

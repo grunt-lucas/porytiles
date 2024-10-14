@@ -460,12 +460,12 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/bottom.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/middle.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_2/primary/top.png"}));
-  png::image<png::rgba_pixel> bottomPrimary{"res/tests/simple_metatiles_2/primary/bottom.png"};
-  png::image<png::rgba_pixel> middlePrimary{"res/tests/simple_metatiles_2/primary/middle.png"};
-  png::image<png::rgba_pixel> topPrimary{"res/tests/simple_metatiles_2/primary/top.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_2/primary/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_2/primary/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_2/primary/top.png"}));
+  png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/simple_metatiles_2/primary/bottom.png"};
+  png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/simple_metatiles_2/primary/middle.png"};
+  png::image<png::rgba_pixel> topPrimary{"Resources/Tests/simple_metatiles_2/primary/top.png"};
   porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
       ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
       middlePrimary, topPrimary);
@@ -484,7 +484,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
   outPng.write(pngTmpPath);
 
   png::image<png::index_pixel> tilesetPng{pngTmpPath};
-  png::image<png::index_pixel> expectedPng{"res/tests/simple_metatiles_2/primary/expected_tiles.png"};
+  png::image<png::index_pixel> expectedPng{"Resources/Tests/simple_metatiles_2/primary/expected_tiles.png"};
 
   CHECK(tilesetPng.get_width() == expectedPng.get_width());
   CHECK(tilesetPng.get_height() == expectedPng.get_height());
@@ -506,13 +506,13 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/bottom.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/middle.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/top.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/top.png"}));
 
-  png::image<png::rgba_pixel> bottom{"res/tests/simple_metatiles_1/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
+  png::image<png::rgba_pixel> bottom{"Resources/Tests/simple_metatiles_1/bottom.png"};
+  png::image<png::rgba_pixel> middle{"Resources/Tests/simple_metatiles_1/middle.png"};
+  png::image<png::rgba_pixel> top{"Resources/Tests/simple_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
       ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
@@ -566,7 +566,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 {
   SUBCASE("triple layer metatiles")
   {
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -579,16 +579,16 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
     std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/attributes.csv"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary/attributes.csv"}));
     auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/anim_metatiles_2/primary/attributes.csv");
+                                                            "Resources/Tests/anim_metatiles_2/primary/attributes.csv");
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_2/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_2/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/anim_metatiles_2/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/anim_metatiles_2/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_2/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, attributesMap, bottomPrimary, middlePrimary, topPrimary);
     auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
@@ -650,7 +650,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
 
   SUBCASE("dual layer metatiles")
   {
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2_dual/primary"}));
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -664,16 +664,16 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_PUDDLE", 0x16}};
     std::unordered_map<std::uint8_t, std::string> behaviorReverseMap = {
         {0x00, "MB_NORMAL"}, {0x02, "MB_TALL_GRASS"}, {0x16, "MB_PUDDLE"}};
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/attributes.csv"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2_dual/primary/attributes.csv"}));
     auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/anim_metatiles_2_dual/primary/attributes.csv");
+                                                            "Resources/Tests/anim_metatiles_2_dual/primary/attributes.csv");
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2_dual/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"res/tests/anim_metatiles_2_dual/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"res/tests/anim_metatiles_2_dual/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"res/tests/anim_metatiles_2_dual/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2_dual/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2_dual/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2_dual/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/anim_metatiles_2_dual/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/anim_metatiles_2_dual/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_2_dual/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, attributesMap, bottomPrimary, middlePrimary, topPrimary);
     auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,

@@ -1208,8 +1208,8 @@ TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset i
           "top-to-bottom order")
 {
   porytiles::PorytilesContext ctx{};
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/2x2_pattern_1.png"}));
-  png::image<png::rgba_pixel> png1{"res/tests/2x2_pattern_1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_1.png"}));
+  png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_1.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
 
@@ -1254,13 +1254,13 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
 {
   porytiles::PorytilesContext ctx{};
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/bottom.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/middle.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/simple_metatiles_1/top.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/top.png"}));
 
-  png::image<png::rgba_pixel> bottom{"res/tests/simple_metatiles_1/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/simple_metatiles_1/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/simple_metatiles_1/top.png"};
+  png::image<png::rgba_pixel> bottom{"Resources/Tests/simple_metatiles_1/bottom.png"};
+  png::image<png::rgba_pixel> middle{"Resources/Tests/simple_metatiles_1/middle.png"};
+  png::image<png::rgba_pixel> top{"Resources/Tests/simple_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
       ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
@@ -1336,21 +1336,21 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
 TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field")
 {
   porytiles::PorytilesContext ctx{};
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow"}));
 
-  porytiles::AnimationPng<png::rgba_pixel> white00{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/00.png"},
+  porytiles::AnimationPng<png::rgba_pixel> white00{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/00.png"},
                                                    "anim_flower_white", "00.png"};
-  porytiles::AnimationPng<png::rgba_pixel> white01{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/01.png"},
+  porytiles::AnimationPng<png::rgba_pixel> white01{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/01.png"},
                                                    "anim_flower_white", "01.png"};
-  porytiles::AnimationPng<png::rgba_pixel> white02{png::image<png::rgba_pixel>{"res/tests/anim_flower_white/02.png"},
+  porytiles::AnimationPng<png::rgba_pixel> white02{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/02.png"},
                                                    "anim_flower_white", "02.png"};
 
-  porytiles::AnimationPng<png::rgba_pixel> yellow00{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/00.png"},
+  porytiles::AnimationPng<png::rgba_pixel> yellow00{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/00.png"},
                                                     "anim_flower_yellow", "00.png"};
-  porytiles::AnimationPng<png::rgba_pixel> yellow01{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/01.png"},
+  porytiles::AnimationPng<png::rgba_pixel> yellow01{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/01.png"},
                                                     "anim_flower_yellow", "01.png"};
-  porytiles::AnimationPng<png::rgba_pixel> yellow02{png::image<png::rgba_pixel>{"res/tests/anim_flower_yellow/02.png"},
+  porytiles::AnimationPng<png::rgba_pixel> yellow02{png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/02.png"},
                                                     "anim_flower_yellow", "02.png"};
 
   std::vector<porytiles::AnimationPng<png::rgba_pixel>> whiteAnim{};
@@ -1377,174 +1377,174 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
   CHECK(tiles.anims.at(1).size() == 3);
 
   // white flower, frame 0
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile0.png"}));
-  png::image<png::rgba_pixel> frame0Tile0Png{"res/tests/anim_flower_white/expected/frame0_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame0_tile0.png"}));
+  png::image<png::rgba_pixel> frame0Tile0Png{"Resources/Tests/anim_flower_white/expected/frame0_tile0.png"};
   porytiles::DecompiledTileset frame0Tile0 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0) == frame0Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile1.png"}));
-  png::image<png::rgba_pixel> frame0Tile1Png{"res/tests/anim_flower_white/expected/frame0_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame0_tile1.png"}));
+  png::image<png::rgba_pixel> frame0Tile1Png{"Resources/Tests/anim_flower_white/expected/frame0_tile1.png"};
   porytiles::DecompiledTileset frame0Tile1 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1) == frame0Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile2.png"}));
-  png::image<png::rgba_pixel> frame0Tile2Png{"res/tests/anim_flower_white/expected/frame0_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame0_tile2.png"}));
+  png::image<png::rgba_pixel> frame0Tile2Png{"Resources/Tests/anim_flower_white/expected/frame0_tile2.png"};
   porytiles::DecompiledTileset frame0Tile2 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2) == frame0Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame0_tile3.png"}));
-  png::image<png::rgba_pixel> frame0Tile3Png{"res/tests/anim_flower_white/expected/frame0_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame0_tile3.png"}));
+  png::image<png::rgba_pixel> frame0Tile3Png{"Resources/Tests/anim_flower_white/expected/frame0_tile3.png"};
   porytiles::DecompiledTileset frame0Tile3 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3) == frame0Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // white flower, frame 1
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile0.png"}));
-  png::image<png::rgba_pixel> frame1Tile0Png{"res/tests/anim_flower_white/expected/frame1_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame1_tile0.png"}));
+  png::image<png::rgba_pixel> frame1Tile0Png{"Resources/Tests/anim_flower_white/expected/frame1_tile0.png"};
   porytiles::DecompiledTileset frame1Tile0 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0) == frame1Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile1.png"}));
-  png::image<png::rgba_pixel> frame1Tile1Png{"res/tests/anim_flower_white/expected/frame1_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame1_tile1.png"}));
+  png::image<png::rgba_pixel> frame1Tile1Png{"Resources/Tests/anim_flower_white/expected/frame1_tile1.png"};
   porytiles::DecompiledTileset frame1Tile1 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1) == frame1Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile2.png"}));
-  png::image<png::rgba_pixel> frame1Tile2Png{"res/tests/anim_flower_white/expected/frame1_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame1_tile2.png"}));
+  png::image<png::rgba_pixel> frame1Tile2Png{"Resources/Tests/anim_flower_white/expected/frame1_tile2.png"};
   porytiles::DecompiledTileset frame1Tile2 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2) == frame1Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame1_tile3.png"}));
-  png::image<png::rgba_pixel> frame1Tile3Png{"res/tests/anim_flower_white/expected/frame1_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame1_tile3.png"}));
+  png::image<png::rgba_pixel> frame1Tile3Png{"Resources/Tests/anim_flower_white/expected/frame1_tile3.png"};
   porytiles::DecompiledTileset frame1Tile3 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3) == frame1Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // white flower, frame 2
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile0.png"}));
-  png::image<png::rgba_pixel> frame2Tile0Png{"res/tests/anim_flower_white/expected/frame2_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame2_tile0.png"}));
+  png::image<png::rgba_pixel> frame2Tile0Png{"Resources/Tests/anim_flower_white/expected/frame2_tile0.png"};
   porytiles::DecompiledTileset frame2Tile0 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0) == frame2Tile0.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile1.png"}));
-  png::image<png::rgba_pixel> frame2Tile1Png{"res/tests/anim_flower_white/expected/frame2_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame2_tile1.png"}));
+  png::image<png::rgba_pixel> frame2Tile1Png{"Resources/Tests/anim_flower_white/expected/frame2_tile1.png"};
   porytiles::DecompiledTileset frame2Tile1 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1) == frame2Tile1.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile2.png"}));
-  png::image<png::rgba_pixel> frame2Tile2Png{"res/tests/anim_flower_white/expected/frame2_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame2_tile2.png"}));
+  png::image<png::rgba_pixel> frame2Tile2Png{"Resources/Tests/anim_flower_white/expected/frame2_tile2.png"};
   porytiles::DecompiledTileset frame2Tile2 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2) == frame2Tile2.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_white/expected/frame2_tile3.png"}));
-  png::image<png::rgba_pixel> frame2Tile3Png{"res/tests/anim_flower_white/expected/frame2_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white/expected/frame2_tile3.png"}));
+  png::image<png::rgba_pixel> frame2Tile3Png{"Resources/Tests/anim_flower_white/expected/frame2_tile3.png"};
   porytiles::DecompiledTileset frame2Tile3 =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png);
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3) == frame2Tile3.tiles.at(0));
   CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 0
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile0.png"}));
-  png::image<png::rgba_pixel> frame0Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame0_tile0.png"}));
+  png::image<png::rgba_pixel> frame0Tile0Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame0_tile0.png"};
   porytiles::DecompiledTileset frame0Tile0_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0) == frame0Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile1.png"}));
-  png::image<png::rgba_pixel> frame0Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame0_tile1.png"}));
+  png::image<png::rgba_pixel> frame0Tile1Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame0_tile1.png"};
   porytiles::DecompiledTileset frame0Tile1_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1) == frame0Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile2.png"}));
-  png::image<png::rgba_pixel> frame0Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame0_tile2.png"}));
+  png::image<png::rgba_pixel> frame0Tile2Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame0_tile2.png"};
   porytiles::DecompiledTileset frame0Tile2_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2) == frame0Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame0_tile3.png"}));
-  png::image<png::rgba_pixel> frame0Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame0_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame0_tile3.png"}));
+  png::image<png::rgba_pixel> frame0Tile3Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame0_tile3.png"};
   porytiles::DecompiledTileset frame0Tile3_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3) == frame0Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 1
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile0.png"}));
-  png::image<png::rgba_pixel> frame1Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame1_tile0.png"}));
+  png::image<png::rgba_pixel> frame1Tile0Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame1_tile0.png"};
   porytiles::DecompiledTileset frame1Tile0_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0) == frame1Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile1.png"}));
-  png::image<png::rgba_pixel> frame1Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame1_tile1.png"}));
+  png::image<png::rgba_pixel> frame1Tile1Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame1_tile1.png"};
   porytiles::DecompiledTileset frame1Tile1_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1) == frame1Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile2.png"}));
-  png::image<png::rgba_pixel> frame1Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame1_tile2.png"}));
+  png::image<png::rgba_pixel> frame1Tile2Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame1_tile2.png"};
   porytiles::DecompiledTileset frame1Tile2_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2) == frame1Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame1_tile3.png"}));
-  png::image<png::rgba_pixel> frame1Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame1_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame1_tile3.png"}));
+  png::image<png::rgba_pixel> frame1Tile3Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame1_tile3.png"};
   porytiles::DecompiledTileset frame1Tile3_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3) == frame1Tile3_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
 
   // yellow flower, frame 2
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile0.png"}));
-  png::image<png::rgba_pixel> frame2Tile0Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile0.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame2_tile0.png"}));
+  png::image<png::rgba_pixel> frame2Tile0Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame2_tile0.png"};
   porytiles::DecompiledTileset frame2Tile0_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0) == frame2Tile0_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile1.png"}));
-  png::image<png::rgba_pixel> frame2Tile1Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile1.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame2_tile1.png"}));
+  png::image<png::rgba_pixel> frame2Tile1Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame2_tile1.png"};
   porytiles::DecompiledTileset frame2Tile1_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1) == frame2Tile1_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile2.png"}));
-  png::image<png::rgba_pixel> frame2Tile2Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile2.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame2_tile2.png"}));
+  png::image<png::rgba_pixel> frame2Tile2Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame2_tile2.png"};
   porytiles::DecompiledTileset frame2Tile2_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2) == frame2Tile2_yellow.tiles.at(0));
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_flower_yellow/expected/frame2_tile3.png"}));
-  png::image<png::rgba_pixel> frame2Tile3Png_yellow{"res/tests/anim_flower_yellow/expected/frame2_tile3.png"};
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow/expected/frame2_tile3.png"}));
+  png::image<png::rgba_pixel> frame2Tile3Png_yellow{"Resources/Tests/anim_flower_yellow/expected/frame2_tile3.png"};
   porytiles::DecompiledTileset frame2Tile3_yellow =
       porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png_yellow);
   CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3) == frame2Tile3_yellow.tiles.at(0));
@@ -1556,13 +1556,13 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
   porytiles::PorytilesContext ctx{};
   ctx.compilerConfig.tripleLayer = false;
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/dual_layer_metatiles_1/bottom.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/dual_layer_metatiles_1/middle.png"}));
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/dual_layer_metatiles_1/top.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/dual_layer_metatiles_1/bottom.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/dual_layer_metatiles_1/middle.png"}));
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/dual_layer_metatiles_1/top.png"}));
 
-  png::image<png::rgba_pixel> bottom{"res/tests/dual_layer_metatiles_1/bottom.png"};
-  png::image<png::rgba_pixel> middle{"res/tests/dual_layer_metatiles_1/middle.png"};
-  png::image<png::rgba_pixel> top{"res/tests/dual_layer_metatiles_1/top.png"};
+  png::image<png::rgba_pixel> bottom{"Resources/Tests/dual_layer_metatiles_1/bottom.png"};
+  png::image<png::rgba_pixel> middle{"Resources/Tests/dual_layer_metatiles_1/middle.png"};
+  png::image<png::rgba_pixel> top{"Resources/Tests/dual_layer_metatiles_1/top.png"};
 
   porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
       ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
@@ -1654,7 +1654,7 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
   porytiles::PorytilesContext ctx{};
   ctx.err.printErrors = false;
 
-  std::ifstream behaviorFile{"res/tests/metatile_behaviors.h"};
+  std::ifstream behaviorFile{"Resources/Tests/metatile_behaviors.h"};
   auto [behaviorMap, behaviorReverseMap] =
       porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile);
   behaviorFile.close();
@@ -1682,7 +1682,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
   SUBCASE("It should parse an Emerald-style attributes CSV correctly")
   {
     auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/correct_1.csv");
+                                                            "Resources/Tests/csv/correct_1.csv");
     CHECK_FALSE(attributesMap.contains(0));
     CHECK_FALSE(attributesMap.contains(1));
     CHECK_FALSE(attributesMap.contains(2));
@@ -1698,7 +1698,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
   SUBCASE("It should parse a Firered-style attributes CSV correctly")
   {
     auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
-                                                            "res/tests/csv/correct_2.csv");
+                                                            "Resources/Tests/csv/correct_2.csv");
     CHECK_FALSE(attributesMap.contains(0));
     CHECK_FALSE(attributesMap.contains(1));
     CHECK(attributesMap.contains(2));
@@ -1727,10 +1727,10 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
   compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
   compileCtx.compilerConfig.cacheAssign = false;
 
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/anim_metatiles_2/primary"}));
-  compileCtx.compilerSrcPaths.primarySourcePath = "res/tests/anim_metatiles_2/primary";
-  REQUIRE(std::filesystem::exists(std::filesystem::path{"res/tests/metatile_behaviors.h"}));
-  compileCtx.compilerSrcPaths.metatileBehaviors = "res/tests/metatile_behaviors.h";
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
+  compileCtx.compilerSrcPaths.primarySourcePath = "Resources/Tests/anim_metatiles_2/primary";
+  REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/metatile_behaviors.h"}));
+  compileCtx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
   porytiles::drive(compileCtx);
 
   porytiles::PorytilesContext decompileCtx{};
