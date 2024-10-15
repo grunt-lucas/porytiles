@@ -29,7 +29,7 @@ macos_arm64() {
   mkdir -p "$output_directory/porytiles-$mode"
   cd Porytiles-1.x
   export CXX="/opt/homebrew/opt/llvm@16/bin/clang++"
-  cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
   cmake --build .
   cd ../..
@@ -41,7 +41,7 @@ linux_aarch64() {
   mkdir -p "$output_directory/porytiles-$mode"
   cd Porytiles-1.x
   export CXX="clang++-16"
-  cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
   cmake --build .
   cd ../..
@@ -53,7 +53,7 @@ linux_amd64() {
   mkdir -p "$output_directory/porytiles-$mode"
   cd Porytiles-1.x
   export CXX="clang++-16"
-  cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   cd build
   cmake --build .
   cd ../..
