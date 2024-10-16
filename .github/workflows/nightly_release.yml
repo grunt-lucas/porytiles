@@ -59,7 +59,7 @@ jobs:
 
       - name: Create release package
         run: |
-          ./script/package.sh linux-amd64 nightly-${{github.sha}} .
+          ./Scripts/package.sh linux-amd64 nightly-${{github.sha}} .
 
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -92,7 +92,7 @@ jobs:
 
       - name: Create release package
         run: |
-          ./script/package.sh macos-arm64 nightly-${{github.sha}} .
+          ./Scripts/package.sh macos-arm64 nightly-${{github.sha}} .
 
       - name: Create release
         uses: softprops/action-gh-release@v1
