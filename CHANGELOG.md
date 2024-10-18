@@ -5,22 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Nightly]
 
 ### Added
 
-- `decompile-secondary` command to decompile secondary tilesets
+- `decompile-secondary` command to decompile secondary tilesets ([#17](https://github.com/grunt-lucas/porytiles/pull/17))
 
-- `-normalize-transparency` option for the decompile commands
+- `-normalize-transparency` option for the decompile commands ([37668ac](https://github.com/grunt-lucas/porytiles/commit/37668ac))([b710078](https://github.com/grunt-lucas/porytiles/commit/b710078))
 
-- `-Wtile-index-out-of-range` for use with the decompile commands
+- `-Wtile-index-out-of-range` for use with the decompile commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
 
-- `-Wpalette-index-out-of-range` for use with the decompile commands
+- `-Wpalette-index-out-of-range` for use with the decompile commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
 
-- Options to disable generation of `metatiles.bin` and `metatile_attributes.bin`
+- Options to disable generation of `metatiles.bin` and `metatile_attributes.bin` ([#16](https://github.com/grunt-lucas/porytiles/pull/16))
   - `-disable-metatile-generation` and `-disable-attribute-generation`
 
-- Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per vertex
+- Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per vertex ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
    - assign config search matrix now tries smart prune before trying a constant prune
 
 ### Changed
@@ -29,7 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `-Wkey-frame-missing-assignment` now called `-Wkey-frame-no-matching-tile`
 
-- Subcommand help menus are much more refined, they now only show info relevant to the given subcommand
+- Subcommand help menus are much more refined, they now only show info relevant to the given subcommand ([#51](https://github.com/grunt-lucas/porytiles/pull/51))
+
+- Build system overhaul, now using CMake ([#62](https://github.com/grunt-lucas/porytiles/pull/62))
 
 ## [0.0.7] - 2024-01-07
 
