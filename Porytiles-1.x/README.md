@@ -21,3 +21,6 @@ Instead of releasing a 1.0.0 Porytiles, I have instead decided to start working 
 + Shell TAB completion for bash, zsh, and fish
 + Animation decompilation support in `decompile-{primary,secondary}` commands
 + And much more!
+
+## Tracking 2.x Progress
+In order to avoid triggering tons of irrelevant nightly builds, 2.x development will begin on a new branch called [`2.x/develop`](https://github.com/grunt-lucas/porytiles/tree/2.x/develop). Feel free to track progress and try out 2.x as it develops by pulling from this branch and building the project. We will keep this 2.x branch in sync with regular [`develop`]((https://github.com/grunt-lucas/porytiles/tree/develop)), and we may at certain points create preview 2.x releases. Please star and watch the repo if you want regular updates!
