@@ -8,6 +8,8 @@ build/**
 cmake-build-debug/**
 Porytiles-1.x/build/**
 Porytiles-1.x/cmake-build-debug/**
+Porytiles-2.x/build/**
+Porytiles-2.x/cmake-build-debug/**
 
 # LLVM coverage files
 default.profraw

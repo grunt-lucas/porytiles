@@ -4,3 +4,6 @@ BasedOnStyle: LLVM
 BreakBeforeBraces: Stroustrup
 ColumnLimit: 120
 ReflowComments: true
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
