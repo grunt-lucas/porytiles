@@ -6,7 +6,7 @@
 namespace porytiles::color {
 
 /**
- * @brief Class representing a color in 15-bit BGR format.
+ * @brief Value object class representing a color in 15-bit BGR format.
  */
 class Bgr15 {
     std::uint16_t bgr;
