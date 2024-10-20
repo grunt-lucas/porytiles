@@ -8,3 +8,4 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 add_subdirectory(Porytiles-1.x)
+add_subdirectory(Porytiles-2.x)
