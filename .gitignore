@@ -4,7 +4,10 @@
 .DS_Store
 
 # Build artifacts and executables
+build/**
+cmake-build-debug/**
 Porytiles-1.x/build/**
+Porytiles-1.x/cmake-build-debug/**
 
 # LLVM coverage files
 default.profraw
