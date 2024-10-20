@@ -1,12 +1,14 @@
-# Create the test executable
-add_executable(ColorTest ColorTest.cpp)
+# Get all sources in a list
+FILE(GLOB TEST_SOURCES *.cpp)
 
-target_include_directories(ColorTest PRIVATE ${PORYTILES_INCLUDE_DIR})
-
-# Link against Google Test and Porytiles library
-target_link_libraries(ColorTest PRIVATE GTest::gtest_main)
-target_link_libraries(ColorTest PRIVATE Porytiles2xLib)
-
-# Discover and add tests
 include(GoogleTest)
-gtest_discover_tests(ColorTest)
+
+# Create a separate test target for each unit
+foreach(TEST_SOURCE ${TEST_SOURCES})
+    get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
+    add_executable(${TEST_NAME} ${TEST_SOURCE})
+    target_include_directories(${TEST_NAME} PRIVATE ${PORYTILES_INCLUDE_DIR})
+    target_link_libraries(${TEST_NAME} PRIVATE GTest::gtest_main)
+    target_link_libraries(${TEST_NAME} PRIVATE Porytiles2xLib)
+    gtest_discover_tests(${TEST_NAME})
+endforeach()
