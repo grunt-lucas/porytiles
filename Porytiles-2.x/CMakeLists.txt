@@ -1,8 +1,5 @@
 project(Porytiles2x CXX)
 
-# Enable testing
-enable_testing()
-
 # Fetch and build Google Test
 include(FetchContent)
 FetchContent_Declare(
