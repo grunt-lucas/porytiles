@@ -6,7 +6,7 @@ set -eu
 
 package_release() {
   cp build/Porytiles-1.x/cli/porytiles "$output_directory/porytiles-$mode"
-  cp build/Porytiles-1.x/test/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
+  cp build/Porytiles-1.x/tests/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
   cp LICENSE "$output_directory/porytiles-$mode"
