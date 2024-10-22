@@ -36,7 +36,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./build/Porytiles-1.x/test/Porytiles1xTestSuite
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
 
   build-linux-amd64-gcc:
     name: Build on linux-amd64 with gcc
@@ -67,7 +67,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./build/Porytiles-1.x/test/Porytiles1xTestSuite
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
 
   build-macos-arm64-clang-llvm:
     name: Build on macos-arm64 with clang
@@ -98,4 +98,4 @@ jobs:
 
       - name: Run test suite
         run: |
-          ./build/Porytiles-1.x/test/Porytiles1xTestSuite
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
