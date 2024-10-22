@@ -7,4 +7,4 @@ on:
 
 jobs:
   build-linux-amd64-clang:
-    uses: ./.github/workflows/templates/linux_amd64_clang.yml
+    uses: ./.github/workflows/linux_amd64_clang.yml

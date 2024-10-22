@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-linux-amd64-clang:
-    uses: ./.github/workflows/templates/linux_amd64_clang.yml
+    uses: ./.github/workflows/linux_amd64_clang.yml
   build-linux-amd64-gcc:
-    uses: ./.github/workflows/templates/linux_amd64_gcc.yml
+    uses: ./.github/workflows/linux_amd64_gcc.yml
   build-macos-arm64-clang:
-    uses: ./.github/workflows/templates/macos_arm64_clang.yml
+    uses: ./.github/workflows/macos_arm64_clang.yml
   build-macos-arm64-gcc:
-    uses: ./.github/workflows/templates/macos_arm64_gcc.yml
+    uses: ./.github/workflows/macos_arm64_gcc.yml
