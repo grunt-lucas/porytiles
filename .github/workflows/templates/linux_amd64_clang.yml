@@ -1,0 +1,31 @@
+name: Linux AMD64 Clang Reusable Build Workflow
+
+jobs:
+  build-linux-amd64-clang:
+    name: Build on linux-amd64 with clang
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Clang+LLVM 16 and other build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install cmake
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16 all
+          clang++-16 --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      - name: Build the project
+        run: |
+          export CXX=clang++-16
+          cmake -B build
+          cd build
+          cmake --build .
+
+      - name: Run test suite
+        run: |
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
