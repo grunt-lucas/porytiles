@@ -1,5 +1,9 @@
 name: Linux AMD64 Clang Reusable Build Workflow
 
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 jobs:
   build-linux-amd64-clang:
     name: Build on linux-amd64 with clang
