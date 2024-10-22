@@ -15,14 +15,14 @@ jobs:
           sudo apt-get install libpng-dev
           sudo apt-get install cmake
           sudo apt-get install g++
-          g++-14 --version
+          g++ --version
 
       - name: Checkout porytiles
         uses: actions/checkout@v3
 
       - name: Build the project
         run: |
-          export CXX=g++-14
+          export CXX=g++
           cmake -B build
           cd build
           cmake --build .
