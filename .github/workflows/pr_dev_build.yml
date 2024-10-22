@@ -1,0 +1,10 @@
+name: Porytiles PR Build
+on:
+  pull_request:
+    branches: [ "develop" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-linux-amd64-clang:
+    uses: ./.github/workflows/templates/linux_amd64_clang.yml

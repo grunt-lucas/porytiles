@@ -1,101 +1,16 @@
-name: Porytiles PR / Develop Build
+name: Porytiles Develop Branch Build
 on:
-  pull_request:
-    branches: [ "develop" ]
   push:
     branches: [ "develop" ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build-linux-amd64-clang-llvm:
-    name: Build on linux-amd64 with clang
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Clang+LLVM 16 and other build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install zlib1g-dev
-          sudo apt-get install libpng-dev
-          sudo apt-get install cmake
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 16 all
-          clang++-16 --version
-          clang++-16 -v
-
-      - name: Checkout porytiles
-        uses: actions/checkout@v3
-
-      - name: Build the project
-        run: |
-          export CXX=clang++-16
-          cmake -B build
-          cd build
-          cmake --build .
-
-      - name: Run test suite
-        run: |
-          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
-
+  build-linux-amd64-clang:
+    uses: ./.github/workflows/templates/linux_amd64_clang.yml
   build-linux-amd64-gcc:
-    name: Build on linux-amd64 with gcc
-    # As of 14-Jun-2024 need ubuntu-24.04 since GitHub removed GCC13 from ubuntu-latest
-    # https://github.com/actions/runner-images/issues/9866
-    # TODO : move to GCC 14?
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Install GCC 13 and dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install zlib1g-dev
-          sudo apt-get install libpng-dev
-          sudo apt-get install cmake
-          sudo apt-get install g++-13
-          g++-13 --version
-          g++-13 -v
-
-      - name: Checkout porytiles
-        uses: actions/checkout@v3
-
-      - name: Build the project
-        run: |
-          export CXX=g++-13
-          cmake -B build
-          cd build
-          cmake --build .
-
-      - name: Run test suite
-        run: |
-          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
-
-  build-macos-arm64-clang-llvm:
-    name: Build on macos-arm64 with clang
-    runs-on: macos-latest
-    # GitHub removed Intel Mac runners, so macos-latest is now arm64
-    # We don't need to install zlib since it is shipped with macOS, CMake will find it
-    steps:
-      - name: Install Clang+LLVM 16 and dependencies
-        run: |
-          brew update
-          brew install libpng || true
-          brew install cmake || true
-          brew install llvm@16 || true
-          /opt/homebrew/opt/llvm@16/bin/clang++ --version
-          /opt/homebrew/opt/llvm@16/bin/clang++ -v
-
-      - name: Checkout porytiles
-        uses: actions/checkout@v3
-
-      # Use -DCMAKE_FIND_FRAMEWORK=NEVER, otherwise CMake sometimes picks up outdated
-      # package versions deeply buried in some ancient macOS system framework
-      - name: Build the project
-        run: |
-          export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
-          cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
-          cd build
-          cmake --build .
-
-      - name: Run test suite
-        run: |
-          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
+    uses: ./.github/workflows/templates/linux_amd64_gcc.yml
+  build-macos-arm64-clang:
+    uses: ./.github/workflows/templates/macos_arm64_clang.yml
+  build-macos-arm64-gcc:
+    uses: ./.github/workflows/templates/macos_arm64_gcc.yml

@@ -1,0 +1,29 @@
+name: Linux AMD64 GCC Reusable Build Workflow
+
+jobs:
+  build-linux-amd64-gcc:
+    name: Build on linux-amd64 with gcc
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GCC and other build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install cmake
+          sudo apt-get install g++
+          g++-14 --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      - name: Build the project
+        run: |
+          export CXX=g++-14
+          cmake -B build
+          cd build
+          cmake --build .
+
+      - name: Run test suite
+        run: |
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite

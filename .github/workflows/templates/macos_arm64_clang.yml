@@ -1,0 +1,32 @@
+name: macOS ARM64 Clang Reusable Build Workflow
+
+jobs:
+  build-macos-arm64-clang:
+    name: Build on macos-arm64 with clang
+    runs-on: macos-latest
+    # GitHub removed Intel Mac runners, so macos-latest is now arm64
+    # We don't need to install zlib since it is shipped with macOS, CMake will find it
+    steps:
+      - name: Install Clang+LLVM 16 and other build dependencies
+        run: |
+          brew update
+          brew install libpng || true
+          brew install cmake || true
+          brew install llvm@16 || true
+          /opt/homebrew/opt/llvm@16/bin/clang++ --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      # Use -DCMAKE_FIND_FRAMEWORK=NEVER, otherwise CMake sometimes picks up outdated
+      # package versions deeply buried in some ancient macOS system framework
+      - name: Build the project
+        run: |
+          export CXX=/opt/homebrew/opt/llvm@16/bin/clang++
+          cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+          cd build
+          cmake --build .
+
+      - name: Run test suite
+        run: |
+          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
