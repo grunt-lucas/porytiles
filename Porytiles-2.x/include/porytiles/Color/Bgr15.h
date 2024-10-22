@@ -6,30 +6,53 @@
 namespace porytiles::color {
 
 /**
- * @brief Value object class representing a color in 15-bit BGR format.
+ * @brief Value object representing a color in 15-bit BGR format.
  */
 class Bgr15 {
     std::uint16_t bgr;
 
   public:
-    Bgr15() : bgr{0} {}
+    /**
+     * @brief Default constructor for Bgr15.
+     *
+     * Initializes a Bgr15 object with default values, equivalent to zero-initialization.
+     * This constructor is implicitly defined.
+     */
+    Bgr15() = default;
 
     /**
-     * Constructs a Bgr15 object with the given 16-bit BGR value.
+     * @brief Construct a Bgr15 object from a 16-bit BGR value.
      *
-     * @param bgr The 16-bit BGR value used to initialize the Bgr15 object.
+     * This constructor initializes a Bgr15 object using a 16-bit integer
+     * that represents a color in 15-bit BGR format.
+     *
+     * @param bgr The 16-bit BGR value used to initialize the object.
      */
-    explicit Bgr15(const std::uint16_t bgr) : bgr{bgr} {}
+    explicit constexpr Bgr15(const std::uint16_t bgr) : bgr{bgr} {}
 
     /**
-     * Constructs a Bgr15 object with the given red, green, and blue color values.
+     * @brief Constructs a Bgr15 object with the given 8-bit RGB color components.
      *
-     * @param red The red value used to initialize the Bgr15 object.
-     * @param green The green value used to initialize the Bgr15 object.
-     * @param blue The blue value used to initialize the Bgr15 object.
+     * This constructor takes individual red, green, and blue color components,
+     * scales them down to 5 bits each, and composes them into a 15-bit BGR value.
+     *
+     * @param red The 8-bit red component of the color.
+     * @param green The 8-bit green component of the color.
+     * @param blue The 8-bit blue component of the color.
      */
-    explicit Bgr15(std::uint8_t red, std::uint8_t green, std::uint8_t blue);
+    explicit constexpr Bgr15(std::uint8_t red, std::uint8_t green, std::uint8_t blue)
+    {
+        bgr = static_cast<std::uint16_t>(((blue / 8) << 10) | ((green / 8) << 5) | (red / 8));
+    }
 
+    /**
+     * @brief Returns the raw 16-bit BGR value.
+     *
+     * This method provides direct access to the internal 15-bit BGR representation
+     * of the color.
+     *
+     * @return The 16-bit BGR value.
+     */
     [[nodiscard]] std::uint16_t getRawValue() const;
 };
 
