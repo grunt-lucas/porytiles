@@ -11,4 +11,6 @@ set_target_properties(Porytiles2xLib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAM
 target_include_directories(Porytiles2xLib PUBLIC ${PORYTILES_INCLUDE_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Export the library
+# TODO 2.x : what's the difference between these two
 export(TARGETS Porytiles2xLib FILE ${CMAKE_CURRENT_BINARY_DIR}/PorytilesLibraryTargets.cmake)
+export(PACKAGE Porytiles2xLib)

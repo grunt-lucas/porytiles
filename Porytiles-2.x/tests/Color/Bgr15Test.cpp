@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <cmath>
-
 #include "porytiles/Color/Bgr15.h"
 
 // Just a fun little example of template metaprogramming

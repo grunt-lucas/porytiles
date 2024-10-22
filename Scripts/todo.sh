@@ -10,6 +10,7 @@ Usage: todo.sh all
        todo.sh {NOTE,note}
        todo.sh {FEATURE,feature}
        todo.sh 1.0.0
+       todo.sh 2.x
        todo.sh tests
        todo.sh --help
 
@@ -68,6 +69,12 @@ if [[ ${args[0]} == "all" ]]; then
     rg 'NOTE 1.0.0 :'
     rg 'FEATURE 1.0.0 :'
 
+    # 2.x
+    rg 'TODO 2.x :'
+    rg 'FIXME 2.x :'
+    rg 'NOTE 2.x :'
+    rg 'FEATURE 2.x :'
+
     # tests
     rg 'TODO tests :'
 elif [[ ${args[0]} == "TODO" || ${args[0]} == "todo" ]]; then
@@ -83,6 +90,11 @@ elif [[ ${args[0]} == "1.0.0" ]] then
     rg 'FIXME 1.0.0 :'
     rg 'NOTE 1.0.0 :'
     rg 'FEATURE 1.0.0 :'
+elif [[ ${args[0]} == "2.x" ]] then
+    rg 'TODO 2.x :'
+    rg 'FIXME 2.x :'
+    rg 'NOTE 2.x :'
+    rg 'FEATURE 2.x :'
 elif [[ ${args[0]} == "tests" ]] then
     rg 'TODO tests :'
 else
