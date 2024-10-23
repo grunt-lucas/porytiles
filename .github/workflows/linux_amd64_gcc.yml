@@ -27,6 +27,7 @@ jobs:
           cd build
           cmake --build .
 
-      - name: Run test suite
+      - name: Run the tests
         run: |
           ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
+          ./build/Porytiles-2.x/tests/Porytiles2xUnitTests

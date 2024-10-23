@@ -9,6 +9,9 @@ namespace porytiles::color {
 
 /**
  * @brief Value object representing a color in 32-bit RGBA format.
+ *
+ *  @details
+ * TODO 2.x : fill in explanation about RGBA format, 8 bits per color, alpha channel, etc
  */
 class Rgba32 {
     std::uint8_t red;
