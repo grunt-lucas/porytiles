@@ -8,3 +8,5 @@ on:
 jobs:
   build-linux-amd64-clang:
     uses: ./.github/workflows/linux_amd64_clang.yml
+  build-macos-arm64-clang:
+    uses: ./.github/workflows/macos_arm64_clang.yml
