@@ -5,7 +5,6 @@
 TEST(Rgba32Test, TestJascString)
 {
     using namespace porytiles::color;
-    using namespace porytiles::color;
 
     constexpr Rgba32 transparentRgba{};
     EXPECT_EQ(transparentRgba.toJascString(), "0 0 0");

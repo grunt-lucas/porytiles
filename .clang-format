@@ -2,7 +2,7 @@
 Language: Cpp
 BasedOnStyle: LLVM
 BreakBeforeBraces: Stroustrup
-ColumnLimit: 120
+ColumnLimit: 100
 ReflowComments: true
 IndentWidth: 4
 TabWidth: 4

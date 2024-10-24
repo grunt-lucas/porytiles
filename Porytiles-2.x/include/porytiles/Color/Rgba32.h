@@ -1,5 +1,5 @@
-#ifndef PORYTILES_COLOR_RGBA_H
-#define PORYTILES_COLOR_RGBA_H
+#ifndef PORYTILES_COLOR_RGBA32_H
+#define PORYTILES_COLOR_RGBA32_H
 
 #include <compare>
 #include <cstdint>
@@ -9,6 +9,9 @@ namespace porytiles::color {
 
 /**
  * @brief Value object representing a color in 32-bit RGBA format.
+ *
+ *  @details
+ * TODO 2.x : fill in explanation about RGBA format, 8 bits per color, alpha channel, etc
  */
 class Rgba32 {
     std::uint8_t red;
@@ -21,53 +24,73 @@ class Rgba32 {
     static constexpr std::uint8_t ALPHA_OPAQUE = 0xff;
 
     /**
-     * @brief Default constructor for Rgba32.
-     *
-     * Initializes an Rgba32 object with default values.
-     * The default constructor is implicitly defined and initializes the color components to zero.
-     *
-     * @return A default-initialized Rgba32 object.
+     * @brief Default constructor for Rgba32. Initializes the color and alpha components to zero.
      */
     Rgba32() = default;
 
     /**
-     * @brief Constructs an Rgba32 object with specified red, green, blue, and alpha component values.
-     *
-     * This constructor initializes an Rgba32 object with the provided values for each color component.
+     * @brief Constructs an Rgba32 object with specified red, green, blue, and alpha component
+     * values.
      *
      * @param red The red component value.
      * @param green The green component value.
      * @param blue The blue component value.
      * @param alpha The alpha (transparency) component value.
-     * @return An Rgba32 object with the specified component values.
      */
-    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green, const std::uint8_t blue,
-                              const std::uint8_t alpha)
+    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green,
+                              const std::uint8_t blue, const std::uint8_t alpha)
         : red{red}, green{green}, blue{blue}, alpha{alpha}
     {
     }
 
     /**
-     * @brief Constructs an Rgba32 object with specified RGB values and an implicit alpha value of 255.
-     *
-     * This constructor initializes an Rgba32 object with the given red, green, and blue component values,
-     * and automatically sets the alpha component to 255 (fully opaque).
+     * @brief Constructs an Rgba32 object with specified RGB values and an implicit alpha value of
+     * 255 (fully opaque).
      *
      * @param red The red component of the color.
      * @param green The green component of the color.
      * @param blue The blue component of the color.
-     * @return An Rgba32 object with the specified RGB values and an alpha value of 255.
      */
-    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green, const std::uint8_t blue)
+    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green,
+                              const std::uint8_t blue)
         : red{red}, green{green}, blue{blue}, alpha{ALPHA_OPAQUE}
     {
     }
 
     /**
+     * @brief Retrieves the red component of the Rgba32 color.
+     *
+     * @return The red component as an 8-bit unsigned integer.
+     */
+    [[nodiscard]] std::uint8_t getRedComponent() const;
+
+    /**
+     * @brief Retrieves the green component of the Rgba32 color.
+     *
+     * @return The green component as an 8-bit unsigned integer.
+     */
+    [[nodiscard]] std::uint8_t getGreenComponent() const;
+
+    /**
+     * @brief Retrieves the blue component of the Rgba32 color.
+     *
+     * @return The blue component as an 8-bit unsigned integer.
+     */
+    [[nodiscard]] std::uint8_t getBlueComponent() const;
+
+    /**
+     * @brief Retrieves the alpha component of the Rgba32 color.
+     *
+     * @return The alpha component as an 8-bit unsigned integer.
+     */
+    [[nodiscard]] std::uint8_t getAlphaComponent() const;
+
+    /**
      * @brief Converts the RGBA color to a JASC-PAL formatted string.
      *
-     * This method converts the red, green, and blue components of the Rgba32 object
-     * into a space-separated string format commonly used in JASC-PAL color palette files.
+     * @details
+     * This method converts the red, green, and blue components of the Rgba32 object into a
+     * space-separated string format commonly used in JASC-PAL color palette files.
      *
      * @return A string representation of the color in JASC-PAL format.
      */
@@ -75,9 +98,6 @@ class Rgba32 {
 
     /**
      * @brief Provides a three-way comparison for Rgba32 objects.
-     *
-     * The <=> operator allows Rgba32 objects to be compared using the built-in
-     * strong ordering mechanism, facilitating easy and efficient comparisons.
      *
      * @param other The Rgba32 object to compare with.
      * @return A std::strong_ordering result indicating the relative order of the objects.
@@ -87,4 +107,4 @@ class Rgba32 {
 
 } // end namespace porytiles::color
 
-#endif // PORYTILES_COLOR_RGBA_H
+#endif // PORYTILES_COLOR_RGBA32_H
