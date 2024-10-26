@@ -7,6 +7,10 @@
 build/**
 cmake-build-*/**
 
+# Doxygen
+Documentation/html/**
+Documentation/latex/**
+
 # LLVM coverage files
 default.profraw
 testcov.profdata
