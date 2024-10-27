@@ -16,7 +16,7 @@ TEST(Bgr15Test, TestDefaultCtor)
 {
     using namespace porytiles::color;
 
-    constexpr Bgr15 bgr{};
+    const Bgr15 bgr{};
     EXPECT_EQ(bgr.getRawValue(), 0);
 }
 
@@ -24,6 +24,6 @@ TEST(Bgr15Test, TestComponentCtor)
 {
     using namespace porytiles::color;
 
-    constexpr Bgr15 bgr{255, 255, 255};
+    const Bgr15 bgr{255, 255, 255};
     EXPECT_EQ(bgr.getRawValue(), TWO_FIFTEENTH_POW_MINUS_ONE);
 }
