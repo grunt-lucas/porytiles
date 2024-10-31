@@ -8,8 +8,8 @@
 int main()
 {
     using namespace porytiles::color;
-    constexpr Bgr15 bgr{};
-    constexpr Rgba32 rgb{};
+    const Bgr15 bgr{};
+    const Rgba32 rgb{};
     std::cout << "Hello, Porytiles!" << std::endl;
     std::cout << "My BGR raw value: " << std::to_string(bgr.getRawValue()) << std::endl;
     std::cout << "My RGB jasc string: " << rgb.toJascString() << std::endl;
