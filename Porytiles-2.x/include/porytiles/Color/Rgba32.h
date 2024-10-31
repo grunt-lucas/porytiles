@@ -1,19 +1,20 @@
 #ifndef PORYTILES_COLOR_RGBA32_H
 #define PORYTILES_COLOR_RGBA32_H
 
-#include <compare>
 #include <cstdint>
 #include <string>
+
+#include "porytiles/Color/Color.h"
 
 namespace porytiles::color {
 
 /**
  * @brief Value object representing a color in 32-bit RGBA format.
  *
- *  @details
+ * @details
  * TODO 2.x : fill in explanation about RGBA format, 8 bits per color, alpha channel, etc
  */
-class Rgba32 {
+class Rgba32 : public Color {
     std::uint8_t red;
     std::uint8_t green;
     std::uint8_t blue;
@@ -26,7 +27,7 @@ class Rgba32 {
     /**
      * @brief Default constructor for Rgba32. Initializes the color and alpha components to zero.
      */
-    Rgba32() = default;
+    constexpr explicit Rgba32() : red{0}, green{0}, blue{0}, alpha{0} {}
 
     /**
      * @brief Constructs an Rgba32 object with specified red, green, blue, and alpha component
@@ -37,7 +38,7 @@ class Rgba32 {
      * @param blue The blue component value.
      * @param alpha The alpha (transparency) component value.
      */
-    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green,
+    constexpr explicit Rgba32(const std::uint8_t red, const std::uint8_t green,
                               const std::uint8_t blue, const std::uint8_t alpha)
         : red{red}, green{green}, blue{blue}, alpha{alpha}
     {
@@ -51,60 +52,64 @@ class Rgba32 {
      * @param green The green component of the color.
      * @param blue The blue component of the color.
      */
-    explicit constexpr Rgba32(const std::uint8_t red, const std::uint8_t green,
+    constexpr explicit Rgba32(const std::uint8_t red, const std::uint8_t green,
                               const std::uint8_t blue)
         : red{red}, green{green}, blue{blue}, alpha{ALPHA_OPAQUE}
     {
     }
 
     /**
-     * @brief Retrieves the red component of the Rgba32 color.
+     * @brief Returns the internal red component.
      *
-     * @return The red component as an 8-bit unsigned integer.
+     * @return The internal 8-bit red component.
      */
-    [[nodiscard]] std::uint8_t getRedComponent() const;
+    [[nodiscard]] std::uint8_t computeRedComponent() const override
+    {
+        return red;
+    }
 
     /**
-     * @brief Retrieves the green component of the Rgba32 color.
+     * @brief Returns the internal green component.
      *
-     * @return The green component as an 8-bit unsigned integer.
+     * @return The internal 8-bit green component.
      */
-    [[nodiscard]] std::uint8_t getGreenComponent() const;
+    [[nodiscard]] std::uint8_t computeGreenComponent() const override
+    {
+        return green;
+    }
 
     /**
-     * @brief Retrieves the blue component of the Rgba32 color.
+     * @brief Returns the internal blue component.
      *
-     * @return The blue component as an 8-bit unsigned integer.
+     * @return The internal 8-bit blue component.
      */
-    [[nodiscard]] std::uint8_t getBlueComponent() const;
+    [[nodiscard]] std::uint8_t computeBlueComponent() const override
+    {
+        return blue;
+    }
 
     /**
-     * @brief Retrieves the alpha component of the Rgba32 color.
+     * @brief Returns the internal alpha component.
      *
-     * @return The alpha component as an 8-bit unsigned integer.
+     * @return The internal 8-bit alpha component.
      */
-    [[nodiscard]] std::uint8_t getAlphaComponent() const;
+    [[nodiscard]] std::uint8_t computeAlphaComponent() const override
+    {
+        return alpha;
+    }
 
-    /**
-     * @brief Converts the RGBA color to a JASC-PAL formatted string.
-     *
-     * @details
-     * This method converts the red, green, and blue components of the Rgba32 object into a
-     * space-separated string format commonly used in JASC-PAL color palette files.
-     *
-     * @return A string representation of the color in JASC-PAL format.
-     */
-    [[nodiscard]] std::string toJascString() const;
+    friend bool operator==(const Rgba32 &lhs, const Rgba32 &rhs)
+    {
+        return lhs.red == rhs.red && lhs.green == rhs.green && lhs.blue == rhs.blue &&
+               lhs.alpha == rhs.alpha;
+    }
 
-    /**
-     * @brief Provides a three-way comparison for Rgba32 objects.
-     *
-     * @param other The Rgba32 object to compare with.
-     * @return A std::strong_ordering result indicating the relative order of the objects.
-     */
-    std::strong_ordering operator<=>(const Rgba32 &other) const = default;
+    friend bool operator!=(const Rgba32 &lhs, const Rgba32 &rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
-} // end namespace porytiles::color
+} // namespace porytiles::color
 
 #endif // PORYTILES_COLOR_RGBA32_H
