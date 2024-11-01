@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "porytiles/Color/RGBLike.h"
 #include "porytiles/Color/Bgr15.h"
 
 // Just a fun little example of template metaprogramming
@@ -16,7 +17,7 @@ TEST(Bgr15Test, TestDefaultCtor)
 {
     using namespace porytiles::color;
 
-    const Bgr15 bgr{};
+    constexpr Bgr15 bgr{};
     EXPECT_EQ(bgr.getRawValue(), 0);
 }
 
@@ -26,4 +27,17 @@ TEST(Bgr15Test, TestComponentCtor)
 
     const Bgr15 bgr{255, 255, 255};
     EXPECT_EQ(bgr.getRawValue(), TWO_FIFTEENTH_POW_MINUS_ONE);
+}
+
+TEST(Bgr15Test, TestComponentGetters)
+{
+    using namespace porytiles::color;
+
+    const Bgr15 bgr{255, 255, 255};
+    // expected component value is 248 due to precision loss
+    constexpr std::uint8_t expectedComponentValue = 248;
+    EXPECT_EQ(bgr.computeRedComponent(), expectedComponentValue);
+    EXPECT_EQ(bgr.computeGreenComponent(), expectedComponentValue);
+    EXPECT_EQ(bgr.computeBlueComponent(), expectedComponentValue);
+    EXPECT_EQ(bgr.computeAlphaComponent(), ALPHA_OPAQUE);
 }

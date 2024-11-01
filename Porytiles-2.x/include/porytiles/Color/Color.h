@@ -2,7 +2,7 @@
 #define PORYTILES_COLOR_COLOR_H
 
 #include <cstdint>
-#include <iostream>
+#include <string>
 
 namespace porytiles::color {
 
@@ -18,6 +18,16 @@ namespace porytiles::color {
  */
 class Color {
   public:
+    /**
+     * @brief Completely transparent alpha channel value.
+     */
+    static constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
+
+    /**
+     * @brief Completely opaque alpha channel value.
+     */
+    static constexpr std::uint8_t ALPHA_OPAQUE = 0xff;
+
     virtual ~Color() = default;
 
     /**
@@ -48,21 +58,6 @@ class Color {
      */
     [[nodiscard]] virtual std::uint8_t computeAlphaComponent() const = 0;
 
-    /**
-     * @brief Converts the Color to a JASC-PAL formatted string.
-     *
-     * @details
-     * This method converts the red, green, and blue components of the Color object into a
-     * space-separated string format commonly used in JASC-PAL color palette files.
-     *
-     * @return A string representation of the color in JASC-PAL format.
-     */
-    [[nodiscard]] virtual std::string toJascString() const
-    {
-        return std::to_string(computeRedComponent()) + " " +
-               std::to_string(computeGreenComponent()) + " " +
-               std::to_string(computeBlueComponent());
-    }
 
     /**
      * @brief Compares two Color objects for equality.

@@ -3,8 +3,9 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 
-#include "porytiles/Color/Rgba32.h"
+#include <porytiles/Color/Rgba32.h>
 
 namespace porytiles::color {
 
@@ -12,9 +13,13 @@ namespace porytiles::color {
  * @brief Value object representing a color in 15-bit BGR format.
  *
  * @details
- * TODO 2.x : fill in explanation about BGR format, 5 bits per color, top bit unused, etc.
+ * The 15-bit BGR format represents a color with three 5-bit channels: one channel for blue, green,
+ * and red respectively. Internally, a Bgr15 is representing using a 16-bit integer, with the top
+ * bit left unused. Bgr15 is the preferred color format for the Game Boy Advance's palette RAM. The
+ * BGR format has no concept of transparency, so Bgr15's @link Bgr15::computeAlphaComponent
+ * computeAlphaComponent @endlink implementation simply returns @link ALPHA_OPAQUE @endlink.
  */
-class Bgr15 : public Color {
+class Bgr15 {
     std::uint16_t bgr;
 
   public:
@@ -62,7 +67,7 @@ class Bgr15 : public Color {
      *
      * @return The 8-bit red component derived from the 15-bit BGR value.
      */
-    [[nodiscard]] std::uint8_t computeRedComponent() const override;
+    [[nodiscard]] std::uint8_t computeRedComponent() const;
 
     /**
      * @brief Computes the green component from the 15-bit BGR color value.
@@ -73,7 +78,7 @@ class Bgr15 : public Color {
      *
      * @return The 8-bit green component derived from the 15-bit BGR value.
      */
-    [[nodiscard]] std::uint8_t computeGreenComponent() const override;
+    [[nodiscard]] std::uint8_t computeGreenComponent() const;
 
     /**
      * @brief Computes the blue component from the 15-bit BGR color value.
@@ -84,7 +89,7 @@ class Bgr15 : public Color {
      *
      * @return The 8-bit blue component derived from the 15-bit BGR value.
      */
-    [[nodiscard]] std::uint8_t computeBlueComponent() const override;
+    [[nodiscard]] std::uint8_t computeBlueComponent() const;
 
     /**
      * @brief Computes the alpha component, which will always be opaque.
@@ -95,17 +100,58 @@ class Bgr15 : public Color {
      *
      * @return The opaque alpha component.
      */
-    [[nodiscard]] std::uint8_t computeAlphaComponent() const override
+    [[nodiscard]] std::uint8_t computeAlphaComponent() const
     {
-        return Rgba32::ALPHA_OPAQUE;
+        return ALPHA_OPAQUE;
     }
 
+    /**
+     * @brief Converts the Color to a JASC-PAL formatted string.
+     *
+     * @details
+     * This method converts the red, green, and blue components of the Color object into a
+     * space-separated string format commonly used in JASC-PAL color palette files. JASC-PAL files
+     * typically do not include an alpha channel value, so that value is omitted from the string
+     * returned here.
+     *
+     * @return A string representation of the color in JASC-PAL format.
+     */
+    [[nodiscard]] std::string toJascString() const
+    {
+        return std::to_string(computeRedComponent()) + " " +
+               std::to_string(computeGreenComponent()) + " " +
+               std::to_string(computeBlueComponent());
+    }
+
+    /**
+     * @brief Equality operator for Bgr15 objects.
+     *
+     * @details
+     * Compares two Bgr15 objects to determine whether their 15-bit BGR values are equal. The
+     * comparison uses the raw value but shifts off the top bit, since this bit is unused in BGR15
+     * format. Garbage bit values here should not affect logical equality.
+     *
+     * @param lhs The left-hand side Bgr15 object to compare.
+     * @param rhs The right-hand side Bgr15 object to compare.
+     * @return True if the 15-bit BGR values of both Bgr15 objects are equal, false otherwise.
+     */
     friend bool operator==(const Bgr15 &lhs, const Bgr15 &rhs)
     {
-        // TODO 2.x : make this ignore the top bit of the raw value, since that bit is unused
-        return lhs.getRawValue() == rhs.getRawValue();
+        return lhs.getRawValue() << 1 == rhs.getRawValue() << 1;
     }
 
+    /**
+     * @brief Inequality operator for Bgr15 objects.
+     *
+     * @details
+     * Compares two Bgr15 objects to determine whether their 15-bit BGR values are not equal.
+     * Currently, it compares the raw 16-bit values, but it should be updated to ignore the top
+     * unused bit.
+     *
+     * @param lhs The left-hand side Bgr15 object to compare.
+     * @param rhs The right-hand side Bgr15 object to compare.
+     * @return True if the 15-bit BGR values of both Bgr15 objects are not equal, false otherwise.
+     */
     friend bool operator!=(const Bgr15 &lhs, const Bgr15 &rhs)
     {
         return !(lhs == rhs);

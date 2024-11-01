@@ -7,4 +7,4 @@
 namespace porytiles::tile {
 }
 
-#endif //PORYTILES_TILE_NAMESPACE_H
+#endif // PORYTILES_TILE_NAMESPACE_H
