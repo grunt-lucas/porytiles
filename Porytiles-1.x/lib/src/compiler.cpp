@@ -808,9 +808,9 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode com
   }
 
   /*
-   * Push back transparent tiles to pad out tileset to multiple of 16
+   * Push back transparent tiles to pad out tileset to a non-zero multiple of 16
    */
-  while (compiled->tiles.size() % 16 != 0) {
+  while (compiled->tiles.size() % 16 != 0 || compiled->tiles.size() == 0) {
     compiled->tiles.push_back(GBA_TILE_TRANSPARENT);
     compiled->paletteIndexesOfTile.push_back(0);
   }
