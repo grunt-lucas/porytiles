@@ -5,8 +5,8 @@ set -eu
 # FIXME : build version and date not correctly passed, need to find idiomatic CMake way to handle this
 
 package_release() {
-  cp build/Porytiles-1.x/cli/porytiles "$output_directory/porytiles-$mode"
-  cp build/Porytiles-1.x/tests/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
+  cp build/cli/porytiles "$output_directory/porytiles-$mode"
+  cp build/tests/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
   cp LICENSE "$output_directory/porytiles-$mode"
