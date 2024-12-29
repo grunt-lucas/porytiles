@@ -23,6 +23,7 @@ jobs:
       - name: Build the project
         run: |
           export CXX=g++
+          cd Porytiles-1.x
           cmake -B build
           cd build
           cmake --build .
@@ -30,4 +31,3 @@ jobs:
       - name: Run the tests
         run: |
           ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
-          ./build/Porytiles-2.x/tests/Porytiles2xUnitTests

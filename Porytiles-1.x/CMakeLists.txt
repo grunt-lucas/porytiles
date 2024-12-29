@@ -1,3 +1,13 @@
+cmake_minimum_required(VERSION 3.20)
+
+# Test discovery so ctest can work
+enable_testing()
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
+
 project(Porytiles1x CXX)
 
 # Enable compilation warnings for 1.x
