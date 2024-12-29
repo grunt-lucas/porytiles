@@ -32,4 +32,4 @@ jobs:
 
       - name: Run the tests
         run: |
-          ./build/Porytiles-1.x/tests/Porytiles1xTestSuite
+          ./Porytiles-1.x/build/Porytiles-1.x/tests/Porytiles1xTestSuite
