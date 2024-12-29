@@ -5,15 +5,15 @@ set -eu
 # FIXME : build version and date not correctly passed, need to find idiomatic CMake way to handle this
 
 package_release() {
-  cp build/cli/porytiles "$output_directory/porytiles-$mode"
-  cp build/tests/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
+  cp Porytiles1.x/build/cli/porytiles "$output_directory/porytiles-$mode"
+  cp Porytiles1.x/build/tests/Porytiles1xTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
   cp LICENSE "$output_directory/porytiles-$mode"
   mkdir -p "$output_directory/porytiles-$mode/Resources"
   cp -r Resources/Examples "$output_directory/porytiles-$mode/Resources"
   cp -r Resources/Tests "$output_directory/porytiles-$mode/Resources"
-  cp -r Porytiles-1.x/vendor "$output_directory/porytiles-$mode"
+  cp -r Porytiles1.x/vendor "$output_directory/porytiles-$mode"
 
   # Run the tests, bail package script if they fail
   pushd "$output_directory/porytiles-$mode"
@@ -33,6 +33,7 @@ macos_arm64() {
   pushd build
   cmake --build .
   popd
+  popd
   package_release
 }
 
@@ -45,6 +46,7 @@ linux_aarch64() {
   pushd build
   cmake --build .
   popd
+  popd
   package_release
 }
 
@@ -56,6 +58,7 @@ linux_amd64() {
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
+  popd
   popd
   package_release
 }

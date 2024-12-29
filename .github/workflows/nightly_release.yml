@@ -65,7 +65,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: Porytiles-1.x/porytiles-linux-amd64.zip
+          files: porytiles-linux-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -98,7 +98,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: Porytiles-1.x/porytiles-macos-arm64.zip
+          files: porytiles-macos-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
