@@ -8,6 +8,7 @@ build/**
 cmake-build-*/**
 Porytiles-1.x/build/**
 Porytiles-1.x/cmake-build-*/**
+Porytiles-2.x/porytiles
 
 # Doxygen
 Documentation/html/**
