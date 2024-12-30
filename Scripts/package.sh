@@ -26,8 +26,8 @@ package_release() {
 
 macos_arm64() {
   echo "Packaging release macos-arm64..."
-  pushd Porytiles-1.x
   mkdir -p "$output_directory/porytiles-$mode"
+  pushd Porytiles-1.x
   export CXX="/opt/homebrew/opt/llvm@16/bin/clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
@@ -39,8 +39,8 @@ macos_arm64() {
 
 linux_aarch64() {
   echo "Packaging release linux-aarch64..."
-  pushd Porytiles-1.x
   mkdir -p "$output_directory/porytiles-$mode"
+  pushd Porytiles-1.x
   export CXX="clang++-16"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
@@ -52,8 +52,8 @@ linux_aarch64() {
 
 linux_amd64() {
   echo "Packaging release linux-amd64..."
-  pushd Porytiles-1.x
   mkdir -p "$output_directory/porytiles-$mode"
+  pushd Porytiles-1.x
   export CXX="clang++-16"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
