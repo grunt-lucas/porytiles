@@ -3,7 +3,7 @@
 [![Porytiles Develop Branch Build](https://github.com/grunt-lucas/porytiles/actions/workflows/dev_build.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/dev_build.yml)
 [![Porytiles Nightly Release](https://github.com/grunt-lucas/porytiles/actions/workflows/nightly_release.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/nightly_release.yml)
 
-Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret/pokeruby), [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeemerald`](https://github.com/pret/pokeemerald) Pokémon Generation 3 decompilation projects from [`pret`](https://github.com/pret). Also compatible with [`pokeemerald-expansion`](https://github.com/rh-hideout/pokeemerald-expansion) from [`rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready tilesets from RGBA (or indexed) tile assets.
+Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret/pokeruby), [`pokefirered`](https://github.com/pret/pokefirered), and [`pokeemerald`](https://github.com/pret/pokeemerald) Pokémon Generation III decompilation projects from [`pret`](https://github.com/pret). Also compatible with [`pokeemerald-expansion`](https://github.com/rh-hideout/pokeemerald-expansion) from [`rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready tilesets from RGBA (or indexed) tile assets.
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop) branch, grab the nightly release instead.
 

@@ -6,22 +6,20 @@ package cmd
 import (
 	"os"
 
+	"github.com/grunt-lucas/porytiles/cmd/compile"
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "porytiles",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "Overworld tileset compiler for Pokémon Generation III decompilation projects",
+	Long: `Overworld tileset compiler for use with the pokeruby, pokefirered, and
+pokeemerald Pokémon Generation III decompilation projects from pret. Also
+compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
+tilesets from RGBA (or indexed) tile assets.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+Project home page: https://github.com/grunt-lucas/porytiles`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -34,6 +32,8 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.AddCommand(compile.CompileCmd)
+	rootCmd.Version = "2.x"
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
