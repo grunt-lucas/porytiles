@@ -1,11 +1,12 @@
 /*
-Copyright © 2024 grunt-lucas grunt.lucas@yahoo.com
+Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 package compile
 
 import (
 	"fmt"
 
+	"github.com/grunt-lucas/porytiles/internal/drivers"
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +16,7 @@ var tilesetCmd = &cobra.Command{
 	Long:  `Compile a Porytiles-format tileset to a Porymap-format tileset.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("tileset called")
+		drivers.DriveCompileTileset()
 	},
 }
 
