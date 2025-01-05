@@ -7,7 +7,7 @@ Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop) branch, grab the nightly release instead.
 
-For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) or [the video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
+For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) (a video tutorial series is coming at a later date).
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Wiki/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles.*
