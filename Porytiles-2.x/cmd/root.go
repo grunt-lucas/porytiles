@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/grunt-lucas/porytiles/cmd/compile"
+	"github.com/grunt-lucas/porytiles/cmd/decompile"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +34,7 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(compile.CompileCmd)
+	rootCmd.AddCommand(decompile.DecompileCmd)
 	rootCmd.Version = "2.x"
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
