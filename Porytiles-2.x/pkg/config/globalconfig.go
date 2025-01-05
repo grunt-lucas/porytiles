@@ -2,7 +2,8 @@
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 
-// Package config defines the various types needed to configure a Porytiles job.
+// Package config defines the various configuration types needed to configure a
+// Porytiles job.
 package config
 
 // A TargetBaseGame represents which of the three Generation III decompilation
