@@ -41,7 +41,7 @@ porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 
 Overworld tileset compiler for use with the pokeruby, pokefirered, and
-pokeemerald Pokémon Generation 3 decompilation projects from pret. Also
+pokeemerald Pokémon Generation III decompilation projects from pret. Also
 compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
 tilesets from RGBA (or indexed) tile assets.
 
@@ -254,7 +254,7 @@ Compile RGBA tile assets into a Porymap-ready secondary tileset.
 `compile-secondary' expects an input path containing the target assets organized
 according to the format outlined in the Compilation Input Directory Format
 subsection. You must also supply the RGBA tile assets for a paired primary
-tileset, so Porytiles can take advantage of the Generation 3 engine's tile
+tileset, so Porytiles can take advantage of the Generation III engine's tile
 re-use system. Like `compile-primary', you must also supply your project's
 `metatile_behaviors.h' file. By default, `compile-secondary' will write output
 to the current working directory, but you can change this behavior by supplying
