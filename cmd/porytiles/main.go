@@ -2,16 +2,21 @@
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 
-// Package cmd contains the root command for the Porytiles CLI.
-package cmd
+/*
+Porytiles converts Pokémon Generation III decomp tilesets and maps between
+various formats.
+
+Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
+*/
+package main
 
 import (
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"github.com/grunt-lucas/porytiles/cmd/compile"
-	"github.com/grunt-lucas/porytiles/cmd/decompile"
+	"github.com/grunt-lucas/porytiles/cmd/porytiles/compile"
+	"github.com/grunt-lucas/porytiles/cmd/porytiles/decompile"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -35,10 +40,14 @@ func Execute() {
 	}
 }
 
+func main() {
+	Execute()
+}
+
 func init() {
 	rootCmd.AddCommand(compile.CompileCmd)
 	rootCmd.AddCommand(decompile.DecompileCmd)
-	rootCmd.Version = "2.x"
+	rootCmd.Version = "1.x"
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
