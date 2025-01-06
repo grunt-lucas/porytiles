@@ -1,14 +1,17 @@
 /*
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
+
+// Package cmd contains the root command for the Porytiles CLI.
 package cmd
 
 import (
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/grunt-lucas/porytiles/cmd/compile"
 	"github.com/grunt-lucas/porytiles/cmd/decompile"
-	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
