@@ -8,16 +8,20 @@ import (
 )
 
 func TestFieldmapConfig_NumPalettesInSecondary(t *testing.T) {
-	config := config.FieldmapConfig{512, 1024, 512, 1024, 6, 13, 12}
+	fieldmapConfig := config.FieldmapConfig{}
+	fieldmapConfig.NumPalettesInPrimary = 6
+	fieldmapConfig.NumPalettesTotal = 13
 	expected := 7
-	actual := config.NumPalettesInSecondary()
+	actual := fieldmapConfig.NumPalettesInSecondary()
 	if actual != expected {
 		t.Errorf("NumPalettesInSecondary() = %d; expected %d", actual, expected)
 	}
 }
 
 func ExampleFieldmapConfig_NumPalettesInSecondary() {
-	config := config.FieldmapConfig{512, 1024, 512, 1024, 6, 13, 12}
-	fmt.Println(config.NumPalettesInSecondary())
+	fieldmapConfig := config.FieldmapConfig{}
+	fieldmapConfig.NumPalettesInPrimary = 6
+	fieldmapConfig.NumPalettesTotal = 13
+	fmt.Println(fieldmapConfig.NumPalettesInSecondary())
 	// Output: 7
 }

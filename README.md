@@ -7,7 +7,7 @@ Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop) branch, grab the nightly release instead.
 
-For detailed documentation about Porytiles features and internal workings, please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) (a video tutorial series is coming at a later date).
+For detailed documentation about Porytiles internal workings, please see [the Go package page here.](https://pkg.go.dev/github.com/grunt-lucas/porytiles) For tutorials and usage documentation please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) (a video tutorial series is coming at a later date).
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Wiki/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles.*
@@ -29,10 +29,10 @@ Clang+LLVM 16 is the "official" Porytiles build toolchain -- the Porytiles forma
 ## Note For Aseprite Users
 GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection of [useful scripts here.](https://github.com/PKGaspi/AsepriteScripts) Of particular interest is this [`export_layers`](https://github.com/PKGaspi/AsepriteScripts/blob/main/scripts/gaspi/export_layers.lua) script, which allows you to save each sprite layer to a different file. This may be useful, since Porytiles requires each tile layer in a separate PNG file.
 
-## Porytiles 2.x
+## Porytiles 1.x
 
-### What Is Porytiles 2.x?
-Porytiles 2.x is a from-the-ground-up refactor of Porytiles, now written in Go.
+### What Is Porytiles 1.x?
+Porytiles 1.x is a from-the-ground-up refactor of Porytiles, now written in Go.
 
 ### What Happened To C++?
 <sub><sup>I'm borderline ADHD and bored of C++ for the moment...</sup></sub>
@@ -45,7 +45,7 @@ I decided that working in Go will be better for the long-term viability of the p
 
 The actual goals of future Porytiles have not changed and are listed in the next section.
 
-### Porytiles 2.x Goals & Highlights
+### Porytiles 1.x Goals & Highlights
 + Modern, clean Go codebase
 + Fixes for many of the pesky bugs listed in the [Issues](https://github.com/grunt-lucas/porytiles/issues) bank
 + Support for completely custom metatile attributes, like Porymap

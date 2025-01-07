@@ -6,8 +6,9 @@ package compile
 import (
 	"fmt"
 
-	"github.com/grunt-lucas/porytiles/internal/drivers"
 	"github.com/spf13/cobra"
+
+	"github.com/grunt-lucas/porytiles/internal/drivers"
 )
 
 var tilesetCmd = &cobra.Command{

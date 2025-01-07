@@ -8,13 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
-project(Porytiles1x CXX)
+project(Porytiles0x CXX)
 
-# Enable compilation warnings for 1.x
+# Enable compilation warnings for 0.x
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
-    # Cannot enable -Wextra in 1.x since some of our header-only dependencies throw warnings
+    # Cannot enable -Wextra in 0.x since some of our header-only dependencies throw warnings
     # that break the build.
     add_compile_options(-Wall -Wpedantic -Werror)
 endif()
