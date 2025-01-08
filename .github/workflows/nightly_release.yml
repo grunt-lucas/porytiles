@@ -35,8 +35,8 @@ jobs:
           tag: nightly-${{github.sha}}
           tag_exists_error: true
 
-  nightly-release-linux-amd64:
-    name: Release a nightly statically linked linux-amd64 binary
+  nightly-release-0x-linux-amd64:
+    name: Release a nightly statically linked 0.x linux-amd64 binary
     runs-on: ubuntu-latest
     needs: [create-release-tag]
     if: needs.check-already-built.outputs.last_sha != github.sha
@@ -69,8 +69,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-macos-arm64:
-    name: Release a nightly dynamically linked macos-arm64 binary
+  nightly-release-0x-macos-arm64:
+    name: Release a nightly dynamically linked 0.x macos-arm64 binary
     runs-on: macos-latest
     # GitHub removed Intel Mac runners, so macos-latest is now arm64
     needs: [create-release-tag]
@@ -105,7 +105,7 @@ jobs:
   prune-old-nightlies:
     name: Only keep the latest nightly build
     runs-on: ubuntu-latest
-    needs: [nightly-release-linux-amd64, nightly-release-macos-arm64]
+    needs: [nightly-release-0x-linux-amd64, nightly-release-0x-macos-arm64]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - uses: dev-drprasad/delete-older-releases@v0.3.2

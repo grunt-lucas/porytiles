@@ -5,7 +5,7 @@ set -eu
 # FIXME : build version and date not correctly passed, need to find idiomatic CMake way to handle this
 
 package_release() {
-  cp Porytiles-0.x/build/cli/cli "$output_directory/porytiles-$mode"
+  cp Porytiles-0.x/build/cli/porytiles "$output_directory/porytiles-$mode"
   cp Porytiles-0.x/build/tests/Porytiles0xTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
@@ -95,7 +95,7 @@ main() {
   esac
 }
 
-if [[ ! -f .cli-marker-file ]]
+if [[ ! -f .porytiles-marker-file ]]
 then
     echo "Script must run in main Porytiles directory"
     exit 1

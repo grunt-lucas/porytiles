@@ -41,7 +41,7 @@ parse_params() {
     return 0
 }
 
-if [[ ! -f .cli-marker-file ]]
+if [[ ! -f .porytiles-marker-file ]]
 then
     echo "Script must run in main Porytiles directory"
     exit 1
