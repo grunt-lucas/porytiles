@@ -1,11 +1,11 @@
-name: Linux AMD64 GCC Reusable Build Workflow
+name: Linux AMD64 GCC Reusable 0.x Build Workflow
 
 on:
   workflow_call:
 
 jobs:
-  build-linux-amd64-gcc:
-    name: Build on linux-amd64 with gcc
+  build-0x-linux-amd64-gcc:
+    name: Build 0.x on linux-amd64 with gcc
     runs-on: ubuntu-latest
     steps:
       - name: Install GCC and other build dependencies

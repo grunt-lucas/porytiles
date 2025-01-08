@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux-amd64-clang:
-    uses: ./.github/workflows/linux_amd64_clang.yml
-  build-macos-arm64-clang:
-    uses: ./.github/workflows/macos_arm64_clang.yml
+  build-0x-linux-amd64-clang:
+    uses: ./.github/workflows/0x_linux_amd64_clang.yml
+  build-0x-macos-arm64-clang:
+    uses: ./.github/workflows/0x_macos_arm64_clang.yml

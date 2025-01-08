@@ -1,11 +1,11 @@
-name: macOS ARM64 Clang Reusable Build Workflow
+name: macOS ARM64 Clang Reusable 0.x Build Workflow
 
 on:
   workflow_call:
 
 jobs:
-  build-macos-arm64-clang:
-    name: Build on macos-arm64 with clang
+  build-0x-macos-arm64-clang:
+    name: Build 0.x on macos-arm64 with clang
     runs-on: macos-latest
     # GitHub removed Intel Mac runners, so macos-latest is now arm64
     # We don't need to install zlib since it is shipped with macOS, CMake will find it
