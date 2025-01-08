@@ -63,7 +63,7 @@ llvm-cov-wrapper() {
     fi
 }
 
-if [[ ! -f .cli-marker-file ]]
+if [[ ! -f .porytiles-marker-file ]]
 then
     echo "Script must run in main Porytiles directory"
     exit 1
@@ -71,7 +71,7 @@ fi
 
 parse_params "$@"
 
-if [[ ! -f ./debug/bin/cli-tests ]]; then
+if [[ ! -f ./debug/bin/porytiles-tests ]]; then
     echo "error: debug test harness \`debug/bin/porytiles-tests' not found"
     echo "Please run \`make debug-check' to build the test harness and generate profile data."
     echo
@@ -91,10 +91,10 @@ fi
 
 if [[ ${args[0]} == "show" ]]; then
     llvm-profdata-wrapper merge -o testcov.profdata default.profraw
-    llvm-cov-wrapper show ./debug/bin/cli-tests -instr-profile=testcov.profdata "${args[@]:1}"
+    llvm-cov-wrapper show ./debug/bin/porytiles-tests -instr-profile=testcov.profdata "${args[@]:1}"
 elif [[ ${args[0]} == "report" ]]; then
     llvm-profdata-wrapper merge -o testcov.profdata default.profraw
-    llvm-cov-wrapper report ./debug/bin/cli-tests -instr-profile=testcov.profdata "${args[@]:1}"
+    llvm-cov-wrapper report ./debug/bin/porytiles-tests -instr-profile=testcov.profdata "${args[@]:1}"
 else
     echo "error: unknown command \`${args[0]}'"
     usage_exit_error
