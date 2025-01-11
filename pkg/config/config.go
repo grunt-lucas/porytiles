@@ -7,24 +7,23 @@ Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 package config
 
 // A TilesOutputPalette represents a possible output format for Porymap-format
-// tiles. Vanilla tileset tiles use Greyscale, but Porymap now supports tiles in
-// TrueColor format.
-//
-// A Greyscale tiles PNG contains a single 16-color greyscale palette. This
-// makes it easy to see the index value of each pixel. But the tradeoff is that
-// it's not obvious which actual palette (i.e. which color) each pixel is
-// actually using.
-//
-// A TrueColor tiles PNG contains the full palette configuration in the internal
-// PNG palette. The bottom four bits of each pixel will correctly index into an
-// individual palette, so 'gbagfx' will be perfectly happy. However, the top 4
-// bits will index into one of the internal PNG palettes. This means that the
-// tiles PNG will be realistically colored, so it will be easy to see what a
-// tile will actually look like in-game.
+// tiles (i.e. the canonical 'tiles.png' file). Vanilla tileset tiles use
+// Greyscale, but Porymap now supports tiles in TrueColor format.
 type TilesOutputPalette int
 
 const (
+	// A TrueColor 'tiles.png' contains the full palette configuration in the
+	// internal PNG palette. The bottom four bits of each pixel will correctly
+	// index into an individual palette, so 'gbagfx' will be perfectly happy.
+	// However, the top 4 bits will index into one of the internal PNG palettes.
+	// This means that the 'tiles.png' will be realistically colored, so it will
+	// be easy to see what a tile will actually look like in-game.
 	TrueColor TilesOutputPalette = iota
+
+	// A Greyscale 'tiles.png' contains a single 16-color greyscale palette.
+	// This makes it easy to see the index value of each pixel. But the tradeoff
+	// is that it's not obvious which actual palette (i.e. which color) each
+	// pixel is actually using.
 	Greyscale
 )
 
