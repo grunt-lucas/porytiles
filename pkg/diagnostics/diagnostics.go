@@ -2,24 +2,21 @@
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 
-// Package diagnostics defines the user diagnostics system for Porytiles jobs.
+// Package diagnostics provides the user diagnostics system for Porytiles jobs.
 package diagnostics
 
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
-	"text/template"
 
 	"github.com/fatih/color"
 )
 
-// ThrowInternalPanic panics with the given message to signal an internal
+// PorytilesInternalPanic panics with the given message to signal an internal
 // Porytiles error. Typically, this error is reserved for bad internal state
 // (which usually signals the presence of a bug). End users should not see this
 // error upon bad input or other correctable problems.
-func ThrowInternalPanic(msg string) {
+func PorytilesInternalPanic(msg string) {
 	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
 	fmt.Fprintf(os.Stderr, "%s %s\n", yellow("internal porytiles error:"), msg)
 	panic("internal error")
@@ -62,83 +59,55 @@ const (
 
 // DiagnosticTemplate defines a reusable template for standardized diagnostic
 // reporting. The DiagnosticEngine uses a template to construct the actual
-// Diagnostic instance when one is in-flight.
+// Diagnostic instance when one is in-flight. A DiagnosticTemplate defines a
+// unique name for the diagnostic as well as a default level. Additionally,
+// it provides a template for the diagnostic message, as well as templates for
+// zero or more notes that should be emitted alongside the diagnostic.
 type DiagnosticTemplate struct {
-	Name         string
-	DefaultLevel DiagnosticLevel
-	Message      string
-	Note         string
+	Name            string
+	DefaultLevel    DiagnosticLevel
+	MessageTemplate string
+	NoteTemplates   []string
 }
 
+// WarnColorPrecisionLoss ("color-precision-loss") warns when two input colors
+// will collapse to the same color upon BGR conversion.
+//
+// See: <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wcolor-precision-loss>
 const WarnColorPrecisionLoss = "color-precision-loss"
 
-// WarnColorPrecisionLossTemplate is a diagnostic template for color precision loss warnings.
-var WarnColorPrecisionLossTemplate = DiagnosticTemplate{
-	Name:         WarnColorPrecisionLoss,
-	DefaultLevel: Warning,
-	Message:      "color `{{.jasc}}' at {{.mode}} `{{.tile}}' subtile pixel col {{.col}}, row {{.row}} collapsed to duplicate BGR",
-	Note:         "previously saw `{{.jasc}}' at `{{.tile}}' subtile pixel col {{.col}}, row {{.row}}",
+// WarnColorPrecisionLossMessage is the warning message shown by Porytiles when
+// a WarnColorPrecisionLoss is in-flight.
+//
+// MessageTemplate Parameters
+//
+//	{{.jasc}}       - the JASC PAL file representation of the relevant color
+//	{{.tile}}       - the relevant tile's string representation
+//	{{.col}}        - the offending pixel's column, indexed within the subtile
+//	{{.row}}        - the offending pixel's row, indexed within the subtile
+const WarnColorPrecisionLossMessage = "color `{{.jasc}}' at `{{.tile}}' subtile pixel col {{.col}}, row {{.row}} collapsed to duplicate BGR"
+
+// WarnColorPrecisionLossNotes are the supplemental notes Porytiles will display
+// alongside the message for a WarnColorPrecisionLoss.
+//
+// MessageTemplate Parameters
+//
+//	{{.prevJasc}}       - the JASC PAL file representation of the colliding color
+//	{{.prevTile}}       - the previous tile that contained the colliding color
+//	{{.prevCol}}        - the previous pixel's column, indexed within the subtile
+//	{{.prevRow}}        - the previous pixel's row, indexed within the subtile
+var WarnColorPrecisionLossNotes = []string{
+	"previously saw `{{.prevJasc}}' at `{{.prevTile}}' subtile pixel col {{.prevCol}}, row {{.prevRow}}",
 }
 
-type Diagnostic struct {
-	// id       int
-	template DiagnosticTemplate
-	level    DiagnosticLevel
-	message  string
+var warnColorPrecisionLossTemplate = DiagnosticTemplate{
+	Name:            WarnColorPrecisionLoss,
+	DefaultLevel:    Warning,
+	MessageTemplate: WarnColorPrecisionLossMessage,
+	NoteTemplates:   WarnColorPrecisionLossNotes,
 }
 
-type DiagnosticConsumer interface {
-	ConsumeDiagnostic(diag Diagnostic)
-}
-
-type StderrConsumer struct{}
-
-func (s StderrConsumer) ConsumeDiagnostic(diag Diagnostic) {
-	// TODO : implement me
-	switch diag.level {
-	case Ignored:
-		// Do nothing for ignored diagnostics
-	case Note:
-		// Process Note level diagnostics
-	case Remark:
-		// Process Remark level diagnostics
-	case Warning:
-		magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", magenta("warning:"), diag.message)
-	case Error:
-		// Process Error level diagnostics
-	case Fatal:
-		// Process Fatal level diagnostics
-		os.Exit(1)
-	default:
-		// Handle unexpected diagnostic levels
-		ThrowInternalPanic("unexpected Diagnostic level: " + strconv.Itoa(int(diag.level)))
-	}
-}
-
-type DevNullConsumer struct{}
-
-func (s DevNullConsumer) ConsumeDiagnostic(diag Diagnostic) {
-	// explicitly do nothing
-}
-
-type DiagnosticEngine struct {
-	consumer DiagnosticConsumer
-}
-
-func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
-	engine.consumer = consumer
-}
-
-func (engine *DiagnosticEngine) Report(diagTempl DiagnosticTemplate, m map[string]string) {
-	// TODO : is there a better way to handle this than templates?
-	templ := template.Must(template.New("").Parse(diagTempl.Message))
-	formattedMessage := &strings.Builder{}
-	err := templ.Execute(formattedMessage, m)
-	if err != nil {
-		ThrowInternalPanic("failed to format diagnostic message: " + err.Error())
-	}
-	// TODO : look up actual level in a map that DiagnosticEngine manages (to handle user-modified levels)
-	diagnostic := Diagnostic{diagTempl, diagTempl.DefaultLevel, formattedMessage.String()}
-	engine.consumer.ConsumeDiagnostic(diagnostic)
+// Map of unique diagnostic names to their templates
+var diagNameToTemplate = map[string]DiagnosticTemplate{
+	WarnColorPrecisionLoss: warnColorPrecisionLossTemplate,
 }

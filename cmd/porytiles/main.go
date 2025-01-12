@@ -17,6 +17,7 @@ import (
 
 	"github.com/grunt-lucas/porytiles/cmd/porytiles/compile"
 	"github.com/grunt-lucas/porytiles/cmd/porytiles/decompile"
+	"github.com/grunt-lucas/porytiles/pkg/diagnostics"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -41,6 +42,12 @@ func Execute() {
 }
 
 func main() {
+	defer func() {
+		// recover from panic if one occurred. Set err to nil otherwise.
+		if r := recover(); r != nil {
+			diagnostics.PorytilesInternalPanic("Porytiles job panicked")
+		}
+	}()
 	Execute()
 }
 
