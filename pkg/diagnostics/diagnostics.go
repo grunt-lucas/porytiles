@@ -6,6 +6,7 @@ Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 package diagnostics
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -19,9 +20,9 @@ import (
 // (which usually signals the presence of a bug). End users should not see this
 // error upon bad input or other correctable problems.
 func ThrowInternalPanic(msg string) {
-	yellow := color.New(color.FgYellow, color.Bold)
-	yellow.Fprintf(os.Stderr, "internal porytiles error: ")
-	panic(msg)
+	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
+	fmt.Fprintf(os.Stderr, "%s %s\n", yellow("internal porytiles error:"), msg)
+	panic("internal error")
 }
 
 // DiagnosticLevel represents a particular severity level for a Diagnostic. The
@@ -64,41 +65,35 @@ const (
 // reporting. The DiagnosticEngine uses a template to construct the actual
 // Diagnostic instance when one is in-flight.
 type DiagnosticTemplate struct {
-	name         string
-	defaultLevel DiagnosticLevel
-	message      string
+	Name         string
+	DefaultLevel DiagnosticLevel
+	Message      string
+	Note         string
 }
 
-func formatMessage(diag *DiagnosticTemplate, m map[string]string) string {
-	templ := template.Must(template.New("").Parse(diag.message))
-	result := &strings.Builder{}
-	err := templ.Execute(result, m)
-	if err != nil {
-		ThrowInternalPanic("failed to format diagnostic message: " + err.Error())
-	}
-	return result.String()
-}
+const WarnColorPrecisionLoss = "color-precision-loss"
 
 var WarnColorPrecisionLossTemplate = DiagnosticTemplate{
-	name:         "color-precision-loss",
-	defaultLevel: Warning,
-	message:      "color `{{.jasc}}' at {{.mode}} `{{.tile}}' subtile pixel col {{.col}}, row {{.row}} collapsed to duplicate BGR",
+	Name:         WarnColorPrecisionLoss,
+	DefaultLevel: Warning,
+	Message:      "color `{{.jasc}}' at {{.mode}} `{{.tile}}' subtile pixel col {{.col}}, row {{.row}} collapsed to duplicate BGR",
+	Note:         "previously saw `{{.jasc}}' at `{{.tile}}' subtile pixel col {{.col}}, row {{.row}}",
 }
 
 type Diagnostic struct {
-	id       int
-	template *DiagnosticTemplate
+	// id       int
+	template DiagnosticTemplate
 	level    DiagnosticLevel
 	message  string
 }
 
 type DiagnosticConsumer interface {
-	ConsumeDiagnostic(diag *Diagnostic)
+	ConsumeDiagnostic(diag Diagnostic)
 }
 
 type StderrConsumer struct{}
 
-func (s StderrConsumer) ConsumeDiagnostic(diag *Diagnostic) {
+func (s StderrConsumer) ConsumeDiagnostic(diag Diagnostic) {
 	// TODO : implement me
 	switch diag.level {
 	case Ignored:
@@ -108,7 +103,8 @@ func (s StderrConsumer) ConsumeDiagnostic(diag *Diagnostic) {
 	case Remark:
 		// Process Remark level diagnostics
 	case Warning:
-		// Process Warning level diagnostics
+		magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
+		fmt.Fprintf(os.Stderr, "%s %s\n", magenta("warning:"), diag.message)
 	case Error:
 		// Process Error level diagnostics
 	case Fatal:
@@ -120,12 +116,29 @@ func (s StderrConsumer) ConsumeDiagnostic(diag *Diagnostic) {
 	}
 }
 
-type IgnoreConsumer struct{}
+type DevNullConsumer struct{}
 
-func (s IgnoreConsumer) ConsumeDiagnostic(diag *Diagnostic) {
+func (s DevNullConsumer) ConsumeDiagnostic(diag Diagnostic) {
 	// explicitly do nothing
 }
 
 type DiagnosticEngine struct {
 	consumer DiagnosticConsumer
+}
+
+func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
+	engine.consumer = consumer
+}
+
+func (engine *DiagnosticEngine) Report(diagTempl DiagnosticTemplate, m map[string]string) {
+	// TODO : is there a better way to handle this than templates?
+	templ := template.Must(template.New("").Parse(diagTempl.Message))
+	formattedMessage := &strings.Builder{}
+	err := templ.Execute(formattedMessage, m)
+	if err != nil {
+		ThrowInternalPanic("failed to format diagnostic message: " + err.Error())
+	}
+	// TODO : look up actual level in a map that DiagnosticEngine manages (to handle user-modified levels)
+	diagnostic := Diagnostic{diagTempl, diagTempl.DefaultLevel, formattedMessage.String()}
+	engine.consumer.ConsumeDiagnostic(diagnostic)
 }
