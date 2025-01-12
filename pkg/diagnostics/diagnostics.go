@@ -58,7 +58,6 @@ const (
 	// The Fatal level is for a Diagnostic which demands immediate termination
 	// of the Porytiles job.
 	Fatal
-	FOOBAR
 )
 
 // DiagnosticTemplate defines a reusable template for standardized diagnostic
@@ -73,6 +72,7 @@ type DiagnosticTemplate struct {
 
 const WarnColorPrecisionLoss = "color-precision-loss"
 
+// WarnColorPrecisionLossTemplate is a diagnostic template for color precision loss warnings.
 var WarnColorPrecisionLossTemplate = DiagnosticTemplate{
 	Name:         WarnColorPrecisionLoss,
 	DefaultLevel: Warning,
