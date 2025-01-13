@@ -24,7 +24,6 @@ type Diagnostic struct {
 	template DiagnosticTemplate
 	level    DiagnosticLevel
 	message  string
-	notes    []string
 }
 
 // DiagnosticConsumer provides a flexible interface so that users of the
@@ -45,16 +44,20 @@ func (s StderrConsumer) ConsumeDiagnostic(diag Diagnostic) {
 	case Ignored:
 		// Do nothing for ignored diagnostics
 	case Note:
-		// Process Note level diagnostics
+		cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
+		fmt.Fprintf(os.Stderr, "%s %s\n", cyan("note:"), diag.message)
 	case Remark:
-		// Process Remark level diagnostics
+		green := color.New(color.FgGreen, color.Bold).SprintFunc()
+		fmt.Fprintf(os.Stderr, "%s %s\n", green("remark:"), diag.message)
 	case Warning:
 		magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
 		fmt.Fprintf(os.Stderr, "%s %s\n", magenta("warning:"), diag.message)
 	case Error:
-		// Process Error level diagnostics
+		red := color.New(color.FgRed, color.Bold).SprintFunc()
+		fmt.Fprintf(os.Stderr, "%s %s\n", red("error:"), diag.message)
 	case Fatal:
-		// Process Fatal level diagnostics
+		red := color.New(color.FgRed, color.Bold).SprintFunc()
+		fmt.Fprintf(os.Stderr, "%s %s\n", red("fatal error:"), diag.message)
 		os.Exit(1)
 	default:
 		// Handle unexpected diagnostic levels
@@ -111,7 +114,7 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	for _, note := range diagTempl.NoteTemplates {
 		var noteTempl = template.Must(template.New("note").Parse(note))
 		var formattedNote = &strings.Builder{}
-		err := noteTempl.Execute(formattedNote, messageParams)
+		err = noteTempl.Execute(formattedNote, messageParams)
 		if err != nil {
 			PorytilesInternalPanic("failed to format diagnostic note: " + err.Error())
 		}
@@ -123,8 +126,16 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	 * i.e. explicitly enabled/disabled takes precedence over globally enabled/disabled
 	 */
 
+	// Issue the parent diagnostic
 	diagnostic := Diagnostic{
-		diagTempl, diagTempl.DefaultLevel, formattedMessage.String(), formattedNotes,
+		diagTempl, diagTempl.DefaultLevel, formattedMessage.String(),
 	}
 	engine.consumer.ConsumeDiagnostic(diagnostic)
+
+	// Issue separate diagnostics for any associated notes
+	for _, note := range formattedNotes {
+		// TODO : correct way to handle the diagTempl here
+		noteDiagnostic := Diagnostic{diagTempl, Note, note}
+		engine.consumer.ConsumeDiagnostic(noteDiagnostic)
+	}
 }

@@ -65,6 +65,7 @@ const (
 // zero or more notes that should be emitted alongside the diagnostic.
 type DiagnosticTemplate struct {
 	Name            string
+	DefaultEnabled  bool
 	DefaultLevel    DiagnosticLevel
 	MessageTemplate string
 	NoteTemplates   []string
@@ -102,6 +103,7 @@ var WarnColorPrecisionLossNotes = []string{
 
 var warnColorPrecisionLossTemplate = DiagnosticTemplate{
 	Name:            WarnColorPrecisionLoss,
+	DefaultEnabled:  false,
 	DefaultLevel:    Warning,
 	MessageTemplate: WarnColorPrecisionLossMessage,
 	NoteTemplates:   WarnColorPrecisionLossNotes,
