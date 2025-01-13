@@ -7,7 +7,6 @@ package diagnostics
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -39,29 +38,30 @@ type DiagnosticConsumer interface {
 type StderrConsumer struct{}
 
 func (s StderrConsumer) ConsumeDiagnostic(diag Diagnostic) {
-	// TODO : implement me
+	// TODO : fully implement me
+	// TODO : should we print newlines between each diagnostic?
 	switch diag.level {
 	case Ignored:
 		// Do nothing for ignored diagnostics
 	case Note:
 		cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", cyan("note:"), diag.message)
+		fmt.Fprintf(os.Stderr, "%s %s\n", cyan(string(Note)+":"), diag.message)
 	case Remark:
 		green := color.New(color.FgGreen, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", green("remark:"), diag.message)
+		fmt.Fprintf(os.Stderr, "%s %s\n", green(string(Remark)+":"), diag.message)
 	case Warning:
 		magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", magenta("warning:"), diag.message)
+		fmt.Fprintf(os.Stderr, "%s %s\n", magenta(string(Warning)+":"), diag.message)
 	case Error:
 		red := color.New(color.FgRed, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", red("error:"), diag.message)
+		fmt.Fprintf(os.Stderr, "%s %s\n", red(string(Error)+":"), diag.message)
 	case Fatal:
 		red := color.New(color.FgRed, color.Bold).SprintFunc()
-		fmt.Fprintf(os.Stderr, "%s %s\n", red("fatal error:"), diag.message)
+		fmt.Fprintf(os.Stderr, "%s %s\n", red(string(Fatal)+":"), diag.message)
 		os.Exit(1)
 	default:
 		// Handle unexpected diagnostic levels
-		PorytilesInternalPanic("unexpected Diagnostic level: " + strconv.Itoa(int(diag.level)))
+		PorytilesInternalPanic("unexpected Diagnostic level: " + string(diag.level))
 	}
 }
 
@@ -73,16 +73,61 @@ func (s DevNullConsumer) ConsumeDiagnostic(diag Diagnostic) {
 	// explicitly do nothing
 }
 
+// SliceConsumer is a DiagnosticConsumer that writes all diagnostics to a slice
+// buffer. They can then be read back later in the order in which they were
+// written. It may be useful for testing purposes.
+type SliceConsumer struct {
+	messages []string
+}
+
+func (s *SliceConsumer) ConsumeDiagnostic(diag Diagnostic) {
+	switch diag.level {
+	case Ignored:
+		s.messages = append(s.messages, string(Ignored)+": "+diag.message)
+	case Note:
+		s.messages = append(s.messages, string(Note)+": "+diag.message)
+	case Remark:
+		s.messages = append(s.messages, string(Remark)+": "+diag.message)
+	case Warning:
+		s.messages = append(s.messages, string(Warning)+": "+diag.message)
+	case Error:
+		s.messages = append(s.messages, string(Error)+": "+diag.message)
+	case Fatal:
+		s.messages = append(s.messages, string(Fatal)+": "+diag.message)
+	default:
+		// Handle unexpected diagnostic levels
+		PorytilesInternalPanic("unexpected Diagnostic level: " + string(diag.level))
+	}
+}
+
+func (s *SliceConsumer) Len() int {
+	return len(s.messages)
+}
+
+func (s *SliceConsumer) Pop() string {
+	message := s.messages[0]
+	s.messages = s.messages[1:]
+	return message
+}
+
 // DiagnosticEngine coordinates the generation and consumption of diagnostic
 // messages. It manages settings for enabling, disabling, treating warnings as
 // errors, etc. It uses a DiagnosticConsumer to process the generated
 // diagnostics according to the engine user's preference.
 type DiagnosticEngine struct {
-	consumer               DiagnosticConsumer
-	allWarningsEnabled     bool
-	allWarningsDisabled    bool
-	allWarningsAsErrors    bool
-	userEnabledDiagnostics map[string]bool
+	consumer                     DiagnosticConsumer
+	allWarningsEnabled           bool
+	allWarningsDisabled          bool
+	allWarningsAsErrors          bool
+	explicitlyEnabledDiagnostics map[string]bool
+	diagnosticLevelOverrides     map[string]DiagnosticLevel
+}
+
+func NewDiagnosticEngine() *DiagnosticEngine {
+	return &DiagnosticEngine{
+		explicitlyEnabledDiagnostics: make(map[string]bool),
+		diagnosticLevelOverrides:     make(map[string]DiagnosticLevel),
+	}
 }
 
 // SetConsumer assigns the provided DiagnosticConsumer to the DiagnosticEngine.
@@ -91,11 +136,11 @@ func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
 }
 
 func (engine *DiagnosticEngine) EnableDiagnostic(diagName string) {
-	engine.userEnabledDiagnostics[diagName] = true
+	engine.explicitlyEnabledDiagnostics[diagName] = true
 }
 
 func (engine *DiagnosticEngine) DisableDiagnostic(diagName string) {
-	engine.userEnabledDiagnostics[diagName] = false
+	engine.explicitlyEnabledDiagnostics[diagName] = false
 }
 
 // Report generates and consumes a diagnostic message using the provided name
@@ -110,10 +155,7 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	}
 
 	// Fetch the relevant diagnostic template
-	diagTempl, ok := diagNameToTemplate[diagName]
-	if !ok {
-		PorytilesInternalPanic("diagnostic with name `" + diagName + "' not found")
-	}
+	diagTempl := getDiagnosticTemplate(diagName)
 
 	// Format the diagnostic message
 	var messageTempl = template.Must(template.New("message").Parse(diagTempl.MessageTemplate))
@@ -136,9 +178,13 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	}
 
 	// Issue the parent diagnostic
+	diagLevel := engine.computeDiagnosticLevel(diagName)
 	diagnostic := Diagnostic{
-		diagTempl, diagTempl.DefaultLevel, formattedMessage.String(),
+		diagTempl, diagLevel, formattedMessage.String(),
 	}
+	// TODO : should we supress consumption if lots of diagnostics of the same
+	// type were issued? E.g. clang will say something like:
+	//    129 similar warnings suppressed.
 	engine.consumer.ConsumeDiagnostic(diagnostic)
 
 	// Issue separate diagnostics for any associated notes
@@ -149,10 +195,29 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	}
 }
 
+func (engine *DiagnosticEngine) computeDiagnosticLevel(diagName string) DiagnosticLevel {
+	diagTempl := getDiagnosticTemplate(diagName)
+	// TODO : actually compute the level
+
+	// Default to the default level from the template
+	return diagTempl.DefaultLevel
+}
+
 func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
-	/*
-	 * TODO : here we need to actually determine the correct level according to the preference order.
-	 * i.e. explicitly enabled/disabled takes precedence over globally enabled/disabled
-	 */
-	return false
+	diagTempl := getDiagnosticTemplate(diagName)
+	// TODO : finish implementing logic
+
+	// Highest precedence is an explicitly enabled or disabled diagnostic. If
+	// the diagnostic is not present in this map, that means it was not
+	// explicitly set by the user, so its enablement will fall back to either
+	// a global setting or the template default.
+	enabled, ok := engine.explicitlyEnabledDiagnostics[diagName]
+	if ok {
+		return enabled
+	}
+
+	// Next highest precedence: global warnings enable or disable
+
+	// Lowest precedence is the DefaultEnabled setting from the template
+	return diagTempl.DefaultEnabled
 }

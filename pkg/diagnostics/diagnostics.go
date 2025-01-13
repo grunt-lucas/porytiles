@@ -25,36 +25,36 @@ func PorytilesInternalPanic(msg string) {
 // DiagnosticLevel represents a particular severity level for a Diagnostic. The
 // severity levels are similar to those present in other popular compilation
 // toolchains like Clang (i.e. Note, Warning, Error, etc).
-type DiagnosticLevel int
+type DiagnosticLevel string
 
 const (
 	// Ignored means ignore this Diagnostic entirely. This could be because the
 	// user explicitly requested to ignore via '-Wno-this-diag', or due to
 	// internal job state, etc.
-	Ignored DiagnosticLevel = iota
+	Ignored DiagnosticLevel = "ignored"
 
 	// The Note level is intended only for a Diagnostic that is linked to a
 	// previous Diagnostic of a higher severity level.
-	Note
+	Note DiagnosticLevel = "note"
 
 	// The Remark level is for a Diagnostic which alerts the user to some
 	// relevant action a given Porytiles job has taken, e.g. some optimization,
 	// on-the-fly edit of the input data, etc.
-	Remark
+	Remark DiagnosticLevel = "remark"
 
 	// The Warning level is for a Diagnostic which alerts the user to a
 	// potential problem with their input or job settings. However, warnings
 	// will not terminate the job.
-	Warning
+	Warning DiagnosticLevel = "warning"
 
 	// The Error level is for a Diagnostic which is not recoverable, but for
 	// which the Porytiles job can continue for a while in order to possibly
 	// generate additional useful Diagnostics.
-	Error
+	Error DiagnosticLevel = "error"
 
 	// The Fatal level is for a Diagnostic which demands immediate termination
 	// of the Porytiles job.
-	Fatal
+	Fatal DiagnosticLevel = "fatal"
 )
 
 // DiagnosticTemplate defines a reusable template for standardized diagnostic
@@ -112,4 +112,12 @@ var warnColorPrecisionLossTemplate = DiagnosticTemplate{
 // Map of unique diagnostic names to their templates
 var diagNameToTemplate = map[string]DiagnosticTemplate{
 	WarnColorPrecisionLoss: warnColorPrecisionLossTemplate,
+}
+
+func getDiagnosticTemplate(diagName string) DiagnosticTemplate {
+	diagTempl, ok := diagNameToTemplate[diagName]
+	if !ok {
+		PorytilesInternalPanic("diagnostic with name `" + diagName + "' not found")
+	}
+	return diagTempl
 }
