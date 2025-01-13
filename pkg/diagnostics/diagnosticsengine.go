@@ -78,15 +78,24 @@ func (s DevNullConsumer) ConsumeDiagnostic(diag Diagnostic) {
 // errors, etc. It uses a DiagnosticConsumer to process the generated
 // diagnostics according to the engine user's preference.
 type DiagnosticEngine struct {
-	consumer            DiagnosticConsumer
-	allWarningsEnabled  bool
-	allWarningsDisabled bool
-	allWarningsAsErrors bool
+	consumer               DiagnosticConsumer
+	allWarningsEnabled     bool
+	allWarningsDisabled    bool
+	allWarningsAsErrors    bool
+	userEnabledDiagnostics map[string]bool
 }
 
 // SetConsumer assigns the provided DiagnosticConsumer to the DiagnosticEngine.
 func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
 	engine.consumer = consumer
+}
+
+func (engine *DiagnosticEngine) EnableDiagnostic(diagName string) {
+	engine.userEnabledDiagnostics[diagName] = true
+}
+
+func (engine *DiagnosticEngine) DisableDiagnostic(diagName string) {
+	engine.userEnabledDiagnostics[diagName] = false
 }
 
 // Report generates and consumes a diagnostic message using the provided name
@@ -95,6 +104,11 @@ func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
 // diagnostic's visibility and level by combining the default level with the
 // various diagnostic parameters provided by the user.
 func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string]string) {
+	// If this diagnostic is not enabled, exit now
+	if !engine.diagnosticIsEnabled(diagName) {
+		return
+	}
+
 	// Fetch the relevant diagnostic template
 	diagTempl, ok := diagNameToTemplate[diagName]
 	if !ok {
@@ -121,11 +135,6 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 		formattedNotes = append(formattedNotes, formattedNote.String())
 	}
 
-	/*
-	 * TODO : here we need to actually determine the correct level according to the preference order.
-	 * i.e. explicitly enabled/disabled takes precedence over globally enabled/disabled
-	 */
-
 	// Issue the parent diagnostic
 	diagnostic := Diagnostic{
 		diagTempl, diagTempl.DefaultLevel, formattedMessage.String(),
@@ -138,4 +147,12 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 		noteDiagnostic := Diagnostic{diagTempl, Note, note}
 		engine.consumer.ConsumeDiagnostic(noteDiagnostic)
 	}
+}
+
+func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
+	/*
+	 * TODO : here we need to actually determine the correct level according to the preference order.
+	 * i.e. explicitly enabled/disabled takes precedence over globally enabled/disabled
+	 */
+	return false
 }
