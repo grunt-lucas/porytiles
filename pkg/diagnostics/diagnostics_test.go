@@ -10,7 +10,7 @@ import (
 	"github.com/grunt-lucas/porytiles/pkg/diagnostics"
 )
 
-func TestDiagnosticEngine_Report(t *testing.T) {
+func TestDiagnosticEngine_ReportBasic(t *testing.T) {
 	consumer := &diagnostics.SliceConsumer{}
 	engine := diagnostics.NewDiagnosticEngine()
 	engine.SetConsumer(consumer)
@@ -35,6 +35,11 @@ func TestDiagnosticEngine_Report(t *testing.T) {
 
 	actualMessage := consumer.Pop()
 	expectedMessage := "warning: color `255 0 255' at `metatile 0x1f (31), middle, northwest' subtile pixel col 0, row 1 collapsed to duplicate BGR"
+	if actualMessage != expectedMessage {
+		t.Errorf("Saw message '%s'; expected '%s'", actualMessage, expectedMessage)
+	}
+	actualMessage = consumer.Pop()
+	expectedMessage = "note: previously saw `251 0 251' at `metatile 0x2 (2), bottom, southeast' subtile pixel col 4, row 2"
 	if actualMessage != expectedMessage {
 		t.Errorf("Saw message '%s'; expected '%s'", actualMessage, expectedMessage)
 	}
