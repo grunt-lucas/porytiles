@@ -216,7 +216,6 @@ func (engine *DiagnosticEngine) computeDiagnosticLevel(diagName string) Diagnost
 // For precedence rules, see:
 // <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#warning-command-line-precedence>
 func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
-	// TODO : finish implementing logic
 	diagTempl := getDiagnosticTemplate(diagName)
 
 	// If this diagnostic is an error or a fatal by default, it is always automatically enabled
@@ -224,11 +223,13 @@ func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
 		return true
 	}
 
+	// TODO : how to handle Remarks properly?
+
 	// Highest precedence is global warning disable. If this is specified, all warnings (including
 	// warnings which have been upgraded to errors) will be disabled. Any other override setting
 	// will be ignored
 	if engine.allWarningsDisabled {
-		return true
+		return false
 	}
 
 	// Next highest precedence is an explicitly enabled or disabled diagnostic. If the diagnostic is
