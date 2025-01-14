@@ -117,12 +117,16 @@ type DiagnosticEngine struct {
 	allWarningsAsErrors          bool
 	explicitlyEnabledDiagnostics map[string]bool
 	diagnosticLevelOverrides     map[string]DiagnosticLevel
+	diagnosticCounts             map[string]int
 }
 
+// NewDiagnosticEngine creates and returns a new instance of DiagnosticEngine. Initializes
+// diagnostic settings and overrides as empty.
 func NewDiagnosticEngine() *DiagnosticEngine {
 	return &DiagnosticEngine{
 		explicitlyEnabledDiagnostics: make(map[string]bool),
 		diagnosticLevelOverrides:     make(map[string]DiagnosticLevel),
+		diagnosticCounts:             make(map[string]int),
 	}
 }
 
@@ -131,10 +135,12 @@ func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
 	engine.consumer = consumer
 }
 
+// EnableDiagnostic explicitly enables a diagnostic by its name, overriding default settings.
 func (engine *DiagnosticEngine) EnableDiagnostic(diagName string) {
 	engine.explicitlyEnabledDiagnostics[diagName] = true
 }
 
+// DisableDiagnostic explicitly disables a diagnostic by its name, overriding default settings.
 func (engine *DiagnosticEngine) DisableDiagnostic(diagName string) {
 	engine.explicitlyEnabledDiagnostics[diagName] = false
 }
@@ -177,14 +183,13 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	diagnostic := InFlightDiagnostic{
 		diagTempl, diagLevel, formattedMessage.String(),
 	}
-	// TODO : should we supress consumption if lots of diagnostics of the same
-	// type were issued? E.g. clang will say something like:
-	//    129 similar warnings suppressed.
 	engine.consumer.ConsumeDiagnostic(diagnostic)
+	engine.diagnosticCounts[diagName]++
 
-	// Issue separate diagnostics for any associated notes
+	// Issue separate diagnostics for any associated notes, we don't need to track counts since
+	// notes are associated with a parent diagnostic, whose count is being tracked already
 	for _, note := range formattedNotes {
-		// TODO : correct way to handle the diagTempl here
+		// TODO : correct way to handle the diagTempl here?
 		noteDiagnostic := InFlightDiagnostic{diagTempl, Note, note}
 		engine.consumer.ConsumeDiagnostic(noteDiagnostic)
 	}
@@ -192,25 +197,52 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 
 func (engine *DiagnosticEngine) computeDiagnosticLevel(diagName string) DiagnosticLevel {
 	diagTempl := getDiagnosticTemplate(diagName)
-	// TODO : actually compute the level
+
+	// If this diagnostic is an error or a fatal by default, its level cannot be overridden
+	if diagTempl.DefaultLevel == Error || diagTempl.DefaultLevel == Fatal {
+		return diagTempl.DefaultLevel
+	}
+
+	// Return level override if present
+	level, ok := engine.diagnosticLevelOverrides[diagName]
+	if ok {
+		return level
+	}
 
 	// Default to the default level from the template
 	return diagTempl.DefaultLevel
 }
 
+// For precedence rules, see:
+// <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#warning-command-line-precedence>
 func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
-	diagTempl := getDiagnosticTemplate(diagName)
 	// TODO : finish implementing logic
+	diagTempl := getDiagnosticTemplate(diagName)
 
-	// Highest precedence is an explicitly enabled or disabled diagnostic. If the diagnostic is not
-	// present in this map, that means it was not explicitly set by the user, so its enablement will
-	// fall back to either a global setting or the template default.
+	// If this diagnostic is an error or a fatal by default, it is always automatically enabled
+	if diagTempl.DefaultLevel == Error || diagTempl.DefaultLevel == Fatal {
+		return true
+	}
+
+	// Highest precedence is global warning disable. If this is specified, all warnings (including
+	// warnings which have been upgraded to errors) will be disabled. Any other override setting
+	// will be ignored
+	if engine.allWarningsDisabled {
+		return true
+	}
+
+	// Next highest precedence is an explicitly enabled or disabled diagnostic. If the diagnostic is
+	// not present in this map, that means it was not explicitly set by the user, so its enablement
+	// will fall back to either a global setting or the template default.
 	enabled, ok := engine.explicitlyEnabledDiagnostics[diagName]
 	if ok {
 		return enabled
 	}
 
-	// Next highest precedence: global warnings enable or disable
+	// Next highest precedence: global warnings enable
+	if engine.allWarningsEnabled {
+		return true
+	}
 
 	// Lowest precedence is the DefaultEnabled setting from the template
 	return diagTempl.DefaultEnabled
