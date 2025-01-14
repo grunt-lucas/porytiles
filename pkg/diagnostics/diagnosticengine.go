@@ -35,7 +35,6 @@ type DiagnosticConsumer interface {
 type StderrConsumer struct{}
 
 func (s StderrConsumer) ConsumeDiagnostic(diag InFlightDiagnostic) {
-	// TODO : fully implement me
 	// TODO : should we print newlines between each diagnostic?
 	switch diag.level {
 	case Ignored:
@@ -135,14 +134,51 @@ func (engine *DiagnosticEngine) SetConsumer(consumer DiagnosticConsumer) {
 	engine.consumer = consumer
 }
 
-// EnableDiagnostic explicitly enables a diagnostic by its name, overriding default settings.
-func (engine *DiagnosticEngine) EnableDiagnostic(diagName string) {
+// Enable explicitly enables a diagnostic by its name, overriding default settings.
+func (engine *DiagnosticEngine) Enable(diagName string) {
+	diagTempl := getDiagnosticTemplate(diagName)
+	if diagTempl.DefaultLevel != Warning {
+		PorytilesInternalPanic("cannot change enablement for non-warning diagnostics")
+	}
 	engine.explicitlyEnabledDiagnostics[diagName] = true
 }
 
-// DisableDiagnostic explicitly disables a diagnostic by its name, overriding default settings.
-func (engine *DiagnosticEngine) DisableDiagnostic(diagName string) {
+// Disable explicitly disables a diagnostic by its name, overriding default settings.
+func (engine *DiagnosticEngine) Disable(diagName string) {
+	diagTempl := getDiagnosticTemplate(diagName)
+	if diagTempl.DefaultLevel != Warning {
+		PorytilesInternalPanic("cannot change enablement for non-warning diagnostics")
+	}
 	engine.explicitlyEnabledDiagnostics[diagName] = false
+}
+
+func (engine *DiagnosticEngine) EnableAllWarnings() {
+	engine.allWarningsEnabled = true
+}
+
+func (engine *DiagnosticEngine) DisableAllWarnings() {
+	engine.allWarningsDisabled = true
+}
+
+func (engine *DiagnosticEngine) EnableAllWarningsAsErrors() {
+	engine.allWarningsAsErrors = true
+}
+
+func (engine *DiagnosticEngine) OverrideLevel(diagName string, level DiagnosticLevel) {
+	// Fetch the relevant diagnostic template
+	diagTempl := getDiagnosticTemplate(diagName)
+
+	// For now, only allow Warnings to be overridden for the warning-as-error case
+	if diagTempl.DefaultLevel != Warning {
+		PorytilesInternalPanic("cannot override diagnostic level for non-warning diagnostics")
+	}
+
+	// For now, only allow warnings to be upgraded to errors or downgraded back to warnings
+	if level != Warning && level != Error {
+		PorytilesInternalPanic("cannot override diagnostic level to " + string(level))
+	}
+
+	engine.diagnosticLevelOverrides[diagName] = level
 }
 
 // Report generates and consumes a diagnostic message using the provided name and message
@@ -189,7 +225,6 @@ func (engine *DiagnosticEngine) Report(diagName string, messageParams map[string
 	// Issue separate diagnostics for any associated notes, we don't need to track counts since
 	// notes are associated with a parent diagnostic, whose count is being tracked already
 	for _, note := range formattedNotes {
-		// TODO : correct way to handle the diagTempl here?
 		noteDiagnostic := InFlightDiagnostic{diagTempl, Note, note}
 		engine.consumer.ConsumeDiagnostic(noteDiagnostic)
 	}
@@ -218,12 +253,11 @@ func (engine *DiagnosticEngine) computeDiagnosticLevel(diagName string) Diagnost
 func (engine *DiagnosticEngine) diagnosticIsEnabled(diagName string) bool {
 	diagTempl := getDiagnosticTemplate(diagName)
 
-	// If this diagnostic is an error or a fatal by default, it is always automatically enabled
-	if diagTempl.DefaultLevel == Error || diagTempl.DefaultLevel == Fatal {
+	// If this diagnostic is a remark, error, or fatal by default, it is always enabled
+	if diagTempl.DefaultLevel == Remark || diagTempl.DefaultLevel == Error ||
+		diagTempl.DefaultLevel == Fatal {
 		return true
 	}
-
-	// TODO : how to handle Remarks properly?
 
 	// Highest precedence is global warning disable. If this is specified, all warnings (including
 	// warnings which have been upgraded to errors) will be disabled. Any other override setting
