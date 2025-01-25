@@ -2,10 +2,7 @@
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 
-package tiles
-
-type Attributes struct {
-}
+package models
 
 type MetatileEntry struct {
 	TileIndex int
