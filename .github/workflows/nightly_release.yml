@@ -41,16 +41,14 @@ jobs:
     needs: [create-release-tag]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install Clang+LLVM 16 and dependencies
+      - name: Install GCC and other build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install zlib1g-dev
           sudo apt-get install libpng-dev
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 16 all
-          clang++-16 --version
-          clang++-16 -v
+          sudo apt-get install cmake
+          sudo apt-get install g++
+          g++ --version
 
       - name: Checkout new Porytiles nightly tag
         uses: actions/checkout@v4
@@ -59,7 +57,7 @@ jobs:
 
       - name: Create release package
         run: |
-          ./Scripts/package.sh linux-amd64 nightly-${{github.sha}} .
+          ./Scripts/package.sh linux-amd64-gcc nightly-${{github.sha}} .
 
       - name: Create release
         uses: softprops/action-gh-release@v1

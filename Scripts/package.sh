@@ -63,6 +63,19 @@ linux_amd64() {
   package_release
 }
 
+linux_amd64_gcc() {
+  echo "Packaging release linux-amd64 with gcc..."
+  mkdir -p "$output_directory/porytiles-$mode"
+  pushd Porytiles-0.x
+  export CXX="g++"
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  pushd build
+  cmake --build .
+  popd
+  popd
+  package_release
+}
+
 main() {
   if [[ ! -d "$output_directory" ]]
   then
@@ -83,6 +96,10 @@ main() {
     linux_amd64
     ;;
 
+    linux-amd64-gcc)
+    linux_amd64_gcc
+    ;;
+
     *)
     echo "unknown mode: $mode"
     echo ""
@@ -90,6 +107,7 @@ main() {
     echo "    macos-arm64"
     echo "    linux-aarch64"
     echo "    linux-amd64"
+    echo "    linux-amd64-gcc"
     exit 1
     ;;
   esac
