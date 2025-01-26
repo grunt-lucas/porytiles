@@ -16,7 +16,10 @@ if(MSVC)
 else()
     # Cannot enable -Wextra in 0.x since some of our header-only dependencies throw warnings
     # that break the build.
-    add_compile_options(-Wall -Wpedantic -Werror)
+    #
+    # Remove warnings-as-errors temporarily to stop GCC from complaining about one of the header libs.
+    # add_compile_options(-Wall -Wpedantic -Werror)
+    add_compile_options(-Wall -Wpedantic)
 endif()
 
 # Enable testing
