@@ -68,7 +68,7 @@ linux_amd64_gcc() {
   mkdir -p "$output_directory/porytiles-$mode"
   pushd Porytiles-0.x
   export CXX="g++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake --compile-no-warning-as-error -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
   popd
