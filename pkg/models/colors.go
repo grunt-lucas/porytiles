@@ -2,8 +2,9 @@
 Copyright © 2025 grunt-lucas grunt.lucas@yahoo.com
 */
 
-// Package colors defines the various color types that Porytiles understands.
-package colors
+package models
+
+import "strconv"
 
 // A RGBA32 is a color in RGBA32 format. The type is 4 bytes long: 1 byte for
 // each color channel (red, green, blue) and 1 byte for the alpha channel.
@@ -12,6 +13,13 @@ type RGBA32 struct {
 	Green uint8
 	Blue  uint8
 	Alpha uint8
+}
+
+func (rgba RGBA32) ToJasc() string {
+	redString := strconv.Itoa(int(rgba.Red))
+	greenString := strconv.Itoa(int(rgba.Green))
+	blueString := strconv.Itoa(int(rgba.Blue))
+	return redString + " " + greenString + " " + blueString
 }
 
 // Transparent represents an 8-bit alpha value of 0, indicating full
