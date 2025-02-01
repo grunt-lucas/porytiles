@@ -74,14 +74,14 @@ jobs:
     needs: [create-release-tag]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install Clang+LLVM 16 and dependencies
+      - name: Install clang and dependencies
         run: |
           brew update
           brew install zlib || true
           brew install libpng || true
-          brew install llvm@16 || true
-          /opt/homebrew/opt/llvm@16/bin/clang++ --version
-          /opt/homebrew/opt/llvm@16/bin/clang++ -v
+          brew install llvm || true
+          /opt/homebrew/opt/llvm/bin/clang++ --version
+          /opt/homebrew/opt/llvm/bin/clang++ -v
 
       - name: Checkout new Porytiles nightly tag
         uses: actions/checkout@v4
