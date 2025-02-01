@@ -5,8 +5,8 @@ set -eu
 # FIXME : build version and date not correctly passed, need to find idiomatic CMake way to handle this
 
 package_release() {
-  cp Porytiles-0.x/build/cli/porytiles "$output_directory/porytiles-$mode"
-  cp Porytiles-0.x/build/tests/Porytiles0xTestSuite "$output_directory/porytiles-$mode"
+  cp build/Porytiles-0.x/cli/porytiles "$output_directory/porytiles-$mode"
+  cp build/Porytiles-0.x/tests/Porytiles0xTestSuite "$output_directory/porytiles-$mode"
   cp CHANGELOG.md "$output_directory/porytiles-$mode"
   cp README.md "$output_directory/porytiles-$mode"
   cp LICENSE "$output_directory/porytiles-$mode"
@@ -27,12 +27,21 @@ package_release() {
 macos_arm64() {
   echo "Packaging release macos-arm64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  pushd Porytiles-0.x
-  export CXX="/opt/homebrew/opt/llvm@16/bin/clang++"
+  export CXX="/opt/homebrew/opt/llvm/bin/clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
   popd
+  package_release
+}
+
+macos_arm64_gcc() {
+  echo "Packaging release macos-arm64-gcc..."
+  mkdir -p "$output_directory/porytiles-$mode"
+  export CXX="g++-14"
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  pushd build
+  cmake --build .
   popd
   package_release
 }
@@ -40,12 +49,10 @@ macos_arm64() {
 linux_aarch64() {
   echo "Packaging release linux-aarch64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  pushd Porytiles-0.x
-  export CXX="clang++-16"
+  export CXX="clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
-  popd
   popd
   package_release
 }
@@ -53,12 +60,10 @@ linux_aarch64() {
 linux_amd64() {
   echo "Packaging release linux-amd64..."
   mkdir -p "$output_directory/porytiles-$mode"
-  pushd Porytiles-0.x
-  export CXX="clang++-16"
+  export CXX="clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
-  popd
   popd
   package_release
 }
@@ -66,12 +71,10 @@ linux_amd64() {
 linux_amd64_gcc() {
   echo "Packaging release linux-amd64 with gcc..."
   mkdir -p "$output_directory/porytiles-$mode"
-  pushd Porytiles-0.x
   export CXX="g++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
-  popd
   popd
   package_release
 }
@@ -86,6 +89,10 @@ main() {
   case $mode in
     macos-arm64)
     macos_arm64
+    ;;
+
+    macos-arm64-gcc)
+    macos_arm64_gcc
     ;;
 
     linux-aarch64)
@@ -105,6 +112,7 @@ main() {
     echo ""
     echo "Valid modes are:"
     echo "    macos-arm64"
+    echo "    macos-arm64-gcc"
     echo "    linux-aarch64"
     echo "    linux-amd64"
     echo "    linux-amd64-gcc"
