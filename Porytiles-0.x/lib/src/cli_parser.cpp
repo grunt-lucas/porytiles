@@ -529,6 +529,8 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WNO_INVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WKEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_KEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     // Decompilation warnings
     {WTILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     {WNO_TILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
@@ -815,6 +817,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
       {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
 
+      {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
+      {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
+
       // Decompilation warnings
       {WTILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WTILE_INDEX_OUT_OF_RANGE_VAL},
       {WNO_TILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_TILE_INDEX_OUT_OF_RANGE_VAL},
@@ -868,6 +873,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
   std::optional<bool> warnMissingAssignCache{};
   std::optional<bool> errMissingAssignCache{};
+
+  // Default this warning to on, since it can lead to issues
+  // https://github.com/grunt-lucas/porytiles/issues/60
+  std::optional<bool> warnKeyFrameMissingColors{true};
+  std::optional<bool> errKeyFrameMissingColors{};
 
   // Decompilation warnings
   std::optional<bool> warnTileIndexOutOfRange{};
@@ -1147,6 +1157,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
           errMissingAssignCache = true;
         }
+        else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
+          errKeyFrameMissingColors = true;
+        }
         // Decompilation warnings
         else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
           errTileIndexOutOfRange = true;
@@ -1193,6 +1206,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
       }
       else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
         errMissingAssignCache = false;
+      }
+      else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
+        errKeyFrameMissingColors = false;
       }
       // Decompilation warnings
       else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
@@ -1288,6 +1304,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     case WNO_MISSING_ASSIGN_CONFIG_VAL:
       validateSubcommandContext(ctx, WNO_MISSING_ASSIGN_CONFIG);
       warnMissingAssignCache = false;
+      break;
+    case WKEY_FRAME_MISSING_COLORS_VAL:
+      validateSubcommandContext(ctx, WKEY_FRAME_MISSING_COLORS);
+      warnKeyFrameMissingColors = true;
+      break;
+    case WNO_KEY_FRAME_MISSING_COLORS_VAL:
+      validateSubcommandContext(ctx, WNO_KEY_FRAME_MISSING_COLORS);
+      warnKeyFrameMissingColors = false;
       break;
     // Decompilation warnings
     case WTILE_INDEX_OUT_OF_RANGE_VAL:
@@ -1430,6 +1454,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
   if (warnMissingAssignCache.has_value()) {
     ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
   }
+  if (warnKeyFrameMissingColors.has_value()) {
+    ctx.err.keyFrameMissingColors = warnKeyFrameMissingColors.value() ? WarningMode::WARN : WarningMode::OFF;
+  }
   // Decompilation warnings
   if (warnTileIndexOutOfRange.has_value()) {
     ctx.err.tileIndexOutOfRange = warnTileIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
@@ -1560,6 +1587,17 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     }
     else {
       ctx.err.missingAssignCache = WarningMode::OFF;
+    }
+  }
+  if (errKeyFrameMissingColors.has_value()) {
+    if (errKeyFrameMissingColors.value()) {
+      ctx.err.keyFrameMissingColors = WarningMode::ERR;
+    }
+    else if ((warnKeyFrameMissingColors.has_value() && warnKeyFrameMissingColors.value()) || enableAllWarnings) {
+      ctx.err.keyFrameMissingColors = WarningMode::WARN;
+    }
+    else {
+      ctx.err.keyFrameMissingColors = WarningMode::OFF;
     }
   }
   // Decompilation warnings

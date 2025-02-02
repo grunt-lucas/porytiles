@@ -1125,6 +1125,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated tiles")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> tilesPng{"Resources/Tests/2x2_pattern_2.png"};
@@ -1243,6 +1244,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
@@ -1299,6 +1301,7 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 TEST_CASE("matchNormalizedWithColorSets should return the expected data structures")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
 
   REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
   png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
@@ -1911,6 +1914,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 TEST_CASE("compile function should correctly compile primary set with animated tiles")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -2124,6 +2128,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 TEST_CASE("compile function should correctly compile secondary set with animated tiles")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
   ctx.fieldmapConfig.numPalettesInPrimary = 3;
   ctx.fieldmapConfig.numPalettesTotal = 6;
   ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
