@@ -87,39 +87,53 @@ template <> struct std::hash<porytiles::BGR15> {
 };
 
 namespace porytiles {
-/**
- * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
- */
-struct RGBA32 {
-  std::uint8_t red;
-  std::uint8_t green;
-  std::uint8_t blue;
-  std::uint8_t alpha;
+  constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
+  constexpr std::uint8_t ALPHA_OPAQUE = 255;
 
-  [[nodiscard]] std::string jasc() const
-  {
-    return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
+  /**
+   * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
+   */
+  struct RGBA32 {
+    std::uint8_t red;
+    std::uint8_t green;
+    std::uint8_t blue;
+    std::uint8_t alpha;
+
+    [[nodiscard]] std::string jasc() const
+    {
+      return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
+    }
+
+    auto operator<=>(const RGBA32 &rgba) const = default;
+
+    friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
+  };
+
+  extern const RGBA32 RGBA_BLACK;
+  extern const RGBA32 RGBA_RED;
+  extern const RGBA32 RGBA_GREEN;
+  extern const RGBA32 RGBA_BLUE;
+  extern const RGBA32 RGBA_YELLOW;
+  extern const RGBA32 RGBA_MAGENTA;
+  extern const RGBA32 RGBA_CYAN;
+  extern const RGBA32 RGBA_WHITE;
+  extern const RGBA32 RGBA_GREY;
+  extern const RGBA32 RGBA_PURPLE;
+  extern const RGBA32 RGBA_LIME;
+}
+
+// TODO : better hash function
+template <> struct std::hash<porytiles::RGBA32> {
+  std::size_t operator()(const porytiles::RGBA32 &rgba) const noexcept {
+    std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red);
+    std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green);
+    std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue);
+    std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha);
+    return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
   }
-
-  auto operator<=>(const RGBA32 &rgba) const = default;
-
-  friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
 };
 
-constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
-constexpr std::uint8_t ALPHA_OPAQUE = 255;
-
-extern const RGBA32 RGBA_BLACK;
-extern const RGBA32 RGBA_RED;
-extern const RGBA32 RGBA_GREEN;
-extern const RGBA32 RGBA_BLUE;
-extern const RGBA32 RGBA_YELLOW;
-extern const RGBA32 RGBA_MAGENTA;
-extern const RGBA32 RGBA_CYAN;
-extern const RGBA32 RGBA_WHITE;
-extern const RGBA32 RGBA_GREY;
-extern const RGBA32 RGBA_PURPLE;
-extern const RGBA32 RGBA_LIME;
+namespace porytiles {
 
 BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 

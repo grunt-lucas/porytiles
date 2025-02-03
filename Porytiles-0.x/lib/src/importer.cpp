@@ -376,6 +376,56 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
   return decompiledTiles;
 }
 
+static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation &anim, CompilerMode compilerMode) {
+  if (anim.frames.size() < 2) {
+    internalerror("importer::validateAnimFormat bad anim format, found frames.size() < 2");
+  }
+  std::vector<std::unordered_set<RGBA32>> keyFrameColors{};
+  std::vector<std::unordered_set<RGBA32>> regularFrameColors{};
+  std::vector<std::unordered_set<RGBA32>> keyFrameMissingColors{};
+
+  for (const auto &tile : anim.keyFrame().tiles) {
+    std::unordered_set<RGBA32> tileColors{};
+    for (const auto &color : tile.pixels) {
+      tileColors.insert(color);
+    }
+    keyFrameColors.push_back(tileColors);
+  }
+
+  for (int i = 0; i < keyFrameColors.size(); i++) {
+    regularFrameColors.emplace_back();
+    keyFrameMissingColors.emplace_back();
+  }
+
+  for (int i = 1; i < anim.size(); i++) {
+    const auto &frame = anim.frames.at(i);
+    int tileIndex = 0;
+    for (const auto &tile : frame.tiles) {
+      for (const auto &color : tile.pixels) {
+        regularFrameColors.at(tileIndex).insert(color);
+      }
+      tileIndex++;
+    }
+  }
+
+  for (int i = 0; i < keyFrameColors.size(); i++) {
+    const auto &keyFrameColorsSet = keyFrameColors.at(i);
+    const auto &regularFrameColorsSet = regularFrameColors.at(i);
+    auto &keyFrameMissingColorsSet = keyFrameMissingColors.at(i);
+    for (const auto &color : regularFrameColorsSet) {
+      if (!keyFrameColorsSet.contains(color)) {
+        keyFrameMissingColorsSet.insert(color);
+      }
+    }
+  }
+
+  for (int i = 0; i < keyFrameMissingColors.size(); i++) {
+    if (!keyFrameMissingColors.at(i).empty()) {
+      warn_keyFrameMissingColors(ctx.err, ctx.compilerSrcPaths, compilerMode, i, keyFrameMissingColors.at(i), anim.animName);
+    }
+  }
+}
+
 void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
                      const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
 {
@@ -443,9 +493,14 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
       }
       anim.frames.push_back(animFrame);
     }
+    validateAnimFormat(ctx, anim, compilerMode);
     anims.push_back(anim);
   }
 
+  if (ctx.err.keyFrameMissingColorsErrCount > 0) {
+    die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                   "some key frame subtiles were missing essential colors");
+  }
   tiles.anims = anims;
 }
 
@@ -1336,6 +1391,7 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
 TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field")
 {
   porytiles::PorytilesContext ctx{};
+  ctx.err.printErrors = false;
   REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white"}));
   REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow"}));
 

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_set>
 
 #include "types.h"
 
@@ -18,6 +19,7 @@ struct ErrorsAndWarnings {
    * counts instead of just a generalized count.
    */
   std::size_t errCount;
+  std::size_t keyFrameMissingColorsErrCount;
   std::size_t warnCount;
   bool printErrors;
 
@@ -32,20 +34,25 @@ struct ErrorsAndWarnings {
   WarningMode assignCacheOverride;
   WarningMode invalidAssignCache;
   WarningMode missingAssignCache;
+  WarningMode keyFrameMissingColors;
 
   // Decompilation warnings
   WarningMode tileIndexOutOfRange;
   WarningMode paletteIndexOutOfRange;
 
   ErrorsAndWarnings()
-      : errCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
+      : errCount{0}, keyFrameMissingColorsErrCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
         keyFrameNoMatchingTile{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
         attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
         unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
         assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
-        missingAssignCache{WarningMode::OFF}, tileIndexOutOfRange{WarningMode::OFF},
-        paletteIndexOutOfRange{WarningMode::OFF}
+        missingAssignCache{WarningMode::OFF}, keyFrameMissingColors(WarningMode::OFF),
+        tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF}
   {
+  }
+
+  [[nodiscard]] std::size_t errTotal() const {
+    return errCount + keyFrameMissingColorsErrCount;
   }
 
   void setAllWarnings(WarningMode setting)
@@ -61,6 +68,7 @@ struct ErrorsAndWarnings {
     assignCacheOverride = setting;
     invalidAssignCache = setting;
     missingAssignCache = setting;
+    keyFrameMissingColors = setting;
 
     // Decompilation warnings
     tileIndexOutOfRange = setting;
@@ -100,6 +108,9 @@ struct ErrorsAndWarnings {
     if (missingAssignCache == WarningMode::WARN) {
       missingAssignCache = WarningMode::ERR;
     }
+    if (keyFrameMissingColors == WarningMode::WARN) {
+      keyFrameMissingColors = WarningMode::ERR;
+    }
 
     // Decompilation warnings
     if (tileIndexOutOfRange == WarningMode::WARN) {
@@ -122,6 +133,7 @@ extern const char *const WARN_TRANSPARENCY_COLLAPSE;
 extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
 extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
+extern const char *const WARN_KEY_FRAME_MISSING_COLORS;
 
 // Decompilation warnings
 extern const char *const WARN_TILE_INDEX_OUT_OF_RANGE;
@@ -285,6 +297,9 @@ void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const C
 void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
+
+void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
+        std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors, const std::string &animName);
 
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue

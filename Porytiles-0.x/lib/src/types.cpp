@@ -1,7 +1,9 @@
 #include "types.h"
 
 #include <filesystem>
+#include <porytiles_context.h>
 #include <stdexcept>
+#include <unordered_set>
 
 #include "errors_warnings.h"
 
@@ -682,7 +684,6 @@ std::string decompilerModeString(DecompilerMode mode)
   // unreachable, here for compiler
   throw std::runtime_error("types::decompilerModeString reached unreachable code path");
 }
-
 } // namespace porytiles
 
 // --------------------

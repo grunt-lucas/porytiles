@@ -31,6 +31,7 @@ const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
 const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
+const char *const WARN_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
 
 // Decompilation warnings
 const char *const WARN_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
@@ -737,6 +738,35 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
   }
 }
 
+void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
+        std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors, const std::string &animName) {
+  if (err.keyFrameMissingColors == WarningMode::ERR) {
+    err.keyFrameMissingColorsErrCount++;
+    if (err.printErrors) {
+      pt_err(
+          "animation `{}' key frame tile `{}' missing essential colors [{}]", fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
+          fmt::styled(fmt::format("-Werror={}", WARN_KEY_FRAME_MISSING_COLORS), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
+    }
+  }
+  else if (err.keyFrameMissingColors == WarningMode::WARN) {
+    err.warnCount++;
+    if (err.printErrors) {
+      pt_warn(
+      "animation `{}' key frame tile `{}' missing essential colors [{}]", fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
+          fmt::styled(fmt::format("-W{}", WARN_KEY_FRAME_MISSING_COLORS), fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
+    }
+  }
+  if (err.printErrors) {
+    pt_note("the following colors were missing from the key frame:");
+    for (const auto &color: missingColors) {
+      pt_println(stderr, "  {}", fmt::styled(color.jasc(), fmt::emphasis::bold));
+    }
+    pt_println(stderr, "If left uncorrected, this may lead to the issue described here:");
+    pt_println(stderr, "  https://github.com/grunt-lucas/porytiles/issues/60");
+    pt_println(stderr, "");
+  }
+}
+
 void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
                               std::size_t tilesheetSize, const RGBATile &tile)
 {
@@ -801,7 +831,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
 {
   if (err.printErrors) {
     std::string errorStr;
-    if (err.errCount == 1) {
+    if (err.errTotal() == 1) {
       errorStr = "error";
     }
     else {
@@ -819,7 +849,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
                  std::to_string(err.errCount), errorStr);
     }
     else {
-      pt_println(stderr, "{} {} generated.", std::to_string(err.errCount), errorStr);
+      pt_println(stderr, "{} {} generated.", std::to_string(err.errTotal()), errorStr);
     }
     pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
   }
