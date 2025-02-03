@@ -11,115 +11,117 @@ namespace porytiles {
 enum class WarningMode { OFF, WARN, ERR };
 
 struct ErrorsAndWarnings {
-  /*
-   * TODO : consider having a error-specific counts. This would allows us to intelligently bail in certain places
-   * depending on which errors have actually been generated. So compilation could potentially carry further and
-   * generate additional errors for the user. E.g. when attributes.csv is missing and user specified this warning to
-   * be an error, we could continue compilation further before terminating if we are able to check for specific error
-   * counts instead of just a generalized count.
-   */
-  std::size_t errCount;
-  std::size_t keyFrameMissingColorsErrCount;
-  std::size_t warnCount;
-  bool printErrors;
+    /*
+     * TODO : consider having a error-specific counts. This would allows us to intelligently bail in certain places
+     * depending on which errors have actually been generated. So compilation could potentially carry further and
+     * generate additional errors for the user. E.g. when attributes.csv is missing and user specified this warning to
+     * be an error, we could continue compilation further before terminating if we are able to check for specific error
+     * counts instead of just a generalized count.
+     */
+    std::size_t errCount;
+    std::size_t keyFrameMissingColorsErrCount;
+    std::size_t warnCount;
+    bool printErrors;
 
-  // Compilation warnings
-  WarningMode colorPrecisionLoss;
-  WarningMode keyFrameNoMatchingTile;
-  WarningMode usedTrueColorMode;
-  WarningMode attributeFormatMismatch;
-  WarningMode missingAttributesCsv;
-  WarningMode unusedAttribute;
-  WarningMode transparencyCollapse;
-  WarningMode assignCacheOverride;
-  WarningMode invalidAssignCache;
-  WarningMode missingAssignCache;
-  WarningMode keyFrameMissingColors;
-
-  // Decompilation warnings
-  WarningMode tileIndexOutOfRange;
-  WarningMode paletteIndexOutOfRange;
-
-  ErrorsAndWarnings()
-      : errCount{0}, keyFrameMissingColorsErrCount{0}, warnCount{0}, printErrors{true}, colorPrecisionLoss{WarningMode::OFF},
-        keyFrameNoMatchingTile{WarningMode::OFF}, usedTrueColorMode{WarningMode::OFF},
-        attributeFormatMismatch{WarningMode::OFF}, missingAttributesCsv{WarningMode::OFF},
-        unusedAttribute{WarningMode::OFF}, transparencyCollapse{WarningMode::OFF},
-        assignCacheOverride{WarningMode::OFF}, invalidAssignCache{WarningMode::OFF},
-        missingAssignCache{WarningMode::OFF}, keyFrameMissingColors(WarningMode::OFF),
-        tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF}
-  {
-  }
-
-  [[nodiscard]] std::size_t errTotal() const {
-    return errCount + keyFrameMissingColorsErrCount;
-  }
-
-  void setAllWarnings(WarningMode setting)
-  {
     // Compilation warnings
-    colorPrecisionLoss = setting;
-    keyFrameNoMatchingTile = setting;
-    usedTrueColorMode = setting;
-    attributeFormatMismatch = setting;
-    missingAttributesCsv = setting;
-    unusedAttribute = setting;
-    transparencyCollapse = setting;
-    assignCacheOverride = setting;
-    invalidAssignCache = setting;
-    missingAssignCache = setting;
-    keyFrameMissingColors = setting;
+    WarningMode colorPrecisionLoss;
+    WarningMode keyFrameNoMatchingTile;
+    WarningMode usedTrueColorMode;
+    WarningMode attributeFormatMismatch;
+    WarningMode missingAttributesCsv;
+    WarningMode unusedAttribute;
+    WarningMode transparencyCollapse;
+    WarningMode assignCacheOverride;
+    WarningMode invalidAssignCache;
+    WarningMode missingAssignCache;
+    WarningMode keyFrameMissingColors;
 
     // Decompilation warnings
-    tileIndexOutOfRange = setting;
-    paletteIndexOutOfRange = setting;
-  }
+    WarningMode tileIndexOutOfRange;
+    WarningMode paletteIndexOutOfRange;
 
-  void setAllEnabledWarningsToErrors()
-  {
-    // Compilation warnings
-    if (colorPrecisionLoss == WarningMode::WARN) {
-      colorPrecisionLoss = WarningMode::ERR;
-    }
-    if (keyFrameNoMatchingTile == WarningMode::WARN) {
-      keyFrameNoMatchingTile = WarningMode::ERR;
-    }
-    if (usedTrueColorMode == WarningMode::WARN) {
-      usedTrueColorMode = WarningMode::ERR;
-    }
-    if (attributeFormatMismatch == WarningMode::WARN) {
-      attributeFormatMismatch = WarningMode::ERR;
-    }
-    if (missingAttributesCsv == WarningMode::WARN) {
-      missingAttributesCsv = WarningMode::ERR;
-    }
-    if (unusedAttribute == WarningMode::WARN) {
-      unusedAttribute = WarningMode::ERR;
-    }
-    if (transparencyCollapse == WarningMode::WARN) {
-      transparencyCollapse = WarningMode::ERR;
-    }
-    if (assignCacheOverride == WarningMode::WARN) {
-      assignCacheOverride = WarningMode::ERR;
-    }
-    if (invalidAssignCache == WarningMode::WARN) {
-      invalidAssignCache = WarningMode::ERR;
-    }
-    if (missingAssignCache == WarningMode::WARN) {
-      missingAssignCache = WarningMode::ERR;
-    }
-    if (keyFrameMissingColors == WarningMode::WARN) {
-      keyFrameMissingColors = WarningMode::ERR;
+    ErrorsAndWarnings()
+        : errCount{0}, keyFrameMissingColorsErrCount{0}, warnCount{0}, printErrors{true},
+          colorPrecisionLoss{WarningMode::OFF}, keyFrameNoMatchingTile{WarningMode::OFF},
+          usedTrueColorMode{WarningMode::OFF}, attributeFormatMismatch{WarningMode::OFF},
+          missingAttributesCsv{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
+          transparencyCollapse{WarningMode::OFF}, assignCacheOverride{WarningMode::OFF},
+          invalidAssignCache{WarningMode::OFF}, missingAssignCache{WarningMode::OFF},
+          keyFrameMissingColors(WarningMode::OFF), tileIndexOutOfRange{WarningMode::OFF},
+          paletteIndexOutOfRange{WarningMode::OFF}
+    {
     }
 
-    // Decompilation warnings
-    if (tileIndexOutOfRange == WarningMode::WARN) {
-      tileIndexOutOfRange = WarningMode::ERR;
+    [[nodiscard]] std::size_t errTotal() const
+    {
+        return errCount + keyFrameMissingColorsErrCount;
     }
-    if (paletteIndexOutOfRange == WarningMode::WARN) {
-      paletteIndexOutOfRange = WarningMode::ERR;
+
+    void setAllWarnings(WarningMode setting)
+    {
+        // Compilation warnings
+        colorPrecisionLoss = setting;
+        keyFrameNoMatchingTile = setting;
+        usedTrueColorMode = setting;
+        attributeFormatMismatch = setting;
+        missingAttributesCsv = setting;
+        unusedAttribute = setting;
+        transparencyCollapse = setting;
+        assignCacheOverride = setting;
+        invalidAssignCache = setting;
+        missingAssignCache = setting;
+        keyFrameMissingColors = setting;
+
+        // Decompilation warnings
+        tileIndexOutOfRange = setting;
+        paletteIndexOutOfRange = setting;
     }
-  }
+
+    void setAllEnabledWarningsToErrors()
+    {
+        // Compilation warnings
+        if (colorPrecisionLoss == WarningMode::WARN) {
+            colorPrecisionLoss = WarningMode::ERR;
+        }
+        if (keyFrameNoMatchingTile == WarningMode::WARN) {
+            keyFrameNoMatchingTile = WarningMode::ERR;
+        }
+        if (usedTrueColorMode == WarningMode::WARN) {
+            usedTrueColorMode = WarningMode::ERR;
+        }
+        if (attributeFormatMismatch == WarningMode::WARN) {
+            attributeFormatMismatch = WarningMode::ERR;
+        }
+        if (missingAttributesCsv == WarningMode::WARN) {
+            missingAttributesCsv = WarningMode::ERR;
+        }
+        if (unusedAttribute == WarningMode::WARN) {
+            unusedAttribute = WarningMode::ERR;
+        }
+        if (transparencyCollapse == WarningMode::WARN) {
+            transparencyCollapse = WarningMode::ERR;
+        }
+        if (assignCacheOverride == WarningMode::WARN) {
+            assignCacheOverride = WarningMode::ERR;
+        }
+        if (invalidAssignCache == WarningMode::WARN) {
+            invalidAssignCache = WarningMode::ERR;
+        }
+        if (missingAssignCache == WarningMode::WARN) {
+            missingAssignCache = WarningMode::ERR;
+        }
+        if (keyFrameMissingColors == WarningMode::WARN) {
+            keyFrameMissingColors = WarningMode::ERR;
+        }
+
+        // Decompilation warnings
+        if (tileIndexOutOfRange == WarningMode::WARN) {
+            tileIndexOutOfRange = WarningMode::ERR;
+        }
+        if (paletteIndexOutOfRange == WarningMode::WARN) {
+            paletteIndexOutOfRange = WarningMode::ERR;
+        }
+    }
 };
 
 // Compilation warnings
@@ -299,7 +301,8 @@ void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
 void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
 
 void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
-        std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors, const std::string &animName);
+                                std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors,
+                                const std::string &animName);
 
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue

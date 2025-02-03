@@ -15,11 +15,11 @@
 namespace porytiles {
 
 struct DecompiledIndex {
-  bool animated;
-  std::size_t animIndex;
-  std::size_t tileIndex;
+    bool animated;
+    std::size_t animIndex;
+    std::size_t tileIndex;
 
-  DecompiledIndex() : animated{false}, animIndex{0}, tileIndex{0} {}
+    DecompiledIndex() : animated{false}, animIndex{0}, tileIndex{0} {}
 };
 
 extern std::size_t gPaletteAssignCutoffCounter;

@@ -17,63 +17,63 @@ namespace porytiles {
 template <typename... T>
 void pt_logln(const PorytilesContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  if (ctx.verbose) {
-    fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
-  }
+    if (ctx.verbose) {
+        fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+    }
 }
 
 template <typename... T>
 void pt_log(const PorytilesContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  if (ctx.verbose) {
-    fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
-  }
+    if (ctx.verbose) {
+        fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+    }
 }
 
 template <typename... T> void pt_println(std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_print(std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
+    fmt::print(stream, "{}", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_msg(std::FILE *stream, fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::print(stream, "{}: {}", PORYTILES_EXECUTABLE, fmt::format(fmt, std::forward<T>(args)...));
+    fmt::print(stream, "{}: {}", PORYTILES_EXECUTABLE, fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_err(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{} {}", fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
-               fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stderr, "{} {}", fmt::styled("error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+                 fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_fatal_err_prefix(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{}: {} {}", PORYTILES_EXECUTABLE,
-               fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
-               fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stderr, "{}: {} {}", PORYTILES_EXECUTABLE,
+                 fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+                 fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_fatal_err(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{} {}", fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
-               fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stderr, "{} {}", fmt::styled("fatal error:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)),
+                 fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_warn(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{} {}", fmt::styled("warning:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)),
-               fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stderr, "{} {}", fmt::styled("warning:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)),
+                 fmt::format(fmt, std::forward<T>(args)...));
 }
 
 template <typename... T> void pt_note(fmt::format_string<T...> fmt, T &&...args)
 {
-  fmt::println(stderr, "{} {}", fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
-               fmt::format(fmt, std::forward<T>(args)...));
+    fmt::println(stderr, "{} {}", fmt::styled("note:", fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan)),
+                 fmt::format(fmt, std::forward<T>(args)...));
 }
 
 } // namespace porytiles

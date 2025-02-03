@@ -14,58 +14,60 @@
 namespace porytiles {
 
 struct PorytilesContext {
-  TargetBaseGame targetBaseGame;
-  FieldmapConfig fieldmapConfig;
-  CompilerSourcePaths compilerSrcPaths;
-  DecompilerSourcePaths decompilerSrcPaths;
-  Output output;
-  CompilerConfig compilerConfig;
-  DecompilerConfig decompilerConfig;
-  CompilerContext compilerContext;
-  DecompilerContext decompilerContext;
-  ErrorsAndWarnings err;
+    TargetBaseGame targetBaseGame;
+    FieldmapConfig fieldmapConfig;
+    CompilerSourcePaths compilerSrcPaths;
+    DecompilerSourcePaths decompilerSrcPaths;
+    Output output;
+    CompilerConfig compilerConfig;
+    DecompilerConfig decompilerConfig;
+    CompilerContext compilerContext;
+    DecompilerContext decompilerContext;
+    ErrorsAndWarnings err;
 
-  // Command params
-  Subcommand subcommand;
-  bool verbose;
+    // Command params
+    Subcommand subcommand;
+    bool verbose;
 
-  PorytilesContext()
-      : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
-        compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-        decompilerContext{}, err{}, subcommand{}, verbose{false}
-  {
-  }
+    PorytilesContext()
+        : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
+          compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
+          decompilerContext{}, err{}, subcommand{}, verbose{false}
+    {
+    }
 
-  void validateFieldmapParameters(CompilerMode compilerMode) const
-  {
-    if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numTiles",
-                                           fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+    void validateFieldmapParameters(CompilerMode compilerMode) const
+    {
+        if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numTiles",
+                                                 fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+        }
+        if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numMetatiles",
+                                                 fieldmapConfig.numMetatilesInPrimary,
+                                                 fieldmapConfig.numMetatilesTotal);
+        }
+        if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numPalettes",
+                                                 fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
+        }
     }
-    if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numMetatiles",
-                                           fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
+    void validateFieldmapParameters(DecompilerMode decompilerMode) const
+    {
+        if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
+                                                 fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+        }
+        if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numMetatiles",
+                                                 fieldmapConfig.numMetatilesInPrimary,
+                                                 fieldmapConfig.numMetatilesTotal);
+        }
+        if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
+            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numPalettes",
+                                                 fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
+        }
     }
-    if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numPalettes",
-                                           fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
-    }
-  }
-  void validateFieldmapParameters(DecompilerMode decompilerMode) const
-  {
-    if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
-                                           fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
-    }
-    if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numMetatiles",
-                                           fieldmapConfig.numMetatilesInPrimary, fieldmapConfig.numMetatilesTotal);
-    }
-    if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-      fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numPalettes",
-                                           fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
-    }
-  }
 };
 
 } // namespace porytiles
