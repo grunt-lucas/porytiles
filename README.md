@@ -12,6 +12,20 @@ For detailed documentation about Porytiles internal workings, please see [the Go
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Wiki/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles.*
 
+- [Porytiles](#porytiles)
+  - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
+  - [Getting Started](#getting-started)
+  - [Compilation Information](#compilation-information)
+  - [Note For Aseprite Users](#note-for-aseprite-users)
+  - [Porytiles 0.x](#porytiles-0x)
+    - [What Is Porytiles 0.x?](#what-is-porytiles-0x)
+  - [Porytiles 1.x](#porytiles-1x)
+    - [What Is Porytiles 1.x?](#what-is-porytiles-1x)
+    - [Why?](#why)
+    - [What Happened To C++?](#what-happened-to-c)
+    - [Porytiles 1.x Goals \& Highlights](#porytiles-1x-goals--highlights)
+
+
 ## Why Should I Use This Tool?
 
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this way: [Poryscript](https://github.com/huderlem/poryscript), another popular community tool, takes a `.script` file and generates a corresponding `.inc` file. Comparably, Porytiles takes a source folder containing RGBA (or indexed) tile assets and generates a corresponding `metatiles.bin`, `metatile_attributes.bin`, indexed `tiles.png`, indexed `anim` folder, and a populated `palettes` folder -- all as part of your build!
@@ -22,17 +36,25 @@ For more info, please see [this wiki page which explains what Porytiles can do i
 
 First, go ahead and follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release). Alternatively, intrepid users may choose to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source). Once you've got Porytiles working, try the demo steps located [at this wiki page](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo). Everything else you need to know about Porytiles can be found [in the wiki](https://github.com/grunt-lucas/porytiles/wiki) or [in this video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ). I highly recommend reading the wiki articles in order, or watching the video series in order. The wiki and video series are meant to be complementary. If you have further questions, I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
 
-## Compiler Information For 0.x
+## Compilation Information
 
-Clang+LLVM is the "official" Porytiles 0.x build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC. I try to maintain compatibility with GCC, should you prefer it over Clang+LLVM.
+Clang+LLVM is the "official" Porytiles 0.x build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on LLVM tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they have support for the C++20 standard. In addition to Clang+LLVM, the Porytiles CI pipeline runs a build job with GCC. I try to maintain compatibility with GCC, should you prefer it over Clang+LLVM. Once again, [please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) if you'd like to try building Porytiles 0.x from source.
 
 ## Note For Aseprite Users
 GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection of [useful scripts here.](https://github.com/PKGaspi/AsepriteScripts) Of particular interest is this [`export_layers`](https://github.com/PKGaspi/AsepriteScripts/blob/main/scripts/gaspi/export_layers.lua) script, which allows you to save each sprite layer to a different file. This may be useful, since Porytiles requires each tile layer in a separate PNG file.
+
+## Porytiles 0.x
+
+### What Is Porytiles 0.x?
+Porytiles 0.x is the "legacy" version of Porytiles, written in C++. Currently, the [Porytiles Releases Tab](https://github.com/grunt-lucas/porytiles/releases) contains builds from the code in the `Porytiles-0.x` directory. This will be the supported version of Porytiles for the forseeable future. It's very usable in its current state, and there is significant documentation [over at the wiki](https://github.com/grunt-lucas/porytiles/wiki) to get you started. There will be occasional tweaks and bugfixes, which should show up in the [Porytiles Releases Tab](https://github.com/grunt-lucas/porytiles/releases) as nightlies. Check back occasionally and always download the latest version. However, most large new features (and some bugs too) will not be fixed in this version. Rather, they will be fixed in an upcoming Porytiles 1.x redux. More on that below.
 
 ## Porytiles 1.x
 
 ### What Is Porytiles 1.x?
 Porytiles 1.x is a from-the-ground-up refactor of Porytiles, now written in Go.
+
+### Why?
+Instead of releasing a 1.0.0 Porytiles based on the C++ codebase, I have instead decided to start working on a from-the-ground-up refactor of Porytiles, which will be known as Porytiles 1.x until it officially releases. The reason for this: the process of rapid iterative development on Porytiles 0.x has accrued significant technical debt. At the moment, the Porytiles 0.x code is so messy that I am having trouble adding features or fixing bugs without introducing further issues and gotchas. As such, building Porytiles 1.x "from scratch" will give it the best foundation for a bright future. Porytiles 1.x will begin as a feature-for-feature port in the Go language. Once it has parity with Porytiles 0.x functionality, I will release a Porytiles 1.0.0 based on the Go codebase. Then I will begin adding new features, fixing the complex bugs and issues, etc. Porytiles 1.x Go code lives in the root of this repository.
 
 ### What Happened To C++?
 <sub><sup>I'm borderline ADHD and bored of C++ for the moment...</sup></sub>
