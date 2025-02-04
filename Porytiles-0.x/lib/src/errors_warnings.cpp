@@ -866,7 +866,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
         }
         if (err.warnCount > 0) {
             pt_println(stderr, "{} {} and {} {} generated.", std::to_string(err.warnCount), warnStr,
-                       std::to_string(err.errCount), errorStr);
+                       std::to_string(err.errTotal()), errorStr);
         }
         else {
             pt_println(stderr, "{} {} generated.", std::to_string(err.errTotal()), errorStr);
