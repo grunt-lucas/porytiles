@@ -461,10 +461,18 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
               std::back_inserter(primerFiles));
 
     for (const auto &primerFile : primerFiles) {
+        // Check if the file is a regular file
         if (!std::filesystem::is_regular_file(primerFile)) {
             pt_logln(ctx, stderr, "skipping {} as it is not a regular file", primerFile.string());
             continue;
         }
+
+        // Check if the file has a .pal extension
+        if (primerFile.extension() != ".pal") {
+            pt_logln(ctx, stderr, "skipping {} as it does not have a .pal extension", primerFile.string());
+            continue;
+        }
+
         std::ifstream fileStream{primerFile};
         pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
         // TODO : instead of throwing fatal errors in this function, throw regular errors so we can fail later
