@@ -21,7 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `-disable-metatile-generation` and `-disable-attribute-generation`
 
 - Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per vertex ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
-   - assign config search matrix now tries smart prune before trying a constant prune
+  - assign config search matrix now tries smart prune before trying a constant prune
+
+- `-Wkey-frame-missing-colors` flags cases where user might run into [Issue #60](https://github.com/grunt-lucas/porytiles/issues/60) ([#85](https://github.com/grunt-lucas/porytiles/pull/85))
+
+- Added palette primer feature
+  - https://github.com/grunt-lucas/porytiles/commit/594795b
+  - https://github.com/grunt-lucas/porytiles/commit/7b43e0d
+  - https://github.com/grunt-lucas/porytiles/commit/d3af999
+  - https://github.com/grunt-lucas/porytiles/commit/7681651
+  - [#89](https://github.com/grunt-lucas/porytiles/pull/89)
 
 ### Changed
 
@@ -32,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subcommand help menus are much more refined, they now only show info relevant to the given subcommand ([#51](https://github.com/grunt-lucas/porytiles/pull/51))
 
 - Build system overhaul, now using CMake ([#62](https://github.com/grunt-lucas/porytiles/pull/62))
+
+- Fixed an IHDR "image height is zero" error when secondary tileset is empty, thanks @rayrobdad ([#72](https://github.com/grunt-lucas/porytiles/pull/72))
+
+- `assign.cfg` now called `assign.cache`
+  - https://github.com/grunt-lucas/porytiles/commit/1e4b484efd1e02e1e9856a412196ea3ac662716e
+
+- Numerous other small bugfixes, refactors, and tweaks
 
 ## [0.0.7] - 2024-01-07
 
@@ -149,7 +165,7 @@ Preview release.
 - Basic palette priming support: Porytiles allows you to force the palette allocation algorithm to guarantee that
   specified colors will be in the same palette
 
-[Unreleased]: https://github.com/grunt-lucas/porytiles/compare/0.0.7...HEAD
+[Nightly]: https://github.com/grunt-lucas/porytiles/compare/0.0.7...HEAD
 
 [0.0.7]: https://github.com/grunt-lucas/porytiles/compare/0.0.6...0.0.7
 
