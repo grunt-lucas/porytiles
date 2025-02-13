@@ -1,0 +1,34 @@
+name: Linux AMD64 Clang Reusable 0.x Build Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  build-0x-linux-aarch64-clang:
+    name: Build 0.x on linux-aarch64 with clang
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Install clang and other build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install cmake
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh all
+          clang++ --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      - name: Build the project
+        run: |
+          export CXX=clang++
+          cmake -B build
+          cd build
+          cmake --build .
+
+      - name: Run the tests
+        run: |
+          ./build/Porytiles-0.x/tests/Porytiles0xTestSuite
