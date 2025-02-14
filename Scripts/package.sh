@@ -24,54 +24,43 @@ package_release() {
   zip -r "$output_directory/porytiles-$mode.zip" "$output_directory/porytiles-$mode"
 }
 
-macos_arm64() {
-  echo "Packaging release macos-arm64..."
+linux_amd64_clang() {
+  echo "Packaging release linux-amd64-clang..."
+  mkdir -p "$output_directory/porytiles-$mode"
+  export CXX="clang++"
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -B build
+  pushd build
+  cmake --build .
+  popd
+  package_release
+}
+
+linux_arm64_clang() {
+  echo "Packaging release linux-arm64-clang..."
+  mkdir -p "$output_directory/porytiles-$mode"
+  export CXX="clang++"
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -B build
+  pushd build
+  cmake --build .
+  popd
+  package_release
+}
+
+macos_amd64_clang() {
+  echo "Packaging release macos-amd64-clang..."
+  mkdir -p "$output_directory/porytiles-$mode"
+  export CXX="/usr/local/opt/llvm/bin/clang++"
+  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  pushd build
+  cmake --build .
+  popd
+  package_release
+}
+
+macos_arm64_clang() {
+  echo "Packaging release macos-arm64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="/opt/homebrew/opt/llvm/bin/clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
-  pushd build
-  cmake --build .
-  popd
-  package_release
-}
-
-macos_arm64_gcc() {
-  echo "Packaging release macos-arm64-gcc..."
-  mkdir -p "$output_directory/porytiles-$mode"
-  export CXX="g++-14"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
-  pushd build
-  cmake --build .
-  popd
-  package_release
-}
-
-linux_aarch64() {
-  echo "Packaging release linux-aarch64..."
-  mkdir -p "$output_directory/porytiles-$mode"
-  export CXX="clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
-  pushd build
-  cmake --build .
-  popd
-  package_release
-}
-
-linux_amd64() {
-  echo "Packaging release linux-amd64..."
-  mkdir -p "$output_directory/porytiles-$mode"
-  export CXX="clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
-  pushd build
-  cmake --build .
-  popd
-  package_release
-}
-
-linux_amd64_gcc() {
-  echo "Packaging release linux-amd64 with gcc..."
-  mkdir -p "$output_directory/porytiles-$mode"
-  export CXX="g++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
   pushd build
   cmake --build .
@@ -87,35 +76,30 @@ main() {
   fi
 
   case $mode in
-    macos-arm64)
-    macos_arm64
+    linux-amd64-clang)
+    linux_amd64_clang
     ;;
 
-    macos-arm64-gcc)
-    macos_arm64_gcc
+    linux-arm64-clang)
+    linux_arm64_clang
     ;;
 
-    linux-aarch64)
-    linux_aarch64
+    macos-amd64-clang)
+    macos_amd64_clang
     ;;
 
-    linux-amd64)
-    linux_amd64
-    ;;
-
-    linux-amd64-gcc)
-    linux_amd64_gcc
+    macos-arm64-clang)
+    macos_arm64_clang
     ;;
 
     *)
     echo "unknown mode: $mode"
     echo ""
     echo "Valid modes are:"
-    echo "    macos-arm64"
-    echo "    macos-arm64-gcc"
-    echo "    linux-aarch64"
-    echo "    linux-amd64"
-    echo "    linux-amd64-gcc"
+    echo "    linux-amd64-clang"
+    echo "    linux-arm64-clang"
+    echo "    macos-amd64-clang"
+    echo "    macos-arm64-clang"
     exit 1
     ;;
   esac
