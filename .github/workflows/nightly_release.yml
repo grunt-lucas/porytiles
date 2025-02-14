@@ -105,7 +105,7 @@ jobs:
 
   nightly-release-0x-macos-amd64:
     name: Release a nightly dynamically linked 0.x macos-amd64 binary
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: [ create-release-tag ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
