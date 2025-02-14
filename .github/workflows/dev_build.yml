@@ -11,17 +11,17 @@ on:
 jobs:
   build-0x-linux-amd64-clang:
     uses: ./.github/workflows/0x_linux_amd64_clang.yml
-  build-0x-linux-aarch64-clang:
-    uses: ./.github/workflows/0x_linux_aarch64_clang.yml
   build-0x-linux-amd64-gcc:
     uses: ./.github/workflows/0x_linux_amd64_gcc.yml
-  build-0x-linux-aarch64-gcc:
-    uses: ./.github/workflows/0x_linux_aarch64_gcc.yml
-  build-0x-macos-arm64-clang:
-    uses: ./.github/workflows/0x_macos_arm64_clang.yml
-  build-0x-macos-arm64-gcc:
-    uses: ./.github/workflows/0x_macos_arm64_gcc.yml
+  build-0x-linux-arm64-clang:
+    uses: ./.github/workflows/0x_linux_arm64_clang.yml
+  build-0x-linux-arm64-gcc:
+    uses: ./.github/workflows/0x_linux_arm64_gcc.yml
   build-0x-macos-amd64-clang:
     uses: ./.github/workflows/0x_macos_amd64_clang.yml
   build-0x-macos-amd64-gcc:
     uses: ./.github/workflows/0x_macos_amd64_gcc.yml
+  build-0x-macos-arm64-clang:
+    uses: ./.github/workflows/0x_macos_arm64_clang.yml
+  build-0x-macos-arm64-gcc:
+    uses: ./.github/workflows/0x_macos_arm64_gcc.yml

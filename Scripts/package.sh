@@ -24,8 +24,8 @@ package_release() {
   zip -r "$output_directory/porytiles-$mode.zip" "$output_directory/porytiles-$mode"
 }
 
-linux_aarch64_clang() {
-  echo "Packaging release linux-aarch64-clang..."
+linux_amd64_clang() {
+  echo "Packaging release linux-amd64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
@@ -35,8 +35,8 @@ linux_aarch64_clang() {
   package_release
 }
 
-linux_amd64_clang() {
-  echo "Packaging release linux-amd64-clang..."
+linux_arm64_clang() {
+  echo "Packaging release linux-arm64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="clang++"
   cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
@@ -76,12 +76,12 @@ main() {
   fi
 
   case $mode in
-    linux-aarch64-clang)
-    linux_aarch64_clang
-    ;;
-
     linux-amd64-clang)
     linux_amd64_clang
+    ;;
+
+    linux-arm64-clang)
+    linux_arm64_clang
     ;;
 
     macos-amd64-clang)
@@ -96,8 +96,8 @@ main() {
     echo "unknown mode: $mode"
     echo ""
     echo "Valid modes are:"
-    echo "    linux-aarch64-clang"
     echo "    linux-amd64-clang"
+    echo "    linux-arm64-clang"
     echo "    macos-amd64-clang"
     echo "    macos-arm64-clang"
     exit 1
