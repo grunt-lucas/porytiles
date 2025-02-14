@@ -1,0 +1,35 @@
+name: macOS ARM64 GCC Reusable 0.x Build Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  build-0x-macos-arm64-gcc:
+    name: Build 0.x on macos-arm64 with gcc
+    runs-on: macos-13
+    # GitHub removed Intel Mac runners, so macos-latest is now arm64
+    # We don't need to install zlib since it is shipped with macOS, CMake will find it
+    steps:
+      - name: Install GCC and other build dependencies
+        run: |
+          brew update
+          brew install libpng || true
+          brew install cmake || true
+          brew install gcc
+          g++-14 --version
+
+      - name: Checkout porytiles
+        uses: actions/checkout@v3
+
+      # Use -DCMAKE_FIND_FRAMEWORK=NEVER, otherwise CMake sometimes picks up outdated
+      # package versions deeply buried in some ancient macOS system framework
+      - name: Build the project
+        run: |
+          export CXX=g++-14
+          cmake -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+          cd build
+          cmake --build .
+
+      - name: Run the tests
+        run: |
+          ./build/Porytiles-0.x/tests/Porytiles0xTestSuite
