@@ -11,16 +11,16 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 project(Porytiles0x CXX)
 
 # Enable compilation warnings for 0.x
-if(MSVC)
+if (MSVC)
     add_compile_options(/W4 /WX)
-else()
+else ()
     # Cannot enable -Wextra in 0.x since some of our header-only dependencies throw warnings
     # that break the build.
     #
     # Remove warnings-as-errors temporarily to stop GCC from complaining about one of the header libs.
     # add_compile_options(-Wall -Wpedantic -Werror)
     add_compile_options(-Wall -Wpedantic)
-endif()
+endif ()
 
 # Enable testing
 enable_testing()

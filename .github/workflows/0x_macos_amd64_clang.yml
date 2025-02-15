@@ -13,6 +13,7 @@ jobs:
       - name: Install clang and other build dependencies
         run: |
           brew update
+          brew install zlib || true
           brew install libpng || true
           brew install cmake || true
           brew install llvm || true
