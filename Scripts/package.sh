@@ -30,7 +30,7 @@ linux_amd64_clang() {
   export CXX="clang++"
   cmake \
       -DCMAKE_BUILD_TYPE=RELEASE \
-      -DPNG_NAMES="png_static;png" \
+      -DCMAKE_PREFIX_PATH="/usr/lib/x86_64-linux-gnu" \
       -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
       -B build
   pushd build
@@ -45,7 +45,7 @@ linux_arm64_clang() {
   export CXX="clang++"
   cmake \
         -DCMAKE_BUILD_TYPE=RELEASE \
-        -DPNG_NAMES="png_static;png" \
+        -DCMAKE_PREFIX_PATH="/usr/lib/aarch64-linux-gnu" \
         -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
         -B build
   pushd build
