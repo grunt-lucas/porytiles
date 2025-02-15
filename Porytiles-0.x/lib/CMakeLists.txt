@@ -15,7 +15,7 @@ find_library(PNG_STATIC
 find_library(ZLIB_STATIC
         NAMES libz.a
         PATHS /opt/homebrew/opt/zlib/lib
-        PATHS /usr/local/opt/libpng/lib
+        PATHS /usr/local/opt/zlib/lib
         PATHS /usr/lib/x86_64-linux-gnu
         PATHS /usr/lib/aarch64-linux-gnu)
 
