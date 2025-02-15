@@ -31,6 +31,7 @@ linux_amd64_clang() {
   cmake \
       -DCMAKE_BUILD_TYPE=RELEASE \
       -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
+      -DCMAKE_CXX_FLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}" \
       -B build
   pushd build
   cmake --build .
@@ -45,6 +46,7 @@ linux_arm64_clang() {
   cmake \
         -DCMAKE_BUILD_TYPE=RELEASE \
         -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
+        -DCMAKE_CXX_FLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}" \
         -B build
   pushd build
   cmake --build .
@@ -59,6 +61,7 @@ macos_amd64_clang() {
   cmake \
       -DCMAKE_BUILD_TYPE=RELEASE \
       -DCMAKE_FIND_FRAMEWORK=NEVER \
+      -DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}" \
       -B build
   pushd build
   cmake --build .
@@ -73,6 +76,7 @@ macos_arm64_clang() {
   cmake \
         -DCMAKE_BUILD_TYPE=RELEASE \
         -DCMAKE_FIND_FRAMEWORK=NEVER \
+        -DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=${porytiles_build_version} -DPORYTILES_BUILD_DATE_=${porytiles_build_date}" \
         -B build
   pushd build
   cmake --build .
