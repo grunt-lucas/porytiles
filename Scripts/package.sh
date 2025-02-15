@@ -28,7 +28,10 @@ linux_amd64_clang() {
   echo "Packaging release linux-amd64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -B build
+  cmake \
+      -DCMAKE_BUILD_TYPE=RELEASE \
+      -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
+      -B build
   pushd build
   cmake --build .
   popd
@@ -39,7 +42,10 @@ linux_arm64_clang() {
   echo "Packaging release linux-arm64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -B build
+  cmake \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static" \
+        -B build
   pushd build
   cmake --build .
   popd
@@ -50,7 +56,10 @@ macos_amd64_clang() {
   echo "Packaging release macos-amd64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="/usr/local/opt/llvm/bin/clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake \
+      -DCMAKE_BUILD_TYPE=RELEASE \
+      -DCMAKE_FIND_FRAMEWORK=NEVER \
+      -B build
   pushd build
   cmake --build .
   popd
@@ -61,7 +70,10 @@ macos_arm64_clang() {
   echo "Packaging release macos-arm64-clang..."
   mkdir -p "$output_directory/porytiles-$mode"
   export CXX="/opt/homebrew/opt/llvm/bin/clang++"
-  cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_FIND_FRAMEWORK=NEVER -B build
+  cmake \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DCMAKE_FIND_FRAMEWORK=NEVER \
+        -B build
   pushd build
   cmake --build .
   popd
