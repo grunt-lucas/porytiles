@@ -25,7 +25,7 @@ jobs:
           export CXX=g++
           cmake -B build
           cd build
-          cmake --build .
+          cmake --build . --verbose
 
       - name: Run the tests
         run: |

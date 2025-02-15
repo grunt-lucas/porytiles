@@ -27,7 +27,7 @@ jobs:
           export CXX=clang++
           cmake -B build
           cd build
-          cmake --build .
+          cmake --build . --verbose
 
       - name: Run the tests
         run: |
