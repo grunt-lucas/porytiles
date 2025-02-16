@@ -1,0 +1,14 @@
+name: Build MacOS Clang
+description: Builds Porytiles on MacOS with Clang
+runs:
+  using: composite
+  steps:
+    - name: Build on MacOS with clang
+      shell: bash
+      run: |
+        export CXX=clang++
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_FIND_FRAMEWORK='NEVER'
+        cd build
+        cmake --build .
+        file ./Porytiles-0.x/cli/porytiles
+        otool -L ./Porytiles-0.x/cli/porytiles

@@ -7,16 +7,38 @@ on:
 
 # PR builds make sure all platforms build with clang. Nightly releases use
 # clang to build so we don't want to let in a PR that's going to fail one
-# of the nightly pipelines. Since we do still care about gcc compatibility,
-# we'll build with gcc on the develop branch build. Breaking gcc changes
-# shouldn't block a PR, but we should know about them so they can be
-# addressed at a later time.
+# of the nightly pipelines. Since we do still care about GCC compatibility,
+# we'll build with GCC on x86-64 Ubuntu as well. PRs should not introduce code
+# that breaks GCC builds.
 jobs:
   build-0x-linux-amd64-clang:
-    uses: ./.github/workflows/0x_linux_amd64_clang.yml
+    uses: ./.github/workflows/build_job_template_linux_clang.yml
+    with:
+      arch: amd64
+      image: ubuntu-latest
+
+  build-0x-linux-amd64-gcc:
+    uses: ./.github/workflows/build_job_template_linux_gcc.yml
+    with:
+      arch: amd64
+      image: ubuntu-latest
+
   build-0x-linux-arm64-clang:
-    uses: ./.github/workflows/0x_linux_arm64_clang.yml
+    uses: ./.github/workflows/build_job_template_linux_clang.yml
+    with:
+      arch: arm64
+      image: ubuntu-24.04-arm
+
   build-0x-macos-amd64-clang:
-    uses: ./.github/workflows/0x_macos_amd64_clang.yml
+    uses: ./.github/workflows/build_job_template_macos_clang.yml
+    with:
+      arch: amd64
+      # MacOS 13 runner is still Intel-based, so we can use it to run an Intel
+      # Mac build and publish artifacts for Intel Mac users.
+      image: macos-13
+
   build-0x-macos-arm64-clang:
-    uses: ./.github/workflows/0x_macos_arm64_clang.yml
+    uses: ./.github/workflows/build_job_template_macos_clang.yml
+    with:
+      arch: arm64
+      image: macos-latest

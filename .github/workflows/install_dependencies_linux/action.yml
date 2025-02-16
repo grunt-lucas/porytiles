@@ -1,0 +1,12 @@
+name: Install Dependencies Linux
+description: Installs Porytiles build dependencies for Linux platforms
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies for Linux
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y zlib1g-dev
+        sudo apt-get install -y libpng-dev
+        sudo apt-get install -y cmake

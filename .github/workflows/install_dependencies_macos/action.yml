@@ -1,0 +1,12 @@
+name: Install Dependencies MacOS
+description: Installs Porytiles build dependencies for MacOS platforms
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies for MacOS
+      shell: bash
+      run: |
+        brew update
+        brew install zlib
+        brew install libpng
+        brew install cmake

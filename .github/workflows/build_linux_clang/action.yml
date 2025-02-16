@@ -1,0 +1,14 @@
+name: Build Linux Clang
+description: Builds Porytiles on Linux with Clang
+runs:
+  using: composite
+  steps:
+    - name: Build on Linux with clang
+      shell: bash
+      run: |
+        export CXX=clang++
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static"
+        cd build
+        cmake --build .
+        file ./Porytiles-0.x/cli/porytiles
+        objdump -p ./Porytiles-0.x/cli/porytiles

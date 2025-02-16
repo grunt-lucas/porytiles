@@ -1,0 +1,10 @@
+name: Run Test Suite
+description: Runs the Porytiles version printout and test suite
+runs:
+  using: composite
+  steps:
+    - name: Run version and test suite
+      shell: bash
+      run: |
+        ./build/Porytiles-0.x/cli/porytiles --version
+        ./build/Porytiles-0.x/tests/Porytiles0xTestSuite

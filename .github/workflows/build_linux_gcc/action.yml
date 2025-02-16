@@ -1,0 +1,14 @@
+name: Build Linux GCC
+description: Builds Porytiles on Linux with GCC
+runs:
+  using: composite
+  steps:
+    - name: Build on Linux with gcc
+      shell: bash
+      run: |
+        export CXX=g++
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static"
+        cd build
+        cmake --build .
+        file ./Porytiles-0.x/cli/porytiles
+        objdump -p ./Porytiles-0.x/cli/porytiles
