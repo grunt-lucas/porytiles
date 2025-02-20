@@ -5,37 +5,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# 'develop' branch build kicks off on PR merges. We run builds on all platforms
-# with the clang compiler. We also run a build on x86-64 Ubuntu with GCC.
 jobs:
-  build-0x-linux-amd64-clang:
-    uses: ./.github/workflows/build_job_template_linux_clang.yml
-    with:
-      arch: amd64
-      image: ubuntu-latest
-
-  build-0x-linux-amd64-gcc:
-    uses: ./.github/workflows/build_job_template_linux_gcc.yml
-    with:
-      arch: amd64
-      image: ubuntu-latest
-
-  build-0x-linux-arm64-clang:
-    uses: ./.github/workflows/build_job_template_linux_clang.yml
-    with:
-      arch: arm64
-      image: ubuntu-24.04-arm
-
-  build-0x-macos-amd64-clang:
-    uses: ./.github/workflows/build_job_template_macos_clang.yml
-    with:
-      arch: amd64
-      # MacOS 13 runner is still Intel-based, so we can use it to run an Intel
-      # Mac build and publish artifacts for Intel Mac users.
-      image: macos-13
-
-  build-0x-macos-arm64-clang:
-    uses: ./.github/workflows/build_job_template_macos_clang.yml
-    with:
-      arch: arm64
-      image: macos-latest
+  build-jobs:
+    uses: ./.github/workflows/build_jobs_template.yml
