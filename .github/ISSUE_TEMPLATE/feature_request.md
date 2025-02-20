@@ -7,5 +7,6 @@ assignees: grunt-lucas
 
 ---
 
-**Describe the feature**
+# Describe the feature
+
 A clear and concise description of the feature you'd like to see.

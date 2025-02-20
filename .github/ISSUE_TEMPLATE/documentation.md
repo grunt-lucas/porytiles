@@ -7,6 +7,7 @@ assignees: grunt-lucas
 
 ---
 
-**Description**
-A clear description of the documentation you found unclear, or of the feature/behavior you'd like
+# Description
+
+A clear description of the documentation you found unclear or of the feature/behavior you'd like
 to see documented.
