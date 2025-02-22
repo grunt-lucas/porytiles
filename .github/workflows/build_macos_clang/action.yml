@@ -1,5 +1,12 @@
 name: Build MacOS Clang
 description: Builds Porytiles on MacOS with Clang
+
+inputs:
+  build-version:
+    description: The build version to inject into the Porytiles build
+    required: false
+    default: default_build_version
+
 runs:
   using: composite
   steps:
@@ -7,7 +14,11 @@ runs:
       shell: bash
       run: |
         export CXX=clang++
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_FIND_FRAMEWORK='NEVER'
+        BUILD_DATE=`date -uIseconds`
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE="Release" \
+          -DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=${{ inputs.build-version }} -DPORYTILES_BUILD_DATE_=${BUILD_DATE}" \
+          -DCMAKE_FIND_FRAMEWORK="NEVER"
         cd build
         cmake --build .
         file ./Porytiles-0.x/cli/porytiles

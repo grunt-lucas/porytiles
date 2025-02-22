@@ -27,31 +27,32 @@ jobs:
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install clang and other build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install zlib1g-dev
-          sudo apt-get install libpng-dev
-          sudo apt-get install cmake
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh all
-          clang++ --version
-
       - name: Checkout the develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
 
+      - name: Install Porytiles build dependencies
+        uses: ./.github/workflows/install_dependencies_linux
+
+      - name: Install clang
+        uses: ./.github/workflows/install_clang_linux
+
+      - name: Build Porytiles
+        uses: ./.github/workflows/build_linux_clang
+        with:
+          build-version: nightly-${{ github.sha }}
+
       - name: Create release package
-        run: |
-          ./Scripts/package.sh linux-amd64-clang nightly-${{github.sha}} .
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: linux-amd64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: porytiles-linux-amd64-clang.zip
+          files: porytiles-linux-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,31 +62,32 @@ jobs:
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install clang and other build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install zlib1g-dev
-          sudo apt-get install libpng-dev
-          sudo apt-get install cmake
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh all
-          clang++ --version
-
       - name: Checkout the develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
 
+      - name: Install Porytiles build dependencies
+        uses: ./.github/workflows/install_dependencies_linux
+
+      - name: Install clang
+        uses: ./.github/workflows/install_clang_linux
+
+      - name: Build Porytiles
+        uses: ./.github/workflows/build_linux_clang
+        with:
+          build-version: nightly-${{ github.sha }}
+
       - name: Create release package
-        run: |
-          ./Scripts/package.sh linux-arm64-clang nightly-${{github.sha}} .
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: linux-arm64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: porytiles-linux-arm64-clang.zip
+          files: porytiles-linux-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -95,61 +97,60 @@ jobs:
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install clang and dependencies
-        run: |
-          brew update
-          brew install zlib || true
-          brew install libpng || true
-          brew install llvm || true
-          /usr/local/opt/llvm/bin/clang++ --version
-          /usr/local/opt/llvm/bin/clang++ -v
-
       - name: Checkout the develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
 
+      - name: Install Porytiles build dependencies
+        uses: ./.github/workflows/install_dependencies_macos
+
+      - name: Build Porytiles
+        uses: ./.github/workflows/build_macos_clang
+        with:
+          build-version: nightly-${{ github.sha }}
+
       - name: Create release package
-        run: |
-          ./Scripts/package.sh macos-amd64-clang nightly-${{github.sha}} .
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: macos-amd64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: porytiles-macos-amd64-clang.zip
+          files: porytiles-macos-amd64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   nightly-release-0x-macos-arm64:
     name: Release a 0.x macos-arm64 binary based on the develop branch
     runs-on: macos-latest
-    # GitHub removed Intel Mac runners, so macos-latest is now arm64
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install clang and dependencies
-        run: |
-          brew update
-          brew install zlib || true
-          brew install libpng || true
-          brew install llvm || true
-          /opt/homebrew/opt/llvm/bin/clang++ --version
-          /opt/homebrew/opt/llvm/bin/clang++ -v
-
       - name: Checkout the develop branch
         uses: actions/checkout@v4
         with:
           ref: develop
 
+      - name: Install Porytiles build dependencies
+        uses: ./.github/workflows/install_dependencies_macos
+
+      - name: Build Porytiles
+        uses: ./.github/workflows/build_macos_clang
+        with:
+          build-version: nightly-${{ github.sha }}
+
       - name: Create release package
-        run: |
-          ./Scripts/package.sh macos-arm64-clang nightly-${{github.sha}} .
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: macos-arm64
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: nightly-${{github.sha}}
-          files: porytiles-macos-arm64-clang.zip
+          files: porytiles-macos-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

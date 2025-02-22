@@ -1,6 +1,12 @@
 name: Build Linux GCC
 description: Builds Porytiles on Linux with GCC
 
+inputs:
+  build-version:
+    description: The build version to inject into the Porytiles build
+    required: false
+    default: default_build_version
+
 runs:
   using: composite
   steps:
@@ -8,7 +14,11 @@ runs:
       shell: bash
       run: |
         export CXX=g++
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static"
+        BUILD_DATE=`date -uIseconds`
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE="Release" \
+          -DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=${{ inputs.build-version }} -DPORYTILES_BUILD_DATE_=${BUILD_DATE}" \
+          -DCMAKE_EXE_LINKER_FLAGS="-static"
         cd build
         cmake --build .
         file ./Porytiles-0.x/cli/porytiles
