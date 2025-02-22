@@ -1,0 +1,11 @@
+name: Install GCC Linux
+description: Installs GCC compiler for Linux platforms
+runs:
+  using: composite
+  steps:
+    - name: Install gcc for Linux
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y g++
+        g++ --version

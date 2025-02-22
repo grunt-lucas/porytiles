@@ -1,0 +1,31 @@
+name: Create Release Package
+
+inputs:
+  os-arch:
+    description: The OS and arch to package (e.g. linux-amd64)
+    required: true
+
+description: Create a Porytiles release package
+runs:
+  using: composite
+  steps:
+    - name: Create a release package
+      shell: bash
+      run: |
+        echo "Packaging release ${{ inputs.os-arch }}..."
+        mkdir "porytiles-${{ inputs.os-arch }}"
+        cp build/Porytiles-0.x/cli/porytiles "./porytiles-${{ inputs.os-arch }}"
+        cp build/Porytiles-0.x/tests/Porytiles0xTestSuite "./porytiles-${{ inputs.os-arch }}"
+        cp CHANGELOG.md "./porytiles-${{ inputs.os-arch }}"
+        cp README.md "./porytiles-${{ inputs.os-arch }}"
+        cp LICENSE "./porytiles-${{ inputs.os-arch }}"
+        mkdir -p "./porytiles-${{ inputs.os-arch }}/Resources"
+        cp -r Resources/Examples "./porytiles-${{ inputs.os-arch }}/Resources"
+        cp -r Resources/Tests "./porytiles-${{ inputs.os-arch }}/Resources"
+        cp -r Porytiles-0.x/vendor "./porytiles-${{ inputs.os-arch }}"
+
+        pushd "./porytiles-${{ inputs.os-arch }}"
+        ./Porytiles0xTestSuite
+        popd
+
+        zip -r "./porytiles-${{ inputs.os-arch }}.zip" "./porytiles-${{ inputs.os-arch }}"

@@ -1,0 +1,13 @@
+name: Install Clang Linux
+description: Installs Clang compiler for Linux platforms
+runs:
+  using: composite
+  steps:
+    - name: Install clang for Linux
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh all
+        clang++ --version

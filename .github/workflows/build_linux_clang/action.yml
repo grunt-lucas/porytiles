@@ -1,0 +1,25 @@
+name: Build Linux Clang
+description: Builds Porytiles on Linux with Clang
+
+inputs:
+  build-version:
+    description: The build version to inject into the Porytiles build
+    required: false
+    default: default_build_version
+
+runs:
+  using: composite
+  steps:
+    - name: Build on Linux with clang
+      shell: bash
+      run: |
+        export CXX=clang++
+        BUILD_DATE=`date -uIseconds`
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE="Release" \
+          -DCMAKE_CXX_FLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${{ inputs.build-version }} -DPORYTILES_BUILD_DATE_=${BUILD_DATE}" \
+          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static"
+        cd build
+        cmake --build .
+        file ./Porytiles-0.x/cli/porytiles
+        objdump -p ./Porytiles-0.x/cli/porytiles
