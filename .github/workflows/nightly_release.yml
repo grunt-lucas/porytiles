@@ -43,6 +43,9 @@ jobs:
         with:
           build-version: nightly-${{ github.sha }}
 
+      - name: Run the test suite
+        uses: ./.github/workflows/run_test_suite
+
       - name: Create release package
         uses: ./.github/workflows/create_release_package
         with:
@@ -78,6 +81,9 @@ jobs:
         with:
           build-version: nightly-${{ github.sha }}
 
+      - name: Run the test suite
+        uses: ./.github/workflows/run_test_suite
+
       - name: Create release package
         uses: ./.github/workflows/create_release_package
         with:
@@ -110,6 +116,9 @@ jobs:
         with:
           build-version: nightly-${{ github.sha }}
 
+      - name: Run the test suite
+        uses: ./.github/workflows/run_test_suite
+
       - name: Create release package
         uses: ./.github/workflows/create_release_package
         with:
@@ -141,6 +150,9 @@ jobs:
         uses: ./.github/workflows/build_macos_clang
         with:
           build-version: nightly-${{ github.sha }}
+
+      - name: Run the test suite
+        uses: ./.github/workflows/run_test_suite
 
       - name: Create release package
         uses: ./.github/workflows/create_release_package
