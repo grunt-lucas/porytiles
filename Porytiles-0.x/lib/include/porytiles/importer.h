@@ -10,12 +10,16 @@
 #include "types.h"
 
 /**
+ * This unwieldy type represents a list of palette slot indexes and the override color for that index.
+ */
+using OverridenPaletteSlots = std::vector<std::pair<std::size_t, porytiles::BGR15>>;
+
+/**
  * Utility functions for building core Porytiles types from sanitized input types and data structures. The importer
  * functions don't handle any file checking or input collation. They expect to receive data as ready-to-use ifstreams,
  * png::images, and other data structures. The driver is responsible for preparing these types and data structures from
  * the raw input files.
  */
-
 namespace porytiles {
 
 /**
@@ -73,12 +77,21 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
+                      const std::vector<std::string> &paletteFileNames,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims);
 
 /**
  * TODO : fill in doc comments
  */
-RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile);
+RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile,
+                             const std::string &fileName);
+
+/**
+ * TODO : fill in doc comments
+ */
+std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, CompilerMode compilerMode,
+                                                                 std::ifstream &paletteFile,
+                                                                 const std::string &fileName);
 
 } // namespace porytiles
 

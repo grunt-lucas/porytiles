@@ -17,6 +17,8 @@
 #include "porytiles_context.h"
 #include "types.h"
 
+#include <regex>
+
 namespace porytiles {
 
 std::vector<std::string> split(std::string input, const std::string &delimiter)
@@ -31,6 +33,17 @@ std::vector<std::string> split(std::string input, const std::string &delimiter)
     }
     result.push_back(input);
     return result;
+}
+
+bool checkFullStringMatch(const std::string &str, const std::string &pattern)
+{
+    try {
+        const std::regex re{pattern};
+        return std::regex_match(str, re);
+    }
+    catch (const std::regex_error &e) {
+        throw std::runtime_error{e.what()};
+    }
 }
 
 void trim(std::string &string)
@@ -72,7 +85,8 @@ std::filesystem::path createTmpdir()
 }
 
 static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerMode,
-                            const DecompilerMode *decompilerMode, const std::string &jascLine)
+                            const DecompilerMode *decompilerMode, const std::string &jascLine,
+                            const std::string &fileName)
 {
     std::vector<std::string> colorComponents = split(jascLine, " ");
     if (colorComponents.size() != 3) {
@@ -81,11 +95,11 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
         }
         else if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
+                       fmt::format("expected valid JASC line in pal file {}, saw {}", fileName, jascLine));
         }
         else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       fmt::format("expected valid JASC line in pal file, saw {}", jascLine));
+                       fmt::format("expected valid JASC line in pal file {}, saw {}", fileName, jascLine));
         }
         else {
             internalerror_unknownSubcommand("utilities::parseJascLine both mode parameters were null");
@@ -112,11 +126,11 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
         }
         else if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       "invalid red component: range must be 0 <= red <= 255");
+                       fmt::format("{}: invalid red component: range must be 0 <= red <= 255", fileName));
         }
         else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       "invalid red component: range must be 0 <= red <= 255");
+                       fmt::format("{}: invalid red component: range must be 0 <= red <= 255", fileName));
         }
         else {
             internalerror_unknownSubcommand("utilities::parseJascLine both mode parameters were null");
@@ -128,11 +142,11 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
         }
         else if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       "invalid green component: range must be 0 <= green <= 255");
+                       fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName));
         }
         else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       "invalid green component: range must be 0 <= green <= 255");
+                       fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName));
         }
         else {
             internalerror_unknownSubcommand("utilities::parseJascLine both mode parameters were null");
@@ -144,11 +158,11 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
         }
         else if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       "invalid blue component: range must be 0 <= blue <= 255");
+                       fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName));
         }
         else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       "invalid blue component: range must be 0 <= blue <= 255");
+                       fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName));
         }
         else {
             internalerror_unknownSubcommand("utilities::parseJascLine both mode parameters were null");
@@ -159,14 +173,16 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
                   ALPHA_OPAQUE};
 }
 
-RGBA32 parseJascLineCompiler(PorytilesContext &ctx, CompilerMode compilerMode, const std::string &jascLine)
+RGBA32 parseJascLineCompiler(PorytilesContext &ctx, CompilerMode compilerMode, const std::string &jascLine,
+                             const std::string &fileName)
 {
-    return parseJascLine(ctx, &compilerMode, nullptr, jascLine);
+    return parseJascLine(ctx, &compilerMode, nullptr, jascLine, fileName);
 }
 
-RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode, const std::string &jascLine)
+RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode, const std::string &jascLine,
+                               const std::string &fileName)
 {
-    return parseJascLine(ctx, nullptr, &decompilerMode, jascLine);
+    return parseJascLine(ctx, nullptr, &decompilerMode, jascLine, fileName);
 }
 
 void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath)

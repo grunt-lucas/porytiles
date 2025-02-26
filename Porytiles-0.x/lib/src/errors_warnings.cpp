@@ -54,6 +54,9 @@ static std::string getTilePrettyString(const RGBATile &tile)
     else if (tile.type == TileType::PRIMER) {
         tileString = fmt::format("primer {}", tile.primer);
     }
+    else if (tile.type == TileType::OVERRIDE) {
+        tileString = fmt::format("override {}", tile.overrideFilename);
+    }
     else {
         throw std::runtime_error{"error_warnings::getTilePrettyString unknown TileType"};
     }

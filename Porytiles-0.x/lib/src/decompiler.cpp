@@ -165,8 +165,7 @@ TEST_CASE("decompile should decompile a basic primary tileset")
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                              std::vector<porytiles::RGBATile>{});
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     auto decompiledViaAlgorithm =
         porytiles::decompile(ctx, porytiles::DecompilerMode::PRIMARY, *compiledPrimary,
@@ -198,8 +197,7 @@ TEST_CASE("decompile should decompile a basic secondary tileset")
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                              std::vector<porytiles::RGBATile>{});
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
     ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_2/secondary/bottom.png"}));
@@ -211,8 +209,8 @@ TEST_CASE("decompile should decompile a basic secondary tileset")
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
-    auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
-                                                std::vector<porytiles::RGBATile>{});
+    auto compiledSecondary =
+        porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
 
     ctx.decompilerContext.pairedPrimaryTileset = std::move(ctx.compilerContext.pairedPrimaryTileset);
     auto decompiledViaAlgorithm =

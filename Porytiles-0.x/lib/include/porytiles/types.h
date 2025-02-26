@@ -3,12 +3,10 @@
 
 #include <algorithm>
 #include <array>
-#include <compare>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <png.hpp>
-#include <stdint.h>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -55,7 +53,7 @@ template <typename T> struct AnimationPng {
     std::string frameName;
 
     AnimationPng(png::image<T> png, std::string animName, std::string frameName)
-        : png{png}, animName{animName}, frameName{frameName}
+        : png{png}, animName{std::move(animName)}, frameName{std::move(frameName)}
     {
     }
 };
@@ -64,7 +62,7 @@ template <typename T> struct AnimationPng {
  * BGR15 color format. 5 bits per color with blue in most significant bits. Top bit unused.
  */
 struct BGR15 {
-    std::uint16_t bgr;
+    std::uint16_t bgr{};
 
     auto operator<=>(const BGR15 &) const = default;
 
@@ -97,10 +95,10 @@ constexpr std::uint8_t ALPHA_OPAQUE = 255;
  * RGBA32 format. 1 byte per color and 1 byte for alpha channel.
  */
 struct RGBA32 {
-    std::uint8_t red;
-    std::uint8_t green;
-    std::uint8_t blue;
-    std::uint8_t alpha;
+    std::uint8_t red{};
+    std::uint8_t green{};
+    std::uint8_t blue{};
+    std::uint8_t alpha{};
 
     [[nodiscard]] std::string jasc() const
     {
@@ -134,10 +132,10 @@ extern const RGBA32 RGBA_LIME;
 template <> struct std::hash<porytiles::RGBA32> {
     std::size_t operator()(const porytiles::RGBA32 &rgba) const noexcept
     {
-        std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red);
-        std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green);
-        std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue);
-        std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha);
+        const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red);
+        const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green);
+        const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue);
+        const std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha);
         return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
     }
 };
@@ -148,7 +146,7 @@ BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
 RGBA32 bgrToRgba(const BGR15 &bgr) noexcept;
 
-enum class TileType { FREESTANDING, LAYERED, ANIM, PRIMER };
+enum class TileType { FREESTANDING, LAYERED, ANIM, PRIMER, OVERRIDE };
 
 std::string tileTypeString(TileType type);
 
@@ -186,51 +184,49 @@ enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
 std::string targetBaseGameString(TargetBaseGame game);
 
 struct Attributes {
-    TargetBaseGame baseGame;
-    LayerType layerType;
-    std::uint16_t metatileBehavior;
-    EncounterType encounterType;
-    TerrainType terrainType;
-
-    Attributes()
-        : baseGame{TargetBaseGame::EMERALD}, layerType{LayerType::TRIPLE}, metatileBehavior{0},
-          encounterType{EncounterType::NONE}, terrainType{TerrainType::NORMAL}
-    {
-    }
+    TargetBaseGame baseGame{TargetBaseGame::EMERALD};
+    LayerType layerType{LayerType::TRIPLE};
+    std::uint16_t metatileBehavior{0};
+    EncounterType encounterType{EncounterType::NONE};
+    TerrainType terrainType{TerrainType::NORMAL};
 };
 
 /**
  * A tile of RGBA32 colors.
  */
 struct RGBATile {
-    std::array<RGBA32, TILE_NUM_PIX> pixels;
+    std::array<RGBA32, TILE_NUM_PIX> pixels{};
 
     /*
      * Metadata Fields:
      * These are used by the various components to track metadata around the usage context of an RGBATile. Allows
      * Porytiles to give much more detailed error messages.
      */
-    TileType type;
+    TileType type{};
 
     // raw tile index, used for FREESTANDING and ANIM types
-    std::size_t tileIndex;
+    std::size_t tileIndex{};
 
     // LAYERED specific metadata
-    TileLayer layer;
-    std::size_t metatileIndex;
-    Subtile subtile;
+    TileLayer layer{};
+    std::size_t metatileIndex{};
+    Subtile subtile{};
 
     // ANIM specific metadata
-    std::string anim;
-    std::string frame;
+    std::string anim{};
+    std::string frame{};
 
     // PRIMER specific metadata
-    std::string primer;
+    std::string primer{};
+
+    // OVERRIDE specific metadata
+    std::string overrideFilename{};
+    std::size_t overridePaletteIndex{};
 
     // Metatile attributes for this tile
-    Attributes attributes;
+    Attributes attributes{};
 
-    [[nodiscard]] RGBA32 getPixel(size_t row, size_t col) const
+    [[nodiscard]] RGBA32 getPixel(const size_t row, const size_t col) const
     {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) +
@@ -245,15 +241,11 @@ struct RGBATile {
 
     [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const
     {
-        for (std::size_t i = 0; i < pixels.size(); i++) {
-            if (pixels[i] != transparencyColor && pixels[i].alpha != ALPHA_TRANSPARENT) {
-                return false;
-            }
-        }
-        return true;
+        return std::ranges::all_of(
+            pixels, [=](const auto &pixel) { return pixel == transparencyColor || pixel.alpha == ALPHA_TRANSPARENT; });
     }
 
-    void setPixel(std::size_t row, std::size_t col, const RGBA32 &value)
+    void setPixel(const std::size_t row, const std::size_t col, const RGBA32 &value)
     {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: RGBATile::setPixel row argument out of bounds (" + std::to_string(row) +
@@ -266,7 +258,7 @@ struct RGBATile {
         pixels.at(row * TILE_SIDE_LENGTH_PIX + col) = value;
     }
 
-    bool equalsAfterBgrConversion(const RGBATile &other)
+    [[nodiscard]] bool equalsAfterBgrConversion(const RGBATile &other) const
     {
         for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
             if (rgbaToBgr(this->pixels.at(i)) != rgbaToBgr(other.pixels.at(i))) {
@@ -313,7 +305,7 @@ struct GBATile {
 
     GBATile() : colorIndexes{} {}
 
-    [[nodiscard]] std::uint8_t getPixel(size_t index) const
+    [[nodiscard]] std::uint8_t getPixel(const size_t index) const
     {
         if (index >= TILE_NUM_PIX) {
             throw std::out_of_range{"internal: GBATile::getPixel index argument out of bounds (" +
@@ -322,7 +314,7 @@ struct GBATile {
         return colorIndexes.at(index);
     }
 
-    [[nodiscard]] std::uint8_t getPixel(size_t row, size_t col) const
+    [[nodiscard]] std::uint8_t getPixel(const size_t row, const size_t col) const
     {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: GBATile::getPixel row argument out of bounds (" + std::to_string(row) +
@@ -360,7 +352,7 @@ template <> struct std::hash<porytiles::GBATile> {
     {
         // TODO : better hash function
         std::size_t hashValue = 0;
-        for (auto index : tile.colorIndexes) {
+        for (const auto index : tile.colorIndexes) {
             hashValue ^= std::hash<uint8_t>{}(index);
         }
         return hashValue;
@@ -383,34 +375,34 @@ struct GBAPalette {
  * index and the corresponding flips.
  */
 struct MetatileEntry {
-    std::size_t tileIndex;
-    std::size_t paletteIndex;
-    bool hFlip;
-    bool vFlip;
+    std::size_t tileIndex{};
+    std::size_t paletteIndex{};
+    bool hFlip{};
+    bool vFlip{};
 
     // Store this here for the attributes emitter
-    Attributes attributes;
+    Attributes attributes{};
 };
 
 struct CompiledAnimFrame {
-    std::vector<GBATile> tiles;
+    std::vector<GBATile> tiles{};
     std::string frameName;
 
-    CompiledAnimFrame(std::string frameName) : tiles{}, frameName{frameName} {}
+    explicit CompiledAnimFrame(std::string frameName) : frameName{std::move(frameName)} {}
 };
 
 struct CompiledAnimation {
-    std::vector<CompiledAnimFrame> frames;
+    std::vector<CompiledAnimFrame> frames{};
     std::string animName;
 
-    CompiledAnimation(std::string animName) : frames{}, animName{animName} {}
+    explicit CompiledAnimation(std::string animName) : animName{std::move(animName)} {}
 
-    const CompiledAnimFrame &keyFrame() const
+    [[nodiscard]] const CompiledAnimFrame &keyFrame() const
     {
         return frames.at(keyFrameIndex());
     }
 
-    static const std::size_t keyFrameIndex()
+    static std::size_t keyFrameIndex()
     {
         return 0;
     }
@@ -419,34 +411,30 @@ struct CompiledAnimation {
 /**
  * A compiled tileset.
  *
- * The `tiles' field contains the normalized tiles from the input tilesheets. This field can be directly written out to
+ * The 'tiles' field contains the normalized tiles from the input tile sheets. This field can be directly written out to
  * `tiles.png'.
  *
- * The `paletteIndexesOfTile'
+ * The 'paletteIndexesOfTile'
  *
- * The `paletteIndexes' contains the palette index (into the `palettes' field) for each corresponding GBATile in
+ * The 'paletteIndexes' contains the palette index (into the 'palettes' field) for each corresponding GBATile in
  * `tiles'.
  *
- * The `palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
- * `numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
+ * The 'palettes' field are hardware palettes, i.e. there should be numPalsInPrimary palettes for a primary tileset, or
+ * 'numPalettesTotal - numPalsInPrimary' palettes for a secondary tileset.
  *
- * The `metatileEntries' vector contains metatile entries, which are just a tile index, palette index, and flips.
+ * The 'metatileEntries' vector contains metatile entries, which are just a tile index, palette index, and flips.
  */
 struct CompiledTileset {
-    std::vector<GBATile> tiles;
-    std::vector<std::size_t> paletteIndexesOfTile;
-    std::vector<GBAPalette> palettes;
-    std::vector<MetatileEntry> metatileEntries;
-    std::unordered_map<BGR15, std::size_t> colorIndexMap;
-    std::unordered_map<GBATile, std::size_t> tileIndexes;
-    std::vector<CompiledAnimation> anims;
+    std::vector<GBATile> tiles{};
+    std::vector<std::size_t> paletteIndexesOfTile{};
+    std::vector<GBAPalette> palettes{};
+    std::vector<MetatileEntry> metatileEntries{};
+    std::unordered_map<BGR15, std::size_t> colorIndexMap{};
+    std::unordered_map<GBATile, std::size_t> tileIndexes{};
+    std::vector<CompiledAnimation> anims{};
+    std::size_t sizeBeforePadding{};
 
-    CompiledTileset()
-        : tiles{}, paletteIndexesOfTile{}, palettes{}, metatileEntries{}, colorIndexMap{}, tileIndexes{}, anims{}
-    {
-    }
-
-    std::unordered_map<std::size_t, Attributes> generateAttributesMap(bool tripleLayer) const
+    [[nodiscard]] std::unordered_map<std::size_t, Attributes> generateAttributesMap(const bool tripleLayer) const
     {
         std::unordered_map<std::size_t, Attributes> attributes{};
         for (std::size_t entryIndex = 0; const auto &metatileEntry : metatileEntries) {
@@ -461,12 +449,12 @@ struct CompiledTileset {
  * An AnimFrame is just a vector of RGBATiles representing one frame of an animation
  */
 struct DecompiledAnimFrame {
-    std::vector<RGBATile> tiles;
+    std::vector<RGBATile> tiles{};
     std::string frameName;
 
-    DecompiledAnimFrame(std::string frameName) : tiles{}, frameName{frameName} {}
+    explicit DecompiledAnimFrame(std::string frameName) : frameName{std::move(frameName)} {}
 
-    std::size_t size() const
+    [[nodiscard]] std::size_t size() const
     {
         return tiles.size();
     }
@@ -481,19 +469,19 @@ struct DecompiledAnimation {
     std::vector<DecompiledAnimFrame> frames;
     std::string animName;
 
-    DecompiledAnimation(std::string animName) : frames{}, animName{animName} {}
+    explicit DecompiledAnimation(std::string animName) : animName{std::move(animName)} {}
 
-    const DecompiledAnimFrame &keyFrame() const
+    [[nodiscard]] const DecompiledAnimFrame &keyFrame() const
     {
         return frames.at(keyFrameIndex());
     }
 
-    static const std::size_t keyFrameIndex()
+    static std::size_t keyFrameIndex()
     {
         return 0;
     }
 
-    std::size_t size() const
+    [[nodiscard]] std::size_t size() const
     {
         return frames.size();
     }
@@ -550,7 +538,7 @@ template <> struct std::hash<porytiles::NormalizedPixels> {
     {
         // TODO : better hash function
         std::size_t hashValue = 0;
-        for (auto pixel : pixels.colorIndexes) {
+        for (const auto pixel : pixels.colorIndexes) {
             hashValue ^= std::hash<uint8_t>{}(pixel);
         }
         return hashValue;
@@ -562,8 +550,8 @@ namespace porytiles {
  * TODO : fill in doc comment
  */
 struct NormalizedPalette {
-    int size;
-    std::array<BGR15, PAL_SIZE> colors;
+    int size{};
+    std::array<BGR15, PAL_SIZE> colors{};
 };
 } // namespace porytiles
 
@@ -592,40 +580,44 @@ struct NormalizedTile {
      * it is the frame the user supplies in the layer PNGs to "key" in to a particular animation. However, the actual
      * animation is stored in the 00.png, 01.png, etc. The game will never display the key-frame in-game.
      */
-    std::vector<NormalizedPixels> frames;
+    std::vector<NormalizedPixels> frames{};
     /*
      * This palette is the combined palette for all frames. We want to handle it this way, since for anim tiles, each
      * frame in the animation must be placed in the same hardware palette.
      */
-    NormalizedPalette palette;
-    bool hFlip;
-    bool vFlip;
+    NormalizedPalette palette{};
+    bool hFlip{};
+    bool vFlip{};
 
     /*
      * Metadata Fields:
      * These are used by the various components to track metadata around the usage context of a NormalizedTile. Allows
      * Porytiles to give much more detailed error messages.
      */
-    TileType type;
+    TileType type{};
 
     // raw tile index, used for FREESTANDING and ANIM types
-    std::size_t tileIndex;
+    std::size_t tileIndex{};
 
     // LAYERED specific metadata
-    TileLayer layer;
-    std::size_t metatileIndex;
-    Subtile subtile;
+    TileLayer layer{};
+    std::size_t metatileIndex{};
+    Subtile subtile{};
 
     // ANIM specific metadata
-    std::string anim;
+    std::string anim{};
 
     // PRIMER specific metadata
-    std::string primer;
+    std::string primer{};
+
+    // OVERRIDE specific metadata
+    std::string overrideFilename{};
+    std::size_t overridePaletteIndex{};
 
     // Metatile attributes for this tile
-    Attributes attributes;
+    Attributes attributes{};
 
-    explicit NormalizedTile(RGBA32 transparency) : frames{}, palette{}, hFlip{}, vFlip{}
+    explicit NormalizedTile(const RGBA32 transparency)
     {
         palette.size = 1;
         palette.colors[0] = rgbaToBgr(transparency);
@@ -641,6 +633,8 @@ struct NormalizedTile {
         this->subtile = tile.subtile;
         this->anim = tile.anim;
         this->primer = tile.primer;
+        this->overrideFilename = tile.overrideFilename;
+        this->overridePaletteIndex = tile.overridePaletteIndex;
         this->attributes = tile.attributes;
     }
 
@@ -649,7 +643,7 @@ struct NormalizedTile {
         return palette.size == 1;
     }
 
-    void setPixel(std::size_t frame, std::size_t row, std::size_t col, uint8_t value)
+    void setPixel(const std::size_t frame, const std::size_t row, const std::size_t col, const uint8_t value)
     {
         if (frame >= frames.size()) {
             throw std::out_of_range{"internal: NormalizedTile::setPixel frame argument out of bounds (" +
@@ -666,12 +660,12 @@ struct NormalizedTile {
         frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH_PIX + col] = value;
     }
 
-    const NormalizedPixels &keyFrame() const
+    [[nodiscard]] const NormalizedPixels &keyFrame() const
     {
         return frames.at(keyFrameIndex());
     }
 
-    static const std::size_t keyFrameIndex()
+    static std::size_t keyFrameIndex()
     {
         return 0;
     }
@@ -690,6 +684,14 @@ template <> struct std::hash<porytiles::NormalizedTile> {
         hashValue ^= std::hash<bool>{}(tile.hFlip);
         hashValue ^= std::hash<bool>{}(tile.vFlip);
         return hashValue;
+    }
+};
+
+template <> struct std::hash<std::pair<std::size_t, std::size_t>> {
+    std::size_t operator()(const std::pair<std::size_t, std::size_t> &pair) const noexcept
+    {
+        // TODO : better hash function
+        return std::hash<std::size_t>{}(pair.first) ^ std::hash<std::size_t>{}(pair.second);
     }
 };
 
@@ -724,13 +726,13 @@ std::string decompilerModeString(DecompilerMode mode);
 
 struct FieldmapConfig {
     // Fieldmap params
-    std::size_t numTilesInPrimary;
-    std::size_t numTilesTotal;
-    std::size_t numMetatilesInPrimary;
-    std::size_t numMetatilesTotal;
-    std::size_t numPalettesInPrimary;
-    std::size_t numPalettesTotal;
-    std::size_t numTilesPerMetatile;
+    std::size_t numTilesInPrimary{};
+    std::size_t numTilesTotal{};
+    std::size_t numMetatilesInPrimary{};
+    std::size_t numMetatilesTotal{};
+    std::size_t numPalettesInPrimary{};
+    std::size_t numPalettesTotal{};
+    std::size_t numTilesPerMetatile{};
 
     [[nodiscard]] std::size_t numPalettesInSecondary() const
     {
@@ -749,7 +751,7 @@ struct FieldmapConfig {
 
     static FieldmapConfig pokeemeraldDefaults()
     {
-        FieldmapConfig config;
+        FieldmapConfig config{};
         config.numTilesInPrimary = 512;
         config.numTilesTotal = 1024;
         config.numMetatilesInPrimary = 512;
@@ -762,7 +764,7 @@ struct FieldmapConfig {
 
     static FieldmapConfig pokefireredDefaults()
     {
-        FieldmapConfig config;
+        FieldmapConfig config{};
         config.numTilesInPrimary = 640;
         config.numTilesTotal = 1024;
         config.numMetatilesInPrimary = 640;
@@ -775,7 +777,7 @@ struct FieldmapConfig {
 
     static FieldmapConfig pokerubyDefaults()
     {
-        FieldmapConfig config;
+        FieldmapConfig config{};
         config.numTilesInPrimary = 512;
         config.numTilesTotal = 1024;
         config.numMetatilesInPrimary = 512;
@@ -792,182 +794,195 @@ struct CompilerSourcePaths {
     std::string secondarySourcePath;
     std::string metatileBehaviors;
 
-    std::filesystem::path bottomPrimaryTilesheet() const
+    [[nodiscard]] std::filesystem::path bottomPrimaryTilesheet() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"bottom.png"};
     }
 
-    std::filesystem::path middlePrimaryTilesheet() const
+    [[nodiscard]] std::filesystem::path middlePrimaryTilesheet() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"middle.png"};
     }
 
-    std::filesystem::path topPrimaryTilesheet() const
+    [[nodiscard]] std::filesystem::path topPrimaryTilesheet() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"top.png"};
     }
 
-    std::filesystem::path bottomSecondaryTilesheet() const
+    [[nodiscard]] std::filesystem::path bottomSecondaryTilesheet() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"bottom.png"};
     }
 
-    std::filesystem::path middleSecondaryTilesheet() const
+    [[nodiscard]] std::filesystem::path middleSecondaryTilesheet() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"middle.png"};
     }
 
-    std::filesystem::path topSecondaryTilesheet() const
+    [[nodiscard]] std::filesystem::path topSecondaryTilesheet() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"top.png"};
     }
 
-    std::filesystem::path primaryAttributes() const
+    [[nodiscard]] std::filesystem::path primaryAttributes() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"attributes.csv"};
     }
 
-    std::filesystem::path secondaryAttributes() const
+    [[nodiscard]] std::filesystem::path secondaryAttributes() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"attributes.csv"};
     }
 
-    std::filesystem::path primaryAnims() const
+    [[nodiscard]] std::filesystem::path primaryAnims() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    std::filesystem::path secondaryAnims() const
+    [[nodiscard]] std::filesystem::path secondaryAnims() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    std::filesystem::path primaryAssignCache() const
+    [[nodiscard]] std::filesystem::path primaryAssignCache() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"assign.cache"};
     }
 
-    std::filesystem::path secondaryAssignCache() const
+    [[nodiscard]] std::filesystem::path secondaryAssignCache() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"assign.cache"};
     }
 
-    std::filesystem::path primaryPalettePrimers() const
+    [[nodiscard]] std::filesystem::path primaryPalettePrimers() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"palette-primers"};
     }
 
-    std::filesystem::path secondaryPalettePrimers() const
+    [[nodiscard]] std::filesystem::path secondaryPalettePrimers() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"palette-primers"};
     }
 
-    std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
-    std::filesystem::path modeBasedBottomTilesheetPath(CompilerMode mode) const;
-    std::filesystem::path modeBasedMiddleTilesheetPath(CompilerMode mode) const;
-    std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
-    std::filesystem::path modeBasedAttributePath(CompilerMode mode) const;
-    std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
-    std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
-    std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path primaryPaletteOverrides() const
+    {
+        const std::filesystem::path path{primarySourcePath};
+        return path / std::filesystem::path{"palette-overrides"};
+    }
+
+    [[nodiscard]] std::filesystem::path secondaryPaletteOverrides() const
+    {
+        const std::filesystem::path path{secondarySourcePath};
+        return path / std::filesystem::path{"palette-overrides"};
+    }
+
+    [[nodiscard]] std::filesystem::path modeBasedSrcPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedBottomTilesheetPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedMiddleTilesheetPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedAttributePath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedPaletteOverridePath(CompilerMode mode) const;
 };
 
 struct DecompilerSourcePaths {
-    std::string primarySourcePath;
-    std::string secondarySourcePath;
-    std::string metatileBehaviors;
+    std::string primarySourcePath{};
+    std::string secondarySourcePath{};
+    std::string metatileBehaviors{};
 
-    std::filesystem::path primaryMetatilesBin() const
+    [[nodiscard]] std::filesystem::path primaryMetatilesBin() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"metatiles.bin"};
     }
 
-    std::filesystem::path primaryAttributesBin() const
+    [[nodiscard]] std::filesystem::path primaryAttributesBin() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"metatile_attributes.bin"};
     }
 
-    std::filesystem::path primaryTilesPng() const
+    [[nodiscard]] std::filesystem::path primaryTilesPng() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"tiles.png"};
     }
 
-    std::filesystem::path primaryPalettes() const
+    [[nodiscard]] std::filesystem::path primaryPalettes() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"palettes"};
     }
 
-    std::filesystem::path primaryAnims() const
+    [[nodiscard]] std::filesystem::path primaryAnims() const
     {
-        std::filesystem::path path{primarySourcePath};
+        const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    std::filesystem::path secondaryMetatilesBin() const
+    [[nodiscard]] std::filesystem::path secondaryMetatilesBin() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"metatiles.bin"};
     }
 
-    std::filesystem::path secondaryAttributesBin() const
+    [[nodiscard]] std::filesystem::path secondaryAttributesBin() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"metatile_attributes.bin"};
     }
 
-    std::filesystem::path secondaryTilesPng() const
+    [[nodiscard]] std::filesystem::path secondaryTilesPng() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"tiles.png"};
     }
 
-    std::filesystem::path secondaryPalettes() const
+    [[nodiscard]] std::filesystem::path secondaryPalettes() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"palettes"};
     }
 
-    std::filesystem::path secondaryAnims() const
+    [[nodiscard]] std::filesystem::path secondaryAnims() const
     {
-        std::filesystem::path path{secondarySourcePath};
+        const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
-    std::filesystem::path modeBasedTilesPath(DecompilerMode mode) const;
-    std::filesystem::path modeBasedMetatilesPath(DecompilerMode mode) const;
-    std::filesystem::path modeBasedAttributePath(DecompilerMode mode) const;
-    std::filesystem::path modeBasedPalettePath(DecompilerMode mode) const;
-    std::filesystem::path modeBasedAnimPath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedSrcPath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedTilesPath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedMetatilesPath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedAttributePath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedPalettePath(DecompilerMode mode) const;
+    [[nodiscard]] std::filesystem::path modeBasedAnimPath(DecompilerMode mode) const;
 };
 
 struct Output {
     TilesOutputPalette paletteMode;
     bool disableMetatileGeneration;
     bool disableAttributeGeneration;
-    std::string path;
+    std::string path{};
 
     Output()
         : paletteMode{TilesOutputPalette::GREYSCALE}, disableMetatileGeneration{false},
-          disableAttributeGeneration{false}, path{}
+          disableAttributeGeneration{false}
     {
     }
 };
@@ -1014,12 +1029,10 @@ struct DecompilerConfig {
 };
 
 struct CompilerContext {
-    std::unique_ptr<CompiledTileset> pairedPrimaryTileset;
-    std::unique_ptr<CompiledTileset> resultTileset;
-    std::unordered_map<BGR15, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>> bgrToRgba;
-    std::size_t exploredNodeCounter;
-
-    CompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr}, bgrToRgba{}, exploredNodeCounter{} {}
+    std::unique_ptr<CompiledTileset> pairedPrimaryTileset{nullptr};
+    std::unique_ptr<CompiledTileset> resultTileset{nullptr};
+    std::unordered_map<BGR15, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>> bgrToRgba{};
+    std::size_t exploredNodeCounter{};
 };
 
 struct DecompilerContext {

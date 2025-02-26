@@ -537,6 +537,20 @@ std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMo
     throw std::runtime_error("types::InputPaths::modeBasedPalettePrimerPath (compile) reached unreachable code path");
 }
 
+std::filesystem::path CompilerSourcePaths::modeBasedPaletteOverridePath(CompilerMode mode) const
+{
+    switch (mode) {
+    case CompilerMode::PRIMARY:
+        return primaryPaletteOverrides();
+    case CompilerMode::SECONDARY:
+        return secondaryPaletteOverrides();
+    default:
+        internalerror_unknownCompilerMode("types::InputPaths::modeBasedPaletteOverridePath");
+    }
+    // unreachable, here for compiler
+    throw std::runtime_error("types::InputPaths::modeBasedPaletteOverridePath (compile) reached unreachable code path");
+}
+
 std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mode) const
 {
     switch (mode) {

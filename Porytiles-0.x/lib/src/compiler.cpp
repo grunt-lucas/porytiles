@@ -169,16 +169,17 @@ static NormalizedTile normalize(PorytilesContext &ctx, CompilerMode compilerMode
     return **normalizedTile;
 }
 
-static std::pair<std::vector<IndexAndNormTile>, std::vector<NormalizedTile>>
+static std::tuple<std::vector<IndexAndNormTile>, std::vector<NormalizedTile>, std::vector<NormalizedTile>>
 normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTileset &decompiledTileset,
-                     const std::vector<RGBATile> &palettePrimers)
+                     const std::vector<RGBATile> &palettePrimers, const std::vector<RGBATile> &paletteOverrides)
 {
     /*
      * For each tile in the decomp tileset, normalize it and tag it with its index in the decomp tileset. We tag the
-     * animated tiles first, then tag the regular assignment tiles.
+     * animated tiles first, then tag the regular assignment tiles. Finally, we tag the primers and the overrides.
      */
-    std::vector<IndexAndNormTile> normalizedTiles;
-    std::vector<NormalizedTile> normalizedPrimers;
+    std::vector<IndexAndNormTile> normalizedTiles{};
+    std::vector<NormalizedTile> normalizedPrimers{};
+    std::vector<NormalizedTile> normalizedOverrides{};
 
     for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
         const auto &anim = decompiledTileset.anims.at(animIndex);
@@ -186,6 +187,7 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
         for (std::size_t tileIndex = 0; tileIndex < anim.keyFrame().size(); tileIndex++) {
             std::vector<RGBATile> multiFrameTile{};
             // For each tile, push all frames of the tile into a vector
+            multiFrameTile.reserve(anim.size());
             for (std::size_t frameIndex = 0; frameIndex < anim.size(); frameIndex++) {
                 multiFrameTile.push_back(anim.frames.at(frameIndex).tiles.at(tileIndex));
             }
@@ -199,6 +201,7 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
         }
     }
 
+    // TODO : should we rethink the order in which we process these?
     std::size_t tileIndex = 0;
     for (const auto &tile : decompiledTileset.tiles) {
         std::vector<RGBATile> singleFrameTile = {tile};
@@ -213,9 +216,14 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
         std::vector<RGBATile> singleFramePrimerTile = {primerTile};
         auto normalizedPrimerTile = normalize(ctx, compilerMode, singleFramePrimerTile);
         normalizedPrimerTile.copyMetadataFrom(primerTile);
-        DecompiledIndex index{};
-        index.tileIndex = tileIndex++;
         normalizedPrimers.emplace_back(normalizedPrimerTile);
+    }
+
+    for (const auto &overrideTile : paletteOverrides) {
+        std::vector<RGBATile> singleFrameOverrideTile = {overrideTile};
+        auto normalizedOverrideTile = normalize(ctx, compilerMode, singleFrameOverrideTile);
+        normalizedOverrideTile.copyMetadataFrom(overrideTile);
+        normalizedOverrides.emplace_back(normalizedOverrideTile);
     }
 
     if (ctx.err.errCount > 0) {
@@ -223,12 +231,14 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
                        "errors generated during tile normalization");
     }
 
-    return std::pair{normalizedTiles, normalizedPrimers};
+    return std::tuple{normalizedTiles, normalizedPrimers, normalizedOverrides};
 }
 
-static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>> buildColorIndexMaps(
-    PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<IndexAndNormTile> &normalizedTiles,
-    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap, const std::vector<NormalizedTile> &primerTiles)
+static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
+buildColorIndexMaps(PorytilesContext &ctx, CompilerMode compilerMode,
+                    const std::vector<IndexAndNormTile> &normalizedTiles,
+                    const std::unordered_map<BGR15, std::size_t> &primaryIndexMap,
+                    const std::vector<NormalizedTile> &primerTiles, const std::vector<NormalizedTile> &overrideTiles)
 {
     /*
      * Iterate over every color in each tile's NormalizedPalette, adding it to the map if not already present. We end up
@@ -249,6 +259,7 @@ static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std:
             }
         }
     }
+    // TODO : should we rethink the order in which we process these?
     std::size_t colorIndex = primaryIndexMap.size();
     for (const auto &[_, normalizedTile] : normalizedTiles) {
         // i starts at 1, since first color in each palette is the transparency color
@@ -262,6 +273,16 @@ static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std:
         }
     }
     for (const auto &normalizedTile : primerTiles) {
+        for (int i = 1; i < normalizedTile.palette.size; i++) {
+            const BGR15 &color = normalizedTile.palette.colors[i];
+            bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
+            if (inserted) {
+                indexesToColors.insert(std::pair{colorIndex, color});
+                colorIndex++;
+            }
+        }
+    }
+    for (const auto &normalizedTile : overrideTiles) {
         for (int i = 1; i < normalizedTile.palette.size; i++) {
             const BGR15 &color = normalizedTile.palette.colors[i];
             bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
@@ -296,8 +317,7 @@ static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std:
     return {colorIndexes, indexesToColors};
 }
 
-static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
-                           const NormalizedPalette &palette)
+static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIndexMap, const NormalizedTile &tile)
 {
     /*
      * Set a color set based on a given palette. Each bit in the ColorSet represents if the color at the given index in
@@ -305,27 +325,40 @@ static ColorSet toColorSet(const std::unordered_map<BGR15, std::size_t> &colorIn
      * palette has two colors in it, which correspond to index 2 and index 11. The ColorSet bitset would be:
      * 0010 0000 0001
      */
-    ColorSet colorSet;
+    ColorSet colorSet{};
     // starts at 1, skip the transparent color at slot 0 in the normalized palette
-    for (int i = 1; i < palette.size; i++) {
-        colorSet.set(colorIndexMap.at(palette.colors.at(i)));
+    for (int i = 1; i < tile.palette.size; i++) {
+        colorSet.first.set(colorIndexMap.at(tile.palette.colors.at(i)));
     }
+    colorSet.second = tile.overridePaletteIndex;
     return colorSet;
 }
 
-static std::tuple<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>, std::vector<ColorSet>>
+static std::tuple<std::vector<IndexedNormTileWithColorSet>, std::vector<ColorSet>, std::vector<ColorSet>,
+                  std::vector<ColorSet>>
 matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &colorIndexMap,
                              const std::vector<IndexAndNormTile> &indexedNormalizedTiles,
-                             const std::vector<NormalizedTile> &normalizedPrimers)
+                             const std::vector<NormalizedTile> &normalizedPrimers,
+                             const std::vector<NormalizedTile> &normalizedOverrides)
 {
-    std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets;
-    std::unordered_set<ColorSet> uniqueColorSets;
-    std::vector<ColorSet> colorSets;
-    std::unordered_set<ColorSet> uniquePrimerColorSets;
-    std::vector<ColorSet> primerColorSets;
+    std::vector<IndexedNormTileWithColorSet> indexedNormTilesWithColorSets{};
+    std::unordered_set<ColorSet> uniqueColorSets{};
+    std::vector<ColorSet> colorSets{};
+    std::unordered_set<ColorSet> uniquePrimerColorSets{};
+    std::vector<ColorSet> primerColorSets{};
+
+    /*
+     * We don't have a uniqueness set for overrides. This is because we allow users to specify non-unique palette
+     * overrides if they really want. E.g. 01.pal and 03.pal could have identical overridden colors, just in different
+     * pal slots. I don't see a reason users would ever need to do this, but it's not logically incoherent and thus
+     * allowed.
+     */
+    // TODO : Perhaps at some point we should disallow the above and throw an error? I could see it being confusing
+    std::vector<ColorSet> overrideColorSets{};
+
     for (const auto &[index, normalizedTile] : indexedNormalizedTiles) {
         // Compute the ColorSet for this normalized tile, then add it to our indexes
-        auto colorSet = toColorSet(colorIndexMap, normalizedTile.palette);
+        auto colorSet = toColorSet(colorIndexMap, normalizedTile);
         indexedNormTilesWithColorSets.emplace_back(index, normalizedTile, colorSet);
         if (!uniqueColorSets.contains(colorSet)) {
             colorSets.push_back(colorSet);
@@ -336,25 +369,34 @@ matchNormalizedWithColorSets(const std::unordered_map<BGR15, std::size_t> &color
     // Special primer ColorSets
     for (const auto &normalizedPrimerTile : normalizedPrimers) {
         // Compute the ColorSet for this normalized tile, then add it to our indexes
-        auto colorSet = toColorSet(colorIndexMap, normalizedPrimerTile.palette);
+        auto colorSet = toColorSet(colorIndexMap, normalizedPrimerTile);
         if (!uniquePrimerColorSets.contains(colorSet)) {
             primerColorSets.push_back(colorSet);
             uniquePrimerColorSets.insert(colorSet);
         }
     }
 
-    return std::tuple{indexedNormTilesWithColorSets, colorSets, primerColorSets};
+    // Special override ColorSets
+    for (const auto &normalizedOverrideTile : normalizedOverrides) {
+        // Compute the ColorSet for this normalized tile, then add it to our indexes
+        auto colorSet = toColorSet(colorIndexMap, normalizedOverrideTile);
+        overrideColorSets.push_back(colorSet);
+    }
+
+    return std::tuple{indexedNormTilesWithColorSets, colorSets, primerColorSets, overrideColorSets};
 }
 
-static GBATile makeTile(const NormalizedTile &normalizedTile, std::size_t frame, GBAPalette palette)
+static GBATile makeTile(const NormalizedTile &normalizedTile, const std::size_t frame, const GBAPalette &palette)
 {
     GBATile gbaTile{};
     std::array<std::uint8_t, PAL_SIZE> paletteIndexes{};
     paletteIndexes.at(0) = 0;
     for (int i = 1; i < normalizedTile.palette.size; i++) {
-        auto it = std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
+        const auto it =
+            std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
         if (it == std::end(palette.colors)) {
-            internalerror("compiler::makeTile it == std::end(palette.colors)");
+            internalerror(fmt::format("compiler::makeTile it == std::end(palette.colors) for color {}",
+                                      bgrToRgba(normalizedTile.palette.colors[i]).jasc()));
         }
         paletteIndexes.at(i) = it - std::begin(palette.colors);
     }
@@ -396,7 +438,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
                                [&colorSet](const auto &assignedPal) {
                                    // Find which of the assignedSolution palettes this tile belongs to
-                                   return (colorSet & ~assignedPal).none();
+                                   return (colorSet.first & ~assignedPal.first).none();
                                });
         if (it == std::end(assignedPalsSolution)) {
             internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
@@ -466,7 +508,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         auto it = std::find_if(std::begin(assignedPalsSolution), std::end(assignedPalsSolution),
                                [&colorSet](const auto &assignedPal) {
                                    // Find which of the assignedSolution palettes this tile belongs to
-                                   return (colorSet & ~assignedPal).none();
+                                   return (colorSet.first & ~assignedPal.first).none();
                                });
         if (it == std::end(assignedPalsSolution)) {
             internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
@@ -543,7 +585,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
                  index.animIndex, index.tileIndex);
         auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets), [&colorSet](const auto &assignedPal) {
             // Find which of the allColorSets palettes this tile belongs to
-            return (colorSet & ~assignedPal).none();
+            return (colorSet.first & ~assignedPal.first).none();
         });
         if (it == std::end(allColorSets)) {
             internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
@@ -623,7 +665,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
 
         auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets), [&colorSet](const auto &assignedPal) {
             // Find which of the allColorSets palettes this tile belongs to
-            return (colorSet & ~assignedPal).none();
+            return (colorSet.first & ~assignedPal.first).none();
         });
         if (it == std::end(allColorSets)) {
             internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
@@ -681,16 +723,126 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
     }
 }
 
-std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode compilerMode,
-                                         const DecompiledTileset &decompiledTileset,
-                                         const std::vector<RGBATile> &palettePrimers)
+static std::vector<ColorSet> assignHardwarePalettes(
+    const PorytilesContext &ctx, CompiledTileset &compiled, const CompilerMode mode,
+    const std::vector<ColorSet> &assignedPalsSolution, const std::unordered_map<std::size_t, BGR15> &indexToColor,
+    const std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>> &palOverridesMap)
+{
+    if (mode != CompilerMode::PRIMARY && mode != CompilerMode::SECONDARY) {
+        internalerror("compiler::assignHardwarePalettes invalid compiler mode");
+    }
+
+    std::unordered_set<std::size_t> usedHardwarePalettes{};
+    std::vector<ColorSet> reorderedAssignedPalsSolution{};
+    reorderedAssignedPalsSolution.resize(assignedPalsSolution.size());
+
+    if (mode == CompilerMode::SECONDARY) {
+        for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
+            // Copy the primary set's palettes into this tileset so tiles can use them
+            for (std::size_t j = 0; j < PAL_SIZE; j++) {
+                compiled.palettes.at(i).colors.at(j) =
+                    ctx.compilerContext.pairedPrimaryTileset->palettes.at(i).colors.at(j);
+            }
+        }
+    }
+
+    for (const auto &palSolution : assignedPalsSolution) {
+        /*
+         * Iterate over assignedPalsSolution and first place all solutions tagged with an override into the correct
+         * hardware palette.
+         */
+        if (palSolution.second != SIZE_MAX) {
+            auto overrideHardwarePalIndex = palSolution.second;
+            const auto &overriddenSlots = palOverridesMap.at(overrideHardwarePalIndex);
+            std::unordered_set<std::size_t> usedSlots{};
+            std::unordered_set<BGR15> usedBgrs{};
+            /*
+             * Iterate over overriddenSlots and first place all override colors into the correct slot.
+             */
+            for (const auto &slot : overriddenSlots) {
+                const auto &slotIndex = slot.first;
+                const auto &bgr = slot.second;
+                compiled.palettes.at(overrideHardwarePalIndex).colors.at(slotIndex) = bgr;
+                usedSlots.insert(slotIndex);
+                usedBgrs.insert(bgr);
+            }
+
+            std::size_t slotIndex = 1;
+            for (std::size_t j = 0; j < palSolution.first.size(); j++) {
+                // Skip over slotIndexes we already used above
+                for (; usedSlots.contains(slotIndex); slotIndex++)
+                    ;
+                if (palSolution.first.test(j)) {
+                    const auto &bgr = indexToColor.at(j);
+                    if (usedBgrs.contains(indexToColor.at(j))) {
+                        continue;
+                    }
+                    compiled.palettes.at(overrideHardwarePalIndex).colors.at(slotIndex) = bgr;
+                    usedSlots.insert(slotIndex);
+                    usedBgrs.insert(bgr);
+                    slotIndex++;
+                }
+            }
+
+            /*
+             * Place transparent color, set logical palette size, mark this hardware palette as used, and insert the
+             * hardware palette assignment solution into the correct order.
+             */
+            compiled.palettes.at(overrideHardwarePalIndex).colors.at(0) =
+                rgbaToBgr(ctx.compilerConfig.transparencyColor);
+            compiled.palettes.at(overrideHardwarePalIndex).size = slotIndex;
+            usedHardwarePalettes.insert(overrideHardwarePalIndex);
+            const std::size_t modeBasedIndex = mode == CompilerMode::PRIMARY
+                                                   ? overrideHardwarePalIndex
+                                                   : overrideHardwarePalIndex - ctx.fieldmapConfig.numPalettesInPrimary;
+            reorderedAssignedPalsSolution.at(modeBasedIndex) = palSolution;
+        }
+    }
+
+    std::size_t hardwarePalIndex = mode == CompilerMode::PRIMARY ? 0 : ctx.fieldmapConfig.numPalettesInPrimary;
+    for (const auto &palSolution : assignedPalsSolution) {
+        /*
+         * Iterate over assignedPalsSolution and place all solutions without an override into the first available
+         * hardware palette.
+         */
+        if (palSolution.second == SIZE_MAX) {
+            // Increment hardwarePalIndex until it’s no longer found in usedHardwarePalettes
+            for (; usedHardwarePalettes.contains(hardwarePalIndex); hardwarePalIndex++)
+                ;
+
+            // Place the solution
+            std::size_t colorIndex = 1;
+            for (std::size_t j = 0; j < palSolution.first.size(); j++) {
+                if (palSolution.first.test(j)) {
+                    compiled.palettes.at(hardwarePalIndex).colors.at(colorIndex) = indexToColor.at(j);
+                    colorIndex++;
+                }
+            }
+            compiled.palettes.at(hardwarePalIndex).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
+            compiled.palettes.at(hardwarePalIndex).size = colorIndex;
+            usedHardwarePalettes.insert(hardwarePalIndex);
+            const std::size_t modeBasedIndex = mode == CompilerMode::PRIMARY
+                                                   ? hardwarePalIndex
+                                                   : hardwarePalIndex - ctx.fieldmapConfig.numPalettesInPrimary;
+            reorderedAssignedPalsSolution.at(modeBasedIndex) = palSolution;
+        }
+    }
+
+    return reorderedAssignedPalsSolution;
+}
+
+std::unique_ptr<CompiledTileset>
+compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTileset &decompiledTileset,
+        const std::vector<RGBATile> &palettePrimers, const std::vector<RGBATile> &paletteOverrides,
+        const std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>> &palOverridesMap)
 {
     /*
      * Sanity check for matching paired primary palette sizes when compiling secondary
      */
     if (compilerMode == CompilerMode::SECONDARY &&
         (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
-        // FIXME : is this actually an internal error? It seems like a user could force this to happen via bad inputs
+        // FIXME : is this actually an internal error? It seems like a user could force this to happen via bad
+        // inputs
         internalerror(fmt::format(
             "compiler::compile config.numPalettesInPrimary did not match primary palette set size ({} != {})",
             ctx.fieldmapConfig.numPalettesInPrimary, ctx.compilerContext.pairedPrimaryTileset->palettes.size()));
@@ -726,11 +878,11 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode com
     compiled->metatileEntries.resize(decompiledTileset.tiles.size());
 
     /*
-     * Build indexed normalized tiles, order of this vector matches the decompiled iteration order, with animated tiles
-     * at the beginning. It also builds a separate vector of normalized primer tiles.
+     * Build indexed normalized tiles, order of this vector matches the decompiled iteration order, with animated
+     * tiles at the beginning. It also builds a separate vector of normalized primer tiles.
      */
-    auto [indexedNormTiles, normalizedPrimers] =
-        normalizeDecompTiles(ctx, compilerMode, decompiledTileset, palettePrimers);
+    auto [indexedNormTiles, normalizedPrimers, normalizedOverrides] =
+        normalizeDecompTiles(ctx, compilerMode, decompiledTileset, palettePrimers, paletteOverrides);
 
     /*
      * Map each unique color to a unique index between 0 and 240 (15 colors per palette * 16 palettes MAX)
@@ -740,66 +892,30 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode com
     if (compilerMode == CompilerMode::SECONDARY) {
         primaryColorIndexMap = &(ctx.compilerContext.pairedPrimaryTileset->colorIndexMap);
     }
-    auto [colorToIndex, indexToColor] =
-        buildColorIndexMaps(ctx, compilerMode, indexedNormTiles, *primaryColorIndexMap, normalizedPrimers);
+    auto [colorToIndex, indexToColor] = buildColorIndexMaps(ctx, compilerMode, indexedNormTiles, *primaryColorIndexMap,
+                                                            normalizedPrimers, normalizedOverrides);
     compiled->colorIndexMap = colorToIndex;
 
     /*
-     * colorSets is a vector: this enforces a well-defined ordering so tileset compilation results are identical across
-     * all compilers and platforms. A ColorSet is just a bitset<240> that marks which colors are present (indexes are
-     * based on the colorIndexMaps from above)
+     * colorSets is a vector: this enforces a well-defined ordering so tileset compilation results are identical
+     * across all compilers and platforms. A ColorSet is just a bitset<240> that marks which colors are present
+     * (indexes are based on the colorIndexMaps from above)
      */
-    auto [indexedNormTilesWithColorSets, colorSets, primerColorSets] =
-        matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, normalizedPrimers);
+    auto [indexedNormTilesWithColorSets, colorSets, primerColorSets, overrideColorSets] =
+        matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, normalizedPrimers, normalizedOverrides);
 
     /*
      * Run palette assignment.
      */
     auto [assignedPalsSolution, primaryPaletteColorSets] =
-        runPaletteAssignmentMatrix(ctx, compilerMode, colorSets, primerColorSets, colorToIndex);
+        runPaletteAssignmentMatrix(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex);
 
     /*
-     * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile sharing)
-     * and so we may need to do something fancier here so that the colors align correctly.
+     * Copy the assignments into the compiled palettes. In a future version we will support sibling tiles (tile
+     * sharing) and so we may need to do something fancier here so that the colors align correctly.
      */
-    if (compilerMode == CompilerMode::PRIMARY) {
-        for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
-            ColorSet palAssignments = assignedPalsSolution.at(i);
-            compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
-            std::size_t colorIndex = 1;
-            for (std::size_t j = 0; j < palAssignments.size(); j++) {
-                if (palAssignments.test(j)) {
-                    compiled->palettes.at(i).colors.at(colorIndex) = indexToColor.at(j);
-                    colorIndex++;
-                }
-            }
-            compiled->palettes.at(i).size = colorIndex;
-        }
-    }
-    else if (compilerMode == CompilerMode::SECONDARY) {
-        for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesInPrimary; i++) {
-            // Copy the primary set's palettes into this tileset so tiles can use them
-            for (std::size_t j = 0; j < PAL_SIZE; j++) {
-                compiled->palettes.at(i).colors.at(j) =
-                    ctx.compilerContext.pairedPrimaryTileset->palettes.at(i).colors.at(j);
-            }
-        }
-        for (std::size_t i = ctx.fieldmapConfig.numPalettesInPrimary; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
-            ColorSet palAssignments = assignedPalsSolution.at(i - ctx.fieldmapConfig.numPalettesInPrimary);
-            compiled->palettes.at(i).colors.at(0) = rgbaToBgr(ctx.compilerConfig.transparencyColor);
-            std::size_t colorIndex = 1;
-            for (std::size_t j = 0; j < palAssignments.size(); j++) {
-                if (palAssignments.test(j)) {
-                    compiled->palettes.at(i).colors.at(colorIndex) = indexToColor.at(j);
-                    colorIndex++;
-                }
-            }
-            compiled->palettes.at(i).size = colorIndex;
-        }
-    }
-    else {
-        internalerror_unknownCompilerMode("compiler::compile");
-    }
+    std::vector<ColorSet> reorderedAssignedPalsSolution =
+        assignHardwarePalettes(ctx, *compiled, compilerMode, assignedPalsSolution, indexToColor, palOverridesMap);
 
     /*
      * Setup the compiled animations
@@ -819,11 +935,11 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode com
      * Build the metatile entries.
      */
     if (compilerMode == CompilerMode::PRIMARY) {
-        assignTilesPrimary(ctx, *compiled, indexedNormTilesWithColorSets, assignedPalsSolution);
+        assignTilesPrimary(ctx, *compiled, indexedNormTilesWithColorSets, reorderedAssignedPalsSolution);
     }
     else if (compilerMode == CompilerMode::SECONDARY) {
         assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets,
-                             assignedPalsSolution);
+                             reorderedAssignedPalsSolution);
     }
     else {
         internalerror_unknownCompilerMode("compiler::compile");
@@ -832,7 +948,8 @@ std::unique_ptr<CompiledTileset> compile(PorytilesContext &ctx, CompilerMode com
     /*
      * Push back transparent tiles to pad out tileset to a non-zero multiple of 16
      */
-    while (compiled->tiles.size() % 16 != 0 || compiled->tiles.size() == 0) {
+    compiled->sizeBeforePadding = compiled->tiles.size();
+    while (compiled->tiles.size() % 16 != 0 || compiled->tiles.empty()) {
         compiled->tiles.push_back(GBA_TILE_TRANSPARENT);
         compiled->paletteIndexesOfTile.push_back(0);
     }
@@ -1087,7 +1204,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
 
-    auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [indexedNormTiles, _1, _2] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
 
     CHECK(indexedNormTiles.size() == 4);
 
@@ -1200,7 +1317,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 
     porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, tiles);
 
-    auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [indexedNormTiles, _1, _2] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
 
     CHECK(indexedNormTiles.size() == 13);
 
@@ -1272,10 +1389,11 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-    auto [indexedNormTiles, _] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [indexedNormTiles, _1, _2] =
+        porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
 
     auto [colorToIndex, indexToColor] =
-        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
+        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {}, {});
 
     CHECK(colorToIndex.size() == 4);
     CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1294,30 +1412,30 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 
     SUBCASE("palette 1")
     {
-        porytiles::NormalizedPalette palette{};
-        palette.size = 2;
-        palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
-        palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
+        porytiles::NormalizedTile tile{porytiles::RGBA_MAGENTA};
+        tile.palette.size = 2;
+        tile.palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
+        tile.palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_RED);
 
-        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, palette);
-        CHECK(colorSet.count() == 1);
-        CHECK(colorSet.test(1));
+        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, tile);
+        CHECK(colorSet.first.count() == 1);
+        CHECK(colorSet.first.test(1));
     }
 
     SUBCASE("palette 2")
     {
-        porytiles::NormalizedPalette palette{};
-        palette.size = 4;
-        palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
-        palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_YELLOW);
-        palette.colors[2] = porytiles::rgbaToBgr(porytiles::RGBA_GREEN);
-        palette.colors[3] = porytiles::rgbaToBgr(porytiles::RGBA_CYAN);
+        porytiles::NormalizedTile tile{porytiles::RGBA_MAGENTA};
+        tile.palette.size = 4;
+        tile.palette.colors[0] = porytiles::rgbaToBgr(porytiles::RGBA_MAGENTA);
+        tile.palette.colors[1] = porytiles::rgbaToBgr(porytiles::RGBA_YELLOW);
+        tile.palette.colors[2] = porytiles::rgbaToBgr(porytiles::RGBA_GREEN);
+        tile.palette.colors[3] = porytiles::rgbaToBgr(porytiles::RGBA_CYAN);
 
-        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, palette);
-        CHECK(colorSet.count() == 3);
-        CHECK(colorSet.test(4));
-        CHECK(colorSet.test(2));
-        CHECK(colorSet.test(3));
+        ColorSet colorSet = porytiles::toColorSet(colorIndexMap, tile);
+        CHECK(colorSet.first.count() == 3);
+        CHECK(colorSet.first.test(4));
+        CHECK(colorSet.first.test(2));
+        CHECK(colorSet.first.test(3));
     }
 }
 
@@ -1329,9 +1447,10 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-    auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+    auto [indexedNormTiles, _1, _2] =
+        porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
     auto [colorToIndex, indexToColor] =
-        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
+        porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {}, {});
 
     CHECK(colorToIndex.size() == 4);
     CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_BLUE)] == 0);
@@ -1339,8 +1458,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_RED)] == 2);
     CHECK(colorToIndex[porytiles::rgbaToBgr(porytiles::RGBA_CYAN)] == 3);
 
-    auto [indexedNormTilesWithColorSets, colorSets, _2] =
-        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
+    auto [indexedNormTilesWithColorSets, colorSets, _3, _4] =
+        porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {}, {});
 
     CHECK(indexedNormTilesWithColorSets.size() == 4);
     // colorSets size is 3 because first and fourth tiles have the same palette
@@ -1360,8 +1479,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
           porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[0]).hFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[0]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).count() == 1);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).test(0));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).first.count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[0]).first.test(0));
     CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[0])) !=
           colorSets.end());
 
@@ -1380,9 +1499,9 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     CHECK(std::get<1>(indexedNormTilesWithColorSets[1]).palette.colors[2] == porytiles::rgbaToBgr(porytiles::RGBA_RED));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).hFlip);
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[1]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).count() == 2);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(1));
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).test(2));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).first.count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).first.test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[1]).first.test(2));
     CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[1])) !=
           colorSets.end());
 
@@ -1401,9 +1520,9 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
           porytiles::rgbaToBgr(porytiles::RGBA_GREEN));
     CHECK_FALSE(std::get<1>(indexedNormTilesWithColorSets[2]).vFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[2]).hFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).count() == 2);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(1));
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).test(3));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).first.count() == 2);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).first.test(1));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[2]).first.test(3));
     CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[2])) !=
           colorSets.end());
 
@@ -1421,8 +1540,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
           porytiles::rgbaToBgr(porytiles::RGBA_BLUE));
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).hFlip);
     CHECK(std::get<1>(indexedNormTilesWithColorSets[3]).vFlip);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).count() == 1);
-    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).test(0));
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).first.count() == 1);
+    CHECK(std::get<2>(indexedNormTilesWithColorSets[3]).first.test(0));
     CHECK(std::find(colorSets.begin(), colorSets.end(), std::get<2>(indexedNormTilesWithColorSets[3])) !=
           colorSets.end());
 }
@@ -1439,11 +1558,12 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
         png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
         porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-        auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+        auto [indexedNormTiles, _1, _2] =
+            porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
         auto [colorToIndex, indexToColor] =
-            porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
-        auto [indexedNormTilesWithColorSets, colorSets, _2] =
-            porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
+            porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {}, {});
+        auto [indexedNormTilesWithColorSets, colorSets, _3, _4] =
+            porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {}, {});
 
         // Set up the state struct
         std::vector<ColorSet> solution;
@@ -1453,18 +1573,18 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         std::vector<ColorSet> unassigned;
         std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
         std::stable_sort(std::begin(unassigned), std::end(unassigned),
-                         [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+                         [](const auto &cs1, const auto &cs2) { return cs1.first.count() < cs2.first.count(); });
         porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
         CHECK(porytiles::assignDepthFirst(ctx, porytiles::CompilerMode::PRIMARY, state, solution, {}, unassigned, {}) ==
               porytiles::AssignResult::SUCCESS);
         CHECK(solution.size() == SOLUTION_SIZE);
-        CHECK(solution.at(0).count() == 1);
-        CHECK(solution.at(1).count() == 3);
-        CHECK(solution.at(0).test(0));
-        CHECK(solution.at(1).test(1));
-        CHECK(solution.at(1).test(2));
-        CHECK(solution.at(1).test(3));
+        CHECK(solution.at(0).first.count() == 1);
+        CHECK(solution.at(1).first.count() == 3);
+        CHECK(solution.at(0).first.test(0));
+        CHECK(solution.at(1).first.test(1));
+        CHECK(solution.at(1).first.test(2));
+        CHECK(solution.at(1).first.test(3));
     }
 
     SUBCASE("It should successfully allocate a large, complex PNG")
@@ -1477,11 +1597,12 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compile_raw_set_1/set.png"}));
         png::image<png::rgba_pixel> png1{"Resources/Tests/compile_raw_set_1/set.png"};
         porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-        auto [indexedNormTiles, _1] = porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
+        auto [indexedNormTiles, _1, _2] =
+            porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
         auto [colorToIndex, indexToColor] =
-            porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {});
-        auto [indexedNormTilesWithColorSets, colorSets, _2] =
-            porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {});
+            porytiles::buildColorIndexMaps(ctx, porytiles::CompilerMode::PRIMARY, indexedNormTiles, {}, {}, {});
+        auto [indexedNormTilesWithColorSets, colorSets, _3, _4] =
+            porytiles::matchNormalizedWithColorSets(colorToIndex, indexedNormTiles, {}, {});
 
         // Set up the state struct
         std::vector<ColorSet> solution;
@@ -1491,17 +1612,17 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         std::vector<ColorSet> unassigned;
         std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassigned));
         std::stable_sort(std::begin(unassigned), std::end(unassigned),
-                         [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+                         [](const auto &cs1, const auto &cs2) { return cs1.first.count() < cs2.first.count(); });
         porytiles::AssignState state = {hardwarePalettes, unassigned.size(), 0};
 
         CHECK(porytiles::assignDepthFirst(ctx, porytiles::CompilerMode::PRIMARY, state, solution, {}, unassigned, {}) ==
               porytiles::AssignResult::SUCCESS);
         CHECK(solution.size() == SOLUTION_SIZE);
-        CHECK(solution.at(0).count() == 11);
-        CHECK(solution.at(1).count() == 12);
-        CHECK(solution.at(2).count() == 14);
-        CHECK(solution.at(3).count() == 14);
-        CHECK(solution.at(4).count() == 15);
+        CHECK(solution.at(0).first.count() == 11);
+        CHECK(solution.at(1).first.count() == 12);
+        CHECK(solution.at(2).first.count() == 14);
+        CHECK(solution.at(3).first.count() == 14);
+        CHECK(solution.at(4).first.count() == 15);
     }
 }
 
@@ -1517,9 +1638,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-    auto [indexedNormTiles, _] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {});
-    auto compiledTiles =
-        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, std::vector<porytiles::RGBATile>{});
+    auto [indexedNormTiles, _1, _2] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
+    auto compiledTiles = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {}, {});
 
     porytiles::GBATile tile0 = porytiles::makeTile(
         indexedNormTiles[0].second, porytiles::NormalizedTile::keyFrameIndex(), compiledTiles->palettes[0]);
@@ -1572,8 +1692,7 @@ TEST_CASE("compile simple example should perform as expected")
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
-    auto compiledTiles =
-        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, std::vector<porytiles::RGBATile>{});
+    auto compiledTiles = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {}, {});
 
     // Check that compiled palettes are as expected
     CHECK(compiledTiles->palettes.at(0).colors[0] == porytiles::rgbaToBgr(ctx.compilerConfig.transparencyColor));
@@ -1653,8 +1772,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                              std::vector<porytiles::RGBATile>{});
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     // Check that tiles are as expected
     CHECK(compiledPrimary->tiles.size() == 16);
@@ -1794,8 +1912,8 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    ctx.compilerContext.pairedPrimaryTileset = porytiles::compile(
-        ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+    ctx.compilerContext.pairedPrimaryTileset =
+        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/bottom.png"}));
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/middle.png"}));
@@ -1806,8 +1924,8 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
-    auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
-                                                std::vector<porytiles::RGBATile>{});
+    auto compiledSecondary =
+        porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
 
     // Check that tiles are as expected
     REQUIRE(std::filesystem::exists(
@@ -2000,8 +2118,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
     porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, decompiledPrimary);
 
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                              std::vector<porytiles::RGBATile>{});
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     CHECK(compiledPrimary->tiles.size() == 16);
 
@@ -2217,8 +2334,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
     porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, decompiledPrimary);
 
-    ctx.compilerContext.pairedPrimaryTileset = porytiles::compile(
-        ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, std::vector<porytiles::RGBATile>{});
+    ctx.compilerContext.pairedPrimaryTileset =
+        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/bottom.png"}));
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/middle.png"}));
@@ -2258,8 +2375,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
 
     porytiles::importAnimTiles(ctx, porytiles::CompilerMode::SECONDARY, animsSecondary, decompiledSecondary);
 
-    auto compiledSecondary = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
-                                                std::vector<porytiles::RGBATile>{});
+    auto compiledSecondary =
+        porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
 
     CHECK(compiledSecondary->tiles.size() == 16);
 
@@ -2433,14 +2550,14 @@ TEST_CASE("primer tiles should change output of primary compile function")
         std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/palette-primers/primer.pal"}));
     std::ifstream primerIfstream{std::filesystem::path{"Resources/Tests/palette_primer_1/palette-primers/primer.pal"}};
     porytiles::RGBATile primerTile =
-        porytiles::importPalettePrimer(ctx, porytiles::CompilerMode::PRIMARY, primerIfstream);
+        porytiles::importPalettePrimer(ctx, porytiles::CompilerMode::PRIMARY, primerIfstream,
+                                       "Resources/Tests/palette_primer_1/palette-primers/primer.pal");
     std::vector<porytiles::RGBATile> palettePrimers{};
     palettePrimers.push_back(primerTile);
     primerIfstream.close();
 
     // Compile with no primer
-    auto compiledNoPrimer =
-        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, std::vector<porytiles::RGBATile>{});
+    auto compiledNoPrimer = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, {}, {}, {});
 
     // Confirm compiled no primer is as expected
     CHECK(compiledNoPrimer->palettes.at(0).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
@@ -2461,7 +2578,7 @@ TEST_CASE("primer tiles should change output of primary compile function")
     CHECK(compiledNoPrimer->palettes.at(3).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
 
     // Compile with primer
-    auto compiledPrimer = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, palettePrimers);
+    auto compiledPrimer = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, palettePrimers, {}, {});
 
     // Confirm compiled with primer is as expected
     for (std::size_t i = 0; i < 3; i++) {
@@ -2486,4 +2603,365 @@ TEST_CASE("primer tiles should change output of primary compile function")
     CHECK(compiledPrimer->palettes.at(3).colors.at(13) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
     CHECK(compiledPrimer->palettes.at(3).colors.at(14) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
     CHECK(compiledPrimer->palettes.at(3).colors.at(15) == porytiles::rgbaToBgr(porytiles::RGBA32{0, 0, 0}));
+}
+
+TEST_CASE("overrides should change output of primary compile function")
+{
+    porytiles::PorytilesContext ctx{};
+    ctx.fieldmapConfig.numPalettesInPrimary = 3;
+    ctx.fieldmapConfig.numPalettesTotal = 6;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.primaryExploredNodeCutoff = 1'000'000;
+    ctx.compilerConfig.primarySmartPrune = true;
+    ctx.compilerConfig.cacheAssign = false;
+
+    // Import decompiled tiles
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/palette_override_1/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/palette_override_1/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/palette_override_1/top.png"};
+    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+        middlePrimary, topPrimary);
+
+    // Import palette overrides
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}));
+    std::ifstream override00IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}};
+
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}));
+    std::ifstream override01IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}};
+
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}));
+    std::ifstream override02IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}};
+
+    auto [overrideTile00, overriddenPalSlots00] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override00IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/00.pal");
+    overrideTile00.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/00.pal";
+    overrideTile00.overridePaletteIndex = 0;
+
+    auto [overrideTile01, overriddenPalSlots01] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override01IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/01.pal");
+    overrideTile01.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/01.pal";
+    overrideTile01.overridePaletteIndex = 1;
+
+    auto [overrideTile02, overriddenPalSlots02] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override02IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/02.pal");
+    overrideTile02.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/02.pal";
+    overrideTile02.overridePaletteIndex = 2;
+
+    std::vector<porytiles::RGBATile> paletteOverrides{};
+    paletteOverrides.push_back(overrideTile00);
+    paletteOverrides.push_back(overrideTile01);
+    paletteOverrides.push_back(overrideTile02);
+    override00IfStream.close();
+    override01IfStream.close();
+    override02IfStream.close();
+    std::unordered_map<size_t, std::vector<std::pair<size_t, porytiles::BGR15>>> palOverridesMap{};
+    palOverridesMap.insert({0, overriddenPalSlots00});
+    palOverridesMap.insert({1, overriddenPalSlots01});
+    palOverridesMap.insert({2, overriddenPalSlots02});
+
+    // Compile with no overrides
+    auto compiledNoOverrides = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
+
+    // Without overrides, there should be 53 actual tiles
+    CHECK(compiledNoOverrides->sizeBeforePadding == 53);
+
+    // Confirm compiled no override is as expected
+    // Without overrides, the grass greens end up in pal 0
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{112, 192, 160}));
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{64, 176, 128}));
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{160, 208, 192}));
+
+    // Pals 1 and 2 contain a smattering of the mart/center colors
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{200, 64, 80}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{248, 184, 128}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{232, 144, 112}));
+
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{112, 192, 160}));
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{200, 64, 80}));
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{232, 144, 112}));
+
+    // Compile with overrides
+    auto compiledOverrides = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {},
+                                                paletteOverrides, palOverridesMap);
+
+    // With overrides, there should be 47 actual tiles
+    CHECK(compiledOverrides->sizeBeforePadding == 47);
+
+    // Confirm compiled with overrides is as expected
+    CHECK(compiledOverrides->palettes.at(0).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledOverrides->palettes.at(0).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{96, 96, 120}));
+    CHECK(compiledOverrides->palettes.at(0).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{248, 184, 128}));
+    CHECK(compiledOverrides->palettes.at(0).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{200, 64, 80}));
+    CHECK(compiledOverrides->palettes.at(0).colors.at(4) == porytiles::rgbaToBgr(porytiles::RGBA32{232, 144, 112}));
+
+    CHECK(compiledOverrides->palettes.at(1).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledOverrides->palettes.at(1).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{96, 96, 120}));
+    CHECK(compiledOverrides->palettes.at(1).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{112, 184, 240}));
+    CHECK(compiledOverrides->palettes.at(1).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{72, 112, 168}));
+    CHECK(compiledOverrides->palettes.at(1).colors.at(4) == porytiles::rgbaToBgr(porytiles::RGBA32{96, 160, 216}));
+
+    /*
+     * With overrides, the grass greens are now relegated to pal 2. Also, we set the tree greens to the end of pal 2 via
+     * an override
+     */
+    CHECK(compiledOverrides->palettes.at(2).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(1) == porytiles::rgbaToBgr(porytiles::RGBA32{112, 192, 160}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(2) == porytiles::rgbaToBgr(porytiles::RGBA32{64, 176, 128}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(3) == porytiles::rgbaToBgr(porytiles::RGBA32{160, 208, 192}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(12) == porytiles::rgbaToBgr(porytiles::RGBA32{56, 136, 48}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(13) == porytiles::rgbaToBgr(porytiles::RGBA32{176, 248, 128}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(14) == porytiles::rgbaToBgr(porytiles::RGBA32{56, 80, 0}));
+    CHECK(compiledOverrides->palettes.at(2).colors.at(15) == porytiles::rgbaToBgr(porytiles::RGBA32{128, 192, 96}));
+}
+
+TEST_CASE("overrides should change output of secondary compile function")
+{
+    porytiles::PorytilesContext ctx{};
+    ctx.fieldmapConfig.numPalettesInPrimary = 3;
+    ctx.fieldmapConfig.numPalettesTotal = 6;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.primaryExploredNodeCutoff = 1'000'000;
+    ctx.compilerConfig.primarySmartPrune = true;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryExploredNodeCutoff = 1'000'000;
+    ctx.compilerConfig.secondarySmartPrune = true;
+    ctx.compilerConfig.cacheAssign = false;
+
+    // Set up compilation for paired primary
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/palette_override_1/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/palette_override_1/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/palette_override_1/top.png"};
+    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
+        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+        middlePrimary, topPrimary);
+
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}));
+    std::ifstream override00IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}};
+
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}));
+    std::ifstream override01IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}};
+
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}));
+    std::ifstream override02IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}};
+
+    auto [overrideTile00, overriddenPalSlots00] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override00IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/00.pal");
+    overrideTile00.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/00.pal";
+    overrideTile00.overridePaletteIndex = 0;
+
+    auto [overrideTile01, overriddenPalSlots01] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override01IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/01.pal");
+    overrideTile01.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/01.pal";
+    overrideTile01.overridePaletteIndex = 1;
+
+    auto [overrideTile02, overriddenPalSlots02] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override02IfStream,
+                                         "Resources/Tests/palette_override_1/palette-overrides/02.pal");
+    overrideTile02.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/02.pal";
+    overrideTile02.overridePaletteIndex = 2;
+
+    std::vector<porytiles::RGBATile> paletteOverridesPrimary{};
+    paletteOverridesPrimary.push_back(overrideTile00);
+    paletteOverridesPrimary.push_back(overrideTile01);
+    paletteOverridesPrimary.push_back(overrideTile02);
+    override00IfStream.close();
+    override01IfStream.close();
+    override02IfStream.close();
+    std::unordered_map<size_t, std::vector<std::pair<size_t, porytiles::BGR15>>> palOverridesMapPrimary{};
+    palOverridesMapPrimary.insert({0, overriddenPalSlots00});
+    palOverridesMapPrimary.insert({1, overriddenPalSlots01});
+    palOverridesMapPrimary.insert({2, overriddenPalSlots02});
+
+    // Compile primary with overrides
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {},
+                                              paletteOverridesPrimary, palOverridesMapPrimary);
+    ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
+
+    // Import secondary resources
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/top.png"}));
+    png::image<png::rgba_pixel> bottomSecondary{"Resources/Tests/palette_override_2/bottom.png"};
+    png::image<png::rgba_pixel> middleSecondary{"Resources/Tests/palette_override_2/middle.png"};
+    png::image<png::rgba_pixel> topSecondary{"Resources/Tests/palette_override_2/top.png"};
+    porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
+        ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
+        bottomSecondary, middleSecondary, topSecondary);
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/03.pal"}));
+    std::ifstream override03IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/03.pal"}};
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/04.pal"}));
+    std::ifstream override04IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/04.pal"}};
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/05.pal"}));
+    std::ifstream override05IfStream{
+        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/05.pal"}};
+    auto [overrideTile03, overriddenPalSlots03] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override03IfStream,
+                                         "Resources/Tests/palette_override_2/palette-overrides/03.pal");
+    overrideTile03.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/03.pal";
+    overrideTile03.overridePaletteIndex = 3;
+    auto [overrideTile04, overriddenPalSlots04] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override04IfStream,
+                                         "Resources/Tests/palette_override_2/palette-overrides/04.pal");
+    overrideTile04.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/04.pal";
+    overrideTile04.overridePaletteIndex = 4;
+    auto [overrideTile05, overriddenPalSlots05] =
+        porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override05IfStream,
+                                         "Resources/Tests/palette_override_2/palette-overrides/05.pal");
+    overrideTile05.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/05.pal";
+    overrideTile05.overridePaletteIndex = 5;
+    std::vector<porytiles::RGBATile> paletteOverridesSecondary{};
+    paletteOverridesSecondary.push_back(overrideTile03);
+    paletteOverridesSecondary.push_back(overrideTile04);
+    paletteOverridesSecondary.push_back(overrideTile05);
+    override03IfStream.close();
+    override04IfStream.close();
+    override05IfStream.close();
+    std::unordered_map<size_t, std::vector<std::pair<size_t, porytiles::BGR15>>> palOverridesMapSecondary{};
+    palOverridesMapSecondary.insert({3, overriddenPalSlots03});
+    palOverridesMapSecondary.insert({4, overriddenPalSlots04});
+    palOverridesMapSecondary.insert({5, overriddenPalSlots05});
+
+    // Compile with no overrides
+    auto compiledSecondaryNoOverrides =
+        porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
+
+    // Without overrides, there should be 12 actual tiles
+    CHECK(compiledSecondaryNoOverrides->sizeBeforePadding == 12);
+
+    // Without overrides, the flower colors end up in pal 3
+    CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(1) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{64, 96, 64}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(2) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{184, 96, 112}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(3) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{248, 144, 112}));
+
+    // Pal 4 contains the tree colors
+    CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(1) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{32, 96, 24}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(2) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{176, 248, 144}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(3) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{56, 152, 88}));
+
+    // Pal 5 contains the log colors
+    CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(1) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{112, 64, 64}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(2) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{216, 184, 152}));
+    CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(3) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{176, 136, 128}));
+
+    // Compile with overrides
+    auto compiledSecondaryOverrides = porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary,
+                                                         {}, paletteOverridesSecondary, palOverridesMapSecondary);
+
+    // With overrides, there should be 6 actual tiles
+    CHECK(compiledSecondaryOverrides->sizeBeforePadding == 6);
+
+    // With overrides, pal 3 has log colors and tree colors
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(1) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{112, 64, 64}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(2) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{216, 184, 152}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(3) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{176, 136, 128}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(4) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{80, 48, 56}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(12) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{32, 96, 24}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(13) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{176, 248, 144}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(14) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{56, 152, 88}));
+    CHECK(compiledSecondaryOverrides->palettes.at(3).colors.at(15) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{128, 208, 40}));
+
+    // Pal 4 is the orange flower
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(4) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{64, 96, 64}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(5) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{64, 136, 80}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(6) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{128, 224, 64}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(7) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{96, 192, 80}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(8) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{56, 168, 128}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(9) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{48, 136, 40}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(10) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{232, 224, 160}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(11) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{184, 96, 112}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(12) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{248, 144, 112}));
+    CHECK(compiledSecondaryOverrides->palettes.at(4).colors.at(13) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{144, 112, 64}));
+
+    // Pal 5 is the purple flower
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(0) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(4) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{64, 96, 64}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(5) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{64, 136, 80}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(6) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{128, 224, 64}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(7) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{96, 192, 80}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(8) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{56, 168, 128}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(9) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{48, 136, 40}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(10) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{168, 184, 248}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(11) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{96, 48, 168}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(12) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{104, 128, 224}));
+    CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(13) ==
+          porytiles::rgbaToBgr(porytiles::RGBA32{168, 104, 152}));
 }
