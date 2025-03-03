@@ -30,12 +30,15 @@ static std::size_t insertRGBA(PorytilesContext &ctx, CompilerMode compilerMode, 
 {
     auto transparencyBgr = rgbaToBgr(transparencyColor);
     if (rgba != transparencyColor && rgbaToBgr(rgba) == transparencyBgr && errWarn) {
-        /*
-         * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err on
-         * the side of forcing the user to be explicit, especially when it comes to transparency handling.
-         */
-        warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
-                                                         transparencyColor);
+        if (rgba.red != transparencyColor.red || rgba.green != transparencyColor.green ||
+            rgba.blue != transparencyColor.blue) {
+            /*
+             * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err
+             * on the side of forcing the user to be explicit, especially when it comes to transparency handling.
+             */
+            warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
+                                                             transparencyColor);
+        }
     }
     /*
      * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
