@@ -24,51 +24,67 @@
 #include "types.h"
 
 namespace porytiles {
+
+/**
+ * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
+ * and possibly deduped (depending on user settings). Transparent alpha pixels will be treated as transparent, as
+ * will pixels that are of transparent color (again, set by the user but default to magenta). Fails if a tile
+ * contains too many unique colors or if an invalid alpha value is detected.
+ */
 static std::size_t insertRGBA(PorytilesContext &ctx, CompilerMode compilerMode, const RGBATile &rgbaFrame,
                               const RGBA32 &transparencyColor, NormalizedPalette &palette, const RGBA32 &rgba,
                               std::size_t row, std::size_t col, bool errWarn)
 {
-    auto transparencyBgr = rgbaToBgr(transparencyColor);
-    if (rgba != transparencyColor && rgbaToBgr(rgba) == transparencyBgr && errWarn) {
-        if (rgba.red != transparencyColor.red || rgba.green != transparencyColor.green ||
-            rgba.blue != transparencyColor.blue) {
-            /*
-             * If we hit this case, it's almost certainly a user mistake so let's push an error. We would prefer to err
-             * on the side of forcing the user to be explicit, especially when it comes to transparency handling.
-             */
-            warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
-                                                             transparencyColor);
-        }
-    }
+    const auto transparencyBgr = rgbaToBgr(transparencyColor);
+    const auto pixelBgr = rgbaToBgr(rgba);
+
     /*
-     * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
-     * and possibly deduped (depending on user settings). Transparent alpha pixels will be treated as transparent, as
-     * will pixels that are of transparent color (again, set by the user but default to magenta). Fails if a tile
-     * contains too many unique colors or if an invalid alpha value is detected.
+     * Porytiles does not allow users to specify an alpha value that isn't fully opaque or transparent.
      */
+    if (rgba.alpha != ALPHA_TRANSPARENT && rgba.alpha != ALPHA_OPAQUE) {
+        if (errWarn) {
+            error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
+        }
+        return INVALID_INDEX_PIXEL_VALUE;
+    }
+
+    if (!rgba.equalsIgnoringAlphaChannel(transparencyColor) && pixelBgr == transparencyBgr && errWarn) {
+        /*
+         * Porytiles has gone through a few iterations of behavior when it hits this case. Originally, this was a
+         * compilation error. Later, it became a warning that would not stop compilation, but would insert the bgr into
+         * the regular colors section of the NormalizedPalette. However, that behavior made for an extremely unintuitive
+         * user experience. We have settled on this behavior: if a pixel collapses to transparent under BGR conversion,
+         * then treat it as transparent but warn the user in case this was not their intention. This is the best option
+         * because it retains end-user visibility while not potentially causing confounding compilation errors later on
+         * in the compilation pipeline.
+         */
+        warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
+                                                         transparencyColor);
+        return 0;
+    }
+
     if (rgba.alpha == ALPHA_TRANSPARENT || rgba == transparencyColor) {
         return 0;
     }
-    else if (rgba.alpha == ALPHA_OPAQUE) {
-        auto bgr = rgbaToBgr(rgba);
 
-        if (ctx.compilerContext.bgrToRgba.contains(bgr) && std::get<0>(ctx.compilerContext.bgrToRgba.at(bgr)) != rgba) {
+    if (rgba.alpha == ALPHA_OPAQUE) {
+        if (ctx.compilerContext.bgrToRgba.contains(pixelBgr) &&
+            std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)) != rgba) {
             /*
              * We lost color precision here, so let's warn the user that two distinct RGBA colors they used
              * in the master sheet are going to collapse to one BGR color on the GBA.
              */
             if (errWarn) {
-                warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, bgr, rgba,
-                                        ctx.compilerContext.bgrToRgba.at(bgr));
+                warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, pixelBgr, rgba,
+                                        ctx.compilerContext.bgrToRgba.at(pixelBgr));
             }
-            ctx.compilerContext.bgrToRgba.at(bgr) =
-                std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>{rgba, rgbaFrame, row, col};
+            ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
         }
-        ctx.compilerContext.bgrToRgba.insert_or_assign(
-            bgr, std::tuple<RGBA32, RGBATile, std::size_t, std::size_t>{rgba, rgbaFrame, row, col});
+        ctx.compilerContext.bgrToRgba.insert_or_assign(pixelBgr, std::tuple{rgba, rgbaFrame, row, col});
 
-        auto itrAtBgr = std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, bgr);
-        auto bgrPosInPalette = itrAtBgr - std::begin(palette.colors);
+        const auto itrAtBgr =
+            std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, pixelBgr);
+        const auto bgrPosInPalette = itrAtBgr - std::begin(palette.colors);
         if (bgrPosInPalette == palette.size) {
             // palette size will grow as we add to it
             if (palette.size == PAL_SIZE) {
@@ -77,16 +93,13 @@ static std::size_t insertRGBA(PorytilesContext &ctx, CompilerMode compilerMode, 
                 }
                 return INVALID_INDEX_PIXEL_VALUE;
             }
-            palette.colors.at(palette.size++) = bgr;
+            palette.colors.at(palette.size++) = pixelBgr;
         }
         return bgrPosInPalette;
     }
-    else {
-        if (errWarn) {
-            error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
-        }
-        return INVALID_INDEX_PIXEL_VALUE;
-    }
+
+    internalerror("compiler::insertRGBA unreachable code path");
+    return INVALID_INDEX_PIXEL_VALUE;
 }
 
 static NormalizedTile candidate(PorytilesContext &ctx, CompilerMode compilerMode, const RGBA32 &transparencyColor,

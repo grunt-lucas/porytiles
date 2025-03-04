@@ -107,6 +107,11 @@ struct RGBA32 {
         return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
     }
 
+    [[nodiscard]] bool equalsIgnoringAlphaChannel(const RGBA32 &other) const
+    {
+        return this->red == other.red && this->green == other.green && this->blue == other.blue;
+    }
+
     auto operator<=>(const RGBA32 &rgba) const = default;
 
     friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
