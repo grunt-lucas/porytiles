@@ -9,43 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `decompile-secondary` command to decompile secondary tilesets ([#17](https://github.com/grunt-lucas/porytiles/pull/17))
+- `decompile-secondary` command to decompile secondary
+  tilesets ([#17](https://github.com/grunt-lucas/porytiles/pull/17))
 
-- `-normalize-transparency` option for the decompile commands ([37668ac](https://github.com/grunt-lucas/porytiles/commit/37668ac))([b710078](https://github.com/grunt-lucas/porytiles/commit/b710078))
+- `-normalize-transparency` option for the decompile
+  commands ([37668ac](https://github.com/grunt-lucas/porytiles/commit/37668ac))([b710078](https://github.com/grunt-lucas/porytiles/commit/b710078))
 
-- `-Wtile-index-out-of-range` for use with the decompile commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
+- `-Wtile-index-out-of-range` for use with the decompile
+  commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
 
-- `-Wpalette-index-out-of-range` for use with the decompile commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
+- `-Wpalette-index-out-of-range` for use with the decompile
+  commands ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
 
-- Options to disable generation of `metatiles.bin` and `metatile_attributes.bin` ([#16](https://github.com/grunt-lucas/porytiles/pull/16))
-  - `-disable-metatile-generation` and `-disable-attribute-generation`
+- Options to disable generation of `metatiles.bin` and
+  `metatile_attributes.bin` ([#16](https://github.com/grunt-lucas/porytiles/pull/16))
+    - `-disable-metatile-generation` and `-disable-attribute-generation`
 
-- Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per vertex ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
-  - assign config search matrix now tries smart prune before trying a constant prune
+- Added support for `-best-branches=smart` pal assignment mode, which prunes `populated + 1` number of branches per
+  vertex ([#18](https://github.com/grunt-lucas/porytiles/pull/18))
+    - assign config search matrix now tries smart prune before trying a constant prune
 
-- `-Wkey-frame-missing-colors` flags cases where user might run into [Issue #60](https://github.com/grunt-lucas/porytiles/issues/60) ([#85](https://github.com/grunt-lucas/porytiles/pull/85))
+- `-Wkey-frame-missing-colors` flags cases where user might run
+  into [Issue #60](https://github.com/grunt-lucas/porytiles/issues/60) ([#85](https://github.com/grunt-lucas/porytiles/pull/85))
 
 - Added palette primer feature
-  - https://github.com/grunt-lucas/porytiles/commit/594795b
-  - https://github.com/grunt-lucas/porytiles/commit/7b43e0d
-  - https://github.com/grunt-lucas/porytiles/commit/d3af999
-  - https://github.com/grunt-lucas/porytiles/commit/7681651
-  - [#89](https://github.com/grunt-lucas/porytiles/pull/89)
+    - https://github.com/grunt-lucas/porytiles/commit/594795b
+    - https://github.com/grunt-lucas/porytiles/commit/7b43e0d
+    - https://github.com/grunt-lucas/porytiles/commit/d3af999
+    - https://github.com/grunt-lucas/porytiles/commit/7681651
+    - [#89](https://github.com/grunt-lucas/porytiles/pull/89)
 
 ### Changed
 
-- Fixed bug from issue [Secondary tileset attributes aren't generated #1](https://github.com/grunt-lucas/porytiles/issues/1)
+- Fixed bug from
+  issue [Secondary tileset attributes aren't generated #1](https://github.com/grunt-lucas/porytiles/issues/1)
 
 - `-Wkey-frame-missing-assignment` now called `-Wkey-frame-no-matching-tile`
 
-- Subcommand help menus are much more refined, they now only show info relevant to the given subcommand ([#51](https://github.com/grunt-lucas/porytiles/pull/51))
+- Subcommand help menus are much more refined, they now only show info relevant to the given
+  subcommand ([#51](https://github.com/grunt-lucas/porytiles/pull/51))
 
 - Build system overhaul, now using CMake ([#62](https://github.com/grunt-lucas/porytiles/pull/62))
 
-- Fixed an IHDR "image height is zero" error when secondary tileset is empty, thanks @rayrobdad ([#72](https://github.com/grunt-lucas/porytiles/pull/72))
+- Fixed an IHDR "image height is zero" error when secondary tileset is empty, thanks
+  @rayrobdad ([#72](https://github.com/grunt-lucas/porytiles/pull/72))
 
 - `assign.cfg` now called `assign.cache`
-  - https://github.com/grunt-lucas/porytiles/commit/1e4b484efd1e02e1e9856a412196ea3ac662716e
+    - https://github.com/grunt-lucas/porytiles/commit/1e4b484efd1e02e1e9856a412196ea3ac662716e
+
+- Some QoL improvements around `-Wtransparency-collapse`:
+  fixed a false warning case and changed behavior so transparent is inserted when warning is triggered
+    - PRs: [#122](https://github.com/grunt-lucas/porytiles/pull/122)
+      and [#124](https://github.com/grunt-lucas/porytiles/pull/124)
 
 - Numerous other small bugfixes, refactors, and tweaks
 
