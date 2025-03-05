@@ -31,9 +31,9 @@ namespace porytiles {
  * will pixels that are of transparent color (again, set by the user but default to magenta). Fails if a tile
  * contains too many unique colors or if an invalid alpha value is detected.
  */
-static std::size_t insertRGBA(PorytilesContext &ctx, CompilerMode compilerMode, const RGBATile &rgbaFrame,
+static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compilerMode, const RGBATile &rgbaFrame,
                               const RGBA32 &transparencyColor, NormalizedPalette &palette, const RGBA32 &rgba,
-                              std::size_t row, std::size_t col, bool errWarn)
+                              std::size_t row, std::size_t col, const bool errWarn)
 {
     const auto transparencyBgr = rgbaToBgr(transparencyColor);
     const auto pixelBgr = rgbaToBgr(rgba);
@@ -102,8 +102,9 @@ static std::size_t insertRGBA(PorytilesContext &ctx, CompilerMode compilerMode, 
     return INVALID_INDEX_PIXEL_VALUE;
 }
 
-static NormalizedTile candidate(PorytilesContext &ctx, CompilerMode compilerMode, const RGBA32 &transparencyColor,
-                                const std::vector<RGBATile> &rgbaFrames, bool hFlip, bool vFlip, bool errWarn)
+static NormalizedTile candidate(PorytilesContext &ctx, const CompilerMode compilerMode, const RGBA32 &transparencyColor,
+                                const std::vector<RGBATile> &rgbaFrames, const bool hFlip, const bool vFlip,
+                                const bool errWarn)
 {
     /*
      * NOTE: This only produces a _candidate_ normalized tile (a different choice of hFlip/vFlip might be the normal
@@ -118,10 +119,11 @@ static NormalizedTile candidate(PorytilesContext &ctx, CompilerMode compilerMode
     for (const auto &rgba : rgbaFrames) {
         for (std::size_t row = 0; row < TILE_SIDE_LENGTH_PIX; row++) {
             for (std::size_t col = 0; col < TILE_SIDE_LENGTH_PIX; col++) {
-                std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH_PIX - 1 - row : row;
-                std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH_PIX - 1 - col : col;
-                std::size_t pixelValue = insertRGBA(ctx, compilerMode, rgba, transparencyColor, candidateTile.palette,
-                                                    rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn);
+                const std::size_t rowWithFlip = vFlip ? TILE_SIDE_LENGTH_PIX - 1 - row : row;
+                const std::size_t colWithFlip = hFlip ? TILE_SIDE_LENGTH_PIX - 1 - col : col;
+                const std::size_t pixelValue =
+                    insertRGBA(ctx, compilerMode, rgba, transparencyColor, candidateTile.palette,
+                               rgba.getPixel(rowWithFlip, colWithFlip), row, col, errWarn);
                 candidateTile.setPixel(frame, row, col, pixelValue);
             }
         }
@@ -181,6 +183,23 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     std::vector<NormalizedTile> normalizedPrimers{};
     std::vector<NormalizedTile> normalizedOverrides{};
 
+    // Load palette primers first
+    for (const auto &primerTile : palettePrimers) {
+        std::vector singleFramePrimerTile = {primerTile};
+        auto normalizedPrimerTile = normalize(ctx, compilerMode, singleFramePrimerTile);
+        normalizedPrimerTile.copyMetadataFrom(primerTile);
+        normalizedPrimers.emplace_back(normalizedPrimerTile);
+    }
+
+    // Then load palette overrides
+    for (const auto &overrideTile : paletteOverrides) {
+        std::vector singleFrameOverrideTile = {overrideTile};
+        auto normalizedOverrideTile = normalize(ctx, compilerMode, singleFrameOverrideTile);
+        normalizedOverrideTile.copyMetadataFrom(overrideTile);
+        normalizedOverrides.emplace_back(normalizedOverrideTile);
+    }
+
+    // Then load animations
     for (std::size_t animIndex = 0; animIndex < decompiledTileset.anims.size(); animIndex++) {
         const auto &anim = decompiledTileset.anims.at(animIndex);
         // We have already validated that all frames have identical dimensions, so we can use the key frame here
@@ -201,29 +220,15 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
         }
     }
 
-    // TODO : should we rethink the order in which we process these?
+    // Finally load regular layer PNG tiles
     std::size_t tileIndex = 0;
     for (const auto &tile : decompiledTileset.tiles) {
-        std::vector<RGBATile> singleFrameTile = {tile};
+        std::vector singleFrameTile = {tile};
         auto normalizedTile = normalize(ctx, compilerMode, singleFrameTile);
         normalizedTile.copyMetadataFrom(tile);
         DecompiledIndex index{};
         index.tileIndex = tileIndex++;
         normalizedTiles.emplace_back(index, normalizedTile);
-    }
-
-    for (const auto &primerTile : palettePrimers) {
-        std::vector<RGBATile> singleFramePrimerTile = {primerTile};
-        auto normalizedPrimerTile = normalize(ctx, compilerMode, singleFramePrimerTile);
-        normalizedPrimerTile.copyMetadataFrom(primerTile);
-        normalizedPrimers.emplace_back(normalizedPrimerTile);
-    }
-
-    for (const auto &overrideTile : paletteOverrides) {
-        std::vector<RGBATile> singleFrameOverrideTile = {overrideTile};
-        auto normalizedOverrideTile = normalize(ctx, compilerMode, singleFrameOverrideTile);
-        normalizedOverrideTile.copyMetadataFrom(overrideTile);
-        normalizedOverrides.emplace_back(normalizedOverrideTile);
     }
 
     if (ctx.err.errCount > 0) {

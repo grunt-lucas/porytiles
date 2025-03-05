@@ -986,7 +986,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
          * mappings from the encounter table.
          */
         try {
-            EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
+            const EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
         }
         catch ([[maybe_unused]] const std::exception &e1) {
@@ -1004,7 +1004,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
          * mappings from the terrain table.
          */
         try {
-            TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
+            const TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
         }
         catch ([[maybe_unused]] const std::exception &e1) {
