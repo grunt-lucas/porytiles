@@ -23,7 +23,7 @@
 
 namespace porytiles {
 
-static void validateCompileInputs(PorytilesContext &ctx, CompilerMode compilerMode)
+static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMode compilerMode)
 {
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -95,7 +95,7 @@ static void validateCompileInputs(PorytilesContext &ctx, CompilerMode compilerMo
     }
 }
 
-static void validateDecompileInputs(PorytilesContext &ctx, DecompilerMode decompilerMode)
+static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode decompilerMode)
 {
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -197,9 +197,11 @@ static void validateCompileOutputs(PorytilesContext &ctx, const CompilerMode com
     }
 }
 
-static void validateDecompileOutputs(PorytilesContext &ctx, DecompilerMode mode, std::filesystem::path &outputPath,
-                                     std::filesystem::path &attributesPath, std::filesystem::path &bottomPath,
-                                     std::filesystem::path &middlePath, std::filesystem::path &topPath)
+static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode mode,
+                                     const std::filesystem::path &outputPath,
+                                     const std::filesystem::path &attributesPath,
+                                     const std::filesystem::path &bottomPath, const std::filesystem::path &middlePath,
+                                     const std::filesystem::path &topPath)
 {
     using std::filesystem::create_directories;
     using std::filesystem::exists;
@@ -490,9 +492,9 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
         return primerTiles;
     }
 
-    // FIXME : this needs to be updated so the files have a well-defined order
     std::vector<path> primerFiles;
     std::copy(directory_iterator(palettePrimersPath), directory_iterator(), std::back_inserter(primerFiles));
+    std::ranges::sort(primerFiles);
 
     for (const auto &primerFile : primerFiles) {
         // Check if the file is a regular file
@@ -539,9 +541,9 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMod
         return {overrideTiles, {}};
     }
 
-    // FIXME : this needs to be updated so the files have a well-defined order
     std::vector<path> overrideFiles;
     std::copy(directory_iterator(paletteOverridesPath), directory_iterator(), std::back_inserter(overrideFiles));
+    std::ranges::sort(overrideFiles);
 
     for (const auto &overrideFile : overrideFiles) {
         // Check if the file is a regular file
