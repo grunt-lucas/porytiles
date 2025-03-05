@@ -32,6 +32,7 @@ const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
 const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
 const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
 const char *const WARN_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
+const char *const WARN_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
 
 // Decompilation warnings
 const char *const WARN_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
@@ -52,7 +53,7 @@ static std::string getTilePrettyString(const RGBATile &tile)
         tileString = fmt::format("tile 0x{:x} ({})", tile.tileIndex, tile.tileIndex);
     }
     else if (tile.type == TileType::PRIMER) {
-        tileString = fmt::format("primer {}", tile.primer);
+        tileString = fmt::format("primer {}", tile.primerFilename);
     }
     else if (tile.type == TileType::OVERRIDE) {
         tileString = fmt::format("override {}", tile.overrideFilename);
@@ -63,24 +64,33 @@ static std::string getTilePrettyString(const RGBATile &tile)
     return tileString;
 }
 
-void internalerror(std::string message)
+void internalerror(const std::string &message)
 {
     throw std::runtime_error(message);
 }
 
-void internalerror_unknownCompilerMode(std::string context)
+void internalerror_unknownCompilerMode(const std::string &context)
 {
     internalerror(context + " unknown CompilerMode");
 }
 
-void internalerror_unknownDecompilerMode(std::string context)
+void internalerror_unknownDecompilerMode(const std::string &context)
 {
     internalerror(context + " unknown DecompilerMode");
 }
 
-void internalerror_unknownSubcommand(std::string context)
+void internalerror_unknownSubcommand(const std::string &context)
 {
     internalerror(context + " unknown Subcommand");
+}
+
+void error(ErrorsAndWarnings &err, const std::string &message)
+{
+    err.errCount++;
+    if (err.printErrors) {
+        pt_err("{}", message);
+        pt_println(stderr, "");
+    }
 }
 
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
@@ -99,7 +109,8 @@ void error_animDimensionNotDivisibleBy8(ErrorsAndWarnings &err, std::string anim
 {
     err.errCount++;
     if (err.printErrors) {
-        pt_err("anim PNG {} `{}' was not divisible by 8", dimensionName, fmt::styled(dimension, fmt::emphasis::bold));
+        pt_err("anim {} frame {} PNG {} `{}' was not divisible by 8", animName, frame, dimensionName,
+               fmt::styled(dimension, fmt::emphasis::bold));
         pt_println(stderr, "");
     }
 }
@@ -786,6 +797,16 @@ void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePath
         }
         pt_println(stderr, "If left uncorrected, this may lead to the issue described here:");
         pt_println(stderr, "  https://github.com/grunt-lucas/porytiles/issues/60");
+        pt_println(stderr, "");
+    }
+}
+
+void warn_unusedManualPalColor(ErrorsAndWarnings &err, const std::string &jasc, const std::string &fileName)
+{
+    printWarning(
+        err, err.unusedManualPalColor, WARN_UNUSED_MANUAL_PAL_COLOR,
+        fmt::format("{}: `{}' was not used in layers or anims", fileName, fmt::styled(jasc, fmt::emphasis::bold)));
+    if (err.printErrors && err.unusedManualPalColor != WarningMode::OFF) {
         pt_println(stderr, "");
     }
 }

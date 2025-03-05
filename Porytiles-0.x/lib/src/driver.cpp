@@ -497,6 +497,9 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
     std::ranges::sort(primerFiles);
 
     for (const auto &primerFile : primerFiles) {
+        const auto &fullPrimerFilename = ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode).string() + "/" +
+                                         primerFile.filename().string();
+
         // Check if the file is a regular file
         if (!is_regular_file(primerFile)) {
             pt_logln(ctx, stderr, "skipping {} as it is not a regular file", primerFile.string());
@@ -511,9 +514,8 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
 
         std::ifstream fileStream{primerFile};
         pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
-        // TODO : instead of throwing fatal errors in this function, throw regular errors so we can fail later
-        RGBATile primerTile = importPalettePrimer(ctx, compilerMode, fileStream, primerFile.filename().string());
-        primerTile.primer = primerFile.filename().string();
+        RGBATile primerTile = importPalettePrimer(ctx, compilerMode, fileStream, fullPrimerFilename);
+        primerTile.primerFilename = fullPrimerFilename;
         primerTiles.push_back(primerTile);
         fileStream.close();
     }
@@ -522,7 +524,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
 }
 
 static std::pair<std::vector<RGBATile>, std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>>>
-preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMode,
+preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compilerMode,
                                  const std::filesystem::path &paletteOverridesPath)
 {
     using std::filesystem::directory_iterator;
@@ -546,6 +548,8 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMod
     std::ranges::sort(overrideFiles);
 
     for (const auto &overrideFile : overrideFiles) {
+        const auto &fullOverrideFilename = ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode).string() +
+                                           "/" + overrideFile.filename().string();
         // Check if the file is a regular file
         if (!is_regular_file(overrideFile)) {
             pt_logln(ctx, stderr, "skipping {} as it is not a regular file", overrideFile.string());
@@ -559,10 +563,9 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMod
         }
 
         // Make sure pal file name is in format e.g. 01.pal
-        // TODO : make this throw a regular error so users can see all mistakes at once
         if (!checkFullStringMatch(overrideFile.stem().string(), "[0,1][0-9]")) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format(".pal file {} at {}: name must match regex [0,1][0-9]", overrideFile.stem().string(),
+                       fmt::format("pal file {} at {}: name must match regex [0,1][0-9]", overrideFile.stem().string(),
                                    overrideFile.string()));
         }
 
@@ -575,21 +578,20 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMod
         }
 
         // Throw fatal if user specifies an out-of-range palette index for their compilation mode
-        // TODO : make this throw a regular error so users can see all mistakes at once
         if (compilerMode == CompilerMode::PRIMARY) {
             if (overridePaletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
-                fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                           fmt::format(".pal file {}: invalid palette index: must be 0 <= index < {} for primary",
-                                       overrideFile.string(), ctx.fieldmapConfig.numPalettesInPrimary));
+                error(ctx.err, fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
+                                           fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
+                                           ctx.fieldmapConfig.numPalettesInPrimary));
             }
         }
         else if (compilerMode == CompilerMode::SECONDARY) {
             if (overridePaletteIndex < ctx.fieldmapConfig.numPalettesInPrimary ||
                 overridePaletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-                fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                           fmt::format(".pal file {}: invalid palette index: must be {} <= index < {} for secondary",
-                                       overrideFile.string(), ctx.fieldmapConfig.numPalettesInPrimary,
-                                       ctx.fieldmapConfig.numPalettesTotal));
+                error(ctx.err,
+                      fmt::format("pal file {}: invalid palette index `{}': must be {} <= index < {}",
+                                  fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
+                                  ctx.fieldmapConfig.numPalettesInPrimary, ctx.fieldmapConfig.numPalettesTotal));
             }
         }
         else {
@@ -599,8 +601,8 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, CompilerMode compilerMod
         std::ifstream fileStream{overrideFile};
         pt_logln(ctx, stderr, "found palette override file {}", overrideFile.string());
         auto [overrideTile, overriddenPalSlots] =
-            importPaletteOverride(ctx, compilerMode, fileStream, overrideFile.filename().string());
-        overrideTile.overrideFilename = overrideFile.filename().string();
+            importPaletteOverride(ctx, compilerMode, fileStream, fullOverrideFilename);
+        overrideTile.overrideFilename = fullOverrideFilename;
         overrideTile.overridePaletteIndex = overridePaletteIndex;
         overrideTiles.push_back(overrideTile);
         for (const auto &[palSlot, bgr] : overriddenPalSlots) {
@@ -846,6 +848,10 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
 
     auto [paletteOverrides, paletteOverrideMap] = preparePaletteOverridesForImport(
         ctx, compilerMode, ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode));
+
+    if (ctx.err.errCount > 0) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "errors encountered while importing manual palettes");
+    }
 
     if (exists(ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode))) {
         std::ifstream assignCacheFile{ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode)};

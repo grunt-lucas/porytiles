@@ -164,8 +164,8 @@ static NormalizedTile normalize(PorytilesContext &ctx, CompilerMode compilerMode
 
     if (rgbaFrames.at(0).type == TileType::LAYERED) {
         pt_logln(ctx, stderr, "{}:{}:{} = [hFlip: {}, vFlip: {}]", layerString(rgbaFrames.at(0).layer),
-                 rgbaFrames.at(0).metatileIndex, subtileString(rgbaFrames.at(0).subtile), (**normalizedTile).hFlip,
-                 (**normalizedTile).vFlip);
+                 rgbaFrames.at(0).metatileIndex, subtileString(rgbaFrames.at(0).subtile), (*normalizedTile)->hFlip,
+                 (*normalizedTile)->vFlip);
     }
 
     return **normalizedTile;
@@ -183,8 +183,26 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     std::vector<NormalizedTile> normalizedPrimers{};
     std::vector<NormalizedTile> normalizedOverrides{};
 
+    std::unordered_set<RGBA32> primerRgbColors{};
+    std::unordered_map<RGBA32, std::vector<std::string>> primerRgbColorPaths{};
+    std::unordered_set<RGBA32> overrideRgbColors{};
+    std::unordered_map<RGBA32, std::vector<std::string>> overrideRgbColorPaths{};
+    std::unordered_set<RGBA32> layerAndAnimRgbColors{};
+
     // Load palette primers first
     for (const auto &primerTile : palettePrimers) {
+        for (std::size_t i = 0; i < primerTile.primerSize; i++) {
+            const auto &rgb = primerTile.pixels.at(i);
+            primerRgbColors.insert(rgb);
+            if (!primerRgbColorPaths.contains(rgb)) {
+                std::vector path = {primerTile.primerFilename};
+                primerRgbColorPaths.insert({rgb, path});
+            }
+            else {
+                primerRgbColorPaths.at(rgb).push_back(primerTile.primerFilename);
+            }
+        }
+
         std::vector singleFramePrimerTile = {primerTile};
         auto normalizedPrimerTile = normalize(ctx, compilerMode, singleFramePrimerTile);
         normalizedPrimerTile.copyMetadataFrom(primerTile);
@@ -193,6 +211,18 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
 
     // Then load palette overrides
     for (const auto &overrideTile : paletteOverrides) {
+        for (std::size_t i = 0; i < overrideTile.primerSize; i++) {
+            const auto &rgb = overrideTile.pixels.at(i);
+            overrideRgbColors.insert(rgb);
+            if (!overrideRgbColorPaths.contains(rgb)) {
+                std::vector path = {overrideTile.overrideFilename};
+                overrideRgbColorPaths.insert({rgb, path});
+            }
+            else {
+                overrideRgbColorPaths.at(rgb).push_back(overrideTile.overrideFilename);
+            }
+        }
+
         std::vector singleFrameOverrideTile = {overrideTile};
         auto normalizedOverrideTile = normalize(ctx, compilerMode, singleFrameOverrideTile);
         normalizedOverrideTile.copyMetadataFrom(overrideTile);
@@ -208,7 +238,11 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
             // For each tile, push all frames of the tile into a vector
             multiFrameTile.reserve(anim.size());
             for (std::size_t frameIndex = 0; frameIndex < anim.size(); frameIndex++) {
-                multiFrameTile.push_back(anim.frames.at(frameIndex).tiles.at(tileIndex));
+                const auto &tile = anim.frames.at(frameIndex).tiles.at(tileIndex);
+                for (const auto &rgb : tile.pixels) {
+                    layerAndAnimRgbColors.insert(rgb);
+                }
+                multiFrameTile.push_back(tile);
             }
             DecompiledIndex index{};
             auto normalizedTile = normalize(ctx, compilerMode, multiFrameTile);
@@ -223,12 +257,37 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     // Finally load regular layer PNG tiles
     std::size_t tileIndex = 0;
     for (const auto &tile : decompiledTileset.tiles) {
+        for (const auto &rgb : tile.pixels) {
+            layerAndAnimRgbColors.insert(rgb);
+        }
+
         std::vector singleFrameTile = {tile};
         auto normalizedTile = normalize(ctx, compilerMode, singleFrameTile);
         normalizedTile.copyMetadataFrom(tile);
         DecompiledIndex index{};
         index.tileIndex = tileIndex++;
         normalizedTiles.emplace_back(index, normalizedTile);
+    }
+
+    /*
+     * Here we warn the user if there were RGB colors in their primers/overrides that weren't actually present in any
+     * anim or layer tile. This usually indicates a user error.
+     */
+    for (const auto &elem : layerAndAnimRgbColors) {
+        primerRgbColors.erase(elem);
+    }
+    for (const auto &elem : layerAndAnimRgbColors) {
+        overrideRgbColors.erase(elem);
+    }
+    for (const auto &remainingRgb : primerRgbColors) {
+        for (const auto &path : primerRgbColorPaths.at(remainingRgb)) {
+            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+        }
+    }
+    for (const auto &remainingRgb : overrideRgbColors) {
+        for (const auto &path : overrideRgbColorPaths.at(remainingRgb)) {
+            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+        }
     }
 
     if (ctx.err.errCount > 0) {
@@ -240,7 +299,7 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
 }
 
 static std::pair<std::unordered_map<BGR15, std::size_t>, std::unordered_map<std::size_t, BGR15>>
-buildColorIndexMaps(PorytilesContext &ctx, CompilerMode compilerMode,
+buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode,
                     const std::vector<IndexAndNormTile> &normalizedTiles,
                     const std::unordered_map<BGR15, std::size_t> &primaryIndexMap,
                     const std::vector<NormalizedTile> &primerTiles, const std::vector<NormalizedTile> &overrideTiles)
@@ -254,34 +313,39 @@ buildColorIndexMaps(PorytilesContext &ctx, CompilerMode compilerMode,
     std::unordered_map<std::size_t, BGR15> indexesToColors;
     if (!primaryIndexMap.empty()) {
         for (const auto &[color, index] : primaryIndexMap) {
-            auto [insertedValue, wasInserted] = colorIndexes.insert({color, index});
-            if (!wasInserted) {
+            if (auto [insertedValue, wasInserted] = colorIndexes.insert({color, index}); !wasInserted) {
                 internalerror("compiler::buildColorIndexMaps colorIndexes.insert failed");
             }
-            auto [_, wasInserted2] = indexesToColors.insert(std::pair{index, color});
-            if (!wasInserted2) {
+            if (auto [_, wasInserted2] = indexesToColors.insert(std::pair{index, color}); !wasInserted2) {
                 internalerror("compiler::buildColorIndexMaps indexesToColors.insert failed");
             }
         }
     }
-    // TODO : should we rethink the order in which we process these?
+
+    // TODO : try using C++20's std::views here
     std::size_t colorIndex = primaryIndexMap.size();
     for (const auto &[_, normalizedTile] : normalizedTiles) {
         // i starts at 1, since first color in each palette is the transparency color
         for (int i = 1; i < normalizedTile.palette.size; i++) {
-            const BGR15 &color = normalizedTile.palette.colors[i];
-            bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
-            if (inserted) {
+            if (const BGR15 &color = normalizedTile.palette.colors[i];
+                colorIndexes.insert(std::pair{color, colorIndex}).second) {
                 indexesToColors.insert(std::pair{colorIndex, color});
                 colorIndex++;
             }
         }
     }
+
+    /*
+     * We shouldn't actually hit the inner map insert for either of these. The only time we would hit the insert is when
+     * the user specified a primer or override that wasn't used in their layer or anim tiles. In that case, they'll see
+     * a Wunused-manual-pal-color warning if they had it enabled. The reason we don't throw the Wunused-manual-pal-color
+     * from here directly is that by the time we get here, we've lost the original RGBA color. We want to report that to
+     * the user for clarity, so we do some extra work to throw the warning earlier.
+     */
     for (const auto &normalizedTile : primerTiles) {
         for (int i = 1; i < normalizedTile.palette.size; i++) {
-            const BGR15 &color = normalizedTile.palette.colors[i];
-            bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
-            if (inserted) {
+            if (const BGR15 &color = normalizedTile.palette.colors[i];
+                colorIndexes.insert(std::pair{color, colorIndex}).second) {
                 indexesToColors.insert(std::pair{colorIndex, color});
                 colorIndex++;
             }
@@ -289,9 +353,8 @@ buildColorIndexMaps(PorytilesContext &ctx, CompilerMode compilerMode,
     }
     for (const auto &normalizedTile : overrideTiles) {
         for (int i = 1; i < normalizedTile.palette.size; i++) {
-            const BGR15 &color = normalizedTile.palette.colors[i];
-            bool inserted = colorIndexes.insert(std::pair{color, colorIndex}).second;
-            if (inserted) {
+            if (const BGR15 &color = normalizedTile.palette.colors[i];
+                colorIndexes.insert(std::pair{color, colorIndex}).second) {
                 indexesToColors.insert(std::pair{colorIndex, color});
                 colorIndex++;
             }
@@ -303,16 +366,14 @@ buildColorIndexMaps(PorytilesContext &ctx, CompilerMode compilerMode,
      * it is actually allocatable.
      */
     if (compilerMode == CompilerMode::PRIMARY) {
-        std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
-        if (colorIndex > allowed) {
-            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, allowed, colorIndex);
+        if (const std::size_t size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary; colorIndex > size) {
+            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, size, colorIndex);
         }
     }
     else if (compilerMode == CompilerMode::SECONDARY) {
         // use numPalettesTotal since secondary tiles can use colors from the primary set
-        std::size_t allowed = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
-        if (colorIndex > allowed) {
-            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, allowed, colorIndex);
+        if (const std::size_t size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal; colorIndex > size) {
+            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, size, colorIndex);
         }
     }
     else {
@@ -2557,6 +2618,7 @@ TEST_CASE("primer tiles should change output of primary compile function")
     porytiles::RGBATile primerTile =
         porytiles::importPalettePrimer(ctx, porytiles::CompilerMode::PRIMARY, primerIfstream,
                                        "Resources/Tests/palette_primer_1/palette-primers/primer.pal");
+    primerTile.primerFilename = "Resources/Tests/palette_primer_1/palette-primers/primer.pal";
     std::vector<porytiles::RGBATile> palettePrimers{};
     palettePrimers.push_back(primerTile);
     primerIfstream.close();
@@ -2722,7 +2784,8 @@ TEST_CASE("overrides should change output of primary compile function")
     CHECK(compiledOverrides->palettes.at(1).colors.at(4) == porytiles::rgbaToBgr(porytiles::RGBA32{96, 160, 216}));
 
     /*
-     * With overrides, the grass greens are now relegated to pal 2. Also, we set the tree greens to the end of pal 2 via
+     * With overrides, the grass greens are now relegated to pal 2. Also, we set the tree greens to the end of pal 2
+     via
      * an override
      */
     CHECK(compiledOverrides->palettes.at(2).colors.at(0) == porytiles::rgbaToBgr(porytiles::RGBA32{255, 0, 255}));

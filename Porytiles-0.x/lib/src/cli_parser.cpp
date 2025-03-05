@@ -531,6 +531,8 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WKEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_KEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WUNUSED_MANUAL_PAL_COLOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_UNUSED_MANUAL_PAL_COLOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     // Decompilation warnings
     {WTILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     {WNO_TILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
@@ -828,6 +830,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
         {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
+        {WUNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WUNUSED_MANUAL_PAL_COLOR_VAL},
+        {WNO_UNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WNO_UNUSED_MANUAL_PAL_COLOR_VAL},
+
         // Decompilation warnings
         {WTILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WTILE_INDEX_OUT_OF_RANGE_VAL},
         {WNO_TILE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_TILE_INDEX_OUT_OF_RANGE_VAL},
@@ -886,6 +891,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     // https://github.com/grunt-lucas/porytiles/issues/60
     std::optional<bool> warnKeyFrameMissingColors{true};
     std::optional<bool> errKeyFrameMissingColors{};
+
+    std::optional<bool> warnUnusedManualPalColor{};
+    std::optional<bool> errUnusedManualPalColor{};
 
     // Decompilation warnings
     std::optional<bool> warnTileIndexOutOfRange{};
@@ -1172,6 +1180,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                 else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                     errKeyFrameMissingColors = true;
                 }
+                else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                    errUnusedManualPalColor = true;
+                }
                 // Decompilation warnings
                 else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
                     errTileIndexOutOfRange = true;
@@ -1221,6 +1232,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             }
             else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                 errKeyFrameMissingColors = false;
+            }
+            else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                errUnusedManualPalColor = false;
             }
             // Decompilation warnings
             else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
@@ -1324,6 +1338,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WNO_KEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WNO_KEY_FRAME_MISSING_COLORS);
             warnKeyFrameMissingColors = false;
+            break;
+        case WUNUSED_MANUAL_PAL_COLOR_VAL:
+            validateSubcommandContext(ctx, WUNUSED_MANUAL_PAL_COLOR);
+            warnUnusedManualPalColor = true;
+            break;
+        case WNO_UNUSED_MANUAL_PAL_COLOR_VAL:
+            validateSubcommandContext(ctx, WNO_UNUSED_MANUAL_PAL_COLOR);
+            warnUnusedManualPalColor = false;
             break;
         // Decompilation warnings
         case WTILE_INDEX_OUT_OF_RANGE_VAL:
@@ -1471,6 +1493,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     if (warnKeyFrameMissingColors.has_value()) {
         ctx.err.keyFrameMissingColors = warnKeyFrameMissingColors.value() ? WarningMode::WARN : WarningMode::OFF;
     }
+    if (warnUnusedManualPalColor.has_value()) {
+        ctx.err.unusedManualPalColor = warnUnusedManualPalColor.value() ? WarningMode::WARN : WarningMode::OFF;
+    }
     // Decompilation warnings
     if (warnTileIndexOutOfRange.has_value()) {
         ctx.err.tileIndexOutOfRange = warnTileIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
@@ -1613,6 +1638,17 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         }
         else {
             ctx.err.keyFrameMissingColors = WarningMode::OFF;
+        }
+    }
+    if (errUnusedManualPalColor.has_value()) {
+        if (errUnusedManualPalColor.value()) {
+            ctx.err.unusedManualPalColor = WarningMode::ERR;
+        }
+        else if ((warnUnusedManualPalColor.has_value() && warnUnusedManualPalColor.value()) || enableAllWarnings) {
+            ctx.err.unusedManualPalColor = WarningMode::WARN;
+        }
+        else {
+            ctx.err.unusedManualPalColor = WarningMode::OFF;
         }
     }
     // Decompilation warnings

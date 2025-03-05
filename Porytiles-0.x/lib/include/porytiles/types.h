@@ -217,11 +217,13 @@ struct RGBATile {
     std::string frame{};
 
     // PRIMER specific metadata
-    std::string primer{};
+    std::string primerFilename{};
+    std::size_t primerSize{};
 
     // OVERRIDE specific metadata
     std::string overrideFilename{};
     std::size_t overridePaletteIndex{};
+    std::size_t overrideSize{};
 
     // Metatile attributes for this tile
     Attributes attributes{};
@@ -589,6 +591,7 @@ struct NormalizedTile {
     bool hFlip{};
     bool vFlip{};
 
+    // FIXME : instead of duping this metadata, NormalizedTile should just keep a handle to its source RGBATile
     /*
      * Metadata Fields:
      * These are used by the various components to track metadata around the usage context of a NormalizedTile. Allows
@@ -606,13 +609,16 @@ struct NormalizedTile {
 
     // ANIM specific metadata
     std::string anim{};
+    std::string frame{};
 
     // PRIMER specific metadata
-    std::string primer{};
+    std::string primerFilename{};
+    std::size_t primerSize{};
 
     // OVERRIDE specific metadata
     std::string overrideFilename{};
     std::size_t overridePaletteIndex{};
+    std::size_t overrideSize{};
 
     // Metatile attributes for this tile
     Attributes attributes{};
@@ -632,9 +638,12 @@ struct NormalizedTile {
         this->metatileIndex = tile.metatileIndex;
         this->subtile = tile.subtile;
         this->anim = tile.anim;
-        this->primer = tile.primer;
+        this->frame = tile.frame;
+        this->primerFilename = tile.primerFilename;
+        this->primerSize = tile.primerSize;
         this->overrideFilename = tile.overrideFilename;
         this->overridePaletteIndex = tile.overridePaletteIndex;
+        this->overrideSize = tile.overrideSize;
         this->attributes = tile.attributes;
     }
 

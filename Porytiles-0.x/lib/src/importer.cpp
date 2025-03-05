@@ -1256,67 +1256,98 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
     return paletteSize;
 }
 
-RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile,
+RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerMode, std::ifstream &paletteFile,
                              const std::string &fileName)
 {
+    std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
     RGBATile primerTile{};
     primerTile.type = TileType::PRIMER;
 
     std::string line{};
-    std::uint8_t paletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
-    if (paletteSize == 0 || paletteSize > PAL_SIZE - 1) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: invalid palette primer size, must be 1 <= size <= 15", fileName));
+    const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
+    if (declaredPaletteSize == 0 || declaredPaletteSize > PAL_SIZE - 1) {
+        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be 1 <= size <= 15", fileName,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
 
     std::uint8_t lineCount = 0;
     while (std::getline(paletteFile, line)) {
         const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
-        /*
-         * TODO : throw fatal error if primer contained transparent color or a color that will collapse
-         * to transparent
-         */
-        primerTile.pixels.at(lineCount) = rgba;
+
+        if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
+            bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
+        }
+        else {
+            error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
+                                       fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
+                                       fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
+                                       bgrToRgba.at(bgr).second));
+        }
+
+        if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
+            error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
+                                       fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+        }
+
+        if (lineCount < primerTile.pixels.size()) {
+            primerTile.pixels.at(lineCount) = rgba;
+        }
         lineCount++;
         if (lineCount > PAL_SIZE - 1) {
             break;
         }
     }
 
-    if (lineCount != paletteSize) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("line count {} did not match stated palette size {} in primer file: {}", lineCount,
-                               paletteSize, fileName));
+    if (lineCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
+    primerTile.primerSize = declaredPaletteSize;
 
     return primerTile;
 }
 
-std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, CompilerMode compilerMode,
+std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, const CompilerMode compilerMode,
                                                                  std::ifstream &paletteFile,
                                                                  const std::string &fileName)
 {
+    std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
     RGBATile overrideTile{};
     OverridenPaletteSlots overridePaletteSlots{};
     overrideTile.type = TileType::OVERRIDE;
 
     std::string line{};
-    std::uint8_t paletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
-    if (paletteSize != PAL_SIZE - 1) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: invalid palette override size, must be exactly {}", fileName, PAL_SIZE - 1));
+    const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
+    if (declaredPaletteSize != PAL_SIZE - 1) {
+        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be exactly {}", fileName,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold), PAL_SIZE - 1));
     }
 
     std::uint8_t lineCount = 0;
+    std::uint8_t usedPaletteSize = 0;
     while (std::getline(paletteFile, line)) {
         if (line != "-\r") {
             const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
-            /*
-             * TODO : throw fatal error if primer contained transparent color or a color that will collapse
-             * to transparent
-             */
-            overrideTile.pixels.at(lineCount) = rgba;
+
+            if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
+                bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
+            }
+            else {
+                error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
+                                           fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
+                                           fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
+                                           bgrToRgba.at(bgr).second));
+            }
+
+            if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
+                error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
+                                           fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+            }
+            // Use usedPaletteSize here so we don't have a bunch of blank pixels at the head of the overrideTile.
+            overrideTile.pixels.at(usedPaletteSize) = rgba;
+            // Add 1 to lineCount since slot 0 is implicitly transparent
             overridePaletteSlots.emplace_back(lineCount + 1, rgbaToBgr(rgba));
+            usedPaletteSize++;
         }
         lineCount++;
         if (lineCount > PAL_SIZE - 1) {
@@ -1324,11 +1355,12 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
         }
     }
 
-    if (lineCount != paletteSize) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("line count {} did not match stated palette size {} in primer file: {}", lineCount,
-                               paletteSize, fileName));
+    if (lineCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
+
+    overrideTile.primerSize = usedPaletteSize;
 
     return {overrideTile, overridePaletteSlots};
 }
