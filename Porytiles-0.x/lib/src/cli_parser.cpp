@@ -125,11 +125,17 @@ const std::string COMPILATION_INPUT_DIRECTORY_FORMAT = std::string{fmt::format(R
                         ...
                     # you may specify an arbitrary number of animations
                     ...
-                 # `palette-primers' folder is optional
+                # `palette-primers' folder is optional
                 [palette-primers]
                     # e.g. a pal file containing all the colors for your foliage
                     [foliage.pal]
                     # you may specify an arbitrary number of primer palettes
+                    ...
+                # `palette-overrides' folder is optional
+                [palette-overrides]
+                    # e.g. a pal file containing overrides for 01.pal
+                    [01.pal]
+                    # you may specify more override palettes for other pal indexes
                     ...
 )"
 )}.substr(1);
