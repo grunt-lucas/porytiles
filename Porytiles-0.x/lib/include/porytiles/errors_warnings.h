@@ -49,17 +49,13 @@ struct ErrorsAndWarnings {
           transparencyCollapse{WarningMode::OFF}, assignCacheOverride{WarningMode::OFF},
           invalidAssignCache{WarningMode::OFF}, missingAssignCache{WarningMode::OFF},
           keyFrameMissingColors(WarningMode::OFF), unusedManualPalColor(WarningMode::OFF),
-          tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF}
-    {
-    }
+          tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF} {}
 
-    [[nodiscard]] std::size_t errTotal() const
-    {
+    [[nodiscard]] std::size_t errTotal() const {
         return errCount + keyFrameMissingColorsErrCount;
     }
 
-    void setAllWarnings(WarningMode setting)
-    {
+    void setAllWarnings(WarningMode setting) {
         // Compilation warnings
         colorPrecisionLoss = setting;
         keyFrameNoMatchingTile = setting;
@@ -79,8 +75,7 @@ struct ErrorsAndWarnings {
         paletteIndexOutOfRange = setting;
     }
 
-    void setAllEnabledWarningsToErrors()
-    {
+    void setAllEnabledWarningsToErrors() {
         // Compilation warnings
         if (colorPrecisionLoss == WarningMode::WARN) {
             colorPrecisionLoss = WarningMode::ERR;

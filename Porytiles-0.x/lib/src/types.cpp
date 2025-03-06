@@ -9,8 +9,7 @@
 
 namespace porytiles {
 
-static RGBATile uniformTile(const RGBA32 &color) noexcept
-{
+static RGBATile uniformTile(const RGBA32 &color) noexcept {
     RGBATile tile{};
     for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
         tile.pixels[i] = color;
@@ -18,8 +17,7 @@ static RGBATile uniformTile(const RGBA32 &color) noexcept
     return tile;
 }
 
-static GBATile uniformTile(const uint8_t &index) noexcept
-{
+static GBATile uniformTile(const uint8_t &index) noexcept {
     GBATile tile{};
     for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
         tile.colorIndexes[i] = index;
@@ -59,8 +57,7 @@ const RGBATile RGBA_TILE_MAGENTA = uniformTile(RGBA_MAGENTA);
 
 const GBATile GBA_TILE_TRANSPARENT = uniformTile(0);
 
-std::string tileTypeString(TileType type)
-{
+std::string tileTypeString(TileType type) {
     switch (type) {
     case TileType::FREESTANDING:
         return "freestanding";
@@ -77,8 +74,7 @@ std::string tileTypeString(TileType type)
     throw std::runtime_error("types::tileTypeString reached unreachable code path");
 }
 
-std::string layerString(TileLayer layer)
-{
+std::string layerString(TileLayer layer) {
     switch (layer) {
     case TileLayer::BOTTOM:
         return "bottom";
@@ -93,29 +89,24 @@ std::string layerString(TileLayer layer)
     throw std::runtime_error("types::layerString reached unreachable code path");
 }
 
-TileLayer indexToLayer(std::size_t index, bool tripleLayer)
-{
+TileLayer indexToLayer(std::size_t index, bool tripleLayer) {
     if (tripleLayer) {
         if (index >= 0 && index < 4) {
             return TileLayer::BOTTOM;
-        }
-        else if (index <= 4 && index < 8) {
+        } else if (index <= 4 && index < 8) {
             return TileLayer::MIDDLE;
-        }
-        else {
+        } else {
             return TileLayer::TOP;
         }
     }
     if (index >= 0 && index < 4) {
         return TileLayer::BOTTOM;
-    }
-    else {
+    } else {
         return TileLayer::TOP;
     }
 }
 
-std::string subtileString(Subtile subtile)
-{
+std::string subtileString(Subtile subtile) {
     switch (subtile) {
     case Subtile::NORTHWEST:
         return "northwest";
@@ -132,24 +123,19 @@ std::string subtileString(Subtile subtile)
     throw std::runtime_error("types::subtileString reached unreachable code path");
 }
 
-Subtile indexToSubtile(std::size_t index)
-{
+Subtile indexToSubtile(std::size_t index) {
     if (index % 4 == 0) {
         return Subtile::NORTHWEST;
-    }
-    else if (index % 4 == 1) {
+    } else if (index % 4 == 1) {
         return Subtile::NORTHEAST;
-    }
-    else if (index % 4 == 2) {
+    } else if (index % 4 == 2) {
         return Subtile::SOUTHWEST;
-    }
-    else {
+    } else {
         return Subtile::SOUTHEAST;
     }
 }
 
-std::string layerTypeString(LayerType layerType)
-{
+std::string layerTypeString(LayerType layerType) {
     switch (layerType) {
     case LayerType::NORMAL:
         return "normal";
@@ -166,8 +152,7 @@ std::string layerTypeString(LayerType layerType)
     throw std::runtime_error("types::layerTypeString reached unreachable code path");
 }
 
-std::uint8_t layerTypeValue(LayerType layerType)
-{
+std::uint8_t layerTypeValue(LayerType layerType) {
     switch (layerType) {
     case LayerType::NORMAL:
         return 0;
@@ -184,8 +169,7 @@ std::uint8_t layerTypeValue(LayerType layerType)
     throw std::runtime_error("types::layerTypeValue reached unreachable code path");
 }
 
-LayerType layerTypeFromInt(std::uint8_t layerInt)
-{
+LayerType layerTypeFromInt(std::uint8_t layerInt) {
     switch (layerInt) {
     case 0:
         return LayerType::NORMAL;
@@ -200,8 +184,7 @@ LayerType layerTypeFromInt(std::uint8_t layerInt)
     throw std::runtime_error("types::layerTypeFromInt reached unreachable code path");
 }
 
-std::uint8_t encounterTypeValue(EncounterType encounterType)
-{
+std::uint8_t encounterTypeValue(EncounterType encounterType) {
     switch (encounterType) {
     case EncounterType::NONE:
         return 0;
@@ -216,8 +199,7 @@ std::uint8_t encounterTypeValue(EncounterType encounterType)
     throw std::runtime_error("types::encounterTypeValue reached unreachable code path");
 }
 
-std::string encounterTypeString(EncounterType encounterType)
-{
+std::string encounterTypeString(EncounterType encounterType) {
     switch (encounterType) {
     case EncounterType::NONE:
         return "TILE_ENCOUNTER_NONE";
@@ -232,22 +214,18 @@ std::string encounterTypeString(EncounterType encounterType)
     throw std::runtime_error("types::encounterTypeString reached unreachable code path");
 }
 
-EncounterType stringToEncounterType(std::string string)
-{
+EncounterType stringToEncounterType(std::string string) {
     if (string == "TILE_ENCOUNTER_NONE") {
         return EncounterType::NONE;
-    }
-    else if (string == "TILE_ENCOUNTER_LAND") {
+    } else if (string == "TILE_ENCOUNTER_LAND") {
         return EncounterType::LAND;
-    }
-    else if (string == "TILE_ENCOUNTER_WATER") {
+    } else if (string == "TILE_ENCOUNTER_WATER") {
         return EncounterType::WATER;
     }
     throw std::invalid_argument{"invalid EnounterType string"};
 }
 
-EncounterType encounterTypeFromInt(std::uint8_t encounterInt)
-{
+EncounterType encounterTypeFromInt(std::uint8_t encounterInt) {
     switch (encounterInt) {
     case 0:
         return EncounterType::NONE;
@@ -262,8 +240,7 @@ EncounterType encounterTypeFromInt(std::uint8_t encounterInt)
     throw std::runtime_error("types::encounterTypeFromInt reached unreachable code path");
 }
 
-std::uint8_t terrainTypeValue(TerrainType terrainType)
-{
+std::uint8_t terrainTypeValue(TerrainType terrainType) {
     switch (terrainType) {
     case TerrainType::NORMAL:
         return 0;
@@ -280,8 +257,7 @@ std::uint8_t terrainTypeValue(TerrainType terrainType)
     throw std::runtime_error("types::terrainTypeValue reached unreachable code path");
 }
 
-std::string terrainTypeString(TerrainType terrainType)
-{
+std::string terrainTypeString(TerrainType terrainType) {
     switch (terrainType) {
     case TerrainType::NORMAL:
         return "TILE_TERRAIN_NORMAL";
@@ -298,26 +274,21 @@ std::string terrainTypeString(TerrainType terrainType)
     throw std::runtime_error("types::terrainTypeString reached unreachable code path");
 }
 
-TerrainType stringToTerrainType(std::string string)
-{
+TerrainType stringToTerrainType(std::string string) {
     if (string == "TILE_TERRAIN_NORMAL") {
         return TerrainType::NORMAL;
-    }
-    else if (string == "TILE_TERRAIN_GRASS") {
+    } else if (string == "TILE_TERRAIN_GRASS") {
         return TerrainType::GRASS;
-    }
-    else if (string == "TILE_TERRAIN_WATER") {
+    } else if (string == "TILE_TERRAIN_WATER") {
         return TerrainType::WATER;
-    }
-    else if (string == "TILE_TERRAIN_WATERFALL") {
+    } else if (string == "TILE_TERRAIN_WATERFALL") {
         return TerrainType::WATERFALL;
     }
 
     throw std::invalid_argument{"invalid TerrainType string"};
 }
 
-TerrainType terrainTypeFromInt(std::uint8_t terrainInt)
-{
+TerrainType terrainTypeFromInt(std::uint8_t terrainInt) {
     switch (terrainInt) {
     case 0:
         return TerrainType::NORMAL;
@@ -334,8 +305,7 @@ TerrainType terrainTypeFromInt(std::uint8_t terrainInt)
     throw std::runtime_error("types::terrainTypeFromInt reached unreachable code path");
 }
 
-std::string targetBaseGameString(TargetBaseGame game)
-{
+std::string targetBaseGameString(TargetBaseGame game) {
     switch (game) {
     case TargetBaseGame::EMERALD:
         return "pokeemerald";
@@ -350,49 +320,36 @@ std::string targetBaseGameString(TargetBaseGame game)
     throw std::runtime_error("types::targetBaseGameString reached unreachable code path");
 }
 
-std::ostream &operator<<(std::ostream &os, const BGR15 &bgr)
-{
+std::ostream &operator<<(std::ostream &os, const BGR15 &bgr) {
     os << std::to_string(bgr.bgr);
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba)
-{
+std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba) {
     // For debugging purposes, print the solid colors with names rather than int values
     if (rgba == RGBA_BLACK || rgba == bgrToRgba(BGR_BLACK)) {
         os << "black";
-    }
-    else if (rgba == RGBA_RED || rgba == bgrToRgba(BGR_RED)) {
+    } else if (rgba == RGBA_RED || rgba == bgrToRgba(BGR_RED)) {
         os << "red";
-    }
-    else if (rgba == RGBA_GREEN || rgba == bgrToRgba(BGR_GREEN)) {
+    } else if (rgba == RGBA_GREEN || rgba == bgrToRgba(BGR_GREEN)) {
         os << "green";
-    }
-    else if (rgba == RGBA_BLUE || rgba == bgrToRgba(BGR_BLUE)) {
+    } else if (rgba == RGBA_BLUE || rgba == bgrToRgba(BGR_BLUE)) {
         os << "blue";
-    }
-    else if (rgba == RGBA_YELLOW || rgba == bgrToRgba(BGR_YELLOW)) {
+    } else if (rgba == RGBA_YELLOW || rgba == bgrToRgba(BGR_YELLOW)) {
         os << "yellow";
-    }
-    else if (rgba == RGBA_MAGENTA || rgba == bgrToRgba(BGR_MAGENTA)) {
+    } else if (rgba == RGBA_MAGENTA || rgba == bgrToRgba(BGR_MAGENTA)) {
         os << "magenta";
-    }
-    else if (rgba == RGBA_CYAN || rgba == bgrToRgba(BGR_CYAN)) {
+    } else if (rgba == RGBA_CYAN || rgba == bgrToRgba(BGR_CYAN)) {
         os << "cyan";
-    }
-    else if (rgba == RGBA_WHITE || rgba == bgrToRgba(BGR_WHITE)) {
+    } else if (rgba == RGBA_WHITE || rgba == bgrToRgba(BGR_WHITE)) {
         os << "white";
-    }
-    else if (rgba == RGBA_GREY || rgba == bgrToRgba(BGR_GREY)) {
+    } else if (rgba == RGBA_GREY || rgba == bgrToRgba(BGR_GREY)) {
         os << "grey";
-    }
-    else if (rgba == RGBA_PURPLE || rgba == bgrToRgba(BGR_PURPLE)) {
+    } else if (rgba == RGBA_PURPLE || rgba == bgrToRgba(BGR_PURPLE)) {
         os << "purple";
-    }
-    else if (rgba == RGBA_LIME || rgba == bgrToRgba(BGR_LIME)) {
+    } else if (rgba == RGBA_LIME || rgba == bgrToRgba(BGR_LIME)) {
         os << "lime";
-    }
-    else {
+    } else {
         os << std::to_string(rgba.red) << "," << std::to_string(rgba.green) << "," << std::to_string(rgba.blue);
         if (rgba.alpha != 255) {
             // Only show alpha if not opaque
@@ -402,8 +359,7 @@ std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba)
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const RGBATile &tile)
-{
+std::ostream &operator<<(std::ostream &os, const RGBATile &tile) {
     os << "{";
     for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
         if (i % TILE_SIDE_LENGTH_PIX == 0) {
@@ -415,14 +371,12 @@ std::ostream &operator<<(std::ostream &os, const RGBATile &tile)
     return os;
 }
 
-BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept
-{
+BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept {
     // Convert each color channel from 8-bit to 5-bit, then shift into the right position
     return {std::uint16_t(((rgba.blue / 8) << 10) | ((rgba.green / 8) << 5) | (rgba.red / 8))};
 }
 
-RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
-{
+RGBA32 bgrToRgba(const BGR15 &bgr) noexcept {
     RGBA32 rgba{};
     rgba.red = (bgr.bgr & 0x1f) * 8;
     rgba.green = ((bgr.bgr >> 5) & 0x1f) * 8;
@@ -431,8 +385,7 @@ RGBA32 bgrToRgba(const BGR15 &bgr) noexcept
     return rgba;
 }
 
-std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primarySourcePath;
@@ -445,8 +398,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) c
     throw std::runtime_error("types::InputPaths::modeBasedInputPath (compile) reached unreachable code path");
 }
 
-std::filesystem::path CompilerSourcePaths::modeBasedBottomTilesheetPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedBottomTilesheetPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return bottomPrimaryTilesheet();
@@ -458,8 +410,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedBottomTilesheetPath(Compiler
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedBottomTilesheetPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedMiddleTilesheetPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedMiddleTilesheetPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return middlePrimaryTilesheet();
@@ -471,8 +422,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedMiddleTilesheetPath(Compiler
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedMiddleTilesheetPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return topPrimaryTilesheet();
@@ -484,8 +434,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMod
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedTopTilesheetPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedAttributePath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedAttributePath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primaryAttributes();
@@ -497,8 +446,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedAttributePath(CompilerMode m
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedAttrPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedAnimPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedAnimPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primaryAnims();
@@ -510,8 +458,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedAnimPath(CompilerMode mode) 
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedAnimPath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedAssignCachePath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedAssignCachePath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primaryAssignCache();
@@ -523,8 +470,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedAssignCachePath(CompilerMode
     // unreachable, here for compiler
     throw std::runtime_error("types::InputPaths::modeBasedAssignCachePath (compile) reached unreachable code path");
 }
-std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primaryPalettePrimers();
@@ -537,8 +483,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMo
     throw std::runtime_error("types::InputPaths::modeBasedPalettePrimerPath (compile) reached unreachable code path");
 }
 
-std::filesystem::path CompilerSourcePaths::modeBasedPaletteOverridePath(CompilerMode mode) const
-{
+std::filesystem::path CompilerSourcePaths::modeBasedPaletteOverridePath(CompilerMode mode) const {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return primaryPaletteOverrides();
@@ -551,8 +496,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedPaletteOverridePath(Compiler
     throw std::runtime_error("types::InputPaths::modeBasedPaletteOverridePath (compile) reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primarySourcePath;
@@ -566,8 +510,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mod
         "types::InputPaths::DecompilerSourcePaths::modeBasedInputPath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedTilesPath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedTilesPath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primaryTilesPng();
@@ -581,8 +524,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedTilesPath(DecompilerMode m
         "types::InputPaths::DecompilerSourcePaths::modeBasedTilesPath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primaryMetatilesBin();
@@ -596,8 +538,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMo
         "types::InputPaths::DecompilerSourcePaths::modeBasedMetatilesPath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedAttributePath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedAttributePath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primaryAttributesBin();
@@ -611,8 +552,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAttributePath(DecompilerMo
         "types::InputPaths::DecompilerSourcePaths::modeBasedAttrPath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedPalettePath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedPalettePath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primaryPalettes();
@@ -626,8 +566,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedPalettePath(DecompilerMode
         "types::InputPaths::DecompilerSourcePaths::modeBasedPalettePath reached unreachable code path");
 }
 
-std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mode) const
-{
+std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mode) const {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return primaryAnims();
@@ -641,8 +580,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mo
         "types::InputPaths::DecompilerSourcePaths::modeBasedAnimPath reached unreachable code path");
 }
 
-std::string subcommandString(Subcommand subcommand)
-{
+std::string subcommandString(Subcommand subcommand) {
     switch (subcommand) {
     case Subcommand::COMPILE_PRIMARY:
         return "compile-primary";
@@ -659,8 +597,7 @@ std::string subcommandString(Subcommand subcommand)
     throw std::runtime_error("types::subcommandString reached unreachable code path");
 }
 
-std::string compilerModeString(CompilerMode mode)
-{
+std::string compilerModeString(CompilerMode mode) {
     switch (mode) {
     case CompilerMode::PRIMARY:
         return "primary";
@@ -673,8 +610,7 @@ std::string compilerModeString(CompilerMode mode)
     throw std::runtime_error("types::compilerModeString reached unreachable code path");
 }
 
-std::string assignAlgorithmString(AssignAlgorithm algo)
-{
+std::string assignAlgorithmString(AssignAlgorithm algo) {
     switch (algo) {
     case AssignAlgorithm::DFS:
         return "dfs";
@@ -687,8 +623,7 @@ std::string assignAlgorithmString(AssignAlgorithm algo)
     throw std::runtime_error("types::assignAlgorithmString reached unreachable code path");
 }
 
-std::string decompilerModeString(DecompilerMode mode)
-{
+std::string decompilerModeString(DecompilerMode mode) {
     switch (mode) {
     case DecompilerMode::PRIMARY:
         return "primary";
@@ -706,8 +641,7 @@ std::string decompilerModeString(DecompilerMode mode)
 // |    TEST CASES    |
 // --------------------
 
-TEST_CASE("RGBA32 to BGR15 should lose precision")
-{
+TEST_CASE("RGBA32 to BGR15 should lose precision") {
     porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
     porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
 
@@ -718,8 +652,7 @@ TEST_CASE("RGBA32 to BGR15 should lose precision")
     CHECK(bgr2 == porytiles::BGR15{32767}); // this value is uint16 max divided by two, i.e. 15 bits are set
 }
 
-TEST_CASE("RGBA32 should be ordered component-wise")
-{
+TEST_CASE("RGBA32 should be ordered component-wise") {
     porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
     porytiles::RGBA32 rgb2 = {1, 2, 3, 4};
     porytiles::RGBA32 rgb3 = {2, 3, 4, 5};
@@ -731,8 +664,7 @@ TEST_CASE("RGBA32 should be ordered component-wise")
     CHECK(rgb2 < rgb3);
 }
 
-TEST_CASE("BGR15 to RGBA should upconvert RGB channels to multiples of 8")
-{
+TEST_CASE("BGR15 to RGBA should upconvert RGB channels to multiples of 8") {
     porytiles::RGBA32 rgb1 = {0, 8, 80, 255};
     porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
     porytiles::RGBA32 rgb3 = {2, 165, 96, 255};

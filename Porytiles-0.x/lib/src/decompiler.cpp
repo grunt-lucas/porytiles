@@ -15,8 +15,7 @@
 namespace porytiles {
 
 static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTile, const GBAPalette &palette,
-                              bool hFlip, bool vFlip)
-{
+                              bool hFlip, bool vFlip) {
     RGBATile rgbTile{};
     for (std::size_t row = 0; row < TILE_SIDE_LENGTH_PIX; row++) {
         for (std::size_t col = 0; col < TILE_SIDE_LENGTH_PIX; col++) {
@@ -26,8 +25,7 @@ static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTil
             RGBA32 rgb{};
             if (pixel == 0 && ctx.decompilerConfig.normalizeTransparency) {
                 rgb = ctx.decompilerConfig.normalizeTransparencyColor;
-            }
-            else {
+            } else {
                 rgb = bgrToRgba(palette.colors.at(pixel));
             }
             rgbTile.setPixel(row, col, rgb);
@@ -39,8 +37,7 @@ static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTil
 static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBATile &decompiledTile,
                                 const std::vector<GBATile> &tiles, std::size_t tileIndex,
                                 const std::vector<GBAPalette> &palettes, std::size_t paletteIndex,
-                                const Attributes &attributes, bool hFlip, bool vFlip)
-{
+                                const Attributes &attributes, bool hFlip, bool vFlip) {
     if (tileIndex >= tiles.size() || paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
         /*
          * This weird edge case can happen because some of the vanilla game metatiles.bin entries have garbage values
@@ -75,8 +72,7 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
 
 std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMode mode,
                                              const CompiledTileset &compiledTileset,
-                                             const std::unordered_map<std::size_t, Attributes> &attributesMap)
-{
+                                             const std::unordered_map<std::size_t, Attributes> &attributesMap) {
     auto decompiledTileset = std::make_unique<DecompiledTileset>();
 
     /*
@@ -89,11 +85,9 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     if (dualImpliedMetatileCount == attributesMap.size()) {
         decompiledTileset->tripleLayer = false;
-    }
-    else if (tripleImpliedMetatileCount == attributesMap.size()) {
+    } else if (tripleImpliedMetatileCount == attributesMap.size()) {
         decompiledTileset->tripleLayer = true;
-    }
-    else {
+    } else {
         fatalerror_noImpliedLayerType(ctx.err, ctx.decompilerSrcPaths, mode);
     }
 
@@ -116,8 +110,7 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
                                     metatileEntry.tileIndex, ctx.decompilerContext.pairedPrimaryTileset->palettes,
                                     metatileEntry.paletteIndex, metatileEntry.attributes, metatileEntry.hFlip,
                                     metatileEntry.vFlip);
-            }
-            else {
+            } else {
                 setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles,
                                     metatileEntry.tileIndex - ctx.fieldmapConfig.numTilesInPrimary,
                                     compiledTileset.palettes, metatileEntry.paletteIndex, metatileEntry.attributes,
@@ -145,8 +138,7 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
 } // namespace porytiles
 
-TEST_CASE("decompile should decompile a basic primary tileset")
-{
+TEST_CASE("decompile should decompile a basic primary tileset") {
     porytiles::PorytilesContext ctx{};
     ctx.fieldmapConfig.numPalettesInPrimary = 6;
     ctx.fieldmapConfig.numPalettesTotal = 13;
@@ -177,8 +169,7 @@ TEST_CASE("decompile should decompile a basic primary tileset")
     }
 }
 
-TEST_CASE("decompile should decompile a basic secondary tileset")
-{
+TEST_CASE("decompile should decompile a basic secondary tileset") {
     porytiles::PorytilesContext ctx{};
     ctx.fieldmapConfig.numPalettesInPrimary = 6;
     ctx.fieldmapConfig.numPalettesTotal = 13;

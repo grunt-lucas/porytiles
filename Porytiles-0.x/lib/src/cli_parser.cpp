@@ -541,8 +541,7 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     // TODO 1.0.0 : this does not correctly handle the -Werror=foo case where foo is an incompatible warning
 };
 
-void parseOptions(PorytilesContext &ctx, int argc, char *const *argv)
-{
+void parseOptions(PorytilesContext &ctx, int argc, char *const *argv) {
     parseGlobalOptions(ctx, argc, argv);
     parseSubcommand(ctx, argc, argv);
 
@@ -559,13 +558,11 @@ void parseOptions(PorytilesContext &ctx, int argc, char *const *argv)
 }
 
 template <typename T>
-static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &optionName, const char *optarg)
-{
+static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &optionName, const char *optarg) {
     try {
         T arg = parseInteger<T>(optarg);
         return arg;
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         fatalerror(err,
                    fmt::format("invalid argument `{}' for option `{}': {}", fmt::styled(optarg, fmt::emphasis::bold),
                                fmt::styled(optionName, fmt::emphasis::bold), e.what()));
@@ -574,8 +571,7 @@ static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &op
     throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
 }
 
-static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName, const std::string &colorString)
-{
+static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName, const std::string &colorString) {
     std::vector<std::string> colorComponents = split(colorString, ",");
     if (colorComponents.size() != 3) {
         fatalerror(err, fmt::format("invalid argument `{}' for option `{}': RGB color must have three components",
@@ -607,16 +603,13 @@ static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName
 }
 
 static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
-                                                   const char *optarg)
-{
+                                                   const char *optarg) {
     std::string optargString{optarg};
     if (optargString == "true-color") {
         return TilesOutputPalette::TRUE_COLOR;
-    }
-    else if (optargString == "greyscale") {
+    } else if (optargString == "greyscale") {
         return TilesOutputPalette::GREYSCALE;
-    }
-    else {
+    } else {
         fatalerror(err,
                    fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                fmt::styled(optionName, fmt::emphasis::bold)));
@@ -626,19 +619,15 @@ static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err,
 }
 
 static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const std::string &optionName,
-                                          const char *optarg)
-{
+                                          const char *optarg) {
     std::string optargString{optarg};
     if (optargString == "pokeemerald") {
         return TargetBaseGame::EMERALD;
-    }
-    else if (optargString == "pokefirered") {
+    } else if (optargString == "pokefirered") {
         return TargetBaseGame::FIRERED;
-    }
-    else if (optargString == "pokeruby") {
+    } else if (optargString == "pokeruby") {
         return TargetBaseGame::RUBY;
-    }
-    else {
+    } else {
         fatalerror(err,
                    fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                fmt::styled(optionName, fmt::emphasis::bold)));
@@ -648,16 +637,13 @@ static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const st
 }
 
 static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const std::string &optionName,
-                                            const char *optarg)
-{
+                                            const char *optarg) {
     std::string optargString{optarg};
     if (optargString == assignAlgorithmString(AssignAlgorithm::DFS)) {
         return AssignAlgorithm::DFS;
-    }
-    else if (optargString == assignAlgorithmString(AssignAlgorithm::BFS)) {
+    } else if (optargString == assignAlgorithmString(AssignAlgorithm::BFS)) {
         return AssignAlgorithm::BFS;
-    }
-    else {
+    } else {
         fatalerror(err,
                    fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
                                fmt::styled(optionName, fmt::emphasis::bold)));
@@ -667,8 +653,7 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
 }
 
 const std::vector<std::string> GLOBAL_SHORTS = {};
-static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv)
-{
+static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv) {
     std::ostringstream implodedShorts;
     std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
     // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
@@ -708,8 +693,7 @@ static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *arg
     }
 }
 
-static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
-{
+static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv) {
     if ((argc - optind) == 0) {
         fatalerror(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
     }
@@ -717,24 +701,19 @@ static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv)
     std::string subcommand = argv[optind++];
     if (subcommand == DECOMPILE_PRIMARY_COMMAND) {
         ctx.subcommand = Subcommand::DECOMPILE_PRIMARY;
-    }
-    else if (subcommand == DECOMPILE_SECONDARY_COMMAND) {
+    } else if (subcommand == DECOMPILE_SECONDARY_COMMAND) {
         ctx.subcommand = Subcommand::DECOMPILE_SECONDARY;
-    }
-    else if (subcommand == COMPILE_PRIMARY_COMMAND) {
+    } else if (subcommand == COMPILE_PRIMARY_COMMAND) {
         ctx.subcommand = Subcommand::COMPILE_PRIMARY;
-    }
-    else if (subcommand == COMPILE_SECONDARY_COMMAND) {
+    } else if (subcommand == COMPILE_SECONDARY_COMMAND) {
         ctx.subcommand = Subcommand::COMPILE_SECONDARY;
-    }
-    else {
+    } else {
         fatalerror(ctx.err,
                    "unrecognized subcommand `" + subcommand + "', try `porytiles --help' for usage information");
     }
 }
 
-static void validateSubcommandContext(PorytilesContext &ctx, std::string option)
-{
+static void validateSubcommandContext(PorytilesContext &ctx, std::string option) {
     if (!supportedSubcommands.contains(option)) {
         internalerror(fmt::format("`supportedSubcommands' did not contain mapping for option `{}'", option));
     }
@@ -747,8 +726,7 @@ const std::vector<std::string> COMPILE_SHORTS = {};
 /*
  * FIXME : the warning parsing system here is a dumpster fire
  */
-static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv)
-{
+static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv) {
     std::ostringstream implodedShorts;
     std::copy(COMPILE_SHORTS.begin(), COMPILE_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
     // leading '+' tells getopt to follow posix and stop the loop at first non-option arg
@@ -979,8 +957,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             if (optarg != NULL) {
                 ctx.decompilerConfig.normalizeTransparencyColor =
                     parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
-            }
-            else {
+            } else {
                 // TODO : remove this deprecation warning at some point in the future
                 pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
                 pt_println(
@@ -1005,8 +982,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                     fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
                                                     fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
                 }
-            }
-            else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+            } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.secondaryExploredNodeCutoff = exploreCutoff;
                 if (ctx.compilerConfig.secondaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
                     fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
@@ -1019,8 +995,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             ctx.compilerConfig.providedAssignCacheOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
-            }
-            else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+            } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.secondaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
             }
             break;
@@ -1030,8 +1005,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 if (std::string{optarg} == SMART_PRUNE) {
                     ctx.compilerConfig.primarySmartPrune = true;
-                }
-                else {
+                } else {
                     ctx.compilerConfig.primaryBestBranches =
                         parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.primaryBestBranches == 0) {
@@ -1039,12 +1013,10 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                                                         fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
                     }
                 }
-            }
-            else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+            } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 if (std::string{optarg} == SMART_PRUNE) {
                     ctx.compilerConfig.secondarySmartPrune = true;
-                }
-                else {
+                } else {
                     ctx.compilerConfig.secondaryBestBranches =
                         parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.secondaryBestBranches == 0) {
@@ -1087,8 +1059,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 if (std::string{optarg} == "smart") {
                     ctx.compilerConfig.primarySmartPrune = true;
-                }
-                else {
+                } else {
                     ctx.compilerConfig.primaryBestBranches =
                         parseIntegralOption<std::size_t>(ctx.err, PRIMARY_BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.primaryBestBranches == 0) {
@@ -1144,53 +1115,39 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             validateSubcommandContext(ctx, WERROR);
             if (optarg == NULL) {
                 setAllEnabledWarningsToErrors = true;
-            }
-            else {
+            } else {
                 // Compilation warnings
                 if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
                     errColorPrecisionLossOverride = true;
-                }
-                else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+                } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                     errKeyFrameTileDidNotAppearInAssignmentOverride = true;
-                }
-                else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
+                } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
                     errUsedTrueColorModeOverride = true;
-                }
-                else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+                } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
                     errAttributeFormatMismatchOverride = true;
-                }
-                else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
+                } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
                     errMissingAttributesCsvOverride = true;
-                }
-                else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
+                } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
                     errUnusedAttributeOverride = true;
-                }
-                else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
+                } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
                     errTransparencyCollapseOverride = true;
-                }
-                else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
+                } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
                     errAssignCacheOverride = true;
-                }
-                else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
+                } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
                     errInvalidAssignCache = true;
-                }
-                else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
+                } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
                     errMissingAssignCache = true;
-                }
-                else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
+                } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                     errKeyFrameMissingColors = true;
-                }
-                else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
                     errUnusedManualPalColor = true;
                 }
                 // Decompilation warnings
                 else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
                     errTileIndexOutOfRange = true;
-                }
-                else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+                } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
                     errPaletteIndexOutOfRange = true;
-                }
-                else {
+                } else {
                     fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
                                                     fmt::styled(std::string{optarg}, fmt::emphasis::bold),
                                                     fmt::styled(WERROR, fmt::emphasis::bold)));
@@ -1202,48 +1159,35 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             // Compilation warnings
             if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
                 errColorPrecisionLossOverride = false;
-            }
-            else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+            } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                 errKeyFrameTileDidNotAppearInAssignmentOverride = false;
-            }
-            else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
+            } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
                 errUsedTrueColorModeOverride = false;
-            }
-            else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+            } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
                 errAttributeFormatMismatchOverride = false;
-            }
-            else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
+            } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
                 errMissingAttributesCsvOverride = false;
-            }
-            else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
+            } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
                 errUnusedAttributeOverride = false;
-            }
-            else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
+            } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
                 errTransparencyCollapseOverride = false;
-            }
-            else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
+            } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
                 errAssignCacheOverride = false;
-            }
-            else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
+            } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
                 errInvalidAssignCache = false;
-            }
-            else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
+            } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
                 errMissingAssignCache = false;
-            }
-            else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
+            } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                 errKeyFrameMissingColors = false;
-            }
-            else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
+            } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
                 errUnusedManualPalColor = false;
             }
             // Decompilation warnings
             else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
                 errTileIndexOutOfRange = false;
-            }
-            else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+            } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
                 errPaletteIndexOutOfRange = false;
-            }
-            else {
+            } else {
                 fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
                                                 fmt::styled(std::string{optarg}, fmt::emphasis::bold),
                                                 fmt::styled(WERROR, fmt::emphasis::bold)));
@@ -1370,17 +1314,13 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             validateSubcommandContext(ctx, HELP);
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 fmt::println("{}", COMPILE_PRIMARY_HELP);
-            }
-            else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+            } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 fmt::println("{}", COMPILE_SECONDARY_HELP);
-            }
-            else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+            } else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
                 fmt::println("{}", DECOMPILE_PRIMARY_HELP);
-            }
-            else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+            } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
                 fmt::println("{}", DECOMPILE_SECONDARY_HELP);
-            }
-            else {
+            } else {
                 internalerror(fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}",
                                           static_cast<int>(ctx.subcommand)));
             }
@@ -1403,46 +1343,39 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             fatalerror(ctx.err,
                        "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
         }
-    }
-    else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         if ((argc - optind) != 3) {
             fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
                                 "compile-secondary --help'");
         }
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
         if ((argc - optind) != 2) {
             fatalerror(ctx.err,
                        "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
         }
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         if ((argc - optind) != 3) {
             fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
                                 "decompile-secondary --help'");
         }
-    }
-    else {
+    } else {
         internalerror(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
     }
 
     if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerSrcPaths.secondarySourcePath = argv[optind++];
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         ctx.decompilerSrcPaths.secondarySourcePath = argv[optind++];
     }
 
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.compilerSrcPaths.primarySourcePath = argv[optind++];
         ctx.compilerSrcPaths.metatileBehaviors = argv[optind++];
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY || ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
         ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
-    }
-    else {
+    } else {
         internalerror(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
     }
@@ -1514,140 +1447,116 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     if (errColorPrecisionLossOverride.has_value()) {
         if (errColorPrecisionLossOverride.value()) {
             ctx.err.colorPrecisionLoss = WarningMode::ERR;
-        }
-        else if ((warnColorPrecisionLossOverride.has_value() && warnColorPrecisionLossOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnColorPrecisionLossOverride.has_value() && warnColorPrecisionLossOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.colorPrecisionLoss = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.colorPrecisionLoss = WarningMode::OFF;
         }
     }
     if (errKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
         if (errKeyFrameTileDidNotAppearInAssignmentOverride.value()) {
             ctx.err.keyFrameNoMatchingTile = WarningMode::ERR;
-        }
-        else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
-                  warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
+                    warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.keyFrameNoMatchingTile = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.keyFrameNoMatchingTile = WarningMode::OFF;
         }
     }
     if (errUsedTrueColorModeOverride.has_value()) {
         if (errUsedTrueColorModeOverride.value()) {
             ctx.err.usedTrueColorMode = WarningMode::ERR;
-        }
-        else if ((warnUsedTrueColorModeOverride.has_value() && warnUsedTrueColorModeOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnUsedTrueColorModeOverride.has_value() && warnUsedTrueColorModeOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.usedTrueColorMode = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.usedTrueColorMode = WarningMode::OFF;
         }
     }
     if (errAttributeFormatMismatchOverride.has_value()) {
         if (errAttributeFormatMismatchOverride.value()) {
             ctx.err.attributeFormatMismatch = WarningMode::ERR;
-        }
-        else if ((warnAttributeFormatMismatchOverride.has_value() && warnAttributeFormatMismatchOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnAttributeFormatMismatchOverride.has_value() && warnAttributeFormatMismatchOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.attributeFormatMismatch = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.attributeFormatMismatch = WarningMode::OFF;
         }
     }
     if (errMissingAttributesCsvOverride.has_value()) {
         if (errMissingAttributesCsvOverride.value()) {
             ctx.err.missingAttributesCsv = WarningMode::ERR;
-        }
-        else if ((warnMissingAttributesCsvOverride.has_value() && warnMissingAttributesCsvOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnMissingAttributesCsvOverride.has_value() && warnMissingAttributesCsvOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.missingAttributesCsv = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.missingAttributesCsv = WarningMode::OFF;
         }
     }
     if (errUnusedAttributeOverride.has_value()) {
         if (errUnusedAttributeOverride.value()) {
             ctx.err.unusedAttribute = WarningMode::ERR;
-        }
-        else if ((warnUnusedAttributeOverride.has_value() && warnUnusedAttributeOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnUnusedAttributeOverride.has_value() && warnUnusedAttributeOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.unusedAttribute = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.unusedAttribute = WarningMode::OFF;
         }
     }
     if (errTransparencyCollapseOverride.has_value()) {
         if (errTransparencyCollapseOverride.value()) {
             ctx.err.transparencyCollapse = WarningMode::ERR;
-        }
-        else if ((warnTransparencyCollapseOverride.has_value() && warnTransparencyCollapseOverride.value()) ||
-                 enableAllWarnings) {
+        } else if ((warnTransparencyCollapseOverride.has_value() && warnTransparencyCollapseOverride.value()) ||
+                   enableAllWarnings) {
             ctx.err.transparencyCollapse = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.transparencyCollapse = WarningMode::OFF;
         }
     }
     if (errAssignCacheOverride.has_value()) {
         if (errAssignCacheOverride.value()) {
             ctx.err.assignCacheOverride = WarningMode::ERR;
-        }
-        else if ((warnAssignCacheOverride.has_value() && warnAssignCacheOverride.value()) || enableAllWarnings) {
+        } else if ((warnAssignCacheOverride.has_value() && warnAssignCacheOverride.value()) || enableAllWarnings) {
             ctx.err.assignCacheOverride = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.assignCacheOverride = WarningMode::OFF;
         }
     }
     if (errInvalidAssignCache.has_value()) {
         if (errInvalidAssignCache.value()) {
             ctx.err.invalidAssignCache = WarningMode::ERR;
-        }
-        else if ((warnInvalidAssignCache.has_value() && warnInvalidAssignCache.value()) || enableAllWarnings) {
+        } else if ((warnInvalidAssignCache.has_value() && warnInvalidAssignCache.value()) || enableAllWarnings) {
             ctx.err.invalidAssignCache = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.invalidAssignCache = WarningMode::OFF;
         }
     }
     if (errMissingAssignCache.has_value()) {
         if (errMissingAssignCache.value()) {
             ctx.err.missingAssignCache = WarningMode::ERR;
-        }
-        else if ((warnMissingAssignCache.has_value() && warnMissingAssignCache.value()) || enableAllWarnings) {
+        } else if ((warnMissingAssignCache.has_value() && warnMissingAssignCache.value()) || enableAllWarnings) {
             ctx.err.missingAssignCache = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.missingAssignCache = WarningMode::OFF;
         }
     }
     if (errKeyFrameMissingColors.has_value()) {
         if (errKeyFrameMissingColors.value()) {
             ctx.err.keyFrameMissingColors = WarningMode::ERR;
-        }
-        else if ((warnKeyFrameMissingColors.has_value() && warnKeyFrameMissingColors.value()) || enableAllWarnings) {
+        } else if ((warnKeyFrameMissingColors.has_value() && warnKeyFrameMissingColors.value()) || enableAllWarnings) {
             ctx.err.keyFrameMissingColors = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.keyFrameMissingColors = WarningMode::OFF;
         }
     }
     if (errUnusedManualPalColor.has_value()) {
         if (errUnusedManualPalColor.value()) {
             ctx.err.unusedManualPalColor = WarningMode::ERR;
-        }
-        else if ((warnUnusedManualPalColor.has_value() && warnUnusedManualPalColor.value()) || enableAllWarnings) {
+        } else if ((warnUnusedManualPalColor.has_value() && warnUnusedManualPalColor.value()) || enableAllWarnings) {
             ctx.err.unusedManualPalColor = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.unusedManualPalColor = WarningMode::OFF;
         }
     }
@@ -1655,22 +1564,19 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     if (errTileIndexOutOfRange.has_value()) {
         if (errTileIndexOutOfRange.value()) {
             ctx.err.tileIndexOutOfRange = WarningMode::ERR;
-        }
-        else if ((warnTileIndexOutOfRange.has_value() && warnTileIndexOutOfRange.value()) || enableAllWarnings) {
+        } else if ((warnTileIndexOutOfRange.has_value() && warnTileIndexOutOfRange.value()) || enableAllWarnings) {
             ctx.err.tileIndexOutOfRange = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.tileIndexOutOfRange = WarningMode::OFF;
         }
     }
     if (errPaletteIndexOutOfRange.has_value()) {
         if (errPaletteIndexOutOfRange.value()) {
             ctx.err.paletteIndexOutOfRange = WarningMode::ERR;
-        }
-        else if ((warnPaletteIndexOutOfRange.has_value() && warnPaletteIndexOutOfRange.value()) || enableAllWarnings) {
+        } else if ((warnPaletteIndexOutOfRange.has_value() && warnPaletteIndexOutOfRange.value()) ||
+                   enableAllWarnings) {
             ctx.err.paletteIndexOutOfRange = WarningMode::WARN;
-        }
-        else {
+        } else {
             ctx.err.paletteIndexOutOfRange = WarningMode::OFF;
         }
     }
@@ -1690,11 +1596,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
      */
     if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
         ctx.fieldmapConfig = FieldmapConfig::pokeemeraldDefaults();
-    }
-    else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
+    } else if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
         ctx.fieldmapConfig = FieldmapConfig::pokefireredDefaults();
-    }
-    else if (ctx.targetBaseGame == TargetBaseGame::RUBY) {
+    } else if (ctx.targetBaseGame == TargetBaseGame::RUBY) {
         ctx.fieldmapConfig = FieldmapConfig::pokerubyDefaults();
     }
     if (tilesPrimaryOverridden) {
@@ -1718,17 +1622,13 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         ctx.validateFieldmapParameters(CompilerMode::PRIMARY);
-    }
-    else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         ctx.validateFieldmapParameters(CompilerMode::SECONDARY);
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
         ctx.validateFieldmapParameters(DecompilerMode::PRIMARY);
-    }
-    else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
+    } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         ctx.validateFieldmapParameters(DecompilerMode::SECONDARY);
-    }
-    else {
+    } else {
         internalerror("cli_parser::parseSubcommandOptions unknown subcommand");
     }
 
@@ -1748,11 +1648,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 }
 } // namespace porytiles
 
-TEST_CASE("parseCompile should work as expected with all command lines")
-{
+TEST_CASE("parseCompile should work as expected with all command lines") {
     // These tests are full of disgusting and evil hacks, avert your gaze
-    SUBCASE("Check that the defaults are correct")
-    {
+    SUBCASE("Check that the defaults are correct") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
@@ -1777,8 +1675,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
     }
 
-    SUBCASE("-Wall should enable everything")
-    {
+    SUBCASE("-Wall should enable everything") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
@@ -1806,8 +1703,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
     }
 
-    SUBCASE("-Wall -Werror should enable everything as an error")
-    {
+    SUBCASE("-Wall -Werror should enable everything as an error") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
@@ -1838,8 +1734,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
     }
 
-    SUBCASE("Should enable a non-default warn, set all to error, then disable the error")
-    {
+    SUBCASE("Should enable a non-default warn, set all to error, then disable the error") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
@@ -1873,8 +1768,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
     }
 
-    SUBCASE("Should enable all warnings, then disable one of them")
-    {
+    SUBCASE("Should enable all warnings, then disable one of them") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 
@@ -1905,8 +1799,7 @@ TEST_CASE("parseCompile should work as expected with all command lines")
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
     }
 
-    SUBCASE("Global warning disable should work, even if a warning was explicitly enabled")
-    {
+    SUBCASE("Global warning disable should work, even if a warning was explicitly enabled") {
         porytiles::PorytilesContext ctx{};
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
 

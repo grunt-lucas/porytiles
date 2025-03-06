@@ -23,8 +23,7 @@
 
 namespace porytiles {
 
-static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMode compilerMode)
-{
+static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMode compilerMode) {
     using std::filesystem::exists;
     using std::filesystem::is_directory;
     using std::filesystem::is_regular_file;
@@ -69,8 +68,7 @@ static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMod
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode)};
-    }
-    catch ([[maybe_unused]] const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception &e) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("{} is not a valid PNG file",
                                ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
@@ -78,8 +76,7 @@ static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMod
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode)};
-    }
-    catch ([[maybe_unused]] const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception &e) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("{} is not a valid PNG file",
                                ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
@@ -87,16 +84,14 @@ static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMod
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
-    }
-    catch ([[maybe_unused]] const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception &e) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("{} is not a valid PNG file",
                                ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
     }
 }
 
-static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode decompilerMode)
-{
+static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode decompilerMode) {
     using std::filesystem::exists;
     using std::filesystem::is_directory;
     using std::filesystem::is_regular_file;
@@ -131,8 +126,7 @@ static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode 
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode)};
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
                    fmt::format("{} is not a valid PNG file",
                                ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
@@ -149,8 +143,7 @@ static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode 
 static void validateCompileOutputs(PorytilesContext &ctx, const CompilerMode compilerMode,
                                    const std::filesystem::path &attributesPath,
                                    const std::filesystem::path &tilesetPath, const std::filesystem::path &metatilesPath,
-                                   const std::filesystem::path &palettesPath, const std::filesystem::path &animsPath)
-{
+                                   const std::filesystem::path &palettesPath, const std::filesystem::path &animsPath) {
     using std::filesystem::create_directories;
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -183,15 +176,13 @@ static void validateCompileOutputs(PorytilesContext &ctx, const CompilerMode com
 
     try {
         create_directories(palettesPath);
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("could not create `{}': {}", palettesPath.string(), e.what()));
     }
     try {
         create_directories(animsPath);
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("could not create `{}': {}", animsPath.string(), e.what()));
     }
@@ -201,8 +192,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
                                      const std::filesystem::path &outputPath,
                                      const std::filesystem::path &attributesPath,
                                      const std::filesystem::path &bottomPath, const std::filesystem::path &middlePath,
-                                     const std::filesystem::path &topPath)
-{
+                                     const std::filesystem::path &topPath) {
     using std::filesystem::create_directories;
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -232,8 +222,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
     if (!outputPath.empty()) {
         try {
             create_directories(outputPath);
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                        fmt::format("could not create `{}': {}", outputPath.string(), e.what()));
         }
@@ -313,8 +302,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
 
 static std::vector<std::vector<AnimationPng<png::rgba_pixel>>>
 prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                const std::filesystem::path &animationPath)
-{
+                                const std::filesystem::path &animationPath) {
     using std::filesystem::create_directories;
     using std::filesystem::directory_iterator;
     using std::filesystem::exists;
@@ -377,8 +365,7 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
                 png::image<png::rgba_pixel> png{frames.at(i)};
                 AnimationPng animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
                 framePngs.push_back(animPng);
-            }
-            catch ([[maybe_unused]] const std::exception &exception) {
+            } catch ([[maybe_unused]] const std::exception &exception) {
                 error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
             }
         }
@@ -396,8 +383,7 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 static std::unordered_map<std::size_t, Attributes>
 prepareDecompiledAttributesForImport(PorytilesContext &ctx, const CompilerMode compilerMode,
                                      const std::unordered_map<std::string, std::uint8_t> &behaviorMap,
-                                     const std::filesystem::path &attributesCsvPath)
-{
+                                     const std::filesystem::path &attributesCsvPath) {
     using std::filesystem::exists;
     using std::filesystem::is_regular_file;
 
@@ -413,19 +399,16 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx, const CompilerMode c
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode *compilerMode,
-                                      const DecompilerMode *decompilerMode, const std::string &behaviorHeaderPath)
-{
+                                      const DecompilerMode *decompilerMode, const std::string &behaviorHeaderPath) {
     std::ifstream behaviorFile{behaviorHeaderPath};
     if (behaviorFile.fail()) {
         if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
                        fmt::format("{}: could not open for reading", behaviorHeaderPath));
-        }
-        else if (decompilerMode != nullptr) {
+        } else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
                        fmt::format("{}: could not open for reading", behaviorHeaderPath));
-        }
-        else {
+        } else {
             internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
         }
     }
@@ -434,11 +417,9 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
             -> std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>> {
             if (compilerMode != nullptr) {
                 return importMetatileBehaviorHeader(ctx, *compilerMode, behaviorFile);
-            }
-            else if (decompilerMode != nullptr) {
+            } else if (decompilerMode != nullptr) {
                 return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
-            }
-            else {
+            } else {
                 internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
             }
             // unreachable, here for compiler
@@ -449,12 +430,10 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
         if (compilerMode != nullptr) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
                        fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
-        }
-        else if (decompilerMode != nullptr) {
+        } else if (decompilerMode != nullptr) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
                        fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
-        }
-        else {
+        } else {
             internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
         }
     }
@@ -463,21 +442,18 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 prepareBehaviorsHeaderForImport(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                const std::string &behaviorHeaderPath)
-{
+                                const std::string &behaviorHeaderPath) {
     return prepareBehaviorsHeaderForImportHelper(ctx, &compilerMode, nullptr, behaviorHeaderPath);
 }
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 prepareBehaviorsHeaderForImport(PorytilesContext &ctx, const DecompilerMode decompilerMode,
-                                const std::string &behaviorHeaderPath)
-{
+                                const std::string &behaviorHeaderPath) {
     return prepareBehaviorsHeaderForImportHelper(ctx, nullptr, &decompilerMode, behaviorHeaderPath);
 }
 
 static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ctx, CompilerMode compilerMode,
-                                                            const std::filesystem::path &palettePrimersPath)
-{
+                                                            const std::filesystem::path &palettePrimersPath) {
     using std::filesystem::directory_iterator;
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -525,8 +501,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
 
 static std::pair<std::vector<RGBATile>, std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>>>
 preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                 const std::filesystem::path &paletteOverridesPath)
-{
+                                 const std::filesystem::path &paletteOverridesPath) {
     using std::filesystem::directory_iterator;
     using std::filesystem::exists;
     using std::filesystem::is_directory;
@@ -572,8 +547,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
         std::size_t overridePaletteIndex{};
         try {
             overridePaletteIndex = parseInteger<std::size_t>(overrideFile.stem().c_str(), 10);
-        }
-        catch ([[maybe_unused]] const std::exception &e) {
+        } catch ([[maybe_unused]] const std::exception &e) {
             internalerror("driver::preparePaletteOverridesForImport parseInteger with invalid pal override file name");
         }
 
@@ -584,8 +558,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
                                            fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
                                            ctx.fieldmapConfig.numPalettesInPrimary));
             }
-        }
-        else if (compilerMode == CompilerMode::SECONDARY) {
+        } else if (compilerMode == CompilerMode::SECONDARY) {
             if (overridePaletteIndex < ctx.fieldmapConfig.numPalettesInPrimary ||
                 overridePaletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
                 error(ctx.err,
@@ -593,8 +566,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
                                   fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
                                   ctx.fieldmapConfig.numPalettesInPrimary, ctx.fieldmapConfig.numPalettesTotal));
             }
-        }
-        else {
+        } else {
             internalerror("driver::preparePaletteOverridesForImport called with invalid compiler mode");
         }
 
@@ -608,8 +580,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
         for (const auto &[palSlot, bgr] : overriddenPalSlots) {
             if (palOverrides.contains(overridePaletteIndex)) {
                 palOverrides.at(overridePaletteIndex).emplace_back(palSlot, bgr);
-            }
-            else {
+            } else {
                 palOverrides.insert({overridePaletteIndex, {{palSlot, bgr}}});
             }
         }
@@ -620,8 +591,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 }
 
 static void driveEmitCompiledPalettes(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
-                                      const std::filesystem::path &palettesPath)
-{
+                                      const std::filesystem::path &palettesPath) {
     for (std::size_t i = 0; i < ctx.fieldmapConfig.numPalettesTotal; i++) {
         std::string fileName = i < 10 ? "0" + std::to_string(i) : std::to_string(i);
         fileName += ".pal";
@@ -629,8 +599,7 @@ static void driveEmitCompiledPalettes(PorytilesContext &ctx, const CompiledTiles
         std::ofstream outPal{paletteFile.string()};
         if (i < compiledTiles.palettes.size()) {
             emitPalette(ctx, outPal, compiledTiles.palettes.at(i));
-        }
-        else {
+        } else {
             emitZeroedPalette(ctx, outPal);
         }
         outPal.close();
@@ -638,8 +607,7 @@ static void driveEmitCompiledPalettes(PorytilesContext &ctx, const CompiledTiles
 }
 
 static void driveEmitCompiledTiles(PorytilesContext &ctx, const CompiledTileset &compiledTiles,
-                                   const std::filesystem::path &tilesetPath)
-{
+                                   const std::filesystem::path &tilesetPath) {
     const std::size_t imageWidth = TILE_SIDE_LENGTH_PIX * TILES_PNG_WIDTH_IN_TILES;
     const std::size_t imageHeight = TILE_SIDE_LENGTH_PIX * (compiledTiles.tiles.size() / TILES_PNG_WIDTH_IN_TILES);
     png::image<png::index_pixel> tilesPng{static_cast<png::uint_32>(imageWidth),
@@ -650,8 +618,7 @@ static void driveEmitCompiledTiles(PorytilesContext &ctx, const CompiledTileset 
 }
 
 static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<CompiledAnimation> &compiledAnims,
-                                   const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath)
-{
+                                   const std::vector<GBAPalette> &palettes, const std::filesystem::path &animsPath) {
     using std::filesystem::create_directories;
     using std::filesystem::path;
 
@@ -676,13 +643,11 @@ static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<Comp
 }
 
 static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                 const std::filesystem::path &assignCfgPath)
-{
+                                 const std::filesystem::path &assignCfgPath) {
     std::ofstream outAssignCache{assignCfgPath.string()};
     if (outAssignCache.good()) {
         emitAssignCache(ctx, compilerMode, outAssignCache);
-    }
-    else {
+    } else {
         fatalerror(
             ctx.err, ctx.compilerSrcPaths, compilerMode,
             fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
@@ -691,8 +656,7 @@ static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode compi
 }
 
 static void driveEmitCompiledTileset(PorytilesContext &ctx, CompilerMode compilerMode, const CompiledTileset &tileset,
-                                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
-{
+                                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap) {
     using std::filesystem::path;
 
     /*
@@ -731,8 +695,7 @@ static void driveEmitCompiledTileset(PorytilesContext &ctx, CompilerMode compile
 
 static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mode, const DecompiledTileset &tileset,
                                        const std::unordered_map<size_t, Attributes> &attributesMap,
-                                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
-{
+                                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap) {
     using std::filesystem::path;
 
     path outputPath(ctx.output.path);
@@ -766,8 +729,7 @@ static void driveEmitDecompiledTileset(PorytilesContext &ctx, DecompilerMode mod
 
 static std::pair<CompiledTileset, std::unordered_map<size_t, Attributes>>
 driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
-                           std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
-{
+                           std::unordered_map<uint8_t, std::string> &behaviorReverseMap) {
     using std::filesystem::exists;
     using std::filesystem::path;
 
@@ -819,8 +781,7 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
 
 static std::pair<std::unique_ptr<CompiledTileset>, std::unordered_map<size_t, Attributes>>
 driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
-                    std::unordered_map<std::string, uint8_t> &behaviorMap)
-{
+                    std::unordered_map<std::string, uint8_t> &behaviorMap) {
     auto compiledTileset = std::make_unique<CompiledTileset>();
 
     pt_logln(ctx, stderr, "importing {} tiles from {}", compilerModeString(compilerMode),
@@ -874,8 +835,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
 
 static std::pair<std::unique_ptr<DecompiledTileset>, std::unordered_map<size_t, Attributes>>
 driveDecompileTileset(PorytilesContext &ctx, const DecompilerMode mode,
-                      std::unordered_map<uint8_t, std::string> &behaviorReverseMap)
-{
+                      std::unordered_map<uint8_t, std::string> &behaviorReverseMap) {
     auto decompiled = std::make_unique<DecompiledTileset>();
 
     /*
@@ -891,8 +851,7 @@ driveDecompileTileset(PorytilesContext &ctx, const DecompilerMode mode,
     return std::pair{std::move(decompiled), attributesMap};
 }
 
-static void driveDecompilePrimary(PorytilesContext &ctx)
-{
+static void driveDecompilePrimary(PorytilesContext &ctx) {
     validateDecompileInputs(ctx, DecompilerMode::PRIMARY);
 
     /*
@@ -912,8 +871,7 @@ static void driveDecompilePrimary(PorytilesContext &ctx)
     driveEmitDecompiledTileset(ctx, DecompilerMode::PRIMARY, *decompiled, attributesMap, behaviorReverseMap);
 }
 
-static void driveDecompileSecondary(PorytilesContext &ctx)
-{
+static void driveDecompileSecondary(PorytilesContext &ctx) {
     validateDecompileInputs(ctx, DecompilerMode::SECONDARY);
     validateDecompileInputs(ctx, DecompilerMode::PRIMARY);
 
@@ -941,8 +899,7 @@ static void driveDecompileSecondary(PorytilesContext &ctx)
     driveEmitDecompiledTileset(ctx, DecompilerMode::SECONDARY, *decompiled, attributesMap, behaviorReverseMap);
 }
 
-static void driveCompilePrimary(PorytilesContext &ctx)
-{
+static void driveCompilePrimary(PorytilesContext &ctx) {
     /*
      * Checks that the compiler input folder contents exist as expected.
      */
@@ -958,8 +915,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
             prepareBehaviorsHeaderForImport(ctx, CompilerMode::PRIMARY, ctx.compilerSrcPaths.metatileBehaviors);
         behaviorMap = map;
         behaviorReverseMap = reverse;
-    }
-    else {
+    } else {
         fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
                    fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
     }
@@ -972,8 +928,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
     // FIXME : default behavior/encounter/terrain parsing code is duped
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-    }
-    catch ([[maybe_unused]] const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the
          * mappings from the behaviors header.
@@ -987,8 +942,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
     }
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
-    }
-    catch ([[maybe_unused]] const std::exception &e) {
+    } catch ([[maybe_unused]] const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided an encounter label and try to parse that based on the
          * mappings from the encounter table.
@@ -996,8 +950,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
         try {
             const EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
-        }
-        catch ([[maybe_unused]] const std::exception &e1) {
+        } catch ([[maybe_unused]] const std::exception &e1) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
                        fmt::format("supplied default EncounterType `{}' was not valid",
                                    fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
@@ -1005,8 +958,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
     }
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
          * mappings from the terrain table.
@@ -1014,8 +966,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
         try {
             const TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
-        }
-        catch ([[maybe_unused]] const std::exception &e1) {
+        } catch ([[maybe_unused]] const std::exception &e1) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
                        fmt::format("supplied default TerrainType `{}' was not valid",
                                    fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
@@ -1030,8 +981,7 @@ static void driveCompilePrimary(PorytilesContext &ctx)
     driveEmitCompiledTileset(ctx, CompilerMode::PRIMARY, *(ctx.compilerContext.resultTileset), behaviorReverseMap);
 }
 
-static void driveCompileSecondary(PorytilesContext &ctx)
-{
+static void driveCompileSecondary(PorytilesContext &ctx) {
     /*
      * Checks that the compiler input folder contents exist as expected.
      */
@@ -1048,8 +998,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
             prepareBehaviorsHeaderForImport(ctx, CompilerMode::SECONDARY, ctx.compilerSrcPaths.metatileBehaviors);
         behaviorMap = map;
         behaviorReverseMap = reverse;
-    }
-    else {
+    } else {
         fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
                    fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
     }
@@ -1062,8 +1011,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
     // FIXME : default behavior/encounter/terrain parsing code is duped
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the
          * mappings from the behaviors header.
@@ -1077,8 +1025,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
     }
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided an encounter label and try to parse that based on the
          * mappings from the encounter table.
@@ -1086,8 +1033,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
         try {
             EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
-        }
-        catch ([[maybe_unused]] const std::exception &e1) {
+        } catch ([[maybe_unused]] const std::exception &e1) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
                        fmt::format("supplied default EncounterType `{}' was not valid",
                                    fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
@@ -1095,8 +1041,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
     }
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         /*
          * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
          * mappings from the terrain table.
@@ -1104,8 +1049,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
         try {
             TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
-        }
-        catch ([[maybe_unused]] const std::exception &e1) {
+        } catch ([[maybe_unused]] const std::exception &e1) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
                        fmt::format("supplied default TerrainType `{}' was not valid",
                                    fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
@@ -1124,8 +1068,7 @@ static void driveCompileSecondary(PorytilesContext &ctx)
     driveEmitCompiledTileset(ctx, CompilerMode::SECONDARY, *(ctx.compilerContext.resultTileset), behaviorReverseMap);
 }
 
-void drive(PorytilesContext &ctx)
-{
+void drive(PorytilesContext &ctx) {
     switch (ctx.subcommand) {
     case Subcommand::DECOMPILE_PRIMARY:
         driveDecompilePrimary(ctx);
@@ -1146,8 +1089,7 @@ void drive(PorytilesContext &ctx)
 
 } // namespace porytiles
 
-TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set")
-{
+TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -1314,8 +1256,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary set")
-{
+TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary set") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -1442,8 +1383,7 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("drive should emit all expected files for compiled_emerald_general")
-{
+TEST_CASE("drive should emit all expected files for compiled_emerald_general") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
@@ -1560,8 +1500,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general")
     std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove")
-{
+TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;

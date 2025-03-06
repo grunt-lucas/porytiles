@@ -12,8 +12,8 @@
 namespace porytiles {
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
-                              const std::vector<ColorSet> &unassigneds, const std::vector<ColorSet> &unassignedPrimers)
-{
+                              const std::vector<ColorSet> &unassigneds,
+                              const std::vector<ColorSet> &unassignedPrimers) {
     std::size_t exploredNodeCutoff = compilerMode == CompilerMode::PRIMARY
                                          ? ctx.compilerConfig.primaryExploredNodeCutoff
                                          : ctx.compilerConfig.secondaryExploredNodeCutoff;
@@ -46,12 +46,10 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
     if (state.unassignedPrimerCount != 0) {
         toAssign = unassignedPrimers.at(state.unassignedPrimerCount - 1);
         newUnassignedPrimerCount = state.unassignedPrimerCount - 1;
-    }
-    else if (state.unassignedPrimerCount == 0 && state.unassignedCount != 0) {
+    } else if (state.unassignedPrimerCount == 0 && state.unassignedCount != 0) {
         toAssign = unassigneds.at(state.unassignedCount - 1);
         newUnassignedCount = state.unassignedCount - 1;
-    }
-    else {
+    } else {
         internalerror("reached bad else clause in palette_assignment::assignDepthFirst");
     }
 
@@ -78,8 +76,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
                                                        unassigneds, unassignedPrimers);
                 if (result == AssignResult::SUCCESS) {
                     return AssignResult::SUCCESS;
-                }
-                else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
+                } else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
                     return AssignResult::EXPLORE_CUTOFF_REACHED;
                 }
             }
@@ -156,8 +153,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
                                                unassignedPrimers);
         if (result == AssignResult::SUCCESS) {
             return AssignResult::SUCCESS;
-        }
-        else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
+        } else if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
             return AssignResult::EXPLORE_CUTOFF_REACHED;
         }
     }
@@ -169,8 +165,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
 AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, const AssignState &initialState,
                                 std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                                 const std::vector<ColorSet> &unassigneds,
-                                const std::vector<ColorSet> &unassignedPrimers)
-{
+                                const std::vector<ColorSet> &unassignedPrimers) {
     std::size_t exploredNodeCutoff = compilerMode == CompilerMode::PRIMARY
                                          ? ctx.compilerConfig.primaryExploredNodeCutoff
                                          : ctx.compilerConfig.secondaryExploredNodeCutoff;
@@ -200,8 +195,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
         if (!stateQueue.empty()) {
             currentState = stateQueue.front();
             stateQueue.pop_front();
-        }
-        else if (!lowPriorityQueue.empty()) {
+        } else if (!lowPriorityQueue.empty()) {
             currentState = lowPriorityQueue.front();
             lowPriorityQueue.pop_front();
         }
@@ -220,12 +214,10 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
         if (currentState.unassignedPrimerCount != 0) {
             toAssign = unassignedPrimers.at(currentState.unassignedPrimerCount - 1);
             newUnassignedPrimerCount = currentState.unassignedPrimerCount - 1;
-        }
-        else if (currentState.unassignedPrimerCount == 0 && currentState.unassignedCount != 0) {
+        } else if (currentState.unassignedPrimerCount == 0 && currentState.unassignedCount != 0) {
             toAssign = unassigneds.at(currentState.unassignedCount - 1);
             newUnassignedCount = currentState.unassignedCount - 1;
-        }
-        else {
+        } else {
             internalerror("reached bad else clause in palette_assignment::assignDepthFirst");
         }
 
@@ -303,8 +295,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
                      */
                     lowPriorityQueue.push_back(updatedState);
                     visitedStates.insert(updatedState);
-                }
-                else {
+                } else {
                     stateQueue.push_back(updatedState);
                     visitedStates.insert(updatedState);
                 }
@@ -318,19 +309,16 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
 static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode,
                           const std::vector<ColorSet> &colorSets, const std::vector<ColorSet> &primerColorSets,
                           const std::vector<ColorSet> &overrideColorSets,
-                          const std::unordered_map<BGR15, std::size_t> &colorToIndex, const bool printErrors)
-{
+                          const std::unordered_map<BGR15, std::size_t> &colorToIndex, const bool printErrors) {
     std::vector<ColorSet> assignedPalsSolution{};
     std::vector<ColorSet> tmpLogicalPalettes{};
     if (compilerMode == CompilerMode::PRIMARY) {
         assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
         tmpLogicalPalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
-    }
-    else if (compilerMode == CompilerMode::SECONDARY) {
+    } else if (compilerMode == CompilerMode::SECONDARY) {
         assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
         tmpLogicalPalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
-    }
-    else {
+    } else {
         internalerror_unknownCompilerMode("compiler::compile");
     }
 
@@ -396,12 +384,10 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
     if (assignAlgorithm == AssignAlgorithm::DFS) {
         assignResult = assignDepthFirst(ctx, compilerMode, initialState, assignedPalsSolution, primaryPaletteColorSets,
                                         unassignedNormPalettes, unassignedPrimerPalettes);
-    }
-    else if (assignAlgorithm == AssignAlgorithm::BFS) {
+    } else if (assignAlgorithm == AssignAlgorithm::BFS) {
         assignResult = assignBreadthFirst(ctx, compilerMode, initialState, assignedPalsSolution,
                                           primaryPaletteColorSets, unassignedNormPalettes, unassignedPrimerPalettes);
-    }
-    else {
+    } else {
         internalerror("palette_assignment::tryAssignment unknown AssignAlgorithm");
     }
 
@@ -415,8 +401,7 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
             fatalerror_noPossiblePaletteAssignment(ctx.err, ctx.compilerSrcPaths, compilerMode);
         }
         return std::make_tuple(false, assignedPalsSolution, primaryPaletteColorSets);
-    }
-    else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
+    } else if (assignResult == AssignResult::EXPLORE_CUTOFF_REACHED) {
         if (printErrors) {
             fatalerror_assignExploreCutoffReached(ctx.err, ctx.compilerSrcPaths, compilerMode, assignAlgorithm,
                                                   exploredNodeCutoff);
@@ -480,8 +465,7 @@ static constexpr std::array MATRIX{
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets, const std::vector<ColorSet> &overrideColorSets,
-                           const std::unordered_map<BGR15, std::size_t> &colorToIndex)
-{
+                           const std::unordered_map<BGR15, std::size_t> &colorToIndex) {
     /*
      * First, we detect if we are in a command line override case. There are three of these.
      */
@@ -532,17 +516,14 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
             }
             if (compilerMode == CompilerMode::PRIMARY) {
                 warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
-            }
-            else if (compilerMode == CompilerMode::SECONDARY) {
+            } else if (compilerMode == CompilerMode::SECONDARY) {
                 warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
             }
         }
-    }
-    else {
+    } else {
         if (compilerMode == CompilerMode::PRIMARY) {
             warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
-        }
-        else if (compilerMode == CompilerMode::SECONDARY) {
+        } else if (compilerMode == CompilerMode::SECONDARY) {
             warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
         }
     }
@@ -553,8 +534,7 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
             ctx.compilerConfig.primaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
             ctx.compilerConfig.primaryBestBranches = MATRIX.at(index).bestBranches;
             ctx.compilerConfig.primarySmartPrune = MATRIX.at(index).smartPrune;
-        }
-        else if (compilerMode == CompilerMode::SECONDARY) {
+        } else if (compilerMode == CompilerMode::SECONDARY) {
             ctx.compilerConfig.secondaryAssignAlgorithm = MATRIX.at(index).assignAlgorithm;
             ctx.compilerConfig.secondaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
             ctx.compilerConfig.secondaryBestBranches = MATRIX.at(index).bestBranches;

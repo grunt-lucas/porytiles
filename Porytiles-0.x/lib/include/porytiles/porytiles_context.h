@@ -32,12 +32,9 @@ struct PorytilesContext {
     PorytilesContext()
         : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
           compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-          decompilerContext{}, err{}, subcommand{}, verbose{false}
-    {
-    }
+          decompilerContext{}, err{}, subcommand{}, verbose{false} {}
 
-    void validateFieldmapParameters(CompilerMode compilerMode) const
-    {
+    void validateFieldmapParameters(CompilerMode compilerMode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
             fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numTiles",
                                                  fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
@@ -52,8 +49,7 @@ struct PorytilesContext {
                                                  fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
         }
     }
-    void validateFieldmapParameters(DecompilerMode decompilerMode) const
-    {
+    void validateFieldmapParameters(DecompilerMode decompilerMode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
             fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
                                                  fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);

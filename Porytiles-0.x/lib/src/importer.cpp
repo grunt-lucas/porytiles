@@ -29,8 +29,7 @@
 namespace porytiles {
 
 DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compilerMode,
-                                     const png::image<png::rgba_pixel> &png)
-{
+                                     const png::image<png::rgba_pixel> &png) {
     if (png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
         error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
     }
@@ -68,8 +67,7 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compile
 }
 
 static std::bitset<3> getLayerBitset(const RGBA32 &transparentColor, const RGBATile &bottomTile,
-                                     const RGBATile &middleTile, const RGBATile &topTile)
-{
+                                     const RGBATile &middleTile, const RGBATile &topTile) {
     std::bitset<3> layers{};
     if (!bottomTile.transparent(transparentColor)) {
         layers.set(0);
@@ -83,8 +81,7 @@ static std::bitset<3> getLayerBitset(const RGBA32 &transparentColor, const RGBAT
     return layers;
 }
 
-static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> layerBitset, std::size_t metatileIndex)
-{
+static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> layerBitset, std::size_t metatileIndex) {
     bool bottomHasContent = layerBitset.test(0);
     bool middleHasContent = layerBitset.test(1);
     bool topHasContent = layerBitset.test(2);
@@ -92,24 +89,18 @@ static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> la
     if (bottomHasContent && middleHasContent && topHasContent) {
         error_allThreeLayersHadNonTransparentContent(ctx.err, metatileIndex);
         return LayerType::TRIPLE;
-    }
-    else if (!bottomHasContent && !middleHasContent && !topHasContent) {
+    } else if (!bottomHasContent && !middleHasContent && !topHasContent) {
         // transparent tile case
         return LayerType::NORMAL;
-    }
-    else if (bottomHasContent && !middleHasContent && !topHasContent) {
+    } else if (bottomHasContent && !middleHasContent && !topHasContent) {
         return LayerType::COVERED;
-    }
-    else if (!bottomHasContent && middleHasContent && !topHasContent) {
+    } else if (!bottomHasContent && middleHasContent && !topHasContent) {
         return LayerType::NORMAL;
-    }
-    else if (!bottomHasContent && !middleHasContent && topHasContent) {
+    } else if (!bottomHasContent && !middleHasContent && topHasContent) {
         return LayerType::NORMAL;
-    }
-    else if (!bottomHasContent && middleHasContent && topHasContent) {
+    } else if (!bottomHasContent && middleHasContent && topHasContent) {
         return LayerType::NORMAL;
-    }
-    else if (bottomHasContent && middleHasContent && !topHasContent) {
+    } else if (bottomHasContent && middleHasContent && !topHasContent) {
         return LayerType::COVERED;
     }
 
@@ -121,8 +112,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
                                              const std::unordered_map<std::size_t, Attributes> &attributesMap,
                                              const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
-                                             const png::image<png::rgba_pixel> &top)
-{
+                                             const png::image<png::rgba_pixel> &top) {
     if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
         error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::BOTTOM, bottom.get_height());
     }
@@ -171,8 +161,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         TerrainType defaultTerrainType;
         try {
             defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             defaultBehavior = 0;
             fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                        fmt::format("supplied default behavior `{}' was not valid",
@@ -181,8 +170,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         try {
             std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
             defaultEncounterType = encounterTypeFromInt(encounterValue);
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             defaultEncounterType = EncounterType::NONE;
             fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                        fmt::format("supplied default EncounterType `{}' was not valid",
@@ -191,8 +179,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         try {
             std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
             defaultTerrainType = terrainTypeFromInt(terrainValue);
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             defaultTerrainType = TerrainType::NORMAL;
             fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                        fmt::format("supplied default TerrainType `{}' was not valid",
@@ -297,8 +284,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
                 middleTiles.at(i).attributes.layerType = LayerType::TRIPLE;
                 topTiles.at(i).attributes.layerType = LayerType::TRIPLE;
             }
-        }
-        else {
+        } else {
             /*
              * Determine layer type by assigning each logical layer to a bit in a bitset. Then we compute the "layer
              * bitset" for each subtile in the metatile. Finally, we OR all these bitsets together. If the final bitset
@@ -378,8 +364,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
     return decompiledTiles;
 }
 
-static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation &anim, CompilerMode compilerMode)
-{
+static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation &anim, CompilerMode compilerMode) {
     if (anim.frames.size() < 2) {
         internalerror("importer::validateAnimFormat bad anim format, found frames.size() < 2");
     }
@@ -431,8 +416,8 @@ static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation 
 }
 
 void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
-                     const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles)
-{
+                     const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims,
+                     DecompiledTileset &tiles) {
     std::vector<DecompiledAnimation> anims{};
 
     for (const auto &rawAnim : rawAnims) {
@@ -510,8 +495,7 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
 
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compilerMode, DecompilerMode *decompilerMode,
-                                   std::ifstream &behaviorFile)
-{
+                                   std::ifstream &behaviorFile) {
     std::unordered_map<std::string, std::uint8_t> behaviorMap{};
     std::unordered_map<std::uint8_t, std::string> behaviorReverseMap{};
 
@@ -536,18 +520,15 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
                     // throw here so it catches below and prints an error message
                     throw std::runtime_error{""};
                 }
-            }
-            catch (const std::exception &e) {
+            } catch (const std::exception &e) {
                 behaviorFile.close();
                 if (compilerMode != nullptr) {
                     fatalerror_invalidBehaviorValue(ctx.err, ctx.compilerSrcPaths, *compilerMode, behaviorName,
                                                     behaviorValueString, processedUpToLine);
-                }
-                else if (decompilerMode != nullptr) {
+                } else if (decompilerMode != nullptr) {
                     fatalerror_invalidBehaviorValue(ctx.err, ctx.decompilerSrcPaths, *decompilerMode, behaviorName,
                                                     behaviorValueString, processedUpToLine);
-                }
-                else {
+                } else {
                     internalerror(
                         "importer::importMetatileBehaviorHeader both compilerMode and decompilerMode were null");
                 }
@@ -568,28 +549,24 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile)
-{
+importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile) {
     return importMetatileBehaviorHeaderHelper(ctx, &compilerMode, nullptr, behaviorFile);
 }
 
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
-importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile)
-{
+importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile) {
     return importMetatileBehaviorHeaderHelper(ctx, nullptr, &decompilerMode, behaviorFile);
 }
 
 std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
-                        const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath)
-{
+                        const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath) {
     std::unordered_map<std::size_t, Attributes> attributeMap{};
     std::unordered_map<std::size_t, std::size_t> lineFirstSeen{};
     io::CSVReader<4> in{filePath};
     try {
         in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
     }
 
@@ -624,8 +601,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     TerrainType defaultTerrainType;
     try {
         defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         defaultBehavior = 0;
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("supplied default behavior `{}' was not valid",
@@ -634,8 +610,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     try {
         std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
         defaultEncounterType = encounterTypeFromInt(encounterValue);
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         defaultEncounterType = EncounterType::NONE;
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("supplied default EncounterType `{}' was not valid",
@@ -644,8 +619,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     try {
         std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
         defaultTerrainType = terrainTypeFromInt(terrainValue);
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         defaultTerrainType = TerrainType::NORMAL;
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("supplied default TerrainType `{}' was not valid",
@@ -659,8 +633,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         try {
             readRow = in.read_row(id, behavior, terrainType, encounterType);
             processedUpToLine++;
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             // increment processedUpToLine here, since we threw before we could increment in the try
             processedUpToLine++;
             error_invalidCsvRowFormat(ctx.err, filePath, processedUpToLine);
@@ -677,24 +650,21 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         attribute.terrainType = defaultTerrainType;
         if (behaviorMap.contains(behavior)) {
             attribute.metatileBehavior = behaviorMap.at(behavior);
-        }
-        else {
+        } else {
             error_unknownMetatileBehavior(ctx.err, filePath, processedUpToLine, behavior);
         }
 
         if (hasTerrainType) {
             try {
                 attribute.terrainType = stringToTerrainType(terrainType);
-            }
-            catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &e) {
                 error_invalidTerrainType(ctx.err, filePath, processedUpToLine, terrainType);
             }
         }
         if (hasEncounterType) {
             try {
                 attribute.encounterType = stringToEncounterType(encounterType);
-            }
-            catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &e) {
                 error_invalidEncounterType(ctx.err, filePath, processedUpToLine, encounterType);
             }
         }
@@ -707,8 +677,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
                 // throw here so it catches below and prints an error
                 throw std::runtime_error{""};
             }
-        }
-        catch (const std::exception &e) {
+        } catch (const std::exception &e) {
             fatalerror_invalidIdInCsv(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath, id, processedUpToLine);
             // here so compiler won't complain
             idVal = 0;
@@ -732,8 +701,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
 }
 
 static void runAssignmentConfigImport(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &config,
-                                      std::string assignCachePath)
-{
+                                      std::string assignCachePath) {
     std::string line;
     std::size_t processedUpToLine = 1;
     while (std::getline(config, line)) {
@@ -754,91 +722,73 @@ static void runAssignmentConfigImport(PorytilesContext &ctx, CompilerMode compil
             if (value == assignAlgorithmString(AssignAlgorithm::DFS)) {
                 if (compilerMode == CompilerMode::PRIMARY) {
                     ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::DFS;
-                }
-                else if (compilerMode == CompilerMode::SECONDARY) {
+                } else if (compilerMode == CompilerMode::SECONDARY) {
                     ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::DFS;
-                }
-                else {
+                } else {
                     internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
                                               static_cast<int>(compilerMode)));
                 }
-            }
-            else if (value == assignAlgorithmString(AssignAlgorithm::BFS)) {
+            } else if (value == assignAlgorithmString(AssignAlgorithm::BFS)) {
                 if (compilerMode == CompilerMode::PRIMARY) {
                     ctx.compilerConfig.primaryAssignAlgorithm = AssignAlgorithm::BFS;
-                }
-                else if (compilerMode == CompilerMode::SECONDARY) {
+                } else if (compilerMode == CompilerMode::SECONDARY) {
                     ctx.compilerConfig.secondaryAssignAlgorithm = AssignAlgorithm::BFS;
-                }
-                else {
+                } else {
                     internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
                                               static_cast<int>(compilerMode)));
                 }
-            }
-            else {
+            } else {
                 fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value,
                                                    processedUpToLine, assignCachePath);
             }
-        }
-        else if (key == EXPLORE_CUTOFF) {
+        } else if (key == EXPLORE_CUTOFF) {
             std::size_t assignExploreValue;
             try {
                 assignExploreValue = parseInteger<std::size_t>(value.c_str());
-            }
-            catch (const std::exception &e) {
+            } catch (const std::exception &e) {
                 assignExploreValue = 0;
                 fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value,
                                                    processedUpToLine, assignCachePath);
             }
             if (compilerMode == CompilerMode::PRIMARY) {
                 ctx.compilerConfig.primaryExploredNodeCutoff = assignExploreValue;
-            }
-            else if (compilerMode == CompilerMode::SECONDARY) {
+            } else if (compilerMode == CompilerMode::SECONDARY) {
                 ctx.compilerConfig.secondaryExploredNodeCutoff = assignExploreValue;
-            }
-            else {
+            } else {
                 internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
                                           static_cast<int>(compilerMode)));
             }
-        }
-        else if (key == BEST_BRANCHES) {
+        } else if (key == BEST_BRANCHES) {
             if (value == SMART_PRUNE) {
                 if (compilerMode == CompilerMode::PRIMARY) {
                     ctx.compilerConfig.primaryBestBranches = SIZE_MAX;
                     ctx.compilerConfig.primarySmartPrune = true;
-                }
-                else if (compilerMode == CompilerMode::SECONDARY) {
+                } else if (compilerMode == CompilerMode::SECONDARY) {
                     ctx.compilerConfig.secondaryBestBranches = SIZE_MAX;
                     ctx.compilerConfig.secondarySmartPrune = true;
-                }
-                else {
+                } else {
                     internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
                                               static_cast<int>(compilerMode)));
                 }
-            }
-            else {
+            } else {
                 std::size_t bestBranchValue;
                 try {
                     bestBranchValue = parseInteger<std::size_t>(value.c_str());
-                }
-                catch (const std::exception &e) {
+                } catch (const std::exception &e) {
                     bestBranchValue = 0;
                     fatalerror_assignCacheInvalidValue(ctx.err, ctx.compilerSrcPaths, compilerMode, key, value,
                                                        processedUpToLine, assignCachePath);
                 }
                 if (compilerMode == CompilerMode::PRIMARY) {
                     ctx.compilerConfig.primaryBestBranches = bestBranchValue;
-                }
-                else if (compilerMode == CompilerMode::SECONDARY) {
+                } else if (compilerMode == CompilerMode::SECONDARY) {
                     ctx.compilerConfig.secondaryBestBranches = bestBranchValue;
-                }
-                else {
+                } else {
                     internalerror(fmt::format("importer::runAssignmentConfigImport unknown CompilerMode: {}",
                                               static_cast<int>(compilerMode)));
                 }
             }
-        }
-        else {
+        } else {
             fatalerror_assignCacheInvalidKey(ctx.err, ctx.compilerSrcPaths, compilerMode, key, processedUpToLine,
                                              assignCachePath);
         }
@@ -847,8 +797,7 @@ static void runAssignmentConfigImport(PorytilesContext &ctx, CompilerMode compil
 }
 
 void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
-                           std::ifstream &config)
-{
+                           std::ifstream &config) {
     if (parentCompilerMode == CompilerMode::SECONDARY && compilerMode == CompilerMode::PRIMARY &&
         ctx.compilerConfig.providedPrimaryAssignCacheOverride) {
         /*
@@ -880,11 +829,9 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
     runAssignmentConfigImport(ctx, compilerMode, config, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
     if (compilerMode == CompilerMode::PRIMARY) {
         ctx.compilerConfig.readPrimaryAssignCache = true;
-    }
-    else if (compilerMode == CompilerMode::SECONDARY) {
+    } else if (compilerMode == CompilerMode::SECONDARY) {
         ctx.compilerConfig.readSecondaryAssignCache = true;
-    }
-    else {
+    } else {
         internalerror(
             fmt::format("importer::importAssignmentCache unknown CompilerMode: {}", static_cast<int>(compilerMode)));
     }
@@ -892,8 +839,7 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
 
 static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, DecompilerMode decompilerMode,
                                                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
-                                                      const std::vector<std::string> &fileNames)
-{
+                                                      const std::vector<std::string> &fileNames) {
     std::vector<GBAPalette> palettes{};
 
     int index = 0;
@@ -958,8 +904,7 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
     return palettes;
 }
 
-static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png::image<png::index_pixel> &tiles)
-{
+static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png::image<png::index_pixel> &tiles) {
     std::vector<GBATile> gbaTiles{};
 
     std::size_t widthInTiles = tiles.get_width() / porytiles::TILE_SIDE_LENGTH_PIX;
@@ -985,8 +930,7 @@ static std::vector<GBATile> importCompiledTiles(PorytilesContext &ctx, const png
 static std::vector<MetatileEntry>
 importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatilesBin,
                         std::unordered_map<std::size_t, Attributes> &attributesMap,
-                        const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap)
-{
+                        const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap) {
     std::vector<MetatileEntry> metatileEntries{};
 
     std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator<char>(metatilesBin), {}};
@@ -1024,8 +968,7 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
         metatileEntry.attributes.baseGame = ctx.targetBaseGame;
         if (tripleLayer) {
             metatileEntry.attributes.layerType = LayerType::TRIPLE;
-        }
-        else {
+        } else {
             metatileEntry.attributes.layerType = attributesMap.at(metatileIndex).layerType;
         }
         metatileEntry.attributes.metatileBehavior = attributesMap.at(metatileIndex).metatileBehavior;
@@ -1046,8 +989,7 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
                 behaviorString, layerTypeString(metatileEntry.attributes.layerType),
                 terrainTypeString(metatileEntry.attributes.terrainType),
                 encounterTypeString(metatileEntry.attributes.encounterType));
-        }
-        else {
+        } else {
             pt_logln(
                 ctx, stderr,
                 "found MetatileEntry[tile: {}, hFlip: {}, vFlip: {}, palette: {}, attr:[behavior: {}, layerType: {}]]",
@@ -1062,8 +1004,7 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
 }
 
 static std::unordered_map<std::size_t, Attributes>
-importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatileAttributesBin)
-{
+importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatileAttributesBin) {
     std::vector<unsigned char> attributesDataBuf{std::istreambuf_iterator<char>(metatileAttributesBin), {}};
 
     std::unordered_map<std::size_t, Attributes> attributesMap{};
@@ -1075,8 +1016,7 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
                        "decompiler input `metatile_attributes.bin' corrupted, not valid uint32 data");
         }
         metatileCount = attributesDataBuf.size() / BYTES_PER_ATTRIBUTE_FIRERED;
-    }
-    else {
+    } else {
         if (attributesDataBuf.size() % BYTES_PER_ATTRIBUTE_EMERALD != 0) {
             fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
                        "decompiler input `metatile_attributes.bin' corrupted, not valid uint16 data");
@@ -1096,8 +1036,7 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
             attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
             attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
             attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
-        }
-        else {
+        } else {
             std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD));
             std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD) + 1);
             std::uint16_t attribute = (byte1 << 8) | byte0;
@@ -1111,8 +1050,7 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
 
 static std::vector<CompiledAnimation>
 importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
-                         const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims)
-{
+                         const std::vector<std::vector<AnimationPng<png::index_pixel>>> &rawAnims) {
     std::vector<CompiledAnimation> anims{};
     for (const auto &rawAnim : rawAnims) {
         std::set<png::uint_32> frameWidths{};
@@ -1183,8 +1121,7 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
                       const std::vector<std::string> &paletteFileNames,
-                      const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
-{
+                      const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims) {
     CompiledTileset tileset{};
 
     tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
@@ -1203,8 +1140,7 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
 }
 
 static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode compilerMode,
-                                      std::ifstream &paletteFile, const std::string &fileName)
-{
+                                      std::ifstream &paletteFile, const std::string &fileName) {
     /*
      * FIXME : this function assumes the pal file is DOS format, need to fix this
      * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
@@ -1247,8 +1183,7 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
     std::uint8_t paletteSize{};
     try {
         paletteSize = parseInteger<std::uint8_t>(line.c_str());
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         paletteSize = 0;
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("invalid pal size in pal file: {}", fileName));
@@ -1257,8 +1192,7 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
 }
 
 RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerMode, std::ifstream &paletteFile,
-                             const std::string &fileName)
-{
+                             const std::string &fileName) {
     std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
     RGBATile primerTile{};
     primerTile.type = TileType::PRIMER;
@@ -1276,8 +1210,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
 
         if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
             bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
-        }
-        else {
+        } else {
             error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
                                        fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
                                        fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
@@ -1309,8 +1242,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
 
 std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, const CompilerMode compilerMode,
                                                                  std::ifstream &paletteFile,
-                                                                 const std::string &fileName)
-{
+                                                                 const std::string &fileName) {
     std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
     RGBATile overrideTile{};
     OverridenPaletteSlots overridePaletteSlots{};
@@ -1331,8 +1263,7 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
             if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
                 bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
-            }
-            else {
+            } else {
                 error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
                                            fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
                                            fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
@@ -1368,8 +1299,7 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 } // namespace porytiles
 
 TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset in tile-wise left-to-right, "
-          "top-to-bottom order")
-{
+          "top-to-bottom order") {
     porytiles::PorytilesContext ctx{};
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_1.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_1.png"};
@@ -1413,8 +1343,7 @@ TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset i
     CHECK(tiles.tiles[3].tileIndex == 3);
 }
 
-TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a DecompiledTileset in correct metatile order")
-{
+TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a DecompiledTileset in correct metatile order") {
     porytiles::PorytilesContext ctx{};
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_1/bottom.png"}));
@@ -1496,8 +1425,7 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
     CHECK(tiles.tiles[11].subtile == porytiles::Subtile::SOUTHEAST);
 }
 
-TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field")
-{
+TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white"}));
@@ -1739,8 +1667,7 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
     CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
 }
 
-TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset via layer type inference")
-{
+TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset via layer type inference") {
     porytiles::PorytilesContext ctx{};
     ctx.compilerConfig.tripleLayer = false;
 
@@ -1837,8 +1764,7 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
     CHECK(tiles.tiles.at(63).attributes.layerType == porytiles::LayerType::NORMAL);
 }
 
-TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected")
-{
+TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
 
@@ -1860,15 +1786,13 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
     CHECK(behaviorReverseMap.at(0xEF) == "MB_UNUSED_EF");
 }
 
-TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
-{
+TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
-    SUBCASE("It should parse an Emerald-style attributes CSV correctly")
-    {
+    SUBCASE("It should parse an Emerald-style attributes CSV correctly") {
         auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
                                                                 "Resources/Tests/csv/correct_1.csv");
         CHECK_FALSE(attributesMap.contains(0));
@@ -1883,8 +1807,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
         CHECK(attributesMap.at(5).metatileBehavior == behaviorMap.at("MB_NORMAL"));
     }
 
-    SUBCASE("It should parse a Firered-style attributes CSV correctly")
-    {
+    SUBCASE("It should parse a Firered-style attributes CSV correctly") {
         auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
                                                                 "Resources/Tests/csv/correct_2.csv");
         CHECK_FALSE(attributesMap.contains(0));
@@ -1904,8 +1827,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected")
     }
 }
 
-TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tileset correctly")
-{
+TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tileset correctly") {
     porytiles::PorytilesContext compileCtx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     compileCtx.output.path = parentDir;
@@ -1978,7 +1900,6 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     std::filesystem::remove_all(parentDir);
 }
 
-TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly")
-{
+TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly") {
     // TODO tests : (importCompiledTileset should import a dual-layer pokefirered tileset correctly)
 }

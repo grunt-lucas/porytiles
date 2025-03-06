@@ -14,8 +14,7 @@
 
 namespace porytiles {
 
-template <typename T> T parseInteger(const char *integerString, const int base)
-{
+template <typename T> T parseInteger(const char *integerString, const int base) {
     try {
         std::size_t pos;
         T arg = std::stoi(integerString, &pos, base);
@@ -24,16 +23,14 @@ template <typename T> T parseInteger(const char *integerString, const int base)
             throw std::runtime_error{"invalid integral string: " + std::string{integerString}};
         }
         return arg;
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         throw std::runtime_error{e.what()};
     }
     // unreachable, here for compiler
     throw std::runtime_error("utilities::parseInteger reached unreachable code path");
 }
 
-template <typename T> T parseInteger(const char *integerString)
-{
+template <typename T> T parseInteger(const char *integerString) {
     return parseInteger<T>(integerString, 0);
 }
 

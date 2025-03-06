@@ -10,30 +10,26 @@
 #include "porytiles/porytiles_context.h"
 #include "porytiles/porytiles_exception.h"
 
-int main(int argc, char **argv)
-try {
+int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
     porytiles::parseOptions(ctx, argc, argv);
     porytiles::drive(ctx);
 
     if (ctx.err.warnCount == 1) {
         porytiles::pt_println(stderr, "{} warning generated.", ctx.err.warnCount);
-    }
-    else if (ctx.err.warnCount > 1) {
+    } else if (ctx.err.warnCount > 1) {
         porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
     }
 
     return 0;
-}
-catch (const porytiles::PorytilesException &e) {
+} catch (const porytiles::PorytilesException &e) {
     /*
      * Catch PorytilesException here. This exception is used by the error system to indicate an error it correctly
      * handled and reported to the user. These errors are typically due to invalid user input. So we can just return 1
      * here to indicate a bad exit.
      */
     return 1;
-}
-catch (const std::exception &e) {
+} catch (const std::exception &e) {
     /*
      * Any other exception type indicates an internal compiler error, i.e. an error we did not explicitly handle or
      * anticipate from library code, or an error we explicitly threw due to an unrecoverable assert failure. This

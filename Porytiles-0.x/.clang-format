@@ -1,7 +1,7 @@
 ---
 Language: Cpp
 BasedOnStyle: LLVM
-BreakBeforeBraces: Stroustrup
+BreakBeforeBraces: Attach
 ColumnLimit: 120
 ReflowComments: true
 IndentWidth: 4

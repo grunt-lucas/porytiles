@@ -53,9 +53,7 @@ template <typename T> struct AnimationPng {
     std::string frameName;
 
     AnimationPng(png::image<T> png, std::string animName, std::string frameName)
-        : png{png}, animName{std::move(animName)}, frameName{std::move(frameName)}
-    {
-    }
+        : png{png}, animName{std::move(animName)}, frameName{std::move(frameName)} {}
 };
 
 /**
@@ -81,8 +79,7 @@ extern const BGR15 BGR_GREY;
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::BGR15> {
-    std::size_t operator()(const porytiles::BGR15 &bgr) const noexcept
-    {
+    std::size_t operator()(const porytiles::BGR15 &bgr) const noexcept {
         return std::hash<uint16_t>{}(bgr.bgr);
     }
 };
@@ -100,13 +97,11 @@ struct RGBA32 {
     std::uint8_t blue{};
     std::uint8_t alpha{};
 
-    [[nodiscard]] std::string jasc() const
-    {
+    [[nodiscard]] std::string jasc() const {
         return std::to_string(red) + " " + std::to_string(green) + " " + std::to_string(blue);
     }
 
-    [[nodiscard]] bool equalsIgnoringAlphaChannel(const RGBA32 &other) const
-    {
+    [[nodiscard]] bool equalsIgnoringAlphaChannel(const RGBA32 &other) const {
         return this->red == other.red && this->green == other.green && this->blue == other.blue;
     }
 
@@ -130,8 +125,7 @@ extern const RGBA32 RGBA_LIME;
 
 // TODO : better hash function
 template <> struct std::hash<porytiles::RGBA32> {
-    std::size_t operator()(const porytiles::RGBA32 &rgba) const noexcept
-    {
+    std::size_t operator()(const porytiles::RGBA32 &rgba) const noexcept {
         const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red);
         const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green);
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue);
@@ -228,8 +222,7 @@ struct RGBATile {
     // Metatile attributes for this tile
     Attributes attributes{};
 
-    [[nodiscard]] RGBA32 getPixel(const size_t row, const size_t col) const
-    {
+    [[nodiscard]] RGBA32 getPixel(const size_t row, const size_t col) const {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: RGBATile::getPixel row argument out of bounds (" + std::to_string(row) +
                                     ")"};
@@ -241,14 +234,12 @@ struct RGBATile {
         return pixels.at(row * TILE_SIDE_LENGTH_PIX + col);
     }
 
-    [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const
-    {
+    [[nodiscard]] bool transparent(const RGBA32 &transparencyColor) const {
         return std::ranges::all_of(
             pixels, [=](const auto &pixel) { return pixel == transparencyColor || pixel.alpha == ALPHA_TRANSPARENT; });
     }
 
-    void setPixel(const std::size_t row, const std::size_t col, const RGBA32 &value)
-    {
+    void setPixel(const std::size_t row, const std::size_t col, const RGBA32 &value) {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: RGBATile::setPixel row argument out of bounds (" + std::to_string(row) +
                                     ")"};
@@ -260,8 +251,7 @@ struct RGBATile {
         pixels.at(row * TILE_SIDE_LENGTH_PIX + col) = value;
     }
 
-    [[nodiscard]] bool equalsAfterBgrConversion(const RGBATile &other) const
-    {
+    [[nodiscard]] bool equalsAfterBgrConversion(const RGBATile &other) const {
         for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
             if (rgbaToBgr(this->pixels.at(i)) != rgbaToBgr(other.pixels.at(i))) {
                 return false;
@@ -270,18 +260,15 @@ struct RGBATile {
         return true;
     }
 
-    auto operator==(const RGBATile &other) const
-    {
+    auto operator==(const RGBATile &other) const {
         return this->pixels == other.pixels;
     }
 
     // Ignore the other fields for purposes of ordering the tiles
-    auto operator<=>(const RGBATile &other) const
-    {
+    auto operator<=>(const RGBATile &other) const {
         if (this->pixels == other.pixels) {
             return std::strong_ordering::equal;
-        }
-        else if (this->pixels < other.pixels) {
+        } else if (this->pixels < other.pixels) {
             return std::strong_ordering::less;
         }
         return std::strong_ordering::greater;
@@ -307,8 +294,7 @@ struct GBATile {
 
     GBATile() : colorIndexes{} {}
 
-    [[nodiscard]] std::uint8_t getPixel(const size_t index) const
-    {
+    [[nodiscard]] std::uint8_t getPixel(const size_t index) const {
         if (index >= TILE_NUM_PIX) {
             throw std::out_of_range{"internal: GBATile::getPixel index argument out of bounds (" +
                                     std::to_string(index) + ")"};
@@ -316,8 +302,7 @@ struct GBATile {
         return colorIndexes.at(index);
     }
 
-    [[nodiscard]] std::uint8_t getPixel(const size_t row, const size_t col) const
-    {
+    [[nodiscard]] std::uint8_t getPixel(const size_t row, const size_t col) const {
         if (row >= TILE_SIDE_LENGTH_PIX) {
             throw std::out_of_range{"internal: GBATile::getPixel row argument out of bounds (" + std::to_string(row) +
                                     ")"};
@@ -329,19 +314,16 @@ struct GBATile {
         return colorIndexes.at(row * TILE_SIDE_LENGTH_PIX + col);
     }
 
-    auto operator<=>(const GBATile &other) const
-    {
+    auto operator<=>(const GBATile &other) const {
         if (this->colorIndexes == other.colorIndexes) {
             return std::strong_ordering::equal;
-        }
-        else if (this->colorIndexes < other.colorIndexes) {
+        } else if (this->colorIndexes < other.colorIndexes) {
             return std::strong_ordering::less;
         }
         return std::strong_ordering::greater;
     }
 
-    auto operator==(const GBATile &other) const
-    {
+    auto operator==(const GBATile &other) const {
         return this->colorIndexes == other.colorIndexes;
     }
 };
@@ -350,8 +332,7 @@ extern const GBATile GBA_TILE_TRANSPARENT;
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::GBATile> {
-    std::size_t operator()(const porytiles::GBATile &tile) const noexcept
-    {
+    std::size_t operator()(const porytiles::GBATile &tile) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto index : tile.colorIndexes) {
@@ -399,13 +380,11 @@ struct CompiledAnimation {
 
     explicit CompiledAnimation(std::string animName) : animName{std::move(animName)} {}
 
-    [[nodiscard]] const CompiledAnimFrame &keyFrame() const
-    {
+    [[nodiscard]] const CompiledAnimFrame &keyFrame() const {
         return frames.at(keyFrameIndex());
     }
 
-    static std::size_t keyFrameIndex()
-    {
+    static std::size_t keyFrameIndex() {
         return 0;
     }
 };
@@ -436,8 +415,7 @@ struct CompiledTileset {
     std::vector<CompiledAnimation> anims{};
     std::size_t sizeBeforePadding{};
 
-    [[nodiscard]] std::unordered_map<std::size_t, Attributes> generateAttributesMap(const bool tripleLayer) const
-    {
+    [[nodiscard]] std::unordered_map<std::size_t, Attributes> generateAttributesMap(const bool tripleLayer) const {
         std::unordered_map<std::size_t, Attributes> attributes{};
         for (std::size_t entryIndex = 0; const auto &metatileEntry : metatileEntries) {
             attributes.insert(std::pair{entryIndex / (tripleLayer ? 12 : 8), metatileEntry.attributes});
@@ -456,8 +434,7 @@ struct DecompiledAnimFrame {
 
     explicit DecompiledAnimFrame(std::string frameName) : frameName{std::move(frameName)} {}
 
-    [[nodiscard]] std::size_t size() const
-    {
+    [[nodiscard]] std::size_t size() const {
         return tiles.size();
     }
 };
@@ -473,18 +450,15 @@ struct DecompiledAnimation {
 
     explicit DecompiledAnimation(std::string animName) : animName{std::move(animName)} {}
 
-    [[nodiscard]] const DecompiledAnimFrame &keyFrame() const
-    {
+    [[nodiscard]] const DecompiledAnimFrame &keyFrame() const {
         return frames.at(keyFrameIndex());
     }
 
-    static std::size_t keyFrameIndex()
-    {
+    static std::size_t keyFrameIndex() {
         return 0;
     }
 
-    [[nodiscard]] std::size_t size() const
-    {
+    [[nodiscard]] std::size_t size() const {
         return frames.size();
     }
 };
@@ -517,27 +491,23 @@ struct DecompiledTileset {
 struct NormalizedPixels {
     std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
-    auto operator<=>(const NormalizedPixels &other) const
-    {
+    auto operator<=>(const NormalizedPixels &other) const {
         if (this->colorIndexes == other.colorIndexes) {
             return std::strong_ordering::equal;
-        }
-        else if (this->colorIndexes < other.colorIndexes) {
+        } else if (this->colorIndexes < other.colorIndexes) {
             return std::strong_ordering::less;
         }
         return std::strong_ordering::greater;
     }
 
-    auto operator==(const NormalizedPixels &other) const
-    {
+    auto operator==(const NormalizedPixels &other) const {
         return this->colorIndexes == other.colorIndexes;
     }
 };
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::NormalizedPixels> {
-    std::size_t operator()(const porytiles::NormalizedPixels &pixels) const noexcept
-    {
+    std::size_t operator()(const porytiles::NormalizedPixels &pixels) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto pixel : pixels.colorIndexes) {
@@ -558,8 +528,7 @@ struct NormalizedPalette {
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::NormalizedPalette> {
-    std::size_t operator()(const porytiles::NormalizedPalette &palette) const noexcept
-    {
+    std::size_t operator()(const porytiles::NormalizedPalette &palette) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         hashValue ^= std::hash<int>{}(palette.size);
@@ -623,15 +592,13 @@ struct NormalizedTile {
     // Metatile attributes for this tile
     Attributes attributes{};
 
-    explicit NormalizedTile(const RGBA32 transparency)
-    {
+    explicit NormalizedTile(const RGBA32 transparency) {
         palette.size = 1;
         palette.colors[0] = rgbaToBgr(transparency);
         frames.resize(1);
     }
 
-    void copyMetadataFrom(const RGBATile &tile)
-    {
+    void copyMetadataFrom(const RGBATile &tile) {
         this->type = tile.type;
         this->tileIndex = tile.tileIndex;
         this->layer = tile.layer;
@@ -647,13 +614,11 @@ struct NormalizedTile {
         this->attributes = tile.attributes;
     }
 
-    [[nodiscard]] bool transparent() const
-    {
+    [[nodiscard]] bool transparent() const {
         return palette.size == 1;
     }
 
-    void setPixel(const std::size_t frame, const std::size_t row, const std::size_t col, const uint8_t value)
-    {
+    void setPixel(const std::size_t frame, const std::size_t row, const std::size_t col, const uint8_t value) {
         if (frame >= frames.size()) {
             throw std::out_of_range{"internal: NormalizedTile::setPixel frame argument out of bounds (" +
                                     std::to_string(frame) + " >= " + std::to_string(frames.size()) + ")"};
@@ -669,21 +634,18 @@ struct NormalizedTile {
         frames.at(frame).colorIndexes[row * TILE_SIDE_LENGTH_PIX + col] = value;
     }
 
-    [[nodiscard]] const NormalizedPixels &keyFrame() const
-    {
+    [[nodiscard]] const NormalizedPixels &keyFrame() const {
         return frames.at(keyFrameIndex());
     }
 
-    static std::size_t keyFrameIndex()
-    {
+    static std::size_t keyFrameIndex() {
         return 0;
     }
 };
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::NormalizedTile> {
-    std::size_t operator()(const porytiles::NormalizedTile &tile) const noexcept
-    {
+    std::size_t operator()(const porytiles::NormalizedTile &tile) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto &layer : tile.frames) {
@@ -697,8 +659,7 @@ template <> struct std::hash<porytiles::NormalizedTile> {
 };
 
 template <> struct std::hash<std::pair<std::size_t, std::size_t>> {
-    std::size_t operator()(const std::pair<std::size_t, std::size_t> &pair) const noexcept
-    {
+    std::size_t operator()(const std::pair<std::size_t, std::size_t> &pair) const noexcept {
         // TODO : better hash function
         return std::hash<std::size_t>{}(pair.first) ^ std::hash<std::size_t>{}(pair.second);
     }
@@ -743,23 +704,19 @@ struct FieldmapConfig {
     std::size_t numPalettesTotal{};
     std::size_t numTilesPerMetatile{};
 
-    [[nodiscard]] std::size_t numPalettesInSecondary() const
-    {
+    [[nodiscard]] std::size_t numPalettesInSecondary() const {
         return numPalettesTotal - numPalettesInPrimary;
     }
 
-    [[nodiscard]] std::size_t numTilesInSecondary() const
-    {
+    [[nodiscard]] std::size_t numTilesInSecondary() const {
         return numTilesTotal - numTilesInPrimary;
     }
 
-    [[nodiscard]] std::size_t numMetatilesInSecondary() const
-    {
+    [[nodiscard]] std::size_t numMetatilesInSecondary() const {
         return numMetatilesTotal - numMetatilesInPrimary;
     }
 
-    static FieldmapConfig pokeemeraldDefaults()
-    {
+    static FieldmapConfig pokeemeraldDefaults() {
         FieldmapConfig config{};
         config.numTilesInPrimary = 512;
         config.numTilesTotal = 1024;
@@ -771,8 +728,7 @@ struct FieldmapConfig {
         return config;
     }
 
-    static FieldmapConfig pokefireredDefaults()
-    {
+    static FieldmapConfig pokefireredDefaults() {
         FieldmapConfig config{};
         config.numTilesInPrimary = 640;
         config.numTilesTotal = 1024;
@@ -784,8 +740,7 @@ struct FieldmapConfig {
         return config;
     }
 
-    static FieldmapConfig pokerubyDefaults()
-    {
+    static FieldmapConfig pokerubyDefaults() {
         FieldmapConfig config{};
         config.numTilesInPrimary = 512;
         config.numTilesTotal = 1024;
@@ -803,98 +758,82 @@ struct CompilerSourcePaths {
     std::string secondarySourcePath;
     std::string metatileBehaviors;
 
-    [[nodiscard]] std::filesystem::path bottomPrimaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path bottomPrimaryTilesheet() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"bottom.png"};
     }
 
-    [[nodiscard]] std::filesystem::path middlePrimaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path middlePrimaryTilesheet() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"middle.png"};
     }
 
-    [[nodiscard]] std::filesystem::path topPrimaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path topPrimaryTilesheet() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"top.png"};
     }
 
-    [[nodiscard]] std::filesystem::path bottomSecondaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path bottomSecondaryTilesheet() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"bottom.png"};
     }
 
-    [[nodiscard]] std::filesystem::path middleSecondaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path middleSecondaryTilesheet() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"middle.png"};
     }
 
-    [[nodiscard]] std::filesystem::path topSecondaryTilesheet() const
-    {
+    [[nodiscard]] std::filesystem::path topSecondaryTilesheet() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"top.png"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryAttributes() const
-    {
+    [[nodiscard]] std::filesystem::path primaryAttributes() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"attributes.csv"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryAttributes() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryAttributes() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"attributes.csv"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryAnims() const
-    {
+    [[nodiscard]] std::filesystem::path primaryAnims() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryAnims() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryAnims() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryAssignCache() const
-    {
+    [[nodiscard]] std::filesystem::path primaryAssignCache() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"assign.cache"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryAssignCache() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryAssignCache() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"assign.cache"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryPalettePrimers() const
-    {
+    [[nodiscard]] std::filesystem::path primaryPalettePrimers() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"palette-primers"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryPalettePrimers() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryPalettePrimers() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"palette-primers"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryPaletteOverrides() const
-    {
+    [[nodiscard]] std::filesystem::path primaryPaletteOverrides() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"palette-overrides"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryPaletteOverrides() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryPaletteOverrides() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"palette-overrides"};
     }
@@ -915,62 +854,52 @@ struct DecompilerSourcePaths {
     std::string secondarySourcePath{};
     std::string metatileBehaviors{};
 
-    [[nodiscard]] std::filesystem::path primaryMetatilesBin() const
-    {
+    [[nodiscard]] std::filesystem::path primaryMetatilesBin() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"metatiles.bin"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryAttributesBin() const
-    {
+    [[nodiscard]] std::filesystem::path primaryAttributesBin() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"metatile_attributes.bin"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryTilesPng() const
-    {
+    [[nodiscard]] std::filesystem::path primaryTilesPng() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"tiles.png"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryPalettes() const
-    {
+    [[nodiscard]] std::filesystem::path primaryPalettes() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"palettes"};
     }
 
-    [[nodiscard]] std::filesystem::path primaryAnims() const
-    {
+    [[nodiscard]] std::filesystem::path primaryAnims() const {
         const std::filesystem::path path{primarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryMetatilesBin() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryMetatilesBin() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"metatiles.bin"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryAttributesBin() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryAttributesBin() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"metatile_attributes.bin"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryTilesPng() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryTilesPng() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"tiles.png"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryPalettes() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryPalettes() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"palettes"};
     }
 
-    [[nodiscard]] std::filesystem::path secondaryAnims() const
-    {
+    [[nodiscard]] std::filesystem::path secondaryAnims() const {
         const std::filesystem::path path{secondarySourcePath};
         return path / std::filesystem::path{"anim"};
     }
@@ -991,9 +920,7 @@ struct Output {
 
     Output()
         : paletteMode{TilesOutputPalette::GREYSCALE}, disableMetatileGeneration{false},
-          disableAttributeGeneration{false}
-    {
-    }
+          disableAttributeGeneration{false} {}
 };
 
 struct CompilerConfig {
@@ -1026,9 +953,7 @@ struct CompilerConfig {
           primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
           readPrimaryAssignCache{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
           secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
-          readSecondaryAssignCache{false}
-    {
-    }
+          readSecondaryAssignCache{false} {}
 };
 
 struct DecompilerConfig {

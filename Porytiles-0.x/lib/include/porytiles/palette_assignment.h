@@ -26,8 +26,7 @@ struct AssignState {
     // The count of unassigned primer palettes
     std::size_t unassignedPrimerCount;
 
-    auto operator==(const AssignState &other) const
-    {
+    auto operator==(const AssignState &other) const {
         return this->logicalPalettes == other.logicalPalettes && this->unassignedCount == other.unassignedCount &&
                this->unassignedPrimerCount == other.unassignedPrimerCount;
     }
@@ -37,8 +36,7 @@ enum class AssignResult { SUCCESS, EXPLORE_CUTOFF_REACHED, NO_SOLUTION_POSSIBLE 
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::AssignState> {
-    std::size_t operator()(const porytiles::AssignState &state) const noexcept
-    {
+    std::size_t operator()(const porytiles::AssignState &state) const noexcept {
         std::size_t hashValue = 0;
         for (auto colorSet : state.logicalPalettes) {
             hashValue ^= std::hash<std::bitset<240>>{}(colorSet.first);
