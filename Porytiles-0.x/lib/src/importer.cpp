@@ -891,10 +891,12 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
 }
 
 static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, DecompilerMode decompilerMode,
-                                                      const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles)
+                                                      const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
+                                                      const std::vector<std::string> &fileNames)
 {
     std::vector<GBAPalette> palettes{};
 
+    int index = 0;
     for (const std::unique_ptr<std::ifstream> &stream : paletteFiles) {
         std::string line;
         /*
@@ -945,11 +947,12 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
         palette.size = PAL_SIZE;
         std::size_t colorIndex = 0;
         while (std::getline(*stream, line)) {
-            BGR15 bgr = rgbaToBgr(parseJascLineDecompiler(ctx, decompilerMode, line));
+            BGR15 bgr = rgbaToBgr(parseJascLineDecompiler(ctx, decompilerMode, line, fileNames.at(index)));
             palette.colors.at(colorIndex) = bgr;
             colorIndex++;
         }
         palettes.push_back(palette);
+        index++;
     }
 
     return palettes;
@@ -1179,12 +1182,13 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
                       const png::image<png::index_pixel> &tilesheetPng,
                       const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
+                      const std::vector<std::string> &paletteFileNames,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims)
 {
     CompiledTileset tileset{};
 
     tileset.tiles = importCompiledTiles(ctx, tilesheetPng);
-    tileset.palettes = importCompiledPalettes(ctx, mode, paletteFiles);
+    tileset.palettes = importCompiledPalettes(ctx, mode, paletteFiles, paletteFileNames);
     auto attributesMap = importCompiledMetatileAttributes(ctx, mode, attributes);
     tileset.metatileEntries = importCompiledMetatiles(ctx, mode, metatiles, attributesMap, behaviorReverseMap);
     tileset.anims = importCompiledAnimations(ctx, mode, compiledAnims);
@@ -1198,74 +1202,167 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
     return {tileset, attributesMap};
 }
 
-RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile)
+static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode compilerMode,
+                                      std::ifstream &paletteFile, const std::string &fileName)
 {
-    RGBATile primerTile{};
-    primerTile.type = TileType::PRIMER;
-
-    /*
-     * TODO : fatalerrors in this function need better messaging
-     */
-
     /*
      * FIXME : this function assumes the pal file is DOS format, need to fix this
      * Pret PR here recently addressed the gbagfx DOS line ending issue: https://github.com/pret/pokeemerald/pull/2004
      */
 
-    std::string line;
+    std::string line{};
     std::getline(paletteFile, line);
-    if (line.size() == 0) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
+    if (line.empty()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                   fmt::format("invalid blank line in pal file: {}", fileName));
     }
     line.pop_back();
+    if (line == "JASC-PA") {
+        // This case is a common issue if the .pal file doesn't have windows line endings
+        // FIXME : see above note about DOS format .pal files
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                   fmt::format("non-DOS line endings detected in pal file: {}", fileName));
+    }
     if (line != "JASC-PAL") {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("expected `JASC-PAL' in pal file, saw `{}'", line));
+                   fmt::format("expected `JASC-PAL' as first line in pal file: {}", fileName));
     }
     std::getline(paletteFile, line);
-    if (line.size() == 0) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
+    if (line.empty()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                   fmt::format("invalid blank line in pal file: {}", fileName));
     }
     line.pop_back();
     if (line != "0100") {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("expected `0100' in pal file, saw `{}'", line));
+                   fmt::format("expected `0100' as second line in pal file: {}", fileName));
     }
     std::getline(paletteFile, line);
-    if (line.size() == 0) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "invalid blank line in pal file");
+    if (line.empty()) {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                   fmt::format("invalid blank line in pal file: {}", fileName));
     }
     line.pop_back();
 
-    std::uint8_t paletteSize;
+    std::uint8_t paletteSize{};
     try {
         paletteSize = parseInteger<std::uint8_t>(line.c_str());
     }
     catch (const std::exception &e) {
         paletteSize = 0;
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, fmt::format("invalid palette size line {}", line));
-    }
-    if (paletteSize == 0 || paletteSize > PAL_SIZE - 1) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("invalid palette size {}, must be 1 <= size <= 15", line));
+                   fmt::format("invalid pal size in pal file: {}", fileName));
+    }
+    return paletteSize;
+}
+
+RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerMode, std::ifstream &paletteFile,
+                             const std::string &fileName)
+{
+    std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
+    RGBATile primerTile{};
+    primerTile.type = TileType::PRIMER;
+
+    std::string line{};
+    const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
+    if (declaredPaletteSize == 0 || declaredPaletteSize > PAL_SIZE - 1) {
+        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be 1 <= size <= 15", fileName,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
 
     std::uint8_t lineCount = 0;
     while (std::getline(paletteFile, line)) {
-        RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line);
-        primerTile.pixels.at(lineCount) = rgba;
+        const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
+
+        if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
+            bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
+        }
+        else {
+            error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
+                                       fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
+                                       fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
+                                       bgrToRgba.at(bgr).second));
+        }
+
+        if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
+            error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
+                                       fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+        }
+
+        if (lineCount < primerTile.pixels.size()) {
+            primerTile.pixels.at(lineCount) = rgba;
+        }
         lineCount++;
         if (lineCount > PAL_SIZE - 1) {
             break;
         }
     }
 
-    if (lineCount != paletteSize) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("line count {} did not match stated palette size {}", lineCount, paletteSize));
+    if (lineCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
+    primerTile.primerSize = declaredPaletteSize;
 
     return primerTile;
+}
+
+std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, const CompilerMode compilerMode,
+                                                                 std::ifstream &paletteFile,
+                                                                 const std::string &fileName)
+{
+    std::unordered_map<BGR15, std::pair<RGBA32, std::size_t>> bgrToRgba{};
+    RGBATile overrideTile{};
+    OverridenPaletteSlots overridePaletteSlots{};
+    overrideTile.type = TileType::OVERRIDE;
+
+    std::string line{};
+    const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
+    if (declaredPaletteSize != PAL_SIZE - 1) {
+        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be exactly {}", fileName,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold), PAL_SIZE - 1));
+    }
+
+    std::uint8_t lineCount = 0;
+    std::uint8_t usedPaletteSize = 0;
+    while (std::getline(paletteFile, line)) {
+        if (line != "-\r") {
+            const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
+
+            if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
+                bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
+            }
+            else {
+                error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
+                                           fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
+                                           fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
+                                           bgrToRgba.at(bgr).second));
+            }
+
+            if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
+                error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
+                                           fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+            }
+            // Use usedPaletteSize here so we don't have a bunch of blank pixels at the head of the overrideTile.
+            overrideTile.pixels.at(usedPaletteSize) = rgba;
+            // Add 1 to lineCount since slot 0 is implicitly transparent
+            overridePaletteSlots.emplace_back(lineCount + 1, rgbaToBgr(rgba));
+            usedPaletteSize++;
+        }
+        lineCount++;
+        if (lineCount > PAL_SIZE - 1) {
+            break;
+        }
+    }
+
+    if (lineCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+    }
+
+    overrideTile.primerSize = usedPaletteSize;
+
+    return {overrideTile, overridePaletteSlots};
 }
 
 } // namespace porytiles
@@ -1831,6 +1928,7 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
     std::ifstream attributes{decompileCtx.decompilerSrcPaths.primaryAttributesBin(), std::ios::binary};
     png::image<png::index_pixel> tilesheetPng{decompileCtx.decompilerSrcPaths.primaryTilesPng()};
     std::vector<std::unique_ptr<std::ifstream>> paletteFiles{};
+    std::vector<std::string> paletteFileNames{};
     for (std::size_t index = 0; index < decompileCtx.fieldmapConfig.numPalettesTotal; index++) {
         std::ostringstream filename;
         if (index < 10) {
@@ -1839,12 +1937,13 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
         filename << index << ".pal";
         std::filesystem::path paletteFile = decompileCtx.decompilerSrcPaths.primaryPalettes() / filename.str();
         paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
+        paletteFileNames.emplace_back(paletteFile.c_str());
     }
     // TODO tests : (importCompiledTileset should import a triple-layer...) actually test anims import
-    auto [importedTileset, attributesMap] =
-        porytiles::importCompiledTileset(decompileCtx, porytiles::DecompilerMode::PRIMARY, metatiles, attributes,
-                                         std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles,
-                                         std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
+    auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
+        decompileCtx, porytiles::DecompilerMode::PRIMARY, metatiles, attributes,
+        std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles, paletteFileNames,
+        std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
     metatiles.close();
     attributes.close();
     std::for_each(paletteFiles.begin(), paletteFiles.end(),

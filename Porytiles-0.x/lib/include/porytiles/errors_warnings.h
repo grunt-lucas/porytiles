@@ -35,6 +35,7 @@ struct ErrorsAndWarnings {
     WarningMode invalidAssignCache;
     WarningMode missingAssignCache;
     WarningMode keyFrameMissingColors;
+    WarningMode unusedManualPalColor;
 
     // Decompilation warnings
     WarningMode tileIndexOutOfRange;
@@ -47,8 +48,8 @@ struct ErrorsAndWarnings {
           missingAttributesCsv{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
           transparencyCollapse{WarningMode::OFF}, assignCacheOverride{WarningMode::OFF},
           invalidAssignCache{WarningMode::OFF}, missingAssignCache{WarningMode::OFF},
-          keyFrameMissingColors(WarningMode::OFF), tileIndexOutOfRange{WarningMode::OFF},
-          paletteIndexOutOfRange{WarningMode::OFF}
+          keyFrameMissingColors(WarningMode::OFF), unusedManualPalColor(WarningMode::OFF),
+          tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF}
     {
     }
 
@@ -71,6 +72,7 @@ struct ErrorsAndWarnings {
         invalidAssignCache = setting;
         missingAssignCache = setting;
         keyFrameMissingColors = setting;
+        unusedManualPalColor = setting;
 
         // Decompilation warnings
         tileIndexOutOfRange = setting;
@@ -113,6 +115,9 @@ struct ErrorsAndWarnings {
         if (keyFrameMissingColors == WarningMode::WARN) {
             keyFrameMissingColors = WarningMode::ERR;
         }
+        if (unusedManualPalColor == WarningMode::WARN) {
+            unusedManualPalColor = WarningMode::ERR;
+        }
 
         // Decompilation warnings
         if (tileIndexOutOfRange == WarningMode::WARN) {
@@ -136,6 +141,7 @@ extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
 extern const char *const WARN_INVALID_ASSIGN_CACHE;
 extern const char *const WARN_MISSING_ASSIGN_CACHE;
 extern const char *const WARN_KEY_FRAME_MISSING_COLORS;
+extern const char *const WARN_UNUSED_MANUAL_PAL_COLOR;
 
 // Decompilation warnings
 extern const char *const WARN_TILE_INDEX_OUT_OF_RANGE;
@@ -144,14 +150,16 @@ extern const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE;
 /*
  * Internal compiler errors (due to bug in the compiler)
  */
-void internalerror(std::string message);
-void internalerror_unknownCompilerMode(std::string context);
-void internalerror_unknownDecompilerMode(std::string context);
-void internalerror_unknownSubcommand(std::string context);
+void internalerror(const std::string &message);
+void internalerror_unknownCompilerMode(const std::string &context);
+void internalerror_unknownDecompilerMode(const std::string &context);
+void internalerror_unknownSubcommand(const std::string &context);
 
 /*
  * Regular compilation errors (due to bad user input), regular errors try to die as late as possible
  */
+void error(ErrorsAndWarnings &err, const std::string &message);
+
 void error_freestandingDimensionNotDivisibleBy8(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                 std::string dimensionName, png::uint_32 dimension);
 
@@ -303,6 +311,8 @@ void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &confi
 void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
                                 std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors,
                                 const std::string &animName);
+
+void warn_unusedManualPalColor(ErrorsAndWarnings &err, const std::string &jasc, const std::string &fileName);
 
 /*
  * Decompilation warnings (due to possible mistakes in user input), decompilation can continue

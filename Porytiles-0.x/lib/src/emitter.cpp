@@ -168,8 +168,9 @@ void emitAnim(PorytilesContext &ctx, std::vector<png::image<png::index_pixel>> &
     }
 }
 
-void emitAttributes(PorytilesContext &ctx, std::ostream &out,
-                    std::unordered_map<std::uint8_t, std::string> behaviorReverseMap, const CompiledTileset &tileset)
+void emitAttributes(const PorytilesContext &ctx, std::ostream &out,
+                    const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
+                    const CompiledTileset &tileset)
 {
     std::size_t delta;
     if (ctx.compilerConfig.tripleLayer) {
@@ -201,7 +202,7 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
                      targetBaseGameString(ctx.targetBaseGame), i / delta, behaviorString,
                      layerTypeString(metatileEntry.attributes.layerType));
             // NOTE : does this code work as expected on a big-endian machine? I think so...
-            std::uint16_t attributeValue =
+            const auto attributeValue =
                 static_cast<std::uint16_t>((metatileEntry.attributes.metatileBehavior & 0xFF) |
                                            ((layerTypeValue(metatileEntry.attributes.layerType) & 0xF) << 12));
             out << static_cast<char>(attributeValue);
@@ -216,7 +217,7 @@ void emitAttributes(PorytilesContext &ctx, std::ostream &out,
                      terrainTypeString(metatileEntry.attributes.terrainType),
                      layerTypeString(metatileEntry.attributes.layerType));
             // NOTE : does this code work as expected on a big-endian machine? I think so...
-            std::uint32_t attributeValue =
+            const auto attributeValue =
                 static_cast<std::uint32_t>((metatileEntry.attributes.metatileBehavior & 0x1FF) |
                                            ((terrainTypeValue(metatileEntry.attributes.terrainType) & 0x1F) << 9) |
                                            ((encounterTypeValue(metatileEntry.attributes.encounterType) & 0x7) << 24) |
@@ -472,8 +473,7 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file")
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                              std::vector<porytiles::RGBATile>{});
+    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     const size_t imageWidth = porytiles::TILE_SIDE_LENGTH_PIX * porytiles::TILES_PNG_WIDTH_IN_TILES;
     const size_t imageHeight =
@@ -519,8 +519,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
         top);
-    auto compiled =
-        porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, std::vector<porytiles::RGBATile>{});
+    auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiled, {}, {}, {});
 
     std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
     std::ofstream outFile{tmpPath};
@@ -595,8 +594,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_2/primary/top.png"};
         porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
             ctx, porytiles::CompilerMode::PRIMARY, attributesMap, bottomPrimary, middlePrimary, topPrimary);
-        auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                           std::vector<porytiles::RGBATile>{});
+        auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
         std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
         std::ofstream outFile{tmpPath};
@@ -685,8 +683,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes")
         png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_2_dual/primary/top.png"};
         porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
             ctx, porytiles::CompilerMode::PRIMARY, attributesMap, bottomPrimary, middlePrimary, topPrimary);
-        auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary,
-                                           std::vector<porytiles::RGBATile>{});
+        auto compiled = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
         std::filesystem::path tmpPath = porytiles::getTmpfilePath(parentDir, "emitMetatileAttributesBin_test.bin");
         std::ofstream outFile{tmpPath};

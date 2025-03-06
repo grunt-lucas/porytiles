@@ -15,10 +15,10 @@ constexpr std::size_t EXPLORATION_MAX_CUTOFF = 100 * EXPLORATION_CUTOFF_MULTIPLI
 
 struct AssignState {
     /*
-     * One color set for each hardware palette, bits in color set will indicate which colors this HW palette will have.
-     * The size of the vector should be fixed to maxPalettes.
+     * One color set for each logical hardware palette, bits in color set will indicate which colors this palette will
+     * have. The size of the vector should be fixed to maxPalettes.
      */
-    std::vector<ColorSet> hardwarePalettes;
+    std::vector<ColorSet> logicalPalettes;
 
     // The count of unassigned palettes
     std::size_t unassignedCount;
@@ -28,7 +28,7 @@ struct AssignState {
 
     auto operator==(const AssignState &other) const
     {
-        return this->hardwarePalettes == other.hardwarePalettes && this->unassignedCount == other.unassignedCount &&
+        return this->logicalPalettes == other.logicalPalettes && this->unassignedCount == other.unassignedCount &&
                this->unassignedPrimerCount == other.unassignedPrimerCount;
     }
 };
@@ -40,8 +40,8 @@ template <> struct std::hash<porytiles::AssignState> {
     std::size_t operator()(const porytiles::AssignState &state) const noexcept
     {
         std::size_t hashValue = 0;
-        for (auto bitset : state.hardwarePalettes) {
-            hashValue ^= std::hash<std::bitset<240>>{}(bitset);
+        for (auto colorSet : state.logicalPalettes) {
+            hashValue ^= std::hash<std::bitset<240>>{}(colorSet.first);
         }
         hashValue ^= std::hash<std::bitset<240>>{}(state.unassignedCount);
         return hashValue;
@@ -52,13 +52,13 @@ namespace porytiles {
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                               const std::vector<ColorSet> &unassigneds, const std::vector<ColorSet> &unassignedPrimers);
-AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &initialState,
+AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, const AssignState &initialState,
                                 std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                                 const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers);
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
-                           const std::vector<ColorSet> &primerColorSets,
+                           const std::vector<ColorSet> &primerColorSets, const std::vector<ColorSet> &overrideColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex);
 } // namespace porytiles
 

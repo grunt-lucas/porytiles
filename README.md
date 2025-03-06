@@ -19,8 +19,8 @@ see [the Go package page here.](https://pkg.go.dev/github.com/grunt-lucas/poryti
 documentation please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) (a video tutorial series is coming at
 a later date).
 
-![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Wiki/PokemonHearth.png?raw=true)
-*Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles.*
+![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
+*Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*
 
 - [Porytiles](#porytiles)
     - [Why Should I Use This Tool?](#why-should-i-use-this-tool)

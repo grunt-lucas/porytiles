@@ -32,7 +32,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
 
     if (state.unassignedPrimerCount == 0 && state.unassignedCount == 0) {
         // No tiles left to assign, found a solution!
-        std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes), std::back_inserter(solution));
+        std::copy(std::begin(state.logicalPalettes), std::end(state.logicalPalettes), std::back_inserter(solution));
         return AssignResult::SUCCESS;
     }
 
@@ -63,14 +63,14 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
     if (!primaryPalettes.empty()) {
         for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
             const ColorSet &palette = primaryPalettes.at(i);
-            if ((palette | toAssign).count() == palette.count()) {
+            if ((palette.first | toAssign.first).count() == palette.first.count()) {
                 /*
                  * This case triggers if `toAssign' shares all its colors with one of the palettes from the primary
                  * tileset. In that case, we will just reuse that palette when we make the tile in a later step. So we
                  * can prep a recursive call to assign with an unchanged state (other than removing `toAssign')
                  */
                 std::vector<ColorSet> hardwarePalettesCopy;
-                std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+                std::copy(std::begin(state.logicalPalettes), std::end(state.logicalPalettes),
                           std::back_inserter(hardwarePalettesCopy));
                 AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
 
@@ -93,10 +93,10 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
      * palettes have the same intersect size. Right now we just use palette size, but in the future we may want to look
      * at color distances so we can pick a palette with more similar colors.
      */
-    std::stable_sort(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+    std::stable_sort(std::begin(state.logicalPalettes), std::end(state.logicalPalettes),
                      [&toAssign](const auto &pal1, const auto &pal2) {
-                         std::size_t pal1IntersectSize = (pal1 & toAssign).count();
-                         std::size_t pal2IntersectSize = (pal2 & toAssign).count();
+                         std::size_t pal1IntersectSize = (pal1.first & toAssign.first).count();
+                         std::size_t pal2IntersectSize = (pal2.first & toAssign.first).count();
 
                          /*
                           * FEATURE : Instead of just using palette count, maybe can we check for color distance here
@@ -107,18 +107,18 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
                           * palette. We can put this behind a flag like '-Ocolor-distance-heuristic
                           */
                          if (pal1IntersectSize == pal2IntersectSize) {
-                             return pal1.count() < pal2.count();
+                             return pal1.first.count() < pal2.first.count();
                          }
 
                          return pal1IntersectSize > pal2IntersectSize;
                      });
 
-    std::size_t stopLimit = std::min(state.hardwarePalettes.size(), bestBranches);
+    std::size_t stopLimit = std::min(state.logicalPalettes.size(), bestBranches);
     if (smartPrune) {
         // Shrink stopLimit so it ends after the first empty hardware palette
         for (std::size_t i = 0; i < stopLimit; i++) {
-            auto pal = state.hardwarePalettes.at(i);
-            std::size_t palIntersectSize = (pal & toAssign).count();
+            auto pal = state.logicalPalettes.at(i);
+            std::size_t palIntersectSize = (pal.first & toAssign.first).count();
             if (palIntersectSize == 0) {
                 stopLimit = i + 1;
                 break;
@@ -126,15 +126,15 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
         }
     }
     // Ensure stopLimit does not exceed the palette list size
-    stopLimit = std::min(state.hardwarePalettes.size(), stopLimit);
+    stopLimit = std::min(state.logicalPalettes.size(), stopLimit);
     for (std::size_t i = 0; i < stopLimit; i++) {
-        const ColorSet &palette = state.hardwarePalettes.at(i);
 
         // > PAL_SIZE - 1 because we need to save a slot for transparency
-        if ((palette | toAssign).count() > PAL_SIZE - 1) {
+        if (const ColorSet &palette = state.logicalPalettes.at(i);
+            (palette.first | toAssign.first).count() > PAL_SIZE - 1) {
             /*
-             *  Skip this palette, cannot assign because there is not enough room in the palette. If we end up skipping
-             * all of them that means the palettes are all too full and we cannot assign this tile in the state we are
+             * Skip this palette, cannot assign because there is not enough room in the palette. If we end up skipping
+             * all of them that means the palettes are all too full, and we cannot assign this tile in the state we are
              * in. The algorithm will be forced to backtrack and try other assignments.
              */
             continue;
@@ -147,9 +147,9 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
          * return true if there is a valid solution somewhere down in this recursive branch.
          */
         std::vector<ColorSet> hardwarePalettesCopy;
-        std::copy(std::begin(state.hardwarePalettes), std::end(state.hardwarePalettes),
+        std::copy(std::begin(state.logicalPalettes), std::end(state.logicalPalettes),
                   std::back_inserter(hardwarePalettesCopy));
-        hardwarePalettesCopy.at(i) |= toAssign;
+        hardwarePalettesCopy.at(i).first |= toAssign.first;
         AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
 
         AssignResult result = assignDepthFirst(ctx, compilerMode, updatedState, solution, primaryPalettes, unassigneds,
@@ -166,7 +166,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
     return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &initialState,
+AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, const AssignState &initialState,
                                 std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                                 const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers)
@@ -186,7 +186,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
     visitedStates.insert(initialState);
 
     while (!stateQueue.empty() || !lowPriorityQueue.empty()) {
-        AssignState currentState;
+        AssignState currentState{};
         ctx.compilerContext.exploredNodeCounter++;
         if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
             pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}, stateQueue={}, lowPrioQueue={}",
@@ -208,7 +208,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
 
         if (currentState.unassignedPrimerCount == 0 && currentState.unassignedCount == 0) {
             // No tiles left to assign, found a solution!
-            std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+            std::copy(std::begin(currentState.logicalPalettes), std::end(currentState.logicalPalettes),
                       std::back_inserter(solution));
             return AssignResult::SUCCESS;
         }
@@ -233,9 +233,9 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
         if (!primaryPalettes.empty()) {
             for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
                 const ColorSet &palette = primaryPalettes.at(i);
-                if ((palette | toAssign).count() == palette.count()) {
+                if ((palette.first | toAssign.first).count() == palette.first.count()) {
                     std::vector<ColorSet> hardwarePalettesCopy;
-                    std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+                    std::copy(std::begin(currentState.logicalPalettes), std::end(currentState.logicalPalettes),
                               std::back_inserter(hardwarePalettesCopy));
                     AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
                     stateQueue.push_back(updatedState);
@@ -253,23 +253,23 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
             continue;
         }
 
-        std::stable_sort(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+        std::stable_sort(std::begin(currentState.logicalPalettes), std::end(currentState.logicalPalettes),
                          [&toAssign](const auto &pal1, const auto &pal2) {
-                             std::size_t pal1IntersectSize = (pal1 & toAssign).count();
-                             std::size_t pal2IntersectSize = (pal2 & toAssign).count();
+                             std::size_t pal1IntersectSize = (pal1.first & toAssign.first).count();
+                             std::size_t pal2IntersectSize = (pal2.first & toAssign.first).count();
                              if (pal1IntersectSize == pal2IntersectSize) {
-                                 return pal1.count() < pal2.count();
+                                 return pal1.first.count() < pal2.first.count();
                              }
                              return pal1IntersectSize > pal2IntersectSize;
                          });
 
         bool sawAssignmentWithIntersection = false;
-        std::size_t stopLimit = std::min(currentState.hardwarePalettes.size(), bestBranches);
+        std::size_t stopLimit = std::min(currentState.logicalPalettes.size(), bestBranches);
         if (smartPrune) {
             // Shrink stopLimit so it ends after the first empty hardware palette
             for (std::size_t i = 0; i < stopLimit; i++) {
-                auto pal = currentState.hardwarePalettes.at(i);
-                std::size_t palIntersectSize = (pal & toAssign).count();
+                auto pal = currentState.logicalPalettes.at(i);
+                std::size_t palIntersectSize = (pal.first & toAssign.first).count();
                 if (palIntersectSize == 0) {
                     stopLimit = i + 1;
                     break;
@@ -277,26 +277,26 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
             }
         }
         // Ensure stopLimit does not exceed the palette list size
-        stopLimit = std::min(currentState.hardwarePalettes.size(), stopLimit);
+        stopLimit = std::min(currentState.logicalPalettes.size(), stopLimit);
         for (size_t i = 0; i < stopLimit; i++) {
-            const ColorSet &palette = currentState.hardwarePalettes.at(i);
+            const ColorSet &palette = currentState.logicalPalettes.at(i);
 
             // > PAL_SIZE - 1 because we need to save a slot for transparency
-            if ((palette | toAssign).count() > PAL_SIZE - 1) {
+            if ((palette.first | toAssign.first).count() > PAL_SIZE - 1) {
                 continue;
             }
 
-            if ((palette & toAssign).count() > 0) {
+            if ((palette.first & toAssign.first).count() > 0) {
                 sawAssignmentWithIntersection = true;
             }
 
             std::vector<ColorSet> hardwarePalettesCopy;
-            std::copy(std::begin(currentState.hardwarePalettes), std::end(currentState.hardwarePalettes),
+            std::copy(std::begin(currentState.logicalPalettes), std::end(currentState.logicalPalettes),
                       std::back_inserter(hardwarePalettesCopy));
-            hardwarePalettesCopy.at(i) |= toAssign;
+            hardwarePalettesCopy.at(i).first |= toAssign.first;
             AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
             if (!visitedStates.contains(updatedState)) {
-                if (sawAssignmentWithIntersection && (palette & toAssign).count() == 0) {
+                if (sawAssignmentWithIntersection && (palette.first & toAssign.first).count() == 0) {
                     /*
                      * Heuristic: if we already saw at least one assignment that had some intersection, put the
                      * 0-intersection branches in a lower-priority queue
@@ -315,31 +315,58 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
     return AssignResult::NO_SOLUTION_POSSIBLE;
 }
 
-static auto tryAssignment(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
-                          const std::vector<ColorSet> &primerColorSets,
-                          const std::unordered_map<BGR15, std::size_t> &colorToIndex, bool printErrors)
+static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode,
+                          const std::vector<ColorSet> &colorSets, const std::vector<ColorSet> &primerColorSets,
+                          const std::vector<ColorSet> &overrideColorSets,
+                          const std::unordered_map<BGR15, std::size_t> &colorToIndex, const bool printErrors)
 {
     std::vector<ColorSet> assignedPalsSolution{};
-    std::vector<ColorSet> tmpHardwarePalettes{};
+    std::vector<ColorSet> tmpLogicalPalettes{};
     if (compilerMode == CompilerMode::PRIMARY) {
         assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInPrimary);
-        tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
+        tmpLogicalPalettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
     }
     else if (compilerMode == CompilerMode::SECONDARY) {
         assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
-        tmpHardwarePalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
+        tmpLogicalPalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
     }
     else {
         internalerror_unknownCompilerMode("compiler::compile");
     }
-    std::vector<ColorSet> unassignedNormPalettes;
-    std::vector<ColorSet> unassignedPrimerPalettes;
+
+    /*
+     * Pre-assign the overrides to the tmpLogicalPalettes.
+     */
+    if (overrideColorSets.size() > tmpLogicalPalettes.size()) {
+        internalerror(
+            fmt::format("palette_assignment::tryAssignment overrideColorSets.size() {} > tmpLogicalPalettes.size() {}",
+                        overrideColorSets.size(), tmpLogicalPalettes.size()));
+    }
+
+    for (std::size_t i = 0; i < tmpLogicalPalettes.size(); i++) {
+        auto &pal = tmpLogicalPalettes.at(i);
+        pal.second = SIZE_MAX;
+        if (i < overrideColorSets.size()) {
+            auto &colorSet = overrideColorSets.at(i);
+            pal.first |= colorSet.first;
+            /*
+             * Store the final hardware palette number in the tmpLogicalPal. This will be useful later on when we need
+             * to map logicalPals to actual hardware pals. Any logical solution palette that isn't tagged with an
+             * override will receive SIZE_MAX as the pal index, which indicates that it can go into any hardware
+             * palette.
+             */
+            pal.second = colorSet.second;
+        }
+    }
+
+    std::vector<ColorSet> unassignedNormPalettes{};
+    std::vector<ColorSet> unassignedPrimerPalettes{};
     std::copy(std::begin(colorSets), std::end(colorSets), std::back_inserter(unassignedNormPalettes));
     std::copy(std::begin(primerColorSets), std::end(primerColorSets), std::back_inserter(unassignedPrimerPalettes));
     std::stable_sort(std::begin(unassignedNormPalettes), std::end(unassignedNormPalettes),
-                     [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+                     [](const auto &cs1, const auto &cs2) { return cs1.first.count() < cs2.first.count(); });
     std::stable_sort(std::begin(unassignedPrimerPalettes), std::end(unassignedPrimerPalettes),
-                     [](const auto &cs1, const auto &cs2) { return cs1.count() < cs2.count(); });
+                     [](const auto &cs1, const auto &cs2) { return cs1.first.count() < cs2.first.count(); });
     std::vector<ColorSet> primaryPaletteColorSets{};
     if (compilerMode == CompilerMode::SECONDARY) {
         /*
@@ -352,12 +379,12 @@ static auto tryAssignment(PorytilesContext &ctx, CompilerMode compilerMode, cons
             const auto &gbaPalette = ctx.compilerContext.pairedPrimaryTileset->palettes.at(i);
             primaryPaletteColorSets.emplace_back();
             for (std::size_t j = 1; j < gbaPalette.size; j++) {
-                primaryPaletteColorSets.at(i).set(colorToIndex.at(gbaPalette.colors.at(j)));
+                primaryPaletteColorSets.at(i).first.set(colorToIndex.at(gbaPalette.colors.at(j)));
             }
         }
     }
 
-    AssignState initialState = {tmpHardwarePalettes, unassignedNormPalettes.size(), unassignedPrimerPalettes.size()};
+    AssignState initialState = {tmpLogicalPalettes, unassignedNormPalettes.size(), unassignedPrimerPalettes.size()};
     ctx.compilerContext.exploredNodeCounter = 0;
     AssignResult assignResult = AssignResult::NO_SOLUTION_POSSIBLE;
     AssignAlgorithm assignAlgorithm = compilerMode == CompilerMode::PRIMARY
@@ -408,7 +435,7 @@ struct AssignParams {
     bool smartPrune;
 };
 
-static const std::array<AssignParams, 48> MATRIX{
+static constexpr std::array MATRIX{
     // DFS, 1 million iterations
     AssignParams{AssignAlgorithm::DFS, 1'000'000, SIZE_MAX, true},
     AssignParams{AssignAlgorithm::DFS, 1'000'000, 2, false}, AssignParams{AssignAlgorithm::DFS, 1'000'000, 3, false},
@@ -452,7 +479,7 @@ static const std::array<AssignParams, 48> MATRIX{
 
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
-                           const std::vector<ColorSet> &primerColorSets,
+                           const std::vector<ColorSet> &primerColorSets, const std::vector<ColorSet> &overrideColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex)
 {
     /*
@@ -482,7 +509,7 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
     // If user supplied any command line overrides, we don't want to run the full matrix. Instead, die upon failure.
     if (primaryOverride || secondaryOverride || pairedPrimaryOverride) {
         auto [success, assignedPalsSolution, primaryPaletteColorSets] =
-            tryAssignment(ctx, compilerMode, colorSets, primerColorSets, colorToIndex, true);
+            tryAssignment(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex, true);
         if (success) {
             return std::pair{assignedPalsSolution, primaryPaletteColorSets};
         }
@@ -495,7 +522,8 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
              * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
              * potentially save a ton of time.
              */
-            auto assignmentResult = tryAssignment(ctx, compilerMode, colorSets, primerColorSets, colorToIndex, false);
+            auto assignmentResult =
+                tryAssignment(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex, false);
             bool success = std::get<0>(assignmentResult);
             if (success) {
                 auto assignedPalsSolution = std::get<1>(assignmentResult);
@@ -533,7 +561,7 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
             ctx.compilerConfig.secondarySmartPrune = MATRIX.at(index).smartPrune;
         }
         auto [success, assignedPalsSolution, primaryPaletteColorSets] =
-            tryAssignment(ctx, compilerMode, colorSets, primerColorSets, colorToIndex, false);
+            tryAssignment(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex, false);
         if (success) {
             return std::pair{assignedPalsSolution, primaryPaletteColorSets};
         }
