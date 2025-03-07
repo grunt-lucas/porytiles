@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - [#89](https://github.com/grunt-lucas/porytiles/pull/89)
 
 - Added palette override feature
+    - Includes new warning `-Wunused-manual-pal-color`that flags unused primer/override colors
     - [#117](https://github.com/grunt-lucas/porytiles/pull/117)
 
 ### Changed
