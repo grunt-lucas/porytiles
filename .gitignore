@@ -6,8 +6,8 @@
 # Build artifacts and executables
 build/**
 cmake-build-*/**
-Porytiles-0.x/build/**
-Porytiles-0.x/cmake-build-*/**
+Porytiles/build/**
+Porytiles/cmake-build-*/**
 cmd/porytiles/porytiles
 
 # Doxygen

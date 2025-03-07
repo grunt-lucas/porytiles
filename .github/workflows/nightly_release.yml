@@ -21,8 +21,8 @@ jobs:
     outputs:
       last_sha: ${{fromJson(steps.check_last_run.outputs.data).workflow_runs[0].head_sha}}
 
-  nightly-release-0x-linux-amd64:
-    name: Release a 0.x linux-amd64 binary based on the develop branch
+  nightly-release-linux-amd64:
+    name: Release a linux-amd64 binary based on the develop branch
     runs-on: ubuntu-latest
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
@@ -59,8 +59,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-0x-linux-arm64:
-    name: Release a 0.x linux-arm64 binary based on the develop branch
+  nightly-release-linux-arm64:
+    name: Release a linux-arm64 binary based on the develop branch
     runs-on: ubuntu-24.04-arm
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
@@ -97,8 +97,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-0x-macos-amd64:
-    name: Release a 0.x macos-amd64 binary based on the develop branch
+  nightly-release-macos-amd64:
+    name: Release a macos-amd64 binary based on the develop branch
     runs-on: macos-13
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
@@ -132,8 +132,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nightly-release-0x-macos-arm64:
-    name: Release a 0.x macos-arm64 binary based on the develop branch
+  nightly-release-macos-arm64:
+    name: Release a macos-arm64 binary based on the develop branch
     runs-on: macos-latest
     needs: [ check-already-built ]
     if: needs.check-already-built.outputs.last_sha != github.sha
