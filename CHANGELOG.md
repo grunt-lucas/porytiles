@@ -39,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - https://github.com/grunt-lucas/porytiles/commit/7681651
     - [#89](https://github.com/grunt-lucas/porytiles/pull/89)
 
+- Added palette override feature
+    - [#117](https://github.com/grunt-lucas/porytiles/pull/117)
+
 ### Changed
 
 - Fixed bug from
