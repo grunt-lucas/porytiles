@@ -54,11 +54,11 @@ you have further questions, I can be found on the `pret` and `RH Hideout` discor
 
 ## Compilation Information
 
-Clang+LLVM is the "official" Porytiles 0.x build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on
+Clang+LLVM is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on
 LLVM tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they
 have support for the C++20 standard. I try to maintain compatibility with GCC, should you prefer it over Clang+LLVM.
 Once again, [please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) if you'd
-like to try building Porytiles 0.x from source.
+like to try building Porytiles from source.
 
 ## Note For Aseprite Users
 
