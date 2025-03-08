@@ -1152,12 +1152,8 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("invalid blank line in pal file: {}", fileName));
     }
-    line.pop_back();
-    if (line == "JASC-PA") {
-        // This case is a common issue if the .pal file doesn't have windows line endings
-        // FIXME : see above note about DOS format .pal files
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("non-DOS line endings detected in pal file: {}", fileName));
+    if (line.at(line.size() - 1) == '\r') {
+        line.pop_back();
     }
     if (line != "JASC-PAL") {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
@@ -1168,7 +1164,9 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("invalid blank line in pal file: {}", fileName));
     }
-    line.pop_back();
+    if (line.at(line.size() - 1) == '\r') {
+        line.pop_back();
+    }
     if (line != "0100") {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("expected `0100' as second line in pal file: {}", fileName));
@@ -1178,7 +1176,9 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                    fmt::format("invalid blank line in pal file: {}", fileName));
     }
-    line.pop_back();
+    if (line.at(line.size() - 1) == '\r') {
+        line.pop_back();
+    }
 
     std::uint8_t paletteSize{};
     try {
@@ -1258,7 +1258,10 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
     std::uint8_t lineCount = 0;
     std::uint8_t usedPaletteSize = 0;
     while (std::getline(paletteFile, line)) {
-        if (line != "-\r") {
+        if (line.at(line.size() - 1) == '\r') {
+            line.pop_back();
+        }
+        if (line != "-") {
             const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
 
             if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
