@@ -206,7 +206,7 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
 
     // Then load palette overrides
     for (const auto &overrideTile : paletteOverrides) {
-        for (std::size_t i = 0; i < overrideTile.primerSize; i++) {
+        for (std::size_t i = 0; i < overrideTile.overrideSize; i++) {
             const auto &rgb = overrideTile.pixels.at(i);
             overrideRgbColors.insert(rgb);
             if (!overrideRgbColorPaths.contains(rgb)) {

@@ -1204,7 +1204,8 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
                                    fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
 
-    std::uint8_t lineCount = 0;
+    std::uint8_t lineCount = 4;
+    std::uint8_t usedPaletteCount = 0;
     while (std::getline(paletteFile, line)) {
         const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
 
@@ -1222,20 +1223,20 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
                                        fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
         }
 
-        if (lineCount < primerTile.pixels.size()) {
-            primerTile.pixels.at(lineCount) = rgba;
-        }
+        primerTile.pixels.at(usedPaletteCount) = rgba;
+
         lineCount++;
-        if (lineCount > PAL_SIZE - 1) {
+        usedPaletteCount++;
+        if (usedPaletteCount >= PAL_SIZE - 1) {
             break;
         }
     }
 
-    if (lineCount != declaredPaletteSize) {
-        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
-                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+    if (usedPaletteCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: used pal size ({}) did not match declared size `{}'", fileName,
+                                   usedPaletteCount, fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
-    primerTile.primerSize = declaredPaletteSize;
+    primerTile.primerSize = usedPaletteCount;
 
     return primerTile;
 }
@@ -1250,13 +1251,25 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
     std::string line{};
     const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
-    if (declaredPaletteSize != PAL_SIZE - 1) {
+    if (declaredPaletteSize != PAL_SIZE) {
         error(ctx.err, fmt::format("{}: invalid declared size `{}', must be exactly {}", fileName,
-                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold), PAL_SIZE - 1));
+                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold), PAL_SIZE));
     }
 
-    std::uint8_t lineCount = 0;
-    std::uint8_t usedPaletteSize = 0;
+    std::uint8_t lineCount = 4;
+    std::getline(paletteFile, line);
+    if (line.at(line.size() - 1) == '\r') {
+        line.pop_back();
+    }
+    if (line != "-") {
+        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
+                   fmt::format("{}: 0th override slot must be `-' but saw `{}'", fileName, line));
+    }
+    lineCount++;
+
+    // usedPaletteCount starts at 1 since we've already "used" a slot for transparent
+    std::uint8_t usedPaletteCount = 1;
+    std::uint8_t overriddenSlotCount = 0;
     while (std::getline(paletteFile, line)) {
         if (line.at(line.size() - 1) == '\r') {
             line.pop_back();
@@ -1277,24 +1290,24 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
                 error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
                                            fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
             }
-            // Use usedPaletteSize here so we don't have a bunch of blank pixels at the head of the overrideTile.
-            overrideTile.pixels.at(usedPaletteSize) = rgba;
-            // Add 1 to lineCount since slot 0 is implicitly transparent
-            overridePaletteSlots.emplace_back(lineCount + 1, rgbaToBgr(rgba));
-            usedPaletteSize++;
+            overrideTile.pixels.at(overriddenSlotCount) = rgba;
+            overriddenSlotCount++;
+            overridePaletteSlots.emplace_back(usedPaletteCount, rgbaToBgr(rgba));
         }
         lineCount++;
-        if (lineCount > PAL_SIZE - 1) {
+        usedPaletteCount++;
+        if (usedPaletteCount >= PAL_SIZE) {
             break;
         }
     }
 
-    if (lineCount != declaredPaletteSize) {
-        error(ctx.err, fmt::format("{}: line count ({}) did not match declared size `{}'", fileName, lineCount,
-                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+    if (usedPaletteCount != declaredPaletteSize) {
+        error(ctx.err, fmt::format("{}: used palette size ({}) did not match declared size `{}'", fileName,
+                                   usedPaletteCount, fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
     }
 
-    overrideTile.primerSize = usedPaletteSize;
+    // minus 1 for transparent
+    overrideTile.overrideSize = overriddenSlotCount;
 
     return {overrideTile, overridePaletteSlots};
 }
