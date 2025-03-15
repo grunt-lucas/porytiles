@@ -1,6 +1,3 @@
-#define DOCTEST_CONFIG_IMPLEMENT
-#include <doctest.h>
-
 #include <exception>
 
 #include "porytiles/build_version.h"
