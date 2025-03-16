@@ -16,11 +16,11 @@ runs:
         mkdir "porytiles-${{ inputs.os-arch }}"
         cp build/Porytiles/tools/driver/porytiles "./porytiles-${{ inputs.os-arch }}"
         cp build/Porytiles/doctests/PorytilesDocTests "./porytiles-${{ inputs.os-arch }}"
-        cp CHANGELOG.md "./porytiles-${{ inputs.os-arch }}"
         cp README.md "./porytiles-${{ inputs.os-arch }}"
         cp LICENSE "./porytiles-${{ inputs.os-arch }}"
         mkdir -p "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Examples "./porytiles-${{ inputs.os-arch }}/Resources"
+        cp -r Resources/Readme "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Tests "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Porytiles/vendor "./porytiles-${{ inputs.os-arch }}"
 
