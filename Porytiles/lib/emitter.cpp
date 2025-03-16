@@ -1,6 +1,9 @@
 #include "emitter.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -353,10 +356,7 @@ void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, std::ostre
 
 } // namespace porytiles
 
-// --------------------
-// |    TEST CASES    |
-// --------------------
-
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("emitPalette should write the expected JASC pal to the output stream") {
     porytiles::PorytilesContext ctx{};
     porytiles::GBAPalette palette{};
@@ -703,3 +703,4 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes") {
 TEST_CASE("emitDecompiled should correctly emit the decompiled tileset files") {
     // TODO tests : (emitDecompiled should correctly emit the decompiled tileset files)
 }
+#endif // PORYTILES_TESTS

@@ -1,9 +1,12 @@
 #include "compiler.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
+#include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
 #include <algorithm>
 #include <bitset>
 #include <deque>
-#include <doctest.h>
 #include <filesystem>
 #include <memory>
 #include <png.hpp>
@@ -76,6 +79,13 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
             if (errWarn) {
                 warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, pixelBgr, rgba,
                                         ctx.compilerContext.bgrToRgba.at(pixelBgr));
+                ctx.diag_->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc().c_str(),
+                                  compilerModeString(compilerMode).c_str(), col, row);
+                ctx.diag_->report_partner(W_COLOR_PRECISION_LOSS, 0,
+                                          std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                          std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc().c_str(),
+                                          std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                          std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
             }
             ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
         }
@@ -996,12 +1006,10 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
 
     return compiled;
 }
+
 } // namespace porytiles
 
-// --------------------
-// |    TEST CASES    |
-// --------------------
-
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
@@ -1614,8 +1622,6 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     SUBCASE("It should successfully allocate a large, complex PNG") {
         constexpr int SOLUTION_SIZE = 5;
         porytiles::PorytilesContext ctx{};
-        ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-        ctx.compilerConfig.primaryExploredNodeCutoff = 200;
 
         REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compile_raw_set_1/set.png"}));
         png::image<png::rgba_pixel> png1{"Resources/Tests/compile_raw_set_1/set.png"};
@@ -2981,3 +2987,4 @@ TEST_CASE("overrides should change output of secondary compile function") {
     CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(13) ==
           porytiles::rgbaToBgr(porytiles::RGBA32{168, 104, 152}));
 }
+#endif // TEST_PALETTE_OVERRIDES

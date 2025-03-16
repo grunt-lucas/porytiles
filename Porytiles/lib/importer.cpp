@@ -1,13 +1,14 @@
 #include "importer.h"
 
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
+#ifndef DOCTEST_CONFIG_DISABLE
+#include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
 
 #include <algorithm>
 #include <bitset>
 #include <csv.h>
-#include <doctest.h>
 #include <filesystem>
+#include <fmt/color.h>
 #include <fstream>
 #include <iostream>
 #include <png.hpp>
@@ -380,12 +381,12 @@ static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation 
         keyFrameColors.push_back(tileColors);
     }
 
-    for (int i = 0; i < keyFrameColors.size(); i++) {
+    for (std::size_t i = 0; i < keyFrameColors.size(); i++) {
         regularFrameColors.emplace_back();
         keyFrameMissingColors.emplace_back();
     }
 
-    for (int i = 1; i < anim.size(); i++) {
+    for (std::size_t i = 1; i < anim.size(); i++) {
         const auto &frame = anim.frames.at(i);
         int tileIndex = 0;
         for (const auto &tile : frame.tiles) {
@@ -396,7 +397,7 @@ static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation 
         }
     }
 
-    for (int i = 0; i < keyFrameColors.size(); i++) {
+    for (std::size_t i = 0; i < keyFrameColors.size(); i++) {
         const auto &keyFrameColorsSet = keyFrameColors.at(i);
         const auto &regularFrameColorsSet = regularFrameColors.at(i);
         auto &keyFrameMissingColorsSet = keyFrameMissingColors.at(i);
@@ -407,7 +408,7 @@ static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation 
         }
     }
 
-    for (int i = 0; i < keyFrameMissingColors.size(); i++) {
+    for (std::size_t i = 0; i < keyFrameMissingColors.size(); i++) {
         if (!keyFrameMissingColors.at(i).empty()) {
             warn_keyFrameMissingColors(ctx.err, ctx.compilerSrcPaths, compilerMode, i, keyFrameMissingColors.at(i),
                                        anim.animName);
@@ -1314,6 +1315,7 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset in tile-wise left-to-right, "
           "top-to-bottom order") {
     porytiles::PorytilesContext ctx{};
@@ -1919,3 +1921,4 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
 TEST_CASE("importCompiledTileset should import a dual-layer pokefirered tileset correctly") {
     // TODO tests : (importCompiledTileset should import a dual-layer pokefirered tileset correctly)
 }
+#endif // DOCTEST_CONFIG_DISABLE

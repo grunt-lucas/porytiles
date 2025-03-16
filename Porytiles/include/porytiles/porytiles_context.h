@@ -1,15 +1,13 @@
 #ifndef PORYTILES_PORYTILES_CONTEXT_H
 #define PORYTILES_PORYTILES_CONTEXT_H
 
-#include <cstddef>
-#include <filesystem>
 #include <memory>
-#include <stdexcept>
 #include <string>
 
-#include "errors_warnings.h"
-#include "porytiles_exception.h"
-#include "types.h"
+#include "./diagnostics/diagnostic_engine.hpp"
+#include "./diagnostics/diagnostics.hpp"
+#include "./errors_warnings.h"
+#include "./types.h"
 
 namespace porytiles {
 
@@ -24,6 +22,7 @@ struct PorytilesContext {
     CompilerContext compilerContext;
     DecompilerContext decompilerContext;
     ErrorsAndWarnings err;
+    std::unique_ptr<diag_engine> diag_;
 
     // Command params
     Subcommand subcommand;
@@ -32,7 +31,7 @@ struct PorytilesContext {
     PorytilesContext()
         : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
           compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-          decompilerContext{}, err{}, subcommand{}, verbose{false} {}
+          decompilerContext{}, err{}, diag_{std::make_unique<diag_engine>()}, subcommand{}, verbose{false} {}
 
     void validateFieldmapParameters(CompilerMode compilerMode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
@@ -49,6 +48,7 @@ struct PorytilesContext {
                                                  fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
         }
     }
+
     void validateFieldmapParameters(DecompilerMode decompilerMode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
             fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
@@ -63,6 +63,10 @@ struct PorytilesContext {
             fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numPalettes",
                                                  fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
         }
+    }
+
+    void set_diag_engine(std::unique_ptr<diag_engine> diag) {
+        diag_ = std::move(diag);
     }
 };
 

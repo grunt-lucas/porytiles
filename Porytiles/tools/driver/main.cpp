@@ -1,18 +1,18 @@
-// We need this here for now to prevent linker errors
-#define DOCTEST_CONFIG_IMPLEMENT
-#include <doctest.h>
-
 #include <exception>
 
-#include "porytiles/build_version.h"
-#include "porytiles/cli_parser.h"
-#include "porytiles/driver.h"
-#include "porytiles/logger.h"
-#include "porytiles/porytiles_context.h"
-#include "porytiles/porytiles_exception.h"
+#include <porytiles/build_version.h>
+#include <porytiles/cli_parser.h>
+#include <porytiles/diagnostics/diagnostic_engine.hpp>
+#include <porytiles/diagnostics/diagnostics.hpp>
+#include <porytiles/driver.h>
+#include <porytiles/logger.h>
+#include <porytiles/porytiles_context.h>
+#include <porytiles/porytiles_exception.h>
 
 int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::stderr_consumer>());
+    ctx.set_diag_engine(std::move(engine));
     porytiles::parseOptions(ctx, argc, argv);
     porytiles::drive(ctx);
 

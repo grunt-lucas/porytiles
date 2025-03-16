@@ -1,6 +1,10 @@
 #include "cli_parser.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <fmt/color.h>
 #include <getopt.h>
 #include <iostream>
 #include <iterator>
@@ -8,9 +12,6 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
-
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
 
 #include "build_version.h"
 #include "cli_options.h"
@@ -23,7 +24,9 @@
 namespace porytiles {
 
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
+
 static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv);
+
 static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
 /*
@@ -658,7 +661,7 @@ static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const 
     throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
 }
 
-const std::vector<std::string> GLOBAL_SHORTS = {};
+constexpr std::vector<std::string> GLOBAL_SHORTS = {};
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv) {
     std::ostringstream implodedShorts;
     std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -1112,19 +1115,24 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WALL_VAL:
             validateSubcommandContext(ctx, WALL);
             enableAllWarnings = true;
+            ctx.diag_->enable_all_warnings();
             break;
         case WNONE_VAL:
             validateSubcommandContext(ctx, WNONE);
             disableAllWarnings = true;
+            ctx.diag_->disable_all_warnings();
             break;
         case WERROR_VAL:
             validateSubcommandContext(ctx, WERROR);
             if (optarg == NULL) {
                 setAllEnabledWarningsToErrors = true;
+                ctx.diag_->enable_all_warnings_as_errors();
             } else {
                 // Compilation warnings
                 if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
                     errColorPrecisionLossOverride = true;
+                    ctx.diag_->enable(W_COLOR_PRECISION_LOSS);
+                    ctx.diag_->override_level(W_COLOR_PRECISION_LOSS, diag_level::error);
                 } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                     errKeyFrameTileDidNotAppearInAssignmentOverride = true;
                 } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
@@ -1165,6 +1173,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             // Compilation warnings
             if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
                 errColorPrecisionLossOverride = false;
+                ctx.diag_->disable(W_COLOR_PRECISION_LOSS);
             } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                 errKeyFrameTileDidNotAppearInAssignmentOverride = false;
             } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
@@ -1204,6 +1213,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WCOLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WCOLOR_PRECISION_LOSS);
             warnColorPrecisionLossOverride = true;
+            ctx.diag_->enable(W_COLOR_PRECISION_LOSS);
             break;
         case WNO_COLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WNO_COLOR_PRECISION_LOSS);
@@ -1654,6 +1664,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 }
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("parseCompile should work as expected with all command lines") {
     // These tests are full of disgusting and evil hacks, avert your gaze
     SUBCASE("Check that the defaults are correct") {
@@ -1836,3 +1847,4 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
     }
 }
+#endif // DOCTEST_CONFIG_DISABLE

@@ -1,6 +1,5 @@
 #pragma once
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include <concepts>
@@ -12,8 +11,7 @@
 namespace porytiles {
 
 /**
- * @brief A wrapper for @link std::string_view @endlink with a taggable
- * @link std::source_location @endlink
+ * @brief A wrapper for std::string_view with a taggable std::source_location.
  *
  * @details
  * Inspired by: https://buildingblock.ai/panic

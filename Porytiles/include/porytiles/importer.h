@@ -6,8 +6,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles_context.h"
-#include "types.h"
+#include "./porytiles_context.h"
+#include "./types.h"
 
 /**
  * This unwieldy type represents a list of palette slot indexes and the override color for that index.

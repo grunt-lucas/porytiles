@@ -1,7 +1,10 @@
 #include "driver.h"
 
-#include <cstdio>
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -1089,6 +1092,7 @@ void drive(PorytilesContext &ctx) {
 
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
@@ -1616,3 +1620,4 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove") 
 
     std::filesystem::remove_all(parentDir);
 }
+#endif // PORYTILES_TEST_DRIVER

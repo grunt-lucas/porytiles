@@ -5,10 +5,12 @@
 #include <string>
 #include <unordered_set>
 
-#include "types.h"
+#include "./types.h"
 
 namespace porytiles {
 enum class WarningMode { OFF, WARN, ERR };
+
+std::string getTilePrettyString(const RGBATile &tile);
 
 struct ErrorsAndWarnings {
     /*

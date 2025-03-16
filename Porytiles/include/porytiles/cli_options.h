@@ -1,11 +1,10 @@
 #ifndef PORYTILES_CLI_OPTIONS_H
 #define PORYTILES_CLI_OPTIONS_H
 
-#include <string>
-#define FMT_HEADER_ONLY
 #include <fmt/color.h>
+#include <string>
 
-#include "errors_warnings.h"
+#include "./errors_warnings.h"
 
 namespace porytiles {
 

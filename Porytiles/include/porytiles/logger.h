@@ -2,15 +2,12 @@
 #define PORYTILES_LOGGER_H
 
 #include <cstdio>
+#include <fmt/color.h>
 #include <stdexcept>
 #include <string>
 
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
-
-#include "build_version.h"
-#include "porytiles_context.h"
-#include "types.h"
+#include "./build_version.h"
+#include "./porytiles_context.h"
 
 namespace porytiles {
 

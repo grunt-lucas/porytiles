@@ -1,9 +1,12 @@
 #include "types.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
+#include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
 #include <filesystem>
 #include <porytiles_context.h>
 #include <stdexcept>
-#include <unordered_set>
 
 #include "errors_warnings.h"
 
@@ -637,10 +640,7 @@ std::string decompilerModeString(DecompilerMode mode) {
 }
 } // namespace porytiles
 
-// --------------------
-// |    TEST CASES    |
-// --------------------
-
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("RGBA32 to BGR15 should lose precision") {
     porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
     porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
@@ -677,3 +677,4 @@ TEST_CASE("BGR15 to RGBA should upconvert RGB channels to multiples of 8") {
     CHECK(porytiles::bgrToRgba(bgr2) == porytiles::RGBA32{248, 248, 248, 255});
     CHECK(porytiles::bgrToRgba(bgr3) == porytiles::RGBA32{0, 160, 96, 255});
 }
+#endif // DOCTEST_CONFIG_DISABLE

@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <vector>
 
-#include "compiler.h"
-#include "porytiles_context.h"
-#include "types.h"
+#include "./compiler.h"
+#include "./porytiles_context.h"
+#include "./types.h"
 
 namespace porytiles {
 
@@ -50,10 +50,12 @@ namespace porytiles {
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                               const std::vector<ColorSet> &unassigneds, const std::vector<ColorSet> &unassignedPrimers);
+
 AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode, const AssignState &initialState,
                                 std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                                 const std::vector<ColorSet> &unassigneds,
                                 const std::vector<ColorSet> &unassignedPrimers);
+
 std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets, const std::vector<ColorSet> &overrideColorSets,

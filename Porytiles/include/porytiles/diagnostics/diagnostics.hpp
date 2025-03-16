@@ -1,42 +1,474 @@
 #pragma once
+
+#include <any>
+#include <fmt/color.h>
+#include <functional>
+#include <sstream>
 #include <string>
 
+#include "../panic/panic.hpp"
+#include "../types.h"
+
 namespace porytiles {
+
+enum class diag_level { ignored, note, remark, warning, error, fatal };
+std::string level_to_str(diag_level level);
+fmt::terminal_color color_for_level(diag_level level);
+
+std::string build_tile_pixel_highlight(bool is_a_tty, diag_level in_flight_level, const RGBATile &tile, std::size_t row,
+                                       std::size_t col);
+
 /**
- * @brief diagnostic_template defines a reusable template for standardized
- * diagnostic reporting.
+ * @brief diag_templ defines a reusable template for standardized diagnostic
+ * reporting.
  *
  * @details
- * The diagnostic_engine uses a diagnostic_template to construct the actual
- * diagnostic instance when one is in-flight. A diagnostic_template defines a
- * unique name for the diagnostic as well as some default settings.
- * Additionally, it provides a template for the diagnostic message and templates
- * for zero or more notes that can be emitted alongside the diagnostic.
+ * diag_templ is used by the diag_engine to construct the actual diagnostic
+ * instance when one is in-flight. A diag_templ defines a unique name for the
+ * diagnostic as well as some default settings. It provides a template for the
+ * diagnostic message: either in the form of a static format string or a dynamic
+ * builder function. It also contains a list of partner diagnostics. Partner
+ * diagnostics are used for warnings/errors that have associated notes.
  */
-class diagnostic_template {
+class diag_templ {
   public:
-    enum class level { ignored, note, remark, warning, error, fatal };
+    /**
+     * @brief @link dynamic_msg_builder @endlink is an alias for a dynamic
+     * diagnostic message builder function.
+     *
+     * @details @link dynamic_msg_builder @endlink defines a function signature
+     * for building diagnostic messages dynamically. The function signature
+     * accepts a boolean flag indicating whether the output is directed to a
+     * tty (terminal) and a vector of additional parameters (of type std::any)
+     * used to customize the diagnostic message. It returns a vector of
+     * formatted strings representing the final diagnostic message. Each element
+     * in the vector represents a single line of output for a
+     * @link diag_consumer @endlink to consume
+     */
+    using dynamic_msg_builder = std::function<std::vector<std::string>(bool is_a_tty, diag_level in_flight_level,
+                                                                       const std::vector<std::any> &)>;
+
+    // @formatter:off
+    // clang-format off
+    explicit diag_templ(std::string_view name, bool default_enabled, diag_level default_level,
+                        std::string_view static_msg_templ, dynamic_msg_builder dynamic_msg_builder,
+                        const std::vector<diag_templ> &partner_diags) noexcept
+        : name_{name},
+          default_enabled_{default_enabled},
+          default_level_{default_level},
+          static_msg_templ_{static_msg_templ},
+          dynamic_msg_builder_{std::move(dynamic_msg_builder)},
+          partner_diags_{partner_diags} {}
+    // @formatter:on
+    // clang-format on
+
+    [[nodiscard]] std::string_view name() const noexcept {
+        return name_;
+    }
+
+    [[nodiscard]] bool default_enabled() const noexcept {
+        return default_enabled_;
+    }
+
+    [[nodiscard]] diag_level level() const noexcept {
+        return default_level_;
+    }
+
+    [[nodiscard]] std::string_view static_msg_templ() const noexcept {
+        return static_msg_templ_;
+    }
+
+    template <typename... Args>
+    std::vector<std::string> build_dynamic_msg(bool is_a_tty, diag_level in_flight_level, Args &&...args) const {
+        if (dynamic_msg_builder_ == nullptr) {
+            std::vector<std::string> v{};
+            v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));
+            return v;
+        }
+        const std::vector<std::any> v{std::forward<Args>(args)...};
+        return dynamic_msg_builder_(is_a_tty, in_flight_level, v);
+    }
+
+    [[nodiscard]] const std::vector<diag_templ> &partner_diags() const noexcept {
+        return partner_diags_;
+    }
 
   private:
-    std::string name_;
+    std::string_view name_;
     bool default_enabled_;
-    level level_;
-    std::string message_template_;
+    diag_level default_level_;
+    std::string_view static_msg_templ_;
+    dynamic_msg_builder dynamic_msg_builder_;
+    std::vector<diag_templ> partner_diags_;
 };
 
 /**
- * @brief
- * InFlightDiagnostic represents a diagnostic message,
- * including its template, level, message, and associated notes.
+ * @brief in_flight_diag represents an in-flight diagnostic.
  *
  * @details
- * An actual InFlightDiagnostic is
- * generated by the DiagnosticEngine by combining the template with context from
- * the various user defined diagnostic parameters (e.g. warnings as errors,
- * specific warning disables, etc.).
+ * in_flight_diag is generated by the diag_engine by combining the template with
+ * context from the various user defined diagnostic parameters (e.g. warnings
+ * as errors, specific warning disables, etc.).
  */
-class in_flight_diagnostic {
-    diagnostic_template template_;
-    diagnostic_template::level level_;
+class in_flight_diag {
+  public:
+    explicit in_flight_diag(diag_level level, std::string msg, const diag_templ &templ) noexcept
+        : level_{level}, msg_{std::move(msg)}, templ_{templ} {}
+
+    [[nodiscard]] diag_level level() const noexcept {
+        return level_;
+    }
+
+    [[nodiscard]] std::string msg() const noexcept {
+        return msg_;
+    }
+
+    [[nodiscard]] const diag_templ &templ() const noexcept {
+        return templ_;
+    }
+
+  private:
+    diag_level level_;
+    std::string msg_;
+    diag_templ templ_;
 };
+
+class diag_consumer {
+  public:
+    virtual ~diag_consumer() = default;
+    virtual void consume(const in_flight_diag &diag) = 0;
+    [[nodiscard]] virtual bool is_a_tty() const = 0;
+    [[nodiscard]] virtual in_flight_diag consumed(std::size_t i) const = 0;
+    [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
+};
+
+/**
+ * @brief ignore_consumer is a consumer implementation that simply ignores the
+ * diagnostic.
+ */
+class ignore_consumer final : public diag_consumer {
+  public:
+    void consume(const in_flight_diag &diag) override;
+    [[nodiscard]] bool is_a_tty() const override;
+    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t consumed_count() const override;
+
+  private:
+    std::uint64_t consumed_count_{};
+};
+
+/**
+ * @brief stderr_consumer is a consumer implementation that pushes diagnostic
+ * messages to stderr.
+ */
+class stderr_consumer final : public diag_consumer {
+  public:
+    void consume(const in_flight_diag &diag) override;
+    [[nodiscard]] bool is_a_tty() const override;
+    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t consumed_count() const override;
+
+  private:
+    std::uint64_t consumed_count_{};
+};
+
+/**
+ * @brief vector_consumer is a consumer implementation that pushes diagnostic
+ * messages to an internal vector for testing purposes.
+ */
+class vector_consumer final : public diag_consumer {
+  public:
+    void consume(const in_flight_diag &diag) override;
+    [[nodiscard]] bool is_a_tty() const override;
+    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t consumed_count() const override;
+
+  private:
+    std::vector<in_flight_diag> diags_;
+};
+
+// @formatter:off
+// clang-format off
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// WARNINGS
+///
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief The -Wcolor-precision-loss warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wcolor-precision-loss>
+ */
+constexpr auto W_COLOR_PRECISION_LOSS = "color-precision-loss";
+
+// @formatter:on
+// clang-format on
+inline std::vector<std::string> w_color_precision_loss_builder(bool is_a_tty, diag_level in_flight_level,
+                                                               const std::vector<std::any> &args) {
+    if (args.size() != 5) {
+        const auto loc = std::source_location::current();
+        panic(fmt::format("{}: found {} args but expected 5", loc.function_name(), args.size()));
+    }
+
+    const RGBATile *tile;
+    const char *color;
+    const char *mode;
+    std::size_t col;
+    std::size_t row;
+    try {
+        tile = &std::any_cast<const RGBATile &>(args[0]);
+        color = std::any_cast<const char *>(args[1]);
+        mode = std::any_cast<const char *>(args[2]);
+        col = std::any_cast<std::size_t>(args[3]);
+        row = std::any_cast<std::size_t>(args[4]);
+    } catch (const std::bad_any_cast &) {
+        const auto loc = std::source_location::current();
+        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
+    }
+
+    constexpr auto msg_templ = "{} {}: '{}' at col {}, row {} collapsed to duplicate BGR";
+    std::vector<std::string> msg{};
+    if (is_a_tty) {
+        msg.push_back(fmt::format(
+            msg_templ, styled(mode, fmt::emphasis::bold), styled(tile->prettify().c_str(), fmt::emphasis::bold),
+            styled(color, fmt::emphasis::bold), styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
+    } else {
+        msg.push_back(fmt::format(msg_templ, mode, tile->prettify().c_str(), color, col, row));
+    }
+    msg.push_back(build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col));
+
+    return msg;
+}
+
+inline std::vector<std::string> w_color_precision_loss_note_builder(bool is_a_tty, diag_level in_flight_level,
+                                                                    const std::vector<std::any> &args) {
+    if (args.size() != 4) {
+        const auto loc = std::source_location::current();
+        panic(fmt::format("{}: found {} args but expected 4", loc.function_name(), args.size()));
+    }
+
+    const RGBATile *tile;
+    const char *color;
+    std::size_t col;
+    std::size_t row;
+    try {
+        tile = &std::any_cast<const RGBATile &>(args[0]);
+        color = std::any_cast<const char *>(args[1]);
+        col = std::any_cast<std::size_t>(args[2]);
+        row = std::any_cast<std::size_t>(args[3]);
+    } catch (const std::bad_any_cast &) {
+        const auto loc = std::source_location::current();
+        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
+    }
+
+    /*
+     * FIXME : this template is incomplete, we want to show the mode since it's
+     * possible to have precision loss across a primary-secondary boundary
+     */
+    constexpr auto msg_templ = "previously saw '{}' at '{}' col {}, row {}";
+    std::vector<std::string> msg{};
+    if (is_a_tty) {
+        msg.push_back(fmt::format(msg_templ, styled(color, fmt::emphasis::bold),
+                                  styled(tile->prettify().c_str(), fmt::emphasis::bold),
+                                  styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
+    } else {
+        msg.push_back(fmt::format(msg_templ, color, tile->prettify().c_str(), col, row));
+    }
+    msg.push_back(build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col));
+
+    return msg;
+}
+
+// @formatter:off
+// clang-format off
+
+const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
+    W_COLOR_PRECISION_LOSS,
+    false,
+    diag_level::warning,
+    "",
+    w_color_precision_loss_builder,
+    {
+        diag_templ{
+            "color-precision-loss-previous",
+            false,
+            diag_level::note,
+            "",
+            w_color_precision_loss_note_builder,
+            {}
+        }
+    }
+};
+
+/**
+ * @brief The -Wkey-no-matching-tile warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wkey-frame-no-matching-tile>
+ */
+constexpr auto W_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
+
+constexpr auto W_KEY_FRAME_NO_MATCHING_TILE_MSG =
+    "animation '{}' key frame tile '{}' was not present in any metatile entries";
+
+const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
+    W_KEY_FRAME_NO_MATCHING_TILE,
+    false,
+    diag_level::warning,
+    W_KEY_FRAME_NO_MATCHING_TILE_MSG,
+    nullptr,
+    {}
+};
+
+/**
+ * @brief The -Wkey-frame-missing-colors warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wkey-frame-missing-colors>
+ */
+constexpr auto W_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
+
+constexpr auto W_KEY_FRAME_MISSING_COLORS_MSG =
+    "animation '{}' key frame tile '{}' missing essential colors";
+
+const diag_templ W_KEY_FRAME_MISSING_COLORS_TEMPL{W_KEY_FRAME_MISSING_COLORS, false, diag_level::warning, W_KEY_FRAME_MISSING_COLORS_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wused-true-color-mode warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wused-true-color-mode>
+ */
+constexpr auto W_USED_TRUE_COLOR_MODE = "used-true-color-mode";
+
+constexpr auto W_USED_TRUE_COLOR_MODE_MSG =
+    "'true-color' mode requires Porymap minimum version 5.2.0";
+
+const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, true, diag_level::warning, W_USED_TRUE_COLOR_MODE_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wattribute-format-mismatch warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wattribute-format-mismatch>
+ */
+constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
+
+constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH_MSG = "{}: too {} attribute columns for base game '{}'";
+
+const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH, false, diag_level::warning, W_ATTRIBUTE_FORMAT_MISMATCH_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wmissing-attributes-csv warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wmissing-attributes-csv>
+ */
+constexpr auto W_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
+
+constexpr auto W_MISSING_ATTRIBUTES_CSV_MSG = "{}: attributes file did not exist";
+
+const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, W_MISSING_ATTRIBUTES_CSV_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wunused-attribute warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wunused-attribute>
+ */
+constexpr auto W_UNUSED_ATTRIBUTE = "unused-attribute";
+
+constexpr auto W_UNUSED_ATTRIBUTE_MSG = "found attribute for nonexistent metatile ID {}";
+
+const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, W_UNUSED_ATTRIBUTE_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wtransparency-collapse warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wtransparency-collapse>
+ */
+constexpr auto W_TRANSPARENCY_COLLAPSE = "transparency-collapse";
+
+constexpr auto W_TRANSPARENCY_COLLAPSE_MSG = "color '{}' at {} '{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion";
+
+const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE, false, diag_level::warning, W_TRANSPARENCY_COLLAPSE_MSG, nullptr, {}};
+
+/**
+ * @brief The -Wunused-manual-pal-color warning.
+ *
+ * @details
+ * See:
+ * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wunused-manual-pal-color>
+ */
+constexpr auto W_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
+
+constexpr auto W_UNUSED_MANUAL_PAL_COLOR_MSG = "{}: '{}' was not used in layers or anims";
+
+const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR, false, diag_level::warning, W_UNUSED_MANUAL_PAL_COLOR_MSG, nullptr, {}};
+
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// ERRORS
+///
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Use this @link diag_templ @endlink for generic error diagnostics.
+ */
+constexpr auto E_GENERIC = "error-generic";
+
+constexpr auto E_GENERIC_MSG = "{}";
+
+const diag_templ E_GENERIC_TEMPL{E_GENERIC, true, diag_level::error, E_GENERIC_MSG, nullptr, {}};
+
+/**
+ * @brief Use this @link diag_templ @endlink for generic error diagnostics.
+ */
+constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
+
+constexpr auto E_FATAL_GENERIC_MSG = "{}";
+
+const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC, true, diag_level::fatal, E_FATAL_GENERIC_MSG, nullptr, {}};
+
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// STANDALONE NOTES
+///
+////////////////////////////////////////////////////////////////////////////////
+
+// @formatter:on
+// clang-format on
+
+/**
+ * @brief Retrieves the diagnostic template corresponding to a given diagnostic
+ * identifier.
+ *
+ * This function searches an internal table for the provided diagnostic
+ * identifier. If the identifier is found, the corresponding diagnostic template
+ * is returned. If not, the function triggers a panic with an error message
+ * indicating an unknown diagnostic.
+ *
+ * @param diag A std::string_view representing the diagnostic identifier.
+ * @return diag_template The diagnostic template associated with the given
+ * identifier.
+ *
+ * @note The function will terminate the program if the diagnostic identifier is
+ * invalid.
+ */
+diag_templ diag_templ_for(std::string_view diag);
+
 } // namespace porytiles

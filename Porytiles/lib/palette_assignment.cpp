@@ -10,6 +10,7 @@
 #include "types.h"
 
 namespace porytiles {
+
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                               const std::vector<ColorSet> &unassigneds,
@@ -22,7 +23,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
     bool smartPrune = compilerMode == CompilerMode::PRIMARY ? ctx.compilerConfig.primarySmartPrune
                                                             : ctx.compilerConfig.secondarySmartPrune;
 
-    ctx.compilerContext.exploredNodeCounter++;
+    ++ctx.compilerContext.exploredNodeCounter;
     if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
         pt_logln(ctx, stderr, "exploredNodeCounter passed {} iterations", ctx.compilerContext.exploredNodeCounter);
     }
@@ -182,7 +183,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
 
     while (!stateQueue.empty() || !lowPriorityQueue.empty()) {
         AssignState currentState{};
-        ctx.compilerContext.exploredNodeCounter++;
+        ++ctx.compilerContext.exploredNodeCounter;
         if (ctx.compilerContext.exploredNodeCounter % EXPLORATION_CUTOFF_MULTIPLIER == 0) {
             pt_logln(ctx, stderr, "exploredNodeCounter passed factor {}, stateQueue={}, lowPrioQueue={}",
                      ctx.compilerContext.exploredNodeCounter / EXPLORATION_CUTOFF_MULTIPLIER, stateQueue.size(),

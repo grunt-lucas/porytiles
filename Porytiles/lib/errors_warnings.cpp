@@ -1,14 +1,15 @@
 #include "errors_warnings.h"
 
-#include <cstddef>
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <cstddef>
+#include <fmt/color.h>
 #include <png.hpp>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
 
 #include "compiler.h"
 #include "driver.h"
@@ -38,7 +39,7 @@ const char *const WARN_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
 const char *const WARN_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
 const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
 
-static std::string getTilePrettyString(const RGBATile &tile) {
+std::string getTilePrettyString(const RGBATile &tile) {
     // TODO : display indexes according to offsets? (so they match up with Porymap?)
     std::string tileString = "";
     if (tile.type == TileType::LAYERED) {
@@ -559,15 +560,20 @@ void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RG
                                       fmt::styled(rgba.jasc(), fmt::emphasis::bold), compilerModeString(mode),
                                       fmt::styled(tileString, fmt::emphasis::bold),
                                       fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
-    printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
+    // printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
+    if (err.colorPrecisionLoss == WarningMode::ERR) {
+        err.errCount++;
+    } else if (err.colorPrecisionLoss == WarningMode::WARN) {
+        err.warnCount++;
+    }
     if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
         std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
-        pt_note("previously saw `{}' at `{}' subtile pixel col {}, row {}",
-                fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
-                fmt::styled(previousTileString, fmt::emphasis::bold),
-                fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
-                fmt::styled(std::get<2>(previousRgba), fmt::emphasis::bold));
-        pt_println(stderr, "");
+        // pt_note("previously saw `{}' at `{}' subtile pixel col {}, row {}",
+        //         fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
+        //         fmt::styled(previousTileString, fmt::emphasis::bold),
+        //         fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
+        //         fmt::styled(std::get<2>(previousRgba), fmt::emphasis::bold));
+        // pt_println(stderr, "");
     }
 }
 
@@ -820,9 +826,7 @@ void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::stri
 
 } // namespace porytiles
 
-/*
- * Test cases that deliberately check for end-to-end error/warning correctness go here
- */
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly") {
     SUBCASE("it should work for regular tiles") {
         porytiles::PorytilesContext ctx{};
@@ -1243,6 +1247,10 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses") {
     porytiles::PorytilesContext ctx{};
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag_->enable(porytiles::W_COLOR_PRECISION_LOSS);
+    ctx.diag_->override_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
@@ -1256,7 +1264,9 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
-    CHECK(ctx.err.errCount == 3);
+    CHECK(ctx.diag_->count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
+    CHECK(ctx.diag_->in_flight_count_for_level(porytiles::diag_level::error) == 3);
+    CHECK(ctx.diag_->in_flight_count_for_level(porytiles::diag_level::note) == 3);
 }
 
 TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly when a key frame tile is not used") {
@@ -1447,3 +1457,4 @@ TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger corre
                          porytiles::PorytilesException);
     CHECK(ctx.err.errCount == 2);
 }
+#endif // PORYTILES_TEST_ERRORS_WARNINGS

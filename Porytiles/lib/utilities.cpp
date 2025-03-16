@@ -1,11 +1,12 @@
 #include "utilities.h"
 
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
+#ifndef DOCTEST_CONFIG_DISABLE
+#include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
 
 #include <algorithm>
-#include <doctest.h>
 #include <filesystem>
+#include <fmt/color.h>
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -164,6 +165,7 @@ RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerM
     return parseJascLine(ctx, nullptr, &decompilerMode, jascLine, fileName);
 }
 
+#ifndef DOCTEST_CONFIG_DISABLE
 void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath) {
     REQUIRE(std::filesystem::exists(expectedPath));
     REQUIRE(std::filesystem::exists(actualPath));
@@ -234,5 +236,6 @@ void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::fi
         CHECK(expectedLine == actualLine);
     }
 }
+#endif // DOCTEST_CONFIG_DISABLE
 
 } // namespace porytiles

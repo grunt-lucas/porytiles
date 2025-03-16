@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <fmt/format.h>
 #include <iostream>
 #include <png.hpp>
 #include <string>
@@ -12,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <doctest.h>
+#include "./panic/panic.hpp"
 
 /**
  * TODO : fill in doc comment for this header
@@ -260,6 +261,26 @@ struct RGBATile {
         return true;
     }
 
+    [[nodiscard]] std::string prettify() const {
+        // TODO : display indexes according to offsets? (so they match up with Porymap?)
+        std::string tileString;
+        if (type == TileType::LAYERED) {
+            tileString = fmt::format("0x{:x} ({}), {}, {}", metatileIndex, metatileIndex, layerString(layer),
+                                     subtileString(subtile));
+        } else if (type == TileType::ANIM) {
+            tileString = fmt::format("anim {}, {}, frame {}", anim, frame, tileIndex);
+        } else if (type == TileType::FREESTANDING) {
+            tileString = fmt::format("tile 0x{:x} ({})", tileIndex, tileIndex);
+        } else if (type == TileType::PRIMER) {
+            tileString = fmt::format("primer {}", primerFilename);
+        } else if (type == TileType::OVERRIDE) {
+            tileString = fmt::format("override {}", overrideFilename);
+        } else {
+            panic("RGBATile::prettify unknown TileType");
+        }
+        return tileString;
+    }
+
     auto operator==(const RGBATile &other) const {
         return this->pixels == other.pixels;
     }
@@ -276,6 +297,14 @@ struct RGBATile {
 
     friend std::ostream &operator<<(std::ostream &os, const RGBATile &tile);
 };
+
+/*
+ * Provide a simple way for fmtlib to format the RGBATile:
+ * https://fmt.dev/11.1/api/#formatting-user-defined-types
+ */
+inline auto format_as(const RGBATile &tile) {
+    return tile.prettify();
+}
 
 extern const RGBATile RGBA_TILE_BLACK;
 extern const RGBATile RGBA_TILE_RED;
@@ -341,6 +370,20 @@ template <> struct std::hash<porytiles::GBATile> {
         return hashValue;
     }
 };
+
+// Specialize fmt::formatter for MyType.
+// template <> struct fmt::formatter<porytiles::RGBATile> {
+//     // Parse format specifiers (none in this simple case).
+//     constexpr auto parse(format_parse_context &ctx) {
+//         return ctx.begin(); // Accepts the default format specifiers.
+//     }
+//
+//     // Format the value 'value' into the output iterator 'ctx.out()'.
+//     template <typename FormatContext> auto format(const porytiles::RGBATile &value, FormatContext &ctx) {
+//         // Here we create a custom string representation.
+//         return fmt::format_to(ctx.out(), "{}", value.prettify().c_str());
+//     }
+// };
 
 namespace porytiles {
 /**

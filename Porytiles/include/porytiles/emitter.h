@@ -4,8 +4,8 @@
 #include <iostream>
 #include <png.hpp>
 
-#include "porytiles_context.h"
-#include "types.h"
+#include "./porytiles_context.h"
+#include "./types.h"
 
 /**
  * TODO : fill in doc comment
