@@ -1,4 +1,8 @@
 #pragma once
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 #include <concepts>
 #include <format>
 #include <source_location>
@@ -27,7 +31,7 @@ struct string_view_with_source_loc {
 [[noreturn]] void panic_impl(const char *s) noexcept;
 
 [[noreturn]] inline void panic(const string_view_with_source_loc &s) noexcept {
-    auto msg = std::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
+    auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
     panic_impl(msg.c_str());
 }
 
