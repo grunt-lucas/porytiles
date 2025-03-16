@@ -1,3 +1,7 @@
+// We need this here for now to prevent linker errors
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest.h>
+
 #include <exception>
 
 #include "porytiles/build_version.h"
