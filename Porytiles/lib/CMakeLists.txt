@@ -20,7 +20,8 @@ find_library(ZLIB_STATIC
         PATHS /usr/lib/aarch64-linux-gnu)
 
 FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
-add_library(PorytilesLib STATIC ${CppSources})
+# This needs to be an object library for now, otherwise doctest cannot find any tests
+add_library(PorytilesLib OBJECT ${CppSources})
 set(CANONICAL_LIB_NAME "porytiles")
 set_target_properties(PorytilesLib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 target_include_directories(PorytilesLib PUBLIC ${CMAKE_SOURCE_DIR}/Porytiles/vendor/fmt-10.1.1/include)
