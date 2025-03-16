@@ -4,7 +4,20 @@ To contribute, fork Porytiles and then make your changes in a branch in your for
 You may then submit a cross-repository PR to the main Porytiles repo with your feature.
 Please see below for guidance on how to name your branch.
 
-## Git Workflow and Repository Branch Conventions
+- [Contributions](#contributions)
+- [Git Workflow and Repository Branch Conventions](#git-workflow-and-repository-branch-conventions)
+- [Topic Branch Conventions](#topic-branch-conventions)
+  - [Bugfixes](#bugfixes)
+  - [Documentation](#documentation)
+  - [Features](#features)
+  - [Refactoring](#refactoring)
+  - [Repository Housekeeping](#repository-housekeeping)
+  - [Tests](#tests)
+- [Issues](#issues)
+- [Branch Cleanup](#branch-cleanup)
+
+
+# Git Workflow and Repository Branch Conventions
 Porytiles's Git workflow and branch name conventions follow the Gitflow model.
 Porytiles-specific idiosyncracies are outlined below.
 For more on the Gitflow model, [please see this writeup.](https://nvie.com/posts/a-successful-git-branching-model/)
@@ -13,51 +26,66 @@ Admins will handle the housekeeping related to the
 `master`, `develop`, `release`, and `hotfix` branches.
 
 Note: occasionally, I may push small changes directly to `develop`.
-This will only happen on occasion 
-and in cases where opening a PR would create unnecessary noise for repository watchers.
-E.g. if a previous `docs` PR had a typo, I may just fix the typo with a direct `develop` push.
+This will happen on occasion,
+especially in cases where opening a PR would create unnecessary noise for repository watchers.
+E.g. if a previous `docs` PR had a typo,
+I may just fix the typo with a direct `develop` push.
 
-## Topic Branch Conventions
+# Topic Branch Conventions
 Some conventions for Porytiles topic branches.
+These follow the labels in the repo.
 Please try to keep branch names compact.
+Following Gitflow, the topic branches should be created off the `develop` branch.
+The topic branch name should follow the format `<TOPIC>/<DESCRIPTION>`,
+where `<TOPIC>` is one of the topics below,
+and `<DESCRIPTION>` is a very brief description of the change.
+Multi-word branch names should use kebab-case, not snake_case.
 
-### Features
-A new feature should be developed on a topic branch titled `feature/<NAME>`,
-where `<NAME>` is a hyphenated description of the feature.
-Following Gitflow, the `feature` branch should be created off the `develop` branch.
+## Bugfixes
+A bugfix should be made on a topic branch titled `bugfix/<DESCRIPTION>`.
 
-E.g. for a branch to add a freestanding compilation mode, the branch name could be: `feature/freestand-compile`.
+E.g. for a branch that fixes a problem with the attribute file emitter,
+the branch name could be: `bugfix/fix-attr-emit`.
 
-### Bugfixes
-A bugfix should be developed on a topic branch titled `bugfix/<NAME>`,
-where `<NAME>` is a hyphenated description of the bug to be fixed.
-Following Gitflow, the branch should be created off the `develop` branch.
+## Documentation
+New documentation should be added on a topic branch titled `docs/<DESCRIPTION>`,
 
-E.g. for a branch that fixes a problem with the attribute file emitter, the branch name could be: `bugfix/fix-attr-emit`.
-
-### Documentation
-New documentation should be added on a topic branch titled `docs/<NAME>`,
-where `<NAME>` is a hyphenated description of the doc contents.
-Following Gitflow, the branch should be created off the `develop` branch.
-
-E.g. for a branch that updates the README, the branch name could be: `docs/readme-update`.
+E.g. for a branch that updates the README,
+the branch name could be: `docs/readme-update`.
 
 Documentation and doc comments should use [semantic linebreaks.](https://sembr.org/)
 
-### Housekeeping
+## Features
+A new feature should be developed on a topic branch titled `feature/<DESCRIPTION>`.
+
+E.g. for a branch to add a freestanding compilation mode,
+the branch name could be: `feature/freestand-compile`.
+
+## Refactoring
+Refactors should be done on a topic branch titled `refactoring/<DESCRIPTION>`.
+
+E.g. for a branch that refactors the diagnostic system,
+the branch name could be: `refactoring/diagnostics`.
+
+## Repository Housekeeping
 Repository housekeeping
 (e.g. CI/CD changes, general branch management, moving files around, etc.)
-should be done on a topic branch titled either `meta/<NAME>` or `repo-housekeeping/<NAME>`,
-where `<NAME>` is a hyphenated description of the housekeeping.
-Following Gitflow, the branch should be created off the `develop` branch.
+should be done on a topic branch titled either
+`meta/<DESCRIPTION>` or `repo-housekeeping/<DESCRIPTION>`.
 
 E.g. for a branch that adds a new Ubuntu ARM build type the nightly build workflow,
 the branch name could be:
 `meta/nightly-build-linux-arm` or `repo-housekeeping/nightly-build-linux-arm`
 
-### Issues
+## Tests
+New tests or test updates should be made on a topic branch titled `tests/<DESCRIPTION>`.
+
+E.g. for a branch that adds tests for palette primers,
+the branch name could be: `<tests/palette-primers>`.
+
+# Issues
 Branches that address a filed issue should fall into one of the above categories,
-but use the `<NAME>` to tag the issue.
+but use the `<DESCRIPTION>` to tag the issue.
 E.g. if Issue #12 reports a bug, the branch to fix this could be called `bugfix/issue-0012`.
 If Issue #27 requests a feature, the branch to implement this could be called `feature/issue-0027`.
 If necessary, the title may be extended with an additional `/` for more specificity.
@@ -66,7 +94,7 @@ E.g. if `issue-0027` contains both a reported bug with the attribute system,
 but the bug is too complex to fix in one pull request, the branches could be:
 `bugfix/issue-0027/add-missing-attr` as well as a `bugfix/issue-0027/fix-emitter`.
 
-## Branch Cleanup
+# Branch Cleanup
 Please use `git rebase --interactive` to clean up your branch before submitting a PR.
 If you have a ton of commits with tiny changes, WIP descriptions, or bugs,
 you can use the interactive rebase to pick and squash them into a coherent branch history.
