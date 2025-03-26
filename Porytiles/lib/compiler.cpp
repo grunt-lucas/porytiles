@@ -80,16 +80,19 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
                 warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, pixelBgr, rgba,
                                         ctx.compilerContext.bgrToRgba.at(pixelBgr));
                 ctx.diag_->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc().c_str(),
-                                  compilerModeString(compilerMode).c_str(), col, row);
+                                  compilerModeString(compilerMode).c_str(), row, col);
                 ctx.diag_->report_partner(W_COLOR_PRECISION_LOSS, 0,
                                           std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
                                           std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc().c_str(),
-                                          std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                          std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
+                                          std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                          std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
+                ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
             }
-            ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
         }
-        ctx.compilerContext.bgrToRgba.insert_or_assign(pixelBgr, std::tuple{rgba, rgbaFrame, row, col});
+        if (errWarn) {
+            // Only update the map for the non-flipped version of each tile
+            ctx.compilerContext.bgrToRgba.insert_or_assign(pixelBgr, std::tuple{rgba, rgbaFrame, row, col});
+        }
 
         const auto itrAtBgr =
             std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, pixelBgr);

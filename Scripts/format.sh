@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+shopt -s globstar
 
 usage() {
     cat <<EOF
-Usage: format.sh <file ...>
+Usage: format.sh
+       format.sh <file ...>
        format.sh --help
 
-Run \`clang-format' on the provided source files.
+Run \`clang-format' on the provided source files. If no source files are
+provided, runs on the default set of source files.
 
 Options:
     -h, --help      Print this help and exit.
@@ -36,16 +39,20 @@ parse_params() {
     done
 
     args=("$@")
-    [[ ${#args[@]} -lt 1 ]] && usage_exit_error
 
     return 0
 }
 
-if [[ ! -f .porytiles-marker-file ]]
-then
+if [[ ! -f .porytiles-marker-file ]]; then
     echo "Script must run in main Porytiles directory"
     exit 1
 fi
 
+# Porytiles/lib/**/*.cpp Porytiles/include/**/*.{h,hpp}
+
 parse_params "$@"
-clang-format -style=file -i "${args[@]}"
+if [[ ${#args[@]} -lt 1 ]]; then
+    clang-format -style=file -i Porytiles/lib/**/*.cpp Porytiles/include/**/*.{h,hpp} Porytiles/tools/**/*.{cpp,hpp}
+else
+    clang-format -style=file -i "${args[@]}"
+fi

@@ -476,8 +476,8 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
     std::ranges::sort(primerFiles);
 
     for (const auto &primerFile : primerFiles) {
-        const auto &fullPrimerFilename = ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode).string() + "/" +
-                                         primerFile.filename().string();
+        const auto &fullPrimerFilename =
+            ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode).string() / primerFile.filename();
 
         // Check if the file is a regular file
         if (!is_regular_file(primerFile)) {
@@ -494,7 +494,9 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
         std::ifstream fileStream{primerFile};
         pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
         RGBATile primerTile = importPalettePrimer(ctx, compilerMode, fileStream, fullPrimerFilename);
-        primerTile.primerFilename = fullPrimerFilename;
+        primerTile.primerFilename =
+            fullPrimerFilename.lexically_relative(ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode))
+                .string();
         primerTiles.push_back(primerTile);
         fileStream.close();
     }
@@ -526,8 +528,8 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
     std::ranges::sort(overrideFiles);
 
     for (const auto &overrideFile : overrideFiles) {
-        const auto &fullOverrideFilename = ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode).string() +
-                                           "/" + overrideFile.filename().string();
+        const auto &fullOverrideFilename =
+            ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode).string() / overrideFile.filename();
         // Check if the file is a regular file
         if (!is_regular_file(overrideFile)) {
             pt_logln(ctx, stderr, "skipping {} as it is not a regular file", overrideFile.string());
@@ -557,16 +559,17 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
         // Throw fatal if user specifies an out-of-range palette index for their compilation mode
         if (compilerMode == CompilerMode::PRIMARY) {
             if (overridePaletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
-                error(ctx.err, fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
-                                           fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
-                                           ctx.fieldmapConfig.numPalettesInPrimary));
+                error(ctx.err,
+                      fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
+                                  fullOverrideFilename.string(), fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
+                                  ctx.fieldmapConfig.numPalettesInPrimary));
             }
         } else if (compilerMode == CompilerMode::SECONDARY) {
             if (overridePaletteIndex < ctx.fieldmapConfig.numPalettesInPrimary ||
                 overridePaletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
                 error(ctx.err,
                       fmt::format("pal file {}: invalid palette index `{}': must be {} <= index < {}",
-                                  fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
+                                  fullOverrideFilename.string(), styled(overridePaletteIndex, fmt::emphasis::bold),
                                   ctx.fieldmapConfig.numPalettesInPrimary, ctx.fieldmapConfig.numPalettesTotal));
             }
         } else {
@@ -577,7 +580,9 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
         pt_logln(ctx, stderr, "found palette override file {}", overrideFile.string());
         auto [overrideTile, overriddenPalSlots] =
             importPaletteOverride(ctx, compilerMode, fileStream, fullOverrideFilename);
-        overrideTile.overrideFilename = fullOverrideFilename;
+        overrideTile.overrideFilename =
+            fullOverrideFilename.lexically_relative(ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode))
+                .string();
         overrideTile.overridePaletteIndex = overridePaletteIndex;
         overrideTiles.push_back(overrideTile);
         for (const auto &[palSlot, bgr] : overriddenPalSlots) {

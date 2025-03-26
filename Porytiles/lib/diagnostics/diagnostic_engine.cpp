@@ -52,7 +52,7 @@ void diag_engine::override_level(std::string_view diag, diag_level override) {
 
     // Only allow warnings to be upgraded to err or downgraded to warn
     if (override != diag_level::warning && override != diag_level::error) {
-        panic("cannot override diagnostic level to TODO put in level here");
+        panic(fmt::format("cannot override diagnostic {} level to {}", diag, level_to_str(override)));
     }
 
     level_overrides_.insert_or_assign(std::string{diag}, override);

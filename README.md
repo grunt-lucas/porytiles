@@ -14,10 +14,10 @@ Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for
 the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop)
 branch, grab the nightly release instead.
 
-For detailed documentation about Porytiles internal workings, please
-see [the Go package page here.](https://pkg.go.dev/github.com/grunt-lucas/porytiles) For tutorials and usage
-documentation please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki) (a video tutorial series is coming at
-a later date).
+For detailed documentation about Porytiles internal workings,
+please see the TODO doxygen documentation.
+For tutorials and usage documentation please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki)
+(a video tutorial series is coming at a later date).
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*

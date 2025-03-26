@@ -87,7 +87,7 @@ class diag_engine {
     [[nodiscard]] const diag_consumer &consumer() const;
 
   private:
-    std::unique_ptr<diag_consumer> consumer_{};
+    std::unique_ptr<diag_consumer> consumer_;
     bool all_warnings_enabled_;
     bool all_warnings_disabled_;
     bool all_warnings_as_errors_;

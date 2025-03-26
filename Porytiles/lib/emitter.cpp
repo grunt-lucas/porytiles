@@ -247,7 +247,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                     std::size_t pixelCol = (metatileCol * METATILE_SIDE_LENGTH) +
                                            (layerTileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
                     const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
-                    if (subtileIndex >= 0 && subtileIndex < 4) {
+                    if (subtileIndex < 4) {
                         bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                     } else if (subtileIndex >= 4 && subtileIndex < 8) {
                         middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
@@ -272,19 +272,19 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                                            (layerTileCol * TILE_SIDE_LENGTH_PIX) + (pixelIndex % TILE_SIDE_LENGTH_PIX);
                     const RGBA32 &pixel = tileset.tiles.at(globalTileIndex).pixels.at(pixelIndex);
                     if (attributesMap.at(metatileIndex).layerType == LayerType::COVERED) {
-                        if (subtileIndex >= 0 && subtileIndex < 4) {
+                        if (subtileIndex < 4) {
                             bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         } else if (subtileIndex >= 4 && subtileIndex < 8) {
                             middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         }
                     } else if (attributesMap.at(metatileIndex).layerType == LayerType::NORMAL) {
-                        if (subtileIndex >= 0 && subtileIndex < 4) {
+                        if (subtileIndex < 4) {
                             middle[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         } else if (subtileIndex >= 4 && subtileIndex < 8) {
                             top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         }
                     } else if (attributesMap.at(metatileIndex).layerType == LayerType::SPLIT) {
-                        if (subtileIndex >= 0 && subtileIndex < 4) {
+                        if (subtileIndex < 4) {
                             bottom[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         } else if (subtileIndex >= 4 && subtileIndex < 8) {
                             top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};

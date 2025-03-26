@@ -15,9 +15,6 @@ enum class diag_level { ignored, note, remark, warning, error, fatal };
 std::string level_to_str(diag_level level);
 fmt::terminal_color color_for_level(diag_level level);
 
-std::string build_tile_pixel_highlight(bool is_a_tty, diag_level in_flight_level, const RGBATile &tile, std::size_t row,
-                                       std::size_t col);
-
 /**
  * @brief diag_templ defines a reusable template for standardized diagnostic
  * reporting.
@@ -31,7 +28,6 @@ std::string build_tile_pixel_highlight(bool is_a_tty, diag_level in_flight_level
  * diagnostics are used for warnings/errors that have associated notes.
  */
 class diag_templ {
-  public:
     /**
      * @brief @link dynamic_msg_builder @endlink is an alias for a dynamic
      * diagnostic message builder function.
@@ -39,25 +35,34 @@ class diag_templ {
      * @details @link dynamic_msg_builder @endlink defines a function signature
      * for building diagnostic messages dynamically. The function signature
      * accepts a boolean flag indicating whether the output is directed to a
-     * tty (terminal) and a vector of additional parameters (of type std::any)
+     * tty (terminal), a diag_level noting the actual in-flight level of the
+     * diagnostic, and a vector of additional parameters (of type std::any)
      * used to customize the diagnostic message. It returns a vector of
      * formatted strings representing the final diagnostic message. Each element
-     * in the vector represents a single line of output for a
-     * @link diag_consumer @endlink to consume
+     * in the vector represents a single chunk of output for a
+     * @link diag_consumer @endlink to consume.
      */
     using dynamic_msg_builder = std::function<std::vector<std::string>(bool is_a_tty, diag_level in_flight_level,
-                                                                       const std::vector<std::any> &)>;
+                                                                       const std::vector<std::any> &args)>;
 
+  public:
     // @formatter:off
     // clang-format off
     explicit diag_templ(std::string_view name, bool default_enabled, diag_level default_level,
-                        std::string_view static_msg_templ, dynamic_msg_builder dynamic_msg_builder,
-                        const std::vector<diag_templ> &partner_diags) noexcept
+                        dynamic_msg_builder dynamic_msg_builder, const std::vector<diag_templ> &partner_diags) noexcept
+        : name_{name},
+          default_enabled_{default_enabled},
+          default_level_{default_level},
+          dynamic_msg_builder_{std::move(dynamic_msg_builder)},
+          partner_diags_{partner_diags} {}
+
+    explicit diag_templ(std::string_view name, bool default_enabled, diag_level default_level,
+                        std::string_view static_msg_templ, const std::vector<diag_templ> &partner_diags) noexcept
         : name_{name},
           default_enabled_{default_enabled},
           default_level_{default_level},
           static_msg_templ_{static_msg_templ},
-          dynamic_msg_builder_{std::move(dynamic_msg_builder)},
+          dynamic_msg_builder_{nullptr},
           partner_diags_{partner_diags} {}
     // @formatter:on
     // clang-format on
@@ -138,7 +143,7 @@ class diag_consumer {
     virtual ~diag_consumer() = default;
     virtual void consume(const in_flight_diag &diag) = 0;
     [[nodiscard]] virtual bool is_a_tty() const = 0;
-    [[nodiscard]] virtual in_flight_diag consumed(std::size_t i) const = 0;
+    [[nodiscard]] virtual in_flight_diag consumed_at(std::size_t i) const = 0;
     [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
 };
 
@@ -150,7 +155,7 @@ class ignore_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
@@ -165,7 +170,7 @@ class stderr_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
@@ -180,7 +185,7 @@ class vector_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed(std::size_t i) const override;
+    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
@@ -205,105 +210,6 @@ class vector_consumer final : public diag_consumer {
  */
 constexpr auto W_COLOR_PRECISION_LOSS = "color-precision-loss";
 
-// @formatter:on
-// clang-format on
-inline std::vector<std::string> w_color_precision_loss_builder(bool is_a_tty, diag_level in_flight_level,
-                                                               const std::vector<std::any> &args) {
-    if (args.size() != 5) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: found {} args but expected 5", loc.function_name(), args.size()));
-    }
-
-    const RGBATile *tile;
-    const char *color;
-    const char *mode;
-    std::size_t col;
-    std::size_t row;
-    try {
-        tile = &std::any_cast<const RGBATile &>(args[0]);
-        color = std::any_cast<const char *>(args[1]);
-        mode = std::any_cast<const char *>(args[2]);
-        col = std::any_cast<std::size_t>(args[3]);
-        row = std::any_cast<std::size_t>(args[4]);
-    } catch (const std::bad_any_cast &) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
-    }
-
-    constexpr auto msg_templ = "{} {}: '{}' at col {}, row {} collapsed to duplicate BGR";
-    std::vector<std::string> msg{};
-    if (is_a_tty) {
-        msg.push_back(fmt::format(
-            msg_templ, styled(mode, fmt::emphasis::bold), styled(tile->prettify().c_str(), fmt::emphasis::bold),
-            styled(color, fmt::emphasis::bold), styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
-    } else {
-        msg.push_back(fmt::format(msg_templ, mode, tile->prettify().c_str(), color, col, row));
-    }
-    msg.push_back(build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col));
-
-    return msg;
-}
-
-inline std::vector<std::string> w_color_precision_loss_note_builder(bool is_a_tty, diag_level in_flight_level,
-                                                                    const std::vector<std::any> &args) {
-    if (args.size() != 4) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: found {} args but expected 4", loc.function_name(), args.size()));
-    }
-
-    const RGBATile *tile;
-    const char *color;
-    std::size_t col;
-    std::size_t row;
-    try {
-        tile = &std::any_cast<const RGBATile &>(args[0]);
-        color = std::any_cast<const char *>(args[1]);
-        col = std::any_cast<std::size_t>(args[2]);
-        row = std::any_cast<std::size_t>(args[3]);
-    } catch (const std::bad_any_cast &) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
-    }
-
-    /*
-     * FIXME : this template is incomplete, we want to show the mode since it's
-     * possible to have precision loss across a primary-secondary boundary
-     */
-    constexpr auto msg_templ = "previously saw '{}' at '{}' col {}, row {}";
-    std::vector<std::string> msg{};
-    if (is_a_tty) {
-        msg.push_back(fmt::format(msg_templ, styled(color, fmt::emphasis::bold),
-                                  styled(tile->prettify().c_str(), fmt::emphasis::bold),
-                                  styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
-    } else {
-        msg.push_back(fmt::format(msg_templ, color, tile->prettify().c_str(), col, row));
-    }
-    msg.push_back(build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col));
-
-    return msg;
-}
-
-// @formatter:off
-// clang-format off
-
-const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
-    W_COLOR_PRECISION_LOSS,
-    false,
-    diag_level::warning,
-    "",
-    w_color_precision_loss_builder,
-    {
-        diag_templ{
-            "color-precision-loss-previous",
-            false,
-            diag_level::note,
-            "",
-            w_color_precision_loss_note_builder,
-            {}
-        }
-    }
-};
-
 /**
  * @brief The -Wkey-no-matching-tile warning.
  *
@@ -312,18 +218,6 @@ const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
  * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wkey-frame-no-matching-tile>
  */
 constexpr auto W_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
-
-constexpr auto W_KEY_FRAME_NO_MATCHING_TILE_MSG =
-    "animation '{}' key frame tile '{}' was not present in any metatile entries";
-
-const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
-    W_KEY_FRAME_NO_MATCHING_TILE,
-    false,
-    diag_level::warning,
-    W_KEY_FRAME_NO_MATCHING_TILE_MSG,
-    nullptr,
-    {}
-};
 
 /**
  * @brief The -Wkey-frame-missing-colors warning.
@@ -334,11 +228,6 @@ const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
  */
 constexpr auto W_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
 
-constexpr auto W_KEY_FRAME_MISSING_COLORS_MSG =
-    "animation '{}' key frame tile '{}' missing essential colors";
-
-const diag_templ W_KEY_FRAME_MISSING_COLORS_TEMPL{W_KEY_FRAME_MISSING_COLORS, false, diag_level::warning, W_KEY_FRAME_MISSING_COLORS_MSG, nullptr, {}};
-
 /**
  * @brief The -Wused-true-color-mode warning.
  *
@@ -347,11 +236,6 @@ const diag_templ W_KEY_FRAME_MISSING_COLORS_TEMPL{W_KEY_FRAME_MISSING_COLORS, fa
  * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wused-true-color-mode>
  */
 constexpr auto W_USED_TRUE_COLOR_MODE = "used-true-color-mode";
-
-constexpr auto W_USED_TRUE_COLOR_MODE_MSG =
-    "'true-color' mode requires Porymap minimum version 5.2.0";
-
-const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, true, diag_level::warning, W_USED_TRUE_COLOR_MODE_MSG, nullptr, {}};
 
 /**
  * @brief The -Wattribute-format-mismatch warning.
@@ -362,10 +246,6 @@ const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, true, diag
  */
 constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 
-constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH_MSG = "{}: too {} attribute columns for base game '{}'";
-
-const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH, false, diag_level::warning, W_ATTRIBUTE_FORMAT_MISMATCH_MSG, nullptr, {}};
-
 /**
  * @brief The -Wmissing-attributes-csv warning.
  *
@@ -374,10 +254,6 @@ const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH, 
  * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wmissing-attributes-csv>
  */
 constexpr auto W_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-
-constexpr auto W_MISSING_ATTRIBUTES_CSV_MSG = "{}: attributes file did not exist";
-
-const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, W_MISSING_ATTRIBUTES_CSV_MSG, nullptr, {}};
 
 /**
  * @brief The -Wunused-attribute warning.
@@ -388,10 +264,6 @@ const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV, false,
  */
 constexpr auto W_UNUSED_ATTRIBUTE = "unused-attribute";
 
-constexpr auto W_UNUSED_ATTRIBUTE_MSG = "found attribute for nonexistent metatile ID {}";
-
-const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, W_UNUSED_ATTRIBUTE_MSG, nullptr, {}};
-
 /**
  * @brief The -Wtransparency-collapse warning.
  *
@@ -401,10 +273,6 @@ const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_
  */
 constexpr auto W_TRANSPARENCY_COLLAPSE = "transparency-collapse";
 
-constexpr auto W_TRANSPARENCY_COLLAPSE_MSG = "color '{}' at {} '{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion";
-
-const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE, false, diag_level::warning, W_TRANSPARENCY_COLLAPSE_MSG, nullptr, {}};
-
 /**
  * @brief The -Wunused-manual-pal-color warning.
  *
@@ -413,10 +281,6 @@ const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE, false, d
  * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wunused-manual-pal-color>
  */
 constexpr auto W_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
-
-constexpr auto W_UNUSED_MANUAL_PAL_COLOR_MSG = "{}: '{}' was not used in layers or anims";
-
-const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR, false, diag_level::warning, W_UNUSED_MANUAL_PAL_COLOR_MSG, nullptr, {}};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,18 +294,10 @@ const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR, fals
  */
 constexpr auto E_GENERIC = "error-generic";
 
-constexpr auto E_GENERIC_MSG = "{}";
-
-const diag_templ E_GENERIC_TEMPL{E_GENERIC, true, diag_level::error, E_GENERIC_MSG, nullptr, {}};
-
 /**
  * @brief Use this @link diag_templ @endlink for generic error diagnostics.
  */
 constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
-
-constexpr auto E_FATAL_GENERIC_MSG = "{}";
-
-const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC, true, diag_level::fatal, E_FATAL_GENERIC_MSG, nullptr, {}};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -470,5 +326,15 @@ const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC, true, diag_level::fatal,
  * invalid.
  */
 diag_templ diag_templ_for(std::string_view diag);
+
+/**
+ * @brief Get an iterable view of all diag_templ identifiers in the internal
+ * table.
+ *
+ * The identifiers returned from this function can then be used for lookup in
+ * diag_templ_for. This may be useful for range-based for-loops, or other use
+ * cases where the user wants to perform an action for some or all diagnostics.
+ */
+auto all_diag_templs();
 
 } // namespace porytiles
