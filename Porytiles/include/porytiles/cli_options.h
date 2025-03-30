@@ -4,6 +4,7 @@
 #include <fmt/color.h>
 #include <string>
 
+#include "./diagnostics/diagnostics.hpp"
 #include "./errors_warnings.h"
 
 namespace porytiles {
@@ -439,15 +440,15 @@ WERROR, WNO_ERROR
 constexpr int WERROR_VAL = 5003;
 
 // Compilation warnings
-const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + WARN_COLOR_PRECISION_LOSS;
-const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + WARN_COLOR_PRECISION_LOSS;
+const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + W_COLOR_PRECISION_LOSS;
+const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + W_COLOR_PRECISION_LOSS;
 constexpr int WCOLOR_PRECISION_LOSS_VAL = 50000;
 constexpr int WNO_COLOR_PRECISION_LOSS_VAL = 60000;
 
-const std::string WKEY_FRAME_DID_NOT_APPEAR = W_GENERAL + WARN_KEY_FRAME_NO_MATCHING_TILE;
-const std::string WNO_KEY_FRAME_DID_NOT_APPEAR = W_GENERAL + "no-" + WARN_KEY_FRAME_NO_MATCHING_TILE;
-constexpr int WKEY_FRAME_DID_NOT_APPEAR_VAL = 50010;
-constexpr int WNO_KEY_FRAME_DID_NOT_APPEAR_VAL = 60010;
+const std::string WKEY_FRAME_NO_MATCHING_TILE = W_GENERAL + W_KEY_FRAME_NO_MATCHING_TILE;
+const std::string WNO_KEY_FRAME_NO_MATCHING_TILE = W_GENERAL + "no-" + W_KEY_FRAME_NO_MATCHING_TILE;
+constexpr int WKEY_FRAME_NO_MATCHING_TILE_VAL = 50010;
+constexpr int WNO_KEY_FRAME_NO_MATCHING_TILE_VAL = 60010;
 
 const std::string WUSED_TRUE_COLOR_MODE = W_GENERAL + WARN_USED_TRUE_COLOR_MODE;
 const std::string WNO_USED_TRUE_COLOR_MODE = W_GENERAL + "no-" + WARN_USED_TRUE_COLOR_MODE;

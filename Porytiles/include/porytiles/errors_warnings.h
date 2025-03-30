@@ -25,9 +25,6 @@ struct ErrorsAndWarnings {
     std::size_t warnCount;
     bool printErrors;
 
-    // Compilation warnings
-    WarningMode colorPrecisionLoss;
-    WarningMode keyFrameNoMatchingTile;
     WarningMode usedTrueColorMode;
     WarningMode attributeFormatMismatch;
     WarningMode missingAttributesCsv;
@@ -45,7 +42,6 @@ struct ErrorsAndWarnings {
 
     ErrorsAndWarnings()
         : errCount{0}, keyFrameMissingColorsErrCount{0}, warnCount{0}, printErrors{true},
-          colorPrecisionLoss{WarningMode::OFF}, keyFrameNoMatchingTile{WarningMode::OFF},
           usedTrueColorMode{WarningMode::OFF}, attributeFormatMismatch{WarningMode::OFF},
           missingAttributesCsv{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
           transparencyCollapse{WarningMode::OFF}, assignCacheOverride{WarningMode::OFF},
@@ -59,8 +55,6 @@ struct ErrorsAndWarnings {
 
     void setAllWarnings(WarningMode setting) {
         // Compilation warnings
-        colorPrecisionLoss = setting;
-        keyFrameNoMatchingTile = setting;
         usedTrueColorMode = setting;
         attributeFormatMismatch = setting;
         missingAttributesCsv = setting;
@@ -79,12 +73,6 @@ struct ErrorsAndWarnings {
 
     void setAllEnabledWarningsToErrors() {
         // Compilation warnings
-        if (colorPrecisionLoss == WarningMode::WARN) {
-            colorPrecisionLoss = WarningMode::ERR;
-        }
-        if (keyFrameNoMatchingTile == WarningMode::WARN) {
-            keyFrameNoMatchingTile = WarningMode::ERR;
-        }
         if (usedTrueColorMode == WarningMode::WARN) {
             usedTrueColorMode = WarningMode::ERR;
         }
@@ -127,8 +115,6 @@ struct ErrorsAndWarnings {
 };
 
 // Compilation warnings
-extern const char *const WARN_COLOR_PRECISION_LOSS;
-extern const char *const WARN_KEY_FRAME_NO_MATCHING_TILE;
 extern const char *const WARN_USED_TRUE_COLOR_MODE;
 extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
 extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
@@ -277,12 +263,6 @@ void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const Decompile
 /*
  * Compilation warnings (due to possible mistakes in user input), compilation can continue
  */
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile, std::size_t row,
-                             std::size_t col, const BGR15 &bgr, const RGBA32 &rgba,
-                             const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba);
-
-void warn_keyFrameNoMatchingTile(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex);
-
 void warn_usedTrueColorMode(ErrorsAndWarnings &err);
 
 void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);

@@ -23,10 +23,13 @@ For tutorials and usage documentation please see [the wiki](https://github.com/g
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*
 
 - [Porytiles](#porytiles)
-    - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
-    - [Getting Started](#getting-started)
-    - [Compilation Information](#compilation-information)
-    - [Note For Aseprite Users](#note-for-aseprite-users)
+  - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
+  - [Getting Started](#getting-started)
+  - [Building From Source](#building-from-source)
+    - [Dependencies](#dependencies)
+    - [Build And Run](#build-and-run)
+    - [Notes For macOS](#notes-for-macos)
+  - [Note For Aseprite Users](#note-for-aseprite-users)
 
 ## Why Should I Use This Tool?
 
@@ -52,13 +55,54 @@ or [in this video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
 articles in order, or watching the video series in order. The wiki and video series are meant to be complementary. If
 you have further questions, I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
 
-## Compilation Information
+## Building From Source
+You can use either GCC or Clang,
+provided your installation is reasonably recent and supports most C++20 features.
+[Please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) for more detailed instructions,
+should you need them.
 
-Clang+LLVM is the "official" Porytiles build toolchain -- the Porytiles formatting/coverage/tidy scripts rely on
-LLVM tools to function. However, most reasonable C++ compilers should be able to build the executable, assuming they
-have support for the C++20 standard. I try to maintain compatibility with GCC, should you prefer it over Clang+LLVM.
-Once again, [please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) if you'd
-like to try building Porytiles from source.
+### Dependencies
+You'll need `zlib` and `libpng` installed on your system,
+specifically the static (`.a`) libraries.
+Consult your system's package manager for details.
+Porytiles's build system will search the system library paths for
+`libpng.a` and `libz.a`.
+If you'd like to link those libraries dynamically,
+or if the CMake configuration is having trouble finding them,
+then you'll need to modify `Porytiles/lib/CMakeLists.txt` appropriately.
+
+You'll also need `cmake` version `3.18` or greater.
+
+### Build And Run
+Set up the CMake build folder:
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+```
+Then build with:
+```
+cd build
+cmake --build .
+```
+You can check that everything is working like this:
+```
+cd ..
+./build/Porytiles/doctests/PorytilesDocTests
+```
+To run the actual tool:
+```
+./build/Porytiles/tools/driver/porytiles
+```
+
+### Notes For macOS
+On macOS,
+the CMake configuration command typically finds your system clang compiler.
+If you've installed GCC via homebrew and would like to use that instead,
+try this alternative configuration command (assuming you have GCC 14):
+```
+CXX=g++-14 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_SYSROOT="" -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ -I/opt/homebrew/opt/gcc/include/c++/14 -L/opt/homebrew/opt/gcc/lib/gcc/14"
+```
+If you have a different major version of GCC or you are using an Intel Mac,
+you may need to tweak this command to match your system.
 
 ## Note For Aseprite Users
 

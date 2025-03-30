@@ -8,7 +8,7 @@ namespace {
 
 using namespace porytiles;
 
-void push_to_ss_n_times(std::stringstream &ss, std::string_view s, std::size_t n) {
+void push_to_ss_n_times(std::stringstream &ss, const std::string_view s, const std::size_t n) {
     for (std::size_t i = 0; i < n; i++) {
         ss << s;
     }
@@ -16,12 +16,17 @@ void push_to_ss_n_times(std::stringstream &ss, std::string_view s, std::size_t n
 
 constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
-std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, diag_level in_flight_level, const RGBATile &tile,
-                                                    std::size_t row, std::size_t col) {
+std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_level in_flight_level,
+                                                    const RGBATile &tile, const std::size_t row,
+                                                    const std::size_t col) {
     std::vector<std::string> highlight{};
     std::stringstream ss{};
     const fmt::terminal_color level_color = color_for_level(in_flight_level);
 
+    // Eventually we can remove this outer check by introducing better metadata
+    // handling in RGBTile. Specifically, metadata can be a std::variant that
+    // changes based on the TileType. Then, we can use the visitor pattern to
+    // create different visit implementations for the different TileTypes.
     if (tile.type == TileType::LAYERED) {
         for (std::size_t i = 0; i < 16; i++) {
             for (std::size_t j = 0; j < 16; j++) {
@@ -31,11 +36,9 @@ std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, diag_level in
                     ss << "|";
                 }
 
-                /*
-                 * General case. Decide if we are drawing the highlighted tile
-                 * and pixel. If not, draw a "-".
-                 */
-                auto styled_x = styled(" X ", is_a_tty ? (fg(level_color) | fmt::emphasis::bold) : fmt::text_style{});
+                // General case. Decide if we are drawing the highlighted tile
+                // and pixel. If not, draw a "-".
+                auto styled_x = styled(" X ", is_a_tty ? fg(level_color) | fmt::emphasis::bold : fmt::text_style{});
                 auto styled_star = styled(" * ", is_a_tty ? fmt::emphasis::bold : fmt::text_style{});
                 if (tile.subtile == Subtile::NORTHWEST && i < 8 && j < 8) {
                     if (row == i && col == j) {
@@ -132,6 +135,24 @@ fmt::terminal_color color_for_level(diag_level level) {
     }
 }
 
+int level_priority(diag_level level) {
+    switch (level) {
+    case diag_level::ignored:
+        return 0;
+    case diag_level::note:
+        return 1;
+    case diag_level::remark:
+        return 2;
+    case diag_level::warning:
+        return 3;
+    case diag_level::error:
+        return 4;
+    case diag_level::fatal:
+        return 5;
+    }
+    return -1;
+}
+
 void ignore_consumer::consume(const in_flight_diag &diag) {
     consumed_count_++;
 }
@@ -185,7 +206,8 @@ std::uint64_t vector_consumer::consumed_count() const {
     return diags_.size();
 }
 
-std::vector<std::string> w_color_precision_loss_dynamic_msg_builder(bool is_a_tty, diag_level in_flight_level,
+std::vector<std::string> w_color_precision_loss_dynamic_msg_builder(const bool is_a_tty,
+                                                                    const diag_level in_flight_level,
                                                                     const std::vector<std::any> &args) {
     if (args.size() != 5) {
         const auto loc = std::source_location::current();
@@ -223,7 +245,8 @@ std::vector<std::string> w_color_precision_loss_dynamic_msg_builder(bool is_a_tt
     return msg;
 }
 
-std::vector<std::string> w_color_precision_loss_note_dynamic_msg_builder(bool is_a_tty, diag_level in_flight_level,
+std::vector<std::string> w_color_precision_loss_note_dynamic_msg_builder(const bool is_a_tty,
+                                                                         const diag_level in_flight_level,
                                                                          const std::vector<std::any> &args) {
     if (args.size() != 4) {
         const auto loc = std::source_location::current();
@@ -244,17 +267,14 @@ std::vector<std::string> w_color_precision_loss_note_dynamic_msg_builder(bool is
         panic(fmt::format("{}: bad_any_cast", loc.function_name()));
     }
 
-    /*
-     * FIXME : this template is incomplete, we want to show the mode since it's
-     * possible to have precision loss across a primary-secondary boundary
-     */
+    // FIXME : this template is incomplete, we want to show the mode since it's
+    // possible to have precision loss across a primary-secondary boundary
     constexpr auto msg_templ = "{}: previously saw: '{}' at col '{}', row '{}'";
     std::vector<std::string> msg{};
     if (is_a_tty) {
         msg.push_back(fmt::format(msg_templ, styled(tile->prettify().c_str(), fmt::emphasis::bold),
-                                  styled(color, fmt::emphasis::bold),
-
-                                  styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
+                                  styled(color, fmt::emphasis::bold), styled(col, fmt::emphasis::bold),
+                                  styled(row, fmt::emphasis::bold)));
     } else {
         msg.push_back(fmt::format(msg_templ, tile->prettify().c_str(), color, col, row));
     }
@@ -268,13 +288,11 @@ std::vector<std::string> w_color_precision_loss_note_dynamic_msg_builder(bool is
 // clang-format off
 static const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
     W_COLOR_PRECISION_LOSS,
-    false,
     diag_level::warning,
     w_color_precision_loss_dynamic_msg_builder,
     {
         diag_templ{
             "color-precision-loss-previously-seen-note",
-            false,
             diag_level::note,
             w_color_precision_loss_note_dynamic_msg_builder,
             {}
@@ -282,9 +300,9 @@ static const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
     }
 };
 
+// TODO : highlight {} content in bold, also show mode information (primary vs secondary)
 static const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
     W_KEY_FRAME_NO_MATCHING_TILE,
-    false,
     diag_level::warning,
     "animation '{}' key frame tile '{}' was not present in any metatile entries",
     {}
@@ -292,27 +310,26 @@ static const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
 
 static const diag_templ W_KEY_FRAME_MISSING_COLORS_TEMPL{
     W_KEY_FRAME_MISSING_COLORS,
-    false,
     diag_level::warning,
     "animation '{}' key frame tile '{}' missing essential colors",
     {}
 };
 
-static const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, true, diag_level::warning, "'true-color' mode requires Porymap minimum version 5.2.0", {}};
+static const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, diag_level::warning, "'true-color' mode requires Porymap minimum version 5.2.0", {}};
 
-static const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH, false, diag_level::warning, "{}: too {} attribute columns for base game '{}'", {}};
+static const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH,  diag_level::warning, "{}: too {} attribute columns for base game '{}'", {}};
 
-static const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, "{}: attributes file did not exist", {}};
+static const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV,  diag_level::warning, "{}: attributes file did not exist", {}};
 
-static const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_MISSING_ATTRIBUTES_CSV, false, diag_level::warning, "found attribute for nonexistent metatile ID {}", {}};
+static const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_UNUSED_ATTRIBUTE,  diag_level::warning, "found attribute for nonexistent metatile ID '{}'", {}};
 
-static const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE, false, diag_level::warning, "color '{}' at {} '{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion", {}};
+static const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE,  diag_level::warning, "color '{}' at {} '{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion", {}};
 
-static const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR, false, diag_level::warning, "{}: '{}' was not used in layers or anims", {}};
+static const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR,  diag_level::warning, "{}: '{}' was not used in layers or anims", {}};
 
-static const diag_templ E_GENERIC_TEMPL{E_GENERIC, true, diag_level::error, "{}", {}};
+static const diag_templ E_GENERIC_TEMPL{E_GENERIC,  diag_level::error, "{}", {}};
 
-static const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC, true, diag_level::fatal, "{}", {}};
+static const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC,  diag_level::fatal, "{}", {}};
 
 static const std::unordered_map<const char *, diag_templ> DIAG_TEMPLS{
     {W_COLOR_PRECISION_LOSS, W_COLOR_PRECISION_LOSS_TEMPL},
@@ -331,15 +348,18 @@ static const std::unordered_map<const char *, diag_templ> DIAG_TEMPLS{
 // @formatter:on
 // clang-format on
 
-diag_templ diag_templ_for(const std::string_view diag) {
-    if (!DIAG_TEMPLS.contains(diag.data())) {
-        panic(fmt::format("diag_template_for: unknown diagnostic: {}", diag));
-    }
-    return DIAG_TEMPLS.at(diag.data());
+diag_templ diag_templ_for(const std::string_view name) {
+    assert_or_panic(DIAG_TEMPLS.contains(name.data()), fmt::format("diag_template_for: unknown diagnostic: {}", name));
+    return DIAG_TEMPLS.at(name.data());
 }
 
-auto all_diag_templs() {
-    return std::views::keys(DIAG_TEMPLS);
+std::vector<const char *> all_diag_templ_names() {
+    std::vector<const char *> keys{};
+    keys.reserve(DIAG_TEMPLS.size());
+    for (const auto &key : DIAG_TEMPLS | std::views::keys) {
+        keys.push_back(key);
+    }
+    return keys;
 }
 
 } // namespace porytiles

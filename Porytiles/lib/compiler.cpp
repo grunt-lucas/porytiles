@@ -77,15 +77,13 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
              * in the master sheet are going to collapse to one BGR color on the GBA.
              */
             if (errWarn) {
-                warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, pixelBgr, rgba,
-                                        ctx.compilerContext.bgrToRgba.at(pixelBgr));
-                ctx.diag_->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc().c_str(),
-                                  compilerModeString(compilerMode).c_str(), row, col);
-                ctx.diag_->report_partner(W_COLOR_PRECISION_LOSS, 0,
-                                          std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                          std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc().c_str(),
-                                          std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                          std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
+                ctx.diag->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc().c_str(),
+                                 compilerModeString(compilerMode).c_str(), row, col);
+                ctx.diag->report_partner(W_COLOR_PRECISION_LOSS, 0,
+                                         std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc().c_str(),
+                                         std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                         std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
                 ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
             }
         }
@@ -297,7 +295,7 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
         }
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during tile normalization");
     }
@@ -602,7 +600,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                warn_keyFrameNoMatchingTile(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, compiled.anims.at(animIndex).animName, tileIndex);
             }
         }
     }
@@ -614,7 +612,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
     }
 
     // exit if there were any other errors
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
                        "errors generated during primary tile assignment");
     }
@@ -764,7 +762,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                warn_keyFrameNoMatchingTile(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, compiled.anims.at(animIndex).animName, tileIndex);
             }
         }
     }
@@ -776,7 +774,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
     }
 
     // exit if there were any other errors
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
                        "errors generated during secondary tile assignment");
     }

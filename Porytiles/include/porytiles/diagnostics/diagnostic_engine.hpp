@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 #include <ranges>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 
@@ -21,26 +22,27 @@ namespace porytiles {
  * according to the engine client's preference.
  */
 class diag_engine {
+    std::unique_ptr<diag_consumer> consumer_;
+    bool all_warnings_disabled_;
+    std::unordered_map<std::string, std::set<diag_level>> enabled_at_level_;
+    std::unordered_map<std::string, std::uint64_t> diag_counts_;
+    std::vector<in_flight_diag> in_flight_diags_;
+
   public:
-    diag_engine()
-        : consumer_(std::make_unique<ignore_consumer>()), all_warnings_enabled_{false}, all_warnings_disabled_{false},
-          all_warnings_as_errors_{false} {}
+    diag_engine() : consumer_(std::make_unique<ignore_consumer>()), all_warnings_disabled_{false} {}
 
     explicit diag_engine(std::unique_ptr<diag_consumer> consumer)
-        : consumer_(std::move(consumer)), all_warnings_enabled_{false}, all_warnings_disabled_{false},
-          all_warnings_as_errors_{false} {}
-
-    void enable(std::string_view diag);
-
-    void disable(std::string_view diag);
+        : consumer_(std::move(consumer)), all_warnings_disabled_{false} {}
 
     void enable_all_warnings();
 
     void disable_all_warnings();
 
-    void enable_all_warnings_as_errors();
+    void upgrade_enabled_warnings_to_errors();
 
-    void override_level(std::string_view diag, diag_level override);
+    void enable_at_level(std::string_view diag, diag_level override);
+
+    void disable_at_level(std::string_view diag, diag_level override);
 
     [[nodiscard]] std::uint64_t in_flight_count_for_level(diag_level level) const;
 
@@ -87,15 +89,6 @@ class diag_engine {
     [[nodiscard]] const diag_consumer &consumer() const;
 
   private:
-    std::unique_ptr<diag_consumer> consumer_;
-    bool all_warnings_enabled_;
-    bool all_warnings_disabled_;
-    bool all_warnings_as_errors_;
-    std::unordered_map<std::string, bool> explicit_enablement_;
-    std::unordered_map<std::string, diag_level> level_overrides_;
-    std::unordered_map<std::string, std::uint64_t> diag_counts_;
-    std::vector<in_flight_diag> in_flight_diags_;
-
     template <typename... T> void report_helper(const diag_templ &templ, diag_level in_flight_level, T &&...args) {
         // Fill in message template
         std::vector<std::string> raw_msg;
@@ -116,8 +109,6 @@ class diag_engine {
         in_flight_diags_.push_back(in_flight);
         consumer_->consume(in_flight);
     }
-
-    void set_enablement(std::string_view diag, bool enablement);
 
     [[nodiscard]] diag_level compute_level(std::string_view diag) const;
 

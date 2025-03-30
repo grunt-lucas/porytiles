@@ -2,9 +2,8 @@
 name: Feature request
 about: Describe a feature you'd like to see in Porytiles
 title: ''
-labels: enhancement
+labels: feature
 assignees: grunt-lucas
-
 ---
 
 # Describe the feature

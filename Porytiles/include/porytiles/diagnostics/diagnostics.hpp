@@ -14,6 +14,7 @@ namespace porytiles {
 enum class diag_level { ignored, note, remark, warning, error, fatal };
 std::string level_to_str(diag_level level);
 fmt::terminal_color color_for_level(diag_level level);
+int level_priority(diag_level level);
 
 /**
  * @brief diag_templ defines a reusable template for standardized diagnostic
@@ -39,27 +40,30 @@ class diag_templ {
      * diagnostic, and a vector of additional parameters (of type std::any)
      * used to customize the diagnostic message. It returns a vector of
      * formatted strings representing the final diagnostic message. Each element
-     * in the vector represents a single chunk of output for a
+     * in the vector represents a single line of output for a
      * @link diag_consumer @endlink to consume.
      */
     using dynamic_msg_builder = std::function<std::vector<std::string>(bool is_a_tty, diag_level in_flight_level,
                                                                        const std::vector<std::any> &args)>;
+    std::string_view name_;
+    diag_level default_level_;
+    std::string_view static_msg_templ_;
+    dynamic_msg_builder dynamic_msg_builder_;
+    std::vector<diag_templ> partner_diags_;
 
   public:
     // @formatter:off
     // clang-format off
-    explicit diag_templ(std::string_view name, bool default_enabled, diag_level default_level,
+    explicit diag_templ(std::string_view name, diag_level default_level,
                         dynamic_msg_builder dynamic_msg_builder, const std::vector<diag_templ> &partner_diags) noexcept
         : name_{name},
-          default_enabled_{default_enabled},
           default_level_{default_level},
           dynamic_msg_builder_{std::move(dynamic_msg_builder)},
           partner_diags_{partner_diags} {}
 
-    explicit diag_templ(std::string_view name, bool default_enabled, diag_level default_level,
+    explicit diag_templ(std::string_view name, diag_level default_level,
                         std::string_view static_msg_templ, const std::vector<diag_templ> &partner_diags) noexcept
-        : name_{name},
-          default_enabled_{default_enabled},
+         : name_{name},
           default_level_{default_level},
           static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr},
@@ -67,19 +71,15 @@ class diag_templ {
     // @formatter:on
     // clang-format on
 
-    [[nodiscard]] std::string_view name() const noexcept {
+    [[nodiscard]] std::string_view name() const {
         return name_;
     }
 
-    [[nodiscard]] bool default_enabled() const noexcept {
-        return default_enabled_;
-    }
-
-    [[nodiscard]] diag_level level() const noexcept {
+    [[nodiscard]] diag_level level() const {
         return default_level_;
     }
 
-    [[nodiscard]] std::string_view static_msg_templ() const noexcept {
+    [[nodiscard]] std::string_view static_msg_templ() const {
         return static_msg_templ_;
     }
 
@@ -94,17 +94,9 @@ class diag_templ {
         return dynamic_msg_builder_(is_a_tty, in_flight_level, v);
     }
 
-    [[nodiscard]] const std::vector<diag_templ> &partner_diags() const noexcept {
+    [[nodiscard]] const std::vector<diag_templ> &partner_diags() const {
         return partner_diags_;
     }
-
-  private:
-    std::string_view name_;
-    bool default_enabled_;
-    diag_level default_level_;
-    std::string_view static_msg_templ_;
-    dynamic_msg_builder dynamic_msg_builder_;
-    std::vector<diag_templ> partner_diags_;
 };
 
 /**
@@ -311,30 +303,29 @@ constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
 
 /**
  * @brief Retrieves the diagnostic template corresponding to a given diagnostic
- * identifier.
+ * name.
  *
  * This function searches an internal table for the provided diagnostic
  * identifier. If the identifier is found, the corresponding diagnostic template
  * is returned. If not, the function triggers a panic with an error message
  * indicating an unknown diagnostic.
  *
- * @param diag A std::string_view representing the diagnostic identifier.
+ * @param name A std::string_view representing the diagnostic name.
  * @return diag_template The diagnostic template associated with the given
  * identifier.
  *
- * @note The function will terminate the program if the diagnostic identifier is
+ * @note The function will terminate the program if the diagnostic name is
  * invalid.
  */
-diag_templ diag_templ_for(std::string_view diag);
+diag_templ diag_templ_for(std::string_view name);
 
 /**
- * @brief Get an iterable view of all diag_templ identifiers in the internal
- * table.
+ * @brief Get an iterable view of all diag_templ names in the internal table.
  *
  * The identifiers returned from this function can then be used for lookup in
  * diag_templ_for. This may be useful for range-based for-loops, or other use
  * cases where the user wants to perform an action for some or all diagnostics.
  */
-auto all_diag_templs();
+std::vector<const char *> all_diag_templ_names();
 
 } // namespace porytiles

@@ -22,7 +22,7 @@ struct PorytilesContext {
     CompilerContext compilerContext;
     DecompilerContext decompilerContext;
     ErrorsAndWarnings err;
-    std::unique_ptr<diag_engine> diag_;
+    std::unique_ptr<diag_engine> diag;
 
     // Command params
     Subcommand subcommand;
@@ -31,7 +31,7 @@ struct PorytilesContext {
     PorytilesContext()
         : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
           compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-          decompilerContext{}, err{}, diag_{std::make_unique<diag_engine>()}, subcommand{}, verbose{false} {}
+          decompilerContext{}, err{}, diag{std::make_unique<diag_engine>()}, subcommand{}, verbose{false} {}
 
     void validateFieldmapParameters(CompilerMode compilerMode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
@@ -65,8 +65,8 @@ struct PorytilesContext {
         }
     }
 
-    void set_diag_engine(std::unique_ptr<diag_engine> diag) {
-        diag_ = std::move(diag);
+    void set_diag_engine(std::unique_ptr<diag_engine> new_diag) {
+        diag = std::move(new_diag);
     }
 };
 

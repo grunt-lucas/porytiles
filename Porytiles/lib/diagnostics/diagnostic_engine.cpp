@@ -4,13 +4,12 @@
 #include <doctest.h>
 #endif // DOCTEST_CONFIG_DISABLE
 
-#include <iostream>
-
 #include "panic/panic.hpp"
 
 namespace {
 
-std::optional<std::string> construct_flag(porytiles::diag_level in_flight_level, const porytiles::diag_templ &templ) {
+std::optional<std::string> construct_flag(const porytiles::diag_level in_flight_level,
+                                          const porytiles::diag_templ &templ) {
     if (in_flight_level == porytiles::diag_level::warning) {
         return std::optional{fmt::format("-W{}", templ.name())};
     }
@@ -24,38 +23,68 @@ std::optional<std::string> construct_flag(porytiles::diag_level in_flight_level,
 
 namespace porytiles {
 
-void diag_engine::enable(std::string_view diag) {
-    set_enablement(diag, true);
-}
-
-void diag_engine::disable(std::string_view diag) {
-    set_enablement(diag, false);
-}
-
 void diag_engine::enable_all_warnings() {
-    all_warnings_enabled_ = true;
+    for (const auto &diag : all_diag_templ_names()) {
+        // Only apply enablement to diagnostics that are default-warnings
+        if (const auto &templ = diag_templ_for(diag); templ.level() == diag_level::warning) {
+            enable_at_level(diag, diag_level::warning);
+        }
+    }
 }
 
 void diag_engine::disable_all_warnings() {
     all_warnings_disabled_ = true;
 }
 
-void diag_engine::enable_all_warnings_as_errors() {
-    all_warnings_as_errors_ = true;
+void diag_engine::upgrade_enabled_warnings_to_errors() {
+    for (const auto &diag : all_diag_templ_names()) {
+        // Only apply enablement to diagnostics that are default-warnings
+        if (const auto &templ = diag_templ_for(diag); templ.level() == diag_level::warning) {
+            if (enabled_at_level_.contains(diag)) {
+                auto &set = enabled_at_level_.at(diag);
+                set.insert(diag_level::error);
+            }
+        }
+    }
 }
 
-void diag_engine::override_level(std::string_view diag, diag_level override) {
+void diag_engine::enable_at_level(std::string_view diag, diag_level override) {
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_templ_for(diag); templ.level() != diag_level::warning) {
-        panic("cannot override diagnostic level for non-warning diagnostics");
+        panic("cannot change diagnostic enablement level for non-warning diagnostics");
     }
 
     // Only allow warnings to be upgraded to err or downgraded to warn
     if (override != diag_level::warning && override != diag_level::error) {
-        panic(fmt::format("cannot override diagnostic {} level to {}", diag, level_to_str(override)));
+        panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, level_to_str(override)));
     }
 
-    level_overrides_.insert_or_assign(std::string{diag}, override);
+    if (enabled_at_level_.contains(diag.data())) {
+        auto &set = enabled_at_level_.at(diag.data());
+        set.insert(override);
+    } else {
+        enabled_at_level_.insert({std::string{diag}, std::set{override}});
+    }
+}
+
+void diag_engine::disable_at_level(std::string_view diag, diag_level override) {
+    // Only allow warns to be overridden for the warning-as-error case
+    if (const auto &templ = diag_templ_for(diag); templ.level() != diag_level::warning) {
+        panic("cannot change diagnostic enablement level for non-warning diagnostics");
+    }
+
+    // Only allow warnings to be upgraded to err or downgraded to warn
+    if (override != diag_level::warning && override != diag_level::error) {
+        panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, level_to_str(override)));
+    }
+
+    if (enabled_at_level_.contains(diag.data())) {
+        auto &set = enabled_at_level_.at(diag.data());
+        set.erase(override);
+        if (set.empty()) {
+            enabled_at_level_.erase(diag.data());
+        }
+    }
 }
 
 std::uint64_t diag_engine::in_flight_count_for_level(diag_level level) const {
@@ -74,26 +103,21 @@ const diag_consumer &diag_engine::consumer() const {
     return *consumer_;
 }
 
-void diag_engine::set_enablement(std::string_view diag, bool enablement) {
-    if (const auto &templ = diag_templ_for(diag); templ.level() != diag_level::warning) {
-        panic("cannot change enablement for non-warning diagnostics");
-    }
-
-    explicit_enablement_.insert_or_assign(std::string{diag}, enablement);
-}
-
 diag_level diag_engine::compute_level(std::string_view diag) const {
     const auto &templ = diag_templ_for(diag);
 
-    // Short-circuit on errors and fatals since these can never change
-    if (templ.level() == diag_level::error || templ.level() == diag_level::fatal) {
+    // Only warnings can "change" levels, so short circuit on anything else
+    if (templ.level() != diag_level::warning) {
         return templ.level();
     }
 
     // Return level override if present
     auto diag_str = std::string{diag};
-    if (level_overrides_.contains(diag_str)) {
-        return level_overrides_.at(diag_str);
+    if (enabled_at_level_.contains(diag_str)) {
+        assert_or_panic(!enabled_at_level_.at(diag_str).empty(),
+                        fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
+        // Return the highest level present
+        return *enabled_at_level_.at(diag_str).rbegin();
     }
 
     // Default to the default level from the template
@@ -101,16 +125,14 @@ diag_level diag_engine::compute_level(std::string_view diag) const {
 }
 
 [[nodiscard]] bool diag_engine::is_enabled(std::string_view diag) const {
-    const auto &templ = diag_templ_for(diag);
-
-    // TODO : this method needs to handle all_warnings_as_errors_ correctly
 
     /*
      * If this diagnostic is a remark, error, or fatal by default, it is
      * always enabled.
      */
-    if (templ.level() == diag_level::remark || templ.level() == diag_level::error ||
-        templ.level() == diag_level::fatal) {
+    if (const auto &templ = diag_templ_for(diag); templ.level() == diag_level::remark ||
+                                                  templ.level() == diag_level::error ||
+                                                  templ.level() == diag_level::fatal) {
         return true;
     }
 
@@ -126,33 +148,26 @@ diag_level diag_engine::compute_level(std::string_view diag) const {
     /*
      * Next highest precedence is an explicitly enabled or disabled
      * diagnostic. If the diagnostic is not present in this map, that means
-     * it was not explicitly set by the user, so its enablement will fall
-     * back to either a global setting or the template default.
+     * it was not set by the user, so it shouldn't be enabled.
      */
-    auto diag_str = std::string{diag};
-    if (explicit_enablement_.contains(diag_str)) {
-        return explicit_enablement_.at(diag_str);
-    }
-
-    // Next highest precedence: global warnings enable
-    if (all_warnings_enabled_) {
+    if (const auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
         return true;
     }
 
-    // Lowest precedence is the default_enabled setting from the template
-    return templ.default_enabled();
+    // Lowest precedence, if nothing else passed then diagnostic is disabled
+    return false;
 }
 
-std::string diag_engine::construct_msg_str(diag_level in_flight_level, const diag_templ &templ,
+std::string diag_engine::construct_msg_str(const diag_level in_flight_level, const diag_templ &templ,
                                            const std::vector<std::string> &msg) const {
     std::stringstream ss{};
 
     auto level_prefix = fmt::format("{}: ", level_to_str(in_flight_level));
+    const auto style = fmt::emphasis::bold | fg(color_for_level(in_flight_level));
 
     // If consumer is a tty, style the prefix with the appropriate color.
     if (consumer_->is_a_tty()) {
-        level_prefix =
-            fmt::format("{}", styled(level_prefix, fmt::emphasis::bold | fg(color_for_level(in_flight_level))));
+        level_prefix = fmt::format("{}", styled(level_prefix, style));
     }
 
     // Dump the level prefix followed by the first line of the message.
@@ -166,8 +181,7 @@ std::string diag_engine::construct_msg_str(diag_level in_flight_level, const dia
      */
     if (const auto flag = construct_flag(in_flight_level, templ); flag.has_value()) {
         ss << " [";
-        const auto styled_flag =
-            fmt::format("{}", styled(flag.value(), fmt::emphasis::bold | fg(color_for_level(in_flight_level))));
+        const auto styled_flag = fmt::format("{}", styled(flag.value(), style));
         consumer_->is_a_tty() ? ss << styled_flag : ss << flag.value();
         ss << "]";
     }
@@ -186,7 +200,7 @@ std::string diag_engine::construct_msg_str(diag_level in_flight_level, const dia
 } // namespace porytiles
 
 #ifndef DOCTEST_CONFIG_DISABLE
-TEST_CASE("diag_engine should emit default-off warnings when -Wall is enabled") {
+TEST_CASE("diag_engine basic -Wall functionality should work") {
     std::size_t zero = 0;
     porytiles::diag_engine engine{std::make_unique<porytiles::vector_consumer>()};
 
@@ -199,20 +213,26 @@ TEST_CASE("diag_engine should emit default-off warnings when -Wall is enabled") 
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 0);
     CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 0);
 
-    // This warning is default on, so it will emit even though -Wall hasn't been toggled yet
-    engine.report(porytiles::W_USED_TRUE_COLOR_MODE);
-    CHECK(engine.consumer().consumed_count() == 1);
-    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
-    CHECK(engine.count_for(porytiles::W_USED_TRUE_COLOR_MODE) == 1);
-
     engine.enable_all_warnings();
 
     engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
     engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, "foo", zero, zero);
+    CHECK(engine.consumer().consumed_count() == 2);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
+    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 1);
+
+    engine.report(porytiles::W_TRANSPARENCY_COLLAPSE, "foo", "bar", "baz", zero, zero);
     CHECK(engine.consumer().consumed_count() == 3);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 2);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
-    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 1);
+    CHECK(engine.count_for(porytiles::W_TRANSPARENCY_COLLAPSE) == 1);
+
+    engine.report(porytiles::W_UNUSED_ATTRIBUTE, 12);
+    CHECK(engine.consumer().consumed_count() == 4);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 3);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
+    CHECK(engine.count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
 }
 
 TEST_CASE("diag_engine explicit enablement should work as expected") {
@@ -224,37 +244,28 @@ TEST_CASE("diag_engine explicit enablement should work as expected") {
     CHECK(engine.consumer().consumed_count() == 0);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 0);
 
-    engine.enable(porytiles::W_COLOR_PRECISION_LOSS);
+    engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::warning);
     engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
     CHECK(engine.consumer().consumed_count() == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
 
-    engine.disable(porytiles::W_COLOR_PRECISION_LOSS);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    CHECK(engine.consumer().consumed_count() == 1);
-    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
-}
-
-TEST_CASE("diag_engine upgrade-to-error should work as expected") {
-    std::size_t zero = 0;
-    porytiles::diag_engine engine{std::make_unique<porytiles::vector_consumer>()};
-
-    porytiles::RGBATile tile{};
-    engine.enable(porytiles::W_COLOR_PRECISION_LOSS);
-    engine.override_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
-
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    CHECK(engine.consumer().consumed_count() == 1);
-    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 0);
-    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 1);
-    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 1);
-
-    engine.override_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::warning);
-
+    engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
     engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
     CHECK(engine.consumer().consumed_count() == 2);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 1);
-    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 2);
+
+    // Disabling at warning doesn't change anything, since it's still enabled at error level
+    engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::warning);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    CHECK(engine.consumer().consumed_count() == 3);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 2);
+
+    engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    CHECK(engine.consumer().consumed_count() == 3);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
+    CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 2);
 }
 #endif

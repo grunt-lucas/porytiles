@@ -520,8 +520,8 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     // Compilation warnings
     {WCOLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_COLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WKEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_KEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WKEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_KEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUSED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_USED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
@@ -787,8 +787,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WCOLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WCOLOR_PRECISION_LOSS_VAL},
         {WNO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WNO_COLOR_PRECISION_LOSS_VAL},
 
-        {WKEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WKEY_FRAME_DID_NOT_APPEAR_VAL},
-        {WNO_KEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WNO_KEY_FRAME_DID_NOT_APPEAR_VAL},
+        {WKEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WKEY_FRAME_NO_MATCHING_TILE_VAL},
+        {WNO_KEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WNO_KEY_FRAME_NO_MATCHING_TILE_VAL},
 
         {WUSED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WUSED_TRUE_COLOR_MODE_VAL},
         {WNO_USED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WNO_USED_TRUE_COLOR_MODE_VAL},
@@ -843,12 +843,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     bool setAllEnabledWarningsToErrors = false;
 
     // Compilation warnings
-    std::optional<bool> warnColorPrecisionLossOverride{};
-    std::optional<bool> errColorPrecisionLossOverride{};
-
-    std::optional<bool> warnKeyFrameTileDidNotAppearInAssignmentOverride{};
-    std::optional<bool> errKeyFrameTileDidNotAppearInAssignmentOverride{};
-
     // TODO : Porymap now supports but needs latest version, a future release should default this warning to OFF
     std::optional<bool> warnUsedTrueColorModeOverride{true};
     std::optional<bool> errUsedTrueColorModeOverride{};
@@ -1115,26 +1109,24 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WALL_VAL:
             validateSubcommandContext(ctx, WALL);
             enableAllWarnings = true;
-            ctx.diag_->enable_all_warnings();
+            ctx.diag->enable_all_warnings();
             break;
         case WNONE_VAL:
             validateSubcommandContext(ctx, WNONE);
             disableAllWarnings = true;
-            ctx.diag_->disable_all_warnings();
+            ctx.diag->disable_all_warnings();
             break;
         case WERROR_VAL:
             validateSubcommandContext(ctx, WERROR);
             if (optarg == NULL) {
                 setAllEnabledWarningsToErrors = true;
-                ctx.diag_->enable_all_warnings_as_errors();
+                ctx.diag->upgrade_enabled_warnings_to_errors();
             } else {
                 // Compilation warnings
-                if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-                    errColorPrecisionLossOverride = true;
-                    ctx.diag_->enable(W_COLOR_PRECISION_LOSS);
-                    ctx.diag_->override_level(W_COLOR_PRECISION_LOSS, diag_level::error);
-                } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
-                    errKeyFrameTileDidNotAppearInAssignmentOverride = true;
+                if (strcmp(optarg, W_COLOR_PRECISION_LOSS) == 0) {
+                    ctx.diag->enable_at_level(W_COLOR_PRECISION_LOSS, diag_level::error);
+                } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+                    ctx.diag->enable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::error);
                 } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
                     errUsedTrueColorModeOverride = true;
                 } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
@@ -1171,11 +1163,10 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WNO_ERROR_VAL:
             validateSubcommandContext(ctx, WNO_ERROR);
             // Compilation warnings
-            if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-                errColorPrecisionLossOverride = false;
-                ctx.diag_->disable(W_COLOR_PRECISION_LOSS);
-            } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
-                errKeyFrameTileDidNotAppearInAssignmentOverride = false;
+            if (strcmp(optarg, W_COLOR_PRECISION_LOSS) == 0) {
+                ctx.diag->disable_at_level(W_COLOR_PRECISION_LOSS, diag_level::error);
+            } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+                ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::error);
             } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
                 errUsedTrueColorModeOverride = false;
             } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
@@ -1212,20 +1203,19 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         // Compilation warnings
         case WCOLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WCOLOR_PRECISION_LOSS);
-            warnColorPrecisionLossOverride = true;
-            ctx.diag_->enable(W_COLOR_PRECISION_LOSS);
+            ctx.diag->enable_at_level(W_COLOR_PRECISION_LOSS, diag_level::warning);
             break;
         case WNO_COLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WNO_COLOR_PRECISION_LOSS);
-            warnColorPrecisionLossOverride = false;
+            ctx.diag->disable_at_level(W_COLOR_PRECISION_LOSS, diag_level::warning);
             break;
-        case WKEY_FRAME_DID_NOT_APPEAR_VAL:
-            validateSubcommandContext(ctx, WKEY_FRAME_DID_NOT_APPEAR);
-            warnKeyFrameTileDidNotAppearInAssignmentOverride = true;
+        case WKEY_FRAME_NO_MATCHING_TILE_VAL:
+            validateSubcommandContext(ctx, WKEY_FRAME_NO_MATCHING_TILE);
+            ctx.diag->enable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::warning);
             break;
-        case WNO_KEY_FRAME_DID_NOT_APPEAR_VAL:
-            validateSubcommandContext(ctx, WNO_KEY_FRAME_DID_NOT_APPEAR);
-            warnKeyFrameTileDidNotAppearInAssignmentOverride = false;
+        case WNO_KEY_FRAME_NO_MATCHING_TILE_VAL:
+            validateSubcommandContext(ctx, WNO_KEY_FRAME_NO_MATCHING_TILE);
+            ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::warning);
             break;
         case WUSED_TRUE_COLOR_MODE_VAL:
             validateSubcommandContext(ctx, WUSED_TRUE_COLOR_MODE);
@@ -1407,13 +1397,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
     // Specific warn settings take precedence over general warn settings
     // Compilation warnings
-    if (warnColorPrecisionLossOverride.has_value()) {
-        ctx.err.colorPrecisionLoss = warnColorPrecisionLossOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
-        ctx.err.keyFrameNoMatchingTile =
-            warnKeyFrameTileDidNotAppearInAssignmentOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
     if (warnUsedTrueColorModeOverride.has_value()) {
         ctx.err.usedTrueColorMode = warnUsedTrueColorModeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
     }
@@ -1460,27 +1443,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
     // Specific err settings take precedence over warns
     // Compilation warnings
-    if (errColorPrecisionLossOverride.has_value()) {
-        if (errColorPrecisionLossOverride.value()) {
-            ctx.err.colorPrecisionLoss = WarningMode::ERR;
-        } else if ((warnColorPrecisionLossOverride.has_value() && warnColorPrecisionLossOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.colorPrecisionLoss = WarningMode::WARN;
-        } else {
-            ctx.err.colorPrecisionLoss = WarningMode::OFF;
-        }
-    }
-    if (errKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
-        if (errKeyFrameTileDidNotAppearInAssignmentOverride.value()) {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::ERR;
-        } else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
-                    warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::WARN;
-        } else {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::OFF;
-        }
-    }
     if (errUsedTrueColorModeOverride.has_value()) {
         if (errUsedTrueColorModeOverride.value()) {
             ctx.err.usedTrueColorMode = WarningMode::ERR;
@@ -1685,8 +1647,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 3, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
@@ -1713,8 +1673,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufWall, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 4, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
@@ -1744,8 +1702,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 5, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::ERR);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
@@ -1778,8 +1734,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 6, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
@@ -1809,8 +1763,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 5, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
@@ -1840,8 +1792,6 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath, bufHeader};
         porytiles::parseSubcommandOptions(ctx, 5, argv);
 
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
         CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
         CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
         CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);

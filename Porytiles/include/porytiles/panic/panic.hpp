@@ -33,4 +33,11 @@ struct string_view_with_source_loc {
     panic_impl(msg.c_str());
 }
 
+inline void assert_or_panic(bool condition, const string_view_with_source_loc &s) {
+    if (!condition) {
+        auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
+        panic_impl(msg.c_str());
+    }
+}
+
 } // namespace porytiles

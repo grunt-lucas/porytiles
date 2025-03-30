@@ -22,8 +22,6 @@
 namespace porytiles {
 
 // Compilation warnings
-const char *const WARN_COLOR_PRECISION_LOSS = "color-precision-loss";
-const char *const WARN_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
 const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
 const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
@@ -549,41 +547,6 @@ static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const 
                     fmt::styled(fmt::format("-W{}", warningName),
                                 fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
         }
-    }
-}
-
-void warn_colorPrecisionLoss(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile, std::size_t row,
-                             std::size_t col, const BGR15 &bgr, const RGBA32 &rgba,
-                             const std::tuple<RGBA32, RGBATile, std::size_t, std::size_t> &previousRgba) {
-    std::string tileString = getTilePrettyString(tile);
-    std::string message = fmt::format("color `{}' at {} `{}' subtile pixel col {}, row {} collapsed to duplicate BGR",
-                                      fmt::styled(rgba.jasc(), fmt::emphasis::bold), compilerModeString(mode),
-                                      fmt::styled(tileString, fmt::emphasis::bold),
-                                      fmt::styled(col, fmt::emphasis::bold), fmt::styled(row, fmt::emphasis::bold));
-    // printWarning(err, err.colorPrecisionLoss, WARN_COLOR_PRECISION_LOSS, message);
-    if (err.colorPrecisionLoss == WarningMode::ERR) {
-        err.errCount++;
-    } else if (err.colorPrecisionLoss == WarningMode::WARN) {
-        err.warnCount++;
-    }
-    if (err.printErrors && err.colorPrecisionLoss != WarningMode::OFF) {
-        std::string previousTileString = getTilePrettyString(std::get<1>(previousRgba));
-        // pt_note("previously saw `{}' at `{}' subtile pixel col {}, row {}",
-        //         fmt::styled(std::get<0>(previousRgba).jasc(), fmt::emphasis::bold),
-        //         fmt::styled(previousTileString, fmt::emphasis::bold),
-        //         fmt::styled(std::get<3>(previousRgba), fmt::emphasis::bold),
-        //         fmt::styled(std::get<2>(previousRgba), fmt::emphasis::bold));
-        // pt_println(stderr, "");
-    }
-}
-
-void warn_keyFrameNoMatchingTile(ErrorsAndWarnings &err, std::string animName, std::size_t tileIndex) {
-    std::string message =
-        fmt::format("animation `{}' key frame tile `{}' was not present in any metatile entries",
-                    fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold));
-    printWarning(err, err.keyFrameNoMatchingTile, WARN_KEY_FRAME_NO_MATCHING_TILE, message);
-    if (err.printErrors && err.keyFrameNoMatchingTile != WarningMode::OFF) {
-        pt_println(stderr, "");
     }
 }
 
@@ -1249,14 +1212,12 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
     porytiles::PorytilesContext ctx{};
     auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
     ctx.set_diag_engine(std::move(engine));
-    ctx.diag_->enable(porytiles::W_COLOR_PRECISION_LOSS);
-    ctx.diag_->override_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
+    ctx.diag->enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_colorPrecisionLoss";
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-    ctx.err.colorPrecisionLoss = porytiles::WarningMode::ERR;
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1264,21 +1225,23 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
-    CHECK(ctx.diag_->count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
-    CHECK(ctx.diag_->in_flight_count_for_level(porytiles::diag_level::error) == 3);
-    CHECK(ctx.diag_->in_flight_count_for_level(porytiles::diag_level::note) == 3);
+    CHECK(ctx.diag->count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 3);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::note) == 3);
 }
 
-TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly when a key frame tile is not used") {
+TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame tile is not used") {
     SUBCASE("it should trigger correctly for a primary set") {
         porytiles::PorytilesContext ctx{};
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
         ctx.compilerSrcPaths.primarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1286,11 +1249,15 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 2);
+        CHECK(ctx.diag->count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 2);
     }
 
     SUBCASE("it should trigger correctly for a secondary set") {
         porytiles::PorytilesContext ctx{};
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1299,7 +1266,6 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
         ctx.compilerSrcPaths.secondarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.keyFrameNoMatchingTile = porytiles::WarningMode::ERR;
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1307,7 +1273,8 @@ TEST_CASE("warn_keyFrameTileDidNotAppearInAssignment should trigger correctly wh
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 2);
+        CHECK(ctx.diag->count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 2);
     }
 }
 
