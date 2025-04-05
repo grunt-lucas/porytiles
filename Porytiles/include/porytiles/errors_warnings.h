@@ -278,13 +278,6 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, Co
                                                       std::size_t row, std::size_t col, const RGBA32 &color,
                                                       const RGBA32 &transparency);
 
-void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config,
-                              std::string path);
-
-void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
-
-void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path);
-
 void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
                                 std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors,
                                 const std::string &animName);

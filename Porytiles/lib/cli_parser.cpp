@@ -526,18 +526,10 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WNO_USED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_ATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_UNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WTRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_TRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_ASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WINVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_INVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WKEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_KEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUNUSED_MANUAL_PAL_COLOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
@@ -805,15 +797,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
         {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
 
-        {WASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WASSIGN_CONFIG_OVERRIDE_VAL},
-        {WNO_ASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WNO_ASSIGN_CONFIG_OVERRIDE_VAL},
-
-        {WINVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WINVALID_ASSIGN_CONFIG_CACHE_VAL},
-        {WNO_INVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL},
-
-        {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
-        {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
-
         {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
         {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
@@ -858,15 +841,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
     std::optional<bool> warnTransparencyCollapseOverride{};
     std::optional<bool> errTransparencyCollapseOverride{};
-
-    std::optional<bool> warnAssignCacheOverride{};
-    std::optional<bool> errAssignCacheOverride{};
-
-    std::optional<bool> warnInvalidAssignCache{};
-    std::optional<bool> errInvalidAssignCache{};
-
-    std::optional<bool> warnMissingAssignCache{};
-    std::optional<bool> errMissingAssignCache{};
 
     // Default this warning to on, since it can lead to issues
     // https://github.com/grunt-lucas/porytiles/issues/60
@@ -1137,12 +1111,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                     errUnusedAttributeOverride = true;
                 } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
                     errTransparencyCollapseOverride = true;
-                } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
-                    errAssignCacheOverride = true;
-                } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
-                    errInvalidAssignCache = true;
-                } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
-                    errMissingAssignCache = true;
                 } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                     errKeyFrameMissingColors = true;
                 } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
@@ -1177,12 +1145,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                 errUnusedAttributeOverride = false;
             } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
                 errTransparencyCollapseOverride = false;
-            } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
-                errAssignCacheOverride = false;
-            } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
-                errInvalidAssignCache = false;
-            } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
-                errMissingAssignCache = false;
             } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
                 errKeyFrameMissingColors = false;
             } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
@@ -1256,30 +1218,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WNO_TRANSPARENCY_COLLAPSE_VAL:
             validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
             warnTransparencyCollapseOverride = false;
-            break;
-        case WASSIGN_CONFIG_OVERRIDE_VAL:
-            validateSubcommandContext(ctx, WASSIGN_CONFIG_OVERRIDE);
-            warnAssignCacheOverride = true;
-            break;
-        case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
-            validateSubcommandContext(ctx, WNO_ASSIGN_CONFIG_OVERRIDE);
-            warnAssignCacheOverride = false;
-            break;
-        case WINVALID_ASSIGN_CONFIG_CACHE_VAL:
-            validateSubcommandContext(ctx, WINVALID_ASSIGN_CONFIG_CACHE);
-            warnInvalidAssignCache = true;
-            break;
-        case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
-            validateSubcommandContext(ctx, WNO_INVALID_ASSIGN_CONFIG_CACHE);
-            warnInvalidAssignCache = false;
-            break;
-        case WMISSING_ASSIGN_CONFIG_VAL:
-            validateSubcommandContext(ctx, WMISSING_ASSIGN_CONFIG);
-            warnMissingAssignCache = true;
-            break;
-        case WNO_MISSING_ASSIGN_CONFIG_VAL:
-            validateSubcommandContext(ctx, WNO_MISSING_ASSIGN_CONFIG);
-            warnMissingAssignCache = false;
             break;
         case WKEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WKEY_FRAME_MISSING_COLORS);
@@ -1413,15 +1351,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     if (warnTransparencyCollapseOverride.has_value()) {
         ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
     }
-    if (warnAssignCacheOverride.has_value()) {
-        ctx.err.assignCacheOverride = warnAssignCacheOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnInvalidAssignCache.has_value()) {
-        ctx.err.invalidAssignCache = warnInvalidAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnMissingAssignCache.has_value()) {
-        ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
     if (warnKeyFrameMissingColors.has_value()) {
         ctx.err.keyFrameMissingColors = warnKeyFrameMissingColors.value() ? WarningMode::WARN : WarningMode::OFF;
     }
@@ -1491,33 +1420,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             ctx.err.transparencyCollapse = WarningMode::WARN;
         } else {
             ctx.err.transparencyCollapse = WarningMode::OFF;
-        }
-    }
-    if (errAssignCacheOverride.has_value()) {
-        if (errAssignCacheOverride.value()) {
-            ctx.err.assignCacheOverride = WarningMode::ERR;
-        } else if ((warnAssignCacheOverride.has_value() && warnAssignCacheOverride.value()) || enableAllWarnings) {
-            ctx.err.assignCacheOverride = WarningMode::WARN;
-        } else {
-            ctx.err.assignCacheOverride = WarningMode::OFF;
-        }
-    }
-    if (errInvalidAssignCache.has_value()) {
-        if (errInvalidAssignCache.value()) {
-            ctx.err.invalidAssignCache = WarningMode::ERR;
-        } else if ((warnInvalidAssignCache.has_value() && warnInvalidAssignCache.value()) || enableAllWarnings) {
-            ctx.err.invalidAssignCache = WarningMode::WARN;
-        } else {
-            ctx.err.invalidAssignCache = WarningMode::OFF;
-        }
-    }
-    if (errMissingAssignCache.has_value()) {
-        if (errMissingAssignCache.value()) {
-            ctx.err.missingAssignCache = WarningMode::ERR;
-        } else if ((warnMissingAssignCache.has_value() && warnMissingAssignCache.value()) || enableAllWarnings) {
-            ctx.err.missingAssignCache = WarningMode::WARN;
-        } else {
-            ctx.err.missingAssignCache = WarningMode::OFF;
         }
     }
     if (errKeyFrameMissingColors.has_value()) {

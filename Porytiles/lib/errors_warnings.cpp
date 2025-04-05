@@ -27,9 +27,6 @@ const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
 const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
 const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
 const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
-const char *const WARN_ASSIGN_CACHE_OVERRIDE = "assign-cache-override";
-const char *const WARN_INVALID_ASSIGN_CACHE = "invalid-assign-cache";
-const char *const WARN_MISSING_ASSIGN_CACHE = "missing-assign-cache";
 const char *const WARN_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
 const char *const WARN_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
 
@@ -611,59 +608,6 @@ void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, Co
     if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
         pt_note("if you did not intend this to be a transparent pixel, please edit the color on the respective layer "
                 "sheet");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_assignCacheOverride(ErrorsAndWarnings &err, CompilerMode mode, const CompilerConfig &config,
-                              std::string path) {
-    printWarning(
-        err, err.assignCacheOverride, WARN_ASSIGN_CACHE_OVERRIDE,
-        fmt::format("{}: ignoring {} `assign.cache' due to command line override", path, compilerModeString(mode)));
-    if (err.printErrors && err.assignCacheOverride != WarningMode::OFF) {
-        if (mode == CompilerMode::PRIMARY) {
-            pt_note("assign-algorithm={}", assignAlgorithmString(config.primaryAssignAlgorithm));
-            pt_note("explored-node-cutoff={}", config.primaryExploredNodeCutoff);
-            if (config.primaryBestBranches == SIZE_MAX) {
-                pt_note("best-branches={}", "SIZE_MAX");
-            } else {
-                if (config.primarySmartPrune) {
-                    pt_note("best-branches={}", "smart-prune");
-                } else {
-                    pt_note("best-branches={}", config.primaryBestBranches);
-                }
-            }
-        } else if (mode == CompilerMode::SECONDARY) {
-            pt_note("assign-algorithm={}", assignAlgorithmString(config.secondaryAssignAlgorithm));
-            pt_note("explored-node-cutoff={}", config.secondaryExploredNodeCutoff);
-            if (config.secondaryBestBranches == SIZE_MAX) {
-                pt_note("best-branches={}", "SIZE_MAX");
-            } else {
-                if (config.secondarySmartPrune) {
-                    pt_note("best-branches={}", "smart-prune");
-                } else {
-                    pt_note("best-branches={}", config.secondarySmartPrune);
-                }
-            }
-        }
-        pt_println(stderr, "");
-    }
-}
-
-void warn_invalidAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path) {
-    printWarning(err, err.invalidAssignCache, WARN_INVALID_ASSIGN_CACHE,
-                 fmt::format("{}: cached compilation settings failed", path));
-    if (err.printErrors && err.invalidAssignCache != WarningMode::OFF) {
-        pt_note("running full parameter search matrix, this may take awhile...");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_missingAssignCache(ErrorsAndWarnings &err, const CompilerConfig &config, std::string path) {
-    printWarning(err, err.missingAssignCache, WARN_MISSING_ASSIGN_CACHE,
-                 fmt::format("{}: cached compilation settings not found", path));
-    if (err.printErrors && err.missingAssignCache != WarningMode::OFF) {
-        pt_note("running full parameter search matrix, this may take awhile...");
         pt_println(stderr, "");
     }
 }

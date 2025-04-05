@@ -515,17 +515,6 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
                 auto primaryPaletteColorSets = std::get<2>(assignmentResult);
                 return std::pair{assignedPalsSolution, primaryPaletteColorSets};
             }
-            if (compilerMode == CompilerMode::PRIMARY) {
-                warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
-            } else if (compilerMode == CompilerMode::SECONDARY) {
-                warn_invalidAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
-            }
-        }
-    } else {
-        if (compilerMode == CompilerMode::PRIMARY) {
-            warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
-        } else if (compilerMode == CompilerMode::SECONDARY) {
-            warn_missingAssignCache(ctx.err, ctx.compilerConfig, ctx.compilerSrcPaths.secondaryAssignCache());
         }
     }
 

@@ -805,7 +805,6 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
          * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
          * override value. In this case, we don't want to read anything from the assign config. Just return.
          */
-        warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
         return;
     }
     if (parentCompilerMode == CompilerMode::PRIMARY && compilerMode == CompilerMode::PRIMARY &&
@@ -814,7 +813,6 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
          * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value.
          * In this case, we don't want to read anything from the assign config. Just return.
          */
-        warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig, ctx.compilerSrcPaths.primaryAssignCache());
         return;
     }
     if (parentCompilerMode == CompilerMode::SECONDARY && compilerMode == CompilerMode::SECONDARY &&
@@ -823,8 +821,6 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
          * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override
          * value. In this case, we don't want to read anything from the assign config. Just return.
          */
-        warn_assignCacheOverride(ctx.err, compilerMode, ctx.compilerConfig,
-                                 ctx.compilerSrcPaths.secondaryAssignCache());
         return;
     }
     runAssignmentConfigImport(ctx, compilerMode, config, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
