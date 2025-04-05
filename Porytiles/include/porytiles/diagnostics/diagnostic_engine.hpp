@@ -44,10 +44,13 @@ class diag_engine {
 
     void disable_at_level(std::string_view diag, diag_level override);
 
+    [[nodiscard]] diag_level enabled_at(std::string_view diag) const;
+
     [[nodiscard]] std::uint64_t in_flight_count_for_level(diag_level level) const;
 
-    [[nodiscard]] std::uint64_t count_for(std::string_view diag) const;
+    [[nodiscard]] std::uint64_t in_flight_count_for(std::string_view diag) const;
 
+    // ReSharper disable once CppParameterMayBeConst
     template <typename... T> void report(std::string_view diag, T &&...args) {
         // If this diagnostic is not enabled, exit now
         if (!is_enabled(diag)) {
@@ -65,7 +68,7 @@ class diag_engine {
         if (!diag_counts_.contains(diag_str)) {
             diag_counts_.insert({diag_str, 0});
         }
-        ++diag_counts_[diag_str];
+        diag_counts_[diag_str] += 1;
     }
 
     template <typename... T> void report_partner(std::string_view diag, std::size_t partner_index, T &&...args) {
@@ -86,6 +89,14 @@ class diag_engine {
         report_helper(partner_templ, in_flight_level, std::forward<T>(args)...);
     }
 
+    template <typename T> auto style(const T &t, fmt::text_style ts) const {
+        return fmt::styled(t, consumer_->is_a_tty() ? ts : fmt::text_style{});
+    }
+
+    template <typename T> auto bold(const T &t) const {
+        return style(t, fmt::emphasis::bold);
+    }
+
     [[nodiscard]] const diag_consumer &consumer() const;
 
   private:
@@ -93,7 +104,7 @@ class diag_engine {
         // Fill in message template
         std::vector<std::string> raw_msg;
         try {
-            raw_msg = templ.build_dynamic_msg(consumer_->is_a_tty(), in_flight_level, std::forward<T>(args)...);
+            raw_msg = templ.build_dynamic_msg(*this, in_flight_level, std::forward<T>(args)...);
         } catch (const std::exception &e) {
             panic(fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
         }

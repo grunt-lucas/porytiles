@@ -60,8 +60,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
          * because it retains end-user visibility while not potentially causing confounding compilation errors later on
          * in the compilation pipeline.
          */
-        warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
-                                                         transparencyColor);
+        ctx.diag->report(W_TRANSPARENCY_COLLAPSE, ctx.diag->bold(rgba.jasc()),
+                         ctx.diag->bold(compilerModeString(compilerMode)), ctx.diag->bold(rgbaFrame.prettify()),
+                         ctx.diag->bold(col), ctx.diag->bold(row));
+        ctx.diag->report_partner(W_TRANSPARENCY_COLLAPSE, 0);
         return 0;
     }
 
@@ -77,11 +79,12 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
              * in the master sheet are going to collapse to one BGR color on the GBA.
              */
             if (errWarn) {
-                ctx.diag->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc().c_str(),
-                                 compilerModeString(compilerMode).c_str(), row, col);
+                // TODO : we can probably pass rgbaFrame here as a pointer
+                ctx.diag->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc(), compilerModeString(compilerMode), row,
+                                 col);
                 ctx.diag->report_partner(W_COLOR_PRECISION_LOSS, 0,
                                          std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc().c_str(),
+                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc(),
                                          std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
                                          std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
                 ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
@@ -286,12 +289,12 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     }
     for (const auto &remainingRgb : primerRgbColors) {
         for (const auto &path : primerRgbColorPaths.at(remainingRgb)) {
-            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+            ctx.diag->report(W_UNUSED_MANUAL_PAL_COLOR, ctx.diag->bold(path), ctx.diag->bold(remainingRgb.jasc()));
         }
     }
     for (const auto &remainingRgb : overrideRgbColors) {
         for (const auto &path : overrideRgbColorPaths.at(remainingRgb)) {
-            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+            ctx.diag->report(W_UNUSED_MANUAL_PAL_COLOR, ctx.diag->bold(path), ctx.diag->bold(remainingRgb.jasc()));
         }
     }
 
@@ -600,7 +603,8 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, ctx.diag->bold(compiled.anims.at(animIndex).animName),
+                                 ctx.diag->bold(tileIndex));
             }
         }
     }
@@ -762,7 +766,8 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, ctx.diag->bold(compiled.anims.at(animIndex).animName),
+                                 ctx.diag->bold(tileIndex));
             }
         }
     }

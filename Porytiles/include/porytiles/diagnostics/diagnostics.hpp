@@ -2,11 +2,11 @@
 
 #include <any>
 #include <fmt/color.h>
+#include <fmt/ranges.h>
 #include <functional>
 #include <sstream>
 #include <string>
 
-#include "../panic/panic.hpp"
 #include "../types.h"
 
 namespace porytiles {
@@ -16,35 +16,39 @@ std::string level_to_str(diag_level level);
 fmt::terminal_color color_for_level(diag_level level);
 int level_priority(diag_level level);
 
-/**
- * @brief diag_templ defines a reusable template for standardized diagnostic
- * reporting.
- *
- * @details
- * diag_templ is used by the diag_engine to construct the actual diagnostic
- * instance when one is in-flight. A diag_templ defines a unique name for the
- * diagnostic as well as some default settings. It provides a template for the
- * diagnostic message: either in the form of a static format string or a dynamic
- * builder function. It also contains a list of partner diagnostics. Partner
- * diagnostics are used for warnings/errors that have associated notes.
- */
+/// @brief diag_engine coordinates the generation and consumption of diagnostic
+/// messages.
+///
+/// The full definition for this class is in diagnostics/diagnostic_engine.hpp.
+class diag_engine;
+
+/// @brief diag_templ defines a reusable template for standardized diagnostic
+/// reporting.
+///
+/// @details
+/// diag_templ is used by the diag_engine to construct the actual diagnostic
+/// instance when one is in-flight. A diag_templ defines a unique name for the
+/// diagnostic as well as some default settings. It provides a template for the
+/// diagnostic message: either in the form of a static format string or a
+/// dynamic builder function. It also contains a list of partner diagnostics.
+/// Partner diagnostics are used for warnings/errors that have associated notes.
 class diag_templ {
-    /**
-     * @brief @link dynamic_msg_builder @endlink is an alias for a dynamic
-     * diagnostic message builder function.
-     *
-     * @details @link dynamic_msg_builder @endlink defines a function signature
-     * for building diagnostic messages dynamically. The function signature
-     * accepts a boolean flag indicating whether the output is directed to a
-     * tty (terminal), a diag_level noting the actual in-flight level of the
-     * diagnostic, and a vector of additional parameters (of type std::any)
-     * used to customize the diagnostic message. It returns a vector of
-     * formatted strings representing the final diagnostic message. Each element
-     * in the vector represents a single line of output for a
-     * @link diag_consumer @endlink to consume.
-     */
-    using dynamic_msg_builder = std::function<std::vector<std::string>(bool is_a_tty, diag_level in_flight_level,
-                                                                       const std::vector<std::any> &args)>;
+
+    /// @brief dynamic_msg_builder is an alias for a dynamic diagnostic message
+    /// builder function.
+    ///
+    /// @details dynamic_msg_builder defines a function signature
+    /// for building diagnostic messages dynamically. The function signature
+    /// accepts a boolean flag indicating whether the output is directed to a
+    /// tty (terminal), a diag_level noting the actual in-flight level of the
+    /// diagnostic, and a vector of additional parameters (of type std::any)
+    /// used to customize the diagnostic message. It returns a vector of
+    /// formatted strings representing the final diagnostic message. Each
+    /// element in the vector represents a single line of output for a
+    /// diag_consumer to consume.
+    using dynamic_msg_builder = std::function<std::vector<std::string>(
+        const diag_engine &eng, diag_level in_flight_level, const std::vector<std::any> &args)>;
+
     std::string_view name_;
     diag_level default_level_;
     std::string_view static_msg_templ_;
@@ -55,6 +59,12 @@ class diag_templ {
     // @formatter:off
     // clang-format off
     explicit diag_templ(std::string_view name, diag_level default_level,
+                      dynamic_msg_builder dynamic_msg_builder) noexcept
+        : name_{name},
+          default_level_{default_level},
+          dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
+
+    explicit diag_templ(std::string_view name, diag_level default_level,
                         dynamic_msg_builder dynamic_msg_builder, const std::vector<diag_templ> &partner_diags) noexcept
         : name_{name},
           default_level_{default_level},
@@ -62,8 +72,15 @@ class diag_templ {
           partner_diags_{partner_diags} {}
 
     explicit diag_templ(std::string_view name, diag_level default_level,
+                    std::string_view static_msg_templ) noexcept
+        : name_{name},
+          default_level_{default_level},
+          static_msg_templ_{static_msg_templ},
+          dynamic_msg_builder_{nullptr} {}
+
+    explicit diag_templ(std::string_view name, diag_level default_level,
                         std::string_view static_msg_templ, const std::vector<diag_templ> &partner_diags) noexcept
-         : name_{name},
+        : name_{name},
           default_level_{default_level},
           static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr},
@@ -84,14 +101,15 @@ class diag_templ {
     }
 
     template <typename... Args>
-    std::vector<std::string> build_dynamic_msg(bool is_a_tty, diag_level in_flight_level, Args &&...args) const {
+    std::vector<std::string> build_dynamic_msg(const diag_engine &eng, const diag_level in_flight_level,
+                                               Args &&...args) const {
         if (dynamic_msg_builder_ == nullptr) {
             std::vector<std::string> v{};
             v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));
             return v;
         }
         const std::vector<std::any> v{std::forward<Args>(args)...};
-        return dynamic_msg_builder_(is_a_tty, in_flight_level, v);
+        return dynamic_msg_builder_(eng, in_flight_level, v);
     }
 
     [[nodiscard]] const std::vector<diag_templ> &partner_diags() const {
@@ -99,18 +117,16 @@ class diag_templ {
     }
 };
 
-/**
- * @brief in_flight_diag represents an in-flight diagnostic.
- *
- * @details
- * in_flight_diag is generated by the diag_engine by combining the template with
- * context from the various user defined diagnostic parameters (e.g. warnings
- * as errors, specific warning disables, etc.).
- */
+/// @brief in_flight_diag represents an in-flight diagnostic.
+///
+/// @details
+/// in_flight_diag is generated by the diag_engine by combining the template
+/// with context from the various user defined diagnostic parameters (e.g.
+/// warnings as errors, specific warning disables, etc.).
 class in_flight_diag {
   public:
-    explicit in_flight_diag(diag_level level, std::string msg, const diag_templ &templ) noexcept
-        : level_{level}, msg_{std::move(msg)}, templ_{templ} {}
+    explicit in_flight_diag(diag_level level, std::string msg, diag_templ templ) noexcept
+        : level_{level}, msg_{std::move(msg)}, templ_{std::move(templ)} {}
 
     [[nodiscard]] diag_level level() const noexcept {
         return level_;
@@ -139,10 +155,8 @@ class diag_consumer {
     [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
 };
 
-/**
- * @brief ignore_consumer is a consumer implementation that simply ignores the
- * diagnostic.
- */
+/// @brief ignore_consumer is a consumer implementation that simply ignores the
+/// diagnostic.
 class ignore_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
@@ -154,10 +168,8 @@ class ignore_consumer final : public diag_consumer {
     std::uint64_t consumed_count_{};
 };
 
-/**
- * @brief stderr_consumer is a consumer implementation that pushes diagnostic
- * messages to stderr.
- */
+/// @brief stderr_consumer is a consumer implementation that pushes diagnostic
+/// messages to stderr.
 class stderr_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
@@ -169,10 +181,8 @@ class stderr_consumer final : public diag_consumer {
     std::uint64_t consumed_count_{};
 };
 
-/**
- * @brief vector_consumer is a consumer implementation that pushes diagnostic
- * messages to an internal vector for testing purposes.
- */
+/// @brief vector_consumer is a consumer implementation that pushes diagnostic
+/// messages to an internal vector for testing purposes.
 class vector_consumer final : public diag_consumer {
   public:
     void consume(const in_flight_diag &diag) override;
@@ -192,87 +202,16 @@ class vector_consumer final : public diag_consumer {
 /// WARNINGS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief The -Wcolor-precision-loss warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wcolor-precision-loss>
- */
 constexpr auto W_COLOR_PRECISION_LOSS = "color-precision-loss";
-
-/**
- * @brief The -Wkey-no-matching-tile warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wkey-frame-no-matching-tile>
- */
 constexpr auto W_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
-
-/**
- * @brief The -Wkey-frame-missing-colors warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wkey-frame-missing-colors>
- */
 constexpr auto W_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
-
-/**
- * @brief The -Wused-true-color-mode warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wused-true-color-mode>
- */
-constexpr auto W_USED_TRUE_COLOR_MODE = "used-true-color-mode";
-
-/**
- * @brief The -Wattribute-format-mismatch warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wattribute-format-mismatch>
- */
 constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
-
-/**
- * @brief The -Wmissing-attributes-csv warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wmissing-attributes-csv>
- */
 constexpr auto W_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-
-/**
- * @brief The -Wunused-attribute warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wunused-attribute>
- */
 constexpr auto W_UNUSED_ATTRIBUTE = "unused-attribute";
-
-/**
- * @brief The -Wtransparency-collapse warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wtransparency-collapse>
- */
 constexpr auto W_TRANSPARENCY_COLLAPSE = "transparency-collapse";
-
-/**
- * @brief The -Wunused-manual-pal-color warning.
- *
- * @details
- * See:
- * <https://github.com/grunt-lucas/porytiles/wiki/Warnings-and-Errors#-wunused-manual-pal-color>
- */
 constexpr auto W_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
+constexpr auto W_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
+constexpr auto W_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -280,52 +219,33 @@ constexpr auto W_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
 /// ERRORS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief Use this @link diag_templ @endlink for generic error diagnostics.
- */
 constexpr auto E_GENERIC = "error-generic";
-
-/**
- * @brief Use this @link diag_templ @endlink for generic error diagnostics.
- */
 constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
-
-
-////////////////////////////////////////////////////////////////////////////////
-///
-/// STANDALONE NOTES
-///
-////////////////////////////////////////////////////////////////////////////////
 
 // @formatter:on
 // clang-format on
 
-/**
- * @brief Retrieves the diagnostic template corresponding to a given diagnostic
- * name.
- *
- * This function searches an internal table for the provided diagnostic
- * identifier. If the identifier is found, the corresponding diagnostic template
- * is returned. If not, the function triggers a panic with an error message
- * indicating an unknown diagnostic.
- *
- * @param name A std::string_view representing the diagnostic name.
- * @return diag_template The diagnostic template associated with the given
- * identifier.
- *
- * @note The function will terminate the program if the diagnostic name is
- * invalid.
- */
+/// @brief Retrieves the diagnostic template corresponding to a given diagnostic
+/// name.
+///
+/// This function searches an internal table for the provided diagnostic
+/// identifier. If the identifier is found, the corresponding diagnostic
+/// template is returned. If not, the function triggers a panic with an error
+/// message indicating an unknown diagnostic.
+///
+/// @param name A std::string_view representing the diagnostic name.
+/// @return diag_template The diagnostic template associated with the given
+/// identifier.
+///
+/// @note The function will terminate the program if the diagnostic name is
+/// invalid.
 diag_templ diag_templ_for(std::string_view name);
 
-/**
- * @brief Get an iterable view of all diag_templ names in the internal table.
- *
- * The identifiers returned from this function can then be used for lookup in
- * diag_templ_for. This may be useful for range-based for-loops, or other use
- * cases where the user wants to perform an action for some or all diagnostics.
- */
+/// @brief Get an iterable view of all diag_templ names in the internal table.
+///
+/// The identifiers returned from this function can then be used for lookup in
+/// diag_templ_for. This may be useful for range-based for-loops, or other use
+/// cases where the user wants to perform an action for some or all diagnostics.
 std::vector<const char *> all_diag_templ_names();
 
 } // namespace porytiles

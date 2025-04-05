@@ -9,6 +9,7 @@
 #include <csv.h>
 #include <filesystem>
 #include <fmt/color.h>
+#include <fmt/ranges.h>
 #include <fstream>
 #include <iostream>
 #include <png.hpp>
@@ -38,7 +39,7 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compile
         error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "width", png.get_width());
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "freestanding source dimension not divisible by 8");
     }
@@ -137,7 +138,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         error_layerHeightsMustEq(ctx.err, bottom.get_height(), middle.get_height(), top.get_height());
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "source layer png dimensions invalid");
     }
@@ -310,38 +311,38 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         // Copy the tiles into the decompiled buffer, accounting for the LayerType we just computed
         switch (bottomTiles.at(0).attributes.layerType) {
         case LayerType::TRIPLE:
-            for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(bottomTiles.at(i));
+            for (const auto &bottomTile : bottomTiles) {
+                decompiledTiles.tiles.push_back(bottomTile);
             }
-            for (std::size_t i = 0; i < middleTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(middleTiles.at(i));
+            for (const auto &middleTile : middleTiles) {
+                decompiledTiles.tiles.push_back(middleTile);
             }
-            for (std::size_t i = 0; i < topTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(topTiles.at(i));
+            for (const auto &topTile : topTiles) {
+                decompiledTiles.tiles.push_back(topTile);
             }
             break;
         case LayerType::NORMAL:
-            for (std::size_t i = 0; i < middleTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(middleTiles.at(i));
+            for (const auto &middleTile : middleTiles) {
+                decompiledTiles.tiles.push_back(middleTile);
             }
-            for (std::size_t i = 0; i < topTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(topTiles.at(i));
+            for (const auto &topTile : topTiles) {
+                decompiledTiles.tiles.push_back(topTile);
             }
             break;
         case LayerType::COVERED:
-            for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(bottomTiles.at(i));
+            for (const auto &bottomTile : bottomTiles) {
+                decompiledTiles.tiles.push_back(bottomTile);
             }
-            for (std::size_t i = 0; i < middleTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(middleTiles.at(i));
+            for (const auto &middleTile : middleTiles) {
+                decompiledTiles.tiles.push_back(middleTile);
             }
             break;
         case LayerType::SPLIT:
-            for (std::size_t i = 0; i < bottomTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(bottomTiles.at(i));
+            for (const auto &bottomTile : bottomTiles) {
+                decompiledTiles.tiles.push_back(bottomTile);
             }
-            for (std::size_t i = 0; i < topTiles.size(); i++) {
-                decompiledTiles.tiles.push_back(topTiles.at(i));
+            for (const auto &topTile : topTiles) {
+                decompiledTiles.tiles.push_back(topTile);
             }
             break;
         default:
@@ -350,14 +351,15 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
     }
 
     std::size_t metatileCount = decompiledTiles.tiles.size() / (ctx.compilerConfig.tripleLayer ? 12 : 8);
-    for (const auto &[metatileId, _] : attributesMap) {
+    for (const auto &metatileId : attributesMap | std::views::keys) {
         if (metatileId > metatileCount - 1) {
-            warn_unusedAttribute(ctx.err, metatileId, metatileCount,
-                                 ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string());
+            ctx.diag->report(W_UNUSED_ATTRIBUTE, ctx.diag->bold(metatileId));
+            ctx.diag->report_partner(W_UNUSED_ATTRIBUTE, 0, metatileCount,
+                                     ctx.diag->bold(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string()));
         }
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during layered tile import");
     }
@@ -365,7 +367,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
     return decompiledTiles;
 }
 
-static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation &anim, CompilerMode compilerMode) {
+static void validateAnimFormat(const PorytilesContext &ctx, const DecompiledAnimation &anim) {
     if (anim.frames.size() < 2) {
         internalerror("importer::validateAnimFormat bad anim format, found frames.size() < 2");
     }
@@ -410,8 +412,9 @@ static void validateAnimFormat(PorytilesContext &ctx, const DecompiledAnimation 
 
     for (std::size_t i = 0; i < keyFrameMissingColors.size(); i++) {
         if (!keyFrameMissingColors.at(i).empty()) {
-            warn_keyFrameMissingColors(ctx.err, ctx.compilerSrcPaths, compilerMode, i, keyFrameMissingColors.at(i),
-                                       anim.animName);
+            ctx.diag->report(W_KEY_FRAME_MISSING_COLORS, anim.animName, i);
+            std::vector<RGBA32> v{keyFrameMissingColors.at(i).begin(), keyFrameMissingColors.at(i).end()};
+            ctx.diag->report_partner(W_KEY_FRAME_MISSING_COLORS, 0, std::move(v));
         }
     }
 }
@@ -442,7 +445,7 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
                                                    rawFrame.png.get_width());
             }
 
-            if (ctx.err.errCount > 0) {
+            if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
                 die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                "anim frame source dimension not divisible by 8");
             }
@@ -483,11 +486,12 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
             }
             anim.frames.push_back(animFrame);
         }
-        validateAnimFormat(ctx, anim, compilerMode);
+        validateAnimFormat(ctx, anim);
         anims.push_back(anim);
     }
 
-    if (ctx.err.keyFrameMissingColorsErrCount > 0) {
+    // TODO : check that key-frame-missing-colors is enabled at error level
+    if (ctx.diag->in_flight_count_for(W_KEY_FRAME_MISSING_COLORS) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "some key frame subtiles were missing essential colors");
     }
@@ -567,7 +571,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     io::CSVReader<4> in{filePath};
     try {
         in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
-    } catch (const std::exception &e) {
+    } catch (const std::exception &) {
         fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
     }
 
@@ -588,11 +592,14 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     }
 
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
-        warn_tooFewAttributesForTargetGame(ctx.err, filePath, ctx.targetBaseGame);
+        ctx.diag->report(W_ATTRIBUTE_FORMAT_MISMATCH, ctx.diag->bold(filePath), "few",
+                         ctx.diag->bold(targetBaseGameString(ctx.targetBaseGame)));
+        ctx.diag->report_partner(W_ATTRIBUTE_FORMAT_MISMATCH, 0);
     }
     if ((ctx.targetBaseGame == TargetBaseGame::EMERALD || ctx.targetBaseGame == TargetBaseGame::RUBY) &&
         (hasTerrainType || hasEncounterType)) {
-        warn_tooManyAttributesForTargetGame(ctx.err, filePath, ctx.targetBaseGame);
+        ctx.diag->report(W_ATTRIBUTE_FORMAT_MISMATCH, ctx.diag->bold(filePath), "many",
+                         ctx.diag->bold(targetBaseGameString(ctx.targetBaseGame)));
     }
 
     // Grab the supplied default behavior, encounter/terrain types
@@ -693,7 +700,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         }
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during attributes CSV parsing");
     }

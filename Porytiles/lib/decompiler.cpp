@@ -48,11 +48,16 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
          * tiles are invisible since they are covered by another layer.
          */
         if (tileIndex >= tiles.size()) {
-            warn_tileIndexOutOfRange(ctx.err, mode, tileIndex, tiles.size(), decompiledTile);
+            ctx.diag->report(W_TILE_INDEX_OUT_OF_RANGE, ctx.diag->bold(decompilerModeString(mode)),
+                             ctx.diag->bold(decompiledTile.prettify()), ctx.diag->bold(tileIndex),
+                             ctx.diag->bold(tiles.size()));
+            ctx.diag->report_partner(W_TILE_INDEX_OUT_OF_RANGE, 0);
         }
         if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-            warn_paletteIndexOutOfRange(ctx.err, mode, paletteIndex, ctx.fieldmapConfig.numPalettesTotal,
-                                        decompiledTile);
+            ctx.diag->report(W_PALETTE_INDEX_OUT_OF_RANGE, ctx.diag->bold(decompilerModeString(mode)),
+                             ctx.diag->bold(decompiledTile.prettify()), ctx.diag->bold(paletteIndex),
+                             ctx.diag->bold(ctx.fieldmapConfig.numPalettesTotal));
+            ctx.diag->report_partner(W_PALETTE_INDEX_OUT_OF_RANGE, 0);
         }
         const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
             // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)
@@ -135,6 +140,10 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     }
 
     // TODO : fill in animations
+
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "errors encountered while decompiling tileset");
+    }
 
     return decompiledTileset;
 }

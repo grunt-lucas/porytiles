@@ -48,8 +48,6 @@ if [[ ! -f .porytiles-marker-file ]]; then
     exit 1
 fi
 
-# Porytiles/lib/**/*.cpp Porytiles/include/**/*.{h,hpp}
-
 parse_params "$@"
 if [[ ${#args[@]} -lt 1 ]]; then
     clang-format -style=file -i Porytiles/lib/**/*.cpp Porytiles/include/**/*.{h,hpp} Porytiles/tools/**/*.{cpp,hpp}

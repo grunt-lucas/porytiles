@@ -1,12 +1,41 @@
 #include "diagnostics/diagnostics.hpp"
 
+#include <any>
 #include <ranges>
 #include <sstream>
+#include <type_traits>
 #include <unistd.h>
+#include <unordered_set>
+
+#include "./diagnostics//diagnostic_engine.hpp"
 
 namespace {
 
 using namespace porytiles;
+
+constexpr std::size_t DIAG_MARGIN_SIZE = 7;
+
+void assert_arg_size(std::size_t expected, std::size_t actual, const char *func_name) {
+    if (actual != expected) {
+        panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
+    }
+}
+
+template <typename T> T any_cast_or_panic(const std::any &a, const std::source_location &loc) {
+    try {
+        return std::any_cast<T>(a);
+    } catch (std::bad_any_cast &) {
+        panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+    }
+}
+
+template <typename T> const T &any_cast_or_panic(const std::any *a, const std::source_location &loc) {
+    auto any_unwrapped = any_cast<T>(a);
+    if (any_unwrapped == nullptr) {
+        panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+    }
+    return *any_unwrapped;
+}
 
 void push_to_ss_n_times(std::stringstream &ss, const std::string_view s, const std::size_t n) {
     for (std::size_t i = 0; i < n; i++) {
@@ -14,15 +43,19 @@ void push_to_ss_n_times(std::stringstream &ss, const std::string_view s, const s
     }
 }
 
-constexpr std::size_t DIAG_MARGIN_SIZE = 7;
+void reset_ss(std::stringstream &ss) {
+    ss.clear();
+    ss.str(std::string{});
+}
 
-std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_level in_flight_level,
+std::vector<std::string> build_tile_pixel_highlight(const diag_engine &eng, const diag_level in_flight_level,
                                                     const RGBATile &tile, const std::size_t row,
                                                     const std::size_t col) {
     std::vector<std::string> highlight{};
     std::stringstream ss{};
     const fmt::terminal_color level_color = color_for_level(in_flight_level);
 
+    // TODO : std::variant here, see note below
     // Eventually we can remove this outer check by introducing better metadata
     // handling in RGBTile. Specifically, metadata can be a std::variant that
     // changes based on the TileType. Then, we can use the visitor pattern to
@@ -38,8 +71,9 @@ std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_le
 
                 // General case. Decide if we are drawing the highlighted tile
                 // and pixel. If not, draw a "-".
-                auto styled_x = styled(" X ", is_a_tty ? fg(level_color) | fmt::emphasis::bold : fmt::text_style{});
-                auto styled_star = styled(" * ", is_a_tty ? fmt::emphasis::bold : fmt::text_style{});
+
+                auto styled_x = eng.style(" X ", fg(level_color) | fmt::emphasis::bold);
+                auto styled_star = eng.style(" * ", fmt::emphasis::bold);
                 if (tile.subtile == Subtile::NORTHWEST && i < 8 && j < 8) {
                     if (row == i && col == j) {
                         ss << format(fmt::runtime("{}"), styled_x);
@@ -76,8 +110,7 @@ std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_le
                 // Reset once this row is exhausted
                 if (j == 15) {
                     highlight.push_back(ss.str());
-                    ss.clear();
-                    ss.str(std::string{});
+                    reset_ss(ss);
                 }
             }
 
@@ -86,8 +119,7 @@ std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_le
                 push_to_ss_n_times(ss, " ", DIAG_MARGIN_SIZE);
                 ss << "|";
                 highlight.push_back(ss.str());
-                ss.clear();
-                ss.str(std::string{});
+                reset_ss(ss);
             }
         }
     }
@@ -97,7 +129,6 @@ std::vector<std::string> build_tile_pixel_highlight(bool is_a_tty, const diag_le
 } // namespace
 
 namespace porytiles {
-
 std::string level_to_str(diag_level level) {
     switch (level) {
     case diag_level::ignored:
@@ -171,7 +202,8 @@ std::uint64_t ignore_consumer::consumed_count() const {
 
 void stderr_consumer::consume(const in_flight_diag &diag) {
     consumed_count_++;
-    std::fputs(diag.msg().c_str(), stderr);
+    const auto msg = diag.msg();
+    std::fputs(msg.c_str(), stderr);
 }
 
 bool stderr_consumer::is_a_tty() const {
@@ -206,101 +238,58 @@ std::uint64_t vector_consumer::consumed_count() const {
     return diags_.size();
 }
 
-std::vector<std::string> w_color_precision_loss_dynamic_msg_builder(const bool is_a_tty,
-                                                                    const diag_level in_flight_level,
-                                                                    const std::vector<std::any> &args) {
-    if (args.size() != 5) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: found {} args but expected 5", loc.function_name(), args.size()));
-    }
-
-    const RGBATile *tile;
-    const char *color;
-    const char *mode;
-    std::size_t row;
-    std::size_t col;
-    try {
-        tile = &std::any_cast<const RGBATile &>(args[0]);
-        color = std::any_cast<const char *>(args[1]);
-        mode = std::any_cast<const char *>(args[2]);
-        row = std::any_cast<std::size_t>(args[3]);
-        col = std::any_cast<std::size_t>(args[4]);
-    } catch (const std::bad_any_cast &) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
-    }
-
-    constexpr auto msg_templ = "{} {}: collapsed to duplicate BGR: '{}' at col '{}', row '{}'";
-    std::vector<std::string> msg{};
-    if (is_a_tty) {
-        msg.push_back(fmt::format(
-            msg_templ, styled(mode, fmt::emphasis::bold), styled(tile->prettify().c_str(), fmt::emphasis::bold),
-            styled(color, fmt::emphasis::bold), styled(col, fmt::emphasis::bold), styled(row, fmt::emphasis::bold)));
-    } else {
-        msg.push_back(fmt::format(msg_templ, mode, tile->prettify().c_str(), color, col, row));
-    }
-    auto highlight = build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col);
-    msg.insert(std::end(msg), std::begin(highlight), std::end(highlight));
-
-    return msg;
-}
-
-std::vector<std::string> w_color_precision_loss_note_dynamic_msg_builder(const bool is_a_tty,
-                                                                         const diag_level in_flight_level,
-                                                                         const std::vector<std::any> &args) {
-    if (args.size() != 4) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: found {} args but expected 4", loc.function_name(), args.size()));
-    }
-
-    const RGBATile *tile;
-    const char *color;
-    std::size_t row;
-    std::size_t col;
-    try {
-        tile = &std::any_cast<const RGBATile &>(args[0]);
-        color = std::any_cast<const char *>(args[1]);
-        row = std::any_cast<std::size_t>(args[2]);
-        col = std::any_cast<std::size_t>(args[3]);
-    } catch (const std::bad_any_cast &) {
-        const auto loc = std::source_location::current();
-        panic(fmt::format("{}: bad_any_cast", loc.function_name()));
-    }
-
-    // FIXME : this template is incomplete, we want to show the mode since it's
-    // possible to have precision loss across a primary-secondary boundary
-    constexpr auto msg_templ = "{}: previously saw: '{}' at col '{}', row '{}'";
-    std::vector<std::string> msg{};
-    if (is_a_tty) {
-        msg.push_back(fmt::format(msg_templ, styled(tile->prettify().c_str(), fmt::emphasis::bold),
-                                  styled(color, fmt::emphasis::bold), styled(col, fmt::emphasis::bold),
-                                  styled(row, fmt::emphasis::bold)));
-    } else {
-        msg.push_back(fmt::format(msg_templ, tile->prettify().c_str(), color, col, row));
-    }
-    auto highlight = build_tile_pixel_highlight(is_a_tty, in_flight_level, *tile, row, col);
-    msg.insert(std::end(msg), std::begin(highlight), std::end(highlight));
-
-    return msg;
-}
-
 // @formatter:off
 // clang-format off
+static const diag_templ W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
+    "color-precision-loss-previously-seen-note",
+    diag_level::note,
+    [](const diag_engine &eng, const diag_level in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
+        assert_arg_size(4, args.size(), std::source_location::current().function_name());
+
+        const auto tile = any_cast_or_panic<RGBATile>(args[0], std::source_location::current());
+        const auto color = any_cast_or_panic<std::string>(args[1], std::source_location::current());
+        const auto row = any_cast_or_panic<std::size_t>(args[2], std::source_location::current());
+        const auto col = any_cast_or_panic<std::size_t>(args[3], std::source_location::current());
+
+        // FIXME : this template is incomplete, we want to show the mode since it's
+        // possible to have precision loss across a primary-secondary boundary
+        constexpr auto msg_templ = "{}: previously saw: '{}' at col '{}', row '{}'";
+        std::vector<std::string> msg{};
+        msg.push_back(fmt::format(msg_templ, eng.bold(tile.prettify()), eng.bold(color), eng.bold(col),
+                                 eng.bold(row)));
+        auto highlight = build_tile_pixel_highlight(eng, in_flight_level, tile, row, col);
+        msg.insert(std::end(msg), std::begin(highlight), std::end(highlight));
+
+        return msg;
+    }
+};
 static const diag_templ W_COLOR_PRECISION_LOSS_TEMPL{
     W_COLOR_PRECISION_LOSS,
     diag_level::warning,
-    w_color_precision_loss_dynamic_msg_builder,
+    [](const diag_engine &eng, const diag_level in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
+        assert_arg_size(5, args.size(), std::source_location::current().function_name());
+
+        const auto tile = any_cast_or_panic<RGBATile>(args[0], std::source_location::current());
+        const auto color = any_cast_or_panic<std::string>(args[1], std::source_location::current());
+        const auto mode = any_cast_or_panic<std::string>(args[2], std::source_location::current());
+        const auto row = any_cast_or_panic<std::size_t>(args[3], std::source_location::current());
+        const auto col = any_cast_or_panic<std::size_t>(args[4], std::source_location::current());
+
+        constexpr auto msg_templ = "{} {}: collapsed to duplicate BGR: '{}' at col '{}', row '{}'";
+        std::vector<std::string> msg{};
+        msg.push_back(fmt::format(msg_templ, eng.bold(mode), eng.bold(tile.prettify()), eng.bold(color), eng.bold(col),
+                                  eng.bold(row)));
+        auto highlight = build_tile_pixel_highlight(eng, in_flight_level, tile, row, col);
+        msg.insert(std::end(msg), std::begin(highlight), std::end(highlight));
+
+        return msg;
+    },
     {
-        diag_templ{
-            "color-precision-loss-previously-seen-note",
-            diag_level::note,
-            w_color_precision_loss_note_dynamic_msg_builder,
-            {}
-        }
+        W_COLOR_PRECISION_LOSS_NOTE_TEMPL
     }
 };
 
-// TODO : highlight {} content in bold, also show mode information (primary vs secondary)
+// TODO : show mode information (primary vs secondary)
 static const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
     W_KEY_FRAME_NO_MATCHING_TILE,
     diag_level::warning,
@@ -308,42 +297,157 @@ static const diag_templ W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
     {}
 };
 
+// TODO : show mode information (primary vs secondary)
+static const diag_templ W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
+    "key-frame-missing-colors-list-note",
+    diag_level::note,
+    [](const diag_engine &eng, const diag_level in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
+        assert_arg_size(1, args.size(), std::source_location::current().function_name());
+
+        const auto missing_colors =
+            any_cast_or_panic<std::vector<RGBA32>>(&args[0], std::source_location::current());
+        std::vector<std::string> msg{};
+        msg.emplace_back("the following colors were missing from the key frame tile:");
+        std::stringstream ss{};
+        push_to_ss_n_times(ss, " ", DIAG_MARGIN_SIZE);
+        ss << "|--- {}";
+        for (const auto &color : missing_colors) {
+            msg.push_back(fmt::format(fmt::runtime(ss.str()), eng.bold(color.jasc())));
+        }
+        reset_ss(ss);
+        push_to_ss_n_times(ss, " ", DIAG_MARGIN_SIZE);
+        ss << "| If left uncorrected, this may lead to the issue described here:";
+        msg.push_back(ss.str());
+        reset_ss(ss);
+        push_to_ss_n_times(ss, " ", DIAG_MARGIN_SIZE);
+        ss << "|    https://github.com/grunt-lucas/porytiles/issues/60";
+        msg.push_back(ss.str());
+        return msg;
+    }
+};
 static const diag_templ W_KEY_FRAME_MISSING_COLORS_TEMPL{
     W_KEY_FRAME_MISSING_COLORS,
     diag_level::warning,
-    "animation '{}' key frame tile '{}' missing essential colors",
-    {}
+    [](const diag_engine &eng, const diag_level in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
+        assert_arg_size(2, args.size(), std::source_location::current().function_name());
+
+        const auto anim_name = any_cast_or_panic<std::string>(args[0], std::source_location::current());
+        const auto tile_index = any_cast_or_panic<std::size_t>(args[1], std::source_location::current());
+        constexpr auto msg_templ = "anim '{}' key frame tile '{}' missing essential colors";
+        std::vector<std::string> msg{};
+        msg.push_back(fmt::format(msg_templ, eng.bold(anim_name), eng.bold(tile_index)));
+        return msg;
+    },
+    {
+        W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL
+    }
 };
 
-static const diag_templ W_USED_TRUE_COLOR_MODE_TEMPL{W_USED_TRUE_COLOR_MODE, diag_level::warning, "'true-color' mode requires Porymap minimum version 5.2.0", {}};
+// TODO : make message shorter, possibly shorten file name?
+static const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{
+    W_ATTRIBUTE_FORMAT_MISMATCH,
+    diag_level::warning,
+    "{}: too {} attribute columns for base game '{}'",
+    {
+        diag_templ{
+            "attribute-format-mismatch-note",
+            diag_level::note,
+            "unspecified columns will receive default values"
+        }
+    }
+};
 
-static const diag_templ W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{W_ATTRIBUTE_FORMAT_MISMATCH,  diag_level::warning, "{}: too {} attribute columns for base game '{}'", {}};
+static const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{
+    W_MISSING_ATTRIBUTES_CSV,
+    diag_level::warning,
+    "{}: attributes.csv did not exist",
+    {
+        diag_templ{
+            "missing-attr-csv-note",
+            diag_level::note,
+            "all attributes will receive default or inferred values"
+        }
+    }
+};
 
-static const diag_templ W_MISSING_ATTRIBUTES_CSV_TEMPL{W_MISSING_ATTRIBUTES_CSV,  diag_level::warning, "{}: attributes file did not exist", {}};
+static const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{
+    W_UNUSED_ATTRIBUTE,
+    diag_level::warning,
+    "found attribute for nonexistent metatile ID '{}'",
+    {
+        diag_templ{
+            "unused-attribute-note",
+            diag_level::note,
+            "{} metatiles found at source path '{}'"
+        }
+    }
+};
 
-static const diag_templ W_UNUSED_ATTRIBUTE_TEMPL{W_UNUSED_ATTRIBUTE,  diag_level::warning, "found attribute for nonexistent metatile ID '{}'", {}};
+static const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{
+    W_TRANSPARENCY_COLLAPSE,
+    diag_level::warning,
+    "color '{}' at {} '{}' subtile pixel col '{}', row '{}' collapsed to transparent under BGR conversion",
+    {
+        diag_templ{
+            "transparency-collapse-note",
+            diag_level::note,
+            "if you did not intend this pixel to be transparent, edit the color on the respective layer sheet"
+        }
+    }
+};
 
-static const diag_templ W_TRANSPARENCY_COLLAPSE_TEMPL{W_TRANSPARENCY_COLLAPSE,  diag_level::warning, "color '{}' at {} '{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion", {}};
+static const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{
+    W_UNUSED_MANUAL_PAL_COLOR, diag_level::warning, "{}: '{}' was not used in layers or anims", {}
+};
 
-static const diag_templ W_UNUSED_MANUAL_PAL_COLOR_TEMPL{W_UNUSED_MANUAL_PAL_COLOR,  diag_level::warning, "{}: '{}' was not used in layers or anims", {}};
+static const diag_templ W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
+    W_TILE_INDEX_OUT_OF_RANGE,
+    diag_level::warning,
+    "{} '{}': tile index '{}' out of range (sheet size = {})",
+    {
+        diag_templ{
+            "tile-index-out-of-range-note",
+            diag_level::note,
+            "substituting primary tile 0 (transparent tile) so decompilation can continue"
+        }
+    }
+};
 
-static const diag_templ E_GENERIC_TEMPL{E_GENERIC,  diag_level::error, "{}", {}};
+static const diag_templ W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
+    W_PALETTE_INDEX_OUT_OF_RANGE,
+    diag_level::warning,
+    "{} '{}': palette index '{}' out of range (numPalettesTotal = {})",
+    {
+        diag_templ{
+            "palette-index-out-of-range-note",
+            diag_level::note,
+            "substituting palette 0 so decompilation can continue"
+        }
+    }
+};
 
-static const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC,  diag_level::fatal, "{}", {}};
+static const diag_templ E_GENERIC_TEMPL{E_GENERIC, diag_level::error, "{}", {}};
+
+static const diag_templ E_FATAL_GENERIC_TEMPL{E_FATAL_GENERIC, diag_level::fatal, "{}", {}};
 
 static const std::unordered_map<const char *, diag_templ> DIAG_TEMPLS{
+    // Tileset compilation warnings
     {W_COLOR_PRECISION_LOSS, W_COLOR_PRECISION_LOSS_TEMPL},
     {W_KEY_FRAME_NO_MATCHING_TILE, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
     {W_KEY_FRAME_MISSING_COLORS, W_KEY_FRAME_MISSING_COLORS_TEMPL},
-    {W_USED_TRUE_COLOR_MODE, W_USED_TRUE_COLOR_MODE_TEMPL},
-    {W_ATTRIBUTE_FORMAT_MISMATCH,W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
-    {W_MISSING_ATTRIBUTES_CSV,W_MISSING_ATTRIBUTES_CSV_TEMPL},
-    {W_UNUSED_ATTRIBUTE,W_UNUSED_ATTRIBUTE_TEMPL},
-    {W_TRANSPARENCY_COLLAPSE,W_TRANSPARENCY_COLLAPSE_TEMPL},
+    {W_ATTRIBUTE_FORMAT_MISMATCH, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
+    {W_MISSING_ATTRIBUTES_CSV, W_MISSING_ATTRIBUTES_CSV_TEMPL},
+    {W_UNUSED_ATTRIBUTE, W_UNUSED_ATTRIBUTE_TEMPL},
+    {W_TRANSPARENCY_COLLAPSE, W_TRANSPARENCY_COLLAPSE_TEMPL},
     {W_UNUSED_MANUAL_PAL_COLOR, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
 
+    // Tileset decompilation warnings
+    {W_TILE_INDEX_OUT_OF_RANGE, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
+    {W_PALETTE_INDEX_OUT_OF_RANGE, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
+
+    // Generic errors
     {E_GENERIC, E_GENERIC_TEMPL},
-    {E_FATAL_GENERIC,E_FATAL_GENERIC_TEMPL}
+    {E_FATAL_GENERIC, E_FATAL_GENERIC_TEMPL}
 };
 // @formatter:on
 // clang-format on

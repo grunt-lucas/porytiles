@@ -522,8 +522,6 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WNO_COLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WKEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_KEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WUSED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_USED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_ATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
@@ -782,8 +780,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WKEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WKEY_FRAME_NO_MATCHING_TILE_VAL},
         {WNO_KEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WNO_KEY_FRAME_NO_MATCHING_TILE_VAL},
 
-        {WUSED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WUSED_TRUE_COLOR_MODE_VAL},
-        {WNO_USED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WNO_USED_TRUE_COLOR_MODE_VAL},
+        {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
+        {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
         {WATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WATTRIBUTE_FORMAT_MISMATCH_VAL},
         {WNO_ATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL},
@@ -796,9 +794,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
         {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
         {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
-
-        {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
-        {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
         {WUNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WUNUSED_MANUAL_PAL_COLOR_VAL},
         {WNO_UNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WNO_UNUSED_MANUAL_PAL_COLOR_VAL},
@@ -815,47 +810,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
 
         {nullptr, no_argument, nullptr, 0}};
-
-    /*
-     * Warning specific variables. We must wait until after all options are processed before we actually enable
-     * warnings, since enabling/disabling specific warnings must take precedence over the general -Wall and -Werror
-     * flags no matter where in the command line the user specified. Some of these warnings are enabled by default.
-     */
-    bool enableAllWarnings = false;
-    bool disableAllWarnings = false;
-    bool setAllEnabledWarningsToErrors = false;
-
-    // Compilation warnings
-    // TODO : Porymap now supports but needs latest version, a future release should default this warning to OFF
-    std::optional<bool> warnUsedTrueColorModeOverride{true};
-    std::optional<bool> errUsedTrueColorModeOverride{};
-
-    std::optional<bool> warnAttributeFormatMismatchOverride{};
-    std::optional<bool> errAttributeFormatMismatchOverride{};
-
-    std::optional<bool> warnMissingAttributesCsvOverride{};
-    std::optional<bool> errMissingAttributesCsvOverride{};
-
-    std::optional<bool> warnUnusedAttributeOverride{};
-    std::optional<bool> errUnusedAttributeOverride{};
-
-    std::optional<bool> warnTransparencyCollapseOverride{};
-    std::optional<bool> errTransparencyCollapseOverride{};
-
-    // Default this warning to on, since it can lead to issues
-    // https://github.com/grunt-lucas/porytiles/issues/60
-    std::optional<bool> warnKeyFrameMissingColors{true};
-    std::optional<bool> errKeyFrameMissingColors{};
-
-    std::optional<bool> warnUnusedManualPalColor{};
-    std::optional<bool> errUnusedManualPalColor{};
-
-    // Decompilation warnings
-    std::optional<bool> warnTileIndexOutOfRange{};
-    std::optional<bool> errTileIndexOutOfRange{};
-
-    std::optional<bool> warnPaletteIndexOutOfRange{};
-    std::optional<bool> errPaletteIndexOutOfRange{};
 
     /*
      * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -1082,18 +1036,15 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         // Warning and error options
         case WALL_VAL:
             validateSubcommandContext(ctx, WALL);
-            enableAllWarnings = true;
             ctx.diag->enable_all_warnings();
             break;
         case WNONE_VAL:
             validateSubcommandContext(ctx, WNONE);
-            disableAllWarnings = true;
             ctx.diag->disable_all_warnings();
             break;
         case WERROR_VAL:
             validateSubcommandContext(ctx, WERROR);
-            if (optarg == NULL) {
-                setAllEnabledWarningsToErrors = true;
+            if (optarg == nullptr) {
                 ctx.diag->upgrade_enabled_warnings_to_errors();
             } else {
                 // Compilation warnings
@@ -1101,26 +1052,24 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                     ctx.diag->enable_at_level(W_COLOR_PRECISION_LOSS, diag_level::error);
                 } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                     ctx.diag->enable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::error);
-                } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-                    errUsedTrueColorModeOverride = true;
-                } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-                    errAttributeFormatMismatchOverride = true;
-                } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-                    errMissingAttributesCsvOverride = true;
-                } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
-                    errUnusedAttributeOverride = true;
-                } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
-                    errTransparencyCollapseOverride = true;
-                } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
-                    errKeyFrameMissingColors = true;
-                } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
-                    errUnusedManualPalColor = true;
+                } else if (strcmp(optarg, W_KEY_FRAME_MISSING_COLORS) == 0) {
+                    ctx.diag->enable_at_level(W_KEY_FRAME_MISSING_COLORS, diag_level::error);
+                } else if (strcmp(optarg, W_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+                    ctx.diag->enable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, diag_level::error);
+                } else if (strcmp(optarg, W_MISSING_ATTRIBUTES_CSV) == 0) {
+                    ctx.diag->enable_at_level(W_MISSING_ATTRIBUTES_CSV, diag_level::error);
+                } else if (strcmp(optarg, W_UNUSED_ATTRIBUTE) == 0) {
+                    ctx.diag->enable_at_level(W_UNUSED_ATTRIBUTE, diag_level::error);
+                } else if (strcmp(optarg, W_TRANSPARENCY_COLLAPSE) == 0) {
+                    ctx.diag->enable_at_level(W_TRANSPARENCY_COLLAPSE, diag_level::error);
+                } else if (strcmp(optarg, W_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                    ctx.diag->enable_at_level(W_UNUSED_MANUAL_PAL_COLOR, diag_level::error);
                 }
                 // Decompilation warnings
-                else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
-                    errTileIndexOutOfRange = true;
-                } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
-                    errPaletteIndexOutOfRange = true;
+                else if (strcmp(optarg, W_TILE_INDEX_OUT_OF_RANGE) == 0) {
+                    ctx.diag->enable_at_level(W_TILE_INDEX_OUT_OF_RANGE, diag_level::error);
+                } else if (strcmp(optarg, W_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+                    ctx.diag->enable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, diag_level::error);
                 } else {
                     fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
                                                     fmt::styled(std::string{optarg}, fmt::emphasis::bold),
@@ -1135,30 +1084,27 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                 ctx.diag->disable_at_level(W_COLOR_PRECISION_LOSS, diag_level::error);
             } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
                 ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::error);
-            } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-                errUsedTrueColorModeOverride = false;
-            } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-                errAttributeFormatMismatchOverride = false;
-            } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-                errMissingAttributesCsvOverride = false;
-            } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
-                errUnusedAttributeOverride = false;
-            } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
-                errTransparencyCollapseOverride = false;
-            } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
-                errKeyFrameMissingColors = false;
-            } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
-                errUnusedManualPalColor = false;
+            } else if (strcmp(optarg, W_KEY_FRAME_MISSING_COLORS) == 0) {
+                ctx.diag->disable_at_level(W_KEY_FRAME_MISSING_COLORS, diag_level::error);
+            } else if (strcmp(optarg, W_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+                ctx.diag->disable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, diag_level::error);
+            } else if (strcmp(optarg, W_MISSING_ATTRIBUTES_CSV) == 0) {
+                ctx.diag->disable_at_level(W_MISSING_ATTRIBUTES_CSV, diag_level::error);
+            } else if (strcmp(optarg, W_UNUSED_ATTRIBUTE) == 0) {
+                ctx.diag->disable_at_level(W_UNUSED_ATTRIBUTE, diag_level::error);
+            } else if (strcmp(optarg, W_TRANSPARENCY_COLLAPSE) == 0) {
+                ctx.diag->disable_at_level(W_TRANSPARENCY_COLLAPSE, diag_level::error);
+            } else if (strcmp(optarg, W_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                ctx.diag->disable_at_level(W_UNUSED_MANUAL_PAL_COLOR, diag_level::error);
             }
             // Decompilation warnings
-            else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
-                errTileIndexOutOfRange = false;
-            } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
-                errPaletteIndexOutOfRange = false;
+            else if (strcmp(optarg, W_TILE_INDEX_OUT_OF_RANGE) == 0) {
+                ctx.diag->disable_at_level(W_TILE_INDEX_OUT_OF_RANGE, diag_level::error);
+            } else if (strcmp(optarg, W_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+                ctx.diag->disable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, diag_level::error);
             } else {
                 fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
-                                                fmt::styled(std::string{optarg}, fmt::emphasis::bold),
-                                                fmt::styled(WERROR, fmt::emphasis::bold)));
+                                                ctx.diag->bold(std::string{optarg}), ctx.diag->bold(WERROR)));
             }
             break;
 
@@ -1179,78 +1125,70 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             validateSubcommandContext(ctx, WNO_KEY_FRAME_NO_MATCHING_TILE);
             ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, diag_level::warning);
             break;
-        case WUSED_TRUE_COLOR_MODE_VAL:
-            validateSubcommandContext(ctx, WUSED_TRUE_COLOR_MODE);
-            warnUsedTrueColorModeOverride = true;
-            break;
-        case WNO_USED_TRUE_COLOR_MODE_VAL:
-            validateSubcommandContext(ctx, WNO_USED_TRUE_COLOR_MODE);
-            warnUsedTrueColorModeOverride = false;
-            break;
-        case WATTRIBUTE_FORMAT_MISMATCH_VAL:
-            validateSubcommandContext(ctx, WATTRIBUTE_FORMAT_MISMATCH);
-            warnAttributeFormatMismatchOverride = true;
-            break;
-        case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
-            validateSubcommandContext(ctx, WNO_ATTRIBUTE_FORMAT_MISMATCH);
-            warnAttributeFormatMismatchOverride = false;
-            break;
-        case WMISSING_ATTRIBUTES_CSV_VAL:
-            validateSubcommandContext(ctx, WMISSING_ATTRIBUTES_CSV);
-            warnMissingAttributesCsvOverride = true;
-            break;
-        case WNO_MISSING_ATTRIBUTES_CSV_VAL:
-            validateSubcommandContext(ctx, WNO_MISSING_ATTRIBUTES_CSV);
-            warnMissingAttributesCsvOverride = false;
-            break;
-        case WUNUSED_ATTRIBUTE_VAL:
-            validateSubcommandContext(ctx, WUNUSED_ATTRIBUTE);
-            warnUnusedAttributeOverride = true;
-            break;
-        case WNO_UNUSED_ATTRIBUTE_VAL:
-            validateSubcommandContext(ctx, WNO_UNUSED_ATTRIBUTE);
-            warnUnusedAttributeOverride = false;
-            break;
-        case WTRANSPARENCY_COLLAPSE_VAL:
-            validateSubcommandContext(ctx, WTRANSPARENCY_COLLAPSE);
-            warnTransparencyCollapseOverride = true;
-            break;
-        case WNO_TRANSPARENCY_COLLAPSE_VAL:
-            validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
-            warnTransparencyCollapseOverride = false;
-            break;
         case WKEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WKEY_FRAME_MISSING_COLORS);
-            warnKeyFrameMissingColors = true;
+            ctx.diag->enable_at_level(W_KEY_FRAME_MISSING_COLORS, diag_level::warning);
             break;
         case WNO_KEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WNO_KEY_FRAME_MISSING_COLORS);
-            warnKeyFrameMissingColors = false;
+            ctx.diag->disable_at_level(W_KEY_FRAME_MISSING_COLORS, diag_level::warning);
+            break;
+        case WATTRIBUTE_FORMAT_MISMATCH_VAL:
+            validateSubcommandContext(ctx, WATTRIBUTE_FORMAT_MISMATCH);
+            ctx.diag->enable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, diag_level::warning);
+            break;
+        case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
+            validateSubcommandContext(ctx, WNO_ATTRIBUTE_FORMAT_MISMATCH);
+            ctx.diag->disable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, diag_level::warning);
+            break;
+        case WMISSING_ATTRIBUTES_CSV_VAL:
+            validateSubcommandContext(ctx, WMISSING_ATTRIBUTES_CSV);
+            ctx.diag->enable_at_level(W_MISSING_ATTRIBUTES_CSV, diag_level::warning);
+            break;
+        case WNO_MISSING_ATTRIBUTES_CSV_VAL:
+            validateSubcommandContext(ctx, WNO_MISSING_ATTRIBUTES_CSV);
+            ctx.diag->disable_at_level(W_MISSING_ATTRIBUTES_CSV, diag_level::warning);
+            break;
+        case WUNUSED_ATTRIBUTE_VAL:
+            validateSubcommandContext(ctx, WUNUSED_ATTRIBUTE);
+            ctx.diag->enable_at_level(W_UNUSED_ATTRIBUTE, diag_level::warning);
+            break;
+        case WNO_UNUSED_ATTRIBUTE_VAL:
+            validateSubcommandContext(ctx, WNO_UNUSED_ATTRIBUTE);
+            ctx.diag->disable_at_level(W_UNUSED_ATTRIBUTE, diag_level::warning);
+            break;
+        case WTRANSPARENCY_COLLAPSE_VAL:
+            validateSubcommandContext(ctx, WTRANSPARENCY_COLLAPSE);
+            ctx.diag->enable_at_level(W_TRANSPARENCY_COLLAPSE, diag_level::warning);
+            break;
+        case WNO_TRANSPARENCY_COLLAPSE_VAL:
+            validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
+            ctx.diag->disable_at_level(W_TRANSPARENCY_COLLAPSE, diag_level::warning);
             break;
         case WUNUSED_MANUAL_PAL_COLOR_VAL:
             validateSubcommandContext(ctx, WUNUSED_MANUAL_PAL_COLOR);
-            warnUnusedManualPalColor = true;
+            ctx.diag->enable_at_level(W_UNUSED_MANUAL_PAL_COLOR, diag_level::warning);
             break;
         case WNO_UNUSED_MANUAL_PAL_COLOR_VAL:
             validateSubcommandContext(ctx, WNO_UNUSED_MANUAL_PAL_COLOR);
-            warnUnusedManualPalColor = false;
+            ctx.diag->disable_at_level(W_UNUSED_MANUAL_PAL_COLOR, diag_level::warning);
             break;
         // Decompilation warnings
         case WTILE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WTILE_INDEX_OUT_OF_RANGE);
-            warnTileIndexOutOfRange = true;
+            ctx.diag->enable_at_level(W_TILE_INDEX_OUT_OF_RANGE, diag_level::warning);
             break;
         case WNO_TILE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WNO_TILE_INDEX_OUT_OF_RANGE);
-            warnTileIndexOutOfRange = false;
+            ctx.diag->disable_at_level(W_TILE_INDEX_OUT_OF_RANGE, diag_level::warning);
             break;
         case WPALETTE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WPALETTE_INDEX_OUT_OF_RANGE);
-            warnPaletteIndexOutOfRange = true;
+            ctx.diag->enable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, diag_level::warning);
             break;
         case WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WNO_PALETTE_INDEX_OUT_OF_RANGE);
-            warnPaletteIndexOutOfRange = false;
+            ctx.diag->disable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, diag_level::warning);
             break;
 
         // Help message upon '-h/--help' goes to stdout
@@ -1325,153 +1263,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     }
 
     /*
-     * Configure warnings and errors per user specification
-     */
-    // These general options are overridden by more specific settings
-    if (enableAllWarnings) {
-        // Enable all warnings
-        ctx.err.setAllWarnings(WarningMode::WARN);
-    }
-
-    // Specific warn settings take precedence over general warn settings
-    // Compilation warnings
-    if (warnUsedTrueColorModeOverride.has_value()) {
-        ctx.err.usedTrueColorMode = warnUsedTrueColorModeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnAttributeFormatMismatchOverride.has_value()) {
-        ctx.err.attributeFormatMismatch =
-            warnAttributeFormatMismatchOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnMissingAttributesCsvOverride.has_value()) {
-        ctx.err.missingAttributesCsv = warnMissingAttributesCsvOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnUnusedAttributeOverride.has_value()) {
-        ctx.err.unusedAttribute = warnUnusedAttributeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnTransparencyCollapseOverride.has_value()) {
-        ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnKeyFrameMissingColors.has_value()) {
-        ctx.err.keyFrameMissingColors = warnKeyFrameMissingColors.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnUnusedManualPalColor.has_value()) {
-        ctx.err.unusedManualPalColor = warnUnusedManualPalColor.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    // Decompilation warnings
-    if (warnTileIndexOutOfRange.has_value()) {
-        ctx.err.tileIndexOutOfRange = warnTileIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnPaletteIndexOutOfRange.has_value()) {
-        ctx.err.paletteIndexOutOfRange = warnPaletteIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-
-    // If requested, set all enabled warnings to errors
-    if (setAllEnabledWarningsToErrors) {
-        ctx.err.setAllEnabledWarningsToErrors();
-    }
-
-    // Specific err settings take precedence over warns
-    // Compilation warnings
-    if (errUsedTrueColorModeOverride.has_value()) {
-        if (errUsedTrueColorModeOverride.value()) {
-            ctx.err.usedTrueColorMode = WarningMode::ERR;
-        } else if ((warnUsedTrueColorModeOverride.has_value() && warnUsedTrueColorModeOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.usedTrueColorMode = WarningMode::WARN;
-        } else {
-            ctx.err.usedTrueColorMode = WarningMode::OFF;
-        }
-    }
-    if (errAttributeFormatMismatchOverride.has_value()) {
-        if (errAttributeFormatMismatchOverride.value()) {
-            ctx.err.attributeFormatMismatch = WarningMode::ERR;
-        } else if ((warnAttributeFormatMismatchOverride.has_value() && warnAttributeFormatMismatchOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.attributeFormatMismatch = WarningMode::WARN;
-        } else {
-            ctx.err.attributeFormatMismatch = WarningMode::OFF;
-        }
-    }
-    if (errMissingAttributesCsvOverride.has_value()) {
-        if (errMissingAttributesCsvOverride.value()) {
-            ctx.err.missingAttributesCsv = WarningMode::ERR;
-        } else if ((warnMissingAttributesCsvOverride.has_value() && warnMissingAttributesCsvOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.missingAttributesCsv = WarningMode::WARN;
-        } else {
-            ctx.err.missingAttributesCsv = WarningMode::OFF;
-        }
-    }
-    if (errUnusedAttributeOverride.has_value()) {
-        if (errUnusedAttributeOverride.value()) {
-            ctx.err.unusedAttribute = WarningMode::ERR;
-        } else if ((warnUnusedAttributeOverride.has_value() && warnUnusedAttributeOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.unusedAttribute = WarningMode::WARN;
-        } else {
-            ctx.err.unusedAttribute = WarningMode::OFF;
-        }
-    }
-    if (errTransparencyCollapseOverride.has_value()) {
-        if (errTransparencyCollapseOverride.value()) {
-            ctx.err.transparencyCollapse = WarningMode::ERR;
-        } else if ((warnTransparencyCollapseOverride.has_value() && warnTransparencyCollapseOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.transparencyCollapse = WarningMode::WARN;
-        } else {
-            ctx.err.transparencyCollapse = WarningMode::OFF;
-        }
-    }
-    if (errKeyFrameMissingColors.has_value()) {
-        if (errKeyFrameMissingColors.value()) {
-            ctx.err.keyFrameMissingColors = WarningMode::ERR;
-        } else if ((warnKeyFrameMissingColors.has_value() && warnKeyFrameMissingColors.value()) || enableAllWarnings) {
-            ctx.err.keyFrameMissingColors = WarningMode::WARN;
-        } else {
-            ctx.err.keyFrameMissingColors = WarningMode::OFF;
-        }
-    }
-    if (errUnusedManualPalColor.has_value()) {
-        if (errUnusedManualPalColor.value()) {
-            ctx.err.unusedManualPalColor = WarningMode::ERR;
-        } else if ((warnUnusedManualPalColor.has_value() && warnUnusedManualPalColor.value()) || enableAllWarnings) {
-            ctx.err.unusedManualPalColor = WarningMode::WARN;
-        } else {
-            ctx.err.unusedManualPalColor = WarningMode::OFF;
-        }
-    }
-    // Decompilation warnings
-    if (errTileIndexOutOfRange.has_value()) {
-        if (errTileIndexOutOfRange.value()) {
-            ctx.err.tileIndexOutOfRange = WarningMode::ERR;
-        } else if ((warnTileIndexOutOfRange.has_value() && warnTileIndexOutOfRange.value()) || enableAllWarnings) {
-            ctx.err.tileIndexOutOfRange = WarningMode::WARN;
-        } else {
-            ctx.err.tileIndexOutOfRange = WarningMode::OFF;
-        }
-    }
-    if (errPaletteIndexOutOfRange.has_value()) {
-        if (errPaletteIndexOutOfRange.value()) {
-            ctx.err.paletteIndexOutOfRange = WarningMode::ERR;
-        } else if ((warnPaletteIndexOutOfRange.has_value() && warnPaletteIndexOutOfRange.value()) ||
-                   enableAllWarnings) {
-            ctx.err.paletteIndexOutOfRange = WarningMode::WARN;
-        } else {
-            ctx.err.paletteIndexOutOfRange = WarningMode::OFF;
-        }
-    }
-
-    if (disableAllWarnings) {
-        /*
-         * Disable all warnings. A single -Wnone specified anywhere on the command line always takes precedence over
-         * anything else. To my mind, this is a bit odd. But GCC does it this way, and since we are emulating the way
-         * GCC does things, we'll do it too.
-         */
-        enableAllWarnings = false;
-        ctx.err.setAllWarnings(WarningMode::OFF);
-    }
-
-    /*
      * Apply and validate the fieldmap configuration parameters
      */
     if (ctx.targetBaseGame == TargetBaseGame::EMERALD) {
@@ -1512,14 +1303,10 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         internalerror("cli_parser::parseSubcommandOptions unknown subcommand");
     }
 
-    if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
-        warn_usedTrueColorMode(ctx.err);
-    }
-
     /*
      * Die if any errors occurred
      */
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
             die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
         }
@@ -1547,11 +1334,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 3, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        parseSubcommandOptions(ctx, 3, argv);
     }
 
     SUBCASE("-Wall should enable everything") {
@@ -1573,11 +1356,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 4, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+        parseSubcommandOptions(ctx, 4, argv);
     }
 
     SUBCASE("-Wall -Werror should enable everything as an error") {
@@ -1602,11 +1381,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
+        parseSubcommandOptions(ctx, 5, argv);
     }
 
     SUBCASE("Should enable a non-default warn, set all to error, then disable the error") {
@@ -1634,11 +1409,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 6, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        parseSubcommandOptions(ctx, 6, argv);
     }
 
     SUBCASE("Should enable all warnings, then disable one of them") {
@@ -1663,11 +1434,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+        parseSubcommandOptions(ctx, 5, argv);
     }
 
     SUBCASE("Global warning disable should work, even if a warning was explicitly enabled") {
@@ -1682,21 +1449,14 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char bufWnone[64];
         strcpy(bufWnone, "-Wnone");
 
-        char bufTrueColor[64];
-        strcpy(bufTrueColor, "-Wused-true-color-mode");
-
         char bufPath[64];
         strcpy(bufPath, "/home/foo/pokeemerald");
 
         char bufHeader[64];
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
-        char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        char *const argv[] = {bufCmd, bufWnone, bufPath, bufHeader};
+        parseSubcommandOptions(ctx, 4, argv);
     }
 }
 #endif // DOCTEST_CONFIG_DISABLE

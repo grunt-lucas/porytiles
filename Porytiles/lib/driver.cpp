@@ -375,7 +375,7 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 
         animations.push_back(framePngs);
     }
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "found anim frame that was not a png");
     }
@@ -392,8 +392,9 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx, const CompilerMode c
 
     pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
     if (!exists(attributesCsvPath) || !is_regular_file(attributesCsvPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping attributes import", attributesCsvPath.string());
-        warn_attributesFileNotFound(ctx.err, attributesCsvPath);
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping attributes import", attributesCsvPath.string());
+        ctx.diag->report(W_MISSING_ATTRIBUTES_CSV, ctx.diag->bold(attributesCsvPath.string()));
+        ctx.diag->report_partner(W_MISSING_ATTRIBUTES_CSV, 0);
         return {};
     }
 
@@ -551,7 +552,8 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 
         std::size_t overridePaletteIndex{};
         try {
-            overridePaletteIndex = parseInteger<std::size_t>(overrideFile.stem().c_str(), 10);
+            const auto stem = overrideFile.stem();
+            overridePaletteIndex = parseInteger<std::size_t>(stem.c_str(), 10);
         } catch ([[maybe_unused]] const std::exception &e) {
             internalerror("driver::preparePaletteOverridesForImport parseInteger with invalid pal override file name");
         }
@@ -561,7 +563,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
             if (overridePaletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
                 error(ctx.err,
                       fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
-                                  fullOverrideFilename.string(), fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
+                                  fullOverrideFilename.string(), styled(overridePaletteIndex, fmt::emphasis::bold),
                                   ctx.fieldmapConfig.numPalettesInPrimary));
             }
         } else if (compilerMode == CompilerMode::SECONDARY) {
@@ -800,7 +802,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
 
     auto attributesMap = prepareDecompiledAttributesForImport(
         ctx, compilerMode, behaviorMap, ctx.compilerSrcPaths.modeBasedAttributePath(compilerMode));
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        fmt::format("errors generated during {} attributes import", compilerModeString(compilerMode)));
     }
@@ -818,7 +820,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
     auto [paletteOverrides, paletteOverrideMap] = preparePaletteOverridesForImport(
         ctx, compilerMode, ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode));
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "errors encountered while importing manual palettes");
     }
 
@@ -827,7 +829,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
         if (assignCacheFile.fail()) {
             fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
                        fmt::format("{}: could not open for reading",
-                                   ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).c_str()));
+                                   ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).string()));
         }
         importAssignmentCache(ctx, compilerMode, parentCompilerMode, assignCacheFile);
         assignCacheFile.close();

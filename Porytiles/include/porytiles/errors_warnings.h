@@ -21,114 +21,14 @@ struct ErrorsAndWarnings {
      * counts instead of just a generalized count.
      */
     std::size_t errCount;
-    std::size_t keyFrameMissingColorsErrCount;
-    std::size_t warnCount;
     bool printErrors;
 
-    WarningMode usedTrueColorMode;
-    WarningMode attributeFormatMismatch;
-    WarningMode missingAttributesCsv;
-    WarningMode unusedAttribute;
-    WarningMode transparencyCollapse;
-    WarningMode assignCacheOverride;
-    WarningMode invalidAssignCache;
-    WarningMode missingAssignCache;
-    WarningMode keyFrameMissingColors;
-    WarningMode unusedManualPalColor;
-
-    // Decompilation warnings
-    WarningMode tileIndexOutOfRange;
-    WarningMode paletteIndexOutOfRange;
-
-    ErrorsAndWarnings()
-        : errCount{0}, keyFrameMissingColorsErrCount{0}, warnCount{0}, printErrors{true},
-          usedTrueColorMode{WarningMode::OFF}, attributeFormatMismatch{WarningMode::OFF},
-          missingAttributesCsv{WarningMode::OFF}, unusedAttribute{WarningMode::OFF},
-          transparencyCollapse{WarningMode::OFF}, assignCacheOverride{WarningMode::OFF},
-          invalidAssignCache{WarningMode::OFF}, missingAssignCache{WarningMode::OFF},
-          keyFrameMissingColors(WarningMode::OFF), unusedManualPalColor(WarningMode::OFF),
-          tileIndexOutOfRange{WarningMode::OFF}, paletteIndexOutOfRange{WarningMode::OFF} {}
+    ErrorsAndWarnings() : errCount{0}, printErrors{true} {}
 
     [[nodiscard]] std::size_t errTotal() const {
-        return errCount + keyFrameMissingColorsErrCount;
-    }
-
-    void setAllWarnings(WarningMode setting) {
-        // Compilation warnings
-        usedTrueColorMode = setting;
-        attributeFormatMismatch = setting;
-        missingAttributesCsv = setting;
-        unusedAttribute = setting;
-        transparencyCollapse = setting;
-        assignCacheOverride = setting;
-        invalidAssignCache = setting;
-        missingAssignCache = setting;
-        keyFrameMissingColors = setting;
-        unusedManualPalColor = setting;
-
-        // Decompilation warnings
-        tileIndexOutOfRange = setting;
-        paletteIndexOutOfRange = setting;
-    }
-
-    void setAllEnabledWarningsToErrors() {
-        // Compilation warnings
-        if (usedTrueColorMode == WarningMode::WARN) {
-            usedTrueColorMode = WarningMode::ERR;
-        }
-        if (attributeFormatMismatch == WarningMode::WARN) {
-            attributeFormatMismatch = WarningMode::ERR;
-        }
-        if (missingAttributesCsv == WarningMode::WARN) {
-            missingAttributesCsv = WarningMode::ERR;
-        }
-        if (unusedAttribute == WarningMode::WARN) {
-            unusedAttribute = WarningMode::ERR;
-        }
-        if (transparencyCollapse == WarningMode::WARN) {
-            transparencyCollapse = WarningMode::ERR;
-        }
-        if (assignCacheOverride == WarningMode::WARN) {
-            assignCacheOverride = WarningMode::ERR;
-        }
-        if (invalidAssignCache == WarningMode::WARN) {
-            invalidAssignCache = WarningMode::ERR;
-        }
-        if (missingAssignCache == WarningMode::WARN) {
-            missingAssignCache = WarningMode::ERR;
-        }
-        if (keyFrameMissingColors == WarningMode::WARN) {
-            keyFrameMissingColors = WarningMode::ERR;
-        }
-        if (unusedManualPalColor == WarningMode::WARN) {
-            unusedManualPalColor = WarningMode::ERR;
-        }
-
-        // Decompilation warnings
-        if (tileIndexOutOfRange == WarningMode::WARN) {
-            tileIndexOutOfRange = WarningMode::ERR;
-        }
-        if (paletteIndexOutOfRange == WarningMode::WARN) {
-            paletteIndexOutOfRange = WarningMode::ERR;
-        }
+        return errCount;
     }
 };
-
-// Compilation warnings
-extern const char *const WARN_USED_TRUE_COLOR_MODE;
-extern const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH;
-extern const char *const WARN_MISSING_ATTRIBUTES_CSV;
-extern const char *const WARN_UNUSED_ATTRIBUTE;
-extern const char *const WARN_TRANSPARENCY_COLLAPSE;
-extern const char *const WARN_ASSIGN_CACHE_OVERRIDE;
-extern const char *const WARN_INVALID_ASSIGN_CACHE;
-extern const char *const WARN_MISSING_ASSIGN_CACHE;
-extern const char *const WARN_KEY_FRAME_MISSING_COLORS;
-extern const char *const WARN_UNUSED_MANUAL_PAL_COLOR;
-
-// Decompilation warnings
-extern const char *const WARN_TILE_INDEX_OUT_OF_RANGE;
-extern const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE;
 
 /*
  * Internal compiler errors (due to bug in the compiler)
@@ -259,39 +159,6 @@ void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &er
 
 void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const DecompilerSourcePaths &srcs,
                                    DecompilerMode mode);
-
-/*
- * Compilation warnings (due to possible mistakes in user input), compilation can continue
- */
-void warn_usedTrueColorMode(ErrorsAndWarnings &err);
-
-void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
-
-void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame);
-
-void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath);
-
-void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
-                          std::string sourcePath);
-
-void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile,
-                                                      std::size_t row, std::size_t col, const RGBA32 &color,
-                                                      const RGBA32 &transparency);
-
-void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
-                                std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors,
-                                const std::string &animName);
-
-void warn_unusedManualPalColor(ErrorsAndWarnings &err, const std::string &jasc, const std::string &fileName);
-
-/*
- * Decompilation warnings (due to possible mistakes in user input), decompilation can continue
- */
-void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
-                              std::size_t tilesheetSize, const RGBATile &tile);
-
-void warn_paletteIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t paletteIndex,
-                                 std::size_t numPalettesTotal, const RGBATile &tile);
 
 /*
  * Die functions

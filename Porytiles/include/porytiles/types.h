@@ -111,6 +111,14 @@ struct RGBA32 {
     friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
 };
 
+/*
+ * Provide a simple way for fmtlib to format the RGBA32:
+ * https://fmt.dev/11.1/api/#formatting-user-defined-types
+ */
+inline auto format_as(const RGBA32 &rgba) {
+    return rgba.jasc();
+}
+
 extern const RGBA32 RGBA_BLACK;
 extern const RGBA32 RGBA_RED;
 extern const RGBA32 RGBA_GREEN;
@@ -370,20 +378,6 @@ template <> struct std::hash<porytiles::GBATile> {
         return hashValue;
     }
 };
-
-// Specialize fmt::formatter for MyType.
-// template <> struct fmt::formatter<porytiles::RGBATile> {
-//     // Parse format specifiers (none in this simple case).
-//     constexpr auto parse(format_parse_context &ctx) {
-//         return ctx.begin(); // Accepts the default format specifiers.
-//     }
-//
-//     // Format the value 'value' into the output iterator 'ctx.out()'.
-//     template <typename FormatContext> auto format(const porytiles::RGBATile &value, FormatContext &ctx) {
-//         // Here we create a custom string representation.
-//         return fmt::format_to(ctx.out(), "{}", value.prettify().c_str());
-//     }
-// };
 
 namespace porytiles {
 /**

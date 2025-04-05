@@ -13,13 +13,14 @@ int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
     auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::stderr_consumer>());
     ctx.set_diag_engine(std::move(engine));
-    porytiles::parseOptions(ctx, argc, argv);
-    porytiles::drive(ctx);
+    parseOptions(ctx, argc, argv);
+    drive(ctx);
 
-    if (ctx.err.warnCount == 1) {
-        porytiles::pt_println(stderr, "{} warning generated.", ctx.err.warnCount);
-    } else if (ctx.err.warnCount > 1) {
-        porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
+    const auto warn_count = ctx.diag->in_flight_count_for_level(porytiles::diag_level::warning);
+    if (warn_count == 1) {
+        porytiles::pt_println(stderr, "{} warning generated.", warn_count);
+    } else if (warn_count > 1) {
+        porytiles::pt_println(stderr, "{} warnings generated.", warn_count);
     }
 
     return 0;

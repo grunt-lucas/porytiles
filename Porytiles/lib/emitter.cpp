@@ -328,7 +328,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
         }
     }
 
-    if (ctx.err.errCount > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
         die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                        "behavior value did not have reverse mapping");
     }

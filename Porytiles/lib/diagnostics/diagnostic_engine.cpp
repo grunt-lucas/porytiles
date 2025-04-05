@@ -4,7 +4,7 @@
 #include <doctest.h>
 #endif // DOCTEST_CONFIG_DISABLE
 
-#include "panic/panic.hpp"
+#include "./panic/panic.hpp"
 
 namespace {
 
@@ -87,11 +87,21 @@ void diag_engine::disable_at_level(std::string_view diag, diag_level override) {
     }
 }
 
+diag_level diag_engine::enabled_at(std::string_view diag) const {
+    if (!enabled_at_level_.contains(diag.data())) {
+        return diag_level::ignored;
+    }
+    assert_or_panic(!enabled_at_level_.at(diag.data()).empty(),
+                    fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
+    // Return the highest level present
+    return *enabled_at_level_.at(diag.data()).rbegin();
+}
+
 std::uint64_t diag_engine::in_flight_count_for_level(diag_level level) const {
     return std::ranges::count(in_flight_diags_, level, &in_flight_diag::level);
 }
 
-std::uint64_t diag_engine::count_for(std::string_view diag) const {
+std::uint64_t diag_engine::in_flight_count_for(std::string_view diag) const {
     auto diag_str = std::string{diag};
     if (!diag_counts_.contains(diag_str)) {
         return 0;
@@ -103,6 +113,7 @@ const diag_consumer &diag_engine::consumer() const {
     return *consumer_;
 }
 
+// ReSharper disable once CppParameterMayBeConst
 diag_level diag_engine::compute_level(std::string_view diag) const {
     const auto &templ = diag_templ_for(diag);
 
@@ -112,8 +123,7 @@ diag_level diag_engine::compute_level(std::string_view diag) const {
     }
 
     // Return level override if present
-    auto diag_str = std::string{diag};
-    if (enabled_at_level_.contains(diag_str)) {
+    if (auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
         assert_or_panic(!enabled_at_level_.at(diag_str).empty(),
                         fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
         // Return the highest level present
@@ -205,34 +215,40 @@ TEST_CASE("diag_engine basic -Wall functionality should work") {
     porytiles::diag_engine engine{std::make_unique<porytiles::vector_consumer>()};
 
     porytiles::RGBATile tile{};
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, "foo", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
+    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, std::string{"foo"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 0);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 0);
-    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 0);
+    CHECK(engine.in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS) == 0);
 
+    CHECK(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS) == porytiles::diag_level::ignored);
+    CHECK(engine.enabled_at(porytiles::W_TRANSPARENCY_COLLAPSE) == porytiles::diag_level::ignored);
+    CHECK(engine.enabled_at(porytiles::W_UNUSED_ATTRIBUTE) == porytiles::diag_level::ignored);
     engine.enable_all_warnings();
+    CHECK(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS) == porytiles::diag_level::warning);
+    CHECK(engine.enabled_at(porytiles::W_TRANSPARENCY_COLLAPSE) == porytiles::diag_level::warning);
+    CHECK(engine.enabled_at(porytiles::W_UNUSED_ATTRIBUTE) == porytiles::diag_level::warning);
 
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
-    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, "foo", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
+    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, std::string{"foo"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 2);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
-    CHECK(engine.count_for(porytiles::W_COLOR_PRECISION_LOSS) == 1);
+    CHECK(engine.in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS) == 1);
 
     engine.report(porytiles::W_TRANSPARENCY_COLLAPSE, "foo", "bar", "baz", zero, zero);
     CHECK(engine.consumer().consumed_count() == 3);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 2);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
-    CHECK(engine.count_for(porytiles::W_TRANSPARENCY_COLLAPSE) == 1);
+    CHECK(engine.in_flight_count_for(porytiles::W_TRANSPARENCY_COLLAPSE) == 1);
 
     engine.report(porytiles::W_UNUSED_ATTRIBUTE, 12);
     CHECK(engine.consumer().consumed_count() == 4);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 3);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::note) == 1);
-    CHECK(engine.count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+    CHECK(engine.in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
 }
 
 TEST_CASE("diag_engine explicit enablement should work as expected") {
@@ -240,30 +256,33 @@ TEST_CASE("diag_engine explicit enablement should work as expected") {
     porytiles::diag_engine engine{std::make_unique<porytiles::vector_consumer>()};
 
     porytiles::RGBATile tile{};
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 0);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 0);
 
+    CHECK(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS) == porytiles::diag_level::ignored);
     engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::warning);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    CHECK(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS) == porytiles::diag_level::warning);
+
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
 
     engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 2);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 1);
 
     // Disabling at warning doesn't change anything, since it's still enabled at error level
     engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::warning);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 3);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 2);
 
     engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, "foo", "bar", zero, zero);
+    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, zero, zero);
     CHECK(engine.consumer().consumed_count() == 3);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::warning) == 1);
     CHECK(engine.in_flight_count_for_level(porytiles::diag_level::error) == 2);

@@ -21,19 +21,6 @@
 
 namespace porytiles {
 
-// Compilation warnings
-const char *const WARN_USED_TRUE_COLOR_MODE = "used-true-color-mode";
-const char *const WARN_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
-const char *const WARN_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-const char *const WARN_UNUSED_ATTRIBUTE = "unused-attribute";
-const char *const WARN_TRANSPARENCY_COLLAPSE = "transparency-collapse";
-const char *const WARN_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
-const char *const WARN_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
-
-// Decompilation warnings
-const char *const WARN_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
-const char *const WARN_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
-
 std::string getTilePrettyString(const RGBATile &tile) {
     // TODO : display indexes according to offsets? (so they match up with Porymap?)
     std::string tileString = "";
@@ -528,156 +515,6 @@ void fatalerror_noImpliedLayerType(const ErrorsAndWarnings &err, const Decompile
     die_decompilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("no implied layer type"));
 }
 
-static void printWarning(ErrorsAndWarnings &err, WarningMode warningMode, const std::string_view &warningName,
-                         const std::string &message) {
-    if (warningMode == WarningMode::ERR) {
-        err.errCount++;
-        if (err.printErrors) {
-            pt_err("{} [{}]", message,
-                   fmt::styled(fmt::format("-Werror={}", warningName),
-                               fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
-        }
-    } else if (warningMode == WarningMode::WARN) {
-        err.warnCount++;
-        if (err.printErrors) {
-            pt_warn("{} [{}]", message,
-                    fmt::styled(fmt::format("-W{}", warningName),
-                                fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
-        }
-    }
-}
-
-void warn_usedTrueColorMode(ErrorsAndWarnings &err) {
-    std::string message = "`true-color' mode requires Porymap minimum version 5.2.0";
-    printWarning(err, err.usedTrueColorMode, WARN_USED_TRUE_COLOR_MODE, message);
-    if (err.printErrors && err.usedTrueColorMode != WarningMode::OFF) {
-        pt_note("if you are using an older version of Porymap, either update it or disable `true-color' mode");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_tooManyAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame) {
-    printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
-                 fmt::format("{}: too many attribute columns for base game `{}'", filePath,
-                             fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
-    if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
-        pt_println(stderr, "");
-    }
-}
-
-void warn_tooFewAttributesForTargetGame(ErrorsAndWarnings &err, std::string filePath, TargetBaseGame baseGame) {
-    printWarning(err, err.attributeFormatMismatch, WARN_ATTRIBUTE_FORMAT_MISMATCH,
-                 fmt::format("{}: too few attribute columns for base game `{}'", filePath,
-                             fmt::styled(targetBaseGameString(baseGame), fmt::emphasis::bold)));
-    if (err.printErrors && err.attributeFormatMismatch != WarningMode::OFF) {
-        pt_note("unspecified columns will receive default values");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_attributesFileNotFound(ErrorsAndWarnings &err, std::string filePath) {
-    printWarning(err, err.missingAttributesCsv, WARN_MISSING_ATTRIBUTES_CSV,
-                 fmt::format("{}: attributes file did not exist", filePath));
-    if (err.printErrors && err.missingAttributesCsv != WarningMode::OFF) {
-        pt_note("all attributes will receive default or inferred values");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_unusedAttribute(ErrorsAndWarnings &err, std::size_t metatileId, std::size_t metatileCount,
-                          std::string sourcePath) {
-    printWarning(
-        err, err.unusedAttribute, WARN_UNUSED_ATTRIBUTE,
-        fmt::format("found attribute for nonexistent metatile ID {}", fmt::styled(metatileId, fmt::emphasis::bold)));
-    if (err.printErrors && err.unusedAttribute != WarningMode::OFF) {
-        pt_note("{} metatiles found at source path {}", metatileCount, fmt::styled(sourcePath, fmt::emphasis::bold));
-        pt_println(stderr, "");
-    }
-}
-
-void warn_nonTransparentRgbaCollapsedToTransparentBgr(ErrorsAndWarnings &err, CompilerMode mode, const RGBATile &tile,
-                                                      std::size_t row, std::size_t col, const RGBA32 &color,
-                                                      const RGBA32 &transparency) {
-    std::string tileString = getTilePrettyString(tile);
-    printWarning(
-        err, err.transparencyCollapse, WARN_TRANSPARENCY_COLLAPSE,
-        fmt::format("color `{}' at {} `{}' subtile pixel col {}, row {} collapsed to transparent under BGR conversion",
-                    fmt::styled(color.jasc(), fmt::emphasis::bold), compilerModeString(mode),
-                    fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(col, fmt::emphasis::bold),
-                    fmt::styled(row, fmt::emphasis::bold)));
-    if (err.printErrors && err.transparencyCollapse != WarningMode::OFF) {
-        pt_note("if you did not intend this to be a transparent pixel, please edit the color on the respective layer "
-                "sheet");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_keyFrameMissingColors(ErrorsAndWarnings &err, const CompilerSourcePaths &srcs, const CompilerMode &mode,
-                                std::size_t tileIndex, const std::unordered_set<RGBA32> &missingColors,
-                                const std::string &animName) {
-    if (err.keyFrameMissingColors == WarningMode::ERR) {
-        err.keyFrameMissingColorsErrCount++;
-        if (err.printErrors) {
-            pt_err("animation `{}' key frame tile `{}' missing essential colors [{}]",
-                   fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
-                   fmt::styled(fmt::format("-Werror={}", WARN_KEY_FRAME_MISSING_COLORS),
-                               fmt::emphasis::bold | fmt::fg(fmt::terminal_color::red)));
-        }
-    } else if (err.keyFrameMissingColors == WarningMode::WARN) {
-        err.warnCount++;
-        if (err.printErrors) {
-            pt_warn("animation `{}' key frame tile `{}' missing essential colors [{}]",
-                    fmt::styled(animName, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
-                    fmt::styled(fmt::format("-W{}", WARN_KEY_FRAME_MISSING_COLORS),
-                                fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta)));
-        }
-    }
-    if (err.printErrors) {
-        pt_note("the following colors were missing from the key frame:");
-        for (const auto &color : missingColors) {
-            pt_println(stderr, "  {}", fmt::styled(color.jasc(), fmt::emphasis::bold));
-        }
-        pt_println(stderr, "If left uncorrected, this may lead to the issue described here:");
-        pt_println(stderr, "  https://github.com/grunt-lucas/porytiles/issues/60");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_unusedManualPalColor(ErrorsAndWarnings &err, const std::string &jasc, const std::string &fileName) {
-    printWarning(
-        err, err.unusedManualPalColor, WARN_UNUSED_MANUAL_PAL_COLOR,
-        fmt::format("{}: `{}' was not used in layers or anims", fileName, fmt::styled(jasc, fmt::emphasis::bold)));
-    if (err.printErrors && err.unusedManualPalColor != WarningMode::OFF) {
-        pt_println(stderr, "");
-    }
-}
-
-void warn_tileIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t tileIndex,
-                              std::size_t tilesheetSize, const RGBATile &tile) {
-    std::string tileString = getTilePrettyString(tile);
-    printWarning(err, err.tileIndexOutOfRange, WARN_TILE_INDEX_OUT_OF_RANGE,
-                 fmt::format("{} `{}': tile index {} out of range (sheet size = {})", decompilerModeString(mode),
-                             fmt::styled(tileString, fmt::emphasis::bold), fmt::styled(tileIndex, fmt::emphasis::bold),
-                             tilesheetSize));
-    if (err.printErrors && err.tileIndexOutOfRange != WarningMode::OFF) {
-        pt_note("substituting primary tile 0 (transparent tile) so decompilation can continue");
-        pt_println(stderr, "");
-    }
-}
-
-void warn_paletteIndexOutOfRange(ErrorsAndWarnings &err, DecompilerMode mode, std::size_t paletteIndex,
-                                 std::size_t numPalettesTotal, const RGBATile &tile) {
-    std::string tileString = getTilePrettyString(tile);
-    printWarning(err, err.paletteIndexOutOfRange, WARN_PALETTE_INDEX_OUT_OF_RANGE,
-                 fmt::format("{} `{}': palette index {} out of range (numPalettesTotal = {})",
-                             decompilerModeString(mode), fmt::styled(tileString, fmt::emphasis::bold),
-                             fmt::styled(paletteIndex, fmt::emphasis::bold), numPalettesTotal));
-    if (err.printErrors && err.paletteIndexOutOfRange != WarningMode::OFF) {
-        pt_note("substituting palette 0 so decompilation can continue");
-        pt_println(stderr, "");
-    }
-}
-
 void die(const ErrorsAndWarnings &err, std::string errorMessage) {
     if (err.printErrors) {
         pt_println(stderr, "{}", errorMessage);
@@ -708,25 +545,8 @@ void die_decompilationTerminated(const ErrorsAndWarnings &err, std::string srcPa
 
 void die_errorCount(const ErrorsAndWarnings &err, std::string srcPath, std::string errorMessage) {
     if (err.printErrors) {
-        std::string errorStr;
-        if (err.errTotal() == 1) {
-            errorStr = "error";
-        } else {
-            errorStr = "errors";
-        }
-        std::string warnStr;
-        if (err.warnCount == 1) {
-            warnStr = "warning";
-        } else {
-            warnStr = "warnings";
-        }
-        if (err.warnCount > 0) {
-            pt_println(stderr, "{} {} and {} {} generated.", std::to_string(err.warnCount), warnStr,
-                       std::to_string(err.errTotal()), errorStr);
-        } else {
-            pt_println(stderr, "{} {} generated.", std::to_string(err.errTotal()), errorStr);
-        }
-        pt_println(stderr, "terminating compilation of {}", fmt::styled(srcPath, fmt::emphasis::bold));
+        // TODO : display warn and err count here once all errors are migrated
+        pt_println(stderr, "terminating compilation of {}", styled(srcPath, fmt::emphasis::bold));
     }
     throw PorytilesException{errorMessage};
 }
@@ -1154,6 +974,7 @@ TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile beha
 
 TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses") {
     porytiles::PorytilesContext ctx{};
+    ctx.err.printErrors = false;
     auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
     ctx.set_diag_engine(std::move(engine));
     ctx.diag->enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::diag_level::error);
@@ -1162,14 +983,13 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_colorPrecisionLoss";
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-    ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
-    CHECK(ctx.diag->count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
     CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 3);
     CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::note) == 3);
 }
@@ -1177,6 +997,7 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
 TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame tile is not used") {
     SUBCASE("it should trigger correctly for a primary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
         auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
         ctx.set_diag_engine(std::move(engine));
         ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::diag_level::error);
@@ -1186,19 +1007,19 @@ TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame
         ctx.compilerSrcPaths.primarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
                              porytiles::PorytilesException);
-        CHECK(ctx.diag->count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
         CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 2);
     }
 
     SUBCASE("it should trigger correctly for a secondary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
         auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
         ctx.set_diag_engine(std::move(engine));
         ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::diag_level::error);
@@ -1210,14 +1031,13 @@ TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame
         ctx.compilerSrcPaths.secondarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
                              porytiles::PorytilesException);
-        CHECK(ctx.diag->count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
         CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 2);
     }
 }
@@ -1225,51 +1045,64 @@ TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame
 TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
-    ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH, porytiles::diag_level::error);
     ctx.targetBaseGame = porytiles::TargetBaseGame::EMERALD;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
                                                             "Resources/Tests/csv/correct_2.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
-    CHECK(ctx.err.errCount == 1);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH) == 1);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
 }
 
 TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn") {
     porytiles::PorytilesContext ctx{};
     ctx.err.printErrors = false;
-    ctx.err.attributeFormatMismatch = porytiles::WarningMode::ERR;
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH, porytiles::diag_level::error);
     ctx.targetBaseGame = porytiles::TargetBaseGame::FIRERED;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
     CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
                                                             "Resources/Tests/csv/correct_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles::PorytilesException);
-    CHECK(ctx.err.errCount == 1);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH) == 1);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
 }
 
 TEST_CASE("warn_attributesFileNotFound should correctly warn") {
     SUBCASE("it should trigger correctly for a primary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_MISSING_ATTRIBUTES_CSV, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
         ctx.compilerSrcPaths.primarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/primary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 1);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_MISSING_ATTRIBUTES_CSV) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
     }
 
     SUBCASE("it should trigger correctly for a secondary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_MISSING_ATTRIBUTES_CSV, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1278,7 +1111,6 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn") {
         ctx.compilerSrcPaths.secondarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.missingAttributesCsv = porytiles::WarningMode::ERR;
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -1286,31 +1118,39 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn") {
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 1);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_MISSING_ATTRIBUTES_CSV) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
     }
 }
 
 TEST_CASE("warn_unusedAttribute should correctly warn") {
     SUBCASE("it should trigger correctly for a primary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
         ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 1);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
     }
 
     SUBCASE("it should trigger correctly for a secondary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1318,19 +1158,22 @@ TEST_CASE("warn_unusedAttribute should correctly warn") {
             "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
         ctx.compilerSrcPaths.secondarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/secondary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 1);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
     }
 
     SUBCASE("it should trigger correctly for a dual layer primary set") {
         porytiles::PorytilesContext ctx{};
+        ctx.err.printErrors = false;
+        auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::diag_level::error);
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
         ctx.fieldmapConfig.numPalettesInPrimary = 2;
         ctx.fieldmapConfig.numPalettesTotal = 4;
@@ -1338,34 +1181,79 @@ TEST_CASE("warn_unusedAttribute should correctly warn") {
         ctx.compilerSrcPaths.primarySourcePath =
             "Resources/Tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-        ctx.err.unusedAttribute = porytiles::WarningMode::ERR;
-        ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
-        CHECK(ctx.err.errCount == 1);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 1);
     }
 }
 
 TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses") {
     porytiles::PorytilesContext ctx{};
+    ctx.err.printErrors = false;
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_TRANSPARENCY_COLLAPSE, porytiles::diag_level::error);
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
     ctx.fieldmapConfig.numPalettesInPrimary = 1;
     ctx.fieldmapConfig.numPalettesTotal = 2;
     ctx.compilerSrcPaths.primarySourcePath =
-        "Resources/Tests/errors_and_warnings/error_nonTransparentRgbaCollapsedToTransparentBgr";
+        "Resources/Tests/errors_and_warnings/warn_nonTransparentRgbaCollapsedToTransparentBgr";
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
-    ctx.err.transparencyCollapse = porytiles::WarningMode::ERR;
-    ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
-    CHECK(ctx.err.errCount == 2);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_TRANSPARENCY_COLLAPSE) == 2);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 2);
 }
-#endif // PORYTILES_TEST_ERRORS_WARNINGS
+
+TEST_CASE("warn_unusedManualPalColor should trigger correctly") {
+    porytiles::PorytilesContext ctx{};
+    ctx.err.printErrors = false;
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_UNUSED_MANUAL_PAL_COLOR, porytiles::diag_level::error);
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedManualPalColor";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.cacheAssign = false;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_MANUAL_PAL_COLOR) == 4);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 4);
+}
+
+TEST_CASE("warn_indexOutOfRangeWarnings should trigger correctly") {
+    porytiles::PorytilesContext ctx{};
+    ctx.err.printErrors = false;
+    auto engine = std::make_unique<porytiles::diag_engine>(std::make_unique<porytiles::ignore_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_TILE_INDEX_OUT_OF_RANGE, porytiles::diag_level::error);
+    ctx.diag->enable_at_level(porytiles::W_PALETTE_INDEX_OUT_OF_RANGE, porytiles::diag_level::error);
+    ctx.subcommand = porytiles::Subcommand::DECOMPILE_SECONDARY;
+    ctx.decompilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/warn_indexOutOfRangeWarnings/general";
+    ctx.decompilerSrcPaths.secondarySourcePath =
+        "Resources/Tests/errors_and_warnings/warn_indexOutOfRangeWarnings/petalburg";
+    ctx.decompilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors encountered while decompiling tileset",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_TILE_INDEX_OUT_OF_RANGE) == 8);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_PALETTE_INDEX_OUT_OF_RANGE) == 8);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::diag_level::error) == 16);
+}
+
+#endif // DOCTEST_CONFIG_DISABLE
