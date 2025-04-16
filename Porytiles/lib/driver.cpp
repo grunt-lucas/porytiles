@@ -33,64 +33,74 @@ static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMod
 
     if (!exists(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode)) ||
         !is_directory(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: source path did not exist or is not a directory",
-                               ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: source path did not exist or is not a directory",
+                                     ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 }
 
@@ -101,45 +111,52 @@ static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode 
 
     if (!exists(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode)) ||
         !is_directory(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: source path did not exist or is not a directory",
-                               ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: source path did not exist or is not a directory",
+                                     ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode))) {
-        fatalerror(
-            ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-            fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
+        const auto msg =
+            fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: directory did not exist",
-                               ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: directory did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode)};
-    } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 
     if (!exists(ctx.decompilerSrcPaths.metatileBehaviors) ||
         !is_regular_file(ctx.decompilerSrcPaths.metatileBehaviors)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: behaviors header did not exist or was not a regular file",
-                               ctx.decompilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: behaviors header did not exist or was not a regular file",
+                                     ctx.decompilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 }
 
@@ -153,41 +170,49 @@ static void validateCompileOutputs(PorytilesContext &ctx, const CompilerMode com
     using std::filesystem::is_regular_file;
 
     if (exists(ctx.output.path) && !is_directory(ctx.output.path)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but is not a directory", ctx.output.path));
+        const auto msg = fmt::format("{}: exists but is not a directory", ctx.output.path);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(attributesPath) && !is_regular_file(attributesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", attributesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", attributesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(tilesetPath) && !is_regular_file(tilesetPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", tilesetPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", tilesetPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(metatilesPath) && !is_regular_file(metatilesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", metatilesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", metatilesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(palettesPath) && !is_directory(palettesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a directory", palettesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a directory", palettesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(animsPath) && !is_directory(animsPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a directory", animsPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a directory", animsPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     try {
         create_directories(palettesPath);
     } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("could not create `{}': {}", palettesPath.string(), e.what()));
+        const auto msg = fmt::format("could not create '{}': {}", palettesPath.string(), e.what());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         create_directories(animsPath);
     } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("could not create `{}': {}", animsPath.string(), e.what()));
+        const auto msg = fmt::format("could not create '{}': {}", animsPath.string(), e.what());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 }
 
@@ -202,32 +227,38 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
     using std::filesystem::is_regular_file;
 
     if (exists(ctx.output.path) && !is_directory(ctx.output.path)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("{}: exists but is not a directory", ctx.output.path));
+        const auto msg = fmt::format("{}: exists but is not a directory", ctx.output.path);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(attributesPath) && !is_regular_file(attributesPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", attributesPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", attributesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(bottomPath) && !is_regular_file(bottomPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", bottomPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", bottomPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(middlePath) && !is_regular_file(middlePath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", middlePath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", middlePath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(topPath) && !is_regular_file(topPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", topPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", topPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 
     if (!outputPath.empty()) {
         try {
             create_directories(outputPath);
         } catch (const std::exception &e) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       fmt::format("could not create `{}': {}", outputPath.string(), e.what()));
+            const auto msg = fmt::format("could not create '{}': {}", outputPath.string(), e.what());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
     }
 }
@@ -240,7 +271,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
 
 //   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
 //   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-//     pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+//     pt_logln(ctx, stderr, "path '{}' did not exist, skipping animations import", animationPath.string());
 //     return animations;
 //   }
 //   std::vector<std::filesystem::path> animationDirectories;
@@ -317,7 +348,7 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 
     pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
     if (!exists(animationPath) || !is_directory(animationPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping animations import", animationPath.string());
         return animations;
     }
     std::vector<path> animationDirectories;
@@ -334,7 +365,11 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
         std::unordered_map<std::size_t, path> frames{};
         path keyFrameFile = animDir / path{"key.png"};
         if (!exists(keyFrameFile) || !is_regular_file(keyFrameFile)) {
-            fatalerror_missingKeyFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode, animDir.filename().string());
+            const auto msg =
+                fmt::format("animation '{}' was missing key frame file", ctx.diag->bold(animDir.filename().string()));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("animation {} missing key frame file", animDir.filename().string()));
         }
         frames.insert(std::pair{0, keyFrameFile});
         pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());
@@ -354,13 +389,23 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 
         std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
         if (frames.size() == 1) {
-            fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                    animDir.filename().string(), 0);
+            const auto msg =
+                fmt::format("animation '{}' was missing expected frame file '{}'",
+                            ctx.diag->bold(animDir.filename().string()), ctx.diag->bold(palIndexToFileName(0)));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("animation {} missing required anim frame file {}",
+                                                  animDir.filename().string(), palIndexToFileName(0)));
         }
         for (std::size_t i = 0; i < frames.size(); i++) {
             if (!frames.contains(i)) {
-                fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                        animDir.filename().string(), i - 1);
+                const auto msg =
+                    fmt::format("animation '{}' was missing expected frame file '{}'",
+                                ctx.diag->bold(animDir.filename().string()), ctx.diag->bold(palIndexToFileName(i - 1)));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                          fmt::format("animation {} missing required anim frame file {}",
+                                                      animDir.filename().string(), palIndexToFileName(i - 1)));
             }
 
             try {
@@ -369,13 +414,15 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
                 AnimationPng animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
                 framePngs.push_back(animPng);
             } catch ([[maybe_unused]] const std::exception &exception) {
-                error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+                ctx.diag->report(E_GENERIC, fmt::format("animation '{}' frame file '{}' was not a valid PNG file",
+                                                        ctx.diag->bold(animDir.filename().string()),
+                                                        ctx.diag->bold(frames.at(i).filename().string())));
             }
         }
 
         animations.push_back(framePngs);
     }
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "found anim frame that was not a png");
     }
@@ -407,11 +454,13 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
     std::ifstream behaviorFile{behaviorHeaderPath};
     if (behaviorFile.fail()) {
         if (compilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       fmt::format("{}: could not open for reading", behaviorHeaderPath));
+            const auto msg = fmt::format("{}: could not open for reading", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         } else if (decompilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       fmt::format("{}: could not open for reading", behaviorHeaderPath));
+            const auto msg = fmt::format("{}: could not open for reading", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         } else {
             internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
         }
@@ -421,22 +470,24 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
             -> std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>> {
             if (compilerMode != nullptr) {
                 return importMetatileBehaviorHeader(ctx, *compilerMode, behaviorFile);
-            } else if (decompilerMode != nullptr) {
-                return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
-            } else {
-                internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
             }
+            if (decompilerMode != nullptr) {
+                return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
+            }
+            internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
             // unreachable, here for compiler
             throw std::runtime_error("driver::prepareBehaviorsHeaderForImportHelper reached unreachable code path");
         });
     behaviorFile.close();
     if (behaviorMap.empty()) {
         if (compilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+            const auto msg = fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         } else if (decompilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
+            const auto msg = fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         } else {
             internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
         }
@@ -468,7 +519,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
 
     pt_logln(ctx, stderr, "importing palette primers from {}", palettePrimersPath.string());
     if (!exists(palettePrimersPath) || !is_directory(palettePrimersPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping palette primers import", palettePrimersPath.string());
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping palette primers import", palettePrimersPath.string());
         return primerTiles;
     }
 
@@ -519,7 +570,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 
     pt_logln(ctx, stderr, "importing palette overrides from {}", paletteOverridesPath.string());
     if (!exists(paletteOverridesPath) || !is_directory(paletteOverridesPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping palette overrides import",
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping palette overrides import",
                  paletteOverridesPath.string());
         return {overrideTiles, {}};
     }
@@ -545,9 +596,10 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 
         // Make sure pal file name is in format e.g. 01.pal
         if (!checkFullStringMatch(overrideFile.stem().string(), "[0,1][0-9]")) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("pal file {} at {}: name must match regex [0,1][0-9]", overrideFile.stem().string(),
-                                   overrideFile.string()));
+            const auto msg = fmt::format("pal file {} at {}: name must match regex [0,1][0-9]",
+                                         overrideFile.stem().string(), overrideFile.string());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
 
         std::size_t overridePaletteIndex{};
@@ -561,18 +613,19 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
         // Throw fatal if user specifies an out-of-range palette index for their compilation mode
         if (compilerMode == CompilerMode::PRIMARY) {
             if (overridePaletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
-                error(ctx.err,
-                      fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
-                                  fullOverrideFilename.string(), styled(overridePaletteIndex, fmt::emphasis::bold),
-                                  ctx.fieldmapConfig.numPalettesInPrimary));
+                ctx.diag->report(E_GENERIC, fmt::format("{} invalid palette index '{}': must be 0 <= index < {}",
+                                                        ctx.diag->bold(fullOverrideFilename.string() + ":"),
+                                                        ctx.diag->bold(overridePaletteIndex),
+                                                        ctx.fieldmapConfig.numPalettesInPrimary));
             }
         } else if (compilerMode == CompilerMode::SECONDARY) {
             if (overridePaletteIndex < ctx.fieldmapConfig.numPalettesInPrimary ||
                 overridePaletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-                error(ctx.err,
-                      fmt::format("pal file {}: invalid palette index `{}': must be {} <= index < {}",
-                                  fullOverrideFilename.string(), styled(overridePaletteIndex, fmt::emphasis::bold),
-                                  ctx.fieldmapConfig.numPalettesInPrimary, ctx.fieldmapConfig.numPalettesTotal));
+                ctx.diag->report(E_GENERIC, fmt::format("{} invalid palette index '{}': must be {} <= index < {}",
+                                                        ctx.diag->bold(fullOverrideFilename.string() + ":"),
+                                                        ctx.diag->bold(overridePaletteIndex),
+                                                        ctx.fieldmapConfig.numPalettesInPrimary,
+                                                        ctx.fieldmapConfig.numPalettesTotal));
             }
         } else {
             internalerror("driver::preparePaletteOverridesForImport called with invalid compiler mode");
@@ -658,9 +711,10 @@ static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode compi
     if (outAssignCache.good()) {
         emitAssignCache(ctx, compilerMode, outAssignCache);
     } else {
-        fatalerror(
-            ctx.err, ctx.compilerSrcPaths, compilerMode,
-            fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
+        const auto msg =
+            fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     outAssignCache.close();
 }
@@ -762,8 +816,9 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
         filename << index << ".pal";
         path paletteFile = ctx.decompilerSrcPaths.modeBasedPalettePath(mode) / filename.str();
         if (!exists(paletteFile)) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       fmt::format("{}: file did not exist", paletteFile.string()));
+            const auto msg = fmt::format("{}: file did not exist", paletteFile.string());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
         paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
         paletteFileNames.emplace_back(paletteFile.c_str());
@@ -802,7 +857,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
 
     auto attributesMap = prepareDecompiledAttributesForImport(
         ctx, compilerMode, behaviorMap, ctx.compilerSrcPaths.modeBasedAttributePath(compilerMode));
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        fmt::format("errors generated during {} attributes import", compilerModeString(compilerMode)));
     }
@@ -820,16 +875,19 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
     auto [paletteOverrides, paletteOverrideMap] = preparePaletteOverridesForImport(
         ctx, compilerMode, ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode));
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "errors encountered while importing manual palettes");
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        const auto msg = "errors encountered while importing manual palettes";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     if (exists(ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode))) {
         std::ifstream assignCacheFile{ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode)};
         if (assignCacheFile.fail()) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("{}: could not open for reading",
-                                   ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).string()));
+            const auto msg = fmt::format("{}: could not open for reading",
+                                         ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).string());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
         importAssignmentCache(ctx, compilerMode, parentCompilerMode, assignCacheFile);
         assignCacheFile.close();
@@ -926,8 +984,9 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
         behaviorMap = map;
         behaviorReverseMap = reverse;
     } else {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                   fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
     }
 
     /*
@@ -944,9 +1003,10 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
          * mappings from the behaviors header.
          */
         if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default behavior `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
         ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
     }
@@ -961,9 +1021,10 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
             const EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default EncounterType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
     }
     try {
@@ -977,9 +1038,10 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
             const TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default TerrainType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
     }
 
@@ -1009,8 +1071,9 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
         behaviorMap = map;
         behaviorReverseMap = reverse;
     } else {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                   fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
     }
 
     /*
@@ -1027,9 +1090,10 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
          * mappings from the behaviors header.
          */
         if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default behavior `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
         ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
     }
@@ -1044,9 +1108,10 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
             EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default EncounterType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
     }
     try {
@@ -1060,9 +1125,10 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
             TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default TerrainType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
     }
 

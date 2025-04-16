@@ -11,29 +11,28 @@
 
 namespace porytiles {
 
-enum class diag_level { ignored, note, remark, warning, error, fatal };
-std::string level_to_str(diag_level level);
-fmt::terminal_color color_for_level(diag_level level);
-int level_priority(diag_level level);
+enum class DiagLevel { Ignored, Note, Remark, Warning, Error, Fatal };
+std::string level_to_str(DiagLevel level);
+fmt::terminal_color color_for_level(DiagLevel level);
+int level_priority(DiagLevel level);
 
-/// @brief diag_engine coordinates the generation and consumption of diagnostic
+/// @brief DiagEngine coordinates the generation and consumption of diagnostic
 /// messages.
 ///
 /// The full definition for this class is in diagnostics/diagnostic_engine.hpp.
-class diag_engine;
+class DiagEngine;
 
-/// @brief diag_templ defines a reusable template for standardized diagnostic
+/// @brief DiagTempl defines a reusable template for standardized diagnostic
 /// reporting.
 ///
 /// @details
-/// diag_templ is used by the diag_engine to construct the actual diagnostic
+/// DiagTempl is used by the diag_engine to construct the actual diagnostic
 /// instance when one is in-flight. A diag_templ defines a unique name for the
 /// diagnostic as well as some default settings. It provides a template for the
 /// diagnostic message: either in the form of a static format string or a
 /// dynamic builder function. It also contains a list of partner diagnostics.
 /// Partner diagnostics are used for warnings/errors that have associated notes.
-class diag_templ {
-
+class DiagTempl {
     /// @brief dynamic_msg_builder is an alias for a dynamic diagnostic message
     /// builder function.
     ///
@@ -46,53 +45,51 @@ class diag_templ {
     /// formatted strings representing the final diagnostic message. Each
     /// element in the vector represents a single line of output for a
     /// diag_consumer to consume.
-    using dynamic_msg_builder = std::function<std::vector<std::string>(
-        const diag_engine &eng, diag_level in_flight_level, const std::vector<std::any> &args)>;
+    using dynamic_msg_builder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
+                                                                       const std::vector<std::any> &args)>;
 
     std::string_view name_;
-    diag_level default_level_;
+    DiagLevel default_level_;
     std::string_view static_msg_templ_;
     dynamic_msg_builder dynamic_msg_builder_;
-    std::vector<diag_templ> partner_diags_;
+    std::vector<DiagTempl> partner_diags_;
 
   public:
-    // @formatter:off
     // clang-format off
-    explicit diag_templ(std::string_view name, diag_level default_level,
+    explicit DiagTempl(std::string_view name, DiagLevel default_level,
                       dynamic_msg_builder dynamic_msg_builder) noexcept
         : name_{name},
           default_level_{default_level},
           dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
 
-    explicit diag_templ(std::string_view name, diag_level default_level,
-                        dynamic_msg_builder dynamic_msg_builder, const std::vector<diag_templ> &partner_diags) noexcept
+    explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                        dynamic_msg_builder dynamic_msg_builder, const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name},
           default_level_{default_level},
           dynamic_msg_builder_{std::move(dynamic_msg_builder)},
           partner_diags_{partner_diags} {}
 
-    explicit diag_templ(std::string_view name, diag_level default_level,
+    explicit DiagTempl(std::string_view name, DiagLevel default_level,
                     std::string_view static_msg_templ) noexcept
         : name_{name},
           default_level_{default_level},
           static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr} {}
 
-    explicit diag_templ(std::string_view name, diag_level default_level,
-                        std::string_view static_msg_templ, const std::vector<diag_templ> &partner_diags) noexcept
+    explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                        std::string_view static_msg_templ, const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name},
           default_level_{default_level},
           static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr},
           partner_diags_{partner_diags} {}
-    // @formatter:on
     // clang-format on
 
     [[nodiscard]] std::string_view name() const {
         return name_;
     }
 
-    [[nodiscard]] diag_level level() const {
+    [[nodiscard]] DiagLevel level() const {
         return default_level_;
     }
 
@@ -101,7 +98,7 @@ class diag_templ {
     }
 
     template <typename... Args>
-    std::vector<std::string> build_dynamic_msg(const diag_engine &eng, const diag_level in_flight_level,
+    std::vector<std::string> build_dynamic_msg(const DiagEngine &eng, const DiagLevel in_flight_level,
                                                Args &&...args) const {
         if (dynamic_msg_builder_ == nullptr) {
             std::vector<std::string> v{};
@@ -112,7 +109,7 @@ class diag_templ {
         return dynamic_msg_builder_(eng, in_flight_level, v);
     }
 
-    [[nodiscard]] const std::vector<diag_templ> &partner_diags() const {
+    [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const {
         return partner_diags_;
     }
 };
@@ -121,14 +118,14 @@ class diag_templ {
 ///
 /// @details
 /// in_flight_diag is generated by the diag_engine by combining the template
-/// with context from the various user defined diagnostic parameters (e.g.
+/// with context from the various user-defined diagnostic parameters (e.g.,
 /// warnings as errors, specific warning disables, etc.).
-class in_flight_diag {
+class InFlightDiag {
   public:
-    explicit in_flight_diag(diag_level level, std::string msg, diag_templ templ) noexcept
+    explicit InFlightDiag(const DiagLevel level, std::string msg, DiagTempl templ) noexcept
         : level_{level}, msg_{std::move(msg)}, templ_{std::move(templ)} {}
 
-    [[nodiscard]] diag_level level() const noexcept {
+    [[nodiscard]] DiagLevel level() const noexcept {
         return level_;
     }
 
@@ -136,32 +133,32 @@ class in_flight_diag {
         return msg_;
     }
 
-    [[nodiscard]] const diag_templ &templ() const noexcept {
+    [[nodiscard]] const DiagTempl &templ() const noexcept {
         return templ_;
     }
 
   private:
-    diag_level level_;
+    DiagLevel level_;
     std::string msg_;
-    diag_templ templ_;
+    DiagTempl templ_;
 };
 
-class diag_consumer {
+class DiagConsumer {
   public:
-    virtual ~diag_consumer() = default;
-    virtual void consume(const in_flight_diag &diag) = 0;
+    virtual ~DiagConsumer() = default;
+    virtual void consume(const InFlightDiag &diag) = 0;
     [[nodiscard]] virtual bool is_a_tty() const = 0;
-    [[nodiscard]] virtual in_flight_diag consumed_at(std::size_t i) const = 0;
+    [[nodiscard]] virtual InFlightDiag consumed_at(std::size_t i) const = 0;
     [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
 };
 
 /// @brief ignore_consumer is a consumer implementation that simply ignores the
 /// diagnostic.
-class ignore_consumer final : public diag_consumer {
+class IgnoreConsumer final : public DiagConsumer {
   public:
-    void consume(const in_flight_diag &diag) override;
+    void consume(const InFlightDiag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
+    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
@@ -170,11 +167,11 @@ class ignore_consumer final : public diag_consumer {
 
 /// @brief stderr_consumer is a consumer implementation that pushes diagnostic
 /// messages to stderr.
-class stderr_consumer final : public diag_consumer {
+class stderr_consumer final : public DiagConsumer {
   public:
-    void consume(const in_flight_diag &diag) override;
+    void consume(const InFlightDiag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
+    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
@@ -183,19 +180,25 @@ class stderr_consumer final : public diag_consumer {
 
 /// @brief vector_consumer is a consumer implementation that pushes diagnostic
 /// messages to an internal vector for testing purposes.
-class vector_consumer final : public diag_consumer {
+class VectorConsumer final : public DiagConsumer {
   public:
-    void consume(const in_flight_diag &diag) override;
+    void consume(const InFlightDiag &diag) override;
     [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] in_flight_diag consumed_at(std::size_t i) const override;
+    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
     [[nodiscard]] std::uint64_t consumed_count() const override;
 
   private:
-    std::vector<in_flight_diag> diags_;
+    std::vector<InFlightDiag> diags_;
 };
 
-// @formatter:off
 // clang-format off
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// STANDALONE NOTES
+///
+////////////////////////////////////////////////////////////////////////////////
+constexpr auto N_GENERIC = "note-generic";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -216,13 +219,12 @@ constexpr auto W_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
-/// ERRORS
+/// ERRORS & FATALS
 ///
 ////////////////////////////////////////////////////////////////////////////////
 constexpr auto E_GENERIC = "error-generic";
 constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
 
-// @formatter:on
 // clang-format on
 
 /// @brief Retrieves the diagnostic template corresponding to a given diagnostic
@@ -239,7 +241,7 @@ constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
 ///
 /// @note The function will terminate the program if the diagnostic name is
 /// invalid.
-diag_templ diag_templ_for(std::string_view name);
+DiagTempl diag_templ_for(std::string_view name);
 
 /// @brief Get an iterable view of all diag_templ names in the internal table.
 ///

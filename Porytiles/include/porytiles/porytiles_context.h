@@ -22,7 +22,7 @@ struct PorytilesContext {
     CompilerContext compilerContext;
     DecompilerContext decompilerContext;
     ErrorsAndWarnings err;
-    std::unique_ptr<diag_engine> diag;
+    std::unique_ptr<DiagEngine> diag;
 
     // Command params
     Subcommand subcommand;
@@ -31,41 +31,77 @@ struct PorytilesContext {
     PorytilesContext()
         : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
           compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-          decompilerContext{}, err{}, diag{std::make_unique<diag_engine>()}, subcommand{}, verbose{false} {}
+          decompilerContext{}, err{}, diag{std::make_unique<DiagEngine>()}, subcommand{}, verbose{false} {}
 
-    void validateFieldmapParameters(CompilerMode compilerMode) const {
+    void validateFieldmapParameters(CompilerMode mode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numTiles",
-                                                 fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+            const auto msg = fmt::format("invalid configuration numTilesInPrimary '{}' exceeded numTilesTotal '{}'",
+                                         this->diag->bold(fieldmapConfig.numTilesInPrimary),
+                                         this->diag->bold(fieldmapConfig.numTilesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+                                      fmt::format("invalid config numTiles: {} > {}", fieldmapConfig.numTilesInPrimary,
+                                                  fieldmapConfig.numTilesTotal));
         }
         if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numMetatiles",
-                                                 fieldmapConfig.numMetatilesInPrimary,
-                                                 fieldmapConfig.numMetatilesTotal);
+            const auto msg =
+                fmt::format("invalid configuration numMetatilesInPrimary '{}' exceeded numMetatilesTotal '{}'",
+                            this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
+                            this->diag->bold(fieldmapConfig.numMetatilesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+                                      fmt::format("invalid config numMetatiles: {} > {}",
+                                                  fieldmapConfig.numMetatilesInPrimary,
+                                                  fieldmapConfig.numMetatilesTotal));
         }
         if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->compilerSrcPaths, compilerMode, "numPalettes",
-                                                 fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
+            const auto msg =
+                fmt::format("invalid configuration numPalettesInPrimary '{}' exceeded numPalettesTotal '{}'",
+                            this->diag->bold(fieldmapConfig.numPalettesInPrimary),
+                            this->diag->bold(fieldmapConfig.numPalettesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+                                      fmt::format("invalid config numPalettes: {} > {}",
+                                                  fieldmapConfig.numPalettesInPrimary,
+                                                  fieldmapConfig.numPalettesTotal));
         }
     }
 
-    void validateFieldmapParameters(DecompilerMode decompilerMode) const {
+    void validateFieldmapParameters(DecompilerMode mode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numTiles",
-                                                 fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal);
+            const auto msg = fmt::format("invalid configuration numTilesInPrimary '{}' exceeded numTilesTotal '{}'",
+                                         this->diag->bold(fieldmapConfig.numTilesInPrimary),
+                                         this->diag->bold(fieldmapConfig.numTilesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+                                        fmt::format("invalid config numTiles: {} > {}",
+                                                    fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal));
         }
         if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numMetatiles",
-                                                 fieldmapConfig.numMetatilesInPrimary,
-                                                 fieldmapConfig.numMetatilesTotal);
+            const auto msg =
+                fmt::format("invalid configuration numMetatilesInPrimary '{}' exceeded numMetatilesTotal '{}'",
+                            this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
+                            this->diag->bold(fieldmapConfig.numMetatilesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+                                        fmt::format("invalid config numMetatiles: {} > {}",
+                                                    fieldmapConfig.numMetatilesInPrimary,
+                                                    fieldmapConfig.numMetatilesTotal));
         }
         if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
-            fatalerror_misconfiguredPrimaryTotal(this->err, this->decompilerSrcPaths, decompilerMode, "numPalettes",
-                                                 fieldmapConfig.numPalettesInPrimary, fieldmapConfig.numPalettesTotal);
+            const auto msg =
+                fmt::format("invalid configuration numPalettesInPrimary '{}' exceeded numPalettesTotal '{}'",
+                            this->diag->bold(fieldmapConfig.numPalettesInPrimary),
+                            this->diag->bold(fieldmapConfig.numPalettesTotal));
+            this->diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+                                        fmt::format("invalid config numPalettes: {} > {}",
+                                                    fieldmapConfig.numPalettesInPrimary,
+                                                    fieldmapConfig.numPalettesTotal));
         }
     }
 
-    void set_diag_engine(std::unique_ptr<diag_engine> new_diag) {
+    void set_diag_engine(std::unique_ptr<DiagEngine> new_diag) {
         diag = std::move(new_diag);
     }
 };

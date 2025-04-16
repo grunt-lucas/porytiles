@@ -33,13 +33,15 @@ namespace porytiles {
 DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compilerMode,
                                      const png::image<png::rgba_pixel> &png) {
     if (png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
-        error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "height", png.get_height());
+        ctx.diag->report(E_GENERIC, fmt::format("source tiles PNG height '{}' was not divisible by 8",
+                                                ctx.diag->bold(png.get_height())));
     }
     if (png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
-        error_freestandingDimensionNotDivisibleBy8(ctx.err, ctx.compilerSrcPaths, "width", png.get_width());
+        ctx.diag->report(E_GENERIC, fmt::format("source tiles PNG width '{}' was not divisible by 8",
+                                                ctx.diag->bold(png.get_width())));
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "freestanding source dimension not divisible by 8");
     }
@@ -89,20 +91,29 @@ static LayerType layerBitsetToLayerType(PorytilesContext &ctx, std::bitset<3> la
     bool topHasContent = layerBitset.test(2);
 
     if (bottomHasContent && middleHasContent && topHasContent) {
-        error_allThreeLayersHadNonTransparentContent(ctx.err, metatileIndex);
+        ctx.diag->report(
+            E_GENERIC,
+            fmt::format("dual-layer inference failed for metatile '{}', all three layers had non-transparent content",
+                        ctx.diag->bold(metatileIndex)));
         return LayerType::TRIPLE;
-    } else if (!bottomHasContent && !middleHasContent && !topHasContent) {
+    }
+    if (!bottomHasContent && !middleHasContent && !topHasContent) {
         // transparent tile case
         return LayerType::NORMAL;
-    } else if (bottomHasContent && !middleHasContent && !topHasContent) {
+    }
+    if (bottomHasContent && !middleHasContent && !topHasContent) {
         return LayerType::COVERED;
-    } else if (!bottomHasContent && middleHasContent && !topHasContent) {
+    }
+    if (!bottomHasContent && middleHasContent && !topHasContent) {
         return LayerType::NORMAL;
-    } else if (!bottomHasContent && !middleHasContent && topHasContent) {
+    }
+    if (!bottomHasContent && !middleHasContent && topHasContent) {
         return LayerType::NORMAL;
-    } else if (!bottomHasContent && middleHasContent && topHasContent) {
+    }
+    if (!bottomHasContent && middleHasContent && topHasContent) {
         return LayerType::NORMAL;
-    } else if (bottomHasContent && middleHasContent && !topHasContent) {
+    }
+    if (bottomHasContent && middleHasContent && !topHasContent) {
         return LayerType::COVERED;
     }
 
@@ -116,29 +127,41 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top) {
     if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
-        error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::BOTTOM, bottom.get_height());
+        ctx.diag->report(E_GENERIC, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
+                                                layerString(TileLayer::BOTTOM), ctx.diag->bold(bottom.get_height())));
     }
     if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
-        error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::MIDDLE, middle.get_height());
+        ctx.diag->report(E_GENERIC, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
+                                                layerString(TileLayer::MIDDLE), ctx.diag->bold(middle.get_height())));
     }
     if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
-        error_layerHeightNotDivisibleBy16(ctx.err, TileLayer::TOP, top.get_height());
+        ctx.diag->report(E_GENERIC, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
+                                                layerString(TileLayer::TOP), ctx.diag->bold(top.get_height())));
     }
 
     if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        error_layerWidthNeq128(ctx.err, TileLayer::BOTTOM, bottom.get_width());
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("{} layer source PNG width '{}' was not {}", layerString(TileLayer::BOTTOM),
+                                     fmt::styled(bottom.get_width(), fmt::emphasis::bold), METATILE_SHEET_WIDTH));
     }
     if (middle.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        error_layerWidthNeq128(ctx.err, TileLayer::MIDDLE, middle.get_width());
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("{} layer source PNG width '{}' was not {}", layerString(TileLayer::MIDDLE),
+                                     fmt::styled(middle.get_width(), fmt::emphasis::bold), METATILE_SHEET_WIDTH));
     }
     if (top.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
-        error_layerWidthNeq128(ctx.err, TileLayer::TOP, top.get_width());
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("{} layer source PNG width '{}' was not {}", layerString(TileLayer::TOP),
+                                     fmt::styled(top.get_width(), fmt::emphasis::bold), METATILE_SHEET_WIDTH));
     }
     if ((bottom.get_height() != middle.get_height()) || (bottom.get_height() != top.get_height())) {
-        error_layerHeightsMustEq(ctx.err, bottom.get_height(), middle.get_height(), top.get_height());
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("bottom, middle, top layer source PNG heights '{}, {}, {}' were not equivalent",
+                                     ctx.diag->bold(bottom.get_height()), ctx.diag->bold(middle.get_height()),
+                                     ctx.diag->bold(top.get_height())));
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "source layer png dimensions invalid");
     }
@@ -163,29 +186,32 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         TerrainType defaultTerrainType;
         try {
             defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-        } catch (const std::exception &e) {
+        } catch (const std::exception &) {
             defaultBehavior = 0;
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("supplied default behavior `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
         try {
             std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
             defaultEncounterType = encounterTypeFromInt(encounterValue);
-        } catch (const std::exception &e) {
+        } catch (const std::exception &) {
             defaultEncounterType = EncounterType::NONE;
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("supplied default EncounterType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
         try {
             std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
             defaultTerrainType = terrainTypeFromInt(terrainValue);
-        } catch (const std::exception &e) {
+        } catch (const std::exception &) {
             defaultTerrainType = TerrainType::NORMAL;
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("supplied default TerrainType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
 
         // Attributes are per-metatile so we can compute them once here
@@ -280,7 +306,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         }
 
         if (ctx.compilerConfig.tripleLayer) {
-            // Triple layer case is easy, just set all three layers to LayerType::TRIPLE
+            // Triple layer case: set all three layers to LayerType::TRIPLE
             for (std::size_t i = 0; i < bottomTiles.size(); i++) {
                 bottomTiles.at(i).attributes.layerType = LayerType::TRIPLE;
                 middleTiles.at(i).attributes.layerType = LayerType::TRIPLE;
@@ -359,7 +385,7 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
         }
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during layered tile import");
     }
@@ -437,15 +463,17 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
             DecompiledAnimFrame animFrame{rawFrame.frameName};
 
             if (rawFrame.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
-                error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "height",
-                                                   rawFrame.png.get_height());
+                ctx.diag->report(E_GENERIC, fmt::format("anim {} frame {} PNG height '{}' was not divisible by 8",
+                                                        rawFrame.animName, rawFrame.frameName,
+                                                        ctx.diag->bold(rawFrame.png.get_height())));
             }
             if (rawFrame.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
-                error_animDimensionNotDivisibleBy8(ctx.err, rawFrame.animName, rawFrame.frameName, "width",
-                                                   rawFrame.png.get_width());
+                ctx.diag->report(E_GENERIC, fmt::format("anim {} frame {} PNG width '{}' was not divisible by 8",
+                                                        rawFrame.animName, rawFrame.frameName,
+                                                        ctx.diag->bold(rawFrame.png.get_width())));
             }
 
-            if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+            if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
                 die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                "anim frame source dimension not divisible by 8");
             }
@@ -453,14 +481,24 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
             frameWidths.insert(rawFrame.png.get_width());
             frameHeights.insert(rawFrame.png.get_height());
             if (frameWidths.size() != 1) {
-                fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                                    rawFrame.animName, rawFrame.frameName, "width",
-                                                                    rawFrame.png.get_width());
+                const auto dimensionName = "width";
+                const auto msg = fmt::format("animation '{}' frame '{}' {} '{}' did not match previous frame {}s",
+                                             ctx.diag->bold(rawFrame.animName), ctx.diag->bold(rawFrame.frameName),
+                                             dimensionName, ctx.diag->bold(rawFrame.png.get_width()), dimensionName);
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                          fmt::format("anim {} frame {} dimension {} mismatch", rawFrame.animName,
+                                                      rawFrame.frameName, dimensionName));
             }
             if (frameHeights.size() != 1) {
-                fatalerror_animFrameDimensionsDoNotMatchOtherFrames(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                                    rawFrame.animName, rawFrame.frameName, "height",
-                                                                    rawFrame.png.get_height());
+                const auto dimensionName = "height";
+                const auto msg = fmt::format("animation '{}' frame '{}' {} '{}' did not match previous frame {}s",
+                                             ctx.diag->bold(rawFrame.animName), ctx.diag->bold(rawFrame.frameName),
+                                             dimensionName, ctx.diag->bold(rawFrame.png.get_height()), dimensionName);
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                          fmt::format("anim {} frame {} dimension {} mismatch", rawFrame.animName,
+                                                      rawFrame.frameName, dimensionName));
             }
 
             std::size_t pngWidthInTiles = rawFrame.png.get_width() / TILE_SIDE_LENGTH_PIX;
@@ -528,11 +566,27 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
             } catch (const std::exception &e) {
                 behaviorFile.close();
                 if (compilerMode != nullptr) {
-                    fatalerror_invalidBehaviorValue(ctx.err, ctx.compilerSrcPaths, *compilerMode, behaviorName,
-                                                    behaviorValueString, processedUpToLine);
+                    const auto msg = fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
+                                                 ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName),
+                                                 processedUpToLine);
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    ctx.diag->report(
+                        N_GENERIC,
+                        "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
+                        ctx.diag->bold("id"));
+                    die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode),
+                                              fmt::format("invalid behavior value {}", behaviorValueString));
                 } else if (decompilerMode != nullptr) {
-                    fatalerror_invalidBehaviorValue(ctx.err, ctx.decompilerSrcPaths, *decompilerMode, behaviorName,
-                                                    behaviorValueString, processedUpToLine);
+                    const auto msg = fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
+                                                 ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName),
+                                                 processedUpToLine);
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    ctx.diag->report(
+                        N_GENERIC,
+                        "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
+                        ctx.diag->bold("id"));
+                    die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode),
+                                                fmt::format("invalid behavior value {}", behaviorValueString));
                 } else {
                     internalerror(
                         "importer::importMetatileBehaviorHeader both compilerMode and decompilerMode were null");
@@ -572,7 +626,12 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     try {
         in.read_header(io::ignore_missing_column, "id", "behavior", "terrainType", "encounterType");
     } catch (const std::exception &) {
-        fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
+        const auto msg = fmt::format("{}: incorrect header row format", filePath);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                  fmt::format("{}: incorrect header row format", filePath));
     }
 
     std::string id;
@@ -588,7 +647,12 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     bool hasEncounterType = in.has_column("encounterType");
 
     if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
-        fatalerror_invalidAttributesCsvHeader(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath);
+        const auto msg = fmt::format("{}: incorrect header row format", filePath);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                  fmt::format("{}: incorrect header row format", filePath));
     }
 
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED && (!hasTerrainType || !hasEncounterType)) {
@@ -611,27 +675,30 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         defaultBehavior = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
     } catch (const std::exception &e) {
         defaultBehavior = 0;
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("supplied default behavior `{}' was not valid",
-                               fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+        const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                     ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         std::uint8_t encounterValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultEncounterType.c_str());
         defaultEncounterType = encounterTypeFromInt(encounterValue);
     } catch (const std::exception &e) {
         defaultEncounterType = EncounterType::NONE;
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("supplied default EncounterType `{}' was not valid",
-                               fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+        const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                     ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         std::uint8_t terrainValue = parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
         defaultTerrainType = terrainTypeFromInt(terrainValue);
     } catch (const std::exception &e) {
         defaultTerrainType = TerrainType::NORMAL;
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("supplied default TerrainType `{}' was not valid",
-                               fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+        const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                     ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     // processedUpToLine starts at 1 since we processed the header already, which was on line 1
@@ -644,7 +711,9 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         } catch (const std::exception &e) {
             // increment processedUpToLine here, since we threw before we could increment in the try
             processedUpToLine++;
-            error_invalidCsvRowFormat(ctx.err, filePath, processedUpToLine);
+            ctx.diag->report(E_GENERIC,
+                             fmt::format("{} provided columns did not match header",
+                                         ctx.diag->bold(filePath + ":" + std::to_string(processedUpToLine) + ":")));
             continue;
         }
         if (!readRow) {
@@ -659,25 +728,34 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         if (behaviorMap.contains(behavior)) {
             attribute.metatileBehavior = behaviorMap.at(behavior);
         } else {
-            error_unknownMetatileBehavior(ctx.err, filePath, processedUpToLine, behavior);
+            ctx.diag->report(E_GENERIC,
+                             fmt::format("{} unknown metatile behavior '{}'",
+                                         ctx.diag->bold(filePath + ":" + std::to_string(processedUpToLine) + ":"),
+                                         ctx.diag->bold(behavior)));
         }
 
         if (hasTerrainType) {
             try {
                 attribute.terrainType = stringToTerrainType(terrainType);
-            } catch (const std::invalid_argument &e) {
-                error_invalidTerrainType(ctx.err, filePath, processedUpToLine, terrainType);
+            } catch (std::invalid_argument &) {
+                ctx.diag->report(E_GENERIC,
+                                 fmt::format("{} invalid TerrainType `{}'",
+                                             ctx.diag->bold(filePath + ":" + std::to_string(processedUpToLine) + ":"),
+                                             ctx.diag->bold(terrainType)));
             }
         }
         if (hasEncounterType) {
             try {
                 attribute.encounterType = stringToEncounterType(encounterType);
-            } catch (const std::invalid_argument &e) {
-                error_invalidEncounterType(ctx.err, filePath, processedUpToLine, encounterType);
+            } catch (std::invalid_argument &) {
+                ctx.diag->report(E_GENERIC,
+                                 fmt::format("{} invalid EncounterType `{}'",
+                                             ctx.diag->bold(filePath + ":" + std::to_string(processedUpToLine) + ":"),
+                                             ctx.diag->bold(encounterType)));
             }
         }
 
-        std::size_t idVal;
+        std::size_t idVal{};
         try {
             std::size_t pos;
             idVal = std::stoi(id, &pos, 0);
@@ -685,22 +763,31 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
                 // throw here so it catches below and prints an error
                 throw std::runtime_error{""};
             }
-        } catch (const std::exception &e) {
-            fatalerror_invalidIdInCsv(ctx.err, ctx.compilerSrcPaths, compilerMode, filePath, id, processedUpToLine);
-            // here so compiler won't complain
-            idVal = 0;
+        } catch (std::exception &) {
+            const auto msg = fmt::format("{}: invalid value '{}' for column '{}' at line {}", filePath,
+                                         ctx.diag->bold(id), ctx.diag->bold("id"), processedUpToLine);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->report(
+                N_GENERIC,
+                "column '{}' must contain an integral value (both decimal and hexadecimal notations are permitted)",
+                ctx.diag->bold("id"));
+            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("{}: invalid id {}", filePath, id));
         }
 
         auto inserted = attributeMap.insert(std::pair{idVal, attribute});
         if (!inserted.second) {
-            error_duplicateAttribute(ctx.err, filePath, processedUpToLine, idVal, lineFirstSeen.at(idVal));
+            ctx.diag->report(E_GENERIC,
+                             fmt::format("{} duplicate entry for metatile '{}', first definition on line {}",
+                                         ctx.diag->bold(filePath + ":" + std::to_string(processedUpToLine) + ":"),
+                                         ctx.diag->bold(id), lineFirstSeen.at(idVal)));
         }
         if (!lineFirstSeen.contains(idVal)) {
             lineFirstSeen.insert(std::pair{idVal, processedUpToLine});
         }
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during attributes CSV parsing");
     }
@@ -810,7 +897,7 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
         ctx.compilerConfig.providedPrimaryAssignCacheOverride) {
         /*
          * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
-         * override value. In this case, we don't want to read anything from the assign config. Just return.
+         * override value. In this case, we don't want to read anything from the assign config. Return.
          */
         return;
     }
@@ -818,7 +905,7 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
         ctx.compilerConfig.providedAssignCacheOverride) {
         /*
          * User is running compile-primary, we are compiling the primary, and user supplied an explicit override value.
-         * In this case, we don't want to read anything from the assign config. Just return.
+         * In this case, we don't want to read anything from the assign config. Return.
          */
         return;
     }
@@ -826,7 +913,7 @@ void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, Com
         ctx.compilerConfig.providedAssignCacheOverride) {
         /*
          * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override
-         * value. In this case, we don't want to read anything from the assign config. Just return.
+         * value. In this case, we don't want to read anything from the assign config. Return.
          */
         return;
     }
@@ -860,32 +947,41 @@ static std::vector<GBAPalette> importCompiledPalettes(PorytilesContext &ctx, Dec
          */
         std::getline(*stream, line);
         if (line.size() == 0) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
+            const auto msg = "invalid blank line in pal file";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
         line.pop_back();
         if (line != "JASC-PAL") {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                       fmt::format("expected `JASC-PAL' in pal file, saw `{}'", line));
+            const auto msg = fmt::format("expected `JASC-PAL' in pal file, saw '{}'", line);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
 
         std::getline(*stream, line);
         if (line.size() == 0) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
+            const auto msg = "invalid blank line in pal file";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
         line.pop_back();
         if (line != "0100") {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                       fmt::format("expected `0100' in pal file, saw `{}'", line));
+            const auto msg = fmt::format("expected `0100' in pal file, saw '{}'", line);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
 
         std::getline(*stream, line);
         if (line.size() == 0) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode, "invalid blank line in pal file");
+            const auto msg = "invalid blank line in pal file";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
         line.pop_back();
         if (line != "16") {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                       fmt::format("expected `16' in pal file, saw `{}'", line));
+            const auto msg = fmt::format("expected `16' in pal file, saw '{}'", line);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
         }
 
         GBAPalette palette{};
@@ -945,8 +1041,9 @@ importCompiledMetatiles(PorytilesContext &ctx, DecompilerMode mode, std::ifstrea
      */
     if (metatileDataBuf.size() % (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_DUAL) != 0 &&
         metatileDataBuf.size() % (BYTES_PER_METATILE_ENTRY * TILES_PER_METATILE_TRIPLE) != 0) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   "decompiler input metatiles.bin corrupted, not valid uint16 data");
+        const auto msg = "decompiler input 'metatiles.bin' corrupted, not valid uint16 data";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 
     bool tripleLayer =
@@ -1016,14 +1113,16 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
     std::size_t metatileCount;
     if (ctx.targetBaseGame == TargetBaseGame::FIRERED) {
         if (attributesDataBuf.size() % BYTES_PER_ATTRIBUTE_FIRERED != 0) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       "decompiler input `metatile_attributes.bin' corrupted, not valid uint32 data");
+            const auto msg = "decompiler input 'metatile_attributes.bin' corrupted, not valid uint32 data";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
         metatileCount = attributesDataBuf.size() / BYTES_PER_ATTRIBUTE_FIRERED;
     } else {
         if (attributesDataBuf.size() % BYTES_PER_ATTRIBUTE_EMERALD != 0) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       "decompiler input `metatile_attributes.bin' corrupted, not valid uint16 data");
+            const auto msg = "decompiler input 'metatile_attributes.bin' corrupted, not valid uint16 data";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
         metatileCount = attributesDataBuf.size() / BYTES_PER_ATTRIBUTE_EMERALD;
     }
@@ -1067,35 +1166,35 @@ importCompiledAnimations(PorytilesContext &ctx, DecompilerMode mode,
             CompiledAnimFrame animFrame{animPng.frameName};
 
             if (animPng.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
-                fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                           fmt::format("anim `{}' frame `{}' width `{}' was not divisible by 8",
-                                       fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
-                                       fmt::styled(animFrame.frameName, fmt::emphasis::bold),
-                                       fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
+                const auto msg = fmt::format("anim '{}' frame '{}' width '{}' was not divisible by 8",
+                                             ctx.diag->bold(compiledAnim.animName), ctx.diag->bold(animFrame.frameName),
+                                             ctx.diag->bold(animPng.png.get_width()));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
             }
             if (animPng.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
-                fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                           fmt::format("anim `{}' frame `{}' height `{}' was not divisible by 8",
-                                       fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
-                                       fmt::styled(animFrame.frameName, fmt::emphasis::bold),
-                                       fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
+                const auto msg = fmt::format("anim '{}' frame '{}' height '{}' was not divisible by 8",
+                                             ctx.diag->bold(compiledAnim.animName), ctx.diag->bold(animFrame.frameName),
+                                             ctx.diag->bold(animPng.png.get_height()));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
             }
 
             frameWidths.insert(animPng.png.get_width());
             frameHeights.insert(animPng.png.get_height());
             if (frameWidths.size() != 1) {
-                fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                           fmt::format("anim `{}' frame `{}' width `{}' differed from previous frame width",
-                                       fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
-                                       fmt::styled(animFrame.frameName, fmt::emphasis::bold),
-                                       fmt::styled(animPng.png.get_width(), fmt::emphasis::bold)));
+                const auto msg = fmt::format("anim '{}' frame '{}' width '{}' differed from previous frame width",
+                                             ctx.diag->bold(compiledAnim.animName), ctx.diag->bold(animFrame.frameName),
+                                             ctx.diag->bold(animPng.png.get_width()));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
             }
             if (frameHeights.size() != 1) {
-                fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                           fmt::format("anim `{}' frame `{}' height `{}' differed from previous frame height",
-                                       fmt::styled(compiledAnim.animName, fmt::emphasis::bold),
-                                       fmt::styled(animFrame.frameName, fmt::emphasis::bold),
-                                       fmt::styled(animPng.png.get_height(), fmt::emphasis::bold)));
+                const auto msg = fmt::format("anim '{}' frame '{}' height '{}' differed from previous frame height",
+                                             ctx.diag->bold(compiledAnim.animName), ctx.diag->bold(animFrame.frameName),
+                                             ctx.diag->bold(animPng.png.get_height()));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
             }
 
             std::size_t pngWidthInTiles = animPng.png.get_width() / TILE_SIDE_LENGTH_PIX;
@@ -1153,32 +1252,37 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
     std::string line{};
     std::getline(paletteFile, line);
     if (line.empty()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("invalid blank line in pal file: {}", fileName));
+        const auto msg = fmt::format("invalid blank line in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (line.at(line.size() - 1) == '\r') {
         line.pop_back();
     }
     if (line != "JASC-PAL") {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("expected `JASC-PAL' as first line in pal file: {}", fileName));
+        const auto msg = fmt::format("expected 'JASC-PAL' as first line in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     std::getline(paletteFile, line);
     if (line.empty()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("invalid blank line in pal file: {}", fileName));
+        const auto msg = fmt::format("invalid blank line in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (line.at(line.size() - 1) == '\r') {
         line.pop_back();
     }
     if (line != "0100") {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("expected `0100' as second line in pal file: {}", fileName));
+        const auto msg = fmt::format("expected '0100' as second line in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     std::getline(paletteFile, line);
     if (line.empty()) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("invalid blank line in pal file: {}", fileName));
+        const auto msg = fmt::format("invalid blank line in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (line.at(line.size() - 1) == '\r') {
         line.pop_back();
@@ -1189,8 +1293,9 @@ static std::uint8_t consumeJascHeader(const PorytilesContext &ctx, CompilerMode 
         paletteSize = parseInteger<std::uint8_t>(line.c_str());
     } catch (const std::exception &e) {
         paletteSize = 0;
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("invalid pal size in pal file: {}", fileName));
+        const auto msg = fmt::format("invalid pal size in pal file: {}", fileName);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     return paletteSize;
 }
@@ -1204,8 +1309,8 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
     std::string line{};
     const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
     if (declaredPaletteSize == 0 || declaredPaletteSize > PAL_SIZE - 1) {
-        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be 1 <= size <= 15", fileName,
-                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+        ctx.diag->report(E_GENERIC, fmt::format("{} invalid declared size '{}', must be 1 <= size <= 15",
+                                                ctx.diag->bold(fileName + ":"), ctx.diag->bold(declaredPaletteSize)));
     }
 
     std::uint8_t lineCount = 4;
@@ -1216,15 +1321,15 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
         if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
             bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
         } else {
-            error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
-                                       fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
-                                       fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
-                                       bgrToRgba.at(bgr).second));
+            ctx.diag->report(E_GENERIC,
+                             fmt::format("{} illegal BGR-equivalent color '{}', previously saw '{}' on line {}",
+                                         ctx.diag->bold(fileName + ":"), ctx.diag->bold(rgba.jasc()),
+                                         ctx.diag->bold(bgrToRgba.at(bgr).first.jasc()), bgrToRgba.at(bgr).second));
         }
 
         if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
-            error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
-                                       fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+            ctx.diag->report(E_GENERIC, fmt::format("{} '{}' was transparent or collapsed to transparent",
+                                                    ctx.diag->bold(fileName + ":"), ctx.diag->bold(rgba.jasc())));
         }
 
         primerTile.pixels.at(usedPaletteCount) = rgba;
@@ -1237,8 +1342,9 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
     }
 
     if (usedPaletteCount != declaredPaletteSize) {
-        error(ctx.err, fmt::format("{}: used pal size ({}) did not match declared size `{}'", fileName,
-                                   usedPaletteCount, fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+        ctx.diag->report(E_GENERIC, fmt::format("{} used pal size ({}) did not match declared size '{}'",
+                                                ctx.diag->bold(fileName + ":"), usedPaletteCount,
+                                                ctx.diag->bold(declaredPaletteSize)));
     }
     primerTile.primerSize = usedPaletteCount;
 
@@ -1256,8 +1362,9 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
     std::string line{};
     const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
     if (declaredPaletteSize != PAL_SIZE) {
-        error(ctx.err, fmt::format("{}: invalid declared size `{}', must be exactly {}", fileName,
-                                   fmt::styled(declaredPaletteSize, fmt::emphasis::bold), PAL_SIZE));
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("{} invalid declared size '{}', must be exactly {}",
+                                     ctx.diag->bold(fileName + ":"), ctx.diag->bold(declaredPaletteSize), PAL_SIZE));
     }
 
     std::uint8_t lineCount = 4;
@@ -1266,8 +1373,9 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
         line.pop_back();
     }
     if (line != "-") {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: 0th override slot must be `-' but saw `{}'", fileName, line));
+        const auto msg = fmt::format("{}: 0th override slot must be '-' but saw '{}'", fileName, line);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     lineCount++;
 
@@ -1284,15 +1392,15 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
             if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
                 bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
             } else {
-                error(ctx.err, fmt::format("{}: illegal BGR-equivalent color `{}', previously saw `{}' on line {}",
-                                           fileName, fmt::styled(rgba.jasc(), fmt::emphasis::bold),
-                                           fmt::styled(bgrToRgba.at(bgr).first.jasc(), fmt::emphasis::bold),
-                                           bgrToRgba.at(bgr).second));
+                ctx.diag->report(E_GENERIC,
+                                 fmt::format("{} illegal BGR-equivalent color '{}', previously saw '{}' on line {}",
+                                             ctx.diag->bold(fileName + ":"), ctx.diag->bold(rgba.jasc()),
+                                             ctx.diag->bold(bgrToRgba.at(bgr).first.jasc()), bgrToRgba.at(bgr).second));
             }
 
             if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
-                error(ctx.err, fmt::format("{}: `{}' was transparent or collapsed to transparent", fileName,
-                                           fmt::styled(rgba.jasc(), fmt::emphasis::bold)));
+                ctx.diag->report(E_GENERIC, fmt::format("{}: '{}' was transparent or collapsed to transparent",
+                                                        ctx.diag->bold(fileName + ":"), ctx.diag->bold(rgba.jasc())));
             }
             overrideTile.pixels.at(overriddenSlotCount) = rgba;
             overriddenSlotCount++;
@@ -1306,8 +1414,9 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
     }
 
     if (usedPaletteCount != declaredPaletteSize) {
-        error(ctx.err, fmt::format("{}: used palette size ({}) did not match declared size `{}'", fileName,
-                                   usedPaletteCount, fmt::styled(declaredPaletteSize, fmt::emphasis::bold)));
+        ctx.diag->report(E_GENERIC, fmt::format("{} used palette size ({}) did not match declared size '{}'",
+                                                ctx.diag->bold(fileName + ":"), usedPaletteCount,
+                                                ctx.diag->bold(declaredPaletteSize)));
     }
 
     // minus 1 for transparent

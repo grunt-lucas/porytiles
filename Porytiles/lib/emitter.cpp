@@ -314,21 +314,25 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                        << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
                        << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
             } else {
-                error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttributePath(mode),
-                                                   metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+                ctx.diag->report(
+                    E_GENERIC, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                                           ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
+                                           ctx.diag->bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         } else {
             if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
                 outCsv << metatileIndex << ","
                        << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
             } else {
-                error_unknownMetatileBehaviorValue(ctx.err, ctx.decompilerSrcPaths.modeBasedAttributePath(mode),
-                                                   metatileIndex, attributesMap.at(metatileIndex).metatileBehavior);
+                ctx.diag->report(
+                    E_GENERIC, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                                           ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
+                                           ctx.diag->bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         }
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                        "behavior value did not have reverse mapping");
     }

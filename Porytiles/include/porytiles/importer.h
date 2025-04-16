@@ -29,49 +29,28 @@ namespace porytiles {
 DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compilerMode,
                                      const png::image<png::rgba_pixel> &png);
 
-/**
- * TODO : fill in doc comments
- */
 DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode compilerMode,
                                              const std::unordered_map<std::size_t, Attributes> &attributesMap,
                                              const png::image<png::rgba_pixel> &bottom,
                                              const png::image<png::rgba_pixel> &middle,
                                              const png::image<png::rgba_pixel> &top);
 
-/**
- * TODO : fill in doc comments
- */
 void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
                      const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles);
 
-/**
- * TODO : fill in doc comments
- */
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile);
 
-/**
- * TODO : fill in doc comments
- */
 std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile);
 
-/**
- * TODO : fill in doc comments
- */
 std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
                         const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath);
 
-/**
- * TODO : fill in doc comments
- */
 void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
                            std::ifstream &config);
 
-/**
- * TODO : fill in doc comments
- */
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatiles, std::ifstream &attributes,
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
@@ -80,15 +59,9 @@ importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream 
                       const std::vector<std::string> &paletteFileNames,
                       const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims);
 
-/**
- * TODO : fill in doc comments
- */
 RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile,
                              const std::string &fileName);
 
-/**
- * TODO : fill in doc comments
- */
 std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, CompilerMode compilerMode,
                                                                  std::ifstream &paletteFile,
                                                                  const std::string &fileName);

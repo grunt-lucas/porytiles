@@ -141,8 +141,10 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     // TODO : fill in animations
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(diag_level::error) > 0) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode, "errors encountered while decompiling tileset");
+    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        const auto msg = "errors encountered while decompiling tileset";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 
     return decompiledTileset;

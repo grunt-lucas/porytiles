@@ -46,6 +46,8 @@ RGBA32 parseJascLineCompiler(PorytilesContext &ctx, CompilerMode compilerMode, c
 RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode, const std::string &jascLine,
                                const std::string &fileName);
 
+std::string palIndexToFileName(std::size_t index);
+
 void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
 
 void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);

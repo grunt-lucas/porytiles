@@ -15,10 +15,6 @@
 
 #include "./panic/panic.hpp"
 
-/**
- * TODO : fill in doc comment for this header
- */
-
 namespace porytiles {
 constexpr std::size_t TILE_SIDE_LENGTH_PIX = 8;
 constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH_PIX * TILE_SIDE_LENGTH_PIX;
@@ -522,9 +518,6 @@ struct DecompiledTileset {
  * Normalized types
  */
 
-/**
- * TODO : fill in doc comment
- */
 struct NormalizedPixels {
     std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
@@ -555,9 +548,7 @@ template <> struct std::hash<porytiles::NormalizedPixels> {
 };
 
 namespace porytiles {
-/**
- * TODO : fill in doc comment
- */
+
 struct NormalizedPalette {
     int size{};
     std::array<BGR15, PAL_SIZE> colors{};
@@ -577,9 +568,7 @@ template <> struct std::hash<porytiles::NormalizedPalette> {
 };
 
 namespace porytiles {
-/**
- * TODO : fill in doc comment
- */
+
 struct NormalizedTile {
     /*
      * Vector here to represent frames. Animated tiles can have multiple frames, with each frame corresponding to

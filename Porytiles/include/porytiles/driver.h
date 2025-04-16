@@ -3,10 +3,6 @@
 
 #include "./porytiles_context.h"
 
-/**
- * TODO : fill in doc comment
- */
-
 namespace porytiles {
 
 void drive(PorytilesContext &ctx);
