@@ -8,3 +8,4 @@ runs:
       run: |
         ./build/Porytiles/tools/driver/porytiles --version
         ./build/Porytiles/doctests/PorytilesDocTests
+        ./build/Porytiles/tests/PorytilesGoogleTests
