@@ -524,8 +524,8 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
         anims.push_back(anim);
     }
 
-    // TODO : check that key-frame-missing-colors is enabled at error level
-    if (ctx.diag->in_flight_count_for(W_KEY_FRAME_MISSING_COLORS) > 0) {
+    if (ctx.diag->enabled_at(W_KEY_FRAME_MISSING_COLORS) == DiagLevel::Error &&
+        ctx.diag->in_flight_count_for(W_KEY_FRAME_MISSING_COLORS) > 0) {
         die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "some key frame subtiles were missing essential colors");
     }
