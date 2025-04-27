@@ -696,27 +696,13 @@ static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<Comp
             outFrames.emplace_back(static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight));
         }
         emitAnim(ctx, outFrames, compiledAnim, palettes);
-        // Index starts at 1 here so we don't actually save a key.png compiled file, not necessary
+        // Index starts at 1 here, so we don't save a key.png compiled file, not necessary
         for (std::size_t frameIndex = 1; frameIndex < compiledAnim.frames.size(); frameIndex++) {
             auto &frame = outFrames.at(frameIndex);
             path framePngPath = animPath / compiledAnim.frames.at(frameIndex).frameName;
             frame.write(framePngPath);
         }
     }
-}
-
-static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                 const std::filesystem::path &assignCfgPath) {
-    std::ofstream outAssignCache{assignCfgPath.string()};
-    if (outAssignCache.good()) {
-        emitAssignCache(ctx, compilerMode, outAssignCache);
-    } else {
-        const auto msg =
-            fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string());
-        ctx.diag->report(E_FATAL_GENERIC, msg);
-        die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
-    }
-    outAssignCache.close();
 }
 
 static void driveEmitCompiledTileset(PorytilesContext &ctx, CompilerMode compilerMode, const CompiledTileset &tileset,
@@ -880,23 +866,7 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
         ctx.diag->report(E_FATAL_GENERIC, msg);
         die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
-
-    if (exists(ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode))) {
-        std::ifstream assignCacheFile{ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode)};
-        if (assignCacheFile.fail()) {
-            const auto msg = fmt::format("{}: could not open for reading",
-                                         ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).string());
-            ctx.diag->report(E_FATAL_GENERIC, msg);
-            die_compilationTerminated(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
-        }
-        importAssignmentCache(ctx, compilerMode, parentCompilerMode, assignCacheFile);
-        assignCacheFile.close();
-    }
     compiledTileset = compile(ctx, compilerMode, decompiledTiles, palettePrimers, paletteOverrides, paletteOverrideMap);
-
-    if (ctx.compilerConfig.cacheAssign) {
-        driveEmitAssignCache(ctx, compilerMode, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
-    }
 
     return std::pair{std::move(compiledTileset), attributesMap};
 }
@@ -1174,7 +1144,6 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/anim_metatiles_2/primary";
@@ -1341,7 +1310,6 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/anim_metatiles_2/primary";

@@ -252,27 +252,6 @@ BEST_BRANCHES
 constexpr int BEST_BRANCHES_VAL = 3002;
 const std::string SMART_PRUNE = "smart";
 
-const std::string DISABLE_ASSIGN_CACHING = "disable-assign-caching";
-const std::string DISABLE_ASSIGN_CACHING_DESC = std::string{fmt::format(R"(
-        -{}
-            Do not write palette assignment search parameters to `assign.cache'
-            after a successful compilation.
-)",
-DISABLE_ASSIGN_CACHING
-)}.substr(1);
-constexpr int DISABLE_ASSIGN_CACHING_VAL = 3003;
-
-const std::string FORCE_ASSIGN_PARAM_MATRIX = "force-assign-param-matrix";
-const std::string FORCE_ASSIGN_PARAM_MATRIX_DESC = std::string{fmt::format(R"(
-        -{}
-            Force the full palette assignment parameter search matrix to run. If
-            `assign.cache' exists in either source folder, its contents will be
-            ignored.
-)",
-FORCE_ASSIGN_PARAM_MATRIX
-)}.substr(1);
-constexpr int FORCE_ASSIGN_PARAM_MATRIX_VAL = 3004;
-
 const std::string PRIMARY_ASSIGN_ALGO = "primary-assign-algorithm";
 const std::string PRIMARY_ASSIGN_ALGO_DESC = std::string{fmt::format(R"(
         -{}=<FACTOR>

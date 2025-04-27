@@ -870,7 +870,6 @@ struct CompilerSourcePaths {
     [[nodiscard]] std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedAttributePath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
-    [[nodiscard]] std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedPaletteOverridePath(CompilerMode mode) const;
 };
@@ -952,10 +951,6 @@ struct Output {
 struct CompilerConfig {
     RGBA32 transparencyColor;
     bool tripleLayer;
-    bool cacheAssign;
-    bool forceParamSearchMatrix;
-    bool providedAssignCacheOverride;
-    bool providedPrimaryAssignCacheOverride;
     std::string defaultBehavior;
     std::string defaultEncounterType;
     std::string defaultTerrainType;
@@ -965,21 +960,19 @@ struct CompilerConfig {
     std::size_t primaryExploredNodeCutoff;
     std::size_t primaryBestBranches;
     bool primarySmartPrune;
-    bool readPrimaryAssignCache;
     AssignAlgorithm secondaryAssignAlgorithm;
     std::size_t secondaryExploredNodeCutoff;
     std::size_t secondaryBestBranches;
     bool secondarySmartPrune;
-    bool readSecondaryAssignCache;
+    bool providedAssignOverride;
+    bool providedPrimaryAssignOverride;
 
     CompilerConfig()
-        : transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true}, forceParamSearchMatrix{false},
-          providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false}, defaultBehavior{"0"},
-          defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
-          primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
-          readPrimaryAssignCache{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
+        : transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"0"}, defaultEncounterType{"0"},
+          defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS}, primaryExploredNodeCutoff{2'000'000},
+          primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
           secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
-          readSecondaryAssignCache{false} {}
+          providedAssignOverride{false}, providedPrimaryAssignOverride{false} {}
 };
 
 struct DecompilerConfig {

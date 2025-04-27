@@ -2649,7 +2649,6 @@ TEST_CASE("primer tiles should change output of primary compile function") {
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.primarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Import decompiled tiles
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/bottom.png"}));
@@ -2730,7 +2729,6 @@ TEST_CASE("overrides should change output of primary compile function") {
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.primaryExploredNodeCutoff = 1'000'000;
     ctx.compilerConfig.primarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Import decompiled tiles
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
@@ -2858,7 +2856,6 @@ TEST_CASE("overrides should change output of secondary compile function") {
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryExploredNodeCutoff = 1'000'000;
     ctx.compilerConfig.secondarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Set up compilation for paired primary
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));

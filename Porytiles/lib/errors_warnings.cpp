@@ -37,40 +37,6 @@ void internalerror_unknownSubcommand(const std::string &context) {
     internalerror(context + " unknown Subcommand");
 }
 
-void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                       const CompilerMode &mode, std::string line, std::size_t lineNumber,
-                                       std::string path) {
-    if (err.printErrors) {
-        pt_fatal_err("{}: invalid syntax `{}' at line {}", path, fmt::styled(line, fmt::emphasis::bold), lineNumber);
-        pt_note("`assign.cache' expected line syntax is: {}", fmt::styled("key=value", fmt::emphasis::bold));
-        pt_println(stderr, "");
-    }
-    die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid assign syntax {}", line));
-}
-
-void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                      const CompilerMode &mode, std::string key, std::size_t lineNumber,
-                                      std::string path) {
-    if (err.printErrors) {
-        pt_fatal_err("{}: invalid key `{}' at line {}", path, fmt::styled(key, fmt::emphasis::bold), lineNumber);
-        pt_note("`assign.cache' expects keys to match the color assignment config options");
-        pt_println(stderr, "");
-    }
-    die_compilationTerminated(err, srcs.modeBasedSrcPath(mode), fmt::format("invalid assign key {}", key));
-}
-
-void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                        const CompilerMode &mode, std::string key, std::string value,
-                                        std::size_t lineNumber, std::string path) {
-    if (err.printErrors) {
-        pt_fatal_err("{}: invalid value `{}' for key `{}' at line {}", path, fmt::styled(value, fmt::emphasis::bold),
-                     fmt::styled(key, fmt::emphasis::bold), lineNumber);
-        pt_println(stderr, "");
-    }
-    die_compilationTerminated(err, srcs.modeBasedSrcPath(mode),
-                              fmt::format("invalid assign value {} for key {}", value, key));
-}
-
 void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                      const CompilerMode &mode) {
     if (err.printErrors) {
@@ -146,7 +112,6 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                              porytiles::PorytilesException);
@@ -166,7 +131,6 @@ TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                              porytiles::PorytilesException);
@@ -186,7 +150,6 @@ TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles") 
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
@@ -205,7 +168,6 @@ TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PorytilesException);
     CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
@@ -225,7 +187,6 @@ TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                          porytiles::PorytilesException);
@@ -328,7 +289,6 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
 }
@@ -345,7 +305,6 @@ TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regu
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
 }
@@ -362,7 +321,6 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
                              porytiles::PorytilesException);
@@ -379,7 +337,6 @@ TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in b
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
                              porytiles::PorytilesException);
@@ -396,7 +353,6 @@ TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file",
                          porytiles::PorytilesException);
@@ -414,7 +370,6 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 01.png dimension width mismatch",
                          porytiles::PorytilesException);
@@ -432,7 +387,6 @@ TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger co
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
                          porytiles::PorytilesException);
@@ -448,7 +402,6 @@ TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a 
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 had a transparent key frame tile",
                          porytiles::PorytilesException);
@@ -465,7 +418,6 @@ TEST_CASE(
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile",
                          porytiles::PorytilesException);
@@ -485,7 +437,6 @@ TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an anim
     ctx.err.printErrors = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 key frame tile present in paired primary",
                          porytiles::PorytilesException);
@@ -583,7 +534,6 @@ TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collaps
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
@@ -607,7 +557,6 @@ TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
                              porytiles::PorytilesException);
@@ -631,7 +580,6 @@ TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
                              porytiles::PorytilesException);
@@ -687,7 +635,6 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
                              porytiles::PorytilesException);
@@ -712,7 +659,6 @@ TEST_CASE("warn_attributesFileNotFound should correctly warn") {
         ctx.err.printErrors = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
                              porytiles::PorytilesException);
@@ -735,7 +681,6 @@ TEST_CASE("warn_unusedAttribute should correctly warn") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
@@ -758,7 +703,6 @@ TEST_CASE("warn_unusedAttribute should correctly warn") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
@@ -781,7 +725,6 @@ TEST_CASE("warn_unusedAttribute should correctly warn") {
         ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-        ctx.compilerConfig.cacheAssign = false;
 
         CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
                              porytiles::PorytilesException);
@@ -804,7 +747,6 @@ TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger corre
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);
@@ -825,7 +767,6 @@ TEST_CASE("warn_unusedManualPalColor should trigger correctly") {
     ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
                          porytiles::PorytilesException);

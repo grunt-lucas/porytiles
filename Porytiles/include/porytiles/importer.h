@@ -48,9 +48,6 @@ std::unordered_map<std::size_t, Attributes>
 importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
                         const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath);
 
-void importAssignmentCache(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMode parentCompilerMode,
-                           std::ifstream &config);
-
 std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
 importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatiles, std::ifstream &attributes,
                       const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,

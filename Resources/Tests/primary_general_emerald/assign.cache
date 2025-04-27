@@ -1,3 +1,0 @@
-assign-algorithm=bfs
-explore-cutoff=2000000
-best-branches=4

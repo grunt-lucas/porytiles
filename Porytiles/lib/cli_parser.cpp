@@ -6,7 +6,6 @@
 
 #include <fmt/color.h>
 #include <getopt.h>
-#include <iostream>
 #include <iterator>
 #include <optional>
 #include <sstream>
@@ -226,8 +225,6 @@ OPTIONS
 {}
 {}
 {}
-{}
-{}
     Fieldmap Override Options
 {}
 {}
@@ -248,7 +245,7 @@ OUTPUT_DESC, TILES_OUTPUT_PAL_DESC, DISABLE_METATILE_GENERATION_DESC, DISABLE_AT
 // Tileset compilation options
 TARGET_BASE_GAME_DESC, DUAL_LAYER_DESC, TRANSPARENCY_COLOR_DESC, DEFAULT_BEHAVIOR_DESC, DEFAULT_ENCOUNTER_TYPE_DESC, DEFAULT_TERRAIN_TYPE_DESC,
 // Palette assignment config options
-ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC, DISABLE_ASSIGN_CACHING_DESC, FORCE_ASSIGN_PARAM_MATRIX_DESC,
+ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC,
 // Fieldmap override options
 TILES_PRIMARY_OVERRIDE_DESC, TILES_TOTAL_OVERRIDE_DESC, METATILES_PRIMARY_OVERRIDE_DESC, METATILES_TOTAL_OVERRIDE_DESC, PALS_PRIMARY_OVERRIDE_DESC, PALS_TOTAL_OVERRIDE_DESC,
 // Warning options
@@ -306,8 +303,6 @@ OPTIONS
 {}
 {}
 {}
-{}
-{}
     Primary Palette Assignment Config Options
 {}
 {}
@@ -332,7 +327,7 @@ OUTPUT_DESC, TILES_OUTPUT_PAL_DESC, DISABLE_METATILE_GENERATION_DESC, DISABLE_AT
 // Tileset compilation options
 TARGET_BASE_GAME_DESC, DUAL_LAYER_DESC, TRANSPARENCY_COLOR_DESC, DEFAULT_BEHAVIOR_DESC, DEFAULT_ENCOUNTER_TYPE_DESC, DEFAULT_TERRAIN_TYPE_DESC,
 // Palette assignment config options
-ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC, DISABLE_ASSIGN_CACHING_DESC, FORCE_ASSIGN_PARAM_MATRIX_DESC,
+ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC,
 // Primary palette assignment config options
 PRIMARY_ASSIGN_ALGO_DESC, PRIMARY_EXPLORE_CUTOFF_DESC, PRIMARY_BEST_BRANCHES_DESC,
 // Fieldmap override options
@@ -486,8 +481,6 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {ASSIGN_ALGO, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {EXPLORE_CUTOFF, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {BEST_BRANCHES, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {DISABLE_ASSIGN_CACHING, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {FORCE_ASSIGN_PARAM_MATRIX, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_ASSIGN_ALGO, {Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_EXPLORE_CUTOFF, {Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_BEST_BRANCHES, {Subcommand::COMPILE_SECONDARY}},
@@ -762,8 +755,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {EXPLORE_CUTOFF.c_str(), required_argument, nullptr, EXPLORE_CUTOFF_VAL},
         {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
         {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
-        {DISABLE_ASSIGN_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CACHING_VAL},
-        {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
         {PRIMARY_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_EXPLORE_CUTOFF_VAL},
         {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
         {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
@@ -914,7 +905,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         // Color assignment config options
         case EXPLORE_CUTOFF_VAL:
             validateSubcommandContext(ctx, EXPLORE_CUTOFF);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
+            ctx.compilerConfig.providedAssignOverride = true;
             exploreCutoff = parseIntegralOption<std::size_t>(ctx, EXPLORE_CUTOFF, optarg);
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
@@ -936,7 +927,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             break;
         case ASSIGN_ALGO_VAL:
             validateSubcommandContext(ctx, ASSIGN_ALGO);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
+            ctx.compilerConfig.providedAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx, ASSIGN_ALGO, optarg);
             } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -945,7 +936,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             break;
         case BEST_BRANCHES_VAL:
             validateSubcommandContext(ctx, BEST_BRANCHES);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
+            ctx.compilerConfig.providedAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 if (std::string{optarg} == SMART_PRUNE) {
                     ctx.compilerConfig.primarySmartPrune = true;
@@ -972,17 +963,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                 }
             }
             break;
-        case DISABLE_ASSIGN_CACHING_VAL:
-            validateSubcommandContext(ctx, DISABLE_ASSIGN_CACHING);
-            ctx.compilerConfig.cacheAssign = false;
-            break;
-        case FORCE_ASSIGN_PARAM_MATRIX_VAL:
-            validateSubcommandContext(ctx, FORCE_ASSIGN_PARAM_MATRIX);
-            ctx.compilerConfig.forceParamSearchMatrix = true;
-            break;
         case PRIMARY_EXPLORE_CUTOFF_VAL:
             validateSubcommandContext(ctx, PRIMARY_EXPLORE_CUTOFF);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
             exploreCutoff = parseIntegralOption<std::size_t>(ctx, PRIMARY_EXPLORE_CUTOFF, optarg);
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
@@ -996,14 +979,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             break;
         case PRIMARY_ASSIGN_ALGO_VAL:
             validateSubcommandContext(ctx, PRIMARY_ASSIGN_ALGO);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx, PRIMARY_ASSIGN_ALGO, optarg);
             }
             break;
         case PRIMARY_BEST_BRANCHES_VAL:
             validateSubcommandContext(ctx, PRIMARY_BEST_BRANCHES);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 if (std::string{optarg} == "smart") {
                     ctx.compilerConfig.primarySmartPrune = true;

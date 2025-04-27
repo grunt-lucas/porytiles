@@ -476,20 +476,20 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
      * this case, we don't want to read anything from the assign config. Just return.
      */
     bool primaryOverride = ctx.subcommand == Subcommand::COMPILE_PRIMARY && compilerMode == CompilerMode::PRIMARY &&
-                           ctx.compilerConfig.providedAssignCacheOverride;
+                           ctx.compilerConfig.providedAssignOverride;
     /*
      * User is running compile-secondary, we are compiling the secondary, and user supplied an explicit override value.
      * In this case, we don't want to read anything from the assign config. Just return.
      */
     bool secondaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
-                             compilerMode == CompilerMode::SECONDARY && ctx.compilerConfig.providedAssignCacheOverride;
+                             compilerMode == CompilerMode::SECONDARY && ctx.compilerConfig.providedAssignOverride;
     /*
      * User is running compile-secondary, we are compiling the paired primary, and user supplied an explicit primary
      * override value. In this case, we don't want to read anything from the assign config. Just return.
      */
     bool pairedPrimaryOverride = ctx.subcommand == Subcommand::COMPILE_SECONDARY &&
                                  compilerMode == CompilerMode::PRIMARY &&
-                                 ctx.compilerConfig.providedPrimaryAssignCacheOverride;
+                                 ctx.compilerConfig.providedPrimaryAssignOverride;
 
     // If user supplied any command line overrides, we don't want to run the full matrix. Instead, die upon failure.
     if (primaryOverride || secondaryOverride || pairedPrimaryOverride) {
@@ -500,35 +500,17 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
         }
     }
 
-    if ((compilerMode == CompilerMode::PRIMARY && ctx.compilerConfig.readPrimaryAssignCache) ||
-        (compilerMode == CompilerMode::SECONDARY && ctx.compilerConfig.readSecondaryAssignCache)) {
-        if (!ctx.compilerConfig.forceParamSearchMatrix) {
-            /*
-             * If we read a cached assignment setting that corresponds to our current compilation mode, try it first to
-             * potentially save a ton of time.
-             */
-            auto assignmentResult =
-                tryAssignment(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex, false);
-            bool success = std::get<0>(assignmentResult);
-            if (success) {
-                auto assignedPalsSolution = std::get<1>(assignmentResult);
-                auto primaryPaletteColorSets = std::get<2>(assignmentResult);
-                return std::pair{assignedPalsSolution, primaryPaletteColorSets};
-            }
-        }
-    }
-
-    for (std::size_t index = 0; index < MATRIX.size(); index++) {
+    for (const auto &[assignAlgorithm, exploredNodeCutoff, bestBranches, smartPrune] : MATRIX) {
         if (compilerMode == CompilerMode::PRIMARY) {
-            ctx.compilerConfig.primaryAssignAlgorithm = MATRIX.at(index).assignAlgorithm;
-            ctx.compilerConfig.primaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
-            ctx.compilerConfig.primaryBestBranches = MATRIX.at(index).bestBranches;
-            ctx.compilerConfig.primarySmartPrune = MATRIX.at(index).smartPrune;
+            ctx.compilerConfig.primaryAssignAlgorithm = assignAlgorithm;
+            ctx.compilerConfig.primaryExploredNodeCutoff = exploredNodeCutoff;
+            ctx.compilerConfig.primaryBestBranches = bestBranches;
+            ctx.compilerConfig.primarySmartPrune = smartPrune;
         } else if (compilerMode == CompilerMode::SECONDARY) {
-            ctx.compilerConfig.secondaryAssignAlgorithm = MATRIX.at(index).assignAlgorithm;
-            ctx.compilerConfig.secondaryExploredNodeCutoff = MATRIX.at(index).exploredNodeCutoff;
-            ctx.compilerConfig.secondaryBestBranches = MATRIX.at(index).bestBranches;
-            ctx.compilerConfig.secondarySmartPrune = MATRIX.at(index).smartPrune;
+            ctx.compilerConfig.secondaryAssignAlgorithm = assignAlgorithm;
+            ctx.compilerConfig.secondaryExploredNodeCutoff = exploredNodeCutoff;
+            ctx.compilerConfig.secondaryBestBranches = bestBranches;
+            ctx.compilerConfig.secondarySmartPrune = smartPrune;
         }
         auto [success, assignedPalsSolution, primaryPaletteColorSets] =
             tryAssignment(ctx, compilerMode, colorSets, primerColorSets, overrideColorSets, colorToIndex, false);

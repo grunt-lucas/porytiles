@@ -39,18 +39,6 @@ void internalerror_unknownSubcommand(const std::string &context);
 /*
  * Fatal compilation errors (due to bad user input), fatal errors die immediately
  */
-void fatalerror_assignCacheSyntaxError(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                       const CompilerMode &mode, std::string line, std::size_t lineNumber,
-                                       std::string path);
-
-void fatalerror_assignCacheInvalidKey(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                      const CompilerMode &mode, std::string key, std::size_t lineNumber,
-                                      std::string path);
-
-void fatalerror_assignCacheInvalidValue(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
-                                        const CompilerMode &mode, std::string key, std::string value,
-                                        std::size_t lineNumber, std::string path);
-
 void fatalerror_paletteAssignParamSearchMatrixFailed(const ErrorsAndWarnings &err, const CompilerSourcePaths &srcs,
                                                      const CompilerMode &mode);
 

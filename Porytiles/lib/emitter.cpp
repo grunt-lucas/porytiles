@@ -338,26 +338,6 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
     }
 }
 
-void emitAssignCache(PorytilesContext &ctx, const CompilerMode &mode, std::ostream &out) {
-    if (mode == CompilerMode::PRIMARY) {
-        out << ASSIGN_ALGO << "=" << assignAlgorithmString(ctx.compilerConfig.primaryAssignAlgorithm) << std::endl;
-        out << EXPLORE_CUTOFF << "=" << ctx.compilerConfig.primaryExploredNodeCutoff << std::endl;
-        if (ctx.compilerConfig.primarySmartPrune) {
-            out << BEST_BRANCHES << "=smart" << std::endl;
-        } else {
-            out << BEST_BRANCHES << "=" << ctx.compilerConfig.primaryBestBranches << std::endl;
-        }
-    } else if (mode == CompilerMode::SECONDARY) {
-        out << ASSIGN_ALGO << "=" << assignAlgorithmString(ctx.compilerConfig.secondaryAssignAlgorithm) << std::endl;
-        out << EXPLORE_CUTOFF << "=" << ctx.compilerConfig.secondaryExploredNodeCutoff << std::endl;
-        if (ctx.compilerConfig.secondarySmartPrune) {
-            out << BEST_BRANCHES << "=smart" << std::endl;
-        } else {
-            out << BEST_BRANCHES << "=" << ctx.compilerConfig.secondaryBestBranches << std::endl;
-        }
-    }
-}
-
 } // namespace porytiles
 
 #ifndef DOCTEST_CONFIG_DISABLE
