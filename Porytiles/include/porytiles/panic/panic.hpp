@@ -1,6 +1,5 @@
 #pragma once
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include <concepts>
@@ -12,8 +11,7 @@
 namespace porytiles {
 
 /**
- * @brief A wrapper for @link std::string_view @endlink with a taggable
- * @link std::source_location @endlink
+ * @brief A wrapper for std::string_view with a taggable std::source_location.
  *
  * @details
  * Inspired by: https://buildingblock.ai/panic
@@ -33,6 +31,13 @@ struct string_view_with_source_loc {
 [[noreturn]] inline void panic(const string_view_with_source_loc &s) noexcept {
     auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
     panic_impl(msg.c_str());
+}
+
+inline void assert_or_panic(bool condition, const string_view_with_source_loc &s) {
+    if (!condition) {
+        auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
+        panic_impl(msg.c_str());
+    }
 }
 
 } // namespace porytiles

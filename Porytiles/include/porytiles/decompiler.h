@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "porytiles_context.h"
-#include "types.h"
+#include "./porytiles_context.h"
+#include "./types.h"
 
 namespace porytiles {
 

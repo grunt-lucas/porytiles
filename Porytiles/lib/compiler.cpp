@@ -1,9 +1,12 @@
 #include "compiler.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
+#include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
 #include <algorithm>
 #include <bitset>
 #include <deque>
-#include <doctest.h>
 #include <filesystem>
 #include <memory>
 #include <png.hpp>
@@ -14,13 +17,11 @@
 #include <utility>
 #include <vector>
 
-#include "emitter.h"
-#include "errors_warnings.h"
 #include "importer.h"
 #include "logger.h"
 #include "palette_assignment.h"
+#include "panic/panic.hpp"
 #include "porytiles_context.h"
-#include "porytiles_exception.h"
 #include "types.h"
 
 namespace porytiles {
@@ -42,7 +43,11 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
      */
     if (rgba.alpha != ALPHA_TRANSPARENT && rgba.alpha != ALPHA_OPAQUE) {
         if (errWarn) {
-            error_invalidAlphaValue(ctx.err, rgbaFrame, rgba.alpha, row, col);
+            ctx.diag->report(E_GENERIC, fmt::format("invalid alpha value '{}' at '{}' subtile pixel col {}, row {}",
+                                                    ctx.diag->bold(rgba.alpha), ctx.diag->bold(rgbaFrame.prettify()),
+                                                    ctx.diag->bold(col), ctx.diag->bold(row)));
+            ctx.diag->report(N_GENERIC, fmt::format("alpha value must be either {} for opaque or {} for transparent",
+                                                    ctx.diag->bold(ALPHA_OPAQUE), ctx.diag->bold(ALPHA_TRANSPARENT)));
         }
         return INVALID_INDEX_PIXEL_VALUE;
     }
@@ -57,8 +62,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
          * because it retains end-user visibility while not potentially causing confounding compilation errors later on
          * in the compilation pipeline.
          */
-        warn_nonTransparentRgbaCollapsedToTransparentBgr(ctx.err, compilerMode, rgbaFrame, row, col, rgba,
-                                                         transparencyColor);
+        ctx.diag->report(W_TRANSPARENCY_COLLAPSE, ctx.diag->bold(rgba.jasc()),
+                         ctx.diag->bold(compilerModeString(compilerMode)), ctx.diag->bold(rgbaFrame.prettify()),
+                         ctx.diag->bold(col), ctx.diag->bold(row));
+        ctx.diag->report_partner(W_TRANSPARENCY_COLLAPSE, 0);
         return 0;
     }
 
@@ -74,12 +81,21 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
              * in the master sheet are going to collapse to one BGR color on the GBA.
              */
             if (errWarn) {
-                warn_colorPrecisionLoss(ctx.err, compilerMode, rgbaFrame, row, col, pixelBgr, rgba,
-                                        ctx.compilerContext.bgrToRgba.at(pixelBgr));
+                // TODO : we can probably pass rgbaFrame here as a pointer
+                ctx.diag->report(W_COLOR_PRECISION_LOSS, rgbaFrame, rgba.jasc(), compilerModeString(compilerMode), row,
+                                 col);
+                ctx.diag->report_partner(W_COLOR_PRECISION_LOSS, 0,
+                                         std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc(),
+                                         std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                         std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
+                ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
             }
-            ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
         }
-        ctx.compilerContext.bgrToRgba.insert_or_assign(pixelBgr, std::tuple{rgba, rgbaFrame, row, col});
+        if (errWarn) {
+            // Only update the map for the non-flipped version of each tile
+            ctx.compilerContext.bgrToRgba.insert_or_assign(pixelBgr, std::tuple{rgba, rgbaFrame, row, col});
+        }
 
         const auto itrAtBgr =
             std::find(std::begin(palette.colors) + 1, std::begin(palette.colors) + palette.size, pixelBgr);
@@ -88,7 +104,14 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
             // palette size will grow as we add to it
             if (palette.size == PAL_SIZE) {
                 if (errWarn) {
-                    error_tooManyUniqueColorsInTile(ctx.err, rgbaFrame, row, col);
+                    ctx.diag->report(E_GENERIC,
+                                     fmt::format("too many unique colors, threw at '{}' subtile pixel col {}, row {}",
+                                                 ctx.diag->bold(rgbaFrame.prettify()), ctx.diag->bold(col),
+                                                 ctx.diag->bold(row)));
+                    ctx.diag->report(
+                        N_GENERIC,
+                        fmt::format("cannot have more than {} unique colors, including the transparency color",
+                                    ctx.diag->bold(PAL_SIZE)));
                 }
                 return INVALID_INDEX_PIXEL_VALUE;
             }
@@ -97,7 +120,7 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
         return bgrPosInPalette;
     }
 
-    internalerror("compiler::insertRGBA unreachable code path");
+    panic("compiler::insertRGBA unreachable code path");
     return INVALID_INDEX_PIXEL_VALUE;
 }
 
@@ -155,9 +178,8 @@ static NormalizedTile normalize(PorytilesContext &ctx, CompilerMode compilerMode
         candidate(ctx, compilerMode, ctx.compilerConfig.transparencyColor, rgbaFrames, true, true, false);
 
     std::array<const NormalizedTile *, 4> candidates = {&noFlipsTile, &hFlipTile, &vFlipTile, &bothFlipsTile};
-    auto normalizedTile = std::min_element(std::begin(candidates), std::end(candidates), [](auto tile1, auto tile2) {
-        return tile1->keyFrame() < tile2->keyFrame();
-    });
+    const auto normalizedTile = std::ranges::min_element(
+        candidates, [](auto tile1, auto tile2) { return tile1->keyFrame() < tile2->keyFrame(); });
 
     if (rgbaFrames.at(0).type == TileType::LAYERED) {
         pt_logln(ctx, stderr, "{}:{}:{} = [hFlip: {}, vFlip: {}]", layerString(rgbaFrames.at(0).layer),
@@ -275,17 +297,17 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     }
     for (const auto &remainingRgb : primerRgbColors) {
         for (const auto &path : primerRgbColorPaths.at(remainingRgb)) {
-            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+            ctx.diag->report(W_UNUSED_MANUAL_PAL_COLOR, ctx.diag->bold(path), ctx.diag->bold(remainingRgb.jasc()));
         }
     }
     for (const auto &remainingRgb : overrideRgbColors) {
         for (const auto &path : overrideRgbColorPaths.at(remainingRgb)) {
-            warn_unusedManualPalColor(ctx.err, remainingRgb.jasc(), path);
+            ctx.diag->report(W_UNUSED_MANUAL_PAL_COLOR, ctx.diag->bold(path), ctx.diag->bold(remainingRgb.jasc()));
         }
     }
 
-    if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        "errors generated during tile normalization");
     }
 
@@ -307,10 +329,10 @@ buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode
     if (!primaryIndexMap.empty()) {
         for (const auto &[color, index] : primaryIndexMap) {
             if (auto [insertedValue, wasInserted] = colorIndexes.insert({color, index}); !wasInserted) {
-                internalerror("compiler::buildColorIndexMaps colorIndexes.insert failed");
+                panic("compiler::buildColorIndexMaps colorIndexes.insert failed");
             }
             if (auto [_, wasInserted2] = indexesToColors.insert(std::pair{index, color}); !wasInserted2) {
-                internalerror("compiler::buildColorIndexMaps indexesToColors.insert failed");
+                panic("compiler::buildColorIndexMaps indexesToColors.insert failed");
             }
         }
     }
@@ -358,17 +380,29 @@ buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode
      * This error is merely a fail-early heuristic. I.e. just because a primary tileset passes this check does not mean
      * it is actually allocatable.
      */
+    bool fatalError = false;
+    std::size_t size;
     if (compilerMode == CompilerMode::PRIMARY) {
-        if (const std::size_t size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary; colorIndex > size) {
-            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, size, colorIndex);
+        size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesInPrimary;
+        if (colorIndex > size) {
+            fatalError = true;
         }
     } else if (compilerMode == CompilerMode::SECONDARY) {
         // use numPalettesTotal since secondary tiles can use colors from the primary set
-        if (const std::size_t size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal; colorIndex > size) {
-            fatalerror_tooManyUniqueColorsTotal(ctx.err, ctx.compilerSrcPaths, compilerMode, size, colorIndex);
+        size = (PAL_SIZE - 1) * ctx.fieldmapConfig.numPalettesTotal;
+        if (colorIndex > size) {
+            fatalError = true;
         }
     } else {
-        internalerror_unknownCompilerMode("compiler::buildColorIndexMaps");
+        panic("compiler::buildColorIndexMaps unknown compiler mode");
+    }
+
+    if (fatalError) {
+        ctx.diag->report(E_FATAL_GENERIC, "too many unique colors in {} tileset", compilerModeString(compilerMode));
+        ctx.diag->report(N_GENERIC, "{} allowed based on fieldmap configuration, but found {}", ctx.diag->bold(size),
+                         ctx.diag->bold(colorIndex));
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                  "too many unique colors total");
     }
 
     return {colorIndexes, indexesToColors};
@@ -449,8 +483,8 @@ static GBATile makeTile(const NormalizedTile &normalizedTile, const std::size_t 
         const auto it =
             std::find(std::begin(palette.colors) + 1, std::end(palette.colors), normalizedTile.palette.colors[i]);
         if (it == std::end(palette.colors)) {
-            internalerror(fmt::format("compiler::makeTile it == std::end(palette.colors) for color {}",
-                                      bgrToRgba(normalizedTile.palette.colors[i]).jasc()));
+            panic(fmt::format("compiler::makeTile it == std::end(palette.colors) for color {}",
+                              bgrToRgba(normalizedTile.palette.colors[i]).jasc()));
         }
         paletteIndexes.at(i) = it - std::begin(palette.colors);
     }
@@ -494,7 +528,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
                                    return (colorSet.first & ~assignedPal.first).none();
                                });
         if (it == std::end(assignedPalsSolution)) {
-            internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
+            panic("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
         }
         std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
 
@@ -507,8 +541,17 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
              * no way to tell if a user provided tile on the layer sheet referred to the true index 0 transparent tile,
              * or if it was a reference into this particular animation.
              */
-            fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, normTile.anim,
-                                               normTile.tileIndex);
+            const auto msg = fmt::format("animation '{}' key frame tile '{}' was transparent",
+                                         ctx.diag->bold(normTile.anim), ctx.diag->bold(normTile.tileIndex));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            // TODO : how to break up a really long note into multiple lines?
+            ctx.diag->report(
+                N_GENERIC,
+                "this is not allowed, since there would be no way to tell if a transparent user-provided tile on the "
+                "layer sheet referred to the true index 0 transparent tile, or if it was a reference into this "
+                "particular animation");
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
+                                      fmt::format("animation {} had a transparent key frame tile", normTile.anim));
         }
 
         // Insert this tile's key frame into the seen tiles map
@@ -527,10 +570,17 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
              */
             usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
         } else if (tileIndexes.contains(keyFrameTile)) {
-            fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, normTile.anim,
-                                             normTile.tileIndex);
+            const auto msg =
+                fmt::format("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
+                            ctx.diag->bold(normTile.anim), ctx.diag->bold(normTile.tileIndex));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->report(
+                N_GENERIC,
+                "key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
+                                      fmt::format("animation {} had a duplicate key frame tile", normTile.anim));
         } else {
-            internalerror("compiler::assignTilesPrimary third key tile insertion branch, should be unreachable");
+            panic("compiler::assignTilesPrimary third key tile insertion branch, should be unreachable");
         }
 
         // Put the rest of this tile's frames into the anim structure for the emitter
@@ -562,7 +612,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
                                    return (colorSet.first & ~assignedPal.first).none();
                                });
         if (it == std::end(assignedPalsSolution)) {
-            internalerror("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
+            panic("compiler::assignTilesPrimary it == std::end(assignedPalsSolution)");
         }
         std::size_t paletteIndex = it - std::begin(assignedPalsSolution);
         GBATile gbaTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes.at(paletteIndex));
@@ -589,20 +639,26 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                warn_keyFrameNoMatchingTile(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, ctx.diag->bold(compiled.anims.at(animIndex).animName),
+                                 ctx.diag->bold(tileIndex));
             }
         }
     }
 
     // error out if there were too many unique tiles
     if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInPrimary) {
-        fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY, compiled.tiles.size(),
-                                      ctx.fieldmapConfig.numTilesInPrimary);
+        const auto msg =
+            fmt::format("unique tile count '{}' exceeded limit of '{}'", ctx.diag->bold(compiled.tiles.size()),
+                        ctx.diag->bold(ctx.fieldmapConfig.numTilesInPrimary));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(
+            ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
+            fmt::format("too many unique tiles in {} tileset", compilerModeString(CompilerMode::PRIMARY)));
     }
 
     // exit if there were any other errors
-    if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
                        "errors generated during primary tile assignment");
     }
 }
@@ -638,7 +694,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
             return (colorSet.first & ~assignedPal.first).none();
         });
         if (it == std::end(allColorSets)) {
-            internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
+            panic("compiler::assignTilesSecondary it == std::end(allColorSets)");
         }
         std::size_t paletteIndex = it - std::begin(allColorSets);
 
@@ -652,16 +708,36 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
                  * be no way to tell if a transparent user provided tile on the layer sheet referred to the true index 0
                  * transparent tile, or if it was a reference into this particular animation.
                  */
-                fatalerror_transparentKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                                                   normTile.anim, normTile.tileIndex);
+                const auto msg = fmt::format("animation '{}' key frame tile '{}' was transparent",
+                                             ctx.diag->bold(normTile.anim), ctx.diag->bold(normTile.tileIndex));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                // TODO : how to break up a really long note into multiple lines?
+                ctx.diag->report(
+                    N_GENERIC,
+                    "this is not allowed, since there would be no way to tell if a transparent user-provided tile on "
+                    "the "
+                    "layer sheet referred to the true index 0 transparent tile, or if it was a reference into this "
+                    "particular animation");
+                die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
+                                          fmt::format("animation {} had a transparent key frame tile", normTile.anim));
             } else {
                 /*
                  * If keyFrameTile was elsewhere present in the primary set, this is a user error because it renders the
                  * animation inoperable, any reference to the repTile in the secondary set will be linked to the primary
                  * tile as opposed to the animation.
                  */
-                fatalerror_keyFramePresentInPairedPrimary(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                                                          normTile.anim, normTile.tileIndex);
+                const auto msg =
+                    fmt::format("animation '{}' key frame tile '{}' was present in the paired primary tileset",
+                                ctx.diag->bold(normTile.anim), ctx.diag->bold(normTile.tileIndex));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                // TODO : how to break up a really long note into multiple lines?
+                ctx.diag->report(
+                    N_GENERIC,
+                    "this is an error because it renders the animation inoperable, any reference to the key tile in "
+                    "the secondary layer sheet will be linked to primary tileset instead of the intended animation");
+                die_compilationTerminated(
+                    ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
+                    fmt::format("animation {} key frame tile present in paired primary", normTile.anim));
             }
         }
 
@@ -681,10 +757,17 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
              */
             usedKeyFrameTiles.insert(std::pair{keyFrameTile, false});
         } else if (tileIndexes.contains(keyFrameTile)) {
-            fatalerror_duplicateKeyFrameTile(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, normTile.anim,
-                                             normTile.tileIndex);
+            const auto msg =
+                fmt::format("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
+                            ctx.diag->bold(normTile.anim), ctx.diag->bold(normTile.tileIndex));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->report(
+                N_GENERIC,
+                "key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
+                                      fmt::format("animation {} had a duplicate key frame tile", normTile.anim));
         } else {
-            internalerror("compiler::assignTilesSecondary third key tile insertion branch, should be unreachable");
+            panic("compiler::assignTilesSecondary third key tile insertion branch, should be unreachable");
         }
 
         // Put the rest of this tile's frames into the anim structure for the emitter
@@ -710,12 +793,12 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
             continue;
         }
 
-        auto it = std::find_if(std::begin(allColorSets), std::end(allColorSets), [&colorSet](const auto &assignedPal) {
+        auto it = std::ranges::find_if(allColorSets, [&colorSet](const auto &assignedPal) {
             // Find which of the allColorSets palettes this tile belongs to
             return (colorSet.first & ~assignedPal.first).none();
         });
         if (it == std::end(allColorSets)) {
-            internalerror("compiler::assignTilesSecondary it == std::end(allColorSets)");
+            panic("compiler::assignTilesSecondary it == std::end(allColorSets)");
         }
         std::size_t paletteIndex = it - std::begin(allColorSets);
         GBATile gbaTile = makeTile(normTile, NormalizedTile::keyFrameIndex(), compiled.palettes[paletteIndex]);
@@ -751,20 +834,26 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                warn_keyFrameNoMatchingTile(ctx.err, compiled.anims.at(animIndex).animName, tileIndex);
+                ctx.diag->report(W_KEY_FRAME_NO_MATCHING_TILE, ctx.diag->bold(compiled.anims.at(animIndex).animName),
+                                 ctx.diag->bold(tileIndex));
             }
         }
     }
 
     // error out if there were too many unique tiles
     if (compiled.tiles.size() > ctx.fieldmapConfig.numTilesInSecondary()) {
-        fatalerror_tooManyUniqueTiles(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY, compiled.tiles.size(),
-                                      ctx.fieldmapConfig.numTilesInSecondary());
+        const auto msg =
+            fmt::format("unique tile count '{}' exceeded limit of '{}'", ctx.diag->bold(compiled.tiles.size()),
+                        ctx.diag->bold(ctx.fieldmapConfig.numTilesInSecondary()));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(
+            ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
+            fmt::format("too many unique tiles in {} tileset", compilerModeString(CompilerMode::SECONDARY)));
     }
 
     // exit if there were any other errors
-    if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
                        "errors generated during secondary tile assignment");
     }
 }
@@ -774,7 +863,7 @@ static std::vector<ColorSet> assignHardwarePalettes(
     const std::vector<ColorSet> &assignedPalsSolution, const std::unordered_map<std::size_t, BGR15> &indexToColor,
     const std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>> &palOverridesMap) {
     if (mode != CompilerMode::PRIMARY && mode != CompilerMode::SECONDARY) {
-        internalerror("compiler::assignHardwarePalettes invalid compiler mode");
+        panic("compiler::assignHardwarePalettes invalid compiler mode");
     }
 
     std::unordered_set<std::size_t> usedHardwarePalettes{};
@@ -887,7 +976,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
         (ctx.fieldmapConfig.numPalettesInPrimary != ctx.compilerContext.pairedPrimaryTileset->palettes.size())) {
         // FIXME : is this actually an internal error? It seems like a user could force this to happen via bad
         // inputs
-        internalerror(fmt::format(
+        panic(fmt::format(
             "compiler::compile config.numPalettesInPrimary did not match primary palette set size ({} != {})",
             ctx.fieldmapConfig.numPalettesInPrimary, ctx.compilerContext.pairedPrimaryTileset->palettes.size()));
     }
@@ -902,20 +991,30 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
      */
     if (compilerMode == CompilerMode::PRIMARY) {
         compiled->palettes.resize(ctx.fieldmapConfig.numPalettesInPrimary);
-        std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
-        if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
-            fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, compilerMode, srcMetatileCount,
-                                        ctx.fieldmapConfig.numMetatilesInPrimary);
+        if (std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+            srcMetatileCount > ctx.fieldmapConfig.numMetatilesInPrimary) {
+            const auto msg = fmt::format("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
+                                         ctx.diag->bold(srcMetatileCount), compilerModeString(compilerMode),
+                                         ctx.diag->bold(ctx.fieldmapConfig.numMetatilesInPrimary));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("too many {} metatiles: {} > {}", compilerModeString(compilerMode),
+                                                  srcMetatileCount, ctx.fieldmapConfig.numMetatilesInPrimary));
         }
     } else if (compilerMode == CompilerMode::SECONDARY) {
         compiled->palettes.resize(ctx.fieldmapConfig.numPalettesTotal);
-        std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
-        if (srcMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
-            fatalerror_tooManyMetatiles(ctx.err, ctx.compilerSrcPaths, compilerMode, srcMetatileCount,
-                                        ctx.fieldmapConfig.numMetatilesInSecondary());
+        if (std::size_t srcMetatileCount = (decompiledTileset.tiles.size() / ctx.fieldmapConfig.numTilesPerMetatile);
+            srcMetatileCount > ctx.fieldmapConfig.numMetatilesInSecondary()) {
+            const auto msg = fmt::format("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
+                                         ctx.diag->bold(srcMetatileCount), compilerModeString(compilerMode),
+                                         ctx.diag->bold(ctx.fieldmapConfig.numMetatilesInSecondary()));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("too many {} metatiles: {} > {}", compilerModeString(compilerMode),
+                                                  srcMetatileCount, ctx.fieldmapConfig.numMetatilesInSecondary()));
         }
     } else {
-        internalerror_unknownCompilerMode("compiler::compile");
+        panic("compiler::compile unknown compiler mode");
     }
     compiled->metatileEntries.resize(decompiledTileset.tiles.size());
 
@@ -982,7 +1081,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
         assignTilesSecondary(ctx, *compiled, indexedNormTilesWithColorSets, primaryPaletteColorSets,
                              reorderedAssignedPalsSolution);
     } else {
-        internalerror_unknownCompilerMode("compiler::compile");
+        panic("compiler::compile unknown compiler mode");
     }
 
     /*
@@ -996,15 +1095,15 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
 
     return compiled;
 }
+
 } // namespace porytiles
 
-// --------------------
-// |    TEST CASES    |
-// --------------------
-
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
 
     porytiles::NormalizedPalette palette1{};
     palette1.size = 1;
@@ -1068,12 +1167,12 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
     // Should generate an error, palette full
     insertRGBA(ctx, porytiles::CompilerMode::PRIMARY, dummy, ctx.compilerConfig.transparencyColor, palette1,
                porytiles::RGBA_CYAN, 0, 0, true);
-    CHECK(ctx.err.errCount == 1);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
 
     // invalid alpha value, must be opaque or transparent, generates another error
     insertRGBA(ctx, porytiles::CompilerMode::PRIMARY, dummy, ctx.compilerConfig.transparencyColor, palette1,
                porytiles::RGBA32{0, 0, 0, 12}, 0, 0, true);
-    CHECK(ctx.err.errCount == 2);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
 }
 
 TEST_CASE("candidate should return the NormalizedTile with requested flips") {
@@ -1296,7 +1395,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the deco
 
 TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated tiles") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> tilesPng{"Resources/Tests/2x2_pattern_2.png"};
@@ -1414,7 +1513,7 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
 
 TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the decomp tileset") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
@@ -1468,7 +1567,7 @@ TEST_CASE("toColorSet should return the correct bitset based on the supplied pal
 
 TEST_CASE("matchNormalizedWithColorSets should return the expected data structures") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
@@ -1614,8 +1713,6 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
     SUBCASE("It should successfully allocate a large, complex PNG") {
         constexpr int SOLUTION_SIZE = 5;
         porytiles::PorytilesContext ctx{};
-        ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
-        ctx.compilerConfig.primaryExploredNodeCutoff = 200;
 
         REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compile_raw_set_1/set.png"}));
         png::image<png::rgba_pixel> png1{"Resources/Tests/compile_raw_set_1/set.png"};
@@ -2080,7 +2177,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 
 TEST_CASE("compile function should correctly compile primary set with animated tiles") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -2294,7 +2391,7 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
 TEST_CASE("compile function should correctly compile secondary set with animated tiles") {
     porytiles::PorytilesContext ctx{};
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.fieldmapConfig.numPalettesInPrimary = 3;
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
@@ -2548,7 +2645,6 @@ TEST_CASE("primer tiles should change output of primary compile function") {
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.primarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Import decompiled tiles
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/bottom.png"}));
@@ -2629,7 +2725,6 @@ TEST_CASE("overrides should change output of primary compile function") {
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.primaryExploredNodeCutoff = 1'000'000;
     ctx.compilerConfig.primarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Import decompiled tiles
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
@@ -2757,7 +2852,6 @@ TEST_CASE("overrides should change output of secondary compile function") {
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryExploredNodeCutoff = 1'000'000;
     ctx.compilerConfig.secondarySmartPrune = true;
-    ctx.compilerConfig.cacheAssign = false;
 
     // Set up compilation for paired primary
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
@@ -2981,3 +3075,4 @@ TEST_CASE("overrides should change output of secondary compile function") {
     CHECK(compiledSecondaryOverrides->palettes.at(5).colors.at(13) ==
           porytiles::rgbaToBgr(porytiles::RGBA32{168, 104, 152}));
 }
+#endif // DOCTEST_CONFIG_DISABLE

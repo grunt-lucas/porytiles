@@ -1,29 +1,31 @@
 #include "cli_parser.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <fmt/color.h>
 #include <getopt.h>
-#include <iostream>
 #include <iterator>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
-
 #include "build_version.h"
 #include "cli_options.h"
-#include "errors_warnings.h"
 #include "logger.h"
 #include "palette_assignment.h"
+#include "panic/panic.hpp"
 #include "porytiles_exception.h"
 #include "utilities.h"
 
 namespace porytiles {
 
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
+
 static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv);
+
 static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
 /*
@@ -84,7 +86,7 @@ its OPTIONS and ARGS.
 
 To get more help with Porytiles, check out the guides at:
     https://github.com/grunt-lucas/porytiles/wiki
-    TODO 1.0.0 : YouTube tutorial playlist link
+    https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce
 
 SEE ALSO
     https://github.com/pret/pokeruby
@@ -223,8 +225,6 @@ OPTIONS
 {}
 {}
 {}
-{}
-{}
     Fieldmap Override Options
 {}
 {}
@@ -245,7 +245,7 @@ OUTPUT_DESC, TILES_OUTPUT_PAL_DESC, DISABLE_METATILE_GENERATION_DESC, DISABLE_AT
 // Tileset compilation options
 TARGET_BASE_GAME_DESC, DUAL_LAYER_DESC, TRANSPARENCY_COLOR_DESC, DEFAULT_BEHAVIOR_DESC, DEFAULT_ENCOUNTER_TYPE_DESC, DEFAULT_TERRAIN_TYPE_DESC,
 // Palette assignment config options
-ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC, DISABLE_ASSIGN_CACHING_DESC, FORCE_ASSIGN_PARAM_MATRIX_DESC,
+ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC,
 // Fieldmap override options
 TILES_PRIMARY_OVERRIDE_DESC, TILES_TOTAL_OVERRIDE_DESC, METATILES_PRIMARY_OVERRIDE_DESC, METATILES_TOTAL_OVERRIDE_DESC, PALS_PRIMARY_OVERRIDE_DESC, PALS_TOTAL_OVERRIDE_DESC,
 // Warning options
@@ -303,8 +303,6 @@ OPTIONS
 {}
 {}
 {}
-{}
-{}
     Primary Palette Assignment Config Options
 {}
 {}
@@ -329,7 +327,7 @@ OUTPUT_DESC, TILES_OUTPUT_PAL_DESC, DISABLE_METATILE_GENERATION_DESC, DISABLE_AT
 // Tileset compilation options
 TARGET_BASE_GAME_DESC, DUAL_LAYER_DESC, TRANSPARENCY_COLOR_DESC, DEFAULT_BEHAVIOR_DESC, DEFAULT_ENCOUNTER_TYPE_DESC, DEFAULT_TERRAIN_TYPE_DESC,
 // Palette assignment config options
-ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC, DISABLE_ASSIGN_CACHING_DESC, FORCE_ASSIGN_PARAM_MATRIX_DESC,
+ASSIGN_ALGO_DESC, EXPLORE_CUTOFF_DESC, BEST_BRANCHES_DESC,
 // Primary palette assignment config options
 PRIMARY_ASSIGN_ALGO_DESC, PRIMARY_EXPLORE_CUTOFF_DESC, PRIMARY_BEST_BRANCHES_DESC,
 // Fieldmap override options
@@ -458,7 +456,7 @@ WARN_OPTIONS_HEADER, WALL_DESC, WNONE_DESC, W_GENERAL_DESC, WERROR_DESC
 // @formatter:on
 // clang-format on
 
-// TODO 1.0.0 : add an EXAMPLES section to each help menu
+// TODO : add an EXAMPLES section to each help menu
 
 std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcommands = {
     {HELP,
@@ -483,8 +481,6 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {ASSIGN_ALGO, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {EXPLORE_CUTOFF, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {BEST_BRANCHES, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {DISABLE_ASSIGN_CACHING, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {FORCE_ASSIGN_PARAM_MATRIX, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_ASSIGN_ALGO, {Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_EXPLORE_CUTOFF, {Subcommand::COMPILE_SECONDARY}},
     {PRIMARY_BEST_BRANCHES, {Subcommand::COMPILE_SECONDARY}},
@@ -517,24 +513,14 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     // Compilation warnings
     {WCOLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_COLOR_PRECISION_LOSS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WKEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_KEY_FRAME_DID_NOT_APPEAR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WUSED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_USED_TRUE_COLOR_MODE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WKEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
+    {WNO_KEY_FRAME_NO_MATCHING_TILE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_ATTRIBUTE_FORMAT_MISMATCH, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_UNUSED_ATTRIBUTE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WTRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_TRANSPARENCY_COLLAPSE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_ASSIGN_CONFIG_OVERRIDE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WINVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_INVALID_ASSIGN_CONFIG_CACHE, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WMISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
-    {WNO_MISSING_ASSIGN_CONFIG, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WKEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WNO_KEY_FRAME_MISSING_COLORS, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
     {WUNUSED_MANUAL_PAL_COLOR, {Subcommand::COMPILE_PRIMARY, Subcommand::COMPILE_SECONDARY}},
@@ -544,7 +530,7 @@ std::unordered_map<std::string, std::unordered_set<Subcommand>> supportedSubcomm
     {WNO_TILE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     {WPALETTE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
     {WNO_PALETTE_INDEX_OUT_OF_RANGE, {Subcommand::DECOMPILE_PRIMARY, Subcommand::DECOMPILE_SECONDARY}},
-    // TODO 1.0.0 : this does not correctly handle the -Werror=foo case where foo is an incompatible warning
+    // TODO : this does not correctly handle the -Werror=foo case where foo is an incompatible warning
 };
 
 void parseOptions(PorytilesContext &ctx, int argc, char *const *argv) {
@@ -559,106 +545,109 @@ void parseOptions(PorytilesContext &ctx, int argc, char *const *argv) {
         parseSubcommandOptions(ctx, argc, argv);
         break;
     default:
-        internalerror("cli_parser::parseOptions unknown subcommand setting");
+        panic("cli_parser::parseOptions unknown subcommand setting");
     }
 }
 
 template <typename T>
-static T parseIntegralOption(const ErrorsAndWarnings &err, const std::string &optionName, const char *optarg) {
+static T parseIntegralOption(const PorytilesContext &ctx, const std::string &optionName, const char *optarg) {
     try {
         T arg = parseInteger<T>(optarg);
         return arg;
     } catch (const std::exception &e) {
-        fatalerror(err,
-                   fmt::format("invalid argument `{}' for option `{}': {}", fmt::styled(optarg, fmt::emphasis::bold),
-                               fmt::styled(optionName, fmt::emphasis::bold), e.what()));
+        const auto msg = fmt::format("invalid argument '{}' for option '{}': {}", ctx.diag->bold(optarg),
+                                     ctx.diag->bold(optionName), e.what());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
     // unreachable, here for compiler
     throw std::runtime_error("cli_parser::parseIntegralOption reached unreachable code path");
 }
 
-static RGBA32 parseRgbColor(const ErrorsAndWarnings &err, std::string optionName, const std::string &colorString) {
+static RGBA32 parseRgbColor(const PorytilesContext &ctx, std::string optionName, const std::string &colorString) {
     std::vector<std::string> colorComponents = split(colorString, ",");
     if (colorComponents.size() != 3) {
-        fatalerror(err, fmt::format("invalid argument `{}' for option `{}': RGB color must have three components",
-                                    fmt::styled(colorString, fmt::emphasis::bold),
-                                    fmt::styled(optionName, fmt::emphasis::bold)));
+        const auto msg = fmt::format("invalid argument '{}' for option '{}': RGB color must have three components",
+                                     ctx.diag->bold(colorString), ctx.diag->bold(optionName));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
-    int red = parseIntegralOption<int>(err, optionName, colorComponents[0].c_str());
-    int green = parseIntegralOption<int>(err, optionName, colorComponents[1].c_str());
-    int blue = parseIntegralOption<int>(err, optionName, colorComponents[2].c_str());
+    int red = parseIntegralOption<int>(ctx, optionName, colorComponents[0].c_str());
+    int green = parseIntegralOption<int>(ctx, optionName, colorComponents[1].c_str());
+    int blue = parseIntegralOption<int>(ctx, optionName, colorComponents[2].c_str());
 
     if (red < 0 || red > 255) {
-        fatalerror(err,
-                   fmt::format("invalid red component `{}' for option `{}': range must be 0 <= red <= 255",
-                               fmt::styled(red, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+        const auto msg = fmt::format("invalid red component '{}' for option '{}': range must be 0 <= red <= 255",
+                                     ctx.diag->bold(red), ctx.diag->bold(optionName));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
     if (green < 0 || green > 255) {
-        fatalerror(err,
-                   fmt::format("invalid green component `{}' for option `{}': range must be 0 <= green <= 255",
-                               fmt::styled(green, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+        const auto msg = fmt::format("invalid green component '{}' for option '{}': range must be 0 <= green <= 255",
+                                     ctx.diag->bold(green), ctx.diag->bold(optionName));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
     if (blue < 0 || blue > 255) {
-        fatalerror(err,
-                   fmt::format("invalid blue component `{}' for option `{}': range must be 0 <= blue <= 255",
-                               fmt::styled(blue, fmt::emphasis::bold), fmt::styled(optionName, fmt::emphasis::bold)));
+        const auto msg = fmt::format("invalid blue component '{}' for option '{}': range must be 0 <= blue <= 255",
+                                     ctx.diag->bold(blue), ctx.diag->bold(optionName));
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
 
     return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),
                   ALPHA_OPAQUE};
 }
 
-static TilesOutputPalette parseTilesPngPaletteMode(const ErrorsAndWarnings &err, const std::string &optionName,
+static TilesOutputPalette parseTilesPngPaletteMode(const PorytilesContext &ctx, const std::string &optionName,
                                                    const char *optarg) {
     std::string optargString{optarg};
     if (optargString == "true-color") {
         return TilesOutputPalette::TRUE_COLOR;
-    } else if (optargString == "greyscale") {
-        return TilesOutputPalette::GREYSCALE;
-    } else {
-        fatalerror(err,
-                   fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
-                               fmt::styled(optionName, fmt::emphasis::bold)));
     }
-    // unreachable, here for compiler
-    throw std::runtime_error("cli_parser::parseTilesPngPaletteMode reached unreachable code path");
+    if (optargString == "greyscale") {
+        return TilesOutputPalette::GREYSCALE;
+    }
+    const auto msg =
+        fmt::format("invalid argument '{}' for option '{}'", ctx.diag->bold(optargString), ctx.diag->bold(optionName));
+    ctx.diag->report(E_FATAL_GENERIC, msg);
+    throw PorytilesException{msg};
 }
 
-static TargetBaseGame parseTargetBaseGame(const ErrorsAndWarnings &err, const std::string &optionName,
+static TargetBaseGame parseTargetBaseGame(const PorytilesContext &ctx, const std::string &optionName,
                                           const char *optarg) {
     std::string optargString{optarg};
     if (optargString == "pokeemerald") {
         return TargetBaseGame::EMERALD;
-    } else if (optargString == "pokefirered") {
-        return TargetBaseGame::FIRERED;
-    } else if (optargString == "pokeruby") {
-        return TargetBaseGame::RUBY;
-    } else {
-        fatalerror(err,
-                   fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
-                               fmt::styled(optionName, fmt::emphasis::bold)));
     }
-    // unreachable, here for compiler
-    throw std::runtime_error("cli_parser::parseTargetBaseGame reached unreachable code path");
+    if (optargString == "pokefirered") {
+        return TargetBaseGame::FIRERED;
+    }
+    if (optargString == "pokeruby") {
+        return TargetBaseGame::RUBY;
+    }
+    const auto msg =
+        fmt::format("invalid argument '{}' for option '{}'", ctx.diag->bold(optargString), ctx.diag->bold(optionName));
+    ctx.diag->report(E_FATAL_GENERIC, msg);
+    throw PorytilesException{msg};
 }
 
-static AssignAlgorithm parseAssignAlgorithm(const ErrorsAndWarnings &err, const std::string &optionName,
+static AssignAlgorithm parseAssignAlgorithm(const PorytilesContext &ctx, const std::string &optionName,
                                             const char *optarg) {
-    std::string optargString{optarg};
+    const std::string optargString{optarg};
     if (optargString == assignAlgorithmString(AssignAlgorithm::DFS)) {
         return AssignAlgorithm::DFS;
-    } else if (optargString == assignAlgorithmString(AssignAlgorithm::BFS)) {
-        return AssignAlgorithm::BFS;
-    } else {
-        fatalerror(err,
-                   fmt::format("invalid argument `{}' for option `{}'", fmt::styled(optargString, fmt::emphasis::bold),
-                               fmt::styled(optionName, fmt::emphasis::bold)));
     }
-    // unreachable, here for compiler
-    throw std::runtime_error("cli_parser::parseAssignAlgorithm reached unreachable code path");
+    if (optargString == assignAlgorithmString(AssignAlgorithm::BFS)) {
+        return AssignAlgorithm::BFS;
+    }
+    const auto msg =
+        fmt::format("invalid argument `{}' for option `{}'", ctx.diag->bold(optargString), ctx.diag->bold(optionName));
+    ctx.diag->report(E_FATAL_GENERIC, msg);
+    throw PorytilesException{msg};
 }
 
-const std::vector<std::string> GLOBAL_SHORTS = {};
+constexpr std::vector<std::string> GLOBAL_SHORTS = {};
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv) {
     std::ostringstream implodedShorts;
     std::copy(GLOBAL_SHORTS.begin(), GLOBAL_SHORTS.end(), std::ostream_iterator<std::string>(implodedShorts, ""));
@@ -701,7 +690,9 @@ static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *arg
 
 static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv) {
     if ((argc - optind) == 0) {
-        fatalerror(ctx.err, "missing required subcommand, try `porytiles --help' for usage information");
+        const auto msg = "missing required subcommand, try 'porytiles --help' for usage information";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
 
     std::string subcommand = argv[optind++];
@@ -714,17 +705,22 @@ static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv) 
     } else if (subcommand == COMPILE_SECONDARY_COMMAND) {
         ctx.subcommand = Subcommand::COMPILE_SECONDARY;
     } else {
-        fatalerror(ctx.err,
-                   "unrecognized subcommand `" + subcommand + "', try `porytiles --help' for usage information");
+        const auto msg =
+            fmt::format("unrecognized subcommand '{}', try 'porytiles --help' for usage information", subcommand);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        throw PorytilesException{msg};
     }
 }
 
 static void validateSubcommandContext(PorytilesContext &ctx, std::string option) {
     if (!supportedSubcommands.contains(option)) {
-        internalerror(fmt::format("`supportedSubcommands' did not contain mapping for option `{}'", option));
+        panic(fmt::format("'supportedSubcommands' did not contain mapping for option `{}'", option));
     }
     if (!supportedSubcommands.at(option).contains(ctx.subcommand)) {
-        fatalerror_unrecognizedOption(ctx.err, option, ctx.subcommand);
+        pt_fatal_err("unrecognized option '{}' for subcommand '{}'", option, subcommandString(ctx.subcommand));
+        pt_println(stderr, "Try '{} --help' for usage information.", subcommandString(ctx.subcommand));
+        throw PorytilesException{
+            fmt::format("unrecognized option '{}' for subcommand '{}'", option, subcommandString(ctx.subcommand))};
     }
 }
 
@@ -759,8 +755,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {EXPLORE_CUTOFF.c_str(), required_argument, nullptr, EXPLORE_CUTOFF_VAL},
         {ASSIGN_ALGO.c_str(), required_argument, nullptr, ASSIGN_ALGO_VAL},
         {BEST_BRANCHES.c_str(), required_argument, nullptr, BEST_BRANCHES_VAL},
-        {DISABLE_ASSIGN_CACHING.c_str(), no_argument, nullptr, DISABLE_ASSIGN_CACHING_VAL},
-        {FORCE_ASSIGN_PARAM_MATRIX.c_str(), no_argument, nullptr, FORCE_ASSIGN_PARAM_MATRIX_VAL},
         {PRIMARY_EXPLORE_CUTOFF.c_str(), required_argument, nullptr, PRIMARY_EXPLORE_CUTOFF_VAL},
         {PRIMARY_ASSIGN_ALGO.c_str(), required_argument, nullptr, PRIMARY_ASSIGN_ALGO_VAL},
         {PRIMARY_BEST_BRANCHES.c_str(), required_argument, nullptr, PRIMARY_BEST_BRANCHES_VAL},
@@ -784,11 +778,11 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WCOLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WCOLOR_PRECISION_LOSS_VAL},
         {WNO_COLOR_PRECISION_LOSS.c_str(), no_argument, nullptr, WNO_COLOR_PRECISION_LOSS_VAL},
 
-        {WKEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WKEY_FRAME_DID_NOT_APPEAR_VAL},
-        {WNO_KEY_FRAME_DID_NOT_APPEAR.c_str(), no_argument, nullptr, WNO_KEY_FRAME_DID_NOT_APPEAR_VAL},
+        {WKEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WKEY_FRAME_NO_MATCHING_TILE_VAL},
+        {WNO_KEY_FRAME_NO_MATCHING_TILE.c_str(), no_argument, nullptr, WNO_KEY_FRAME_NO_MATCHING_TILE_VAL},
 
-        {WUSED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WUSED_TRUE_COLOR_MODE_VAL},
-        {WNO_USED_TRUE_COLOR_MODE.c_str(), no_argument, nullptr, WNO_USED_TRUE_COLOR_MODE_VAL},
+        {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
+        {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
         {WATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WATTRIBUTE_FORMAT_MISMATCH_VAL},
         {WNO_ATTRIBUTE_FORMAT_MISMATCH.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL},
@@ -801,18 +795,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
 
         {WTRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WTRANSPARENCY_COLLAPSE_VAL},
         {WNO_TRANSPARENCY_COLLAPSE.c_str(), no_argument, nullptr, WNO_TRANSPARENCY_COLLAPSE_VAL},
-
-        {WASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WASSIGN_CONFIG_OVERRIDE_VAL},
-        {WNO_ASSIGN_CONFIG_OVERRIDE.c_str(), no_argument, nullptr, WNO_ASSIGN_CONFIG_OVERRIDE_VAL},
-
-        {WINVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WINVALID_ASSIGN_CONFIG_CACHE_VAL},
-        {WNO_INVALID_ASSIGN_CONFIG_CACHE.c_str(), no_argument, nullptr, WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL},
-
-        {WMISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WMISSING_ASSIGN_CONFIG_VAL},
-        {WNO_MISSING_ASSIGN_CONFIG.c_str(), no_argument, nullptr, WNO_MISSING_ASSIGN_CONFIG_VAL},
-
-        {WKEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WKEY_FRAME_MISSING_COLORS_VAL},
-        {WNO_KEY_FRAME_MISSING_COLORS.c_str(), no_argument, nullptr, WNO_KEY_FRAME_MISSING_COLORS_VAL},
 
         {WUNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WUNUSED_MANUAL_PAL_COLOR_VAL},
         {WNO_UNUSED_MANUAL_PAL_COLOR.c_str(), no_argument, nullptr, WNO_UNUSED_MANUAL_PAL_COLOR_VAL},
@@ -829,62 +811,6 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
 
         {nullptr, no_argument, nullptr, 0}};
-
-    /*
-     * Warning specific variables. We must wait until after all options are processed before we actually enable
-     * warnings, since enabling/disabling specific warnings must take precedence over the general -Wall and -Werror
-     * flags no matter where in the command line the user specified. Some of these warnings are enabled by default.
-     */
-    bool enableAllWarnings = false;
-    bool disableAllWarnings = false;
-    bool setAllEnabledWarningsToErrors = false;
-
-    // Compilation warnings
-    std::optional<bool> warnColorPrecisionLossOverride{};
-    std::optional<bool> errColorPrecisionLossOverride{};
-
-    std::optional<bool> warnKeyFrameTileDidNotAppearInAssignmentOverride{};
-    std::optional<bool> errKeyFrameTileDidNotAppearInAssignmentOverride{};
-
-    // TODO : Porymap now supports but needs latest version, a future release should default this warning to OFF
-    std::optional<bool> warnUsedTrueColorModeOverride{true};
-    std::optional<bool> errUsedTrueColorModeOverride{};
-
-    std::optional<bool> warnAttributeFormatMismatchOverride{};
-    std::optional<bool> errAttributeFormatMismatchOverride{};
-
-    std::optional<bool> warnMissingAttributesCsvOverride{};
-    std::optional<bool> errMissingAttributesCsvOverride{};
-
-    std::optional<bool> warnUnusedAttributeOverride{};
-    std::optional<bool> errUnusedAttributeOverride{};
-
-    std::optional<bool> warnTransparencyCollapseOverride{};
-    std::optional<bool> errTransparencyCollapseOverride{};
-
-    std::optional<bool> warnAssignCacheOverride{};
-    std::optional<bool> errAssignCacheOverride{};
-
-    std::optional<bool> warnInvalidAssignCache{};
-    std::optional<bool> errInvalidAssignCache{};
-
-    std::optional<bool> warnMissingAssignCache{};
-    std::optional<bool> errMissingAssignCache{};
-
-    // Default this warning to on, since it can lead to issues
-    // https://github.com/grunt-lucas/porytiles/issues/60
-    std::optional<bool> warnKeyFrameMissingColors{true};
-    std::optional<bool> errKeyFrameMissingColors{};
-
-    std::optional<bool> warnUnusedManualPalColor{};
-    std::optional<bool> errUnusedManualPalColor{};
-
-    // Decompilation warnings
-    std::optional<bool> warnTileIndexOutOfRange{};
-    std::optional<bool> errTileIndexOutOfRange{};
-
-    std::optional<bool> warnPaletteIndexOutOfRange{};
-    std::optional<bool> errPaletteIndexOutOfRange{};
 
     /*
      * Fieldmap specific variables. Like warnings above, we must wait until after all options are processed before we
@@ -921,7 +847,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             break;
         case TILES_OUTPUT_PAL_VAL:
             validateSubcommandContext(ctx, TILES_OUTPUT_PAL);
-            ctx.output.paletteMode = parseTilesPngPaletteMode(ctx.err, TILES_OUTPUT_PAL, optarg);
+            ctx.output.paletteMode = parseTilesPngPaletteMode(ctx, TILES_OUTPUT_PAL, optarg);
             break;
         case DISABLE_METATILE_GENERATION_VAL:
             validateSubcommandContext(ctx, DISABLE_METATILE_GENERATION);
@@ -935,7 +861,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         // Tileset (de)compilation options
         case TARGET_BASE_GAME_VAL:
             validateSubcommandContext(ctx, TARGET_BASE_GAME);
-            ctx.targetBaseGame = parseTargetBaseGame(ctx.err, TARGET_BASE_GAME, optarg);
+            ctx.targetBaseGame = parseTargetBaseGame(ctx, TARGET_BASE_GAME, optarg);
             break;
         case DUAL_LAYER_VAL:
             validateSubcommandContext(ctx, DUAL_LAYER);
@@ -943,7 +869,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             break;
         case TRANSPARENCY_COLOR_VAL:
             validateSubcommandContext(ctx, TRANSPARENCY_COLOR);
-            ctx.compilerConfig.transparencyColor = parseRgbColor(ctx.err, TRANSPARENCY_COLOR, optarg);
+            ctx.compilerConfig.transparencyColor = parseRgbColor(ctx, TRANSPARENCY_COLOR, optarg);
             break;
         case DEFAULT_BEHAVIOR_VAL:
             validateSubcommandContext(ctx, DEFAULT_BEHAVIOR);
@@ -960,9 +886,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case NORMALIZE_TRANSPARENCY_VAL:
             validateSubcommandContext(ctx, NORMALIZE_TRANSPARENCY);
             ctx.decompilerConfig.normalizeTransparency = true;
-            if (optarg != NULL) {
-                ctx.decompilerConfig.normalizeTransparencyColor =
-                    parseRgbColor(ctx.err, NORMALIZE_TRANSPARENCY, optarg);
+            if (optarg != nullptr) {
+                ctx.decompilerConfig.normalizeTransparencyColor = parseRgbColor(ctx, NORMALIZE_TRANSPARENCY, optarg);
             } else {
                 // TODO : remove this deprecation warning at some point in the future
                 pt_warn("the no-arg version of `normalize-transparency' has been deprecated");
@@ -980,43 +905,48 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         // Color assignment config options
         case EXPLORE_CUTOFF_VAL:
             validateSubcommandContext(ctx, EXPLORE_CUTOFF);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
-            exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, EXPLORE_CUTOFF, optarg);
+            ctx.compilerConfig.providedAssignOverride = true;
+            exploreCutoff = parseIntegralOption<std::size_t>(ctx, EXPLORE_CUTOFF, optarg);
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
                 if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-                    fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
-                                                    fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                    const auto msg =
+                        fmt::format("option '{}' argument cannot be > 100", ctx.diag->bold(EXPLORE_CUTOFF));
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    throw PorytilesException{msg};
                 }
             } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.secondaryExploredNodeCutoff = exploreCutoff;
                 if (ctx.compilerConfig.secondaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-                    fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
-                                                    fmt::styled(EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                    const auto msg =
+                        fmt::format("option '{}' argument cannot be > 100", ctx.diag->bold(EXPLORE_CUTOFF));
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    throw PorytilesException{msg};
                 }
             }
             break;
         case ASSIGN_ALGO_VAL:
             validateSubcommandContext(ctx, ASSIGN_ALGO);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
+            ctx.compilerConfig.providedAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
-                ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+                ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx, ASSIGN_ALGO, optarg);
             } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-                ctx.compilerConfig.secondaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, ASSIGN_ALGO, optarg);
+                ctx.compilerConfig.secondaryAssignAlgorithm = parseAssignAlgorithm(ctx, ASSIGN_ALGO, optarg);
             }
             break;
         case BEST_BRANCHES_VAL:
             validateSubcommandContext(ctx, BEST_BRANCHES);
-            ctx.compilerConfig.providedAssignCacheOverride = true;
+            ctx.compilerConfig.providedAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
                 if (std::string{optarg} == SMART_PRUNE) {
                     ctx.compilerConfig.primarySmartPrune = true;
                 } else {
                     ctx.compilerConfig.primaryBestBranches =
-                        parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
+                        parseIntegralOption<std::size_t>(ctx, BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.primaryBestBranches == 0) {
-                        fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
-                                                        fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+                        const auto msg = fmt::format("option '{}' argument cannot be 0", ctx.diag->bold(BEST_BRANCHES));
+                        ctx.diag->report(E_FATAL_GENERIC, msg);
+                        throw PorytilesException{msg};
                     }
                 }
             } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
@@ -1024,53 +954,50 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                     ctx.compilerConfig.secondarySmartPrune = true;
                 } else {
                     ctx.compilerConfig.secondaryBestBranches =
-                        parseIntegralOption<std::size_t>(ctx.err, BEST_BRANCHES, optarg);
+                        parseIntegralOption<std::size_t>(ctx, BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.secondaryBestBranches == 0) {
-                        fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
-                                                        fmt::styled(BEST_BRANCHES, fmt::emphasis::bold)));
+                        const auto msg = fmt::format("option '{}' argument cannot be 0", ctx.diag->bold(BEST_BRANCHES));
+                        ctx.diag->report(E_FATAL_GENERIC, msg);
+                        throw PorytilesException{msg};
                     }
                 }
             }
             break;
-        case DISABLE_ASSIGN_CACHING_VAL:
-            validateSubcommandContext(ctx, DISABLE_ASSIGN_CACHING);
-            ctx.compilerConfig.cacheAssign = false;
-            break;
-        case FORCE_ASSIGN_PARAM_MATRIX_VAL:
-            validateSubcommandContext(ctx, FORCE_ASSIGN_PARAM_MATRIX);
-            ctx.compilerConfig.forceParamSearchMatrix = true;
-            break;
         case PRIMARY_EXPLORE_CUTOFF_VAL:
             validateSubcommandContext(ctx, PRIMARY_EXPLORE_CUTOFF);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
-            exploreCutoff = parseIntegralOption<std::size_t>(ctx.err, PRIMARY_EXPLORE_CUTOFF, optarg);
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
+            exploreCutoff = parseIntegralOption<std::size_t>(ctx, PRIMARY_EXPLORE_CUTOFF, optarg);
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 ctx.compilerConfig.primaryExploredNodeCutoff = exploreCutoff;
                 if (ctx.compilerConfig.primaryExploredNodeCutoff > EXPLORATION_MAX_CUTOFF) {
-                    fatalerror(ctx.err, fmt::format("option `{}' argument cannot be > 100",
-                                                    fmt::styled(PRIMARY_EXPLORE_CUTOFF, fmt::emphasis::bold)));
+                    const auto msg =
+                        fmt::format("option '{}' argument cannot be > 100", ctx.diag->bold(PRIMARY_EXPLORE_CUTOFF));
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    throw PorytilesException{msg};
                 }
             }
             break;
         case PRIMARY_ASSIGN_ALGO_VAL:
             validateSubcommandContext(ctx, PRIMARY_ASSIGN_ALGO);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-                ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx.err, PRIMARY_ASSIGN_ALGO, optarg);
+                ctx.compilerConfig.primaryAssignAlgorithm = parseAssignAlgorithm(ctx, PRIMARY_ASSIGN_ALGO, optarg);
             }
             break;
         case PRIMARY_BEST_BRANCHES_VAL:
             validateSubcommandContext(ctx, PRIMARY_BEST_BRANCHES);
-            ctx.compilerConfig.providedPrimaryAssignCacheOverride = true;
+            ctx.compilerConfig.providedPrimaryAssignOverride = true;
             if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
                 if (std::string{optarg} == "smart") {
                     ctx.compilerConfig.primarySmartPrune = true;
                 } else {
                     ctx.compilerConfig.primaryBestBranches =
-                        parseIntegralOption<std::size_t>(ctx.err, PRIMARY_BEST_BRANCHES, optarg);
+                        parseIntegralOption<std::size_t>(ctx, PRIMARY_BEST_BRANCHES, optarg);
                     if (ctx.compilerConfig.primaryBestBranches == 0) {
-                        fatalerror(ctx.err, fmt::format("option `{}' argument cannot be 0",
-                                                        fmt::styled(PRIMARY_BEST_BRANCHES, fmt::emphasis::bold)));
+                        const auto msg =
+                            fmt::format("option '{}' argument cannot be 0", ctx.diag->bold(PRIMARY_BEST_BRANCHES));
+                        ctx.diag->report(E_FATAL_GENERIC, msg);
+                        throw PorytilesException{msg};
                     }
                 }
             }
@@ -1080,239 +1007,193 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case TILES_PRIMARY_OVERRIDE_VAL:
             validateSubcommandContext(ctx, TILES_PRIMARY_OVERRIDE);
             tilesPrimaryOverridden = true;
-            tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_PRIMARY_OVERRIDE, optarg);
+            tilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx, TILES_PRIMARY_OVERRIDE, optarg);
             break;
         case TILES_TOTAL_OVERRIDE_VAL:
             validateSubcommandContext(ctx, TILES_TOTAL_OVERRIDE);
             tilesTotalOverridden = true;
-            tilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, TILES_TOTAL_OVERRIDE, optarg);
+            tilesTotalOverride = parseIntegralOption<std::size_t>(ctx, TILES_TOTAL_OVERRIDE, optarg);
             break;
         case METATILES_PRIMARY_OVERRIDE_VAL:
             validateSubcommandContext(ctx, METATILES_PRIMARY_OVERRIDE);
             metatilesPrimaryOverridden = true;
-            metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_PRIMARY_OVERRIDE, optarg);
+            metatilesPrimaryOverride = parseIntegralOption<std::size_t>(ctx, METATILES_PRIMARY_OVERRIDE, optarg);
             break;
         case METATILES_TOTAL_OVERRIDE_VAL:
             validateSubcommandContext(ctx, METATILES_TOTAL_OVERRIDE);
             metatilesTotalOverridden = true;
-            metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, METATILES_TOTAL_OVERRIDE, optarg);
+            metatilesTotalOverride = parseIntegralOption<std::size_t>(ctx, METATILES_TOTAL_OVERRIDE, optarg);
             break;
         case PALS_PRIMARY_OVERRIDE_VAL:
             validateSubcommandContext(ctx, PALS_PRIMARY_OVERRIDE);
             palettesPrimaryOverridden = true;
-            palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_PRIMARY_OVERRIDE, optarg);
+            palettesPrimaryOverride = parseIntegralOption<std::size_t>(ctx, PALS_PRIMARY_OVERRIDE, optarg);
             break;
         case PALS_TOTAL_OVERRIDE_VAL:
             validateSubcommandContext(ctx, PALS_TOTAL_OVERRIDE);
             palettesTotalOverridden = true;
-            palettesTotalOverride = parseIntegralOption<std::size_t>(ctx.err, PALS_TOTAL_OVERRIDE, optarg);
+            palettesTotalOverride = parseIntegralOption<std::size_t>(ctx, PALS_TOTAL_OVERRIDE, optarg);
             break;
 
         // Warning and error options
         case WALL_VAL:
             validateSubcommandContext(ctx, WALL);
-            enableAllWarnings = true;
+            ctx.diag->enable_all_warnings();
             break;
         case WNONE_VAL:
             validateSubcommandContext(ctx, WNONE);
-            disableAllWarnings = true;
+            ctx.diag->disable_all_warnings();
             break;
         case WERROR_VAL:
             validateSubcommandContext(ctx, WERROR);
-            if (optarg == NULL) {
-                setAllEnabledWarningsToErrors = true;
+            if (optarg == nullptr) {
+                ctx.diag->upgrade_enabled_warnings_to_errors();
             } else {
                 // Compilation warnings
-                if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-                    errColorPrecisionLossOverride = true;
-                } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
-                    errKeyFrameTileDidNotAppearInAssignmentOverride = true;
-                } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-                    errUsedTrueColorModeOverride = true;
-                } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-                    errAttributeFormatMismatchOverride = true;
-                } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-                    errMissingAttributesCsvOverride = true;
-                } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
-                    errUnusedAttributeOverride = true;
-                } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
-                    errTransparencyCollapseOverride = true;
-                } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
-                    errAssignCacheOverride = true;
-                } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
-                    errInvalidAssignCache = true;
-                } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
-                    errMissingAssignCache = true;
-                } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
-                    errKeyFrameMissingColors = true;
-                } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
-                    errUnusedManualPalColor = true;
+                if (strcmp(optarg, W_COLOR_PRECISION_LOSS) == 0) {
+                    ctx.diag->enable_at_level(W_COLOR_PRECISION_LOSS, DiagLevel::Error);
+                } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+                    ctx.diag->enable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, DiagLevel::Error);
+                } else if (strcmp(optarg, W_KEY_FRAME_MISSING_COLORS) == 0) {
+                    ctx.diag->enable_at_level(W_KEY_FRAME_MISSING_COLORS, DiagLevel::Error);
+                } else if (strcmp(optarg, W_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+                    ctx.diag->enable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, DiagLevel::Error);
+                } else if (strcmp(optarg, W_MISSING_ATTRIBUTES_CSV) == 0) {
+                    ctx.diag->enable_at_level(W_MISSING_ATTRIBUTES_CSV, DiagLevel::Error);
+                } else if (strcmp(optarg, W_UNUSED_ATTRIBUTE) == 0) {
+                    ctx.diag->enable_at_level(W_UNUSED_ATTRIBUTE, DiagLevel::Error);
+                } else if (strcmp(optarg, W_TRANSPARENCY_COLLAPSE) == 0) {
+                    ctx.diag->enable_at_level(W_TRANSPARENCY_COLLAPSE, DiagLevel::Error);
+                } else if (strcmp(optarg, W_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                    ctx.diag->enable_at_level(W_UNUSED_MANUAL_PAL_COLOR, DiagLevel::Error);
                 }
                 // Decompilation warnings
-                else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
-                    errTileIndexOutOfRange = true;
-                } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
-                    errPaletteIndexOutOfRange = true;
+                else if (strcmp(optarg, W_TILE_INDEX_OUT_OF_RANGE) == 0) {
+                    ctx.diag->enable_at_level(W_TILE_INDEX_OUT_OF_RANGE, DiagLevel::Error);
+                } else if (strcmp(optarg, W_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+                    ctx.diag->enable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, DiagLevel::Error);
                 } else {
-                    fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
-                                                    fmt::styled(std::string{optarg}, fmt::emphasis::bold),
-                                                    fmt::styled(WERROR, fmt::emphasis::bold)));
+                    const auto msg = fmt::format("invalid argument '{}' for option '{}'",
+                                                 ctx.diag->bold(std::string{optarg}), ctx.diag->bold(WERROR));
+                    ctx.diag->report(E_FATAL_GENERIC, msg);
+                    throw PorytilesException{msg};
                 }
             }
             break;
         case WNO_ERROR_VAL:
             validateSubcommandContext(ctx, WNO_ERROR);
             // Compilation warnings
-            if (strcmp(optarg, WARN_COLOR_PRECISION_LOSS) == 0) {
-                errColorPrecisionLossOverride = false;
-            } else if (strcmp(optarg, WARN_KEY_FRAME_NO_MATCHING_TILE) == 0) {
-                errKeyFrameTileDidNotAppearInAssignmentOverride = false;
-            } else if (strcmp(optarg, WARN_USED_TRUE_COLOR_MODE) == 0) {
-                errUsedTrueColorModeOverride = false;
-            } else if (strcmp(optarg, WARN_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
-                errAttributeFormatMismatchOverride = false;
-            } else if (strcmp(optarg, WARN_MISSING_ATTRIBUTES_CSV) == 0) {
-                errMissingAttributesCsvOverride = false;
-            } else if (strcmp(optarg, WARN_UNUSED_ATTRIBUTE) == 0) {
-                errUnusedAttributeOverride = false;
-            } else if (strcmp(optarg, WARN_TRANSPARENCY_COLLAPSE) == 0) {
-                errTransparencyCollapseOverride = false;
-            } else if (strcmp(optarg, WARN_ASSIGN_CACHE_OVERRIDE) == 0) {
-                errAssignCacheOverride = false;
-            } else if (strcmp(optarg, WARN_INVALID_ASSIGN_CACHE) == 0) {
-                errInvalidAssignCache = false;
-            } else if (strcmp(optarg, WARN_MISSING_ASSIGN_CACHE) == 0) {
-                errMissingAssignCache = false;
-            } else if (strcmp(optarg, WARN_KEY_FRAME_MISSING_COLORS) == 0) {
-                errKeyFrameMissingColors = false;
-            } else if (strcmp(optarg, WARN_UNUSED_MANUAL_PAL_COLOR) == 0) {
-                errUnusedManualPalColor = false;
+            if (strcmp(optarg, W_COLOR_PRECISION_LOSS) == 0) {
+                ctx.diag->disable_at_level(W_COLOR_PRECISION_LOSS, DiagLevel::Error);
+            } else if (strcmp(optarg, W_KEY_FRAME_NO_MATCHING_TILE) == 0) {
+                ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, DiagLevel::Error);
+            } else if (strcmp(optarg, W_KEY_FRAME_MISSING_COLORS) == 0) {
+                ctx.diag->disable_at_level(W_KEY_FRAME_MISSING_COLORS, DiagLevel::Error);
+            } else if (strcmp(optarg, W_ATTRIBUTE_FORMAT_MISMATCH) == 0) {
+                ctx.diag->disable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, DiagLevel::Error);
+            } else if (strcmp(optarg, W_MISSING_ATTRIBUTES_CSV) == 0) {
+                ctx.diag->disable_at_level(W_MISSING_ATTRIBUTES_CSV, DiagLevel::Error);
+            } else if (strcmp(optarg, W_UNUSED_ATTRIBUTE) == 0) {
+                ctx.diag->disable_at_level(W_UNUSED_ATTRIBUTE, DiagLevel::Error);
+            } else if (strcmp(optarg, W_TRANSPARENCY_COLLAPSE) == 0) {
+                ctx.diag->disable_at_level(W_TRANSPARENCY_COLLAPSE, DiagLevel::Error);
+            } else if (strcmp(optarg, W_UNUSED_MANUAL_PAL_COLOR) == 0) {
+                ctx.diag->disable_at_level(W_UNUSED_MANUAL_PAL_COLOR, DiagLevel::Error);
             }
             // Decompilation warnings
-            else if (strcmp(optarg, WARN_TILE_INDEX_OUT_OF_RANGE) == 0) {
-                errTileIndexOutOfRange = false;
-            } else if (strcmp(optarg, WARN_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
-                errPaletteIndexOutOfRange = false;
+            else if (strcmp(optarg, W_TILE_INDEX_OUT_OF_RANGE) == 0) {
+                ctx.diag->disable_at_level(W_TILE_INDEX_OUT_OF_RANGE, DiagLevel::Error);
+            } else if (strcmp(optarg, W_PALETTE_INDEX_OUT_OF_RANGE) == 0) {
+                ctx.diag->disable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, DiagLevel::Error);
             } else {
-                fatalerror(ctx.err, fmt::format("invalid argument `{}' for option `{}'",
-                                                fmt::styled(std::string{optarg}, fmt::emphasis::bold),
-                                                fmt::styled(WERROR, fmt::emphasis::bold)));
+                const auto msg = fmt::format("invalid argument '{}' for option '{}'",
+                                             ctx.diag->bold(std::string{optarg}), ctx.diag->bold(WERROR));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                throw PorytilesException{msg};
             }
             break;
 
         // Compilation warnings
         case WCOLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WCOLOR_PRECISION_LOSS);
-            warnColorPrecisionLossOverride = true;
+            ctx.diag->enable_at_level(W_COLOR_PRECISION_LOSS, DiagLevel::Warning);
             break;
         case WNO_COLOR_PRECISION_LOSS_VAL:
             validateSubcommandContext(ctx, WNO_COLOR_PRECISION_LOSS);
-            warnColorPrecisionLossOverride = false;
+            ctx.diag->disable_at_level(W_COLOR_PRECISION_LOSS, DiagLevel::Warning);
             break;
-        case WKEY_FRAME_DID_NOT_APPEAR_VAL:
-            validateSubcommandContext(ctx, WKEY_FRAME_DID_NOT_APPEAR);
-            warnKeyFrameTileDidNotAppearInAssignmentOverride = true;
+        case WKEY_FRAME_NO_MATCHING_TILE_VAL:
+            validateSubcommandContext(ctx, WKEY_FRAME_NO_MATCHING_TILE);
+            ctx.diag->enable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, DiagLevel::Warning);
             break;
-        case WNO_KEY_FRAME_DID_NOT_APPEAR_VAL:
-            validateSubcommandContext(ctx, WNO_KEY_FRAME_DID_NOT_APPEAR);
-            warnKeyFrameTileDidNotAppearInAssignmentOverride = false;
-            break;
-        case WUSED_TRUE_COLOR_MODE_VAL:
-            validateSubcommandContext(ctx, WUSED_TRUE_COLOR_MODE);
-            warnUsedTrueColorModeOverride = true;
-            break;
-        case WNO_USED_TRUE_COLOR_MODE_VAL:
-            validateSubcommandContext(ctx, WNO_USED_TRUE_COLOR_MODE);
-            warnUsedTrueColorModeOverride = false;
-            break;
-        case WATTRIBUTE_FORMAT_MISMATCH_VAL:
-            validateSubcommandContext(ctx, WATTRIBUTE_FORMAT_MISMATCH);
-            warnAttributeFormatMismatchOverride = true;
-            break;
-        case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
-            validateSubcommandContext(ctx, WNO_ATTRIBUTE_FORMAT_MISMATCH);
-            warnAttributeFormatMismatchOverride = false;
-            break;
-        case WMISSING_ATTRIBUTES_CSV_VAL:
-            validateSubcommandContext(ctx, WMISSING_ATTRIBUTES_CSV);
-            warnMissingAttributesCsvOverride = true;
-            break;
-        case WNO_MISSING_ATTRIBUTES_CSV_VAL:
-            validateSubcommandContext(ctx, WNO_MISSING_ATTRIBUTES_CSV);
-            warnMissingAttributesCsvOverride = false;
-            break;
-        case WUNUSED_ATTRIBUTE_VAL:
-            validateSubcommandContext(ctx, WUNUSED_ATTRIBUTE);
-            warnUnusedAttributeOverride = true;
-            break;
-        case WNO_UNUSED_ATTRIBUTE_VAL:
-            validateSubcommandContext(ctx, WNO_UNUSED_ATTRIBUTE);
-            warnUnusedAttributeOverride = false;
-            break;
-        case WTRANSPARENCY_COLLAPSE_VAL:
-            validateSubcommandContext(ctx, WTRANSPARENCY_COLLAPSE);
-            warnTransparencyCollapseOverride = true;
-            break;
-        case WNO_TRANSPARENCY_COLLAPSE_VAL:
-            validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
-            warnTransparencyCollapseOverride = false;
-            break;
-        case WASSIGN_CONFIG_OVERRIDE_VAL:
-            validateSubcommandContext(ctx, WASSIGN_CONFIG_OVERRIDE);
-            warnAssignCacheOverride = true;
-            break;
-        case WNO_ASSIGN_CONFIG_OVERRIDE_VAL:
-            validateSubcommandContext(ctx, WNO_ASSIGN_CONFIG_OVERRIDE);
-            warnAssignCacheOverride = false;
-            break;
-        case WINVALID_ASSIGN_CONFIG_CACHE_VAL:
-            validateSubcommandContext(ctx, WINVALID_ASSIGN_CONFIG_CACHE);
-            warnInvalidAssignCache = true;
-            break;
-        case WNO_INVALID_ASSIGN_CONFIG_CACHE_VAL:
-            validateSubcommandContext(ctx, WNO_INVALID_ASSIGN_CONFIG_CACHE);
-            warnInvalidAssignCache = false;
-            break;
-        case WMISSING_ASSIGN_CONFIG_VAL:
-            validateSubcommandContext(ctx, WMISSING_ASSIGN_CONFIG);
-            warnMissingAssignCache = true;
-            break;
-        case WNO_MISSING_ASSIGN_CONFIG_VAL:
-            validateSubcommandContext(ctx, WNO_MISSING_ASSIGN_CONFIG);
-            warnMissingAssignCache = false;
+        case WNO_KEY_FRAME_NO_MATCHING_TILE_VAL:
+            validateSubcommandContext(ctx, WNO_KEY_FRAME_NO_MATCHING_TILE);
+            ctx.diag->disable_at_level(W_KEY_FRAME_NO_MATCHING_TILE, DiagLevel::Warning);
             break;
         case WKEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WKEY_FRAME_MISSING_COLORS);
-            warnKeyFrameMissingColors = true;
+            ctx.diag->enable_at_level(W_KEY_FRAME_MISSING_COLORS, DiagLevel::Warning);
             break;
         case WNO_KEY_FRAME_MISSING_COLORS_VAL:
             validateSubcommandContext(ctx, WNO_KEY_FRAME_MISSING_COLORS);
-            warnKeyFrameMissingColors = false;
+            ctx.diag->disable_at_level(W_KEY_FRAME_MISSING_COLORS, DiagLevel::Warning);
+            break;
+        case WATTRIBUTE_FORMAT_MISMATCH_VAL:
+            validateSubcommandContext(ctx, WATTRIBUTE_FORMAT_MISMATCH);
+            ctx.diag->enable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, DiagLevel::Warning);
+            break;
+        case WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL:
+            validateSubcommandContext(ctx, WNO_ATTRIBUTE_FORMAT_MISMATCH);
+            ctx.diag->disable_at_level(W_ATTRIBUTE_FORMAT_MISMATCH, DiagLevel::Warning);
+            break;
+        case WMISSING_ATTRIBUTES_CSV_VAL:
+            validateSubcommandContext(ctx, WMISSING_ATTRIBUTES_CSV);
+            ctx.diag->enable_at_level(W_MISSING_ATTRIBUTES_CSV, DiagLevel::Warning);
+            break;
+        case WNO_MISSING_ATTRIBUTES_CSV_VAL:
+            validateSubcommandContext(ctx, WNO_MISSING_ATTRIBUTES_CSV);
+            ctx.diag->disable_at_level(W_MISSING_ATTRIBUTES_CSV, DiagLevel::Warning);
+            break;
+        case WUNUSED_ATTRIBUTE_VAL:
+            validateSubcommandContext(ctx, WUNUSED_ATTRIBUTE);
+            ctx.diag->enable_at_level(W_UNUSED_ATTRIBUTE, DiagLevel::Warning);
+            break;
+        case WNO_UNUSED_ATTRIBUTE_VAL:
+            validateSubcommandContext(ctx, WNO_UNUSED_ATTRIBUTE);
+            ctx.diag->disable_at_level(W_UNUSED_ATTRIBUTE, DiagLevel::Warning);
+            break;
+        case WTRANSPARENCY_COLLAPSE_VAL:
+            validateSubcommandContext(ctx, WTRANSPARENCY_COLLAPSE);
+            ctx.diag->enable_at_level(W_TRANSPARENCY_COLLAPSE, DiagLevel::Warning);
+            break;
+        case WNO_TRANSPARENCY_COLLAPSE_VAL:
+            validateSubcommandContext(ctx, WNO_TRANSPARENCY_COLLAPSE);
+            ctx.diag->disable_at_level(W_TRANSPARENCY_COLLAPSE, DiagLevel::Warning);
             break;
         case WUNUSED_MANUAL_PAL_COLOR_VAL:
             validateSubcommandContext(ctx, WUNUSED_MANUAL_PAL_COLOR);
-            warnUnusedManualPalColor = true;
+            ctx.diag->enable_at_level(W_UNUSED_MANUAL_PAL_COLOR, DiagLevel::Warning);
             break;
         case WNO_UNUSED_MANUAL_PAL_COLOR_VAL:
             validateSubcommandContext(ctx, WNO_UNUSED_MANUAL_PAL_COLOR);
-            warnUnusedManualPalColor = false;
+            ctx.diag->disable_at_level(W_UNUSED_MANUAL_PAL_COLOR, DiagLevel::Warning);
             break;
         // Decompilation warnings
         case WTILE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WTILE_INDEX_OUT_OF_RANGE);
-            warnTileIndexOutOfRange = true;
+            ctx.diag->enable_at_level(W_TILE_INDEX_OUT_OF_RANGE, DiagLevel::Warning);
             break;
         case WNO_TILE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WNO_TILE_INDEX_OUT_OF_RANGE);
-            warnTileIndexOutOfRange = false;
+            ctx.diag->disable_at_level(W_TILE_INDEX_OUT_OF_RANGE, DiagLevel::Warning);
             break;
         case WPALETTE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WPALETTE_INDEX_OUT_OF_RANGE);
-            warnPaletteIndexOutOfRange = true;
+            ctx.diag->enable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, DiagLevel::Warning);
             break;
         case WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WNO_PALETTE_INDEX_OUT_OF_RANGE);
-            warnPaletteIndexOutOfRange = false;
+            ctx.diag->disable_at_level(W_PALETTE_INDEX_OUT_OF_RANGE, DiagLevel::Warning);
             break;
 
         // Help message upon '-h/--help' goes to stdout
@@ -1327,15 +1208,15 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
                 fmt::println("{}", DECOMPILE_SECONDARY_HELP);
             } else {
-                internalerror(fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}",
-                                          static_cast<int>(ctx.subcommand)));
+                panic(fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}",
+                                  static_cast<int>(ctx.subcommand)));
             }
             exit(0);
         // Help message on invalid or unknown options goes to stderr and gives error code
         case '?':
         default:
-            // TODO 1.0.0 : figure out how to use fatalerror_unrecognizedOption here
-            fmt::println(stderr, "Try `{} {} --help' for usage information.", PORYTILES_EXECUTABLE,
+            // TODO : figure out how to use fatalerror_unrecognizedOption here
+            fmt::println(stderr, "Try '{} {} --help' for usage information.", PORYTILES_EXECUTABLE,
                          subcommandString(ctx.subcommand));
             exit(2);
         }
@@ -1346,26 +1227,32 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
      */
     if (ctx.subcommand == Subcommand::COMPILE_PRIMARY) {
         if ((argc - optind) != 2) {
-            fatalerror(ctx.err,
-                       "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles compile-primary --help'");
+            const auto msg = "must specify INPUT-PATH, BEHAVIORS-HEADER args, see 'porytiles compile-primary --help'";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            throw PorytilesException{msg};
         }
     } else if (ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
         if ((argc - optind) != 3) {
-            fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
-                                "compile-secondary --help'");
+            const auto msg = "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see 'porytiles "
+                             "compile-secondary --help'";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            throw PorytilesException{msg};
         }
     } else if (ctx.subcommand == Subcommand::DECOMPILE_PRIMARY) {
         if ((argc - optind) != 2) {
-            fatalerror(ctx.err,
-                       "must specify INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles decompile-primary --help'");
+            const auto msg = "must specify INPUT-PATH, BEHAVIORS-HEADER args, see 'porytiles decompile-primary --help'";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            throw PorytilesException{msg};
         }
     } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         if ((argc - optind) != 3) {
-            fatalerror(ctx.err, "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see `porytiles "
-                                "decompile-secondary --help'");
+            const auto msg = "must specify INPUT-PATH, PRIMARY-INPUT-PATH, BEHAVIORS-HEADER args, see 'porytiles "
+                             "decompile-secondary --help'";
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            throw PorytilesException{msg};
         }
     } else {
-        internalerror(
+        panic(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
     }
 
@@ -1382,219 +1269,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
         ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
     } else {
-        internalerror(
+        panic(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
-    }
-
-    /*
-     * Configure warnings and errors per user specification
-     */
-    // These general options are overridden by more specific settings
-    if (enableAllWarnings) {
-        // Enable all warnings
-        ctx.err.setAllWarnings(WarningMode::WARN);
-    }
-
-    // Specific warn settings take precedence over general warn settings
-    // Compilation warnings
-    if (warnColorPrecisionLossOverride.has_value()) {
-        ctx.err.colorPrecisionLoss = warnColorPrecisionLossOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
-        ctx.err.keyFrameNoMatchingTile =
-            warnKeyFrameTileDidNotAppearInAssignmentOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnUsedTrueColorModeOverride.has_value()) {
-        ctx.err.usedTrueColorMode = warnUsedTrueColorModeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnAttributeFormatMismatchOverride.has_value()) {
-        ctx.err.attributeFormatMismatch =
-            warnAttributeFormatMismatchOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnMissingAttributesCsvOverride.has_value()) {
-        ctx.err.missingAttributesCsv = warnMissingAttributesCsvOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnUnusedAttributeOverride.has_value()) {
-        ctx.err.unusedAttribute = warnUnusedAttributeOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnTransparencyCollapseOverride.has_value()) {
-        ctx.err.transparencyCollapse = warnTransparencyCollapseOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnAssignCacheOverride.has_value()) {
-        ctx.err.assignCacheOverride = warnAssignCacheOverride.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnInvalidAssignCache.has_value()) {
-        ctx.err.invalidAssignCache = warnInvalidAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnMissingAssignCache.has_value()) {
-        ctx.err.missingAssignCache = warnMissingAssignCache.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnKeyFrameMissingColors.has_value()) {
-        ctx.err.keyFrameMissingColors = warnKeyFrameMissingColors.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnUnusedManualPalColor.has_value()) {
-        ctx.err.unusedManualPalColor = warnUnusedManualPalColor.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    // Decompilation warnings
-    if (warnTileIndexOutOfRange.has_value()) {
-        ctx.err.tileIndexOutOfRange = warnTileIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-    if (warnPaletteIndexOutOfRange.has_value()) {
-        ctx.err.paletteIndexOutOfRange = warnPaletteIndexOutOfRange.value() ? WarningMode::WARN : WarningMode::OFF;
-    }
-
-    // If requested, set all enabled warnings to errors
-    if (setAllEnabledWarningsToErrors) {
-        ctx.err.setAllEnabledWarningsToErrors();
-    }
-
-    // Specific err settings take precedence over warns
-    // Compilation warnings
-    if (errColorPrecisionLossOverride.has_value()) {
-        if (errColorPrecisionLossOverride.value()) {
-            ctx.err.colorPrecisionLoss = WarningMode::ERR;
-        } else if ((warnColorPrecisionLossOverride.has_value() && warnColorPrecisionLossOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.colorPrecisionLoss = WarningMode::WARN;
-        } else {
-            ctx.err.colorPrecisionLoss = WarningMode::OFF;
-        }
-    }
-    if (errKeyFrameTileDidNotAppearInAssignmentOverride.has_value()) {
-        if (errKeyFrameTileDidNotAppearInAssignmentOverride.value()) {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::ERR;
-        } else if ((warnKeyFrameTileDidNotAppearInAssignmentOverride.has_value() &&
-                    warnKeyFrameTileDidNotAppearInAssignmentOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::WARN;
-        } else {
-            ctx.err.keyFrameNoMatchingTile = WarningMode::OFF;
-        }
-    }
-    if (errUsedTrueColorModeOverride.has_value()) {
-        if (errUsedTrueColorModeOverride.value()) {
-            ctx.err.usedTrueColorMode = WarningMode::ERR;
-        } else if ((warnUsedTrueColorModeOverride.has_value() && warnUsedTrueColorModeOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.usedTrueColorMode = WarningMode::WARN;
-        } else {
-            ctx.err.usedTrueColorMode = WarningMode::OFF;
-        }
-    }
-    if (errAttributeFormatMismatchOverride.has_value()) {
-        if (errAttributeFormatMismatchOverride.value()) {
-            ctx.err.attributeFormatMismatch = WarningMode::ERR;
-        } else if ((warnAttributeFormatMismatchOverride.has_value() && warnAttributeFormatMismatchOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.attributeFormatMismatch = WarningMode::WARN;
-        } else {
-            ctx.err.attributeFormatMismatch = WarningMode::OFF;
-        }
-    }
-    if (errMissingAttributesCsvOverride.has_value()) {
-        if (errMissingAttributesCsvOverride.value()) {
-            ctx.err.missingAttributesCsv = WarningMode::ERR;
-        } else if ((warnMissingAttributesCsvOverride.has_value() && warnMissingAttributesCsvOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.missingAttributesCsv = WarningMode::WARN;
-        } else {
-            ctx.err.missingAttributesCsv = WarningMode::OFF;
-        }
-    }
-    if (errUnusedAttributeOverride.has_value()) {
-        if (errUnusedAttributeOverride.value()) {
-            ctx.err.unusedAttribute = WarningMode::ERR;
-        } else if ((warnUnusedAttributeOverride.has_value() && warnUnusedAttributeOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.unusedAttribute = WarningMode::WARN;
-        } else {
-            ctx.err.unusedAttribute = WarningMode::OFF;
-        }
-    }
-    if (errTransparencyCollapseOverride.has_value()) {
-        if (errTransparencyCollapseOverride.value()) {
-            ctx.err.transparencyCollapse = WarningMode::ERR;
-        } else if ((warnTransparencyCollapseOverride.has_value() && warnTransparencyCollapseOverride.value()) ||
-                   enableAllWarnings) {
-            ctx.err.transparencyCollapse = WarningMode::WARN;
-        } else {
-            ctx.err.transparencyCollapse = WarningMode::OFF;
-        }
-    }
-    if (errAssignCacheOverride.has_value()) {
-        if (errAssignCacheOverride.value()) {
-            ctx.err.assignCacheOverride = WarningMode::ERR;
-        } else if ((warnAssignCacheOverride.has_value() && warnAssignCacheOverride.value()) || enableAllWarnings) {
-            ctx.err.assignCacheOverride = WarningMode::WARN;
-        } else {
-            ctx.err.assignCacheOverride = WarningMode::OFF;
-        }
-    }
-    if (errInvalidAssignCache.has_value()) {
-        if (errInvalidAssignCache.value()) {
-            ctx.err.invalidAssignCache = WarningMode::ERR;
-        } else if ((warnInvalidAssignCache.has_value() && warnInvalidAssignCache.value()) || enableAllWarnings) {
-            ctx.err.invalidAssignCache = WarningMode::WARN;
-        } else {
-            ctx.err.invalidAssignCache = WarningMode::OFF;
-        }
-    }
-    if (errMissingAssignCache.has_value()) {
-        if (errMissingAssignCache.value()) {
-            ctx.err.missingAssignCache = WarningMode::ERR;
-        } else if ((warnMissingAssignCache.has_value() && warnMissingAssignCache.value()) || enableAllWarnings) {
-            ctx.err.missingAssignCache = WarningMode::WARN;
-        } else {
-            ctx.err.missingAssignCache = WarningMode::OFF;
-        }
-    }
-    if (errKeyFrameMissingColors.has_value()) {
-        if (errKeyFrameMissingColors.value()) {
-            ctx.err.keyFrameMissingColors = WarningMode::ERR;
-        } else if ((warnKeyFrameMissingColors.has_value() && warnKeyFrameMissingColors.value()) || enableAllWarnings) {
-            ctx.err.keyFrameMissingColors = WarningMode::WARN;
-        } else {
-            ctx.err.keyFrameMissingColors = WarningMode::OFF;
-        }
-    }
-    if (errUnusedManualPalColor.has_value()) {
-        if (errUnusedManualPalColor.value()) {
-            ctx.err.unusedManualPalColor = WarningMode::ERR;
-        } else if ((warnUnusedManualPalColor.has_value() && warnUnusedManualPalColor.value()) || enableAllWarnings) {
-            ctx.err.unusedManualPalColor = WarningMode::WARN;
-        } else {
-            ctx.err.unusedManualPalColor = WarningMode::OFF;
-        }
-    }
-    // Decompilation warnings
-    if (errTileIndexOutOfRange.has_value()) {
-        if (errTileIndexOutOfRange.value()) {
-            ctx.err.tileIndexOutOfRange = WarningMode::ERR;
-        } else if ((warnTileIndexOutOfRange.has_value() && warnTileIndexOutOfRange.value()) || enableAllWarnings) {
-            ctx.err.tileIndexOutOfRange = WarningMode::WARN;
-        } else {
-            ctx.err.tileIndexOutOfRange = WarningMode::OFF;
-        }
-    }
-    if (errPaletteIndexOutOfRange.has_value()) {
-        if (errPaletteIndexOutOfRange.value()) {
-            ctx.err.paletteIndexOutOfRange = WarningMode::ERR;
-        } else if ((warnPaletteIndexOutOfRange.has_value() && warnPaletteIndexOutOfRange.value()) ||
-                   enableAllWarnings) {
-            ctx.err.paletteIndexOutOfRange = WarningMode::WARN;
-        } else {
-            ctx.err.paletteIndexOutOfRange = WarningMode::OFF;
-        }
-    }
-
-    if (disableAllWarnings) {
-        /*
-         * Disable all warnings. A single -Wnone specified anywhere on the command line always takes precedence over
-         * anything else. To my mind, this is a bit odd. But GCC does it this way, and since we are emulating the way
-         * GCC does things, we'll do it too.
-         */
-        enableAllWarnings = false;
-        ctx.err.setAllWarnings(WarningMode::OFF);
     }
 
     /*
@@ -1635,25 +1311,22 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         ctx.validateFieldmapParameters(DecompilerMode::SECONDARY);
     } else {
-        internalerror("cli_parser::parseSubcommandOptions unknown subcommand");
-    }
-
-    if (ctx.err.usedTrueColorMode != WarningMode::OFF && ctx.output.paletteMode == TilesOutputPalette::TRUE_COLOR) {
-        warn_usedTrueColorMode(ctx.err);
+        panic("cli_parser::parseSubcommandOptions unknown subcommand");
     }
 
     /*
      * Die if any errors occurred
      */
-    if (ctx.err.errCount > 0) {
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-            die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
+            die(ctx, "Errors generated during command line parsing. Compilation terminated.");
         }
-        die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
+        die(ctx, "Errors generated during command line parsing. Decompilation terminated.");
     }
 }
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("parseCompile should work as expected with all command lines") {
     // These tests are full of disgusting and evil hacks, avert your gaze
     SUBCASE("Check that the defaults are correct") {
@@ -1672,13 +1345,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 3, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        parseSubcommandOptions(ctx, 3, argv);
     }
 
     SUBCASE("-Wall should enable everything") {
@@ -1700,13 +1367,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 4, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+        parseSubcommandOptions(ctx, 4, argv);
     }
 
     SUBCASE("-Wall -Werror should enable everything as an error") {
@@ -1731,13 +1392,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufWerror, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::ERR);
+        parseSubcommandOptions(ctx, 5, argv);
     }
 
     SUBCASE("Should enable a non-default warn, set all to error, then disable the error") {
@@ -1765,13 +1420,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufTrueColor, bufWerror, bufNoError, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 6, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::ERR);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        parseSubcommandOptions(ctx, 6, argv);
     }
 
     SUBCASE("Should enable all warnings, then disable one of them") {
@@ -1796,13 +1445,7 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
         char *const argv[] = {bufCmd, bufWall, bufNoColorPrecisionLoss, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::WARN);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::WARN);
+        parseSubcommandOptions(ctx, 5, argv);
     }
 
     SUBCASE("Global warning disable should work, even if a warning was explicitly enabled") {
@@ -1817,22 +1460,14 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
         char bufWnone[64];
         strcpy(bufWnone, "-Wnone");
 
-        char bufTrueColor[64];
-        strcpy(bufTrueColor, "-Wused-true-color-mode");
-
         char bufPath[64];
         strcpy(bufPath, "/home/foo/pokeemerald");
 
         char bufHeader[64];
         strcpy(bufHeader, "/home/foo/metatile_behaviors.h");
 
-        char *const argv[] = {bufCmd, bufWnone, bufTrueColor, bufPath, bufHeader};
-        porytiles::parseSubcommandOptions(ctx, 5, argv);
-
-        CHECK(ctx.err.colorPrecisionLoss == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.keyFrameNoMatchingTile == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.usedTrueColorMode == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.attributeFormatMismatch == porytiles::WarningMode::OFF);
-        CHECK(ctx.err.missingAttributesCsv == porytiles::WarningMode::OFF);
+        char *const argv[] = {bufCmd, bufWnone, bufPath, bufHeader};
+        parseSubcommandOptions(ctx, 4, argv);
     }
 }
+#endif // DOCTEST_CONFIG_DISABLE

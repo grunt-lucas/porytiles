@@ -13,6 +13,7 @@ runs:
     - name: Build on Linux with clang
       shell: bash
       run: |
+        export CC=clang
         export CXX=clang++
         BUILD_DATE=`date -uIseconds`
         cmake -B build \

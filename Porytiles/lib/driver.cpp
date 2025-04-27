@@ -1,12 +1,14 @@
 #include "driver.h"
 
-#include <cstdio>
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <functional>
-#include <iostream>
 #include <png.hpp>
 #include <regex>
 #include <sstream>
@@ -18,7 +20,9 @@
 #include "emitter.h"
 #include "importer.h"
 #include "logger.h"
+#include "panic/panic.hpp"
 #include "porytiles_context.h"
+#include "porytiles_exception.h"
 #include "utilities.h"
 
 namespace porytiles {
@@ -30,64 +34,74 @@ static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMod
 
     if (!exists(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode)) ||
         !is_directory(ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: source path did not exist or is not a directory",
-                               ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: source path did not exist or is not a directory",
+                                     ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!exists(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (!is_regular_file(ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode))) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but was not a regular file",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+        const auto msg = fmt::format("{}: exists but was not a regular file",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedBottomTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedMiddleTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode)};
-    } catch ([[maybe_unused]] const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.compilerSrcPaths.modeBasedTopTilesheetPath(compilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 }
 
@@ -98,45 +112,52 @@ static void validateDecompileInputs(PorytilesContext &ctx, const DecompilerMode 
 
     if (!exists(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode)) ||
         !is_directory(ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: source path did not exist or is not a directory",
-                               ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: source path did not exist or is not a directory",
+                                     ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedMetatilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: file did not exist",
-                               ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: file did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedAttributePath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode))) {
-        fatalerror(
-            ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-            fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
+        const auto msg =
+            fmt::format("{}: file did not exist", ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
     if (!exists(ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode))) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: directory did not exist",
-                               ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode).string()));
+        const auto msg = fmt::format("{}: directory did not exist",
+                                     ctx.decompilerSrcPaths.modeBasedPalettePath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 
     try {
         // We do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::rgba_pixel> tilesheetPng{ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode)};
-    } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{} is not a valid PNG file",
-                               ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string()));
+    } catch (std::exception &) {
+        const auto msg = fmt::format("{} is not a valid PNG file",
+                                     ctx.decompilerSrcPaths.modeBasedTilesPath(decompilerMode).string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 
     if (!exists(ctx.decompilerSrcPaths.metatileBehaviors) ||
         !is_regular_file(ctx.decompilerSrcPaths.metatileBehaviors)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, decompilerMode,
-                   fmt::format("{}: behaviors header did not exist or was not a regular file",
-                               ctx.decompilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: behaviors header did not exist or was not a regular file",
+                                     ctx.decompilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(decompilerMode), msg);
     }
 }
 
@@ -150,41 +171,49 @@ static void validateCompileOutputs(PorytilesContext &ctx, const CompilerMode com
     using std::filesystem::is_regular_file;
 
     if (exists(ctx.output.path) && !is_directory(ctx.output.path)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("{}: exists but is not a directory", ctx.output.path));
+        const auto msg = fmt::format("{}: exists but is not a directory", ctx.output.path);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(attributesPath) && !is_regular_file(attributesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", attributesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", attributesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(tilesetPath) && !is_regular_file(tilesetPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", tilesetPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", tilesetPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(metatilesPath) && !is_regular_file(metatilesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a file", metatilesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a file", metatilesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(palettesPath) && !is_directory(palettesPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a directory", palettesPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a directory", palettesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     if (exists(animsPath) && !is_directory(animsPath)) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("`{}' exists but is not a directory", animsPath.string()));
+        const auto msg = fmt::format("'{}' exists but is not a directory", animsPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 
     try {
         create_directories(palettesPath);
     } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("could not create `{}': {}", palettesPath.string(), e.what()));
+        const auto msg = fmt::format("could not create '{}': {}", palettesPath.string(), e.what());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     try {
         create_directories(animsPath);
     } catch (const std::exception &e) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                   fmt::format("could not create `{}': {}", animsPath.string(), e.what()));
+        const auto msg = fmt::format("could not create '{}': {}", animsPath.string(), e.what());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
 }
 
@@ -199,32 +228,38 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
     using std::filesystem::is_regular_file;
 
     if (exists(ctx.output.path) && !is_directory(ctx.output.path)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("{}: exists but is not a directory", ctx.output.path));
+        const auto msg = fmt::format("{}: exists but is not a directory", ctx.output.path);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(attributesPath) && !is_regular_file(attributesPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", attributesPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", attributesPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(bottomPath) && !is_regular_file(bottomPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", bottomPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", bottomPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(middlePath) && !is_regular_file(middlePath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", middlePath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", middlePath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
     if (exists(topPath) && !is_regular_file(topPath)) {
-        fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                   fmt::format("`{}' exists in output directory but is not a file", topPath.string()));
+        const auto msg = fmt::format("'{}' exists in output directory but is not a file", topPath.string());
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 
     if (!outputPath.empty()) {
         try {
             create_directories(outputPath);
         } catch (const std::exception &e) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       fmt::format("could not create `{}': {}", outputPath.string(), e.what()));
+            const auto msg = fmt::format("could not create '{}': {}", outputPath.string(), e.what());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
     }
 }
@@ -237,7 +272,7 @@ static void validateDecompileOutputs(PorytilesContext &ctx, const DecompilerMode
 
 //   pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
 //   if (!std::filesystem::exists(animationPath) || !std::filesystem::is_directory(animationPath)) {
-//     pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+//     pt_logln(ctx, stderr, "path '{}' did not exist, skipping animations import", animationPath.string());
 //     return animations;
 //   }
 //   std::vector<std::filesystem::path> animationDirectories;
@@ -314,7 +349,7 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 
     pt_logln(ctx, stderr, "importing animations from {}", animationPath.string());
     if (!exists(animationPath) || !is_directory(animationPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping animations import", animationPath.string());
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping animations import", animationPath.string());
         return animations;
     }
     std::vector<path> animationDirectories;
@@ -331,7 +366,11 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
         std::unordered_map<std::size_t, path> frames{};
         path keyFrameFile = animDir / path{"key.png"};
         if (!exists(keyFrameFile) || !is_regular_file(keyFrameFile)) {
-            fatalerror_missingKeyFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode, animDir.filename().string());
+            const auto msg =
+                fmt::format("animation '{}' was missing key frame file", ctx.diag->bold(animDir.filename().string()));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("animation {} missing key frame file", animDir.filename().string()));
         }
         frames.insert(std::pair{0, keyFrameFile});
         pt_logln(ctx, stderr, "found key frame file: {}, index=0", keyFrameFile.string());
@@ -351,13 +390,23 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
 
         std::vector<AnimationPng<png::rgba_pixel>> framePngs{};
         if (frames.size() == 1) {
-            fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                    animDir.filename().string(), 0);
+            const auto msg =
+                fmt::format("animation '{}' was missing expected frame file '{}'",
+                            ctx.diag->bold(animDir.filename().string()), ctx.diag->bold(palIndexToFileName(0)));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                      fmt::format("animation {} missing required anim frame file {}",
+                                                  animDir.filename().string(), palIndexToFileName(0)));
         }
         for (std::size_t i = 0; i < frames.size(); i++) {
             if (!frames.contains(i)) {
-                fatalerror_missingRequiredAnimFrameFile(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                                                        animDir.filename().string(), i - 1);
+                const auto msg =
+                    fmt::format("animation '{}' was missing expected frame file '{}'",
+                                ctx.diag->bold(animDir.filename().string()), ctx.diag->bold(palIndexToFileName(i - 1)));
+                ctx.diag->report(E_FATAL_GENERIC, msg);
+                die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+                                          fmt::format("animation {} missing required anim frame file {}",
+                                                      animDir.filename().string(), palIndexToFileName(i - 1)));
             }
 
             try {
@@ -366,15 +415,16 @@ prepareDecompiledAnimsForImport(PorytilesContext &ctx, const CompilerMode compil
                 AnimationPng animPng{png, animDir.filename().string(), frames.at(i).filename().string()};
                 framePngs.push_back(animPng);
             } catch ([[maybe_unused]] const std::exception &exception) {
-                error_animFrameWasNotAPng(ctx.err, animDir.filename().string(), frames.at(i).filename().string());
+                ctx.diag->report(E_GENERIC, fmt::format("animation '{}' frame file '{}' was not a valid PNG file",
+                                                        ctx.diag->bold(animDir.filename().string()),
+                                                        ctx.diag->bold(frames.at(i).filename().string())));
             }
         }
 
         animations.push_back(framePngs);
     }
-    if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
-                       "found anim frame that was not a png");
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), "found anim frame that was not a png");
     }
 
     return animations;
@@ -389,8 +439,9 @@ prepareDecompiledAttributesForImport(PorytilesContext &ctx, const CompilerMode c
 
     pt_logln(ctx, stderr, "importing attributes from {}", attributesCsvPath.string());
     if (!exists(attributesCsvPath) || !is_regular_file(attributesCsvPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping attributes import", attributesCsvPath.string());
-        warn_attributesFileNotFound(ctx.err, attributesCsvPath);
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping attributes import", attributesCsvPath.string());
+        ctx.diag->report(W_MISSING_ATTRIBUTES_CSV, ctx.diag->bold(attributesCsvPath.string()));
+        ctx.diag->report_partner(W_MISSING_ATTRIBUTES_CSV, 0);
         return {};
     }
 
@@ -403,39 +454,43 @@ prepareBehaviorsHeaderForImportHelper(PorytilesContext &ctx, const CompilerMode 
     std::ifstream behaviorFile{behaviorHeaderPath};
     if (behaviorFile.fail()) {
         if (compilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       fmt::format("{}: could not open for reading", behaviorHeaderPath));
-        } else if (decompilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       fmt::format("{}: could not open for reading", behaviorHeaderPath));
-        } else {
-            internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+            const auto msg = fmt::format("{}: could not open for reading", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
+        if (decompilerMode != nullptr) {
+            const auto msg = fmt::format("{}: could not open for reading", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
+        }
+        panic("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
     }
     auto [behaviorMap, behaviorReverseMap] = std::invoke(
         [&]()
             -> std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>> {
             if (compilerMode != nullptr) {
                 return importMetatileBehaviorHeader(ctx, *compilerMode, behaviorFile);
-            } else if (decompilerMode != nullptr) {
-                return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
-            } else {
-                internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
             }
+            if (decompilerMode != nullptr) {
+                return importMetatileBehaviorHeader(ctx, *decompilerMode, behaviorFile);
+            }
+            panic("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
             // unreachable, here for compiler
             throw std::runtime_error("driver::prepareBehaviorsHeaderForImportHelper reached unreachable code path");
         });
     behaviorFile.close();
     if (behaviorMap.empty()) {
         if (compilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, *compilerMode,
-                       fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
-        } else if (decompilerMode != nullptr) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, *decompilerMode,
-                       fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath));
-        } else {
-            internalerror("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
+            const auto msg = fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
+        if (decompilerMode != nullptr) {
+            const auto msg = fmt::format("{}: behavior header did not contain any valid mappings", behaviorHeaderPath);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
+        }
+        panic("driver::prepareBehaviorsHeaderForImportHelper both mode parameters were null");
     }
     return std::pair{behaviorMap, behaviorReverseMap};
 }
@@ -464,7 +519,7 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
 
     pt_logln(ctx, stderr, "importing palette primers from {}", palettePrimersPath.string());
     if (!exists(palettePrimersPath) || !is_directory(palettePrimersPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping palette primers import", palettePrimersPath.string());
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping palette primers import", palettePrimersPath.string());
         return primerTiles;
     }
 
@@ -473,8 +528,8 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
     std::ranges::sort(primerFiles);
 
     for (const auto &primerFile : primerFiles) {
-        const auto &fullPrimerFilename = ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode).string() + "/" +
-                                         primerFile.filename().string();
+        const auto &fullPrimerFilename =
+            ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode).string() / primerFile.filename();
 
         // Check if the file is a regular file
         if (!is_regular_file(primerFile)) {
@@ -491,7 +546,9 @@ static std::vector<RGBATile> preparePalettePrimersForImport(PorytilesContext &ct
         std::ifstream fileStream{primerFile};
         pt_logln(ctx, stderr, "found palette primer file {}", primerFile.string());
         RGBATile primerTile = importPalettePrimer(ctx, compilerMode, fileStream, fullPrimerFilename);
-        primerTile.primerFilename = fullPrimerFilename;
+        primerTile.primerFilename =
+            fullPrimerFilename.lexically_relative(ctx.compilerSrcPaths.modeBasedPalettePrimerPath(compilerMode))
+                .string();
         primerTiles.push_back(primerTile);
         fileStream.close();
     }
@@ -513,7 +570,7 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 
     pt_logln(ctx, stderr, "importing palette overrides from {}", paletteOverridesPath.string());
     if (!exists(paletteOverridesPath) || !is_directory(paletteOverridesPath)) {
-        pt_logln(ctx, stderr, "path `{}' did not exist, skipping palette overrides import",
+        pt_logln(ctx, stderr, "path '{}' did not exist, skipping palette overrides import",
                  paletteOverridesPath.string());
         return {overrideTiles, {}};
     }
@@ -523,8 +580,8 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
     std::ranges::sort(overrideFiles);
 
     for (const auto &overrideFile : overrideFiles) {
-        const auto &fullOverrideFilename = ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode).string() +
-                                           "/" + overrideFile.filename().string();
+        const auto &fullOverrideFilename =
+            ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode).string() / overrideFile.filename();
         // Check if the file is a regular file
         if (!is_regular_file(overrideFile)) {
             pt_logln(ctx, stderr, "skipping {} as it is not a regular file", overrideFile.string());
@@ -539,42 +596,48 @@ preparePaletteOverridesForImport(PorytilesContext &ctx, const CompilerMode compi
 
         // Make sure pal file name is in format e.g. 01.pal
         if (!checkFullStringMatch(overrideFile.stem().string(), "[0,1][0-9]")) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("pal file {} at {}: name must match regex [0,1][0-9]", overrideFile.stem().string(),
-                                   overrideFile.string()));
+            const auto msg = fmt::format("pal file {} at {}: name must match regex [0,1][0-9]",
+                                         overrideFile.stem().string(), overrideFile.string());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
         }
 
         std::size_t overridePaletteIndex{};
         try {
-            overridePaletteIndex = parseInteger<std::size_t>(overrideFile.stem().c_str(), 10);
+            const auto stem = overrideFile.stem();
+            overridePaletteIndex = parseInteger<std::size_t>(stem.c_str(), 10);
         } catch ([[maybe_unused]] const std::exception &e) {
-            internalerror("driver::preparePaletteOverridesForImport parseInteger with invalid pal override file name");
+            panic("driver::preparePaletteOverridesForImport parseInteger with invalid pal override file name");
         }
 
         // Throw fatal if user specifies an out-of-range palette index for their compilation mode
         if (compilerMode == CompilerMode::PRIMARY) {
             if (overridePaletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
-                error(ctx.err, fmt::format("pal file {}: invalid palette index `{}': must be 0 <= index < {}",
-                                           fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
-                                           ctx.fieldmapConfig.numPalettesInPrimary));
+                ctx.diag->report(E_GENERIC, fmt::format("{} invalid palette index '{}': must be 0 <= index < {}",
+                                                        ctx.diag->bold(fullOverrideFilename.string() + ":"),
+                                                        ctx.diag->bold(overridePaletteIndex),
+                                                        ctx.fieldmapConfig.numPalettesInPrimary));
             }
         } else if (compilerMode == CompilerMode::SECONDARY) {
             if (overridePaletteIndex < ctx.fieldmapConfig.numPalettesInPrimary ||
                 overridePaletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-                error(ctx.err,
-                      fmt::format("pal file {}: invalid palette index `{}': must be {} <= index < {}",
-                                  fullOverrideFilename, fmt::styled(overridePaletteIndex, fmt::emphasis::bold),
-                                  ctx.fieldmapConfig.numPalettesInPrimary, ctx.fieldmapConfig.numPalettesTotal));
+                ctx.diag->report(E_GENERIC, fmt::format("{} invalid palette index '{}': must be {} <= index < {}",
+                                                        ctx.diag->bold(fullOverrideFilename.string() + ":"),
+                                                        ctx.diag->bold(overridePaletteIndex),
+                                                        ctx.fieldmapConfig.numPalettesInPrimary,
+                                                        ctx.fieldmapConfig.numPalettesTotal));
             }
         } else {
-            internalerror("driver::preparePaletteOverridesForImport called with invalid compiler mode");
+            panic("driver::preparePaletteOverridesForImport called with invalid compiler mode");
         }
 
         std::ifstream fileStream{overrideFile};
         pt_logln(ctx, stderr, "found palette override file {}", overrideFile.string());
         auto [overrideTile, overriddenPalSlots] =
             importPaletteOverride(ctx, compilerMode, fileStream, fullOverrideFilename);
-        overrideTile.overrideFilename = fullOverrideFilename;
+        overrideTile.overrideFilename =
+            fullOverrideFilename.lexically_relative(ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode))
+                .string();
         overrideTile.overridePaletteIndex = overridePaletteIndex;
         overrideTiles.push_back(overrideTile);
         for (const auto &[palSlot, bgr] : overriddenPalSlots) {
@@ -633,26 +696,13 @@ static void driveEmitCompiledAnims(PorytilesContext &ctx, const std::vector<Comp
             outFrames.emplace_back(static_cast<png::uint_32>(imageWidth), static_cast<png::uint_32>(imageHeight));
         }
         emitAnim(ctx, outFrames, compiledAnim, palettes);
-        // Index starts at 1 here so we don't actually save a key.png compiled file, not necessary
+        // Index starts at 1 here, so we don't save a key.png compiled file, not necessary
         for (std::size_t frameIndex = 1; frameIndex < compiledAnim.frames.size(); frameIndex++) {
             auto &frame = outFrames.at(frameIndex);
             path framePngPath = animPath / compiledAnim.frames.at(frameIndex).frameName;
             frame.write(framePngPath);
         }
     }
-}
-
-static void driveEmitAssignCache(PorytilesContext &ctx, const CompilerMode compilerMode,
-                                 const std::filesystem::path &assignCfgPath) {
-    std::ofstream outAssignCache{assignCfgPath.string()};
-    if (outAssignCache.good()) {
-        emitAssignCache(ctx, compilerMode, outAssignCache);
-    } else {
-        fatalerror(
-            ctx.err, ctx.compilerSrcPaths, compilerMode,
-            fmt::format("{}: cache write failed, please make sure the file is writable", assignCfgPath.string()));
-    }
-    outAssignCache.close();
 }
 
 static void driveEmitCompiledTileset(PorytilesContext &ctx, CompilerMode compilerMode, const CompiledTileset &tileset,
@@ -752,8 +802,9 @@ driveCompiledTilesetImport(PorytilesContext &ctx, DecompilerMode mode,
         filename << index << ".pal";
         path paletteFile = ctx.decompilerSrcPaths.modeBasedPalettePath(mode) / filename.str();
         if (!exists(paletteFile)) {
-            fatalerror(ctx.err, ctx.decompilerSrcPaths, mode,
-                       fmt::format("{}: file did not exist", paletteFile.string()));
+            const auto msg = fmt::format("{}: file did not exist", paletteFile.string());
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
         }
         paletteFiles.push_back(std::make_unique<std::ifstream>(paletteFile));
         paletteFileNames.emplace_back(paletteFile.c_str());
@@ -792,8 +843,8 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
 
     auto attributesMap = prepareDecompiledAttributesForImport(
         ctx, compilerMode, behaviorMap, ctx.compilerSrcPaths.modeBasedAttributePath(compilerMode));
-    if (ctx.err.errCount > 0) {
-        die_errorCount(ctx.err, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                        fmt::format("errors generated during {} attributes import", compilerModeString(compilerMode)));
     }
 
@@ -810,25 +861,12 @@ driveCompileTileset(PorytilesContext &ctx, CompilerMode compilerMode, CompilerMo
     auto [paletteOverrides, paletteOverrideMap] = preparePaletteOverridesForImport(
         ctx, compilerMode, ctx.compilerSrcPaths.modeBasedPaletteOverridePath(compilerMode));
 
-    if (ctx.err.errCount > 0) {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode, "errors encountered while importing manual palettes");
-    }
-
-    if (exists(ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode))) {
-        std::ifstream assignCacheFile{ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode)};
-        if (assignCacheFile.fail()) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, compilerMode,
-                       fmt::format("{}: could not open for reading",
-                                   ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode).c_str()));
-        }
-        importAssignmentCache(ctx, compilerMode, parentCompilerMode, assignCacheFile);
-        assignCacheFile.close();
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        const auto msg = "errors encountered while importing manual palettes";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
     }
     compiledTileset = compile(ctx, compilerMode, decompiledTiles, palettePrimers, paletteOverrides, paletteOverrideMap);
-
-    if (ctx.compilerConfig.cacheAssign) {
-        driveEmitAssignCache(ctx, compilerMode, ctx.compilerSrcPaths.modeBasedAssignCachePath(compilerMode));
-    }
 
     return std::pair{std::move(compiledTileset), attributesMap};
 }
@@ -916,8 +954,9 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
         behaviorMap = map;
         behaviorReverseMap = reverse;
     } else {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                   fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
     }
 
     /*
@@ -934,9 +973,10 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
          * mappings from the behaviors header.
          */
         if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default behavior `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
         ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
     }
@@ -951,14 +991,15 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
             const EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default EncounterType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
     }
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultTerrainType.c_str());
-    } catch (const std::exception &e) {
+    } catch (std::exception &) {
         /*
          * If the integer parse fails, assume the user provided an terrain label and try to parse that based on the
          * mappings from the terrain table.
@@ -967,9 +1008,10 @@ static void driveCompilePrimary(PorytilesContext &ctx) {
             const TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::PRIMARY,
-                       fmt::format("supplied default TerrainType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY), msg);
         }
     }
 
@@ -999,8 +1041,9 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
         behaviorMap = map;
         behaviorReverseMap = reverse;
     } else {
-        fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                   fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors));
+        const auto msg = fmt::format("{}: file did not exist", ctx.compilerSrcPaths.metatileBehaviors);
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
     }
 
     /*
@@ -1011,15 +1054,16 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
     // FIXME : default behavior/encounter/terrain parsing code is duped
     try {
         parseInteger<std::uint16_t>(ctx.compilerConfig.defaultBehavior.c_str());
-    } catch (const std::exception &e) {
+    } catch (std::exception &) {
         /*
          * If the integer parse fails, assume the user provided a behavior label and try to parse that based on the
          * mappings from the behaviors header.
          */
         if (!behaviorMap.contains(ctx.compilerConfig.defaultBehavior)) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default behavior `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultBehavior, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default behavior '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultBehavior));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
         ctx.compilerConfig.defaultBehavior = std::to_string(behaviorMap.at(ctx.compilerConfig.defaultBehavior));
     }
@@ -1034,9 +1078,10 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
             EncounterType type = stringToEncounterType(ctx.compilerConfig.defaultEncounterType);
             ctx.compilerConfig.defaultEncounterType = std::to_string(encounterTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default EncounterType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultEncounterType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default EncounterType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultEncounterType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
     }
     try {
@@ -1050,9 +1095,10 @@ static void driveCompileSecondary(PorytilesContext &ctx) {
             TerrainType type = stringToTerrainType(ctx.compilerConfig.defaultTerrainType);
             ctx.compilerConfig.defaultTerrainType = std::to_string(terrainTypeValue(type));
         } catch ([[maybe_unused]] const std::exception &e1) {
-            fatalerror(ctx.err, ctx.compilerSrcPaths, CompilerMode::SECONDARY,
-                       fmt::format("supplied default TerrainType `{}' was not valid",
-                                   fmt::styled(ctx.compilerConfig.defaultTerrainType, fmt::emphasis::bold)));
+            const auto msg = fmt::format("supplied default TerrainType '{}' was not valid",
+                                         ctx.diag->bold(ctx.compilerConfig.defaultTerrainType));
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY), msg);
         }
     }
 
@@ -1083,21 +1129,21 @@ void drive(PorytilesContext &ctx) {
         driveCompileSecondary(ctx);
         break;
     default:
-        internalerror("driver::drive unknown subcommand setting");
+        panic("driver::drive unknown subcommand setting");
     }
 }
 
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set") {
     porytiles::PorytilesContext ctx{};
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/anim_metatiles_2/primary";
@@ -1261,10 +1307,9 @@ TEST_CASE("drive should emit all expected files for anim_metatiles_2 secondary s
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.cacheAssign = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_2/primary"}));
     ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/anim_metatiles_2/primary";
@@ -1388,7 +1433,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_general") {
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::DECOMPILE_PRIMARY;
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.decompilerConfig.normalizeTransparency = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compiled_emerald_general"}));
@@ -1505,7 +1550,7 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove") 
     std::filesystem::path parentDir = porytiles::createTmpdir();
     ctx.output.path = parentDir;
     ctx.subcommand = porytiles::Subcommand::DECOMPILE_SECONDARY;
-    ctx.err.printErrors = false;
+    ctx.printDieMsg = false;
     ctx.decompilerConfig.normalizeTransparency = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compiled_emerald_general"}));
@@ -1616,3 +1661,701 @@ TEST_CASE("drive should emit all expected files for compiled_emerald_lilycove") 
 
     std::filesystem::remove_all(parentDir);
 }
+
+TEST_CASE("error_tooManyUniqueColorsInTile should trigger correctly") {
+    SUBCASE("it should work for regular tiles") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 3;
+        ctx.fieldmapConfig.numPalettesTotal = 6;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/error_tooManyUniqueColorsInTile_regular";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 6);
+    }
+
+    SUBCASE("it should work for anim tiles") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 3;
+        ctx.fieldmapConfig.numPalettesTotal = 6;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/error_tooManyUniqueColorsInTile_anim";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 4);
+    }
+}
+
+TEST_CASE("error_invalidAlphaValue should trigger correctly for regular tiles") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 3;
+    ctx.fieldmapConfig.numPalettesTotal = 6;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_invalidAlphaValue";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+}
+
+TEST_CASE("error_animFrameWasNotAPng should trigger correctly when an anim frame is missing") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/error_animFrameWasNotAPng";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "found anim frame that was not a png", porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+}
+
+TEST_CASE("error_allThreeLayersHadNonTransparentContent should trigger correctly when a dual-layer inference fails") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.compilerConfig.tripleLayer = false;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/error_allThreeLayersHadNonTransparentContent";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+}
+
+TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format is invalid") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Emerald row format, missing field") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/incorrect_row_format_1.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+    SUBCASE("Firered row format, missing field") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/incorrect_row_format_2.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+    }
+}
+
+TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has an unrecognized behavior") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Emerald row format, missing metatile behavior") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/unknown_behavior_1.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+    }
+}
+
+TEST_CASE("error_duplicateAttribute should trigger correctly when two rows specify the same metatile id") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Duplicate metatile definition test 1") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/duplicate_definition_1.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+    }
+}
+
+TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifies an invalid TerrainType") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Invalid TerrainType test 1") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/invalid_terrain_type_1.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+}
+
+TEST_CASE("error_invalidEncounterType should trigger correctly when a row specifies an invalid EncounterType") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Invalid EncounterType test 1") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/invalid_encounter_type_1.csv"),
+                             "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+}
+
+TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular primary tiles") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_tooManyUniqueColorsTotal should trigger correctly for regular secondary tiles") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/simple_metatiles_1";
+    ctx.compilerSrcPaths.secondarySourcePath =
+        "Resources/Tests/errors_and_warnings/fatalerror_tooManyUniqueColorsTotal";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "too many unique colors total", porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_missingRequiredAnimFrameFile should trigger correctly in both cases:") {
+    SUBCASE("when an anim frame is missing") {
+        porytiles::PorytilesContext ctx{};
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 1;
+        ctx.fieldmapConfig.numPalettesTotal = 2;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_skipCase";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.printDieMsg = false;
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 01.png",
+                             porytiles::PorytilesException);
+    }
+
+    SUBCASE("when there are no regular frames supplied") {
+        porytiles::PorytilesContext ctx{};
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 1;
+        ctx.fieldmapConfig.numPalettesTotal = 2;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/fatalerror_missingRequiredAnimFrameFile_keyOnlyCase";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.printDieMsg = false;
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing required anim frame file 00.png",
+                             porytiles::PorytilesException);
+    }
+}
+
+TEST_CASE("fatalerror_missingKeyFrameFile should trigger correctly when there is no key frame supplied") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_missingKeyFrameFile";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 missing key frame file",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame width "
+          "is mismatched") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_widthCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 01.png dimension width mismatch",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_animFrameDimensionsDoNotMatchOtherFrames should trigger correctly when an anim frame height "
+          "is mismatched") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/fatalerror_animFrameDimensionsDoNotMatchOtherFrames_heightCase";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "anim anim1 frame 02.png dimension height mismatch",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_transparentKeyFrameTile should trigger when an anim has a transparent tile") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_transparentKeyFrameTile";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 had a transparent key frame tile",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE(
+    "fatalerror_duplicateKeyFrameTile should trigger when two different animations have a duplicate key frame tile") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/fatalerror_duplicateKeyFrameTile";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim2 had a duplicate key frame tile",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_keyFramePresentInPairedPrimary should trigger when an animation key frame tile is present in the "
+          "paired primary tileset") {
+    porytiles::PorytilesContext ctx{};
+    ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 4;
+    ctx.compilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/primary";
+    ctx.compilerSrcPaths.secondarySourcePath =
+        "Resources/Tests/errors_and_warnings/fatalerror_keyFramePresentInPairedPrimary/secondary";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.printDieMsg = false;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "animation anim1 key frame tile present in paired primary",
+                         porytiles::PorytilesException);
+}
+
+TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attributes file is missing a header") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Completely missing header") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/missing_header_1.csv"),
+                             "Resources/Tests/csv/missing_header_1.csv: incorrect header row format",
+                             porytiles::PorytilesException);
+    }
+
+    SUBCASE("Header missing id field") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/missing_header_2.csv"),
+                             "Resources/Tests/csv/missing_header_2.csv: incorrect header row format",
+                             porytiles::PorytilesException);
+    }
+
+    SUBCASE("Header missing behavior field") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/missing_header_3.csv"),
+                             "Resources/Tests/csv/missing_header_3.csv: incorrect header row format",
+                             porytiles::PorytilesException);
+    }
+
+    SUBCASE("Header has terrainType but missing encounterType") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/missing_header_4.csv"),
+                             "Resources/Tests/csv/missing_header_4.csv: incorrect header row format",
+                             porytiles::PorytilesException);
+    }
+}
+
+TEST_CASE(
+    "fatalerror_invalidIdInCsv should trigger when the id column in attribute csv contains a non-integral value") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+
+    SUBCASE("Invalid integer format 1") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/invalid_id_column_1.csv"),
+                             "Resources/Tests/csv/invalid_id_column_1.csv: invalid id foo",
+                             porytiles::PorytilesException);
+    }
+
+    SUBCASE("Invalid integer format 2") {
+        CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                                "Resources/Tests/csv/invalid_id_column_2.csv"),
+                             "Resources/Tests/csv/invalid_id_column_2.csv: invalid id 6bar",
+                             porytiles::PorytilesException);
+    }
+}
+
+TEST_CASE("fatalerror_invalidBehaviorValue should trigger when the metatile behavior header has a non-integral "
+          "behavior value") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+
+    SUBCASE("Invalid integer format 1") {
+        std::ifstream behaviorFile{"Resources/Tests/metatile_behaviors_invalid_1.h"};
+        CHECK_THROWS_WITH_AS(
+            porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+            "invalid behavior value foo", porytiles::PorytilesException);
+        behaviorFile.close();
+    }
+
+    SUBCASE("Invalid integer format 2") {
+        std::ifstream behaviorFile{"Resources/Tests/metatile_behaviors_invalid_2.h"};
+        CHECK_THROWS_WITH_AS(
+            porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile),
+            "invalid behavior value 6bar", porytiles::PorytilesException);
+        behaviorFile.close();
+    }
+}
+
+TEST_CASE("warn_colorPrecisionLoss should trigger correctly when a color collapses") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::DiagLevel::Error);
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_colorPrecisionLoss";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS) == 3);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 3);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Note) == 3);
+}
+
+TEST_CASE("warn_keyFrameNoMatchingTile should trigger correctly when a key frame tile is not used") {
+    SUBCASE("it should trigger correctly for a primary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary tile assignment",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+    }
+
+    SUBCASE("it should trigger correctly for a secondary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_KEY_FRAME_NO_MATCHING_TILE, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/primary_correct";
+        ctx.compilerSrcPaths.secondarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_keyFrameTileDidNotAppearInAssignment/secondary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary tile assignment",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_KEY_FRAME_NO_MATCHING_TILE) == 2);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+    }
+}
+
+TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH, porytiles::DiagLevel::Error);
+    ctx.targetBaseGame = porytiles::TargetBaseGame::EMERALD;
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "Resources/Tests/csv/correct_2.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH) == 1);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+}
+
+TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH, porytiles::DiagLevel::Error);
+    ctx.targetBaseGame = porytiles::TargetBaseGame::FIRERED;
+
+    std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
+    CHECK_THROWS_WITH_AS(porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+                                                            "Resources/Tests/csv/correct_1.csv"),
+                         "errors generated during attributes CSV parsing", porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_ATTRIBUTE_FORMAT_MISMATCH) == 1);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+}
+
+TEST_CASE("warn_attributesFileNotFound should correctly warn") {
+    SUBCASE("it should trigger correctly for a primary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_MISSING_ATTRIBUTES_CSV, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/primary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during primary attributes import",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_MISSING_ATTRIBUTES_CSV) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+
+    SUBCASE("it should trigger correctly for a secondary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_MISSING_ATTRIBUTES_CSV, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/primary_correct";
+        ctx.compilerSrcPaths.secondarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_attributesFileNotFound/secondary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.printDieMsg = false;
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during secondary attributes import",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_MISSING_ATTRIBUTES_CSV) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+}
+
+TEST_CASE("warn_unusedAttribute should correctly warn") {
+    SUBCASE("it should trigger correctly for a primary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+
+    SUBCASE("it should trigger correctly for a secondary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_SECONDARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_unusedAttribute/primary_correct";
+        ctx.compilerSrcPaths.secondarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedAttribute/secondary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+
+    SUBCASE("it should trigger correctly for a dual layer primary set") {
+        porytiles::PorytilesContext ctx{};
+        ctx.printDieMsg = false;
+        auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+        ctx.set_diag_engine(std::move(engine));
+        ctx.diag->enable_at_level(porytiles::W_UNUSED_ATTRIBUTE, porytiles::DiagLevel::Error);
+        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        ctx.fieldmapConfig.numPalettesInPrimary = 2;
+        ctx.fieldmapConfig.numPalettesTotal = 4;
+        ctx.compilerConfig.tripleLayer = false;
+        ctx.compilerSrcPaths.primarySourcePath =
+            "Resources/Tests/errors_and_warnings/warn_unusedAttribute/dual/primary";
+        ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+        ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+        ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+        CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during layered tile import",
+                             porytiles::PorytilesException);
+        CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE) == 1);
+        CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 1);
+    }
+}
+
+TEST_CASE("warn_nonTransparentRgbaCollapsedToTransparentBgr should trigger correctly when a color collapses") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_TRANSPARENCY_COLLAPSE, porytiles::DiagLevel::Error);
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 1;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/warn_nonTransparentRgbaCollapsedToTransparentBgr";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_TRANSPARENCY_COLLAPSE) == 2);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 2);
+}
+
+TEST_CASE("warn_unusedManualPalColor should trigger correctly") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_UNUSED_MANUAL_PAL_COLOR, porytiles::DiagLevel::Error);
+    ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    ctx.fieldmapConfig.numPalettesInPrimary = 2;
+    ctx.fieldmapConfig.numPalettesTotal = 2;
+    ctx.compilerSrcPaths.primarySourcePath = "Resources/Tests/errors_and_warnings/warn_unusedManualPalColor";
+    ctx.compilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors generated during tile normalization",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_UNUSED_MANUAL_PAL_COLOR) == 4);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 4);
+}
+
+TEST_CASE("warn_indexOutOfRangeWarnings should trigger correctly") {
+    porytiles::PorytilesContext ctx{};
+    ctx.printDieMsg = false;
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::IgnoreConsumer>());
+    ctx.set_diag_engine(std::move(engine));
+    ctx.diag->enable_at_level(porytiles::W_TILE_INDEX_OUT_OF_RANGE, porytiles::DiagLevel::Error);
+    ctx.diag->enable_at_level(porytiles::W_PALETTE_INDEX_OUT_OF_RANGE, porytiles::DiagLevel::Error);
+    ctx.subcommand = porytiles::Subcommand::DECOMPILE_SECONDARY;
+    ctx.decompilerSrcPaths.primarySourcePath =
+        "Resources/Tests/errors_and_warnings/warn_indexOutOfRangeWarnings/general";
+    ctx.decompilerSrcPaths.secondarySourcePath =
+        "Resources/Tests/errors_and_warnings/warn_indexOutOfRangeWarnings/petalburg";
+    ctx.decompilerSrcPaths.metatileBehaviors = "Resources/Tests/metatile_behaviors.h";
+
+    CHECK_THROWS_WITH_AS(porytiles::drive(ctx), "errors encountered while decompiling tileset",
+                         porytiles::PorytilesException);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_TILE_INDEX_OUT_OF_RANGE) == 8);
+    CHECK(ctx.diag->in_flight_count_for(porytiles::W_PALETTE_INDEX_OUT_OF_RANGE) == 8);
+    CHECK(ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Error) == 16);
+}
+#endif // DOCTEST_CONFIG_DISABLE

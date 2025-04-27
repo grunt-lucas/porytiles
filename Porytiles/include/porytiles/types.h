@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <fmt/format.h>
 #include <iostream>
 #include <png.hpp>
 #include <string>
@@ -12,11 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <doctest.h>
-
-/**
- * TODO : fill in doc comment for this header
- */
+#include "./panic/panic.hpp"
 
 namespace porytiles {
 constexpr std::size_t TILE_SIDE_LENGTH_PIX = 8;
@@ -110,6 +107,14 @@ struct RGBA32 {
     friend std::ostream &operator<<(std::ostream &os, const RGBA32 &rgba);
 };
 
+/*
+ * Provide a simple way for fmtlib to format the RGBA32:
+ * https://fmt.dev/11.1/api/#formatting-user-defined-types
+ */
+inline auto format_as(const RGBA32 &rgba) {
+    return rgba.jasc();
+}
+
 extern const RGBA32 RGBA_BLACK;
 extern const RGBA32 RGBA_RED;
 extern const RGBA32 RGBA_GREEN;
@@ -165,13 +170,13 @@ LayerType layerTypeFromInt(std::uint8_t layerInt);
 enum class EncounterType { NONE, LAND, WATER };
 std::uint8_t encounterTypeValue(EncounterType encounterType);
 std::string encounterTypeString(EncounterType encounterType);
-EncounterType stringToEncounterType(std::string string);
+EncounterType stringToEncounterType(const std::string &string);
 EncounterType encounterTypeFromInt(std::uint8_t encounterInt);
 
 enum class TerrainType { NORMAL, GRASS, WATER, WATERFALL };
 std::uint8_t terrainTypeValue(TerrainType terrainType);
 std::string terrainTypeString(TerrainType terrainType);
-TerrainType stringToTerrainType(std::string string);
+TerrainType stringToTerrainType(const std::string &string);
 TerrainType terrainTypeFromInt(std::uint8_t terrainInt);
 
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
@@ -260,6 +265,26 @@ struct RGBATile {
         return true;
     }
 
+    [[nodiscard]] std::string prettify() const {
+        // TODO : display indexes according to offsets? (so they match up with Porymap?)
+        std::string tileString;
+        if (type == TileType::LAYERED) {
+            tileString = fmt::format("0x{:x} ({}), {}, {}", metatileIndex, metatileIndex, layerString(layer),
+                                     subtileString(subtile));
+        } else if (type == TileType::ANIM) {
+            tileString = fmt::format("anim {}, {}, frame {}", anim, frame, tileIndex);
+        } else if (type == TileType::FREESTANDING) {
+            tileString = fmt::format("tile 0x{:x} ({})", tileIndex, tileIndex);
+        } else if (type == TileType::PRIMER) {
+            tileString = fmt::format("primer {}", primerFilename);
+        } else if (type == TileType::OVERRIDE) {
+            tileString = fmt::format("override {}", overrideFilename);
+        } else {
+            panic("RGBATile::prettify unknown TileType");
+        }
+        return tileString;
+    }
+
     auto operator==(const RGBATile &other) const {
         return this->pixels == other.pixels;
     }
@@ -276,6 +301,14 @@ struct RGBATile {
 
     friend std::ostream &operator<<(std::ostream &os, const RGBATile &tile);
 };
+
+/*
+ * Provide a simple way for fmtlib to format the RGBATile:
+ * https://fmt.dev/11.1/api/#formatting-user-defined-types
+ */
+inline auto format_as(const RGBATile &tile) {
+    return tile.prettify();
+}
 
 extern const RGBATile RGBA_TILE_BLACK;
 extern const RGBATile RGBA_TILE_RED;
@@ -485,9 +518,6 @@ struct DecompiledTileset {
  * Normalized types
  */
 
-/**
- * TODO : fill in doc comment
- */
 struct NormalizedPixels {
     std::array<std::uint8_t, TILE_NUM_PIX> colorIndexes;
 
@@ -518,9 +548,7 @@ template <> struct std::hash<porytiles::NormalizedPixels> {
 };
 
 namespace porytiles {
-/**
- * TODO : fill in doc comment
- */
+
 struct NormalizedPalette {
     int size{};
     std::array<BGR15, PAL_SIZE> colors{};
@@ -540,9 +568,7 @@ template <> struct std::hash<porytiles::NormalizedPalette> {
 };
 
 namespace porytiles {
-/**
- * TODO : fill in doc comment
- */
+
 struct NormalizedTile {
     /*
      * Vector here to represent frames. Animated tiles can have multiple frames, with each frame corresponding to
@@ -844,7 +870,6 @@ struct CompilerSourcePaths {
     [[nodiscard]] std::filesystem::path modeBasedTopTilesheetPath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedAttributePath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedAnimPath(CompilerMode mode) const;
-    [[nodiscard]] std::filesystem::path modeBasedAssignCachePath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedPalettePrimerPath(CompilerMode mode) const;
     [[nodiscard]] std::filesystem::path modeBasedPaletteOverridePath(CompilerMode mode) const;
 };
@@ -926,10 +951,6 @@ struct Output {
 struct CompilerConfig {
     RGBA32 transparencyColor;
     bool tripleLayer;
-    bool cacheAssign;
-    bool forceParamSearchMatrix;
-    bool providedAssignCacheOverride;
-    bool providedPrimaryAssignCacheOverride;
     std::string defaultBehavior;
     std::string defaultEncounterType;
     std::string defaultTerrainType;
@@ -939,21 +960,19 @@ struct CompilerConfig {
     std::size_t primaryExploredNodeCutoff;
     std::size_t primaryBestBranches;
     bool primarySmartPrune;
-    bool readPrimaryAssignCache;
     AssignAlgorithm secondaryAssignAlgorithm;
     std::size_t secondaryExploredNodeCutoff;
     std::size_t secondaryBestBranches;
     bool secondarySmartPrune;
-    bool readSecondaryAssignCache;
+    bool providedAssignOverride;
+    bool providedPrimaryAssignOverride;
 
     CompilerConfig()
-        : transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, cacheAssign{true}, forceParamSearchMatrix{false},
-          providedAssignCacheOverride{false}, providedPrimaryAssignCacheOverride{false}, defaultBehavior{"0"},
-          defaultEncounterType{"0"}, defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS},
-          primaryExploredNodeCutoff{2'000'000}, primaryBestBranches{SIZE_MAX}, primarySmartPrune{false},
-          readPrimaryAssignCache{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
+        : transparencyColor{RGBA_MAGENTA}, tripleLayer{true}, defaultBehavior{"0"}, defaultEncounterType{"0"},
+          defaultTerrainType{"0"}, primaryAssignAlgorithm{AssignAlgorithm::DFS}, primaryExploredNodeCutoff{2'000'000},
+          primaryBestBranches{SIZE_MAX}, primarySmartPrune{false}, secondaryAssignAlgorithm{AssignAlgorithm::DFS},
           secondaryExploredNodeCutoff{2'000'000}, secondaryBestBranches{SIZE_MAX}, secondarySmartPrune{false},
-          readSecondaryAssignCache{false} {}
+          providedAssignOverride{false}, providedPrimaryAssignOverride{false} {}
 };
 
 struct DecompilerConfig {

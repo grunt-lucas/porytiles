@@ -13,6 +13,7 @@ runs:
     - name: Build on Linux with gcc
       shell: bash
       run: |
+        export CC=gcc
         export CXX=g++
         BUILD_DATE=`date -uIseconds`
         cmake -B build \

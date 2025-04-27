@@ -3,14 +3,9 @@
 
 #include <filesystem>
 #include <string>
-#include <unordered_map>
 
-#define FMT_HEADER_ONLY
-#include <fmt/color.h>
-
-#include "errors_warnings.h"
-#include "porytiles_context.h"
-#include "types.h"
+#include "./porytiles_context.h"
+#include "./types.h"
 
 namespace porytiles {
 
@@ -49,6 +44,8 @@ RGBA32 parseJascLineCompiler(PorytilesContext &ctx, CompilerMode compilerMode, c
 
 RGBA32 parseJascLineDecompiler(PorytilesContext &ctx, DecompilerMode decompilerMode, const std::string &jascLine,
                                const std::string &fileName);
+
+std::string palIndexToFileName(std::size_t index);
 
 void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
 

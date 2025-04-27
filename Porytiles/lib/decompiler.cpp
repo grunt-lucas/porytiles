@@ -1,7 +1,10 @@
 #include "decompiler.h"
 
-#include <cstdint>
+#ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
+#endif // DOCTEST_CONFIG_DISABLE
+
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -45,11 +48,16 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
          * tiles are invisible since they are covered by another layer.
          */
         if (tileIndex >= tiles.size()) {
-            warn_tileIndexOutOfRange(ctx.err, mode, tileIndex, tiles.size(), decompiledTile);
+            ctx.diag->report(W_TILE_INDEX_OUT_OF_RANGE, ctx.diag->bold(decompilerModeString(mode)),
+                             ctx.diag->bold(decompiledTile.prettify()), ctx.diag->bold(tileIndex),
+                             ctx.diag->bold(tiles.size()));
+            ctx.diag->report_partner(W_TILE_INDEX_OUT_OF_RANGE, 0);
         }
         if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-            warn_paletteIndexOutOfRange(ctx.err, mode, paletteIndex, ctx.fieldmapConfig.numPalettesTotal,
-                                        decompiledTile);
+            ctx.diag->report(W_PALETTE_INDEX_OUT_OF_RANGE, ctx.diag->bold(decompilerModeString(mode)),
+                             ctx.diag->bold(decompiledTile.prettify()), ctx.diag->bold(paletteIndex),
+                             ctx.diag->bold(ctx.fieldmapConfig.numPalettesTotal));
+            ctx.diag->report_partner(W_PALETTE_INDEX_OUT_OF_RANGE, 0);
         }
         const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
             // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)
@@ -88,7 +96,11 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     } else if (tripleImpliedMetatileCount == attributesMap.size()) {
         decompiledTileset->tripleLayer = true;
     } else {
-        fatalerror_noImpliedLayerType(ctx.err, ctx.decompilerSrcPaths, mode);
+        ctx.diag->report(E_FATAL_GENERIC, "no layer type was implied by the supplied metatiles and attributes");
+        ctx.diag->report(N_GENERIC,
+                         "either you forgot to supply the correct `-target-base-game' option, or a file is corrupted");
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
+                                    fmt::format("no implied layer type"));
     }
 
     std::size_t metatileIndex = 0;
@@ -133,11 +145,18 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     // TODO : fill in animations
 
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        const auto msg = "errors encountered while decompiling tileset";
+        ctx.diag->report(E_FATAL_GENERIC, msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
+    }
+
     return decompiledTileset;
 }
 
 } // namespace porytiles
 
+#ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("decompile should decompile a basic primary tileset") {
     porytiles::PorytilesContext ctx{};
     ctx.fieldmapConfig.numPalettesInPrimary = 6;
@@ -213,3 +232,4 @@ TEST_CASE("decompile should decompile a basic secondary tileset") {
         CHECK(decompiledViaAlgorithm->tiles.at(i).equalsAfterBgrConversion(decompiledSecondary.tiles.at(i)));
     }
 }
+#endif // DOCTEST_CONFIG_DISABLE

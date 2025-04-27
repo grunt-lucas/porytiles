@@ -1,25 +1,26 @@
-// We need this here for now to prevent linker errors
-#define DOCTEST_CONFIG_IMPLEMENT
-#include <doctest.h>
-
 #include <exception>
 
-#include "porytiles/build_version.h"
-#include "porytiles/cli_parser.h"
-#include "porytiles/driver.h"
-#include "porytiles/logger.h"
-#include "porytiles/porytiles_context.h"
-#include "porytiles/porytiles_exception.h"
+#include <porytiles/build_version.h>
+#include <porytiles/cli_parser.h>
+#include <porytiles/diagnostics/diagnostic_engine.hpp>
+#include <porytiles/diagnostics/diagnostics.hpp>
+#include <porytiles/driver.h>
+#include <porytiles/logger.h>
+#include <porytiles/porytiles_context.h>
+#include <porytiles/porytiles_exception.h>
 
 int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
-    porytiles::parseOptions(ctx, argc, argv);
-    porytiles::drive(ctx);
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::stderr_consumer>());
+    ctx.set_diag_engine(std::move(engine));
+    parseOptions(ctx, argc, argv);
+    drive(ctx);
 
-    if (ctx.err.warnCount == 1) {
-        porytiles::pt_println(stderr, "{} warning generated.", ctx.err.warnCount);
-    } else if (ctx.err.warnCount > 1) {
-        porytiles::pt_println(stderr, "{} warnings generated.", ctx.err.warnCount);
+    const auto warn_count = ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Warning);
+    if (warn_count == 1) {
+        porytiles::pt_println(stderr, "{} warning generated.", warn_count);
+    } else if (warn_count > 1) {
+        porytiles::pt_println(stderr, "{} warnings generated.", warn_count);
     }
 
     return 0;

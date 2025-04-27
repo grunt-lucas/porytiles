@@ -1,14 +1,7 @@
 #ifndef PORYTILES_CLI_PARSER_H
 #define PORYTILES_CLI_PARSER_H
 
-#include <string>
-
-#include "porytiles_context.h"
-#include "types.h"
-
-/**
- * TODO : fill in doc comment
- */
+#include "./porytiles_context.h"
 
 namespace porytiles {
 

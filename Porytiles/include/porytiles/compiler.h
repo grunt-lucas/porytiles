@@ -5,12 +5,8 @@
 #include <memory>
 #include <tuple>
 
-#include "porytiles_context.h"
-#include "types.h"
-
-/**
- * TODO : fill in doc comment
- */
+#include "./porytiles_context.h"
+#include "./types.h"
 
 namespace porytiles {
 
@@ -24,9 +20,6 @@ struct DecompiledIndex {
 
 extern std::size_t gPaletteAssignCutoffCounter;
 
-/**
- * TODO : fill in doc comments
- */
 std::unique_ptr<CompiledTileset>
 compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTileset &decompiledTileset,
         const std::vector<RGBATile> &palettePrimers, const std::vector<RGBATile> &paletteOverrides,

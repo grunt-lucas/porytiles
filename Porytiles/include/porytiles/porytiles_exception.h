@@ -11,7 +11,7 @@
 
 namespace porytiles {
 // Generic porytiles exception class
-class PorytilesException : public std::runtime_error {
+class PorytilesException final : public std::runtime_error {
   public:
     explicit PorytilesException(const std::string &msg) : std::runtime_error{msg} {}
 };
