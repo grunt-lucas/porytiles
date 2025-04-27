@@ -5,7 +5,6 @@
 #include <string>
 
 #include "./diagnostics/diagnostics.hpp"
-#include "./errors_warnings.h"
 
 namespace porytiles {
 

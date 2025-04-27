@@ -10,9 +10,9 @@
 
 #include "cli_options.h"
 #include "compiler.h"
-#include "decompiler.h"
 #include "importer.h"
 #include "logger.h"
+#include "panic/panic.hpp"
 #include "porytiles_context.h"
 #include "types.h"
 #include "utilities.h"
@@ -54,7 +54,7 @@ void emitZeroedPalette(PorytilesContext &ctx, std::ostream &out) {
 
 static void configurePngPalette(TilesOutputPalette paletteMode, png::image<png::index_pixel> &out,
                                 const std::vector<GBAPalette> &palettes) {
-    std::array<RGBA32, PAL_SIZE> greyscalePalette = {
+    constexpr std::array greyscalePalette = {
         RGBA32{0, 0, 0, 255},       RGBA32{16, 16, 16, 255},    RGBA32{32, 32, 32, 255},    RGBA32{48, 48, 48, 255},
         RGBA32{64, 64, 64, 255},    RGBA32{80, 80, 80, 255},    RGBA32{96, 96, 96, 255},    RGBA32{112, 112, 112, 255},
         RGBA32{128, 128, 128, 255}, RGBA32{144, 144, 144, 255}, RGBA32{160, 160, 160, 255}, RGBA32{176, 176, 176, 255},
@@ -73,15 +73,15 @@ static void configurePngPalette(TilesOutputPalette paletteMode, png::image<png::
         for (const auto &palette : palettes) {
             for (const auto &color : palette.colors) {
                 RGBA32 rgbaColor = bgrToRgba(color);
-                pngPal.push_back(png::color{rgbaColor.red, rgbaColor.green, rgbaColor.blue});
+                pngPal.emplace_back(rgbaColor.red, rgbaColor.green, rgbaColor.blue);
             }
         }
     } else if (paletteMode == TilesOutputPalette::GREYSCALE) {
         for (const auto &color : greyscalePalette) {
-            pngPal.push_back(png::color{color.red, color.green, color.blue});
+            pngPal.emplace_back(color.red, color.green, color.blue);
         }
     } else {
-        internalerror("emitter::configurePngPalette unknown TilesPngPaletteMode");
+        panic("emitter::configurePngPalette unknown TilesPngPaletteMode");
     }
     out.set_palette(pngPal);
 }
@@ -113,11 +113,11 @@ void emitTilesPng(PorytilesContext &ctx, png::image<png::index_pixel> &out, cons
                     out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
                     break;
                 default:
-                    internalerror("emitter::emitTilesPng unknown TilesPngPalMode");
+                    panic("emitter::emitTilesPng unknown TilesPngPalMode");
                 }
             } else {
-                internalerror(fmt::format("emitter::emitTilesPng tileIndex reached {} which is larger than size {}",
-                                          tileIndex, tileset.tiles.size()));
+                panic(fmt::format("emitter::emitTilesPng tileIndex reached {} which is larger than size {}", tileIndex,
+                                  tileset.tiles.size()));
             }
         }
     }
@@ -139,7 +139,7 @@ void emitMetatilesBin(PorytilesContext &ctx, std::ostream &out, const CompiledTi
 void emitAnim(PorytilesContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames,
               const CompiledAnimation &animation, const std::vector<GBAPalette> &palettes) {
     if (outFrames.size() != animation.frames.size()) {
-        internalerror("emitter::emitAnim outFrames.size() != animation.frames.size()");
+        panic("emitter::emitAnim outFrames.size() != animation.frames.size()");
     }
 
     for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
@@ -169,14 +169,14 @@ void emitAttributes(const PorytilesContext &ctx, std::ostream &out,
     if (ctx.compilerConfig.tripleLayer) {
         delta = 12;
         if (tileset.metatileEntries.size() % 12 != 0) {
-            internalerror("emitter::emitAttributes tileset.metatileEntries size '" +
-                          std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 12");
+            panic("emitter::emitAttributes tileset.metatileEntries size '" +
+                  std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 12");
         }
     } else {
         delta = 8;
         if (tileset.metatileEntries.size() % 8 != 0) {
-            internalerror("emitter::emitAttributes tileset.metatileEntries size '" +
-                          std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 8");
+            panic("emitter::emitAttributes tileset.metatileEntries size '" +
+                  std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 8");
         }
     }
     for (std::size_t i = 0; i < tileset.metatileEntries.size(); i += delta) {
@@ -217,7 +217,7 @@ void emitAttributes(const PorytilesContext &ctx, std::ostream &out,
             out << static_cast<char>(attributeValue >> 16);
             out << static_cast<char>(attributeValue >> 24);
         } else {
-            internalerror("emitter::emitAttributes unknown TargetBaseGame");
+            panic("emitter::emitAttributes unknown TargetBaseGame");
         }
     }
     out.flush();
@@ -290,7 +290,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                             top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         }
                     } else {
-                        internalerror("emitter::emitDecompiled invalid layer type for dual-layer emit");
+                        panic("emitter::emitDecompiled invalid layer type for dual-layer emit");
                     }
                 }
             }
@@ -332,8 +332,8 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
         }
     }
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
-        die_errorCount(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+        die_errorCount(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                        "behavior value did not have reverse mapping");
     }
 }
@@ -517,7 +517,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes") {
         std::filesystem::path parentDir = porytiles::createTmpdir();
         ctx.output.path = parentDir;
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
-        ctx.err.printErrors = false;
+        ctx.printDieMsg = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
@@ -602,7 +602,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes") {
         ctx.output.path = parentDir;
         ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
         ctx.compilerConfig.tripleLayer = false;
-        ctx.err.printErrors = false;
+        ctx.printDieMsg = false;
         ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
         ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 

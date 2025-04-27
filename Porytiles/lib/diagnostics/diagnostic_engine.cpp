@@ -4,7 +4,7 @@
 #include <doctest.h>
 #endif // DOCTEST_CONFIG_DISABLE
 
-#include "./panic/panic.hpp"
+#include "panic/panic.hpp"
 
 namespace {
 

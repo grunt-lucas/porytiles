@@ -6,10 +6,27 @@
 
 #include "./diagnostics/diagnostic_engine.hpp"
 #include "./diagnostics/diagnostics.hpp"
-#include "./errors_warnings.h"
 #include "./types.h"
 
 namespace porytiles {
+
+struct PorytilesContext;
+
+/*
+ * Die functions.
+ */
+[[noreturn]] void die(const PorytilesContext &ctx, const std::string &errorMessage);
+
+[[noreturn]] void die_compilationTerminated(const PorytilesContext &ctx, const std::string &srcPath,
+                                            const std::string &errorMessage);
+
+[[noreturn]] void die_compilationTerminatedFailHard(const PorytilesContext &ctx, const std::string &srcPath);
+
+[[noreturn]] void die_decompilationTerminated(const PorytilesContext &ctx, const std::string &srcPath,
+                                              const std::string &errorMessage);
+
+[[noreturn]] void die_errorCount(const PorytilesContext &ctx, const std::string &srcPath,
+                                 const std::string &errorMessage);
 
 struct PorytilesContext {
     TargetBaseGame targetBaseGame;
@@ -21,7 +38,7 @@ struct PorytilesContext {
     DecompilerConfig decompilerConfig;
     CompilerContext compilerContext;
     DecompilerContext decompilerContext;
-    ErrorsAndWarnings err;
+    bool printDieMsg;
     std::unique_ptr<DiagEngine> diag;
 
     // Command params
@@ -31,7 +48,7 @@ struct PorytilesContext {
     PorytilesContext()
         : targetBaseGame{TargetBaseGame::EMERALD}, fieldmapConfig{FieldmapConfig::pokeemeraldDefaults()},
           compilerSrcPaths{}, decompilerSrcPaths{}, output{}, compilerConfig{}, decompilerConfig{}, compilerContext{},
-          decompilerContext{}, err{}, diag{std::make_unique<DiagEngine>()}, subcommand{}, verbose{false} {}
+          decompilerContext{}, printDieMsg{true}, diag{std::make_unique<DiagEngine>()}, subcommand{}, verbose{false} {}
 
     void validateFieldmapParameters(CompilerMode mode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
@@ -39,7 +56,7 @@ struct PorytilesContext {
                                          this->diag->bold(fieldmapConfig.numTilesInPrimary),
                                          this->diag->bold(fieldmapConfig.numTilesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+            die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numTiles: {} > {}", fieldmapConfig.numTilesInPrimary,
                                                   fieldmapConfig.numTilesTotal));
         }
@@ -49,7 +66,7 @@ struct PorytilesContext {
                             this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
                             this->diag->bold(fieldmapConfig.numMetatilesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+            die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numMetatiles: {} > {}",
                                                   fieldmapConfig.numMetatilesInPrimary,
                                                   fieldmapConfig.numMetatilesTotal));
@@ -60,7 +77,7 @@ struct PorytilesContext {
                             this->diag->bold(fieldmapConfig.numPalettesInPrimary),
                             this->diag->bold(fieldmapConfig.numPalettesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_compilationTerminated(err, this->compilerSrcPaths.modeBasedSrcPath(mode),
+            die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numPalettes: {} > {}",
                                                   fieldmapConfig.numPalettesInPrimary,
                                                   fieldmapConfig.numPalettesTotal));
@@ -73,7 +90,7 @@ struct PorytilesContext {
                                          this->diag->bold(fieldmapConfig.numTilesInPrimary),
                                          this->diag->bold(fieldmapConfig.numTilesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+            die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numTiles: {} > {}",
                                                     fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal));
         }
@@ -83,7 +100,7 @@ struct PorytilesContext {
                             this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
                             this->diag->bold(fieldmapConfig.numMetatilesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+            die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numMetatiles: {} > {}",
                                                     fieldmapConfig.numMetatilesInPrimary,
                                                     fieldmapConfig.numMetatilesTotal));
@@ -94,7 +111,7 @@ struct PorytilesContext {
                             this->diag->bold(fieldmapConfig.numPalettesInPrimary),
                             this->diag->bold(fieldmapConfig.numPalettesTotal));
             this->diag->report(E_FATAL_GENERIC, msg);
-            die_decompilationTerminated(err, this->decompilerSrcPaths.modeBasedSrcPath(mode),
+            die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numPalettes: {} > {}",
                                                     fieldmapConfig.numPalettesInPrimary,
                                                     fieldmapConfig.numPalettesTotal));

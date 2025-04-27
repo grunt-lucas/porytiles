@@ -14,9 +14,9 @@
 
 #include "build_version.h"
 #include "cli_options.h"
-#include "errors_warnings.h"
 #include "logger.h"
 #include "palette_assignment.h"
+#include "panic/panic.hpp"
 #include "porytiles_exception.h"
 #include "utilities.h"
 
@@ -545,7 +545,7 @@ void parseOptions(PorytilesContext &ctx, int argc, char *const *argv) {
         parseSubcommandOptions(ctx, argc, argv);
         break;
     default:
-        internalerror("cli_parser::parseOptions unknown subcommand setting");
+        panic("cli_parser::parseOptions unknown subcommand setting");
     }
 }
 
@@ -714,7 +714,7 @@ static void parseSubcommand(PorytilesContext &ctx, int argc, char *const *argv) 
 
 static void validateSubcommandContext(PorytilesContext &ctx, std::string option) {
     if (!supportedSubcommands.contains(option)) {
-        internalerror(fmt::format("'supportedSubcommands' did not contain mapping for option `{}'", option));
+        panic(fmt::format("'supportedSubcommands' did not contain mapping for option `{}'", option));
     }
     if (!supportedSubcommands.at(option).contains(ctx.subcommand)) {
         pt_fatal_err("unrecognized option '{}' for subcommand '{}'", option, subcommandString(ctx.subcommand));
@@ -1208,8 +1208,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
                 fmt::println("{}", DECOMPILE_SECONDARY_HELP);
             } else {
-                internalerror(fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}",
-                                          static_cast<int>(ctx.subcommand)));
+                panic(fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}",
+                                  static_cast<int>(ctx.subcommand)));
             }
             exit(0);
         // Help message on invalid or unknown options goes to stderr and gives error code
@@ -1252,7 +1252,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
             throw PorytilesException{msg};
         }
     } else {
-        internalerror(
+        panic(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
     }
 
@@ -1269,7 +1269,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         ctx.decompilerSrcPaths.primarySourcePath = argv[optind++];
         ctx.decompilerSrcPaths.metatileBehaviors = argv[optind++];
     } else {
-        internalerror(
+        panic(
             fmt::format("cli_parser::parseSubcommandOptions unknown subcommand: {}", static_cast<int>(ctx.subcommand)));
     }
 
@@ -1311,17 +1311,17 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
     } else if (ctx.subcommand == Subcommand::DECOMPILE_SECONDARY) {
         ctx.validateFieldmapParameters(DecompilerMode::SECONDARY);
     } else {
-        internalerror("cli_parser::parseSubcommandOptions unknown subcommand");
+        panic("cli_parser::parseSubcommandOptions unknown subcommand");
     }
 
     /*
      * Die if any errors occurred
      */
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         if (ctx.subcommand == Subcommand::COMPILE_PRIMARY || ctx.subcommand == Subcommand::COMPILE_SECONDARY) {
-            die(ctx.err, "Errors generated during command line parsing. Compilation terminated.");
+            die(ctx, "Errors generated during command line parsing. Compilation terminated.");
         }
-        die(ctx.err, "Errors generated during command line parsing. Decompilation terminated.");
+        die(ctx, "Errors generated during command line parsing. Decompilation terminated.");
     }
 }
 } // namespace porytiles

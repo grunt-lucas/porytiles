@@ -96,7 +96,11 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     } else if (tripleImpliedMetatileCount == attributesMap.size()) {
         decompiledTileset->tripleLayer = true;
     } else {
-        fatalerror_noImpliedLayerType(ctx.err, ctx.decompilerSrcPaths, mode);
+        ctx.diag->report(E_FATAL_GENERIC, "no layer type was implied by the supplied metatiles and attributes");
+        ctx.diag->report(N_GENERIC,
+                         "either you forgot to supply the correct `-target-base-game' option, or a file is corrupted");
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
+                                    fmt::format("no implied layer type"));
     }
 
     std::size_t metatileIndex = 0;
@@ -141,10 +145,10 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     // TODO : fill in animations
 
-    if (ctx.err.errCount > 0 || ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
         const auto msg = "errors encountered while decompiling tileset";
         ctx.diag->report(E_FATAL_GENERIC, msg);
-        die_decompilationTerminated(ctx.err, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
+        die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 
     return decompiledTileset;

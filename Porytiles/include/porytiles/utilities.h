@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <string>
 
-#include "./errors_warnings.h"
 #include "./porytiles_context.h"
 #include "./types.h"
 
