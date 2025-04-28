@@ -177,7 +177,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: grunt-lucas/homebrew-porytiles
-          token: ${{ secrets.TAP_REPO_PAT }}
+          token: ${{ secrets.PORYTILES_TAP_REPO_PAT }}
 
       - name: Set up Git
         run: |
