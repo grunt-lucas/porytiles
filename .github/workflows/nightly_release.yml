@@ -166,3 +166,56 @@ jobs:
           files: porytiles-macos-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew-tap:
+    name: Update Homebrew tap formula
+    runs-on: ubuntu-latest
+    needs: [ check-already-built, nightly-release-linux-amd64, nightly-release-linux-arm64, nightly-release-macos-amd64, nightly-release-macos-arm64 ]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - name: Checkout Homebrew tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: grunt-lucas/homebrew-porytiles
+          token: ${{ secrets.TAP_REPO_PAT }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github
+
+      - name: Define vars
+        id: vars
+        run: |
+          echo "nightly_tag=nightly-${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "new_version=$(date +'%Y%m%d%H%M%S')-nightly-${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "formula_path=Formula/porytiles.rb" >> $GITHUB_OUTPUT
+
+      - name: Download assets and calculate SHA256 checksums
+        id: checksums
+        run: |
+          URL_BASE="https://github.com/${{ github.repository }}/releases/download/${{ steps.vars.outputs.nightly_tag }}"
+          MACOS_AMD64_URL="$URL_BASE/porytiles-macos-amd64.zip"
+          MACOS_ARM64_URL="$URL_BASE/porytiles-macos-arm64.zip"
+          
+          echo "Downloading $MACOS_AMD64_URL"
+          curl -L -o porytiles-macos-amd64.zip $MACOS_AMD64_URL
+          MACOS_AMD64_SHA=$(sha256sum porytiles-macos-amd64.zip | awk '{ print $1 }')
+          echo "macos_amd64_sha=$MACOS_AMD64_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256 for macos-amd64: $MACOS_AMD64_SHA"
+
+          echo "Downloading $MACOS_ARM64_URL"
+          curl -L -o porytiles-macos-arm64.zip $MACOS_ARM64_URL
+          MACOS_ARM64_SHA=$(sha256sum porytiles-macos-arm64.zip | awk '{ print $1 }')
+          echo "macos_arm64_sha=$MACOS_ARM64_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256 for macos-arm64: $MACOS_ARM64_SHA"
+
+      - name: Update formula file
+        run: |
+          FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
+          sed -i "s/^    version \".*\"/    version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
+          sed -i "s/^    nightly = \".*\"/    nightly = \"${{ steps.vars.outputs.nightly_tag }}\"/" "$FORMULA_PATH"
+          sed -i "/if OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
+          echo "Formula file updated:"
+          cat "$FORMULA_PATH"
