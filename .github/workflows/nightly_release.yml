@@ -219,3 +219,9 @@ jobs:
           sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
           echo "Formula file updated:"
           cat "$FORMULA_PATH"
+
+      - name: Commit and push changes
+        run: |
+          git add "${{ steps.vars.outputs.formula_path }}"
+          git commit -m "Update porytiles formula to ${{ steps.vars.outputs.nightly_tag }}"
+          git push
