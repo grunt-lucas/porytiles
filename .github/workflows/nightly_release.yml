@@ -170,7 +170,7 @@ jobs:
   update-homebrew-tap:
     name: Update Homebrew tap formula
     runs-on: ubuntu-latest
-    needs: [ check-already-built, nightly-release-linux-amd64, nightly-release-linux-arm64, nightly-release-macos-amd64, nightly-release-macos-arm64 ]
+    needs: [ nightly-release-linux-amd64, nightly-release-linux-arm64, nightly-release-macos-amd64, nightly-release-macos-arm64 ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
       - name: Checkout Homebrew tap repository
@@ -195,8 +195,22 @@ jobs:
         id: checksums
         run: |
           URL_BASE="https://github.com/${{ github.repository }}/releases/download/${{ steps.vars.outputs.nightly_tag }}"
+          LINUX_AMD64_URL="$URL_BASE/porytiles-linux-amd64.zip"
+          LINUX_ARM64_URL="$URL_BASE/porytiles-linux-arm64.zip"
           MACOS_AMD64_URL="$URL_BASE/porytiles-macos-amd64.zip"
           MACOS_ARM64_URL="$URL_BASE/porytiles-macos-arm64.zip"
+          
+          echo "Downloading $LINUX_AMD64_URL"
+          curl -L -o porytiles-linux-amd64.zip $LINUX_AMD64_URL
+          LINUX_AMD64_SHA=$(sha256sum porytiles-linux-amd64.zip | awk '{ print $1 }')
+          echo "linux_amd64_sha=$LINUX_AMD64_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256 for linux-amd64: $LINUX_AMD64_SHA"
+          
+          echo "Downloading $LINUX_ARM64_URL"
+          curl -L -o porytiles-linux-arm64.zip $LINUX_ARM64_URL
+          LINUX_ARM64_SHA=$(sha256sum porytiles-linux-arm64.zip | awk '{ print $1 }')
+          echo "linux_arm64_sha=$LINUX_ARM64_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256 for linux-arm64: $LINUX_ARM64_SHA"
           
           echo "Downloading $MACOS_AMD64_URL"
           curl -L -o porytiles-macos-amd64.zip $MACOS_AMD64_URL
@@ -215,7 +229,9 @@ jobs:
           FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
           sed -i "s/^    version \".*\"/    version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
           sed -i "s/^    nightly = \".*\"/    nightly = \"${{ steps.vars.outputs.nightly_tag }}\"/" "$FORMULA_PATH"
-          sed -i "/if OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
           sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
           echo "Formula file updated:"
           cat "$FORMULA_PATH"
@@ -225,3 +241,23 @@ jobs:
           git add "${{ steps.vars.outputs.formula_path }}"
           git commit -m "Update porytiles formula to ${{ steps.vars.outputs.nightly_tag }}"
           git push
+
+  test-linux-amd64-brew-tap:
+    name: Test the brew tap on linux-amd64
+    runs-on: ubuntu-latest
+    needs: [ update-homebrew-tap ]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      - name: Install Porytiles
+        run: |
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test Porytiles
+        run: |
+          porytiles --version
