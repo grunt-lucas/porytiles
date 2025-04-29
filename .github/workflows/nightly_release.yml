@@ -260,23 +260,25 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           porytiles --version
 
-  test-linux-arm64-brew-tap:
-    name: Test the brew tap on linux-arm64
-    runs-on: ubuntu-24.04-arm
-    needs: [ update-homebrew-tap ]
-    if: needs.check-already-built.outputs.last_sha != github.sha
-    steps:
-      - name: Install Porytiles
-        run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew tap grunt-lucas/porytiles
-          brew update
-          brew install porytiles
-
-      - name: Test Porytiles
-        run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          porytiles --version
+  # Does not seem to work currently. Does GitHub Actions ubuntu-24.04-arm
+  # not include Homebrew?
+  #  test-linux-arm64-brew-tap:
+  #    name: Test the brew tap on linux-arm64
+  #    runs-on: ubuntu-24.04-arm
+  #    needs: [ update-homebrew-tap ]
+  #    if: needs.check-already-built.outputs.last_sha != github.sha
+  #    steps:
+  #      - name: Install Porytiles
+  #        run: |
+  #          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  #          brew tap grunt-lucas/porytiles
+  #          brew update
+  #          brew install porytiles
+  #
+  #      - name: Test Porytiles
+  #        run: |
+  #          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  #          porytiles --version
 
   test-macos-amd64-brew-tap:
     name: Test the brew tap on macos-amd64
