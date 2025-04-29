@@ -229,10 +229,10 @@ jobs:
           FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
           sed -i "s/^    version \".*\"/    version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
           sed -i "s/^    nightly = \".*\"/    nightly = \"${{ steps.vars.outputs.nightly_tag }}\"/" "$FORMULA_PATH"
-          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
-          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
-          sed -i "/elsif OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
-          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/ s/^      sha256 \".*\"/      sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
           echo "Formula file updated:"
           cat "$FORMULA_PATH"
 
@@ -258,4 +258,54 @@ jobs:
       - name: Test Porytiles
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          porytiles --version
+
+  test-linux-arm64-brew-tap:
+    name: Test the brew tap on linux-arm64
+    runs-on: ubuntu-24.04-arm
+    needs: [ update-homebrew-tap ]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - name: Install Porytiles
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test Porytiles
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          porytiles --version
+
+  test-macos-amd64-brew-tap:
+    name: Test the brew tap on macos-amd64
+    runs-on: macos-13
+    needs: [ update-homebrew-tap ]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - name: Install Porytiles
+        run: |
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test Porytiles
+        run: |
+          porytiles --version
+
+  test-macos-arm64-brew-tap:
+    name: Test the brew tap on macos-arm64
+    runs-on: macos-latest
+    needs: [ update-homebrew-tap ]
+    if: needs.check-already-built.outputs.last_sha != github.sha
+    steps:
+      - name: Install Porytiles
+        run: |
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test Porytiles
+        run: |
           porytiles --version
