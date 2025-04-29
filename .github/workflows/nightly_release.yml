@@ -227,8 +227,8 @@ jobs:
       - name: Update formula file
         run: |
           FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
-          sed -i "s/^    version \".*\"/    version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
-          sed -i "s/^    nightly = \".*\"/    nightly = \"${{ steps.vars.outputs.nightly_tag }}\"/" "$FORMULA_PATH"
+          sed -i "s/^  version \".*\"/  version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
+          sed -i "s/^  nightly = \".*\"/  nightly = \"${{ steps.vars.outputs.nightly_tag }}\"/" "$FORMULA_PATH"
           sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
           sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
           sed -i "/elsif OS.mac? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_amd64_sha }}\"/" "$FORMULA_PATH"
