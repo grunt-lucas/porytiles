@@ -248,17 +248,14 @@ jobs:
     needs: [ update-homebrew-tap ]
     if: needs.check-already-built.outputs.last_sha != github.sha
     steps:
-      - name: Install Homebrew
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          /home/linuxbrew/.linuxbrew/bin/brew shellenv >> "$GITHUB_ENV"
-
       - name: Install Porytiles
         run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap grunt-lucas/porytiles
           brew update
           brew install porytiles
 
       - name: Test Porytiles
         run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           porytiles --version
