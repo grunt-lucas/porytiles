@@ -117,12 +117,46 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
         // In secondary mode, we need to determine which compiled tileset this tile comes from: paired primary or
         // secondary
         if (mode == DecompilerMode::SECONDARY) {
-            if (metatileEntry.tileIndex < ctx.fieldmapConfig.numTilesInPrimary) {
+            // 1. tile index in primary range, pal index in primary range
+            // This case is when the secondary set is using a pure-primary tile e.g., the grass behind a building roof.
+            if (metatileEntry.tileIndex < ctx.fieldmapConfig.numTilesInPrimary &&
+                metatileEntry.paletteIndex < ctx.fieldmapConfig.numPalettesInPrimary) {
                 setDecompTileFields(ctx, mode, decompiledTile, ctx.decompilerContext.pairedPrimaryTileset->tiles,
                                     metatileEntry.tileIndex, ctx.decompilerContext.pairedPrimaryTileset->palettes,
                                     metatileEntry.paletteIndex, metatileEntry.attributes, metatileEntry.hFlip,
                                     metatileEntry.vFlip);
-            } else {
+            }
+            // 2. tile index in primary range, pal index in secondary range
+            // This case is when the secondary set is using a primary tile but with a secondary palette. This might
+            // happen if the user compiled the secondary set with an override that forces tile sharing. E.g., see my
+            // re-colored tree example in the Palette Overrides wiki page. Originally we didn't handle this case
+            // correctly, which led to this issue file: https://github.com/grunt-lucas/porytiles/issues/111
+            else if (metatileEntry.tileIndex < ctx.fieldmapConfig.numTilesInPrimary &&
+                     metatileEntry.paletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
+                setDecompTileFields(ctx, mode, decompiledTile, ctx.decompilerContext.pairedPrimaryTileset->tiles,
+                                    metatileEntry.tileIndex, compiledTileset.palettes, metatileEntry.paletteIndex,
+                                    metatileEntry.attributes, metatileEntry.hFlip, metatileEntry.vFlip);
+            }
+            // 3. tile index in secondary range, pal index in primary range
+            // This case is when the secondary set uses a new tile, but that tile can use one of the primary palettes.
+            // This is possible but not frequently seen, e.g. the secondary set adds some new foliage that can re-use
+            // the foliage colors from the primary set.
+            //
+            // The reason we didn't have a bug reported here is mostly because this isn't super common, and because
+            // often the secondary palettes in primary range (if the tileset is from vanilla) have been correctly set
+            // with the primary colors. This is common but not guaranteed so we shouldn't assume it's the case.
+            else if (metatileEntry.tileIndex >= ctx.fieldmapConfig.numTilesInPrimary &&
+                     metatileEntry.paletteIndex < ctx.fieldmapConfig.numPalettesInPrimary) {
+                setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles,
+                                    metatileEntry.tileIndex - ctx.fieldmapConfig.numTilesInPrimary,
+                                    ctx.decompilerContext.pairedPrimaryTileset->palettes, metatileEntry.paletteIndex,
+                                    metatileEntry.attributes, metatileEntry.hFlip, metatileEntry.vFlip);
+            }
+            // 4. tile index in secondary range, pal index in secondary range
+            // This case is when the secondary set is using a new tile with one of its new palettes. This case is also
+            // quite common.
+            else if (metatileEntry.tileIndex >= ctx.fieldmapConfig.numTilesInPrimary &&
+                     metatileEntry.paletteIndex >= ctx.fieldmapConfig.numPalettesInPrimary) {
                 setDecompTileFields(ctx, mode, decompiledTile, compiledTileset.tiles,
                                     metatileEntry.tileIndex - ctx.fieldmapConfig.numTilesInPrimary,
                                     compiledTileset.palettes, metatileEntry.paletteIndex, metatileEntry.attributes,
