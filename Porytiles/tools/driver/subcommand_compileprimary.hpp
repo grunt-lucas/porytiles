@@ -3,11 +3,11 @@
 #include <CLI/CLI.hpp>
 #include <string>
 
+#include "./optiongroup_fieldmap.hpp"
+
 /// Collection of all options for 'compile-primary'.
 struct CompilePrimaryOpts {
-    std::string file;
-    bool with_foo;
-    bool with_bar;
+    OptGroupFieldmap fieldmapOpts;
 };
 
 void SetupCompilePrimary(CLI::App &app);
