@@ -1,4 +1,4 @@
-#include "utilities.h"
+#include "legacy/utilities.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -13,10 +13,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "logger.h"
+#include "legacy/logger.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "types.h"
 
 #include <regex>
 

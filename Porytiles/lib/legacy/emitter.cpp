@@ -1,4 +1,4 @@
-#include "emitter.h"
+#include "legacy/emitter.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -8,14 +8,14 @@
 #include <iostream>
 #include <sstream>
 
-#include "cli_options.h"
-#include "compiler.h"
-#include "importer.h"
-#include "logger.h"
+#include "legacy/cli_options.h"
+#include "legacy/compiler.h"
+#include "legacy/importer.h"
+#include "legacy/logger.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "types.h"
-#include "utilities.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
+#include "legacy/utilities.h"
 
 namespace porytiles {
 

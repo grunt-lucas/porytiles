@@ -1,4 +1,4 @@
-#include "types.h"
+#include "legacy/types.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
+#include "legacy/porytiles_context.h"
 
 namespace porytiles {
 

@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "./diagnostics/diagnostic_engine.hpp"
-#include "./diagnostics/diagnostics.hpp"
+#include "../diagnostics/diagnostic_engine.hpp"
+#include "../diagnostics/diagnostics.hpp"
 #include "./types.h"
 
 namespace porytiles {

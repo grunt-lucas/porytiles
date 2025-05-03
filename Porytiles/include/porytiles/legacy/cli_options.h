@@ -4,7 +4,7 @@
 #include <fmt/color.h>
 #include <string>
 
-#include "./diagnostics/diagnostics.hpp"
+#include "../diagnostics/diagnostics.hpp"
 
 namespace porytiles {
 

@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "legacy/compiler.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -17,12 +17,12 @@
 #include <utility>
 #include <vector>
 
-#include "importer.h"
-#include "logger.h"
-#include "palette_assignment.h"
+#include "legacy/importer.h"
+#include "legacy/logger.h"
+#include "legacy/palette_assignment.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "types.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
 
 namespace porytiles {
 

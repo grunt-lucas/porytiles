@@ -1,10 +1,10 @@
-#include "porytiles_context.h"
+#include "legacy/porytiles_context.h"
 
 #include <fmt/color.h>
 #include <string>
 
-#include "logger.h"
-#include "porytiles_exception.h"
+#include "legacy/logger.h"
+#include "legacy/porytiles_exception.h"
 
 namespace porytiles {
 void die(const PorytilesContext &ctx, const std::string &errorMessage) {

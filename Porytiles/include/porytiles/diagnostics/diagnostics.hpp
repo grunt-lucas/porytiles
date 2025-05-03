@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include "../types.h"
+#include "../legacy/types.h"
 
 namespace porytiles {
 

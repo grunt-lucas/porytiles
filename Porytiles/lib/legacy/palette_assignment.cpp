@@ -1,14 +1,14 @@
-#include "palette_assignment.h"
+#include "legacy/palette_assignment.h"
 
 #include <algorithm>
 #include <deque>
 #include <unordered_set>
 #include <vector>
 
-#include "logger.h"
+#include "legacy/logger.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "types.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
 
 namespace porytiles {
 

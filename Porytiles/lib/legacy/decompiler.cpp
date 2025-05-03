@@ -1,4 +1,4 @@
-#include "decompiler.h"
+#include "legacy/decompiler.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -9,11 +9,11 @@
 #include <functional>
 #include <memory>
 
-#include "compiler.h"
-#include "importer.h"
-#include "logger.h"
-#include "porytiles_context.h"
-#include "types.h"
+#include "legacy/compiler.h"
+#include "legacy/importer.h"
+#include "legacy/logger.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
 
 namespace porytiles {
 

@@ -1,4 +1,4 @@
-#include "importer.h"
+#include "legacy/importer.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -18,13 +18,13 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "cli_options.h"
-#include "driver.h"
-#include "logger.h"
+#include "legacy/cli_options.h"
+#include "legacy/driver.h"
+#include "legacy/logger.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "types.h"
-#include "utilities.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/types.h"
+#include "legacy/utilities.h"
 
 namespace porytiles {
 

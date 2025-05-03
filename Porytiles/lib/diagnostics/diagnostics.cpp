@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <unordered_set>
 
-#include "./diagnostics//diagnostic_engine.hpp"
+#include "diagnostics//diagnostic_engine.hpp"
 
 namespace {
 

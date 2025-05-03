@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "./build_version.h"
+#include "../build_version.h"
 #include "./porytiles_context.h"
 
 namespace porytiles {

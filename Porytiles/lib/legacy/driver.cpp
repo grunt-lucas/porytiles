@@ -1,4 +1,4 @@
-#include "driver.h"
+#include "legacy/driver.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -15,15 +15,15 @@
 #include <unordered_map>
 #include <utility>
 
-#include "compiler.h"
-#include "decompiler.h"
-#include "emitter.h"
-#include "importer.h"
-#include "logger.h"
+#include "legacy/compiler.h"
+#include "legacy/decompiler.h"
+#include "legacy/emitter.h"
+#include "legacy/importer.h"
+#include "legacy/logger.h"
+#include "legacy/porytiles_context.h"
+#include "legacy/porytiles_exception.h"
+#include "legacy/utilities.h"
 #include "panic/panic.hpp"
-#include "porytiles_context.h"
-#include "porytiles_exception.h"
-#include "utilities.h"
 
 namespace porytiles {
 

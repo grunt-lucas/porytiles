@@ -1,12 +1,12 @@
 #include <exception>
 #include <porytiles/build_version.h>
-#include <porytiles/cli_parser.h>
 #include <porytiles/diagnostics/diagnostic_engine.hpp>
 #include <porytiles/diagnostics/diagnostics.hpp>
-#include <porytiles/driver.h>
-#include <porytiles/logger.h>
-#include <porytiles/porytiles_context.h>
-#include <porytiles/porytiles_exception.h>
+#include <porytiles/legacy/cli_parser.h>
+#include <porytiles/legacy/driver.h>
+#include <porytiles/legacy/logger.h>
+#include <porytiles/legacy/porytiles_context.h>
+#include <porytiles/legacy/porytiles_exception.h>
 
 int main_legacy(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};

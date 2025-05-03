@@ -1,4 +1,4 @@
-#include "cli_parser.h"
+#include "legacy/cli_parser.h"
 
 #ifndef DOCTEST_CONFIG_DISABLE
 #include <doctest.h>
@@ -13,12 +13,12 @@
 #include <unordered_set>
 
 #include "build_version.h"
-#include "cli_options.h"
-#include "logger.h"
-#include "palette_assignment.h"
+#include "legacy/cli_options.h"
+#include "legacy/logger.h"
+#include "legacy/palette_assignment.h"
+#include "legacy/porytiles_exception.h"
+#include "legacy/utilities.h"
 #include "panic/panic.hpp"
-#include "porytiles_exception.h"
-#include "utilities.h"
 
 namespace porytiles {
 

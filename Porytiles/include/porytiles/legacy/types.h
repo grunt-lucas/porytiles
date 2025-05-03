@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "./panic/panic.hpp"
+#include "../panic/panic.hpp"
 
 namespace porytiles {
 constexpr std::size_t TILE_SIDE_LENGTH_PIX = 8;
