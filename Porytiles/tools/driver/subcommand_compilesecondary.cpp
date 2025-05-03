@@ -5,7 +5,7 @@ void SetupCompileSecondary(CLI::App &app) {
     auto *sub = app.add_subcommand("compile-secondary", "Compile a secondary tileset using explicit asset paths");
     sub->group("LEGACY SUBCOMMANDS");
 
-    sub->add_flag("--with-foo", opt->with_foo, "Counter");
+    sub->add_flag("--with-foo", opt->with_foo, "Foo flag");
     sub->callback([opt]() { RunCompileSecondary(*opt); });
 }
 

@@ -7,6 +7,7 @@
 struct CompilePrimaryOpts {
     std::string file;
     bool with_foo;
+    bool with_bar;
 };
 
 void SetupCompilePrimary(CLI::App &app);

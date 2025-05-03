@@ -11,7 +11,9 @@ void SetupCompilePrimary(CLI::App &app) {
     sub->group("LEGACY SUBCOMMANDS");
 
     // Add options to sub, binding them to opt.
-    sub->add_flag("--with-foo", opt->with_foo, "Counter");
+    const auto with_foo = sub->add_flag("--with-foo", opt->with_foo, "Foo flag");
+    with_foo->group("FOO OPTIONS");
+    sub->add_flag("--with-bar", opt->with_bar, "Bar flag");
 
     // Set the run function as callback to be called when this subcommand is issued.
     sub->callback([opt]() { RunCompilePrimary(*opt); });
