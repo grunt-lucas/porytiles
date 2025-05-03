@@ -1,6 +1,6 @@
 #include "./subcommand_compileprimary.hpp"
 
-#include "./optiongroup_fieldmap.hpp"
+#include "./optiongroup.hpp"
 
 /// Set up a subcommand and capture a shared_ptr to a struct that holds all its options.
 /// The variables of the struct are bound to the CLI options.
@@ -13,7 +13,7 @@ void SetupCompilePrimary(CLI::App &app) {
     sub->group("LEGACY SUBCOMMANDS");
 
     // Add options to sub, binding them to opt.
-    opt->fieldmapOpts.RegisterOptions(sub);
+    opt->fieldmapOpts.RegisterOptions(*sub);
 
     // Set the run function as callback to be called when this subcommand is issued.
     sub->callback([opt]() { RunCompilePrimary(*opt); });

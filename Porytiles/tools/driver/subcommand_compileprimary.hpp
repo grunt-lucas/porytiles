@@ -3,7 +3,7 @@
 #include <CLI/CLI.hpp>
 #include <string>
 
-#include "./optiongroup_fieldmap.hpp"
+#include "./optiongroup.hpp"
 
 /// Collection of all options for 'compile-primary'.
 struct CompilePrimaryOpts {

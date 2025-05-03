@@ -32,6 +32,11 @@ https://github.com/pret/pokeemerald
 https://github.com/rh-hideout/pokeemerald-expansion
 https://github.com/huderlem/porymap)");
 
+    app.add_flag("-V,--version", [](const size_t) {
+        std::cout << PORYTILES_EXECUTABLE << " " << PORYTILES_BUILD_VERSION << " " << PORYTILES_BUILD_DATE << std::endl;
+        std::exit(0);
+    });
+
     // Call the setup functions for the subcommands.
     // They are kept alive by a shared pointer in the
     // lambda function held by CLI11
