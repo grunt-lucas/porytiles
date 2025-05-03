@@ -8,6 +8,7 @@ void SetupCompilePrimary(CLI::App &app) {
     // Create the option and subcommand objects.
     auto opt = std::make_shared<CompilePrimaryOpts>();
     auto *sub = app.add_subcommand("compile-primary", "Compile a primary tileset using explicit asset paths");
+    sub->group("LEGACY SUBCOMMANDS");
 
     // Add options to sub, binding them to opt.
     sub->add_flag("--with-foo", opt->with_foo, "Counter");
