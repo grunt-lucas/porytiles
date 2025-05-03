@@ -8,7 +8,7 @@
 #include <porytiles/legacy/porytiles_context.h>
 #include <porytiles/legacy/porytiles_exception.h>
 
-int main_legacy(int argc, char **argv) try {
+int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
     auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::stderr_consumer>());
     ctx.set_diag_engine(std::move(engine));

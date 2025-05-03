@@ -22,5 +22,5 @@ runs:
           -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static"
         cd build
         cmake --build .
-        file ./Porytiles/tools/driver/porytiles
-        objdump -p ./Porytiles/tools/driver/porytiles
+        file ./Porytiles/tools/legacy_driver/porytiles
+        objdump -p ./Porytiles/tools/legacy_driver/porytiles
