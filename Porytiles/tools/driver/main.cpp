@@ -3,8 +3,7 @@
 
 #include <porytiles/build_version.h>
 
-#include "./subcommand_compileprimary.hpp"
-#include "./subcommand_compilesecondary.hpp"
+#include "./command.hpp"
 
 int main(const int argc, char **argv) {
     CLI::App app{"Porytiles"};
@@ -37,11 +36,8 @@ https://github.com/huderlem/porymap)");
         std::exit(0);
     });
 
-    // Call the setup functions for the subcommands.
-    // They are kept alive by a shared pointer in the
-    // lambda function held by CLI11
-    SetupCompilePrimary(app);
-    SetupCompileSecondary(app);
+    CompilePrimaryCommand compilePrimaryCommand{};
+    compilePrimaryCommand.Setup(app);
 
     // Make sure we get at least one subcommand
     app.require_subcommand();
