@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "panic/panic.hpp"
 #include "legacy/porytiles_context.h"
+#include "panic/panic.hpp"
 
 namespace porytiles {
 

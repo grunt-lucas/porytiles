@@ -12,10 +12,10 @@
 #include "legacy/compiler.h"
 #include "legacy/importer.h"
 #include "legacy/logger.h"
-#include "panic/panic.hpp"
 #include "legacy/porytiles_context.h"
 #include "legacy/types.h"
 #include "legacy/utilities.h"
+#include "panic/panic.hpp"
 
 namespace porytiles {
 

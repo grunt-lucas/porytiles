@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "legacy/logger.h"
-#include "panic/panic.hpp"
 #include "legacy/porytiles_context.h"
 #include "legacy/types.h"
+#include "panic/panic.hpp"
 
 namespace porytiles {
 

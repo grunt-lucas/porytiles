@@ -20,9 +20,9 @@
 #include "legacy/importer.h"
 #include "legacy/logger.h"
 #include "legacy/palette_assignment.h"
-#include "panic/panic.hpp"
 #include "legacy/porytiles_context.h"
 #include "legacy/types.h"
+#include "panic/panic.hpp"
 
 namespace porytiles {
 
