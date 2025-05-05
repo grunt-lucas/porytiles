@@ -26,9 +26,9 @@ template <typename T, typename StatusEnum> class Result {
         return status_ == StatusEnum{};
     }
 
-    template <typename F> void IfSuccess(F func) {
+    template <typename F> void IfSuccess(F &&func) {
         if (HasSuccess()) {
-            func(value_);
+            return std::forward<F>(func)(value_);
         }
     }
 };
