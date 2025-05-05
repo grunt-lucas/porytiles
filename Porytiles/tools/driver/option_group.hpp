@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CLI/CLI.hpp>
-#include <porytiles/template_lib/porytiles_template_lib.hpp>
 
 class OptGroup {
   protected:
