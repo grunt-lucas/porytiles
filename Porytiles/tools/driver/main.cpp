@@ -36,13 +36,13 @@ https://github.com/huderlem/porymap)");
         std::exit(0);
     });
 
-    CompilePrimaryCommand compilePrimaryCommand{};
-    compilePrimaryCommand.Setup(app);
+    CompilePrimaryCommand compilePrimaryCommand{app};
+    CompileSecondaryCommand compileSecondaryCommand{app};
+    DecompilePrimaryCommand decompilePrimaryCommand{app};
+    DecompileSecondaryCommand decompileSecondaryCommand{app};
 
     // Make sure we get at least one subcommand
     app.require_subcommand();
-
-    // More setup if needed, i.e., other subcommands etc.
 
     CLI11_PARSE(app, argc, argv);
     return 0;
