@@ -7,8 +7,8 @@ Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret
 `pokefirered`](https://github.com/pret/pokefirered), and [`pokeemerald`](https://github.com/pret/pokeemerald) Pokémon
 Generation III decompilation projects from [`pret`](https://github.com/pret). Also compatible with [
 `pokeemerald-expansion`](https://github.com/rh-hideout/pokeemerald-expansion) from [
-`rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready tilesets from
-RGBA (or indexed) tile assets.
+`rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready assets from
+RGBA (or indexed) input assets.
 
 Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want
 the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop)
@@ -16,8 +16,9 @@ branch, grab the nightly release instead.
 
 For detailed documentation about Porytiles internal workings,
 please see the TODO doxygen documentation.
-For tutorials and usage documentation please see [the wiki](https://github.com/grunt-lucas/porytiles/wiki)
-(a video tutorial series is coming at a later date).
+For tutorials and usage documentation please see [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
+There is a short community-made [video tutorial series here.](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
+An official video tutorial series is coming at a later date.
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*

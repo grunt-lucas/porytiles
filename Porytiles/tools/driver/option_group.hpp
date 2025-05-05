@@ -1,12 +1,15 @@
 #pragma once
 
 #include <CLI/CLI.hpp>
+#include <porytiles/template_lib/porytiles_template_lib.hpp>
 
 class OptGroup {
-  public:
-    virtual ~OptGroup() = default;
+  protected:
     virtual std::string GroupName() = 0;
     virtual void RegisterOptions(CLI::App &app) = 0;
+
+  public:
+    virtual ~OptGroup() = default;
 };
 
 class OptGroupFieldmap final : public OptGroup {
