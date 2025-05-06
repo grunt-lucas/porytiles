@@ -11,7 +11,12 @@ namespace porytiles {
 /// @details If the provided `std::optional` object `o` contains a value
 /// (i.e., `o.has_value()` is true),
 /// this function calls the provided callable `func` with the contained value (`*o`).
-/// The callable `func` is perfectly forwarded using `std::forward`.
+/// The callable `func` is perfectly forwarded using `std::forward`. Example:
+/// @code
+/// IfPresent(str_opt, [](const std::string& s) -> void {
+///     std::cout << s << std::endl;
+/// });
+/// @endcode
 ///
 /// @tparam T The type of the value held by the `std::optional`.
 /// @tparam F The type of the function or callable object to execute.

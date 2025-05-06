@@ -3,12 +3,10 @@
 #include <CLI/CLI.hpp>
 
 class OptGroup {
-  protected:
-    virtual std::string GroupName() = 0;
-    virtual void RegisterOptions(CLI::App &app) = 0;
-
   public:
     virtual ~OptGroup() = default;
+    virtual std::string GroupName() = 0;
+    virtual void RegisterOptions(CLI::App &app) = 0;
 };
 
 class OptGroupFieldmap final : public OptGroup {
@@ -60,9 +58,16 @@ class OptGroupFieldmap final : public OptGroup {
 
 class OptGroupDiagnostics final : public OptGroup {
   public:
+    std::vector<std::string> diagnostics_;
+
     std::string GroupName() override {
         return "DIAGNOSTIC OPTIONS";
     }
 
-    void RegisterOptions(CLI::App &app) override {}
+    void RegisterOptions(CLI::App &app) override {
+        app.add_option("--W", diagnostics_, "Enable given warning diagnostic.")->group(GroupName());
+        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic.")->group(GroupName());
+        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error.")->group(GroupName());
+        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error.")->group(GroupName());
+    }
 };

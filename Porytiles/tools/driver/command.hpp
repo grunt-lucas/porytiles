@@ -57,16 +57,21 @@ class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit CompilePrimaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {
         std::cout << "Legacy compile primary command called." << std::endl;
+        for (const auto &option : diagnostics_opts_.diagnostics_) {
+            std::cout << option << std::endl;
+        }
     }
 };
 
@@ -76,12 +81,14 @@ class CompileSecondaryCommand final : public Command {
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit CompileSecondaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {
@@ -95,12 +102,14 @@ class DecompilePrimaryCommand final : public Command {
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit DecompilePrimaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {
@@ -114,12 +123,14 @@ class DecompileSecondaryCommand final : public Command {
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit DecompileSecondaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {
@@ -133,11 +144,13 @@ class CompileCommand final : public Command {
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit CompileCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {}
@@ -191,11 +204,13 @@ class DecompileCommand final : public Command {
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit DecompileCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
         fieldmap_opts_.RegisterOptions(cmd);
+        diagnostics_opts_.RegisterOptions(cmd);
     }
 
     void Run() override {}
