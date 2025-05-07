@@ -45,20 +45,16 @@ https://github.com/huderlem/porymap)");
     DecompilePrimaryCommand decompile_primary{porytiles_app};
     DecompileSecondaryCommand decompile_secondary{porytiles_app};
 
-    CompileCommand compile{porytiles_app};
-    CompileTilesetCommand compile_tileset{compile.get_command()};
-    CompileLayoutCommand compile_layout{compile.get_command()};
-    CompileSpritesheetCommand compile_spritesheet{compile.get_command()};
+    CompileTilesetCommand compile_tileset{porytiles_app};
+    CompileLayoutCommand compile_layout{porytiles_app};
+    CompileSpritesheetCommand compile_spritesheet{porytiles_app};
 
-    DecompileCommand decompile{porytiles_app};
-    DecompileTilesetCommand decompile_tileset{decompile.get_command()};
-    DecompileLayoutCommand decompile_layout{decompile.get_command()};
+    DecompileTilesetCommand decompile_tileset{porytiles_app};
+    DecompileLayoutCommand decompile_layout{porytiles_app};
 
     ReduceBitDepthCommand reduce_bit_depth{porytiles_app};
 
     porytiles_app.require_subcommand();
-    compile.get_command().require_subcommand();
-    decompile.get_command().require_subcommand();
 
     CLI11_PARSE(porytiles_app, argc, argv);
     return 0;

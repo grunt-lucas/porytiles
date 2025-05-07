@@ -20,37 +20,37 @@ class OptGroupFieldmap final : public OptGroup {
     std::size_t pals_total_override_;
 
     std::string GroupName() override {
-        return "FIELDMAP OPTIONS";
+        return "FIELDMAP OVERRIDE OPTIONS";
     }
 
     void RegisterOptions(CLI::App &app) override {
-        app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
+        app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset")
             ->group(GroupName());
 
         app.add_option("--tiles-primary-override", tiles_primary_override_,
-                       "Override the number of tiles in the primary tileset.")
+                       "Override the number of tiles in the primary tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
         app.add_option("--tiles-total-override", tiles_total_override_,
-                       "Override the total number of tiles in the tileset.")
+                       "Override the total number of tiles in the tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
 
         app.add_option("--metatiles-primary-override", metatiles_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+                       "Override the number of metatiles in the primary tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
         app.add_option("--metatiles-total-override", metatiles_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+                       "Override the total number of metatiles in the tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
 
         app.add_option("--pals-primary-override", pals_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+                       "Override the number of metatiles in the primary tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
         app.add_option("--pals-total-override", pals_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+                       "Override the total number of metatiles in the tileset")
             ->check(CLI::Range(0UL, SIZE_MAX))
             ->group(GroupName());
     }
@@ -65,9 +65,9 @@ class OptGroupDiagnostics final : public OptGroup {
     }
 
     void RegisterOptions(CLI::App &app) override {
-        app.add_option("--W", diagnostics_, "Enable given warning diagnostic.")->group(GroupName());
-        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic.")->group(GroupName());
-        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error.")->group(GroupName());
-        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error.")->group(GroupName());
+        app.add_option("--W", diagnostics_, "Enable given warning diagnostic")->group(GroupName());
+        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic")->group(GroupName());
+        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error")->group(GroupName());
+        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error")->group(GroupName());
     }
 };
