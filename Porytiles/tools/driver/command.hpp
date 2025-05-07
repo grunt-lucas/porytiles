@@ -25,10 +25,7 @@ class Command {
         }
 
         command_ = parent_app.add_subcommand(name, desc);
-        if (command_ == nullptr) {
-            // Should not happen if CLI11 is working, but good practice
-            porytiles::panic("CLI::App::add_subcommand returned nullptr for: " + name);
-        }
+        porytiles::assert_or_panic(command_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
 
         if (!group.empty()) {
             command_->group(group);

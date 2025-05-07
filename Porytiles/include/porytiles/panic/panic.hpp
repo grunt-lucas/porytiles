@@ -29,13 +29,13 @@ struct string_view_with_source_loc {
 [[noreturn]] void panic_impl(const char *s) noexcept;
 
 [[noreturn]] inline void panic(const string_view_with_source_loc &s) noexcept {
-    auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
+    const auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
     panic_impl(msg.c_str());
 }
 
-inline void assert_or_panic(bool condition, const string_view_with_source_loc &s) {
+inline void assert_or_panic(const bool condition, const string_view_with_source_loc &s) {
     if (!condition) {
-        auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
+        const auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
         panic_impl(msg.c_str());
     }
 }
