@@ -44,10 +44,11 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
     if (rgba.alpha != ALPHA_TRANSPARENT && rgba.alpha != ALPHA_OPAQUE) {
         if (errWarn) {
             ctx.diag->Report(kErrGeneric, fmt::format("invalid alpha value '{}' at '{}' subtile pixel col {}, row {}",
-                                                    ctx.diag->Bold(rgba.alpha), ctx.diag->Bold(rgbaFrame.prettify()),
-                                                    ctx.diag->Bold(col), ctx.diag->Bold(row)));
-            ctx.diag->Report(kNoteGeneric, fmt::format("alpha value must be either {} for opaque or {} for transparent",
-                                                    ctx.diag->Bold(ALPHA_OPAQUE), ctx.diag->Bold(ALPHA_TRANSPARENT)));
+                                                      ctx.diag->Bold(rgba.alpha), ctx.diag->Bold(rgbaFrame.prettify()),
+                                                      ctx.diag->Bold(col), ctx.diag->Bold(row)));
+            ctx.diag->Report(kNoteGeneric,
+                             fmt::format("alpha value must be either {} for opaque or {} for transparent",
+                                         ctx.diag->Bold(ALPHA_OPAQUE), ctx.diag->Bold(ALPHA_TRANSPARENT)));
         }
         return INVALID_INDEX_PIXEL_VALUE;
     }
@@ -85,10 +86,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
                 ctx.diag->Report(kWarnColorPrecisionLoss, rgbaFrame, rgba.jasc(), compilerModeString(compilerMode), row,
                                  col);
                 ctx.diag->ReportPartner(kWarnColorPrecisionLoss, 0,
-                                         std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc(),
-                                         std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
-                                         std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
+                                        std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                        std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc(),
+                                        std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
+                                        std::get<3>(ctx.compilerContext.bgrToRgba.at(pixelBgr)));
                 ctx.compilerContext.bgrToRgba.at(pixelBgr) = std::tuple{rgba, rgbaFrame, row, col};
             }
         }
@@ -1179,8 +1180,8 @@ TEST_CASE("insertRGBA should add new colors in order and return the correct inde
 TEST_CASE("candidate should return the NormalizedTile with requested flips") {
     porytiles::PorytilesContext ctx{};
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/corners.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/corners.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/corners.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/corners.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     porytiles::RGBATile tile = tiles.tiles[0];
 
@@ -1304,8 +1305,8 @@ TEST_CASE("candidate should return the NormalizedTile with requested flips") {
 TEST_CASE("normalize should return the normal form of the given tile") {
     porytiles::PorytilesContext ctx{};
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/corners.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/corners.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/corners.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/corners.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     porytiles::RGBATile tile = tiles.tiles[0];
 
@@ -1332,8 +1333,8 @@ TEST_CASE("normalize should return the normal form of the given tile") {
 TEST_CASE("normalizeDecompTiles should correctly normalize all tiles in the decomp tileset") {
     porytiles::PorytilesContext ctx{};
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
 
     auto [indexedNormTiles, _1, _2] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
@@ -1398,33 +1399,33 @@ TEST_CASE("normalizeDecompTiles should correctly normalize multi-frame animated 
     porytiles::PorytilesContext ctx{};
     ctx.printDieMsg = false;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> tilesPng{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> tilesPng{"Resources/Doctests/2x2_pattern_2.png"};
 
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, tilesPng);
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_white"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_flower_yellow"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_water_1"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_flower_white"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_flower_yellow"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_water_1"}));
 
     porytiles::AnimationPng<png::rgba_pixel> white00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/00.png"}, "anim_flower_white", "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/00.png"}, "anim_flower_white", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> white01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/01.png"}, "anim_flower_white", "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/01.png"}, "anim_flower_white", "01.png"};
     porytiles::AnimationPng<png::rgba_pixel> white02{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_white/02.png"}, "anim_flower_white", "02.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/02.png"}, "anim_flower_white", "02.png"};
 
     porytiles::AnimationPng<png::rgba_pixel> yellow00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/00.png"}, "anim_flower_yellow", "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/00.png"}, "anim_flower_yellow", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> yellow01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/01.png"}, "anim_flower_yellow", "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/01.png"}, "anim_flower_yellow", "01.png"};
     porytiles::AnimationPng<png::rgba_pixel> yellow02{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_flower_yellow/02.png"}, "anim_flower_yellow", "02.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/02.png"}, "anim_flower_yellow", "02.png"};
 
-    porytiles::AnimationPng<png::rgba_pixel> water00{png::image<png::rgba_pixel>{"Resources/Tests/anim_water_1/00.png"},
-                                                     "anim_water_1", "00.png"};
-    porytiles::AnimationPng<png::rgba_pixel> water01{png::image<png::rgba_pixel>{"Resources/Tests/anim_water_1/01.png"},
-                                                     "anim_water_1", "01.png"};
+    porytiles::AnimationPng<png::rgba_pixel> water00{
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_water_1/00.png"}, "anim_water_1", "00.png"};
+    porytiles::AnimationPng<png::rgba_pixel> water01{
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_water_1/01.png"}, "anim_water_1", "01.png"};
 
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> whiteAnim{};
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> yellowAnim{};
@@ -1516,8 +1517,8 @@ TEST_CASE("buildColorIndexMaps should build a map of all unique colors in the de
     porytiles::PorytilesContext ctx{};
     ctx.printDieMsg = false;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     auto [indexedNormTiles, _1, _2] =
         porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
@@ -1570,8 +1571,8 @@ TEST_CASE("matchNormalizedWithColorSets should return the expected data structur
     porytiles::PorytilesContext ctx{};
     ctx.printDieMsg = false;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     auto [indexedNormTiles, _1, _2] =
         porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
@@ -1679,8 +1680,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         ctx.fieldmapConfig.numPalettesInPrimary = SOLUTION_SIZE;
         ctx.compilerConfig.primaryExploredNodeCutoff = 20;
 
-        REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-        png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+        REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+        png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
         porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
         auto [indexedNormTiles, _1, _2] =
             porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
@@ -1715,8 +1716,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         constexpr int SOLUTION_SIZE = 5;
         porytiles::PorytilesContext ctx{};
 
-        REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/compile_raw_set_1/set.png"}));
-        png::image<png::rgba_pixel> png1{"Resources/Tests/compile_raw_set_1/set.png"};
+        REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/compile_raw_set_1/set.png"}));
+        png::image<png::rgba_pixel> png1{"Resources/Doctests/compile_raw_set_1/set.png"};
         porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
         auto [indexedNormTiles, _1, _2] =
             porytiles::normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
@@ -1755,8 +1756,8 @@ TEST_CASE("makeTile should create the expected GBATile from the given Normalized
     ctx.compilerConfig.primaryExploredNodeCutoff = 5;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     auto [indexedNormTiles, _1, _2] = normalizeDecompTiles(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {});
     auto compiledTiles = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {}, {});
@@ -1808,8 +1809,8 @@ TEST_CASE("compile simple example should perform as expected") {
     ctx.compilerConfig.primaryExploredNodeCutoff = 5;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/2x2_pattern_2.png"}));
-    png::image<png::rgba_pixel> png1{"Resources/Tests/2x2_pattern_2.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_2.png"}));
+    png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_2.png"};
     porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
     auto compiledTiles = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, tiles, {}, {}, {});
 
@@ -1880,12 +1881,12 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/simple_metatiles_3/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/simple_metatiles_3/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/simple_metatiles_3/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/simple_metatiles_3/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_3/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_3/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
@@ -1895,8 +1896,8 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     // Check that tiles are as expected
     CHECK(compiledPrimary->tiles.size() == 16);
     REQUIRE(std::filesystem::exists(
-        std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/expected_tiles.png"}));
-    png::image<png::index_pixel> expectedPng{"Resources/Tests/simple_metatiles_3/primary/expected_tiles.png"};
+        std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/expected_tiles.png"}));
+    png::image<png::index_pixel> expectedPng{"Resources/Doctests/simple_metatiles_3/primary/expected_tiles.png"};
     for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
         for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
             for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
@@ -2019,12 +2020,12 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/simple_metatiles_3/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/simple_metatiles_3/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/simple_metatiles_3/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/simple_metatiles_3/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_3/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_3/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
@@ -2032,12 +2033,14 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     ctx.compilerContext.pairedPrimaryTileset =
         porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/top.png"}));
-    png::image<png::rgba_pixel> bottomSecondary{"Resources/Tests/simple_metatiles_3/secondary/bottom.png"};
-    png::image<png::rgba_pixel> middleSecondary{"Resources/Tests/simple_metatiles_3/secondary/middle.png"};
-    png::image<png::rgba_pixel> topSecondary{"Resources/Tests/simple_metatiles_3/secondary/top.png"};
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/secondary/bottom.png"}));
+    REQUIRE(
+        std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/secondary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_3/secondary/top.png"}));
+    png::image<png::rgba_pixel> bottomSecondary{"Resources/Doctests/simple_metatiles_3/secondary/bottom.png"};
+    png::image<png::rgba_pixel> middleSecondary{"Resources/Doctests/simple_metatiles_3/secondary/middle.png"};
+    png::image<png::rgba_pixel> topSecondary{"Resources/Doctests/simple_metatiles_3/secondary/top.png"};
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
@@ -2046,8 +2049,8 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 
     // Check that tiles are as expected
     REQUIRE(std::filesystem::exists(
-        std::filesystem::path{"Resources/Tests/simple_metatiles_3/secondary/expected_tiles.png"}));
-    png::image<png::index_pixel> expectedPng{"Resources/Tests/simple_metatiles_3/secondary/expected_tiles.png"};
+        std::filesystem::path{"Resources/Doctests/simple_metatiles_3/secondary/expected_tiles.png"}));
+    png::image<png::index_pixel> expectedPng{"Resources/Doctests/simple_metatiles_3/secondary/expected_tiles.png"};
     for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
         for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
             for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
@@ -2183,38 +2186,39 @@ TEST_CASE("compile function should correctly compile primary set with animated t
     ctx.fieldmapConfig.numPalettesTotal = 6;
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/anim_metatiles_1/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/anim_metatiles_1/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_1/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/anim_metatiles_1/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/anim_metatiles_1/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/anim_metatiles_1/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/anim/water"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/anim/water"}));
 
     porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/key.png"},
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/key.png"},
         "flower_white", "key.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/0.png"}, "flower_white",
-        "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/0.png"},
+        "flower_white", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/1.png"}, "flower_white",
-        "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/1.png"},
+        "flower_white", "01.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/2.png"}, "flower_white",
-        "02.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/2.png"},
+        "flower_white", "02.png"};
     porytiles::AnimationPng<png::rgba_pixel> waterKey{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/key.png"}, "water", "key.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/key.png"}, "water",
+        "key.png"};
     porytiles::AnimationPng<png::rgba_pixel> water00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> water01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
 
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2238,9 +2242,9 @@ TEST_CASE("compile function should correctly compile primary set with animated t
 
     CHECK(compiledPrimary->tiles.size() == 16);
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/expected_tiles.png"}));
-    png::image<png::index_pixel> expectedPng{"Resources/Tests/anim_metatiles_1/primary/expected_tiles.png"};
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/expected_tiles.png"}));
+    png::image<png::index_pixel> expectedPng{"Resources/Doctests/anim_metatiles_1/primary/expected_tiles.png"};
     for (std::size_t tileIndex = 0; tileIndex < compiledPrimary->tiles.size(); tileIndex++) {
         for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
             for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
@@ -2398,38 +2402,39 @@ TEST_CASE("compile function should correctly compile secondary set with animated
     ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
     ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/anim_metatiles_1/primary/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/anim_metatiles_1/primary/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/anim_metatiles_1/primary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/anim_metatiles_1/primary/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/anim_metatiles_1/primary/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/anim_metatiles_1/primary/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/primary/anim/water"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/primary/anim/water"}));
 
     porytiles::AnimationPng<png::rgba_pixel> flowerWhiteKey{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/key.png"},
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/key.png"},
         "flower_white", "key.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/0.png"}, "flower_white",
-        "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/0.png"},
+        "flower_white", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/1.png"}, "flower_white",
-        "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/1.png"},
+        "flower_white", "01.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerWhite02{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/flower_white/2.png"}, "flower_white",
-        "02.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/flower_white/2.png"},
+        "flower_white", "02.png"};
     porytiles::AnimationPng<png::rgba_pixel> waterKey{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/key.png"}, "water", "key.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/key.png"}, "water",
+        "key.png"};
     porytiles::AnimationPng<png::rgba_pixel> water00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/0.png"}, "water", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> water01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/primary/anim/water/1.png"}, "water", "01.png"};
 
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerWhiteAnim{};
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> waterAnim{};
@@ -2452,31 +2457,31 @@ TEST_CASE("compile function should correctly compile secondary set with animated
     ctx.compilerContext.pairedPrimaryTileset =
         porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/top.png"}));
-    png::image<png::rgba_pixel> bottomSecondary{"Resources/Tests/anim_metatiles_1/secondary/bottom.png"};
-    png::image<png::rgba_pixel> middleSecondary{"Resources/Tests/anim_metatiles_1/secondary/middle.png"};
-    png::image<png::rgba_pixel> topSecondary{"Resources/Tests/anim_metatiles_1/secondary/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/secondary/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/secondary/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_1/secondary/top.png"}));
+    png::image<png::rgba_pixel> bottomSecondary{"Resources/Doctests/anim_metatiles_1/secondary/bottom.png"};
+    png::image<png::rgba_pixel> middleSecondary{"Resources/Doctests/anim_metatiles_1/secondary/middle.png"};
+    png::image<png::rgba_pixel> topSecondary{"Resources/Doctests/anim_metatiles_1/secondary/top.png"};
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/anim/flower_red"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/anim_metatiles_1/secondary/anim/flower_red"}));
 
     porytiles::AnimationPng<png::rgba_pixel> flowerRedKey{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/secondary/anim/flower_red/key.png"},
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/secondary/anim/flower_red/key.png"},
         "flower_white", "key.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerRed00{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/secondary/anim/flower_red/0.png"}, "flower_white",
-        "00.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/secondary/anim/flower_red/0.png"},
+        "flower_white", "00.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerRed01{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/secondary/anim/flower_red/1.png"}, "flower_white",
-        "01.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/secondary/anim/flower_red/1.png"},
+        "flower_white", "01.png"};
     porytiles::AnimationPng<png::rgba_pixel> flowerRed02{
-        png::image<png::rgba_pixel>{"Resources/Tests/anim_metatiles_1/secondary/anim/flower_red/2.png"}, "flower_white",
-        "02.png"};
+        png::image<png::rgba_pixel>{"Resources/Doctests/anim_metatiles_1/secondary/anim/flower_red/2.png"},
+        "flower_white", "02.png"};
 
     std::vector<porytiles::AnimationPng<png::rgba_pixel>> flowerRedAnim{};
 
@@ -2496,8 +2501,8 @@ TEST_CASE("compile function should correctly compile secondary set with animated
     CHECK(compiledSecondary->tiles.size() == 16);
 
     REQUIRE(std::filesystem::exists(
-        std::filesystem::path{"Resources/Tests/anim_metatiles_1/secondary/expected_tiles.png"}));
-    png::image<png::index_pixel> expectedPng{"Resources/Tests/anim_metatiles_1/secondary/expected_tiles.png"};
+        std::filesystem::path{"Resources/Doctests/anim_metatiles_1/secondary/expected_tiles.png"}));
+    png::image<png::index_pixel> expectedPng{"Resources/Doctests/anim_metatiles_1/secondary/expected_tiles.png"};
     for (std::size_t tileIndex = 0; tileIndex < compiledSecondary->tiles.size(); tileIndex++) {
         for (std::size_t row = 0; row < porytiles::TILE_SIDE_LENGTH_PIX; row++) {
             for (std::size_t col = 0; col < porytiles::TILE_SIDE_LENGTH_PIX; col++) {
@@ -2648,24 +2653,25 @@ TEST_CASE("primer tiles should change output of primary compile function") {
     ctx.compilerConfig.primarySmartPrune = true;
 
     // Import decompiled tiles
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/palette_primer_1/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/palette_primer_1/bottom.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/palette_primer_1/bottom.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_primer_1/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_primer_1/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_primer_1/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/palette_primer_1/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/palette_primer_1/bottom.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/palette_primer_1/bottom.png"};
     porytiles::DecompiledTileset decompiled = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
     // Import palette primer
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_primer_1/palette-primers/primer.pal"}));
-    std::ifstream primerIfstream{std::filesystem::path{"Resources/Tests/palette_primer_1/palette-primers/primer.pal"}};
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_primer_1/palette-primers/primer.pal"}));
+    std::ifstream primerIfstream{
+        std::filesystem::path{"Resources/Doctests/palette_primer_1/palette-primers/primer.pal"}};
     porytiles::RGBATile primerTile =
         porytiles::importPalettePrimer(ctx, porytiles::CompilerMode::PRIMARY, primerIfstream,
-                                       "Resources/Tests/palette_primer_1/palette-primers/primer.pal");
-    primerTile.primerFilename = "Resources/Tests/palette_primer_1/palette-primers/primer.pal";
+                                       "Resources/Doctests/palette_primer_1/palette-primers/primer.pal");
+    primerTile.primerFilename = "Resources/Doctests/palette_primer_1/palette-primers/primer.pal";
     std::vector<porytiles::RGBATile> palettePrimers{};
     palettePrimers.push_back(primerTile);
     primerIfstream.close();
@@ -2728,48 +2734,48 @@ TEST_CASE("overrides should change output of primary compile function") {
     ctx.compilerConfig.primarySmartPrune = true;
 
     // Import decompiled tiles
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/palette_override_1/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/palette_override_1/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/palette_override_1/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/palette_override_1/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/palette_override_1/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/palette_override_1/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
     // Import palette overrides
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/00.pal"}));
     std::ifstream override00IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/00.pal"}};
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/01.pal"}));
     std::ifstream override01IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/01.pal"}};
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/02.pal"}));
     std::ifstream override02IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/02.pal"}};
 
     auto [overrideTile00, overriddenPalSlots00] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override00IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/00.pal");
-    overrideTile00.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/00.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/00.pal");
+    overrideTile00.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/00.pal";
     overrideTile00.overridePaletteIndex = 0;
 
     auto [overrideTile01, overriddenPalSlots01] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override01IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/01.pal");
-    overrideTile01.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/01.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/01.pal");
+    overrideTile01.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/01.pal";
     overrideTile01.overridePaletteIndex = 1;
 
     auto [overrideTile02, overriddenPalSlots02] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override02IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/02.pal");
-    overrideTile02.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/02.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/02.pal");
+    overrideTile02.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/02.pal";
     overrideTile02.overridePaletteIndex = 2;
 
     std::vector<porytiles::RGBATile> paletteOverrides{};
@@ -2855,47 +2861,47 @@ TEST_CASE("overrides should change output of secondary compile function") {
     ctx.compilerConfig.secondarySmartPrune = true;
 
     // Set up compilation for paired primary
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/top.png"}));
-    png::image<png::rgba_pixel> bottomPrimary{"Resources/Tests/palette_override_1/bottom.png"};
-    png::image<png::rgba_pixel> middlePrimary{"Resources/Tests/palette_override_1/middle.png"};
-    png::image<png::rgba_pixel> topPrimary{"Resources/Tests/palette_override_1/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_1/top.png"}));
+    png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/palette_override_1/bottom.png"};
+    png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/palette_override_1/middle.png"};
+    png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/palette_override_1/top.png"};
     porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/00.pal"}));
     std::ifstream override00IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/00.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/00.pal"}};
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/01.pal"}));
     std::ifstream override01IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/01.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/01.pal"}};
 
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/02.pal"}));
     std::ifstream override02IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_1/palette-overrides/02.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_1/palette-overrides/02.pal"}};
 
     auto [overrideTile00, overriddenPalSlots00] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override00IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/00.pal");
-    overrideTile00.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/00.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/00.pal");
+    overrideTile00.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/00.pal";
     overrideTile00.overridePaletteIndex = 0;
 
     auto [overrideTile01, overriddenPalSlots01] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override01IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/01.pal");
-    overrideTile01.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/01.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/01.pal");
+    overrideTile01.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/01.pal";
     overrideTile01.overridePaletteIndex = 1;
 
     auto [overrideTile02, overriddenPalSlots02] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::PRIMARY, override02IfStream,
-                                         "Resources/Tests/palette_override_1/palette-overrides/02.pal");
-    overrideTile02.overrideFilename = "Resources/Tests/palette_override_1/palette-overrides/02.pal";
+                                         "Resources/Doctests/palette_override_1/palette-overrides/02.pal");
+    overrideTile02.overrideFilename = "Resources/Doctests/palette_override_1/palette-overrides/02.pal";
     overrideTile02.overridePaletteIndex = 2;
 
     std::vector<porytiles::RGBATile> paletteOverridesPrimary{};
@@ -2916,41 +2922,41 @@ TEST_CASE("overrides should change output of secondary compile function") {
     ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
 
     // Import secondary resources
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/bottom.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/middle.png"}));
-    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/top.png"}));
-    png::image<png::rgba_pixel> bottomSecondary{"Resources/Tests/palette_override_2/bottom.png"};
-    png::image<png::rgba_pixel> middleSecondary{"Resources/Tests/palette_override_2/middle.png"};
-    png::image<png::rgba_pixel> topSecondary{"Resources/Tests/palette_override_2/top.png"};
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_2/bottom.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_2/middle.png"}));
+    REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/palette_override_2/top.png"}));
+    png::image<png::rgba_pixel> bottomSecondary{"Resources/Doctests/palette_override_2/bottom.png"};
+    png::image<png::rgba_pixel> middleSecondary{"Resources/Doctests/palette_override_2/middle.png"};
+    png::image<png::rgba_pixel> topSecondary{"Resources/Doctests/palette_override_2/top.png"};
     porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
         ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/03.pal"}));
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/03.pal"}));
     std::ifstream override03IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/03.pal"}};
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/04.pal"}));
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/03.pal"}};
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/04.pal"}));
     std::ifstream override04IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/04.pal"}};
-    REQUIRE(
-        std::filesystem::exists(std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/05.pal"}));
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/04.pal"}};
+    REQUIRE(std::filesystem::exists(
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/05.pal"}));
     std::ifstream override05IfStream{
-        std::filesystem::path{"Resources/Tests/palette_override_2/palette-overrides/05.pal"}};
+        std::filesystem::path{"Resources/Doctests/palette_override_2/palette-overrides/05.pal"}};
     auto [overrideTile03, overriddenPalSlots03] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override03IfStream,
-                                         "Resources/Tests/palette_override_2/palette-overrides/03.pal");
-    overrideTile03.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/03.pal";
+                                         "Resources/Doctests/palette_override_2/palette-overrides/03.pal");
+    overrideTile03.overrideFilename = "Resources/Doctests/palette_override_2/palette-overrides/03.pal";
     overrideTile03.overridePaletteIndex = 3;
     auto [overrideTile04, overriddenPalSlots04] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override04IfStream,
-                                         "Resources/Tests/palette_override_2/palette-overrides/04.pal");
-    overrideTile04.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/04.pal";
+                                         "Resources/Doctests/palette_override_2/palette-overrides/04.pal");
+    overrideTile04.overrideFilename = "Resources/Doctests/palette_override_2/palette-overrides/04.pal";
     overrideTile04.overridePaletteIndex = 4;
     auto [overrideTile05, overriddenPalSlots05] =
         porytiles::importPaletteOverride(ctx, porytiles::CompilerMode::SECONDARY, override05IfStream,
-                                         "Resources/Tests/palette_override_2/palette-overrides/05.pal");
-    overrideTile05.overrideFilename = "Resources/Tests/palette_override_2/palette-overrides/05.pal";
+                                         "Resources/Doctests/palette_override_2/palette-overrides/05.pal");
+    overrideTile05.overrideFilename = "Resources/Doctests/palette_override_2/palette-overrides/05.pal";
     overrideTile05.overridePaletteIndex = 5;
     std::vector<porytiles::RGBATile> paletteOverridesSecondary{};
     paletteOverridesSecondary.push_back(overrideTile03);
