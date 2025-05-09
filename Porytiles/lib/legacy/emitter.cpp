@@ -81,7 +81,7 @@ static void configurePngPalette(TilesOutputPalette paletteMode, png::image<png::
             pngPal.emplace_back(color.red, color.green, color.blue);
         }
     } else {
-        panic("emitter::configurePngPalette unknown TilesPngPaletteMode");
+        Panic("emitter::configurePngPalette unknown TilesPngPaletteMode");
     }
     out.set_palette(pngPal);
 }
@@ -113,10 +113,10 @@ void emitTilesPng(PorytilesContext &ctx, png::image<png::index_pixel> &out, cons
                     out[pixelRow][pixelCol] = (paletteIndex << 4) | indexInPalette;
                     break;
                 default:
-                    panic("emitter::emitTilesPng unknown TilesPngPalMode");
+                    Panic("emitter::emitTilesPng unknown TilesPngPalMode");
                 }
             } else {
-                panic(fmt::format("emitter::emitTilesPng tileIndex reached {} which is larger than size {}", tileIndex,
+                Panic(fmt::format("emitter::emitTilesPng tileIndex reached {} which is larger than size {}", tileIndex,
                                   tileset.tiles.size()));
             }
         }
@@ -139,7 +139,7 @@ void emitMetatilesBin(PorytilesContext &ctx, std::ostream &out, const CompiledTi
 void emitAnim(PorytilesContext &ctx, std::vector<png::image<png::index_pixel>> &outFrames,
               const CompiledAnimation &animation, const std::vector<GBAPalette> &palettes) {
     if (outFrames.size() != animation.frames.size()) {
-        panic("emitter::emitAnim outFrames.size() != animation.frames.size()");
+        Panic("emitter::emitAnim outFrames.size() != animation.frames.size()");
     }
 
     for (std::size_t frameIndex = 0; frameIndex < animation.frames.size(); frameIndex++) {
@@ -169,13 +169,13 @@ void emitAttributes(const PorytilesContext &ctx, std::ostream &out,
     if (ctx.compilerConfig.tripleLayer) {
         delta = 12;
         if (tileset.metatileEntries.size() % 12 != 0) {
-            panic("emitter::emitAttributes tileset.metatileEntries size '" +
+            Panic("emitter::emitAttributes tileset.metatileEntries size '" +
                   std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 12");
         }
     } else {
         delta = 8;
         if (tileset.metatileEntries.size() % 8 != 0) {
-            panic("emitter::emitAttributes tileset.metatileEntries size '" +
+            Panic("emitter::emitAttributes tileset.metatileEntries size '" +
                   std::to_string(tileset.metatileEntries.size()) + "' was not divisible by 8");
         }
     }
@@ -217,7 +217,7 @@ void emitAttributes(const PorytilesContext &ctx, std::ostream &out,
             out << static_cast<char>(attributeValue >> 16);
             out << static_cast<char>(attributeValue >> 24);
         } else {
-            panic("emitter::emitAttributes unknown TargetBaseGame");
+            Panic("emitter::emitAttributes unknown TargetBaseGame");
         }
     }
     out.flush();
@@ -290,7 +290,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                             top[pixelRow][pixelCol] = {pixel.red, pixel.green, pixel.blue, pixel.alpha};
                         }
                     } else {
-                        panic("emitter::emitDecompiled invalid layer type for dual-layer emit");
+                        Panic("emitter::emitDecompiled invalid layer type for dual-layer emit");
                     }
                 }
             }
@@ -314,25 +314,25 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                        << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
                        << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
             } else {
-                ctx.diag->report(
-                    E_GENERIC, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                ctx.diag->Report(
+                    kErrGeneric, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
                                            ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
-                                           ctx.diag->bold(attributesMap.at(metatileIndex).metatileBehavior)));
+                                           ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         } else {
             if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
                 outCsv << metatileIndex << ","
                        << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
             } else {
-                ctx.diag->report(
-                    E_GENERIC, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                ctx.diag->Report(
+                    kErrGeneric, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
                                            ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
-                                           ctx.diag->bold(attributesMap.at(metatileIndex).metatileBehavior)));
+                                           ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         }
     }
 
-    if (ctx.diag->in_flight_count_for_level(DiagLevel::Error) > 0) {
+    if (ctx.diag->InFlightCountForLevel(DiagLevel::Error) > 0) {
         die_errorCount(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                        "behavior value did not have reverse mapping");
     }

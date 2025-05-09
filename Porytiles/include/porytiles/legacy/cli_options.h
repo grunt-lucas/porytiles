@@ -418,54 +418,54 @@ WERROR, WNO_ERROR
 constexpr int WERROR_VAL = 5003;
 
 // Compilation warnings
-const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + W_COLOR_PRECISION_LOSS;
-const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + W_COLOR_PRECISION_LOSS;
+const std::string WCOLOR_PRECISION_LOSS = W_GENERAL + kWarnColorPrecisionLoss;
+const std::string WNO_COLOR_PRECISION_LOSS = W_GENERAL + "no-" + kWarnColorPrecisionLoss;
 constexpr int WCOLOR_PRECISION_LOSS_VAL = 50000;
 constexpr int WNO_COLOR_PRECISION_LOSS_VAL = 60000;
 
-const std::string WKEY_FRAME_NO_MATCHING_TILE = W_GENERAL + W_KEY_FRAME_NO_MATCHING_TILE;
-const std::string WNO_KEY_FRAME_NO_MATCHING_TILE = W_GENERAL + "no-" + W_KEY_FRAME_NO_MATCHING_TILE;
+const std::string WKEY_FRAME_NO_MATCHING_TILE = W_GENERAL + kWarnKeyFrameNoMatchingTile;
+const std::string WNO_KEY_FRAME_NO_MATCHING_TILE = W_GENERAL + "no-" + kWarnKeyFrameNoMatchingTile;
 constexpr int WKEY_FRAME_NO_MATCHING_TILE_VAL = 50010;
 constexpr int WNO_KEY_FRAME_NO_MATCHING_TILE_VAL = 60010;
 
-const std::string WKEY_FRAME_MISSING_COLORS = W_GENERAL + W_KEY_FRAME_MISSING_COLORS;
-const std::string WNO_KEY_FRAME_MISSING_COLORS = W_GENERAL + "no-" + W_KEY_FRAME_MISSING_COLORS;
+const std::string WKEY_FRAME_MISSING_COLORS = W_GENERAL + kWarnKeyFrameMissingColors;
+const std::string WNO_KEY_FRAME_MISSING_COLORS = W_GENERAL + "no-" + kWarnKeyFrameMissingColors;
 constexpr int WKEY_FRAME_MISSING_COLORS_VAL = 50110;
 constexpr int WNO_KEY_FRAME_MISSING_COLORS_VAL = 60110;
 
-const std::string WATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + W_ATTRIBUTE_FORMAT_MISMATCH;
-const std::string WNO_ATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + "no-" + W_ATTRIBUTE_FORMAT_MISMATCH;
+const std::string WATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + kWarnAttributeFormatMismatch;
+const std::string WNO_ATTRIBUTE_FORMAT_MISMATCH = W_GENERAL + "no-" + kWarnAttributeFormatMismatch;
 constexpr int WATTRIBUTE_FORMAT_MISMATCH_VAL = 50030;
 constexpr int WNO_ATTRIBUTE_FORMAT_MISMATCH_VAL = 60030;
 
-const std::string WMISSING_ATTRIBUTES_CSV = W_GENERAL + W_MISSING_ATTRIBUTES_CSV;
-const std::string WNO_MISSING_ATTRIBUTES_CSV = W_GENERAL + "no-" + W_MISSING_ATTRIBUTES_CSV;
+const std::string WMISSING_ATTRIBUTES_CSV = W_GENERAL + kWarnMissingAttributesCsv;
+const std::string WNO_MISSING_ATTRIBUTES_CSV = W_GENERAL + "no-" + kWarnMissingAttributesCsv;
 constexpr int WMISSING_ATTRIBUTES_CSV_VAL = 50040;
 constexpr int WNO_MISSING_ATTRIBUTES_CSV_VAL = 60040;
 
-const std::string WUNUSED_ATTRIBUTE = W_GENERAL + W_UNUSED_ATTRIBUTE;
-const std::string WNO_UNUSED_ATTRIBUTE = W_GENERAL + "no-" + W_UNUSED_ATTRIBUTE;
+const std::string WUNUSED_ATTRIBUTE = W_GENERAL + kWarnUnusedAttribute;
+const std::string WNO_UNUSED_ATTRIBUTE = W_GENERAL + "no-" + kWarnUnusedAttribute;
 constexpr int WUNUSED_ATTRIBUTE_VAL = 50060;
 constexpr int WNO_UNUSED_ATTRIBUTE_VAL = 60060;
 
-const std::string WTRANSPARENCY_COLLAPSE = W_GENERAL + W_TRANSPARENCY_COLLAPSE;
-const std::string WNO_TRANSPARENCY_COLLAPSE = W_GENERAL + "no-" + W_TRANSPARENCY_COLLAPSE;
+const std::string WTRANSPARENCY_COLLAPSE = W_GENERAL + kWarnTransparencyCollapse;
+const std::string WNO_TRANSPARENCY_COLLAPSE = W_GENERAL + "no-" + kWarnTransparencyCollapse;
 constexpr int WTRANSPARENCY_COLLAPSE_VAL = 50070;
 constexpr int WNO_TRANSPARENCY_COLLAPSE_VAL = 60070;
 
-const std::string WUNUSED_MANUAL_PAL_COLOR = W_GENERAL + W_UNUSED_MANUAL_PAL_COLOR;
-const std::string WNO_UNUSED_MANUAL_PAL_COLOR = W_GENERAL + "no-" + W_UNUSED_MANUAL_PAL_COLOR;
+const std::string WUNUSED_MANUAL_PAL_COLOR = W_GENERAL + kWarnUnusedManualPalColor;
+const std::string WNO_UNUSED_MANUAL_PAL_COLOR = W_GENERAL + "no-" + kWarnUnusedManualPalColor;
 constexpr int WUNUSED_MANUAL_PAL_COLOR_VAL = 50120;
 constexpr int WNO_UNUSED_MANUAL_PAL_COLOR_VAL = 60120;
 
 // Decompilation warnings
-const std::string WTILE_INDEX_OUT_OF_RANGE = W_GENERAL + W_TILE_INDEX_OUT_OF_RANGE;
-const std::string WNO_TILE_INDEX_OUT_OF_RANGE = W_GENERAL + "no-" + W_TILE_INDEX_OUT_OF_RANGE;
+const std::string WTILE_INDEX_OUT_OF_RANGE = W_GENERAL + kWarnTileIndexOutOfRange;
+const std::string WNO_TILE_INDEX_OUT_OF_RANGE = W_GENERAL + "no-" + kWarnTileIndexOutOfRange;
 constexpr int WTILE_INDEX_OUT_OF_RANGE_VAL = 70110;
 constexpr int WNO_TILE_INDEX_OUT_OF_RANGE_VAL = 80110;
 
-const std::string WPALETTE_INDEX_OUT_OF_RANGE = W_GENERAL + W_PALETTE_INDEX_OUT_OF_RANGE;
-const std::string WNO_PALETTE_INDEX_OUT_OF_RANGE = W_GENERAL + "no-" + W_PALETTE_INDEX_OUT_OF_RANGE;
+const std::string WPALETTE_INDEX_OUT_OF_RANGE = W_GENERAL + kWarnPaletteIndexOutOfRange;
+const std::string WNO_PALETTE_INDEX_OUT_OF_RANGE = W_GENERAL + "no-" + kWarnPaletteIndexOutOfRange;
 constexpr int WPALETTE_INDEX_OUT_OF_RANGE_VAL = 70120;
 constexpr int WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL = 80120;
 

@@ -280,7 +280,7 @@ struct RGBATile {
         } else if (type == TileType::OVERRIDE) {
             tileString = fmt::format("override {}", overrideFilename);
         } else {
-            panic("RGBATile::prettify unknown TileType");
+            Panic("RGBATile::prettify unknown TileType");
         }
         return tileString;
     }

@@ -71,7 +71,7 @@ std::string tileTypeString(TileType type) {
     case TileType::PRIMER:
         return "primer";
     default:
-        panic("types::tileTypeString unknown TileType");
+        Panic("types::tileTypeString unknown TileType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::tileTypeString reached unreachable code path");
@@ -86,7 +86,7 @@ std::string layerString(TileLayer layer) {
     case TileLayer::TOP:
         return "top";
     default:
-        panic("types::layerString unknown TileLayer");
+        Panic("types::layerString unknown TileLayer");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::layerString reached unreachable code path");
@@ -119,7 +119,7 @@ std::string subtileString(Subtile subtile) {
     case Subtile::SOUTHEAST:
         return "southeast";
     default:
-        panic("types::subtileString unknown Subtile");
+        Panic("types::subtileString unknown Subtile");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::subtileString reached unreachable code path");
@@ -148,7 +148,7 @@ std::string layerTypeString(LayerType layerType) {
     case LayerType::TRIPLE:
         return "triple";
     default:
-        panic("types::layerTypeString unknown LayerType");
+        Panic("types::layerTypeString unknown LayerType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::layerTypeString reached unreachable code path");
@@ -165,7 +165,7 @@ std::uint8_t layerTypeValue(LayerType layerType) {
     case LayerType::TRIPLE:
         return 0;
     default:
-        panic("types::layerTypeValue unknown LayerType");
+        Panic("types::layerTypeValue unknown LayerType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::layerTypeValue reached unreachable code path");
@@ -180,7 +180,7 @@ LayerType layerTypeFromInt(std::uint8_t layerInt) {
     case 2:
         return LayerType::SPLIT;
     default:
-        panic("types::layerTypeValue unknown LayerType int " + std::to_string(layerInt));
+        Panic("types::layerTypeValue unknown LayerType int " + std::to_string(layerInt));
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::layerTypeFromInt reached unreachable code path");
@@ -195,7 +195,7 @@ std::uint8_t encounterTypeValue(EncounterType encounterType) {
     case EncounterType::WATER:
         return 2;
     default:
-        panic("types::encounterTypeValue unknown EncounterType");
+        Panic("types::encounterTypeValue unknown EncounterType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::encounterTypeValue reached unreachable code path");
@@ -210,7 +210,7 @@ std::string encounterTypeString(EncounterType encounterType) {
     case EncounterType::WATER:
         return "TILE_ENCOUNTER_WATER";
     default:
-        panic("types::encounterTypeString unknown EncounterType");
+        Panic("types::encounterTypeString unknown EncounterType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::encounterTypeString reached unreachable code path");
@@ -238,7 +238,7 @@ EncounterType encounterTypeFromInt(std::uint8_t encounterInt) {
     case 2:
         return EncounterType::WATER;
     default:
-        panic("types::encounterTypeFromInt unknown EncounterType int " + std::to_string(encounterInt));
+        Panic("types::encounterTypeFromInt unknown EncounterType int " + std::to_string(encounterInt));
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::encounterTypeFromInt reached unreachable code path");
@@ -255,7 +255,7 @@ std::uint8_t terrainTypeValue(TerrainType terrainType) {
     case TerrainType::WATERFALL:
         return 3;
     default:
-        panic("types::terrainTypeValue unknown TerrainType");
+        Panic("types::terrainTypeValue unknown TerrainType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::terrainTypeValue reached unreachable code path");
@@ -272,7 +272,7 @@ std::string terrainTypeString(TerrainType terrainType) {
     case TerrainType::WATERFALL:
         return "TILE_TERRAIN_WATERFALL";
     default:
-        panic("types::terrainTypeString unknown TerrainType");
+        Panic("types::terrainTypeString unknown TerrainType");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::terrainTypeString reached unreachable code path");
@@ -303,7 +303,7 @@ TerrainType terrainTypeFromInt(std::uint8_t terrainInt) {
     case 3:
         return TerrainType::WATERFALL;
     default:
-        panic("types::terrainTypeFromInt unknown TerrainType int " + std::to_string(terrainInt));
+        Panic("types::terrainTypeFromInt unknown TerrainType int " + std::to_string(terrainInt));
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::terrainTypeFromInt reached unreachable code path");
@@ -318,7 +318,7 @@ std::string targetBaseGameString(TargetBaseGame game) {
     case TargetBaseGame::RUBY:
         return "pokeruby";
     default:
-        panic("types::targetBaseGameString unknown compiler mode");
+        Panic("types::targetBaseGameString unknown compiler mode");
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::targetBaseGameString reached unreachable code path");
@@ -396,7 +396,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedSrcPath(CompilerMode mode) c
     case CompilerMode::SECONDARY:
         return secondarySourcePath;
     default:
-        panic("types::InputPaths::modeBasedInputPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedInputPath unknown compiler mode");
     }
 }
 
@@ -407,7 +407,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedBottomTilesheetPath(Compiler
     case CompilerMode::SECONDARY:
         return bottomSecondaryTilesheet();
     default:
-        panic("types::InputPaths::modeBasedBottomTilesheetPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedBottomTilesheetPath unknown compiler mode");
     }
 }
 
@@ -418,7 +418,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedMiddleTilesheetPath(Compiler
     case CompilerMode::SECONDARY:
         return middleSecondaryTilesheet();
     default:
-        panic("types::InputPaths::modeBasedMiddleTilesheetPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedMiddleTilesheetPath unknown compiler mode");
     }
 }
 
@@ -429,7 +429,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedTopTilesheetPath(CompilerMod
     case CompilerMode::SECONDARY:
         return topSecondaryTilesheet();
     default:
-        panic("types::InputPaths::modeBasedTopTilesheetPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedTopTilesheetPath unknown compiler mode");
     }
 }
 
@@ -440,7 +440,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedAttributePath(CompilerMode m
     case CompilerMode::SECONDARY:
         return secondaryAttributes();
     default:
-        panic("types::InputPaths::modeBasedAttrPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedAttrPath unknown compiler mode");
     }
 }
 
@@ -451,7 +451,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedAnimPath(CompilerMode mode) 
     case CompilerMode::SECONDARY:
         return secondaryAnims();
     default:
-        panic("types::InputPaths::modeBasedAnimPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedAnimPath unknown compiler mode");
     }
 }
 
@@ -462,7 +462,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedPalettePrimerPath(CompilerMo
     case CompilerMode::SECONDARY:
         return secondaryPalettePrimers();
     default:
-        panic("types::InputPaths::modeBasedPalettePrimerPath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedPalettePrimerPath unknown compiler mode");
     }
 }
 
@@ -473,7 +473,7 @@ std::filesystem::path CompilerSourcePaths::modeBasedPaletteOverridePath(Compiler
     case CompilerMode::SECONDARY:
         return secondaryPaletteOverrides();
     default:
-        panic("types::InputPaths::modeBasedPaletteOverridePath unknown compiler mode");
+        Panic("types::InputPaths::modeBasedPaletteOverridePath unknown compiler mode");
     }
 }
 
@@ -484,7 +484,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedSrcPath(DecompilerMode mod
     case DecompilerMode::SECONDARY:
         return secondarySourcePath;
     default:
-        panic("types::InputPaths::modeBasedInputPath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedInputPath unknown decompiler mode");
     }
 }
 
@@ -495,7 +495,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedTilesPath(DecompilerMode m
     case DecompilerMode::SECONDARY:
         return secondaryTilesPng();
     default:
-        panic("types::InputPaths::modeBasedTilesPath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedTilesPath unknown decompiler mode");
     }
 }
 
@@ -506,7 +506,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedMetatilesPath(DecompilerMo
     case DecompilerMode::SECONDARY:
         return secondaryMetatilesBin();
     default:
-        panic("types::InputPaths::modeBasedMetatilesPath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedMetatilesPath unknown decompiler mode");
     }
 }
 
@@ -517,7 +517,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAttributePath(DecompilerMo
     case DecompilerMode::SECONDARY:
         return secondaryAttributesBin();
     default:
-        panic("types::InputPaths::modeBasedAttrPath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedAttrPath unknown decompiler mode");
     }
 }
 
@@ -528,7 +528,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedPalettePath(DecompilerMode
     case DecompilerMode::SECONDARY:
         return secondaryPalettes();
     default:
-        panic("types::InputPaths::modeBasedPalettePath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedPalettePath unknown decompiler mode");
     }
 }
 
@@ -539,7 +539,7 @@ std::filesystem::path DecompilerSourcePaths::modeBasedAnimPath(DecompilerMode mo
     case DecompilerMode::SECONDARY:
         return secondaryAnims();
     default:
-        panic("types::InputPaths::modeBasedAnimPath unknown decompiler mode");
+        Panic("types::InputPaths::modeBasedAnimPath unknown decompiler mode");
     }
 }
 
@@ -554,7 +554,7 @@ std::string subcommandString(Subcommand subcommand) {
     case Subcommand::DECOMPILE_SECONDARY:
         return "decompile-secondary";
     default:
-        panic("types::subcommandString unknown subcommand");
+        Panic("types::subcommandString unknown subcommand");
     }
 }
 
@@ -565,7 +565,7 @@ std::string compilerModeString(CompilerMode mode) {
     case CompilerMode::SECONDARY:
         return "secondary";
     default:
-        panic("types::compilerModeString unknown compiler mode");
+        Panic("types::compilerModeString unknown compiler mode");
     }
 }
 
@@ -576,7 +576,7 @@ std::string assignAlgorithmString(AssignAlgorithm algo) {
     case AssignAlgorithm::BFS:
         return "bfs";
     default:
-        panic("types::assignAlgorithmString unknown compiler mode");
+        Panic("types::assignAlgorithmString unknown compiler mode");
     }
 }
 
@@ -587,7 +587,7 @@ std::string decompilerModeString(DecompilerMode mode) {
     case DecompilerMode::SECONDARY:
         return "secondary";
     default:
-        panic("types::decompilerModeString unknown decompiler mode");
+        Panic("types::decompilerModeString unknown decompiler mode");
     }
 }
 } // namespace porytiles

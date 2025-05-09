@@ -53,9 +53,9 @@ struct PorytilesContext {
     void validateFieldmapParameters(CompilerMode mode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
             const auto msg = fmt::format("invalid configuration numTilesInPrimary '{}' exceeded numTilesTotal '{}'",
-                                         this->diag->bold(fieldmapConfig.numTilesInPrimary),
-                                         this->diag->bold(fieldmapConfig.numTilesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                                         this->diag->Bold(fieldmapConfig.numTilesInPrimary),
+                                         this->diag->Bold(fieldmapConfig.numTilesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numTiles: {} > {}", fieldmapConfig.numTilesInPrimary,
                                                   fieldmapConfig.numTilesTotal));
@@ -63,9 +63,9 @@ struct PorytilesContext {
         if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
             const auto msg =
                 fmt::format("invalid configuration numMetatilesInPrimary '{}' exceeded numMetatilesTotal '{}'",
-                            this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
-                            this->diag->bold(fieldmapConfig.numMetatilesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                            this->diag->Bold(fieldmapConfig.numMetatilesInPrimary),
+                            this->diag->Bold(fieldmapConfig.numMetatilesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numMetatiles: {} > {}",
                                                   fieldmapConfig.numMetatilesInPrimary,
@@ -74,9 +74,9 @@ struct PorytilesContext {
         if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
             const auto msg =
                 fmt::format("invalid configuration numPalettesInPrimary '{}' exceeded numPalettesTotal '{}'",
-                            this->diag->bold(fieldmapConfig.numPalettesInPrimary),
-                            this->diag->bold(fieldmapConfig.numPalettesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                            this->diag->Bold(fieldmapConfig.numPalettesInPrimary),
+                            this->diag->Bold(fieldmapConfig.numPalettesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(*this, this->compilerSrcPaths.modeBasedSrcPath(mode),
                                       fmt::format("invalid config numPalettes: {} > {}",
                                                   fieldmapConfig.numPalettesInPrimary,
@@ -87,9 +87,9 @@ struct PorytilesContext {
     void validateFieldmapParameters(DecompilerMode mode) const {
         if (fieldmapConfig.numTilesInPrimary > fieldmapConfig.numTilesTotal) {
             const auto msg = fmt::format("invalid configuration numTilesInPrimary '{}' exceeded numTilesTotal '{}'",
-                                         this->diag->bold(fieldmapConfig.numTilesInPrimary),
-                                         this->diag->bold(fieldmapConfig.numTilesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                                         this->diag->Bold(fieldmapConfig.numTilesInPrimary),
+                                         this->diag->Bold(fieldmapConfig.numTilesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numTiles: {} > {}",
                                                     fieldmapConfig.numTilesInPrimary, fieldmapConfig.numTilesTotal));
@@ -97,9 +97,9 @@ struct PorytilesContext {
         if (fieldmapConfig.numMetatilesInPrimary > fieldmapConfig.numMetatilesTotal) {
             const auto msg =
                 fmt::format("invalid configuration numMetatilesInPrimary '{}' exceeded numMetatilesTotal '{}'",
-                            this->diag->bold(fieldmapConfig.numMetatilesInPrimary),
-                            this->diag->bold(fieldmapConfig.numMetatilesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                            this->diag->Bold(fieldmapConfig.numMetatilesInPrimary),
+                            this->diag->Bold(fieldmapConfig.numMetatilesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numMetatiles: {} > {}",
                                                     fieldmapConfig.numMetatilesInPrimary,
@@ -108,9 +108,9 @@ struct PorytilesContext {
         if (fieldmapConfig.numPalettesInPrimary > fieldmapConfig.numPalettesTotal) {
             const auto msg =
                 fmt::format("invalid configuration numPalettesInPrimary '{}' exceeded numPalettesTotal '{}'",
-                            this->diag->bold(fieldmapConfig.numPalettesInPrimary),
-                            this->diag->bold(fieldmapConfig.numPalettesTotal));
-            this->diag->report(E_FATAL_GENERIC, msg);
+                            this->diag->Bold(fieldmapConfig.numPalettesInPrimary),
+                            this->diag->Bold(fieldmapConfig.numPalettesTotal));
+            this->diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(*this, this->decompilerSrcPaths.modeBasedSrcPath(mode),
                                         fmt::format("invalid config numPalettes: {} > {}",
                                                     fieldmapConfig.numPalettesInPrimary,

@@ -10,12 +10,12 @@
 
 int main(int argc, char **argv) try {
     porytiles::PorytilesContext ctx{};
-    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::stderr_consumer>());
+    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::StderrConsumer>());
     ctx.set_diag_engine(std::move(engine));
     parseOptions(ctx, argc, argv);
     drive(ctx);
 
-    const auto warn_count = ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Warning);
+    const auto warn_count = ctx.diag->InFlightCountForLevel(porytiles::DiagLevel::Warning);
     if (warn_count == 1) {
         porytiles::pt_println(stderr, "{} warning generated.", warn_count);
     } else if (warn_count > 1) {

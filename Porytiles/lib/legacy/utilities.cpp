@@ -72,7 +72,7 @@ std::filesystem::path createTmpdir() {
             break;
         }
         if (i == maxTries) {
-            panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+            Panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
         }
         i++;
     }
@@ -85,19 +85,19 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
     std::vector<std::string> colorComponents = split(jascLine, " ");
     if (colorComponents.size() != 3) {
         if (compilerMode != nullptr && decompilerMode != nullptr) {
-            panic("utilities::parseJascLine both mode parameters were non-null");
+            Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
             const auto msg = fmt::format("expected valid JASC line in pal file {}, saw {}", fileName, jascLine);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
             const auto msg = fmt::format("expected valid JASC line in pal file {}, saw {}", fileName, jascLine);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }
-        panic("utilities::parseJascLine both mode parameters were null");
+        Panic("utilities::parseJascLine both mode parameters were null");
     }
 
     if (colorComponents[0].at(colorComponents[0].size() - 1) == '\r') {
@@ -116,51 +116,51 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
 
     if (red < 0 || red > 255) {
         if (compilerMode != nullptr && decompilerMode != nullptr) {
-            panic("utilities::parseJascLine both mode parameters were non-null");
+            Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid red component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid red component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }
-        panic("utilities::parseJascLine both mode parameters were null");
+        Panic("utilities::parseJascLine both mode parameters were null");
     }
     if (green < 0 || green > 255) {
         if (compilerMode != nullptr && decompilerMode != nullptr) {
-            panic("utilities::parseJascLine both mode parameters were non-null");
+            Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }
-        panic("utilities::parseJascLine both mode parameters were null");
+        Panic("utilities::parseJascLine both mode parameters were null");
     }
     if (blue < 0 || blue > 255) {
         if (compilerMode != nullptr && decompilerMode != nullptr) {
-            panic("utilities::parseJascLine both mode parameters were non-null");
+            Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
             const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName);
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }
-        panic("utilities::parseJascLine both mode parameters were null");
+        Panic("utilities::parseJascLine both mode parameters were null");
     }
 
     return RGBA32{static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue),

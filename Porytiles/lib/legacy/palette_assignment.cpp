@@ -52,7 +52,7 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
         toAssign = unassigneds.at(state.unassignedCount - 1);
         newUnassignedCount = state.unassignedCount - 1;
     } else {
-        panic("reached bad else clause in palette_assignment::assignDepthFirst");
+        Panic("reached bad else clause in palette_assignment::assignDepthFirst");
     }
 
     /*
@@ -218,7 +218,7 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
             toAssign = unassigneds.at(currentState.unassignedCount - 1);
             newUnassignedCount = currentState.unassignedCount - 1;
         } else {
-            panic("reached bad else clause in palette_assignment::assignDepthFirst");
+            Panic("reached bad else clause in palette_assignment::assignDepthFirst");
         }
 
         bool foundPrimaryMatch = false;
@@ -317,14 +317,14 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
         assignedPalsSolution.reserve(ctx.fieldmapConfig.numPalettesInSecondary());
         tmpLogicalPalettes.resize(ctx.fieldmapConfig.numPalettesInSecondary());
     } else {
-        panic("tryAssignment unknown compiler mode");
+        Panic("tryAssignment unknown compiler mode");
     }
 
     /*
      * Pre-assign the overrides to the tmpLogicalPalettes.
      */
     if (overrideColorSets.size() > tmpLogicalPalettes.size()) {
-        panic(
+        Panic(
             fmt::format("palette_assignment::tryAssignment overrideColorSets.size() {} > tmpLogicalPalettes.size() {}",
                         overrideColorSets.size(), tmpLogicalPalettes.size()));
     }
@@ -383,7 +383,7 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
         assignResult = assignBreadthFirst(ctx, compilerMode, initialState, assignedPalsSolution,
                                           primaryPaletteColorSets, unassignedNormPalettes, unassignedPrimerPalettes);
     } else {
-        panic("palette_assignment::tryAssignment unknown AssignAlgorithm");
+        Panic("palette_assignment::tryAssignment unknown AssignAlgorithm");
     }
 
     if (assignResult == AssignResult::NO_SOLUTION_POSSIBLE) {
@@ -394,7 +394,7 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
          */
         if (printErrors) {
             const auto msg = "no possible palette assignment exists, given the current assign search params";
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminatedFailHard(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode));
         }
         return std::make_tuple(false, assignedPalsSolution, primaryPaletteColorSets);
@@ -403,7 +403,7 @@ static auto tryAssignment(PorytilesContext &ctx, const CompilerMode compilerMode
         if (printErrors) {
             const auto msg = fmt::format("{} palette assignment exploration reached node cutoff",
                                          assignAlgorithmString(assignAlgorithm));
-            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->Report(kFatalGeneric, msg);
             die_compilationTerminatedFailHard(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode));
         }
         return std::make_tuple(false, assignedPalsSolution, primaryPaletteColorSets);
@@ -518,7 +518,7 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
         }
     }
     // If we got here, the matrix failed, print a sad message
-    ctx.diag->report(E_FATAL_GENERIC,
+    ctx.diag->Report(kFatalGeneric,
                      "palette assignment parameter search matrix failed to find any suitable parameters");
     die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                               fmt::format("palette assign param search matrix failed"));

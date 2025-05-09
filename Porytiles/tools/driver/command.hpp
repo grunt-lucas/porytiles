@@ -21,11 +21,11 @@ class Command {
     Command(CLI::App &parent_app, const std::string &name, const std::string &desc, const std::string &group)
         : command_(nullptr) {
         if (name.empty()) {
-            porytiles::panic("Command name cannot be empty.");
+            porytiles::Panic("Command name cannot be empty.");
         }
 
         command_ = parent_app.add_subcommand(name, desc);
-        porytiles::assert_or_panic(command_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
+        porytiles::AssertOrPanic(command_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
 
         if (!group.empty()) {
             command_->group(group);
@@ -42,7 +42,7 @@ class Command {
 
     [[nodiscard]] CLI::App &get_command() const {
         if (command_ == nullptr) {
-            porytiles::panic("command_ should have been initialized by the constructor");
+            porytiles::Panic("command_ should have been initialized by the constructor");
         }
         return *command_;
     }
