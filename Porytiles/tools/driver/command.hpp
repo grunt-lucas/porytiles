@@ -1,9 +1,12 @@
 #pragma once
 
-#include <CLI/CLI.hpp>
+#include <filesystem>
 #include <iostream>
-#include <porytiles/panic/panic.hpp>
 #include <string>
+
+#include <CLI/CLI.hpp>
+
+#include <porytiles/panic/panic.hpp>
 
 #include "./option_group.hpp"
 
@@ -53,6 +56,7 @@ class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandDesc = "Compile a primary tileset using explicit asset paths";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
+    OptGroupOutput output_opts_;
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 
@@ -60,6 +64,8 @@ class CompilePrimaryCommand final : public Command {
     explicit CompilePrimaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
+
+        output_opts_.RegisterOptions(cmd);
         fieldmap_opts_.RegisterOptions(cmd);
         diagnostics_opts_.RegisterOptions(cmd);
     }
@@ -69,6 +75,7 @@ class CompilePrimaryCommand final : public Command {
         for (const auto &option : diagnostics_opts_.diagnostics_) {
             std::cout << option << std::endl;
         }
+        std::cout << "Output path: " << output_opts_.output_path_ << std::endl;
     }
 };
 
