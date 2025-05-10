@@ -1,11 +1,13 @@
 #pragma once
 
 #include <any>
-#include <fmt/color.h>
-#include <fmt/ranges.h>
 #include <functional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
+
+#include <fmt/color.h>
+#include <fmt/ranges.h>
 
 #include "../legacy/types.h"
 
@@ -48,7 +50,7 @@ class DiagTempl {
     using dynamic_msg_builder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
                                                                        const std::vector<std::any> &args)>;
 
-    std::string_view name_;
+    std::string name_;
     DiagLevel default_level_;
     std::string_view static_msg_templ_;
     dynamic_msg_builder dynamic_msg_builder_;
@@ -85,7 +87,7 @@ class DiagTempl {
           partner_diags_{partner_diags} {}
     // clang-format on
 
-    [[nodiscard]] std::string_view name() const {
+    [[nodiscard]] const std::string &name() const {
         return name_;
     }
 
@@ -250,4 +252,17 @@ DiagTempl DiagTemplFor(std::string_view name);
 /// cases where the user wants to perform an action for some or all diagnostics.
 std::vector<const char *> AllDiagTemplNames();
 
+/// @brief Get an iterable view of all diag_templ names for a given DiagLevel.
+std::vector<const char *> AllDiagTemplNames(DiagLevel level);
+
 } // namespace porytiles
+
+template <>
+struct std::hash<porytiles::DiagTempl> {
+    std::size_t operator()(const porytiles::DiagTempl &templ) const noexcept {
+        std::size_t seed = 0x39A9C07E;
+        seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(templ.name());
+        seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());
+        return seed;
+    }
+};

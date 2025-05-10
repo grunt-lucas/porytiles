@@ -470,4 +470,15 @@ std::vector<const char *> AllDiagTemplNames() {
     return keys;
 }
 
+std::vector<const char *> AllDiagTemplNames(const DiagLevel level) {
+    std::vector<const char *> keys{};
+    keys.reserve(DIAG_TEMPLS.size());
+    for (const auto &[name, templ] : DIAG_TEMPLS) {
+        if (templ.level() == level) {
+            keys.push_back(name);
+        }
+    }
+    return keys;
+}
+
 } // namespace porytiles

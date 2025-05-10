@@ -1,19 +1,40 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 
 #include <CLI/CLI.hpp>
 
-class NotAlreadyFileValidator : public CLI::Validator {
+#include <porytiles/diagnostics/diagnostics.hpp>
+
+class NotAlreadyAFileValidator final : public CLI::Validator {
   public:
-    explicit NotAlreadyFileValidator(std::string description) : Validator{std::move(description)} {
-        name_ = "NOT_ALREADY_FILE";
+    explicit NotAlreadyAFileValidator(std::string hint) : Validator{std::move(hint)} {
+        name_ = "NOT_ALREADY_A_FILE";
         non_modifying_ = true;
         func_ = [](const std::string &str) {
             if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
                 return std::string{"file already exists: " + str};
             }
             return std::string{};
+        };
+    }
+};
+
+class DiagnosticIsWarningValidator final : public CLI::Validator {
+  public:
+    explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
+        std::unordered_set<std::string> warning_diags;
+        for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
+            warning_diags.insert(name);
+        }
+        name_ = "IS_WARNING_DIAGNOSTIC";
+        non_modifying_ = true;
+        func_ = [warning_diags](const std::string &str) {
+            if (warning_diags.contains(str)) {
+                return std::string{};
+            }
+            return std::string{"invalid warning diagnostic: " + str};
         };
     }
 };
@@ -37,25 +58,25 @@ class OptGroupFieldmap final : public OptGroup {
     std::size_t pals_total_override_;
 
     void RegisterOptions(CLI::App &app) override {
-        app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset")
+        app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
             ->group(kGroupName);
         app.add_option("--tiles-primary-override", tiles_primary_override_,
-                       "Override the number of tiles in the primary tileset")
+                       "Override the number of tiles in the primary tileset.")
             ->group(kGroupName);
         app.add_option("--tiles-total-override", tiles_total_override_,
-                       "Override the total number of tiles in the tileset")
+                       "Override the total number of tiles in the tileset.")
             ->group(kGroupName);
         app.add_option("--metatiles-primary-override", metatiles_primary_override_,
-                       "Override the number of metatiles in the primary tileset")
+                       "Override the number of metatiles in the primary tileset.")
             ->group(kGroupName);
         app.add_option("--metatiles-total-override", metatiles_total_override_,
-                       "Override the total number of metatiles in the tileset")
+                       "Override the total number of metatiles in the tileset.")
             ->group(kGroupName);
         app.add_option("--pals-primary-override", pals_primary_override_,
-                       "Override the number of metatiles in the primary tileset")
+                       "Override the number of metatiles in the primary tileset.")
             ->group(kGroupName);
         app.add_option("--pals-total-override", pals_total_override_,
-                       "Override the total number of metatiles in the tileset")
+                       "Override the total number of metatiles in the tileset.")
             ->group(kGroupName);
     }
 };
@@ -67,24 +88,66 @@ class OptGroupDiagnostics final : public OptGroup {
     std::vector<std::string> diagnostics_;
 
     void RegisterOptions(CLI::App &app) override {
-        app.add_option("--W", diagnostics_, "Enable given warning diagnostic")->group(kGroupName);
-        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic")->group(kGroupName);
-        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error")->group(kGroupName);
-        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error")->group(kGroupName);
+        app.add_option("--W", diagnostics_, "Enable given warning diagnostic.")
+            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->group(kGroupName);
+        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic.")
+            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->group(kGroupName);
+        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error.")
+            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->group(kGroupName);
+        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error.")
+            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->group(kGroupName);
     }
 };
 
-class OptGroupOutput final : public OptGroup {
-  public:
+class OptOutput final : public OptGroup {
     std::string output_path_;
 
-    OptGroupOutput() : output_path_{"."} {}
+  public:
+    OptOutput() : output_path_{"."} {}
 
     void RegisterOptions(CLI::App &app) override {
         app.add_option("-o,--output", output_path_,
                        "Output generated files to the directory specified by PATH. If any element of PATH does not "
                        "exist, it will be created.")
-            ->check(NotAlreadyFileValidator{"PATH"})
+            ->check(NotAlreadyAFileValidator{"PATH"})
             ->capture_default_str();
+    }
+
+    [[nodiscard]] std::string output_path() const {
+        return output_path_;
+    }
+};
+
+class OptTilesOutputPal final : public OptGroup {
+    class OptTilesOutputPalValidator final : public CLI::Validator {
+      public:
+        explicit OptTilesOutputPalValidator(std::string hint) : Validator{std::move(hint)} {
+            name_ = "TILES_OUTPUT_PAL";
+            non_modifying_ = true;
+            func_ = [](const std::string &str) { return std::string{}; };
+        }
+    };
+
+    std::string pal_format_;
+
+  public:
+    // TODO : call some kind of OutputPalToStr function here
+    OptTilesOutputPal() : pal_format_{"true-color"} {}
+
+    void RegisterOptions(CLI::App &app) override {
+        app.add_option(
+               "--tiles-output-pal", pal_format_,
+               "Set the palette mode for the output 'tiles.png'. Valid settings are 'true-color' or 'greyscale'. These "
+               "settings are for human visual purposes only and have no effect on the final in-game tiles.")
+            ->check(OptTilesOutputPalValidator{"MODE"})
+            ->capture_default_str();
+    }
+
+    [[nodiscard]] std::string pal_format() const {
+        return pal_format_;
     }
 };

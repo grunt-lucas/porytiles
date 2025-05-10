@@ -56,7 +56,8 @@ class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandDesc = "Compile a primary tileset using explicit asset paths";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
-    OptGroupOutput output_opts_;
+    OptOutput output_opt_;
+    OptTilesOutputPal tiles_output_pal_opt_;
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 
@@ -65,7 +66,8 @@ class CompilePrimaryCommand final : public Command {
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
         CLI::App &cmd = get_command();
 
-        output_opts_.RegisterOptions(cmd);
+        output_opt_.RegisterOptions(cmd);
+        tiles_output_pal_opt_.RegisterOptions(cmd);
         fieldmap_opts_.RegisterOptions(cmd);
         diagnostics_opts_.RegisterOptions(cmd);
     }
@@ -75,7 +77,7 @@ class CompilePrimaryCommand final : public Command {
         for (const auto &option : diagnostics_opts_.diagnostics_) {
             std::cout << option << std::endl;
         }
-        std::cout << "Output path: " << output_opts_.output_path_ << std::endl;
+        std::cout << "Output path: " << output_opt_.output_path() << std::endl;
     }
 };
 
