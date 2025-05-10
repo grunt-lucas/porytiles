@@ -6,6 +6,7 @@
 #include <CLI/CLI.hpp>
 
 #include <porytiles/diagnostics/diagnostics.hpp>
+#include <porytiles/tiles/output_pal.hpp>
 
 class NotAlreadyAFileValidator final : public CLI::Validator {
   public:
@@ -128,7 +129,12 @@ class OptTilesOutputPal final : public OptGroup {
         explicit OptTilesOutputPalValidator(std::string hint) : Validator{std::move(hint)} {
             name_ = "TILES_OUTPUT_PAL";
             non_modifying_ = true;
-            func_ = [](const std::string &str) { return std::string{}; };
+            func_ = [](const std::string &str) {
+                if (!porytiles::OutputPalette::FromString(str).has_value()) {
+                    return std::string{"invalid 'tiles.png' output palette mode: " + str};
+                }
+                return std::string{};
+            };
         }
     };
 
@@ -136,7 +142,7 @@ class OptTilesOutputPal final : public OptGroup {
 
   public:
     // TODO : call some kind of OutputPalToStr function here
-    OptTilesOutputPal() : pal_format_{"true-color"} {}
+    OptTilesOutputPal() : pal_format_{porytiles::OutputPalette{porytiles::OutputPalette::kTrueColor}.ToString()} {}
 
     void RegisterOptions(CLI::App &app) override {
         app.add_option(
