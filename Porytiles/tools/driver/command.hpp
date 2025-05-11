@@ -57,7 +57,7 @@ class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptOutput output_opt_;
-    OptTilesOutputPal tiles_output_pal_opt_;
+    OptTilesPalMode tiles_output_pal_opt_;
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 

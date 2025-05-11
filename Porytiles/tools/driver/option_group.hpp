@@ -6,36 +6,17 @@
 #include <CLI/CLI.hpp>
 
 #include <porytiles/diagnostics/diagnostics.hpp>
-#include <porytiles/tiles/output_pal.hpp>
+#include <porytiles/tiles/tiles_pal_mode.hpp>
 
 class NotAlreadyAFileValidator final : public CLI::Validator {
   public:
     explicit NotAlreadyAFileValidator(std::string hint) : Validator{std::move(hint)} {
         name_ = "NOT_ALREADY_A_FILE";
-        non_modifying_ = true;
         func_ = [](const std::string &str) {
             if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
                 return std::string{"file already exists: " + str};
             }
             return std::string{};
-        };
-    }
-};
-
-class DiagnosticIsWarningValidator final : public CLI::Validator {
-  public:
-    explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
-        std::unordered_set<std::string> warning_diags;
-        for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
-            warning_diags.insert(name);
-        }
-        name_ = "IS_WARNING_DIAGNOSTIC";
-        non_modifying_ = true;
-        func_ = [warning_diags](const std::string &str) {
-            if (warning_diags.contains(str)) {
-                return std::string{};
-            }
-            return std::string{"invalid warning diagnostic: " + str};
         };
     }
 };
@@ -83,16 +64,33 @@ class OptGroupFieldmap final : public OptGroup {
 };
 
 class OptGroupDiagnostics final : public OptGroup {
+    class DiagnosticIsWarningValidator final : public CLI::Validator {
+      public:
+        explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
+            std::unordered_set<std::string> warning_diags;
+            for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
+                warning_diags.insert(name);
+            }
+            name_ = "IS_WARNING_DIAGNOSTIC";
+            func_ = [warning_diags](const std::string &str) {
+                if (warning_diags.contains(str)) {
+                    return std::string{};
+                }
+                return std::string{"invalid warning diagnostic: " + str};
+            };
+        }
+    };
+
     static constexpr auto kGroupName = "DIAGNOSTIC OPTIONS";
 
   public:
     std::vector<std::string> diagnostics_;
 
     void RegisterOptions(CLI::App &app) override {
-        app.add_option("--W", diagnostics_, "Enable given warning diagnostic.")
+        app.add_option("-W,--warning", diagnostics_, "Enable given warning diagnostic.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
             ->group(kGroupName);
-        app.add_option("--Wno", diagnostics_, "Disable given warning diagnostic.")
+        app.add_option("--Wno,--no-warning", diagnostics_, "Disable given warning diagnostic.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
             ->group(kGroupName);
         app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error.")
@@ -123,14 +121,13 @@ class OptOutput final : public OptGroup {
     }
 };
 
-class OptTilesOutputPal final : public OptGroup {
-    class OptTilesOutputPalValidator final : public CLI::Validator {
+class OptTilesPalMode final : public OptGroup {
+    class TilesPalModeValidator final : public CLI::Validator {
       public:
-        explicit OptTilesOutputPalValidator(std::string hint) : Validator{std::move(hint)} {
+        explicit TilesPalModeValidator(std::string hint) : Validator{std::move(hint)} {
             name_ = "TILES_OUTPUT_PAL";
-            non_modifying_ = true;
             func_ = [](const std::string &str) {
-                if (!porytiles::OutputPalette::FromString(str).has_value()) {
+                if (!porytiles::TilesPalModeFromStr(str).has_value()) {
                     return std::string{"invalid 'tiles.png' output palette mode: " + str};
                 }
                 return std::string{};
@@ -141,15 +138,14 @@ class OptTilesOutputPal final : public OptGroup {
     std::string pal_format_;
 
   public:
-    // TODO : call some kind of OutputPalToStr function here
-    OptTilesOutputPal() : pal_format_{porytiles::OutputPalette{porytiles::OutputPalette::kTrueColor}.ToString()} {}
+    OptTilesPalMode() : pal_format_{porytiles::TilesPalModeToStr(porytiles::TilesPalMode::kTrueColor)} {}
 
     void RegisterOptions(CLI::App &app) override {
         app.add_option(
-               "--tiles-output-pal", pal_format_,
+               "--tiles-pal-mode", pal_format_,
                "Set the palette mode for the output 'tiles.png'. Valid settings are 'true-color' or 'greyscale'. These "
                "settings are for human visual purposes only and have no effect on the final in-game tiles.")
-            ->check(OptTilesOutputPalValidator{"MODE"})
+            ->check(TilesPalModeValidator{"MODE"})
             ->capture_default_str();
     }
 
