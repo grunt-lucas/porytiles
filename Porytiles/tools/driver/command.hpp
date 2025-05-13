@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -8,12 +7,13 @@
 
 #include <porytiles/panic/panic.hpp>
 
+#include "./option.hpp"
 #include "./option_group.hpp"
 
 /// @brief Command is an abstract class that provides basic command
 /// functionality for the Porytiles CLI driver.
 class Command {
-    CLI::App *command_;
+    CLI::App *app_;
 
   protected:
     virtual void Run() = 0;
@@ -22,19 +22,19 @@ class Command {
     virtual ~Command() = default;
 
     Command(CLI::App &parent_app, const std::string &name, const std::string &desc, const std::string &group)
-        : command_(nullptr) {
+        : app_(nullptr) {
         if (name.empty()) {
             porytiles::Panic("Command name cannot be empty.");
         }
 
-        command_ = parent_app.add_subcommand(name, desc);
-        porytiles::AssertOrPanic(command_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
+        app_ = parent_app.add_subcommand(name, desc);
+        porytiles::AssertOrPanic(app_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
 
         if (!group.empty()) {
-            command_->group(group);
+            app_->group(group);
         }
 
-        command_->callback([this] { this->Run(); });
+        app_->callback([this] { this->Run(); });
     }
 
     // Prevent copy/move semantics
@@ -43,11 +43,11 @@ class Command {
     Command(Command &&) = delete;
     Command &operator=(Command &&) = delete;
 
-    [[nodiscard]] CLI::App &get_command() const {
-        if (command_ == nullptr) {
-            porytiles::Panic("command_ should have been initialized by the constructor");
+    [[nodiscard]] CLI::App &get_app() const {
+        if (app_ == nullptr) {
+            porytiles::Panic("app_ should have been initialized by the constructor");
         }
-        return *command_;
+        return *app_;
     }
 };
 
@@ -56,28 +56,26 @@ class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandDesc = "Compile a primary tileset using explicit asset paths";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
-    OptOutput output_opt_;
-    OptTilesPalMode tiles_output_pal_opt_;
+    OptGroupArtifacts artifacts_opts_;
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 
   public:
     explicit CompilePrimaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
+        CLI::App &cmd = get_app();
 
-        output_opt_.RegisterOptions(cmd);
-        tiles_output_pal_opt_.RegisterOptions(cmd);
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        artifacts_opts_.RegisterGroup(cmd);
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
         std::cout << "Legacy compile primary command called." << std::endl;
-        for (const auto &option : diagnostics_opts_.diagnostics_) {
+        for (const auto &option : diagnostics_opts_.diagnostics()) {
             std::cout << option << std::endl;
         }
-        std::cout << "Output path: " << output_opt_.output_path() << std::endl;
+        std::cout << "Output path: " << artifacts_opts_.output_opt().output_path() << std::endl;
     }
 };
 
@@ -92,9 +90,9 @@ class CompileSecondaryCommand final : public Command {
   public:
     explicit CompileSecondaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -113,9 +111,9 @@ class DecompilePrimaryCommand final : public Command {
   public:
     explicit DecompilePrimaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -134,9 +132,9 @@ class DecompileSecondaryCommand final : public Command {
   public:
     explicit DecompileSecondaryCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -155,9 +153,9 @@ class CompileTilesetCommand final : public Command {
   public:
     explicit CompileTilesetCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -176,9 +174,9 @@ class CompileLayoutCommand final : public Command {
   public:
     explicit CompileLayoutCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -197,9 +195,9 @@ class CompileSpritesheetCommand final : public Command {
   public:
     explicit CompileSpritesheetCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -218,9 +216,9 @@ class DecompileTilesetCommand final : public Command {
   public:
     explicit DecompileTilesetCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
@@ -239,9 +237,9 @@ class DecompileLayoutCommand final : public Command {
   public:
     explicit DecompileLayoutCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
-        CLI::App &cmd = get_command();
-        fieldmap_opts_.RegisterOptions(cmd);
-        diagnostics_opts_.RegisterOptions(cmd);
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {

@@ -6,31 +6,15 @@
 #include <CLI/CLI.hpp>
 
 #include <porytiles/diagnostics/diagnostics.hpp>
-#include <porytiles/tiles/tiles_pal_mode.hpp>
-
-class NotAlreadyAFileValidator final : public CLI::Validator {
-  public:
-    explicit NotAlreadyAFileValidator(std::string hint) : Validator{std::move(hint)} {
-        name_ = "NOT_ALREADY_A_FILE";
-        func_ = [](const std::string &str) {
-            if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
-                return std::string{"file already exists: " + str};
-            }
-            return std::string{};
-        };
-    }
-};
 
 class OptGroup {
   public:
     virtual ~OptGroup() = default;
-    virtual void RegisterOptions(CLI::App &app) = 0;
+    virtual std::string GroupName() = 0;
+    virtual void RegisterGroup(CLI::App &app) = 0;
 };
 
 class OptGroupFieldmap final : public OptGroup {
-    static constexpr auto kGroupName = "FIELDMAP OVERRIDE OPTIONS";
-
-  public:
     std::string base_game_preset_;
     std::size_t tiles_primary_override_;
     std::size_t tiles_total_override_;
@@ -39,27 +23,43 @@ class OptGroupFieldmap final : public OptGroup {
     std::size_t pals_primary_override_;
     std::size_t pals_total_override_;
 
-    void RegisterOptions(CLI::App &app) override {
+  public:
+    OptGroupFieldmap()
+        // TODO : 'pokeemerald' string should be defined by an enum, like TilesPalMode
+        : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0}, tiles_total_override_{0},
+          metatiles_primary_override_{0}, metatiles_total_override_{0}, pals_primary_override_{0},
+          pals_total_override_{0} {}
+
+    [[nodiscard]] std::string GroupName() override {
+        return "FIELDMAP OVERRIDE OPTIONS";
+    }
+
+    void RegisterGroup(CLI::App &app) override {
         app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
-            ->group(kGroupName);
+            ->group(GroupName())
+            ->capture_default_str();
         app.add_option("--tiles-primary-override", tiles_primary_override_,
                        "Override the number of tiles in the primary tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
         app.add_option("--tiles-total-override", tiles_total_override_,
                        "Override the total number of tiles in the tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
         app.add_option("--metatiles-primary-override", metatiles_primary_override_,
                        "Override the number of metatiles in the primary tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
         app.add_option("--metatiles-total-override", metatiles_total_override_,
                        "Override the total number of metatiles in the tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
         app.add_option("--pals-primary-override", pals_primary_override_,
                        "Override the number of metatiles in the primary tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
         app.add_option("--pals-total-override", pals_total_override_,
                        "Override the total number of metatiles in the tileset.")
-            ->group(kGroupName);
+            ->group(GroupName());
+    }
+
+    [[nodiscard]] const std::string &base_game_preset() const {
+        return base_game_preset_;
     }
 };
 
@@ -71,7 +71,7 @@ class OptGroupDiagnostics final : public OptGroup {
             for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
                 warning_diags.insert(name);
             }
-            name_ = "IS_WARNING_DIAGNOSTIC";
+            name_ = "DIAGNOSTIC_IS_WARNING";
             func_ = [warning_diags](const std::string &str) {
                 if (warning_diags.contains(str)) {
                     return std::string{};
@@ -81,75 +81,54 @@ class OptGroupDiagnostics final : public OptGroup {
         }
     };
 
-    static constexpr auto kGroupName = "DIAGNOSTIC OPTIONS";
-
-  public:
     std::vector<std::string> diagnostics_;
 
-    void RegisterOptions(CLI::App &app) override {
-        app.add_option("-W,--warning", diagnostics_, "Enable given warning diagnostic.")
+  public:
+    OptGroupDiagnostics() = default;
+
+    [[nodiscard]] std::string GroupName() override {
+        return "DIAGNOSTIC OPTIONS";
+    }
+
+    void RegisterGroup(CLI::App &app) override {
+        app.add_option("--warning", diagnostics_, "Enable given warning diagnostics.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
-            ->group(kGroupName);
-        app.add_option("--Wno,--no-warning", diagnostics_, "Disable given warning diagnostic.")
+            ->group(GroupName());
+        app.add_option("--no-warning", diagnostics_, "Disable given warning diagnostics.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
-            ->group(kGroupName);
-        app.add_option("--Werror", diagnostics_, "Enable given warning diagnostic as error.")
+            ->group(GroupName());
+        app.add_option("--error", diagnostics_, "Enable given warning diagnostics as errors.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
-            ->group(kGroupName);
-        app.add_option("--Wno-error", diagnostics_, "Disable given warning diagnostic as error.")
+            ->group(GroupName());
+        app.add_option("--no-error", diagnostics_, "Disable given warning diagnostics as errors.")
             ->check(DiagnosticIsWarningValidator{"DIAG"})
-            ->group(kGroupName);
+            ->group(GroupName());
+    }
+
+    [[nodiscard]] const std::vector<std::string> &diagnostics() const {
+        return diagnostics_;
     }
 };
 
-class OptOutput final : public OptGroup {
-    std::string output_path_;
+class OptGroupArtifacts final : public OptGroup {
+    OptOutput output_opt_;
+    OptTilesPalMode tiles_output_pal_opt_;
 
   public:
-    OptOutput() : output_path_{"."} {}
+    OptGroupArtifacts() = default;
 
-    void RegisterOptions(CLI::App &app) override {
-        app.add_option("-o,--output", output_path_,
-                       "Output generated files to the directory specified by PATH. If any element of PATH does not "
-                       "exist, it will be created.")
-            ->check(NotAlreadyAFileValidator{"PATH"})
-            ->capture_default_str();
+    [[nodiscard]] std::string GroupName() override {
+        return "ARTIFACT OPTIONS";
     }
 
-    [[nodiscard]] std::string output_path() const {
-        return output_path_;
-    }
-};
-
-class OptTilesPalMode final : public OptGroup {
-    class TilesPalModeValidator final : public CLI::Validator {
-      public:
-        explicit TilesPalModeValidator(std::string hint) : Validator{std::move(hint)} {
-            name_ = "TILES_OUTPUT_PAL";
-            func_ = [](const std::string &str) {
-                if (!porytiles::TilesPalModeFromStr(str).has_value()) {
-                    return std::string{"invalid 'tiles.png' output palette mode: " + str};
-                }
-                return std::string{};
-            };
-        }
-    };
-
-    std::string pal_format_;
-
-  public:
-    OptTilesPalMode() : pal_format_{porytiles::TilesPalModeToStr(porytiles::TilesPalMode::kTrueColor)} {}
-
-    void RegisterOptions(CLI::App &app) override {
-        app.add_option(
-               "--tiles-pal-mode", pal_format_,
-               "Set the palette mode for the output 'tiles.png'. Valid settings are 'true-color' or 'greyscale'. These "
-               "settings are for human visual purposes only and have no effect on the final in-game tiles.")
-            ->check(TilesPalModeValidator{"MODE"})
-            ->capture_default_str();
+    void RegisterGroup(CLI::App &app) override {
+        output_opt_.RegisterOpt(app);
+        output_opt_.SetGroup(GroupName(), app);
+        tiles_output_pal_opt_.RegisterOpt(app);
+        tiles_output_pal_opt_.SetGroup(GroupName(), app);
     }
 
-    [[nodiscard]] std::string pal_format() const {
-        return pal_format_;
+    [[nodiscard]] const OptOutput &output_opt() const {
+        return output_opt_;
     }
 };
