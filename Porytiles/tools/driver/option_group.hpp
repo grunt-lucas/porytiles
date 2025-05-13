@@ -7,6 +7,8 @@
 
 #include <porytiles/diagnostics/diagnostics.hpp>
 
+#include "./option.hpp"
+
 class OptGroup {
   public:
     virtual ~OptGroup() = default;
@@ -112,7 +114,9 @@ class OptGroupDiagnostics final : public OptGroup {
 
 class OptGroupArtifacts final : public OptGroup {
     OptOutput output_opt_;
-    OptTilesPalMode tiles_output_pal_opt_;
+    OptTilesPalMode tiles_pal_mode_opt_;
+    OptDisableMetatileGeneration disable_metatile_generation_opt_;
+    OptDisableAttributeGeneration disable_attribute_generation_opt_;
 
   public:
     OptGroupArtifacts() = default;
@@ -124,11 +128,38 @@ class OptGroupArtifacts final : public OptGroup {
     void RegisterGroup(CLI::App &app) override {
         output_opt_.RegisterOpt(app);
         output_opt_.SetGroup(GroupName(), app);
-        tiles_output_pal_opt_.RegisterOpt(app);
-        tiles_output_pal_opt_.SetGroup(GroupName(), app);
+        tiles_pal_mode_opt_.RegisterOpt(app);
+        tiles_pal_mode_opt_.SetGroup(GroupName(), app);
+        disable_metatile_generation_opt_.RegisterOpt(app);
+        disable_metatile_generation_opt_.SetGroup(GroupName(), app);
+        disable_attribute_generation_opt_.RegisterOpt(app);
+        disable_attribute_generation_opt_.SetGroup(GroupName(), app);
     }
 
     [[nodiscard]] const OptOutput &output_opt() const {
         return output_opt_;
     }
+
+    [[nodiscard]] const OptTilesPalMode &tiles_pal_mode() const {
+        return tiles_pal_mode_opt_;
+    }
+
+    [[nodiscard]] bool metatiles_disabled() const {
+        return disable_metatile_generation_opt_.disabled();
+    }
+
+    [[nodiscard]] bool attributes_disabled() const {
+        return disable_attribute_generation_opt_.disabled();
+    }
+};
+
+class OptGroupPalAssignmentConfig final : public OptGroup {
+  public:
+    OptGroupPalAssignmentConfig() = default;
+
+    [[nodiscard]] std::string GroupName() override {
+        return "PAL ASSIGNMENT CONFIG OPTIONS";
+    }
+
+    void RegisterGroup(CLI::App &app) override {}
 };

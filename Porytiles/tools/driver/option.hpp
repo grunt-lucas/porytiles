@@ -92,3 +92,53 @@ class OptTilesPalMode final : public Opt {
         return pal_format_;
     }
 };
+
+class OptDisableMetatileGeneration final : public Opt {
+    bool disabled_{false};
+
+  public:
+    OptDisableMetatileGeneration() = default;
+
+    [[nodiscard]] std::string NameShort() const override {
+        return "";
+    }
+
+    [[nodiscard]] std::string NameLong() const override {
+        return "--disable-metatile-generation";
+    }
+
+    void RegisterOpt(CLI::App &app) override {
+        app.add_flag(NameLong(), disabled_,
+                     "Disable generation of 'metatiles.bin'. Only enable this if you want to manage metatiles manually "
+                     "via Porymap.");
+    }
+
+    [[nodiscard]] bool disabled() const {
+        return disabled_;
+    }
+};
+
+class OptDisableAttributeGeneration final : public Opt {
+    bool disabled_{false};
+
+  public:
+    OptDisableAttributeGeneration() = default;
+
+    [[nodiscard]] std::string NameShort() const override {
+        return "";
+    }
+
+    [[nodiscard]] std::string NameLong() const override {
+        return "--disable-attribute-generation";
+    }
+
+    void RegisterOpt(CLI::App &app) override {
+        app.add_flag(NameLong(), disabled_,
+                     "Disable generation of 'metatile_attributes.bin'. Only enable this if you want to manage metatile "
+                     "attributes manually via Porymap.");
+    }
+
+    [[nodiscard]] bool disabled() const {
+        return disabled_;
+    }
+};

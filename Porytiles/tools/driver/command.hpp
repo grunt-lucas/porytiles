@@ -59,6 +59,7 @@ class CompilePrimaryCommand final : public Command {
     OptGroupArtifacts artifacts_opts_;
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
+    OptGroupPalAssignmentConfig pal_assignment_opts_;
 
   public:
     explicit CompilePrimaryCommand(CLI::App &parent_app)
@@ -68,6 +69,7 @@ class CompilePrimaryCommand final : public Command {
         artifacts_opts_.RegisterGroup(cmd);
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
+        pal_assignment_opts_.RegisterGroup(cmd);
     }
 
     void Run() override {
