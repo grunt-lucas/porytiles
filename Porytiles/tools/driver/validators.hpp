@@ -51,13 +51,13 @@ class RgbStringValidator final : public CLI::Validator {
             const auto blue = blueResult.Get();
 
             if (red < 0 || red > 255) {
-                return fmt::format("invalid rgb red component: {}", red);
+                return fmt::format("rgb red component out of range: {}", red);
             }
             if (green < 0 || green > 255) {
-                return fmt::format("invalid rgb green component: {}", green);
+                return fmt::format("rgb green component out of range: {}", green);
             }
             if (blue < 0 || blue > 255) {
-                return fmt::format("invalid rgb blue component: {}", blue);
+                return fmt::format("rgb blue component out of range: {}", blue);
             }
 
             return std::string{};
