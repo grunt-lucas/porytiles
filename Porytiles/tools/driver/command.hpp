@@ -60,6 +60,7 @@ class CompilePrimaryCommand final : public Command {
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
     OptGroupPalAssignmentConfig pal_assignment_opts_;
+    OptTransparencyColor transparency_color_opt_;
 
   public:
     explicit CompilePrimaryCommand(CLI::App &parent_app)
@@ -70,6 +71,7 @@ class CompilePrimaryCommand final : public Command {
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
         pal_assignment_opts_.RegisterGroup(cmd);
+        transparency_color_opt_.RegisterOpt(cmd);
     }
 
     void Run() override {

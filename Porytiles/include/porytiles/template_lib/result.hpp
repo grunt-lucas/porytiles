@@ -5,7 +5,7 @@
 
 namespace porytiles {
 
-enum class BinaryResult {
+enum class BinaryStatus {
     SUCCESS,
     ERROR,
 };
@@ -26,10 +26,14 @@ template <typename T, typename StatusEnum> class Result {
         return status_ == StatusEnum{};
     }
 
-    template <typename F> void IfSuccess(F &&func) {
+    template <typename F> void IfSuccess(F &&func) const {
         if (HasSuccess()) {
             return std::forward<F>(func)(value_);
         }
+    }
+
+    [[nodiscard]] const T &Get() const {
+        return value_;
     }
 };
 

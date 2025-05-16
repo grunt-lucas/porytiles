@@ -170,6 +170,27 @@ class OptDualLayer final : public Opt {
 };
 
 class OptTransparencyColor final : public Opt {
+    std::string rgb_;
+
   public:
     OptTransparencyColor() = default;
+
+    [[nodiscard]] std::string NameShort() const override {
+        return "";
+    }
+
+    [[nodiscard]] std::string NameLong() const override {
+        return "--transparency-color";
+    }
+
+    void RegisterOpt(CLI::App &app) override {
+        app.add_flag(NameLong(), rgb_,
+                     "Enable dual-layer compilation mode. The layer type will be inferred from your source layer PNGs, "
+                     "so compilation will error out if any metatiles contain content on all three layers. If this "
+                     "option is not supplied, Porytiles assumes you are compiling a triple-layer tileset.");
+    }
+
+    [[nodiscard]] std::string rgb() const {
+        return rgb_;
+    }
 };
