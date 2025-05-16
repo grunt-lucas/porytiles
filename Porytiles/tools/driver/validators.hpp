@@ -37,13 +37,13 @@ class RgbStringValidator final : public CLI::Validator {
             const auto blueResult = porytiles::ParseInt<int>(colorComponents[2]);
 
             if (!redResult.HasSuccess()) {
-                return std::string{"invalid rgb red component: " + str};
+                return std::string{"invalid rgb red component: " + colorComponents[0]};
             }
             if (!greenResult.HasSuccess()) {
-                return std::string{"invalid rgb green component: " + str};
+                return std::string{"invalid rgb green component: " + colorComponents[1]};
             }
             if (!blueResult.HasSuccess()) {
-                return std::string{"invalid rgb blue component: " + str};
+                return std::string{"invalid rgb blue component: " + colorComponents[2]};
             }
 
             const auto red = redResult.Get();
