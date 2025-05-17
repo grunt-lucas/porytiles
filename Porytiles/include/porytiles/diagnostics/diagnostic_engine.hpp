@@ -55,7 +55,7 @@ class DiagEngine {
         if (!IsEnabled(diag)) {
             return;
         }
-        const auto &templ = DiagTemplFor(diag);
+        const auto &templ = DiagFor(diag);
 
         // Compute in-flight level based on user settings
         const auto in_flight_level = ComputeLevel(diag);
@@ -72,7 +72,7 @@ class DiagEngine {
 
     template <typename... T>
     void ReportPartner(std::string_view diag, std::size_t partner_index, T &&...args) {
-        const auto &parent_templ = DiagTemplFor(diag);
+        const auto &parent_templ = DiagFor(diag);
 
         if (partner_index >= parent_templ.partner_diags().size()) {
             Panic(fmt::format("partner index {} out of bounds for diag {}", partner_index, diag));

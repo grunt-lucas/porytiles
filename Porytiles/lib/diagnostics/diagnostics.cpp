@@ -456,12 +456,12 @@ static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
 };
 // clang-format on
 
-DiagTempl DiagTemplFor(const std::string_view name) {
+DiagTempl DiagFor(const std::string_view name) {
     AssertOrPanic(DIAG_TEMPLS.contains(name.data()), fmt::format("diag_template_for: unknown diagnostic: {}", name));
     return DIAG_TEMPLS.at(name.data());
 }
 
-std::vector<const char *> AllDiagTemplNames() {
+std::vector<const char *> AllDiagNames() {
     std::vector<const char *> keys{};
     keys.reserve(DIAG_TEMPLS.size());
     for (const auto &key : DIAG_TEMPLS | std::views::keys) {
@@ -470,7 +470,7 @@ std::vector<const char *> AllDiagTemplNames() {
     return keys;
 }
 
-std::vector<const char *> AllDiagTemplNames(const DiagLevel level) {
+std::vector<const char *> AllDiagNames(const DiagLevel level) {
     std::vector<const char *> keys{};
     keys.reserve(DIAG_TEMPLS.size());
     for (const auto &[name, templ] : DIAG_TEMPLS) {

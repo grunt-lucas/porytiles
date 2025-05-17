@@ -24,9 +24,9 @@ std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_l
 namespace porytiles {
 
 void DiagEngine::EnableAllWarnings() {
-    for (const auto &diag : AllDiagTemplNames()) {
+    for (const auto &diag : AllDiagNames()) {
         // Only apply enablement to diagnostics that are default-warnings
-        if (const auto &templ = DiagTemplFor(diag); templ.level() == DiagLevel::Warning) {
+        if (const auto &templ = DiagFor(diag); templ.level() == DiagLevel::Warning) {
             EnableAtLevel(diag, DiagLevel::Warning);
         }
     }
@@ -37,9 +37,9 @@ void DiagEngine::DisableAllWarnings() {
 }
 
 void DiagEngine::UpgradeEnabledWarningsToErr() {
-    for (const auto &diag : AllDiagTemplNames()) {
+    for (const auto &diag : AllDiagNames()) {
         // Only apply enablement to diagnostics that are default-warnings
-        if (const auto &templ = DiagTemplFor(diag); templ.level() == DiagLevel::Warning) {
+        if (const auto &templ = DiagFor(diag); templ.level() == DiagLevel::Warning) {
             if (enabled_at_level_.contains(diag)) {
                 auto &set = enabled_at_level_.at(diag);
                 set.insert(DiagLevel::Error);
@@ -50,7 +50,7 @@ void DiagEngine::UpgradeEnabledWarningsToErr() {
 
 void DiagEngine::EnableAtLevel(std::string_view diag, DiagLevel override) {
     // Only allow warns to be overridden for the warning-as-error case
-    if (const auto &templ = DiagTemplFor(diag); templ.level() != DiagLevel::Warning) {
+    if (const auto &templ = DiagFor(diag); templ.level() != DiagLevel::Warning) {
         Panic("cannot change diagnostic enablement level for non-warning diagnostics");
     }
 
@@ -69,7 +69,7 @@ void DiagEngine::EnableAtLevel(std::string_view diag, DiagLevel override) {
 
 void DiagEngine::DisableAtLevel(std::string_view diag, DiagLevel override) {
     // Only allow warns to be overridden for the warning-as-error case
-    if (const auto &templ = DiagTemplFor(diag); templ.level() != DiagLevel::Warning) {
+    if (const auto &templ = DiagFor(diag); templ.level() != DiagLevel::Warning) {
         Panic("cannot change diagnostic enablement level for non-warning diagnostics");
     }
 
@@ -115,7 +115,7 @@ const DiagConsumer &DiagEngine::consumer() const {
 
 // ReSharper disable once CppParameterMayBeConst
 DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
-    const auto &templ = DiagTemplFor(diag);
+    const auto &templ = DiagFor(diag);
 
     // Only warnings can "change" levels, so short circuit on anything else
     if (templ.level() != DiagLevel::Warning) {
@@ -142,7 +142,7 @@ DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
     // TODO : should we have note always enabled? Or should we have the generic
     // error and fatal diagnostics contain a blank note partner? The downside
     // to that approach is we're locked in to having only a single note partner
-    if (const auto &templ = DiagTemplFor(diag);
+    if (const auto &templ = DiagFor(diag);
         templ.level() == DiagLevel::Note || templ.level() == DiagLevel::Remark || templ.level() == DiagLevel::Error ||
         templ.level() == DiagLevel::Fatal) {
         return true;

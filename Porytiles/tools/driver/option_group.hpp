@@ -78,16 +78,16 @@ class OptGroupDiagnostics final : public OptGroup {
 
     void RegisterGroup(CLI::App &app) override {
         app.add_option("--warning", diagnostics_, "Enable given warning diagnostics.")
-            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->check(DiagnosticIsWarningValidator{})
             ->group(GroupName());
         app.add_option("--no-warning", diagnostics_, "Disable given warning diagnostics.")
-            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->check(DiagnosticIsWarningValidator{})
             ->group(GroupName());
         app.add_option("--error", diagnostics_, "Enable given warning diagnostics as errors.")
-            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->check(DiagnosticIsWarningValidator{})
             ->group(GroupName());
         app.add_option("--no-error", diagnostics_, "Disable given warning diagnostics as errors.")
-            ->check(DiagnosticIsWarningValidator{"DIAG"})
+            ->check(DiagnosticIsWarningValidator{})
             ->group(GroupName());
     }
 

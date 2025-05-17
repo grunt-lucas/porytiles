@@ -10,8 +10,10 @@
 #include <porytiles/template_lib/result.hpp>
 
 class TilesPalModeValidator final : public CLI::Validator {
+    static constexpr auto kHint = "MODE";
+
   public:
-    explicit TilesPalModeValidator(std::string hint) : Validator{std::move(hint)} {
+    explicit TilesPalModeValidator() : Validator{kHint} {
         name_ = "TILES_OUTPUT_PAL";
         func_ = [](const std::string &str) {
             if (!porytiles::TilesPalModeFromStr(str).has_value()) {
@@ -23,8 +25,10 @@ class TilesPalModeValidator final : public CLI::Validator {
 };
 
 class NotAlreadyAFileValidator final : public CLI::Validator {
+    static constexpr auto kHint = "PATH";
+
   public:
-    explicit NotAlreadyAFileValidator(std::string hint) : Validator{std::move(hint)} {
+    explicit NotAlreadyAFileValidator() : Validator{kHint} {
         name_ = "NOT_ALREADY_A_FILE";
         func_ = [](const std::string &str) {
             if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
@@ -36,8 +40,10 @@ class NotAlreadyAFileValidator final : public CLI::Validator {
 };
 
 class RgbStringValidator final : public CLI::Validator {
+    static constexpr auto kHint = "R,G,B";
+
   public:
-    explicit RgbStringValidator(std::string hint) : Validator{std::move(hint)} {
+    explicit RgbStringValidator() : Validator{kHint} {
         name_ = "RGB_STRING";
         func_ = [](const std::string &str) {
             const std::vector<std::string> colorComponents = porytiles::split(str, ",");
@@ -79,11 +85,13 @@ class RgbStringValidator final : public CLI::Validator {
 };
 
 class DiagnosticIsWarningValidator final : public CLI::Validator {
+    static constexpr auto kHint = "DIAG";
+
   public:
-    explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
+    explicit DiagnosticIsWarningValidator() : Validator{kHint} {
         name_ = "DIAGNOSTIC_IS_WARNING";
         std::unordered_set<std::string> warning_diags;
-        for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
+        for (const auto name : porytiles::AllDiagNames(porytiles::DiagLevel::Warning)) {
             warning_diags.insert(name);
         }
         func_ = [warning_diags](const std::string &str) {

@@ -243,17 +243,17 @@ constexpr auto kFatalGeneric = "error-fatal-generic";
 ///
 /// @note The function will terminate the program if the diagnostic name is
 /// invalid.
-DiagTempl DiagTemplFor(std::string_view name);
+DiagTempl DiagFor(std::string_view name);
 
 /// @brief Get an iterable view of all diag_templ names in the internal table.
 ///
 /// The identifiers returned from this function can then be used for lookup in
 /// diag_templ_for. This may be useful for range-based for-loops, or other use
 /// cases where the user wants to perform an action for some or all diagnostics.
-std::vector<const char *> AllDiagTemplNames();
+std::vector<const char *> AllDiagNames();
 
 /// @brief Get an iterable view of all diag_templ names for a given DiagLevel.
-std::vector<const char *> AllDiagTemplNames(DiagLevel level);
+std::vector<const char *> AllDiagNames(DiagLevel level);
 
 } // namespace porytiles
 

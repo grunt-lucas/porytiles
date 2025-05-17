@@ -43,7 +43,7 @@ class OptOutput final : public Opt {
         app.add_option(NameCombined(), output_path_,
                        "Output generated files to the directory specified by PATH. If any element of PATH does not "
                        "exist, it will be created.")
-            ->check(NotAlreadyAFileValidator{"PATH"})
+            ->check(NotAlreadyAFileValidator{})
             ->capture_default_str();
     }
 
@@ -71,7 +71,7 @@ class OptTilesPalMode final : public Opt {
                NameLong(), pal_format_,
                "Set the palette mode for the output 'tiles.png'. Valid settings are 'true-color' or 'greyscale'. These "
                "settings are for human visual purposes only and have no effect on the final in-game tiles.")
-            ->check(TilesPalModeValidator{"MODE"})
+            ->check(TilesPalModeValidator{})
             ->capture_default_str();
     }
 
@@ -174,7 +174,7 @@ class OptTransparencyColor final : public Opt {
     void RegisterOpt(CLI::App &app) override {
         app.add_option(NameLong(), rgb_,
                        "Select RGB color <R,G,B> to represent transparency in your layer source PNGs.")
-            ->check(RgbStringValidator{"R,G,B"})
+            ->check(RgbStringValidator{})
             ->capture_default_str();
     }
 
