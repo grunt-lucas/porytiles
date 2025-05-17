@@ -9,6 +9,19 @@
 #include <porytiles/template_lib/parsing.hpp>
 #include <porytiles/template_lib/result.hpp>
 
+class TilesPalModeValidator final : public CLI::Validator {
+  public:
+    explicit TilesPalModeValidator(std::string hint) : Validator{std::move(hint)} {
+        name_ = "TILES_OUTPUT_PAL";
+        func_ = [](const std::string &str) {
+            if (!porytiles::TilesPalModeFromStr(str).has_value()) {
+                return std::string{"invalid 'tiles.png' output palette mode: " + str};
+            }
+            return std::string{};
+        };
+    }
+};
+
 class NotAlreadyAFileValidator final : public CLI::Validator {
   public:
     explicit NotAlreadyAFileValidator(std::string hint) : Validator{std::move(hint)} {
@@ -61,6 +74,23 @@ class RgbStringValidator final : public CLI::Validator {
             }
 
             return std::string{};
+        };
+    }
+};
+
+class DiagnosticIsWarningValidator final : public CLI::Validator {
+  public:
+    explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
+        name_ = "DIAGNOSTIC_IS_WARNING";
+        std::unordered_set<std::string> warning_diags;
+        for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
+            warning_diags.insert(name);
+        }
+        func_ = [warning_diags](const std::string &str) {
+            if (warning_diags.contains(str)) {
+                return std::string{};
+            }
+            return std::string{"invalid warning diagnostic: " + str};
         };
     }
 };

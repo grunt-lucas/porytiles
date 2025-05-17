@@ -53,19 +53,6 @@ class OptOutput final : public Opt {
 };
 
 class OptTilesPalMode final : public Opt {
-    class TilesPalModeValidator final : public CLI::Validator {
-      public:
-        explicit TilesPalModeValidator(std::string hint) : Validator{std::move(hint)} {
-            name_ = "TILES_OUTPUT_PAL";
-            func_ = [](const std::string &str) {
-                if (!porytiles::TilesPalModeFromStr(str).has_value()) {
-                    return std::string{"invalid 'tiles.png' output palette mode: " + str};
-                }
-                return std::string{};
-            };
-        }
-    };
-
     std::string pal_format_;
 
   public:
@@ -143,29 +130,30 @@ class OptDisableAttributeGeneration final : public Opt {
     }
 };
 
-class OptDualLayer final : public Opt {
-    bool dual_layer_{false};
+class OptTripleLayer final : public Opt {
+    bool triple_layer_{false};
 
   public:
-    OptDualLayer() = default;
+    OptTripleLayer() = default;
 
     [[nodiscard]] std::string NameShort() const override {
         return "";
     }
 
     [[nodiscard]] std::string NameLong() const override {
-        return "--dual-layer";
+        return "--triple-layer";
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_flag(NameLong(), dual_layer_,
-                     "Enable dual-layer compilation mode. The layer type will be inferred from your source layer PNGs, "
-                     "so compilation will error out if any metatiles contain content on all three layers. If this "
-                     "option is not supplied, Porytiles assumes you are compiling a triple-layer tileset.");
+        app.add_flag(
+            NameLong(), triple_layer_,
+            "Enable triple-layer compilation mode. If this option is not supplied, Porytiles assumes you are compiling "
+            "a dual-layer tileset. For dual-layer tilesets the layer type will be inferred from your source layer "
+            "PNGs, so compilation will error out if any metatiles contain content on all three layers.");
     }
 
     [[nodiscard]] bool dual_layer() const {
-        return dual_layer_;
+        return triple_layer_;
     }
 };
 

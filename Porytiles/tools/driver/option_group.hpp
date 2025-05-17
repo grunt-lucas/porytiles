@@ -67,23 +67,6 @@ class OptGroupFieldmap final : public OptGroup {
 };
 
 class OptGroupDiagnostics final : public OptGroup {
-    class DiagnosticIsWarningValidator final : public CLI::Validator {
-      public:
-        explicit DiagnosticIsWarningValidator(std::string hint) : Validator{std::move(hint)} {
-            std::unordered_set<std::string> warning_diags;
-            for (const auto name : porytiles::AllDiagTemplNames(porytiles::DiagLevel::Warning)) {
-                warning_diags.insert(name);
-            }
-            name_ = "DIAGNOSTIC_IS_WARNING";
-            func_ = [warning_diags](const std::string &str) {
-                if (warning_diags.contains(str)) {
-                    return std::string{};
-                }
-                return std::string{"invalid warning diagnostic: " + str};
-            };
-        }
-    };
-
     std::vector<std::string> diagnostics_;
 
   public:
