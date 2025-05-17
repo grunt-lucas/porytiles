@@ -398,9 +398,10 @@ buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode
     }
 
     if (fatalError) {
-        ctx.diag->report(E_FATAL_GENERIC, "too many unique colors in {} tileset", compilerModeString(compilerMode));
-        ctx.diag->report(N_GENERIC, "{} allowed based on fieldmap configuration, but found {}", ctx.diag->bold(size),
-                         ctx.diag->bold(colorIndex));
+        ctx.diag->report(E_FATAL_GENERIC,
+                         fmt::format("too many unique colors in {} tileset", compilerModeString(compilerMode)));
+        ctx.diag->report(N_GENERIC, fmt::format("{} allowed based on fieldmap configuration, but found {}",
+                                                ctx.diag->bold(size), ctx.diag->bold(colorIndex)));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   "too many unique colors total");
     }

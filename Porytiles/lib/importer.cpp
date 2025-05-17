@@ -621,8 +621,8 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     } catch (const std::exception &) {
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->report(E_FATAL_GENERIC, msg);
-        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
-                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        ctx.diag->report(N_GENERIC, fmt::format("valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                                                ctx.diag->bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
@@ -642,8 +642,8 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->report(E_FATAL_GENERIC, msg);
-        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
-                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        ctx.diag->report(N_GENERIC, fmt::format("valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                                                ctx.diag->bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
@@ -1232,21 +1232,21 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
     }
     if (line != "-") {
         const auto msg = fmt::format("{}: 0th override slot must be '-' but saw '{}'", fileName, line);
-        ctx.diag->report(E_FATAL_GENERIC, msg);
-        die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode), msg);
+        ctx.diag->report(E_GENERIC, msg);
     }
     lineCount++;
 
     // usedPaletteCount starts at 1 since we've already "used" a slot for transparent
     std::uint8_t usedPaletteCount = 1;
     std::uint8_t overriddenSlotCount = 0;
+    bool sawAtLeastOneOverriddenColor = false;
     while (std::getline(paletteFile, line)) {
         if (line.at(line.size() - 1) == '\r') {
             line.pop_back();
         }
         if (line != "-") {
             const RGBA32 rgba = parseJascLineCompiler(ctx, compilerMode, line, fileName);
-
+            sawAtLeastOneOverriddenColor = true;
             if (const BGR15 bgr = rgbaToBgr(rgba); !bgrToRgba.contains(bgr)) {
                 bgrToRgba.insert(std::pair{bgr, std::pair{rgba, lineCount}});
             } else {
@@ -1269,6 +1269,12 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
         if (usedPaletteCount >= PAL_SIZE) {
             break;
         }
+    }
+
+    if (!sawAtLeastOneOverriddenColor) {
+        ctx.diag->report(E_GENERIC,
+                         fmt::format("{} no overridden pal slots were present", ctx.diag->bold(fileName + ":")));
+        ctx.diag->report(N_GENERIC, fmt::format("this is illegal, a completely empty override is effectively a no-op"));
     }
 
     if (usedPaletteCount != declaredPaletteSize) {
