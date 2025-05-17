@@ -621,8 +621,8 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     } catch (const std::exception &) {
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->report(E_FATAL_GENERIC, msg);
-        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
-                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        ctx.diag->report(N_GENERIC, fmt::format("valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                                                ctx.diag->bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
@@ -642,8 +642,8 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
     if (!hasId || !hasBehavior || (hasTerrainType && !hasEncounterType) || (!hasTerrainType && hasEncounterType)) {
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->report(E_FATAL_GENERIC, msg);
-        ctx.diag->report(N_GENERIC, "valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
-                         ctx.diag->bold("id,behavior,terrainType,encounterType"));
+        ctx.diag->report(N_GENERIC, fmt::format("valid headers are '{}' or '{}'", ctx.diag->bold("id,behavior"),
+                                                ctx.diag->bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
