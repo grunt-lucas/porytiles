@@ -12,7 +12,13 @@ class Rgba32 {
     std::uint8_t alpha_;
 
   public:
-    Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
+    static constexpr std::uint8_t kAlphaTransparent = 0;
+    static constexpr std::uint8_t kAlphaOpaque = 255;
+
+    constexpr Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
+
+    constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = kAlphaOpaque)
+        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
 
     [[nodiscard]] std::uint8_t red() const {
         return red_;
@@ -36,7 +42,7 @@ class Rgba32 {
 
     [[nodiscard]] bool EqualsIgnoringAlpha(const Rgba32 &other) const;
 
-    friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
+    // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
 };
 
 /// Provide a simple way for fmtlib to format Rgba32:
@@ -44,6 +50,18 @@ class Rgba32 {
 inline auto format_as(const Rgba32 &rgba) {
     return rgba.ToJascStr();
 }
+
+constexpr Rgba32 kRgbaBlack{0, 0, 0, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaWhite{255, 255, 255, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaGrey{128, 128, 128, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaRed{255, 0, 0, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaGreen{0, 255, 0, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaBlue{0, 0, 255, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaYellow{255, 255, 0, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaMagenta{255, 0, 255, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaCyan{0, 255, 255, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaPurple{128, 0, 255, Rgba32::kAlphaOpaque};
+constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::kAlphaOpaque};
 
 // std::size_t hash_value(const Rgba32 &obj) {
 //     std::size_t seed = 0x7A22F97A;

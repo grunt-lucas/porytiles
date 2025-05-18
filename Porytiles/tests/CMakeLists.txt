@@ -10,6 +10,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+add_subdirectory(colors)
 add_subdirectory(diagnostics)
 
 # Get all sources in a list
