@@ -35,7 +35,7 @@ namespace porytiles {
 /// `std::forward` ensures the value category (lvalue/rvalue)
 /// of the callable `func` itself is preserved during the call.
 template <typename T, typename F> void IfPresent(const std::optional<T> &o, F &&func) {
-    if (o) {
+    if (o.has_value()) {
         std::forward<F>(func)(*o);
     }
 }
@@ -44,8 +44,8 @@ template <typename T, typename F> void IfPresent(const std::optional<T> &o, F &&
 ///
 /// https://mariusbancila.ro/blog/2023/05/29/notes-on-std-optional-monadic-operations
 template <typename T, typename F> std::optional<T> OrElse(const std::optional<T> &o, F &&func) {
-    if (o) {
-        return *o;
+    if (o.has_value()) {
+        return o.value();
     }
     return std::forward<F>(func)();
 }
