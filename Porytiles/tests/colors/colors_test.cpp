@@ -1,6 +1,6 @@
-#include "fmt/format.h"
-
 #include <gtest/gtest.h>
+
+#include <fmt/format.h>
 
 #include "porytiles/colors/bgr15.hpp"
 #include "porytiles/colors/rgba32.hpp"
