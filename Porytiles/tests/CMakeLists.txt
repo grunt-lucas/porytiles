@@ -12,6 +12,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(colors)
 add_subdirectory(diagnostics)
+add_subdirectory(tiles)
 
 # Get all sources in a list
 FILE(GLOB TEST_SOURCES */*.cpp)
