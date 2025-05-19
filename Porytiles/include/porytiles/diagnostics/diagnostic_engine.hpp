@@ -12,12 +12,12 @@
 
 namespace porytiles {
 
-/// @brief diag_engine coordinates the generation and consumption of diagnostic
+/// @brief DiagEngine coordinates the generation and consumption of diagnostic
 /// messages.
 ///
 /// @details
-/// diag_engine manages settings for enabling, disabling, treating warnings as
-/// errors, etc. It uses a diag_consumer to process the generated diagnostics
+/// DiagEngine manages settings for enabling, disabling, treating warnings as
+/// errors, etc. It uses a DiagConsumer to process the generated diagnostics
 /// according to the engine client's preference.
 class DiagEngine {
     std::unique_ptr<DiagConsumer> consumer_;

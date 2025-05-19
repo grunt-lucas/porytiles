@@ -16,11 +16,11 @@ using TileMetadata = std::variant<std::monostate, FreeMetadata, LayeredMetadata>
 /// which can store pixel data and type-specific metadata.
 ///
 /// @details
-/// A `Tile` object encapsulates an array of pixel data (`pix_`)
-/// of a user-defined type `T`.
-/// Each tile has a `TileType` that determines the kind of metadata it holds.
-/// The metadata is stored in a `std::variant` (`metadata_`),
-/// allowing for different metadata structures depending on the `TileType`.
+/// A Tile object encapsulates an array of pixel data (pix_)
+/// of a user-defined type T.
+/// Each tile has a TileType that determines the kind of metadata it holds.
+/// The metadata is stored in a std::variant (metadata_),
+/// allowing for different metadata structures depending on the TileType.
 /// This class provides methods to access the tile's type
 /// and its associated metadata in a type-safe manner.
 template <typename T> class Tile {
