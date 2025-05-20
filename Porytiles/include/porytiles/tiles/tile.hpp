@@ -10,26 +10,23 @@ namespace porytiles {
 constexpr std::size_t kTileSideLength = 8;
 constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
 
-using TileMetadata = std::variant<std::monostate, FreeMetadata, LayeredMetadata>;
-
 /// @brief Represents a single tile,
 /// which can store pixel data and type-specific metadata.
 ///
 /// @details
-/// A Tile object encapsulates an array of pixel data (pix_)
-/// of a user-defined type T.
+/// A Tile object encapsulates a pixel data array of a user-defined type.
 /// Each tile has a TileType that determines the kind of metadata it holds.
 /// The metadata is stored in a std::variant (metadata_),
 /// allowing for different metadata structures depending on the TileType.
 /// This class provides methods to access the tile's type
 /// and its associated metadata in a type-safe manner.
-template <typename T> class Tile {
-    std::array<T, kTileSize> pix_;
+template <typename P> class Tile {
+    std::array<P, kTileSize> pix_;
     TileType type_;
     TileMetadata metadata_;
 
   public:
-    explicit Tile(const TileType t) : type_(t) {
+    explicit Tile(const TileType t) : pix_{}, type_(t) {
         switch (t) {
         case TileType::kFree:
             metadata_ = FreeMetadata{};
@@ -64,6 +61,40 @@ template <typename T> class Tile {
             return *m;
         }
         Panic("Metadata std::variant did not contain expected type");
+    }
+
+    [[nodiscard]] P At(std::size_t i) const {
+        if (i >= kTileSize) {
+            Panic(fmt::format("Index {} out of bounds", i));
+        }
+        return pix_[i];
+    }
+
+    [[nodiscard]] P At(std::size_t row, std::size_t col) const {
+        if (row >= kTileSideLength) {
+            Panic(fmt::format("Row index {} out of bounds", row));
+        }
+        if (col >= kTileSideLength) {
+            Panic(fmt::format("Col index {} out of bounds", col));
+        }
+        return pix_[row * kTileSideLength + col];
+    }
+
+    void Set(std::size_t i, const P &p) {
+        if (i >= kTileSize) {
+            Panic(fmt::format("Index {} out of bounds", i));
+        }
+        pix_[i] = p;
+    }
+
+    void Set(std::size_t row, std::size_t col, const P &p) {
+        if (row >= kTileSideLength) {
+            Panic(fmt::format("Row index {} out of bounds", row));
+        }
+        if (col >= kTileSideLength) {
+            Panic(fmt::format("Col index {} out of bounds", col));
+        }
+        pix_[row * kTileSideLength + col] = p;
     }
 };
 

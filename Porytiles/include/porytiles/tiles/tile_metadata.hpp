@@ -34,4 +34,6 @@ class LayeredMetadata {
     }
 };
 
+using TileMetadata = std::variant<std::monostate, FreeMetadata, LayeredMetadata>;
+
 } // namespace porytiles

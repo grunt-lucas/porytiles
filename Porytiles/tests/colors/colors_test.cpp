@@ -2,8 +2,8 @@
 
 #include <fmt/format.h>
 
-#include "porytiles/colors/bgr15.hpp"
-#include "porytiles/colors/rgba32.hpp"
+#include <porytiles/colors/bgr15.hpp>
+#include <porytiles/colors/rgba32.hpp>
 
 using namespace porytiles;
 

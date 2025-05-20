@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "porytiles/diagnostics/diagnostic_engine.hpp"
+#include <porytiles/diagnostics/diagnostic_engine.hpp>
 
 using namespace porytiles;
 
