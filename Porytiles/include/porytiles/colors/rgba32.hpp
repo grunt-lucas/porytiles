@@ -36,6 +36,7 @@ class Rgba32 {
         return alpha_;
     }
 
+    bool operator==(const Rgba32 &rgba) const = default;
     auto operator<=>(const Rgba32 &rgba) const = default;
 
     [[nodiscard]] std::string ToJascStr() const;

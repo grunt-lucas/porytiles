@@ -16,7 +16,7 @@ constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
 /// @details
 /// A Tile object encapsulates a pixel data array of a user-defined type.
 /// Each tile has a TileType that determines the kind of metadata it holds.
-/// The metadata is stored in a std::variant (metadata_),
+/// The metadata is stored in a std::variant,
 /// allowing for different metadata structures depending on the TileType.
 /// This class provides methods to access the tile's type
 /// and its associated metadata in a type-safe manner.
@@ -24,6 +24,11 @@ template <typename P> class Tile {
     std::array<P, kTileSize> pix_;
     TileType type_;
     TileMetadata metadata_;
+
+  protected:
+    [[nodiscard]] const std::array<P, kTileSize> &pix() const {
+        return pix_;
+    }
 
   public:
     explicit Tile(const TileType t) : pix_{}, type_(t) {
