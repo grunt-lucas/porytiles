@@ -2,7 +2,7 @@
 
 namespace porytiles {
 
-enum class TileType { kFree, kLayered, kAnim, kPrimer, kOverride };
+enum class TileType { kVram, kFree, kLayered, kAnim, kPrimer, kOverride };
 
 class FreeMetadata {
     std::size_t tile_index_;

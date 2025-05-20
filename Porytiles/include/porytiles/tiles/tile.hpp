@@ -68,6 +68,10 @@ template <typename P> class Tile {
         Panic("Metadata std::variant did not contain expected type");
     }
 
+    [[nodiscard]] virtual bool IsTransparent(const P &transparency) const {
+        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
+    }
+
     [[nodiscard]] P At(std::size_t i) const {
         if (i >= kTileSize) {
             Panic(fmt::format("Index {} out of bounds", i));
