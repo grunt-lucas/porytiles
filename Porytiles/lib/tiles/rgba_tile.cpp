@@ -1,5 +1,6 @@
 #include "tiles/rgba_tile.hpp"
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include <ranges>
 
 #include "colors/rgba32.hpp"
