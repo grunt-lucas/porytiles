@@ -1,5 +1,7 @@
 #pragma once
 
+// ReSharper disable once CppUnusedIncludeDirective
+#include <cstdint>
 #include <string>
 
 namespace porytiles {
