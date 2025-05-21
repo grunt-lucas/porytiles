@@ -6,7 +6,7 @@
 
 namespace porytiles {
 
-class RgbaTile : public Tile<Rgba32> {
+class RgbaTile final : public Tile<Rgba32> {
   public:
     explicit RgbaTile(const TileType t) : Tile{t} {}
 

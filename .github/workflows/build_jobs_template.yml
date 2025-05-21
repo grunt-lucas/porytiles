@@ -38,7 +38,7 @@ jobs:
       - name: Install Porytiles build dependencies
         uses: ./.github/workflows/install_dependencies_linux
 
-      - name: Install clang
+      - name: Install gcc
         uses: ./.github/workflows/install_gcc_linux
 
       - name: Build the project

@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fmt/format.h>
-#include <iostream>
 #include <png.hpp>
 #include <string>
 #include <tuple>

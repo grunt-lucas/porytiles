@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 
 #include "../panic/panic.hpp"
@@ -31,6 +32,8 @@ template <typename P> class Tile {
     }
 
   public:
+    virtual ~Tile() = default;
+
     explicit Tile(const TileType t) : pix_{}, type_(t) {
         switch (t) {
         case TileType::kFree:
