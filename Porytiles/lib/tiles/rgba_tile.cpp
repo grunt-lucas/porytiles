@@ -1,5 +1,7 @@
 #include "tiles/rgba_tile.hpp"
 
+#include <algorithm>
+
 #include "colors/rgba32.hpp"
 
 namespace porytiles {
