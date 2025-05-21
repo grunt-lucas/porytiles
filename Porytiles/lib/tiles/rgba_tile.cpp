@@ -1,6 +1,6 @@
-#include <algorithm>
-
 #include "tiles/rgba_tile.hpp"
+
+#include <ranges>
 
 #include "colors/rgba32.hpp"
 
