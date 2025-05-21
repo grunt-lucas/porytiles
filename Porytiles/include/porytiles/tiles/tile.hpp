@@ -23,6 +23,13 @@ constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
 /// and its associated metadata in a type-safe manner.
 template <typename P> class Tile {
     std::array<P, kTileSize> pix_;
+
+    // TODO : refactor this class so the type and metadata here aren't so
+    // tightly coupled. The problem is that given this design, anytime we change
+    // the metadata, we have to recompile everything that depends on Tile, which
+    // means a lower level abstraction is leaking into our high level
+    // architecture. See the Document Json Export case study in Iglberger
+    // C++ Software Design book.
     TileType type_;
     TileMetadata metadata_;
 
