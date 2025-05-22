@@ -31,6 +31,7 @@ https://github.com/pret/pokeemerald
 https://github.com/rh-hideout/pokeemerald-expansion
 https://github.com/huderlem/porymap)");
 
+    // Override some --version,--help flag defaults.
     porytiles_app.add_flag(
         "-V,--version",
         [](const size_t) {
@@ -38,7 +39,8 @@ https://github.com/huderlem/porymap)");
                       << std::endl;
             std::exit(0);
         },
-        "Print version info and exit");
+        "Print version info and exit.");
+    porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
     CompilePrimaryCommand compile_primary{porytiles_app};
     CompileSecondaryCommand compile_secondary{porytiles_app};

@@ -53,7 +53,7 @@ class Command {
 
 class CompilePrimaryCommand final : public Command {
     static constexpr auto kCommandName = "compile-primary";
-    static constexpr auto kCommandDesc = "Compile a primary tileset using explicit asset paths";
+    static constexpr auto kCommandDesc = "Compile a primary tileset using explicit asset paths.";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupArtifacts artifacts_opts_;
@@ -85,7 +85,7 @@ class CompilePrimaryCommand final : public Command {
 
 class CompileSecondaryCommand final : public Command {
     static constexpr auto kCommandName = "compile-secondary";
-    static constexpr auto kCommandDesc = "Compile a secondary tileset using explicit asset paths";
+    static constexpr auto kCommandDesc = "Compile a secondary tileset using explicit asset paths.";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -106,7 +106,7 @@ class CompileSecondaryCommand final : public Command {
 
 class DecompilePrimaryCommand final : public Command {
     static constexpr auto kCommandName = "decompile-primary";
-    static constexpr auto kCommandDesc = "Decompile a primary tileset using explicit asset paths";
+    static constexpr auto kCommandDesc = "Decompile a primary tileset using explicit asset paths.";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -127,7 +127,7 @@ class DecompilePrimaryCommand final : public Command {
 
 class DecompileSecondaryCommand final : public Command {
     static constexpr auto kCommandName = "decompile-secondary";
-    static constexpr auto kCommandDesc = "Decompile a secondary tileset using explicit asset paths";
+    static constexpr auto kCommandDesc = "Decompile a secondary tileset using explicit asset paths.";
     static constexpr auto kCommandGroup = "LEGACY COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -148,7 +148,7 @@ class DecompileSecondaryCommand final : public Command {
 
 class CompileTilesetCommand final : public Command {
     static constexpr auto kCommandName = "compile-tileset";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format tileset to a Porymap-format tileset";
+    static constexpr auto kCommandDesc = "Compile a Porytiles-format tileset to a Porymap-format tileset.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -169,7 +169,7 @@ class CompileTilesetCommand final : public Command {
 
 class CompileLayoutCommand final : public Command {
     static constexpr auto kCommandName = "compile-layout";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format layout to a Porymap-format layout";
+    static constexpr auto kCommandDesc = "Compile a Porytiles-format layout to a Porymap-format layout.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -190,7 +190,7 @@ class CompileLayoutCommand final : public Command {
 
 class CompileSpritesheetCommand final : public Command {
     static constexpr auto kCommandName = "compile-spritesheet";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format spritesheet to a Porymap-format spritesheet";
+    static constexpr auto kCommandDesc = "Compile a Porytiles-format spritesheet to a Porymap-format spritesheet.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -211,7 +211,7 @@ class CompileSpritesheetCommand final : public Command {
 
 class DecompileTilesetCommand final : public Command {
     static constexpr auto kCommandName = "decompile-tileset";
-    static constexpr auto kCommandDesc = "Decompile a Porymap-format tileset back to a Porytiles-format tileset";
+    static constexpr auto kCommandDesc = "Decompile a Porymap-format tileset back to a Porytiles-format tileset.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -232,7 +232,7 @@ class DecompileTilesetCommand final : public Command {
 
 class DecompileLayoutCommand final : public Command {
     static constexpr auto kCommandName = "decompile-layout";
-    static constexpr auto kCommandDesc = "Decompile a Porymap-format layout back to a Porytiles-format layout";
+    static constexpr auto kCommandDesc = "Decompile a Porymap-format layout back to a Porytiles-format layout.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -253,7 +253,7 @@ class DecompileLayoutCommand final : public Command {
 
 class ReduceBitDepthCommand final : public Command {
     static constexpr auto kCommandName = "reduce-bit-depth";
-    static constexpr auto kCommandDesc = "Reduce bit depth for given input assets";
+    static constexpr auto kCommandDesc = "Reduce bit depth for given input assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
   public:
