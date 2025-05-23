@@ -2,6 +2,6 @@
 
 namespace porytiles {
 
-class Metatile {};
+class PorytileTileset {};
 
 } // namespace porytiles
