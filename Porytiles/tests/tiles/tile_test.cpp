@@ -11,7 +11,7 @@
 using namespace porytiles;
 
 TEST(TileTests, TileAtAndSetShouldWork) {
-    Tile<int> tile{TileType::kFree};
+    Tile<int> tile{};
 
     ASSERT_EQ(tile.At(0), 0);
     ASSERT_EQ(tile.At(63), 0);
@@ -21,20 +21,11 @@ TEST(TileTests, TileAtAndSetShouldWork) {
     EXPECT_EXIT(std::ignore = tile.At(0, kTileSideLength), ::testing::KilledBySignal(SIGABRT),
                 "Col index 8 out of bounds");
 
+    // Set value using index, fetch using row/col
     tile.Set(22, 10);
-    tile.Set(5, 2, 31);
     ASSERT_EQ(tile.At(2, 6), 10);
+
+    // Set value using row/col, fetch using index
+    tile.Set(5, 2, 31);
     ASSERT_EQ(tile.At(42), 31);
-}
-
-TEST(TileMetadataTests, TileMetadataShouldFetchSuccessfully) {
-    const Tile<int> tile{TileType::kFree};
-    const auto metadata = tile.metadata<FreeMetadata>();
-    ASSERT_EQ(metadata.tile_index(), 0);
-}
-
-TEST(TileMetadataTests, TileMetadataShouldAbortOnBadFetchType) {
-    const Tile<int> tile{TileType::kFree};
-    EXPECT_EXIT(std::ignore = tile.metadata<LayeredMetadata>(), ::testing::KilledBySignal(SIGABRT),
-                "Metadata std::variant did not contain expected type");
 }

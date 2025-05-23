@@ -11,27 +11,9 @@ namespace porytiles {
 constexpr std::size_t kTileSideLength = 8;
 constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
 
-/// @brief Represents a single tile,
-/// which can store pixel data and type-specific metadata.
-///
-/// @details
-/// A Tile object encapsulates a pixel data array of a user-defined type.
-/// Each tile has a TileType that determines the kind of metadata it holds.
-/// The metadata is stored in a std::variant,
-/// allowing for different metadata structures depending on the TileType.
-/// This class provides methods to access the tile's type
-/// and its associated metadata in a type-safe manner.
+/// @brief A single 8x8 pixel tile with an arbitrary pixel data type.
 template <typename P> class Tile {
     std::array<P, kTileSize> pix_;
-
-    // TODO : refactor this class so the type and metadata here aren't so
-    // tightly coupled. The problem is that given this design, anytime we change
-    // the metadata, we have to recompile everything that depends on Tile, which
-    // means a lower level abstraction is leaking into our high level
-    // architecture. See the Document Json Export case study in Iglberger
-    // C++ Software Design book.
-    TileType type_;
-    TileMetadata metadata_;
 
   protected:
     [[nodiscard]] const std::array<P, kTileSize> &pix() const {
@@ -41,42 +23,7 @@ template <typename P> class Tile {
   public:
     virtual ~Tile() = default;
 
-    explicit Tile(const TileType t) : pix_{}, type_(t) {
-        switch (t) {
-        case TileType::kFree:
-            metadata_ = FreeMetadata{};
-            break;
-        case TileType::kLayered:
-            metadata_ = LayeredMetadata{};
-            break;
-        default:
-            metadata_ = std::monostate{};
-        }
-    }
-
-    [[nodiscard]] TileType type() const noexcept {
-        return type_;
-    }
-
-    /// @brief Gets a constant reference to the tile's typed metadata.
-    /// @tparam M The expected type of the metadata to retrieve.
-    /// @return A constant reference to the metadata object of type `M`.
-    template <typename M> [[nodiscard]] const M &metadata() const {
-        if (auto *m = std::get_if<M>(&metadata_)) {
-            return *m;
-        }
-        Panic("Metadata std::variant did not contain expected type");
-    }
-
-    /// @brief Gets a mutable reference to the tile's typed metadata.
-    /// @tparam M The expected type of the metadata to retrieve.
-    /// @return A mutable reference to the metadata object of type `M`.
-    template <typename M> [[nodiscard]] M &metadata() {
-        if (auto *m = std::get_if<M>(&metadata_)) {
-            return *m;
-        }
-        Panic("Metadata std::variant did not contain expected type");
-    }
+    explicit Tile() : pix_{} {}
 
     [[nodiscard]] virtual bool IsTransparent(const P &transparency) const {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });

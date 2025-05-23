@@ -1,5 +1,6 @@
 # Create the test executable
-add_executable(TilesTest tiles_test.cpp)
+FILE(GLOB TEST_SOURCES *.cpp)
+add_executable(TilesTest ${TEST_SOURCES})
 
 target_include_directories(TilesTest PRIVATE ${PORYTILES_INCLUDE_DIR})
 
