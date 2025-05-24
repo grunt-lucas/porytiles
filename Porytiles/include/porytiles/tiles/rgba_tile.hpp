@@ -2,7 +2,6 @@
 
 #include "../colors/rgba32.hpp"
 #include "./tile.hpp"
-#include "./tile_metadata.hpp"
 
 namespace porytiles {
 
