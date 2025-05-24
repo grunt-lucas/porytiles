@@ -4,9 +4,7 @@
 
 #include <fmt/format.h>
 
-#include <porytiles/tiles/rgba_tile.hpp>
 #include <porytiles/tiles/tile.hpp>
-#include <porytiles/tiles/tile_metadata.hpp>
 
 using namespace porytiles;
 
@@ -15,10 +13,10 @@ TEST(TileTests, TileAtAndSetShouldWork) {
 
     ASSERT_EQ(tile.At(0), 0);
     ASSERT_EQ(tile.At(63), 0);
-    EXPECT_EXIT(std::ignore = tile.At(kTileSize), ::testing::KilledBySignal(SIGABRT), "Index 64 out of bounds");
-    EXPECT_EXIT(std::ignore = tile.At(kTileSideLength, 2), ::testing::KilledBySignal(SIGABRT),
+    ASSERT_EXIT(std::ignore = tile.At(kTileSize), ::testing::KilledBySignal(SIGABRT), "Index 64 out of bounds");
+    ASSERT_EXIT(std::ignore = tile.At(kTileSideLength, 2), ::testing::KilledBySignal(SIGABRT),
                 "Row index 8 out of bounds");
-    EXPECT_EXIT(std::ignore = tile.At(0, kTileSideLength), ::testing::KilledBySignal(SIGABRT),
+    ASSERT_EXIT(std::ignore = tile.At(0, kTileSideLength), ::testing::KilledBySignal(SIGABRT),
                 "Col index 8 out of bounds");
 
     // Set value using index, fetch using row/col
