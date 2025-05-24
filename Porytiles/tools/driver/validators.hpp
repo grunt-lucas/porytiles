@@ -6,8 +6,8 @@
 #include <fmt/format.h>
 
 #include <porytiles/legacy/utilities.h>
-#include <porytiles/template_lib/parsing.hpp>
-#include <porytiles/template_lib/result.hpp>
+#include <porytiles/templates/parsing.hpp>
+#include <porytiles/templates/result.hpp>
 
 class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";

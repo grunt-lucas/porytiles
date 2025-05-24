@@ -11,8 +11,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(colors)
-add_subdirectory(config)
 add_subdirectory(diagnostics)
+add_subdirectory(templates)
 add_subdirectory(tiles)
 
 # Get all sources in a list

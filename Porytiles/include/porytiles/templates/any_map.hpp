@@ -8,32 +8,32 @@
 
 namespace porytiles {
 
-class Config {
+class AnyMap {
     std::unordered_map<std::string, std::any> config_;
 
-    template <typename T> T get(const std::string &key) {
-        try {
-            return std::any_cast<T>(config_[key]);
-        } catch (const std::bad_any_cast &) {
-            Panic("Invalid type requested for key: " + key);
-        }
-    }
-
   public:
-    Config() = default;
+    AnyMap() = default;
 
     template <typename T> std::optional<T> Try(const std::string &key) {
         if (!config_.contains(key)) {
             return std::nullopt;
         }
-        return std::optional{get<T>(key)};
+        try {
+            return std::optional{std::any_cast<T>(config_[key])};
+        } catch (const std::bad_any_cast &) {
+            return std::nullopt;
+        }
     }
 
     template <typename T> std::optional<T> Get(const std::string &key) {
         if (!config_.contains(key)) {
             Panic("Key not found: " + key);
         }
-        return std::optional{get<T>(key)};
+        try {
+            return std::optional{std::any_cast<T>(config_[key])};
+        } catch (const std::bad_any_cast &) {
+            Panic("Invalid type requested for key: " + key);
+        }
     }
 
     void Put(const std::string &key, const std::any &value) {
