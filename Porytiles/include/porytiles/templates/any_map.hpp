@@ -14,7 +14,7 @@ class AnyMap {
     AnyMap() = default;
 
     template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) const {
-        if (!!Contains(key)) {
+        if (!Contains(key)) {
             return std::nullopt;
         }
         try {
@@ -33,6 +33,13 @@ class AnyMap {
         } catch (const std::bad_any_cast &) {
             Panic("Invalid type requested for key: " + key);
         }
+    }
+
+    [[nodiscard]] std::any GetAny(const std::string &key) const {
+        if (!Contains(key)) {
+            Panic("Key not found: " + key);
+        }
+        return config_.at(key);
     }
 
     void Put(const std::string &key, const std::any &value) {
