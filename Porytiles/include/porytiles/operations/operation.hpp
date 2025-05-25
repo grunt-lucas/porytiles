@@ -39,7 +39,7 @@ class Operation {
     /// Subclasses must implement this method to define their input contract.
     /// An empty vector indicates
     /// that the operation has no specific input dependencies.
-    [[nodiscard]] virtual std::vector<Artifact> DeclareDependencies() const = 0;
+    [[nodiscard]] virtual std::vector<Artifact> Dependencies() const = 0;
 
     [[nodiscard]] virtual Result<AnyMap, BinaryStatus> Run(const AnyMap &inputs) const = 0;
 

@@ -35,6 +35,13 @@ class AnyMap {
         }
     }
 
+    [[nodiscard]] std::optional<std::any> TryAny(const std::string &key) const {
+        if (!Contains(key)) {
+            return std::nullopt;
+        }
+        return std::optional{config_.at(key)};
+    }
+
     [[nodiscard]] std::any GetAny(const std::string &key) const {
         if (!Contains(key)) {
             Panic("Key not found: " + key);
