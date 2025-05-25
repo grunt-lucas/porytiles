@@ -9,12 +9,10 @@
 namespace porytiles {
 
 class AnyMap {
-    std::unordered_map<std::string, std::any> config_;
-
   public:
     AnyMap() = default;
 
-    template <typename T> std::optional<T> Try(const std::string &key) {
+    template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) {
         if (!config_.contains(key)) {
             return std::nullopt;
         }
@@ -25,7 +23,7 @@ class AnyMap {
         }
     }
 
-    template <typename T> std::optional<T> Get(const std::string &key) {
+    template <typename T> [[nodiscard]] std::optional<T> Get(const std::string &key) {
         if (!config_.contains(key)) {
             Panic("Key not found: " + key);
         }
@@ -39,6 +37,13 @@ class AnyMap {
     void Put(const std::string &key, const std::any &value) {
         config_.insert_or_assign(key, value);
     }
+
+    [[nodiscard]] bool Contains(const std::string &key) const {
+        return config_.contains(key);
+    }
+
+  private:
+    std::unordered_map<std::string, std::any> config_;
 };
 
 } // namespace porytiles

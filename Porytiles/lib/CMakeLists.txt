@@ -63,8 +63,7 @@ target_include_directories(PorytilesLib INTERFACE ${PORYTILES_INCLUDE_DIR} PRIVA
 # Find the libpng include dirs located via find_package
 target_include_directories(PorytilesLib PUBLIC ${PNG_INCLUDE_DIRS})
 
-# png++ library is a header-only C++ wrapper for libpng. Mark it public because
-# our library interface uses types from it.
+# Mark public any includes our interface exposes.
 target_include_directories(PorytilesLib PUBLIC ${CMAKE_SOURCE_DIR}/Porytiles/vendor/png++-0.2.9)
 
 # Disable doctest

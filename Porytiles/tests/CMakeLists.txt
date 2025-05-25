@@ -12,6 +12,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(colors)
 add_subdirectory(diagnostics)
+add_subdirectory(operations)
 add_subdirectory(templates)
 add_subdirectory(tiles)
 

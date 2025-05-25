@@ -2,6 +2,6 @@
 
 namespace porytiles {
 
-class CompileTileset {};
+class Pipeline {};
 
 } // namespace porytiles
