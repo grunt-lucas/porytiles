@@ -6,8 +6,8 @@
 
 #include <gsl/pointers>
 
+#include <../../include/porytiles/orchestration/operation.hpp>
 #include <porytiles/diagnostics/diagnostic_engine.hpp>
-#include <porytiles/operations/operation.hpp>
 
 using namespace porytiles;
 

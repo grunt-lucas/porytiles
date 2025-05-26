@@ -10,9 +10,9 @@
 
 namespace porytiles {
 
-class Artifact {
+class ArtifactMetadata {
   public:
-    Artifact(std::string k, const std::type_index t) : key_{std::move(k)}, expected_type_{t} {}
+    ArtifactMetadata(std::string k, const std::type_index t) : key_{std::move(k)}, expected_type_{t} {}
 
     [[nodiscard]] const std::string &key() const {
         return key_;
@@ -33,17 +33,13 @@ class Operation {
 
     explicit Operation(const gsl::not_null<DiagEngine *> diag) : diag_{diag} {}
 
-    /// @brief Declares the input dependencies required by this operation.
-    ///
-    /// @details
-    /// Subclasses must implement this method to define their input contract.
-    /// An empty vector indicates
-    /// that the operation has no specific input dependencies.
-    [[nodiscard]] virtual std::vector<Artifact> Dependencies() const = 0;
+    /// @brief Declares the input artifacts required by this operation.
+    [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareInputs() const = 0;
 
-    [[nodiscard]] virtual Result<AnyMap, BinaryStatus> Run(const AnyMap &inputs) const = 0;
+    /// @brief Declares the artifacts this operation will produce.
+    [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareOutputs() const = 0;
 
-    [[nodiscard]] Result<AnyMap, BinaryStatus> Execute(const AnyMap &inputs) const;
+    [[nodiscard]] virtual Result<AnyMap, BinaryStatus> Execute(const AnyMap &inputs) const = 0;
 
   protected:
     gsl::not_null<DiagEngine *> diag_;
