@@ -12,7 +12,8 @@ namespace porytiles {
 
 class ArtifactMetadata {
   public:
-    ArtifactMetadata(std::string k, const std::type_index t) : key_{std::move(k)}, expected_type_{t} {}
+    ArtifactMetadata(std::string key, const std::type_index type)
+        : key_{std::move(key)}, expected_type_{type}, desc_{key} {}
 
     [[nodiscard]] const std::string &key() const {
         return key_;
@@ -22,9 +23,18 @@ class ArtifactMetadata {
         return expected_type_;
     }
 
+    [[nodiscard]] const std::string &description() const {
+        return desc_;
+    }
+
+    void set_description(const std::string &desc) {
+        desc_ = desc;
+    }
+
   private:
     std::string key_;
     std::type_index expected_type_;
+    std::string desc_;
 };
 
 class Operation {
@@ -41,8 +51,17 @@ class Operation {
 
     [[nodiscard]] virtual Result<AnyMap, BinaryStatus> Execute(const AnyMap &inputs) const = 0;
 
-  protected:
-    gsl::not_null<DiagEngine *> diag_;
+    [[nodiscard]] const DiagEngine &diag() const {
+        return *diag_;
+    }
+
+    [[nodiscard]] const std::string &name() const {
+        return name_;
+    }
+
+  private:
+    DiagEngine *diag_;
+    std::string name_;
 };
 
 } // namespace porytiles

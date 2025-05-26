@@ -11,8 +11,8 @@ using namespace porytiles;
 TEST(TileTests, TileAtAndSetShouldWork) {
     Tile<int> tile{};
 
-    ASSERT_EQ(tile.At(0), 0);
-    ASSERT_EQ(tile.At(63), 0);
+    ASSERT_EQ(0, tile.At(0));
+    ASSERT_EQ(0, tile.At(63));
     ASSERT_EXIT(std::ignore = tile.At(kTileSize), ::testing::KilledBySignal(SIGABRT), "Index 64 out of bounds");
     ASSERT_EXIT(std::ignore = tile.At(kTileSideLength, 2), ::testing::KilledBySignal(SIGABRT),
                 "Row index 8 out of bounds");
@@ -21,9 +21,9 @@ TEST(TileTests, TileAtAndSetShouldWork) {
 
     // Set value using index, fetch using row/col
     tile.Set(22, 10);
-    ASSERT_EQ(tile.At(2, 6), 10);
+    ASSERT_EQ(10, tile.At(2, 6));
 
     // Set value using row/col, fetch using index
     tile.Set(5, 2, 31);
-    ASSERT_EQ(tile.At(42), 31);
+    ASSERT_EQ(31, tile.At(42));
 }
