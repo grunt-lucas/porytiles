@@ -3,10 +3,12 @@
 #include <string>
 #include <utility>
 
+#include "../panic/panic.hpp"
+
 namespace porytiles {
 
 enum class BinaryStatus {
-    SUCCESS,
+    OK,
     ERROR,
 };
 
@@ -21,18 +23,15 @@ template <typename T, typename StatusEnum> class Result {
 
     explicit Result(StatusEnum err, std::string msg = "") : status_{err}, message_{std::move(msg)} {}
 
-    [[nodiscard]] bool HasSuccess() const {
+    [[nodiscard]] bool Ok() const {
         // Assumes first enumerator represents success
         return status_ == StatusEnum{};
     }
 
-    template <typename F> void IfSuccess(F &&func) const {
-        if (HasSuccess()) {
-            return std::forward<F>(func)(value_);
-        }
-    }
-
     [[nodiscard]] const T &Get() const {
+        if (status_ != StatusEnum{}) {
+            Panic("Called Result.Get() when Result didn't contain OK");
+        }
         return value_;
     }
 };

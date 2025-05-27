@@ -1,5 +1,7 @@
 #pragma once
 
+#include <variant>
+
 namespace porytiles {
 
 enum class TileType { kVram, kFree, kLayered, kAnim, kPrimer, kOverride };

@@ -6,8 +6,8 @@
 
 #include <gsl/pointers>
 
-#include <../../include/porytiles/orchestration/operation.hpp>
 #include <porytiles/diagnostics/diagnostic_engine.hpp>
+#include <porytiles/orchestration/operation.hpp>
 
 using namespace porytiles;
 
@@ -46,7 +46,7 @@ class TestOperation final : public Operation {
     int multiplier_;
 };
 
-TEST(OperationTest, BasicOperationFunctionsShouldWork) {
+TEST(OperationTests, BasicOperationFunctionsShouldWork) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
     AnyMap inputs{};
@@ -57,7 +57,8 @@ TEST(OperationTest, BasicOperationFunctionsShouldWork) {
     operation.set_multiplier(10);
 
     const auto result = operation.Execute(inputs);
-    ASSERT_TRUE(result.HasSuccess());
+    ASSERT_TRUE(result.Ok());
+
     const auto &map = result.Get();
     const auto sum = map.Get<int>("sum");
     ASSERT_EQ(150, sum);
