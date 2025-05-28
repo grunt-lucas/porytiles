@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <memory>
-#include <tuple>
 #include <vector>
 
 #include <gsl/pointers>
@@ -29,13 +28,13 @@ class TestOperation final : public Operation {
         return outputs;
     }
 
-    [[nodiscard]] Result<AnyMap, BinaryStatus> Execute(const AnyMap &inputs) const override {
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
         const auto num1 = inputs.Get<int>("num1").value();
         const auto num2 = inputs.Get<int>("num2").value();
         int sum = (num1 + num2) * multiplier_;
         AnyMap outputs{};
         outputs.Put("sum", sum);
-        return Result<AnyMap, BinaryStatus>{outputs};
+        return std::expected<AnyMap, std::string>{outputs};
     }
 
     void set_multiplier(const int value) {
@@ -57,9 +56,9 @@ TEST(OperationTests, BasicOperationFunctionsShouldWork) {
     operation.set_multiplier(10);
 
     const auto result = operation.Execute(inputs);
-    ASSERT_TRUE(result.Ok());
+    ASSERT_TRUE(result.has_value());
 
-    const auto &map = result.Get();
+    const auto &map = result.value();
     const auto sum = map.Get<int>("sum");
     ASSERT_EQ(150, sum);
 }

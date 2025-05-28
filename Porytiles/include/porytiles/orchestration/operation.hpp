@@ -1,12 +1,12 @@
 #pragma once
 
+#include <expected>
 #include <typeindex>
 
 #include <gsl/pointers>
 
 #include "../diagnostics/diagnostic_engine.hpp"
 #include "../templates/any_map.hpp"
-#include "../templates/result.hpp"
 
 namespace porytiles {
 
@@ -49,7 +49,7 @@ class Operation {
     /// @brief Declares the artifacts this operation will produce.
     [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareOutputs() const = 0;
 
-    [[nodiscard]] virtual Result<AnyMap, BinaryStatus> Execute(const AnyMap &inputs) const = 0;
+    [[nodiscard]] virtual std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const = 0;
 
     [[nodiscard]] const DiagEngine &diag() const {
         return *diag_;
