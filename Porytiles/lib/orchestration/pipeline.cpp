@@ -58,9 +58,31 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
 }
 
 std::expected<AnyMap, std::string> Pipeline::Run() const {
-    // AnyMap artifacts = initial_inputs;
+    AnyMap artifacts{};
+    for (auto *op : sorted_) {
+        // Gather inputs for the operation
+        AnyMap inputs{};
+        for (auto &input_artifact : op->DeclareInputs()) {
+            const auto &key = input_artifact.key();
+            const auto val = artifacts.Try<std::any>(key);
+            if (!val.has_value()) {
+                throw std::runtime_error("Missing artifact: " + key);
+            }
+            inputs.Put(key, val.value());
+        }
 
-    return std::expected<AnyMap, std::string>{};
+        // Execute the operation
+        auto result = op->Execute(inputs);
+        if (!result.has_value()) {
+            return result;
+        }
+
+        // Merge outputs
+        for (const auto &[key, value] : result.value()) {
+            artifacts.Put(key, value);
+        }
+    }
+    return std::expected<AnyMap, std::string>{artifacts};
 }
 
 } // namespace porytiles
