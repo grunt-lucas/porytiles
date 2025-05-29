@@ -13,6 +13,29 @@ class AnyMap {
   public:
     AnyMap() = default;
 
+    // -- Range-for support --
+    using iterator = std::unordered_map<std::string, std::any>::iterator;
+    using const_iterator = std::unordered_map<std::string, std::any>::const_iterator;
+
+    iterator begin() noexcept {
+        return config_.begin();
+    }
+    iterator end() noexcept {
+        return config_.end();
+    }
+    [[nodiscard]] const_iterator begin() const noexcept {
+        return config_.begin();
+    }
+    [[nodiscard]] const_iterator end() const noexcept {
+        return config_.end();
+    }
+    [[nodiscard]] const_iterator cbegin() const noexcept {
+        return config_.cbegin();
+    }
+    [[nodiscard]] const_iterator cend() const noexcept {
+        return config_.cend();
+    }
+
     template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) const {
         if (!Contains(key)) {
             return std::nullopt;

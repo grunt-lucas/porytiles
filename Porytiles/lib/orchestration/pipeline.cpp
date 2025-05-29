@@ -59,7 +59,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
 
 std::expected<AnyMap, std::string> Pipeline::Run() const {
     AnyMap artifacts{};
-    for (auto *op : sorted_) {
+    for (const auto *op : sorted_) {
         // Gather inputs for the operation
         AnyMap inputs{};
         for (auto &input_artifact : op->DeclareInputs()) {
@@ -78,7 +78,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
         }
 
         // Merge outputs
-        for (const auto &[key, value] : result.value()) {
+        for (auto outputsMap = result.value(); const auto &[key, value] : outputsMap) {
             artifacts.Put(key, value);
         }
     }
