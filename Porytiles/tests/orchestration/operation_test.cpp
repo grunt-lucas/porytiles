@@ -28,7 +28,7 @@ class TestOperation final : public Operation {
         return outputs;
     }
 
-    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
         const auto num1 = inputs.Get<int>("num1").value();
         const auto num2 = inputs.Get<int>("num2").value();
         int sum = (num1 + num2) * multiplier_;

@@ -31,8 +31,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
             } else {
-                // TODO : resolve at runtime from initial inputs?
-                Panic("no producer for key: " + in_key);
+                Panic(fmt::format("operation '{}' depends on non-existent artifact: '{}'", op->name(), in_key));
             }
         }
         in_degree_.insert({op.get(), deps});
@@ -62,7 +61,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
 
 std::expected<AnyMap, std::string> Pipeline::Run() const {
     AnyMap artifacts{};
-    for (const auto *op : sorted_) {
+    for (auto *op : sorted_) {
         // Gather inputs for the operation
         AnyMap inputs{};
         for (auto &input_artifact : op->DeclareInputs()) {

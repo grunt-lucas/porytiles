@@ -49,7 +49,7 @@ class Operation {
     /// @brief Declares the artifacts this operation will produce.
     [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareOutputs() const = 0;
 
-    [[nodiscard]] virtual std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const = 0;
+    [[nodiscard]] virtual std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) = 0;
 
     [[nodiscard]] const DiagEngine &diag() const {
         return *diag_;

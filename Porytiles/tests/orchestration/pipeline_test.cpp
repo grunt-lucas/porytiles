@@ -24,10 +24,10 @@ class NumSupplierOperation final : public Operation {
         return {ArtifactMetadata{key_, typeid(int)}};
     }
 
-    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
         AnyMap result{};
         result.Put(key_, value_);
-        return std::expected<AnyMap, std::string>{result};
+        return result;
     }
 
   private:
@@ -37,39 +37,42 @@ class NumSupplierOperation final : public Operation {
 
 class SumOperation final : public Operation {
   public:
-    explicit SumOperation(DiagEngine *engine, std::vector<int> nums) : Operation{engine}, nums_{std::move(nums)} {}
+    explicit SumOperation(DiagEngine *engine, std::vector<std::string> in_keys, std::string out_key = "sum")
+        : Operation{engine}, in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)} {}
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
         std::vector<ArtifactMetadata> inputs{};
-        inputs.reserve(nums_.size());
-        for (int i = 0; i < nums_.size(); ++i) {
-            inputs.emplace_back("num" + std::to_string(i), typeid(int));
+        inputs.reserve(in_keys_.size());
+        for (const auto &key : in_keys_) {
+            inputs.emplace_back(key, typeid(int));
         }
         return inputs;
     }
 
     /// @brief Declares the artifacts this operation will produce.
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
-        return {ArtifactMetadata{"sum", typeid(int)}};
+        return {ArtifactMetadata{out_key_, typeid(int)}};
     }
 
-    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
         int sum = 0;
-        for (int i = 0; i < nums_.size(); ++i) {
-            sum += inputs.Get<int>("num" + std::to_string(i)).value();
+        for (const auto &key : in_keys_) {
+            sum += inputs.Get<int>(key).value();
         }
         AnyMap outputs{};
-        outputs.Put("sum", sum);
-        return std::expected<AnyMap, std::string>{outputs};
+        outputs.Put(out_key_, sum);
+        return outputs;
     }
 
   private:
-    std::vector<int> nums_;
+    std::vector<std::string> in_keys_;
+    std::string out_key_;
 };
 
 class NumConsumerOperation final : public Operation {
   public:
-    explicit NumConsumerOperation(DiagEngine *engine, std::string key) : Operation{engine}, key_{std::move(key)} {}
+    explicit NumConsumerOperation(DiagEngine *engine, std::string key)
+        : Operation{engine}, key_{std::move(key)}, consumed_{0} {}
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
         return {ArtifactMetadata{key_, typeid(int)}};
@@ -79,26 +82,29 @@ class NumConsumerOperation final : public Operation {
         return {};
     }
 
-    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
-        AnyMap result{};
-        result.Put("result", inputs.Get<int>(key_).value());
-        return std::expected<AnyMap, std::string>{result};
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
+        consumed_ = inputs.Get<int>(key_).value();
+        return {};
+    }
+
+    [[nodiscard]] int consumed() const {
+        return consumed_;
     }
 
   private:
     std::string key_;
+    int consumed_;
 };
 
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
     const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, "num0", 10);
-    supplierOp0->set_name("supplierOp0");
     const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, "num1", 20);
-    supplierOp1->set_name("supplierOp1");
-    const std::shared_ptr<Operation> sumOp = std::make_shared<SumOperation>(&engine, std::vector{0, 1});
-    sumOp->set_name("sumOp");
+    const std::shared_ptr<Operation> sumOp =
+        std::make_shared<SumOperation>(&engine, std::vector{std::string{"num0"}, std::string{"num1"}});
+    const std::shared_ptr<Operation> consumerOp = std::make_shared<NumConsumerOperation>(&engine, "sum");
 
-    const Pipeline sum{std::vector{supplierOp0, supplierOp1, sumOp}};
-    const auto result = sum.Run();
-    ASSERT_EQ(30, result.value().Get<int>("sum"));
+    const Pipeline pipeline{std::vector{supplierOp0, supplierOp1, sumOp, consumerOp}};
+    const auto result = pipeline.Run();
+    ASSERT_EQ(30, std::dynamic_pointer_cast<NumConsumerOperation>(consumerOp)->consumed());
 }
