@@ -12,7 +12,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         for (const auto &output_artifact : op->DeclareOutputs()) {
             const auto &out_key = output_artifact.key();
             if (producers_.contains(out_key)) {
-                Panic("Duplicate producer for key: " + out_key);
+                Panic("duplicate producer for key: " + out_key);
             }
             producers_.insert({out_key, op.get()});
         }
@@ -20,19 +20,19 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
 
     // 2) Build adjacency and compute in-degrees
     for (auto &op : ops) {
+        adj_.try_emplace(op.get(), std::vector<Operation *>{});
+    }
+    for (auto &op : ops) {
         const auto inputs = op->DeclareInputs();
         int deps = 0;
         for (const auto &input_artifact : inputs) {
             if (const auto &in_key = input_artifact.key(); producers_.contains(in_key)) {
                 auto *producer_op = producers_.at(in_key);
-                if (!adj_.contains(producer_op)) {
-                    adj_.insert({producer_op, std::vector<Operation *>{}});
-                }
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
             } else {
                 // TODO : resolve at runtime from initial inputs?
-                Panic("No producer for key: " + in_key);
+                Panic("no producer for key: " + in_key);
             }
         }
         in_degree_.insert({op.get(), deps});
@@ -49,14 +49,14 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         auto *op = q.front();
         q.pop();
         sorted_.push_back(op);
-        for (auto *nbr : adj_.at(op)) {
-            if (--in_degree_[nbr] == 0) {
-                q.push(nbr);
+        for (auto *neighbor : adj_.at(op)) {
+            if (--in_degree_[neighbor] == 0) {
+                q.push(neighbor);
             }
         }
     }
     if (sorted_.size() != ops.size()) {
-        Panic("Cycle detected in pipeline dependencies");
+        Panic("cycle detected in pipeline dependencies");
     }
 }
 
@@ -67,9 +67,9 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
         AnyMap inputs{};
         for (auto &input_artifact : op->DeclareInputs()) {
             const auto &key = input_artifact.key();
-            const auto val = artifacts.Try<std::any>(key);
+            const auto val = artifacts.TryAny(key);
             if (!val.has_value()) {
-                Panic("Missing input artifact: " + key);
+                Panic("missing input artifact: " + key);
             }
             inputs.Put(key, val.value());
         }
@@ -83,7 +83,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
         // Merge outputs
         for (auto outputsMap = result.value(); const auto &[key, value] : outputsMap) {
             if (artifacts.Contains(key)) {
-                Panic("Duplicate output artifact: " + key);
+                Panic("duplicate output artifact: " + key);
             }
             artifacts.Put(key, value);
         }

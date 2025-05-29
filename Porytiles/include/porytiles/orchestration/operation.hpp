@@ -59,6 +59,10 @@ class Operation {
         return name_;
     }
 
+    void set_name(const std::string &name) {
+        name_ = name;
+    }
+
   private:
     DiagEngine *diag_;
     std::string name_;

@@ -92,8 +92,11 @@ class NumConsumerOperation final : public Operation {
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
     const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, 0, 10);
+    supplierOp0->set_name("supplierOp0");
     const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, 1, 20);
+    supplierOp1->set_name("supplierOp1");
     const std::shared_ptr<Operation> sumOp = std::make_shared<SumOperation>(&engine, std::vector{0, 1});
+    sumOp->set_name("sumOp");
 
     const Pipeline sum{std::vector{supplierOp0, supplierOp1, sumOp}};
     const auto result = sum.Run();
