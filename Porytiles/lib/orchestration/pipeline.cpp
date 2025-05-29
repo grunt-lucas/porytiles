@@ -66,7 +66,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
             const auto &key = input_artifact.key();
             const auto val = artifacts.Try<std::any>(key);
             if (!val.has_value()) {
-                throw std::runtime_error("Missing artifact: " + key);
+                Panic("Missing input artifact: " + key);
             }
             inputs.Put(key, val.value());
         }
@@ -79,6 +79,9 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
 
         // Merge outputs
         for (auto outputsMap = result.value(); const auto &[key, value] : outputsMap) {
+            if (artifacts.Contains(key)) {
+                Panic("Duplicate output artifact: " + key);
+            }
             artifacts.Put(key, value);
         }
     }
