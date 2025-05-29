@@ -11,41 +11,91 @@
 
 using namespace porytiles;
 
-class TestOperation final : public Operation {
+class NumSupplierOperation final : public Operation {
   public:
-    explicit TestOperation(DiagEngine *engine) : Operation{engine}, multiplier_{1} {}
+    explicit NumSupplierOperation(DiagEngine *engine, const int index, const int value)
+        : Operation{engine}, index_{index}, value_{value} {}
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
-        std::vector inputs = {
-            ArtifactMetadata{"num1", typeid(int)},
-            ArtifactMetadata{"num2", typeid(int)},
-        };
+        return {};
+    }
+
+    [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
+        return {ArtifactMetadata{"num" + std::to_string(index_), typeid(int)}};
+    }
+
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
+        AnyMap result{};
+        result.Put("num" + std::to_string(index_), value_);
+        return std::expected<AnyMap, std::string>{result};
+    }
+
+  private:
+    int index_;
+    int value_;
+};
+
+class SumOperation final : public Operation {
+  public:
+    explicit SumOperation(DiagEngine *engine, std::vector<int> nums) : Operation{engine}, nums_{std::move(nums)} {}
+
+    [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
+        std::vector<ArtifactMetadata> inputs{};
+        inputs.reserve(nums_.size());
+        for (int i = 0; i < nums_.size(); ++i) {
+            inputs.emplace_back("num" + std::to_string(i), typeid(int));
+        }
         return inputs;
     }
 
     /// @brief Declares the artifacts this operation will produce.
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
-        std::vector outputs = {ArtifactMetadata{"sum", typeid(int)}};
-        return outputs;
+        return {ArtifactMetadata{"sum", typeid(int)}};
     }
 
     [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
-        const auto num1 = inputs.Get<int>("num1").value();
-        const auto num2 = inputs.Get<int>("num2").value();
-        int sum = (num1 + num2) * multiplier_;
+        int sum = 0;
+        for (int i = 0; i < nums_.size(); ++i) {
+            sum += inputs.Get<int>("num" + std::to_string(i)).value();
+        }
         AnyMap outputs{};
         outputs.Put("sum", sum);
         return std::expected<AnyMap, std::string>{outputs};
     }
 
-    void set_multiplier(const int value) {
-        multiplier_ = value;
+  private:
+    std::vector<int> nums_;
+};
+
+class NumConsumerOperation final : public Operation {
+  public:
+    explicit NumConsumerOperation(DiagEngine *engine, const int index) : Operation{engine}, index_{index} {}
+
+    [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
+        return {ArtifactMetadata{"num" + std::to_string(index_), typeid(int)}};
+    }
+
+    [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
+        return {};
+    }
+
+    [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
+        AnyMap result{};
+        result.Put("result", inputs.Get<int>("num" + std::to_string(index_)).value());
+        return std::expected<AnyMap, std::string>{result};
     }
 
   private:
-    int multiplier_;
+    int index_;
 };
 
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
-    ASSERT_TRUE(true);
+    DiagEngine engine{std::make_unique<IgnoreConsumer>()};
+    const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, 0, 10);
+    const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, 1, 20);
+    const std::shared_ptr<Operation> sumOp = std::make_shared<SumOperation>(&engine, std::vector{0, 1});
+
+    const Pipeline sum{std::vector{supplierOp0, supplierOp1, sumOp}};
+    const auto result = sum.Run();
+    ASSERT_EQ(30, result.value().Get<int>("sum"));
 }

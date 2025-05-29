@@ -25,6 +25,9 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         for (const auto &input_artifact : inputs) {
             if (const auto &in_key = input_artifact.key(); producers_.contains(in_key)) {
                 auto *producer_op = producers_.at(in_key);
+                if (!adj_.contains(producer_op)) {
+                    adj_.insert({producer_op, std::vector<Operation *>{}});
+                }
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
             } else {
@@ -46,7 +49,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         auto *op = q.front();
         q.pop();
         sorted_.push_back(op);
-        for (auto *nbr : adj_[op]) {
+        for (auto *nbr : adj_.at(op)) {
             if (--in_degree_[nbr] == 0) {
                 q.push(nbr);
             }
