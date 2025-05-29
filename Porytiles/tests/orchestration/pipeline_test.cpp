@@ -13,25 +13,25 @@ using namespace porytiles;
 
 class NumSupplierOperation final : public Operation {
   public:
-    explicit NumSupplierOperation(DiagEngine *engine, const int index, const int value)
-        : Operation{engine}, index_{index}, value_{value} {}
+    explicit NumSupplierOperation(DiagEngine *engine, std::string key, const int value)
+        : Operation{engine}, key_{std::move(key)}, value_{value} {}
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
         return {};
     }
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
-        return {ArtifactMetadata{"num" + std::to_string(index_), typeid(int)}};
+        return {ArtifactMetadata{key_, typeid(int)}};
     }
 
     [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
         AnyMap result{};
-        result.Put("num" + std::to_string(index_), value_);
+        result.Put(key_, value_);
         return std::expected<AnyMap, std::string>{result};
     }
 
   private:
-    int index_;
+    std::string key_;
     int value_;
 };
 
@@ -69,10 +69,10 @@ class SumOperation final : public Operation {
 
 class NumConsumerOperation final : public Operation {
   public:
-    explicit NumConsumerOperation(DiagEngine *engine, const int index) : Operation{engine}, index_{index} {}
+    explicit NumConsumerOperation(DiagEngine *engine, std::string key) : Operation{engine}, key_{std::move(key)} {}
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
-        return {ArtifactMetadata{"num" + std::to_string(index_), typeid(int)}};
+        return {ArtifactMetadata{key_, typeid(int)}};
     }
 
     [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
@@ -81,19 +81,19 @@ class NumConsumerOperation final : public Operation {
 
     [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) const override {
         AnyMap result{};
-        result.Put("result", inputs.Get<int>("num" + std::to_string(index_)).value());
+        result.Put("result", inputs.Get<int>(key_).value());
         return std::expected<AnyMap, std::string>{result};
     }
 
   private:
-    int index_;
+    std::string key_;
 };
 
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
-    const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, 0, 10);
+    const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, "num0", 10);
     supplierOp0->set_name("supplierOp0");
-    const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, 1, 20);
+    const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, "num1", 20);
     supplierOp1->set_name("supplierOp1");
     const std::shared_ptr<Operation> sumOp = std::make_shared<SumOperation>(&engine, std::vector{0, 1});
     sumOp->set_name("sumOp");

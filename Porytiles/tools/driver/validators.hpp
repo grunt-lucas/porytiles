@@ -1,5 +1,6 @@
 #pragma once
 
+#include <expected>
 #include <filesystem>
 
 #include <CLI/CLI.hpp>
@@ -7,7 +8,6 @@
 
 #include <porytiles/legacy/utilities.h>
 #include <porytiles/templates/parsing.hpp>
-#include <porytiles/templates/result.hpp>
 
 class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";
@@ -46,28 +46,28 @@ class RgbStringValidator final : public CLI::Validator {
     explicit RgbStringValidator() : Validator{kHint} {
         name_ = "RGB_STRING";
         func_ = [](const std::string &str) {
-            const std::vector<std::string> colorComponents = porytiles::split(str, ",");
-            if (colorComponents.size() != 3) {
+            const std::vector<std::string> color_components = porytiles::split(str, ",");
+            if (color_components.size() != 3) {
                 return std::string{"invalid rgb string: " + str};
             }
 
-            const auto redResult = porytiles::ParseInt<int>(colorComponents[0]);
-            const auto greenResult = porytiles::ParseInt<int>(colorComponents[1]);
-            const auto blueResult = porytiles::ParseInt<int>(colorComponents[2]);
+            const auto red_result = porytiles::ParseInt<int>(color_components[0]);
+            const auto green_result = porytiles::ParseInt<int>(color_components[1]);
+            const auto blue_result = porytiles::ParseInt<int>(color_components[2]);
 
-            if (!redResult.Ok()) {
-                return std::string{"invalid rgb red component: " + colorComponents[0]};
+            if (!red_result.has_value()) {
+                return std::string{"invalid rgb red component: " + red_result.error()};
             }
-            if (!greenResult.Ok()) {
-                return std::string{"invalid rgb green component: " + colorComponents[1]};
+            if (!green_result.has_value()) {
+                return std::string{"invalid rgb green component: " + green_result.error()};
             }
-            if (!blueResult.Ok()) {
-                return std::string{"invalid rgb blue component: " + colorComponents[2]};
+            if (!blue_result.has_value()) {
+                return std::string{"invalid rgb blue component: " + blue_result.error()};
             }
 
-            const auto red = redResult.Get();
-            const auto green = greenResult.Get();
-            const auto blue = blueResult.Get();
+            const auto red = red_result.value();
+            const auto green = green_result.value();
+            const auto blue = blue_result.value();
 
             if (red < 0 || red > 255) {
                 return fmt::format("rgb red component out of range: {}", red);

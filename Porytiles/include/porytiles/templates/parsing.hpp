@@ -13,13 +13,13 @@ template <typename T> std::expected<T, std::string> ParseInt(std::string_view in
     try {
         arg = std::stoi(int_string.data(), &pos, base);
     } catch (const std::exception &e) {
-        return std::expected<T, std::string>{"invalid integral string: " + std::string{int_string}};
+        return std::unexpected{"invalid integral string: " + std::string{int_string}};
     }
     if (std::string{int_string}.size() != pos) {
-        return std::expected<T, std::string>{"invalid integral string: " + std::string{int_string}};
+        return std::unexpected{"invalid integral string: " + std::string{int_string}};
     }
 
-    return std::expected<T, std::string>{arg};
+    return arg;
 }
 
 // ReSharper disable once CppParameterMayBeConst
