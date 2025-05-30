@@ -12,7 +12,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         for (const auto &output_artifact : op->DeclareOutputs()) {
             const auto &out_key = output_artifact.key();
             if (producers_.contains(out_key)) {
-                Panic("duplicate producer for key: " + out_key);
+                Panic("duplicate producers for key: " + out_key);
             }
             producers_.insert({out_key, op.get()});
         }
@@ -68,7 +68,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
             const auto &key = input_artifact.key();
             const auto val = artifacts.TryAny(key);
             if (!val.has_value()) {
-                Panic("missing input artifact: " + key);
+                Panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
             }
             inputs.Put(key, val.value());
         }
@@ -87,7 +87,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
             artifacts.Put(key, value);
         }
     }
-    return std::expected<AnyMap, std::string>{artifacts};
+    return artifacts;
 }
 
 } // namespace porytiles

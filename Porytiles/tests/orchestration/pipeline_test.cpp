@@ -98,13 +98,15 @@ class NumConsumerOperation final : public Operation {
 
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
-    const std::shared_ptr<Operation> supplierOp0 = std::make_shared<NumSupplierOperation>(&engine, "num0", 10);
-    const std::shared_ptr<Operation> supplierOp1 = std::make_shared<NumSupplierOperation>(&engine, "num1", 20);
-    const std::shared_ptr<Operation> sumOp =
-        std::make_shared<SumOperation>(&engine, std::vector{std::string{"num0"}, std::string{"num1"}});
-    const std::shared_ptr<Operation> consumerOp = std::make_shared<NumConsumerOperation>(&engine, "sum");
 
-    const Pipeline pipeline{std::vector{supplierOp0, supplierOp1, sumOp, consumerOp}};
+    std::vector<std::shared_ptr<Operation>> ops{};
+    ops.push_back(std::make_shared<NumSupplierOperation>(&engine, "num0", 10));
+    ops.push_back(std::make_shared<NumSupplierOperation>(&engine, "num1", 20));
+    ops.push_back(std::make_shared<SumOperation>(&engine, std::vector{std::string{"num0"}, std::string{"num1"}}));
+    const auto consumerOp = std::make_shared<NumConsumerOperation>(&engine, "sum");
+    ops.push_back(consumerOp);
+
+    const Pipeline pipeline{ops};
     const auto result = pipeline.Run();
     ASSERT_EQ(30, std::dynamic_pointer_cast<NumConsumerOperation>(consumerOp)->consumed());
 }
