@@ -2,7 +2,8 @@
 
 #include <CLI/CLI.hpp>
 
-#include <porytiles/tiles/tiles_pal_mode.hpp>
+#include <porytiles/config/fieldmap_config.hpp>
+#include <porytiles/config/tiles_pal_mode.hpp>
 
 #include "./validators.hpp"
 
