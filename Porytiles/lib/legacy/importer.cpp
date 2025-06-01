@@ -1290,7 +1290,7 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
     if (!sawAtLeastOneOverriddenColor) {
         ctx.diag->Report(kErrGeneric,
-                         fmt::format("{} no overridden pal slots were present", ctx.diag->bold(fileName + ":")));
+                         fmt::format("{} no overridden pal slots were present", ctx.diag->Bold(fileName + ":")));
         ctx.diag->Report(kNoteGeneric,
                          fmt::format("this is illegal, a completely empty override is effectively a no-op"));
     }
