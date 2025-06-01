@@ -532,6 +532,47 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
     tiles.anims = anims;
 }
 
+static std::uint8_t parseMacroFormatLine(PorytilesContext &ctx, std::ifstream &behaviorFile, CompilerMode *compilerMode,
+                                         DecompilerMode *decompilerMode, const std::string &behaviorName,
+                                         const std::string &behaviorValueString, std::size_t processedUpToLine) {
+    std::uint8_t behaviorVal{};
+    try {
+        std::size_t pos;
+        behaviorVal = std::stoi(behaviorValueString, &pos, 0);
+        if (std::string{behaviorValueString}.size() != pos) {
+            behaviorFile.close();
+            // throw here so it catches below and prints an error message
+            throw std::runtime_error{""};
+        }
+    } catch (const std::exception &e) {
+        behaviorFile.close();
+        if (compilerMode != nullptr) {
+            const auto msg =
+                fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
+                            ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName), processedUpToLine);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->report(
+                N_GENERIC, "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
+                ctx.diag->bold("id"));
+            die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode),
+                                      fmt::format("invalid behavior value {}", behaviorValueString));
+        }
+        if (decompilerMode != nullptr) {
+            const auto msg =
+                fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
+                            ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName), processedUpToLine);
+            ctx.diag->report(E_FATAL_GENERIC, msg);
+            ctx.diag->report(
+                N_GENERIC, "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
+                ctx.diag->bold("id"));
+            die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode),
+                                        fmt::format("invalid behavior value {}", behaviorValueString));
+        }
+        panic("importer::importMetatileBehaviorHeader both compilerMode and decompilerMode were null");
+    }
+    return behaviorVal;
+}
+
 static std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
 importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compilerMode, DecompilerMode *decompilerMode,
                                    std::ifstream &behaviorFile) {
@@ -540,6 +581,7 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
 
     std::string line;
     std::size_t processedUpToLine = 1;
+    std::size_t enumBehaviorCounter = 0;
     while (std::getline(behaviorFile, line)) {
         std::string buffer;
         std::stringstream stringStream(line);
@@ -547,51 +589,23 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
         while (stringStream >> buffer) {
             tokens.push_back(buffer);
         }
-        if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_")) {
+        if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_") && tokens.at(1) != "MB_INVALID") {
             const std::string &behaviorName = tokens.at(1);
             const std::string &behaviorValueString = tokens.at(2);
-            std::uint8_t behaviorVal{};
-            try {
-                std::size_t pos;
-                behaviorVal = std::stoi(behaviorValueString, &pos, 0);
-                if (std::string{behaviorValueString}.size() != pos) {
-                    behaviorFile.close();
-                    // throw here so it catches below and prints an error message
-                    throw std::runtime_error{""};
-                }
-            } catch (const std::exception &e) {
-                behaviorFile.close();
-                if (compilerMode != nullptr) {
-                    const auto msg = fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
-                                                 ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName),
-                                                 processedUpToLine);
-                    ctx.diag->report(E_FATAL_GENERIC, msg);
-                    ctx.diag->report(
-                        N_GENERIC,
-                        "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
-                        ctx.diag->bold("id"));
-                    die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode),
-                                              fmt::format("invalid behavior value {}", behaviorValueString));
-                }
-                if (decompilerMode != nullptr) {
-                    const auto msg = fmt::format("invalid value '{}' for behavior '{}' defined at line {}",
-                                                 ctx.diag->bold(behaviorValueString), ctx.diag->bold(behaviorName),
-                                                 processedUpToLine);
-                    ctx.diag->report(E_FATAL_GENERIC, msg);
-                    ctx.diag->report(
-                        N_GENERIC,
-                        "behavior must be an integral value (both decimal and hexadecimal notations are permitted)",
-                        ctx.diag->bold("id"));
-                    die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode),
-                                                fmt::format("invalid behavior value {}", behaviorValueString));
-                }
-                panic("importer::importMetatileBehaviorHeader both compilerMode and decompilerMode were null");
-            }
+            const std::uint8_t behaviorVal = parseMacroFormatLine(ctx, behaviorFile, compilerMode, decompilerMode,
+                                                                  behaviorName, behaviorValueString, processedUpToLine);
             if (behaviorVal != 0xFF) {
-                // Check for MB_INVALID above, only insert if it was a valid MB
                 behaviorMap.insert(std::pair{behaviorName, behaviorVal});
                 behaviorReverseMap.insert(std::pair{behaviorVal, behaviorName});
             }
+        } else if (tokens.size() == 1 && tokens.at(0).starts_with("MB_") && tokens.at(0) != "MB_INVALID") {
+            std::string &behaviorName = tokens.at(0);
+            if (!behaviorName.empty() && behaviorName.back() == ',') {
+                behaviorName.pop_back();
+            }
+            behaviorMap.insert(std::pair{behaviorName, enumBehaviorCounter});
+            behaviorReverseMap.insert(std::pair{enumBehaviorCounter, behaviorName});
+            enumBehaviorCounter++;
         }
         processedUpToLine++;
     }
