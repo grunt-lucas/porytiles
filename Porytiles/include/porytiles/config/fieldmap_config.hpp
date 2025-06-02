@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace porytiles {
 
 class FieldmapConfig2 {

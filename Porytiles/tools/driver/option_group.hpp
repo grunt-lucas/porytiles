@@ -1,11 +1,8 @@
 #pragma once
 
 #include <string>
-#include <unordered_set>
 
 #include <CLI/CLI.hpp>
-
-#include <porytiles/diagnostics/diagnostics.hpp>
 
 #include "./option.hpp"
 
