@@ -21,4 +21,4 @@ bool RgbaTile::EqualsBgr(const RgbaTile &other) const {
     return true;
 }
 
-}; // namespace porytiles
+} // namespace porytiles

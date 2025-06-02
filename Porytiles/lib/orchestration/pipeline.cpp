@@ -80,7 +80,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
         }
 
         // Merge outputs
-        for (auto outputsMap = result.value(); const auto &[key, value] : outputsMap) {
+        for (auto outputs_map = result.value(); const auto &[key, value] : outputs_map) {
             if (artifacts.Contains(key)) {
                 Panic("duplicate output artifact: " + key);
             }
