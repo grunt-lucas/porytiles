@@ -15,8 +15,9 @@ runs:
         echo "Packaging release ${{ inputs.os-arch }}..."
         mkdir "porytiles-${{ inputs.os-arch }}"
         cp build/Porytiles/tools/legacy_driver/porytiles "./porytiles-${{ inputs.os-arch }}"
-        cp build/Porytiles/tools/driver/porytiles-exp "./porytiles-${{ inputs.os-arch }}"
+        cp build/Porytiles/tools/driver/porytiles2 "./porytiles-${{ inputs.os-arch }}"
         cp build/Porytiles/doctests/PorytilesDocTests "./porytiles-${{ inputs.os-arch }}"
+        cp build/Porytiles/tests/PorytilesGoogleTests "./porytiles-${{ inputs.os-arch }}"
         cp README.md "./porytiles-${{ inputs.os-arch }}"
         cp LICENSE "./porytiles-${{ inputs.os-arch }}"
         mkdir -p "./porytiles-${{ inputs.os-arch }}/Resources"
@@ -27,6 +28,7 @@ runs:
 
         pushd "./porytiles-${{ inputs.os-arch }}"
         ./PorytilesDocTests
+        ./PorytilesGoogleTests
         popd
 
         zip -r "./porytiles-${{ inputs.os-arch }}.zip" "./porytiles-${{ inputs.os-arch }}"
