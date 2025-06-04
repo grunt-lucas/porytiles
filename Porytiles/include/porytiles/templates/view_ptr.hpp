@@ -3,17 +3,32 @@
 #include <cstddef>
 #include <utility>
 
+#include "../panic/panic.hpp"
+
 namespace porytiles {
+
+/// @brief A smart pointer that represents a non-owning view of a resource.
+///
+/// @details The view_ptr allows for reading and writing.
+/// It is semantically equivalent to a raw pointer.
+/// The purpose of view_ptr is to explicitly signal
+/// that the pointed-to resource is not owned.
+///
+/// @tparam T The pointed-to type.
 template <typename T> class view_ptr {
   public:
     constexpr view_ptr() noexcept : ptr_(nullptr) {}
+
     explicit constexpr view_ptr(std::nullptr_t) noexcept : ptr_(nullptr) {}
+
     explicit view_ptr(T *p) noexcept : ptr_(p) {}
 
     view_ptr(const view_ptr &other) noexcept = default;
+
     view_ptr &operator=(const view_ptr &other) noexcept = default;
 
     view_ptr(view_ptr &&other) noexcept : ptr_(other.release()) {}
+
     view_ptr &operator=(view_ptr &&other) noexcept {
         ptr_ = other.release();
         return *this;
@@ -54,6 +69,7 @@ template <typename T> class view_ptr {
 };
 
 // Comparison operators
+// TODO : make these members? pros vs. cons
 template <typename T1, typename T2> bool operator==(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
     return lhs.get() == rhs.get();
 }
