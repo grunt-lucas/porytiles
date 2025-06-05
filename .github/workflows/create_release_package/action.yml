@@ -21,6 +21,7 @@ runs:
         cp README.md "./porytiles-${{ inputs.os-arch }}"
         cp LICENSE "./porytiles-${{ inputs.os-arch }}"
         mkdir -p "./porytiles-${{ inputs.os-arch }}/Resources"
+        cp -r Resources/Doctests "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Examples "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Readme "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Tests "./porytiles-${{ inputs.os-arch }}/Resources"
