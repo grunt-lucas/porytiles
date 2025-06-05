@@ -5,7 +5,7 @@
 
 namespace porytiles {
 
-[[noreturn]] void panic_impl(const char *s) noexcept {
+[[noreturn]] void PanicImpl(const char *s) noexcept {
     std::fputs(s, stderr);
     std::abort();
 }

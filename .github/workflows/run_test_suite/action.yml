@@ -6,6 +6,7 @@ runs:
     - name: Run version and test suite
       shell: bash
       run: |
-        ./build/Porytiles/tools/driver/porytiles --version
+        ./build/Porytiles/tools/legacy_driver/porytiles --version
         ./build/Porytiles/doctests/PorytilesDocTests
+        ./build/Porytiles/tools/driver/porytiles2 --version
         ./build/Porytiles/tests/PorytilesGoogleTests

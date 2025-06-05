@@ -14,9 +14,17 @@ find_package(PNG REQUIRED)
 # Pull in fmtlib directly from GitHub
 FetchContent_Declare(
         fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt
-        GIT_TAG 11.1.4)
+        GIT_REPOSITORY "https://github.com/fmtlib/fmt"
+        GIT_TAG "11.1.4")
 FetchContent_MakeAvailable(fmt)
+
+# Pull in Core Guidelines support library
+FetchContent_Declare(
+        GSL
+        GIT_REPOSITORY "https://github.com/microsoft/GSL"
+        GIT_TAG "v4.2.0"
+        GIT_SHALLOW ON)
+FetchContent_MakeAvailable(GSL)
 
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
@@ -55,8 +63,7 @@ target_include_directories(PorytilesLib INTERFACE ${PORYTILES_INCLUDE_DIR} PRIVA
 # Find the libpng include dirs located via find_package
 target_include_directories(PorytilesLib PUBLIC ${PNG_INCLUDE_DIRS})
 
-# png++ library is a header-only C++ wrapper for libpng. Mark it public because
-# our library interface uses types from it.
+# Mark public any includes our interface exposes.
 target_include_directories(PorytilesLib PUBLIC ${CMAKE_SOURCE_DIR}/Porytiles/vendor/png++-0.2.9)
 
 # Disable doctest
@@ -74,15 +81,15 @@ target_include_directories(PorytilesLib PRIVATE ${CMAKE_SOURCE_DIR}/Porytiles/ve
 target_link_libraries(PorytilesLib PRIVATE ${PNG_STATIC})
 target_link_libraries(PorytilesLib PRIVATE ${ZLIB_STATIC})
 
-# Link fmtlib publicly since our API exposes it
+# Public link API exposed libs
 target_link_libraries(PorytilesLib PUBLIC fmt::fmt)
+target_link_libraries(PorytilesLib PUBLIC Microsoft.GSL::GSL)
 
 
 ##################################
 #### Export Porytiles library ####
 ##################################
 
-# Export the library
-# TODO : what's the difference between these two
-export(TARGETS PorytilesLib FILE ${CMAKE_CURRENT_BINARY_DIR}/PorytilesLibraryTargets.cmake)
-export(PACKAGE PorytilesLib)
+# Export the library.
+# We have to export GSL explicitly since the GSL CMake disables exporting by default.
+export(TARGETS PorytilesLib GSL FILE ${CMAKE_CURRENT_BINARY_DIR}/PorytilesLibraryTargets.cmake)

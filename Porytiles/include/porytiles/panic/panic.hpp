@@ -16,27 +16,27 @@ namespace porytiles {
  * @details
  * Inspired by: https://buildingblock.ai/panic
  */
-struct string_view_with_source_loc {
+struct StringViewSourceLoc {
     template <class T>
         requires std::constructible_from<std::string_view, T>
-    string_view_with_source_loc(const T &msg, std::source_location loc = std::source_location::current()) noexcept
-        : msg{msg}, loc{loc} {}
+    StringViewSourceLoc(const T &msg, std::source_location loc = std::source_location::current()) noexcept
+        : msg_{msg}, loc_{loc} {}
 
-    std::string_view msg;
-    std::source_location loc;
+    std::string_view msg_;
+    std::source_location loc_;
 };
 
-[[noreturn]] void panic_impl(const char *s) noexcept;
+[[noreturn]] void PanicImpl(const char *s) noexcept;
 
-[[noreturn]] inline void panic(const string_view_with_source_loc &s) noexcept {
-    auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
-    panic_impl(msg.c_str());
+[[noreturn]] inline void Panic(const StringViewSourceLoc &s) noexcept {
+    const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
+    PanicImpl(msg.c_str());
 }
 
-inline void assert_or_panic(bool condition, const string_view_with_source_loc &s) {
+inline void AssertOrPanic(const bool condition, const StringViewSourceLoc &s) {
     if (!condition) {
-        auto msg = fmt::format("{}:{} panic: {}\n", s.loc.file_name(), s.loc.line(), s.msg);
-        panic_impl(msg.c_str());
+        const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
+        PanicImpl(msg.c_str());
     }
 }
 

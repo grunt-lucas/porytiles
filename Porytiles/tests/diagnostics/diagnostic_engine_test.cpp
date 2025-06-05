@@ -1,80 +1,82 @@
 #include <gtest/gtest.h>
 
-#include "porytiles/diagnostics/diagnostic_engine.hpp"
+#include <porytiles/diagnostics/diagnostic_engine.hpp>
+
+using namespace porytiles;
 
 TEST(WarningTests, WallShouldEnableAllWarnings) {
-    porytiles::DiagEngine engine{std::make_unique<porytiles::IgnoreConsumer>()};
+    DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
-    ASSERT_EQ(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS), porytiles::DiagLevel::Ignored);
-    ASSERT_EQ(engine.enabled_at(porytiles::W_TRANSPARENCY_COLLAPSE), porytiles::DiagLevel::Ignored);
-    ASSERT_EQ(engine.enabled_at(porytiles::W_UNUSED_ATTRIBUTE), porytiles::DiagLevel::Ignored);
+    ASSERT_EQ(engine.EnabledAt(kWarnColorPrecisionLoss), DiagLevel::Ignored);
+    ASSERT_EQ(engine.EnabledAt(kWarnTransparencyCollapse), DiagLevel::Ignored);
+    ASSERT_EQ(engine.EnabledAt(kWarnUnusedAttribute), DiagLevel::Ignored);
 
-    porytiles::RGBATile tile{};
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, std::string{"foo"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 0);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 0);
-    ASSERT_EQ(engine.in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS), 0);
+    RGBATile tile{};
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    engine.ReportPartner(kWarnColorPrecisionLoss, 0, tile, std::string{"foo"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 0);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 0);
+    ASSERT_EQ(engine.InFlightCountFor(kWarnColorPrecisionLoss), 0);
 
-    engine.enable_all_warnings();
-    ASSERT_EQ(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS), porytiles::DiagLevel::Warning);
-    ASSERT_EQ(engine.enabled_at(porytiles::W_TRANSPARENCY_COLLAPSE), porytiles::DiagLevel::Warning);
-    ASSERT_EQ(engine.enabled_at(porytiles::W_UNUSED_ATTRIBUTE), porytiles::DiagLevel::Warning);
+    engine.EnableAllWarnings();
+    ASSERT_EQ(engine.EnabledAt(kWarnColorPrecisionLoss), DiagLevel::Warning);
+    ASSERT_EQ(engine.EnabledAt(kWarnTransparencyCollapse), DiagLevel::Warning);
+    ASSERT_EQ(engine.EnabledAt(kWarnUnusedAttribute), DiagLevel::Warning);
 
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    engine.report_partner(porytiles::W_COLOR_PRECISION_LOSS, 0, tile, std::string{"foo"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 2);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 1);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Note), 1);
-    ASSERT_EQ(engine.in_flight_count_for(porytiles::W_COLOR_PRECISION_LOSS), 1);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    engine.ReportPartner(kWarnColorPrecisionLoss, 0, tile, std::string{"foo"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 2);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 1);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Note), 1);
+    ASSERT_EQ(engine.InFlightCountFor(kWarnColorPrecisionLoss), 1);
 
-    engine.report(porytiles::W_TRANSPARENCY_COLLAPSE, "foo", "bar", "baz", 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 3);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 2);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Note), 1);
-    ASSERT_EQ(engine.in_flight_count_for(porytiles::W_TRANSPARENCY_COLLAPSE), 1);
+    engine.Report(kWarnTransparencyCollapse, "foo", "bar", "baz", 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 3);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 2);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Note), 1);
+    ASSERT_EQ(engine.InFlightCountFor(kWarnTransparencyCollapse), 1);
 
-    engine.report(porytiles::W_UNUSED_ATTRIBUTE, 12UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 4);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 3);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Note), 1);
-    ASSERT_EQ(engine.in_flight_count_for(porytiles::W_UNUSED_ATTRIBUTE), 1);
+    engine.Report(kWarnUnusedAttribute, 12UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 4);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 3);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Note), 1);
+    ASSERT_EQ(engine.InFlightCountFor(kWarnUnusedAttribute), 1);
 }
 
 TEST(WarningTests, IndividualWarningsShouldExplicitlyEnable) {
-    porytiles::DiagEngine engine{std::make_unique<porytiles::IgnoreConsumer>()};
-    ASSERT_EQ(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS), porytiles::DiagLevel::Ignored);
+    DiagEngine engine{std::make_unique<IgnoreConsumer>()};
+    ASSERT_EQ(engine.EnabledAt(kWarnColorPrecisionLoss), DiagLevel::Ignored);
 
-    porytiles::RGBATile tile{};
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 0);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 0);
+    RGBATile tile{};
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 0);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 0);
 
-    engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::DiagLevel::Warning);
-    ASSERT_EQ(engine.enabled_at(porytiles::W_COLOR_PRECISION_LOSS), porytiles::DiagLevel::Warning);
+    engine.EnableAtLevel(kWarnColorPrecisionLoss, DiagLevel::Warning);
+    ASSERT_EQ(engine.EnabledAt(kWarnColorPrecisionLoss), DiagLevel::Warning);
 
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 1);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 1);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 1);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 1);
 
-    engine.enable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::DiagLevel::Error);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 2);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 1);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Error), 1);
+    engine.EnableAtLevel(kWarnColorPrecisionLoss, DiagLevel::Error);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 2);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 1);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Error), 1);
 
     // Disabling at warning doesn't change anything, since it's still enabled at error level
-    engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::DiagLevel::Warning);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 3);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 1);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Error), 2);
+    engine.DisableAtLevel(kWarnColorPrecisionLoss, DiagLevel::Warning);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 3);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 1);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Error), 2);
 
-    engine.disable_at_level(porytiles::W_COLOR_PRECISION_LOSS, porytiles::DiagLevel::Error);
-    engine.report(porytiles::W_COLOR_PRECISION_LOSS, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
-    ASSERT_EQ(engine.consumer().consumed_count(), 3);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Warning), 1);
-    ASSERT_EQ(engine.in_flight_count_for_level(porytiles::DiagLevel::Error), 2);
+    engine.DisableAtLevel(kWarnColorPrecisionLoss, DiagLevel::Error);
+    engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
+    ASSERT_EQ(engine.consumer().ConsumedCount(), 3);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Warning), 1);
+    ASSERT_EQ(engine.InFlightCountForLevel(DiagLevel::Error), 2);
 }

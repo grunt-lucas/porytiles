@@ -1,1 +1,2 @@
 add_subdirectory(driver)
+add_subdirectory(legacy_driver)

@@ -22,6 +22,14 @@ FetchContent_Declare(
         GIT_TAG 11.1.4)
 FetchContent_MakeAvailable(fmt)
 
+# Pull in Core Guidelines support library
+FetchContent_Declare(
+        GSL
+        GIT_REPOSITORY "https://github.com/microsoft/GSL"
+        GIT_TAG "v4.2.0"
+        GIT_SHALLOW ON)
+FetchContent_MakeAvailable(GSL)
+
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
 find_library(PNG_STATIC
@@ -41,6 +49,7 @@ find_library(ZLIB_STATIC
 #### Compile Porytiles lib code as object lib ####
 ##################################################
 
+# Only grab the legacy code
 FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Porytiles/lib/*.cpp)
 # This needs to be an object library for now, otherwise doctest cannot find any
 # tests
@@ -75,8 +84,9 @@ target_include_directories(PorytilesLibDocTests PRIVATE ${CMAKE_SOURCE_DIR}/Pory
 target_link_libraries(PorytilesLibDocTests PRIVATE ${PNG_STATIC})
 target_link_libraries(PorytilesLibDocTests PRIVATE ${ZLIB_STATIC})
 
-# Link fmtlib publicly since our API exposes it
+# Public link API exposed libs
 target_link_libraries(PorytilesLibDocTests PUBLIC fmt::fmt)
+target_link_libraries(PorytilesLibDocTests PUBLIC Microsoft.GSL::GSL)
 
 
 ##################################

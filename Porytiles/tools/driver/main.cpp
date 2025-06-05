@@ -1,62 +1,58 @@
-#include <exception>
+#include <CLI/CLI.hpp>
+#include <fmt/format.h>
 
 #include <porytiles/build_version.h>
-#include <porytiles/cli_parser.h>
-#include <porytiles/diagnostics/diagnostic_engine.hpp>
-#include <porytiles/diagnostics/diagnostics.hpp>
-#include <porytiles/driver.h>
-#include <porytiles/logger.h>
-#include <porytiles/porytiles_context.h>
-#include <porytiles/porytiles_exception.h>
 
-int main(int argc, char **argv) try {
-    porytiles::PorytilesContext ctx{};
-    auto engine = std::make_unique<porytiles::DiagEngine>(std::make_unique<porytiles::stderr_consumer>());
-    ctx.set_diag_engine(std::move(engine));
-    parseOptions(ctx, argc, argv);
-    drive(ctx);
+#include "./command.hpp"
 
-    const auto warn_count = ctx.diag->in_flight_count_for_level(porytiles::DiagLevel::Warning);
-    if (warn_count == 1) {
-        porytiles::pt_println(stderr, "{} warning generated.", warn_count);
-    } else if (warn_count > 1) {
-        porytiles::pt_println(stderr, "{} warnings generated.", warn_count);
-    }
+int main(const int argc, char **argv) {
+    CLI::App porytiles_app{"Porytiles"};
 
+    porytiles_app.description(fmt::format(R"(porytiles {} {}
+grunt-lucas <grunt.lucas@yahoo.com>
+
+Overworld tileset compiler for use with the pokeruby, pokefirered, and
+pokeemerald Pokémon Generation III decompilation projects from pret. Also
+compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
+assets from RGBA (or indexed) input assets.
+
+Home Page: https://github.com/grunt-lucas/porytiles)",
+                                          std::string{PORYTILES_BUILD_VERSION}, std::string{PORYTILES_BUILD_DATE}));
+
+    porytiles_app.footer(
+        R"(To get more help with Porytiles, check out the guides at:
+https://github.com/grunt-lucas/porytiles/wiki
+https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce
+
+SEE ALSO
+https://github.com/pret/pokeruby
+https://github.com/pret/pokefirered
+https://github.com/pret/pokeemerald
+https://github.com/rh-hideout/pokeemerald-expansion
+https://github.com/huderlem/porymap)");
+
+    // Override some --version,--help flag defaults.
+    porytiles_app.add_flag(
+        "-V,--version",
+        [](const size_t) {
+            std::cout << PORYTILES_EXECUTABLE << " " << PORYTILES_BUILD_VERSION << " " << PORYTILES_BUILD_DATE
+                      << std::endl;
+            std::exit(0);
+        },
+        "Print version info and exit.");
+    porytiles_app.get_option("--help")->description("Print this help message and exit.");
+
+    CompileTilesetCommand compile_tileset{porytiles_app};
+    CompileLayoutCommand compile_layout{porytiles_app};
+    CompileSpritesheetCommand compile_spritesheet{porytiles_app};
+
+    DecompileTilesetCommand decompile_tileset{porytiles_app};
+    DecompileLayoutCommand decompile_layout{porytiles_app};
+
+    ReduceBitDepthCommand reduce_bit_depth{porytiles_app};
+
+    porytiles_app.require_subcommand();
+
+    CLI11_PARSE(porytiles_app, argc, argv);
     return 0;
-} catch (const porytiles::PorytilesException &e) {
-    /*
-     * Catch PorytilesException here. This exception is used by the error system to indicate an error it correctly
-     * handled and reported to the user. These errors are typically due to invalid user input. So we can just return 1
-     * here to indicate a bad exit.
-     */
-    return 1;
-} catch (const std::exception &e) {
-    /*
-     * Any other exception type indicates an internal compiler error, i.e. an error we did not explicitly handle or
-     * anticipate from library code, or an error we explicitly threw due to an unrecoverable assert failure. This
-     * usually indicates a bug in the compiler. Just dump a helpful message so the user can file an issue on GitHub.
-     */
-
-    /*
-     * FEATURE : New C++23 features may allow a stacktrace here: https://github.com/TylerGlaiel/Crashlogs
-     * Or do something like this: https://stackoverflow.com/questions/691719/c-display-stack-trace-on-exception
-     */
-    porytiles::pt_println(
-        stderr, "{}: {} {}", PORYTILES_EXECUTABLE,
-        fmt::styled("internal compiler error:", fmt::emphasis::bold | fg(fmt::terminal_color::yellow)), e.what());
-    porytiles::pt_println(stderr, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    porytiles::pt_println(stderr, "This is a bug. Please file an issue here:");
-    porytiles::pt_println(stderr, "https://github.com/grunt-lucas/porytiles/issues");
-    porytiles::pt_println(stderr, "");
-    porytiles::pt_println(stderr, "In the issue body, please include the following info:");
-    porytiles::pt_println(stderr, "  - the above error message");
-    porytiles::pt_println(stderr, "  - the full command line you ran");
-    porytiles::pt_println(stderr, "  - any relevant input files");
-    porytiles::pt_println(stderr, "  - the version / commit of Porytiles you are using");
-    porytiles::pt_println(stderr, "  - the compiler (and settings) you built with (if you built from source)");
-    porytiles::pt_println(stderr, "");
-    porytiles::pt_println(stderr, "Including these items makes it more likely a maintainer will be able to");
-    porytiles::pt_println(stderr, "reproduce the issue and create a fix release.");
-    return 1;
 }

@@ -1,20 +1,22 @@
 #pragma once
 
 #include <any>
-#include <fmt/color.h>
-#include <fmt/ranges.h>
 #include <functional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
-#include "../types.h"
+#include <fmt/color.h>
+#include <fmt/ranges.h>
+
+#include "../legacy/types.h"
 
 namespace porytiles {
 
 enum class DiagLevel { Ignored, Note, Remark, Warning, Error, Fatal };
-std::string level_to_str(DiagLevel level);
-fmt::terminal_color color_for_level(DiagLevel level);
-int level_priority(DiagLevel level);
+std::string LevelToStr(DiagLevel level);
+fmt::terminal_color ColorForLevel(DiagLevel level);
+int LevelPriority(DiagLevel level);
 
 /// @brief DiagEngine coordinates the generation and consumption of diagnostic
 /// messages.
@@ -48,7 +50,7 @@ class DiagTempl {
     using dynamic_msg_builder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
                                                                        const std::vector<std::any> &args)>;
 
-    std::string_view name_;
+    std::string name_;
     DiagLevel default_level_;
     std::string_view static_msg_templ_;
     dynamic_msg_builder dynamic_msg_builder_;
@@ -85,7 +87,7 @@ class DiagTempl {
           partner_diags_{partner_diags} {}
     // clang-format on
 
-    [[nodiscard]] std::string_view name() const {
+    [[nodiscard]] const std::string &name() const {
         return name_;
     }
 
@@ -98,8 +100,8 @@ class DiagTempl {
     }
 
     template <typename... Args>
-    std::vector<std::string> build_dynamic_msg(const DiagEngine &eng, const DiagLevel in_flight_level,
-                                               Args &&...args) const {
+    std::vector<std::string> BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level,
+                                             Args &&...args) const {
         if (dynamic_msg_builder_ == nullptr) {
             std::vector<std::string> v{};
             v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));
@@ -146,20 +148,20 @@ class InFlightDiag {
 class DiagConsumer {
   public:
     virtual ~DiagConsumer() = default;
-    virtual void consume(const InFlightDiag &diag) = 0;
-    [[nodiscard]] virtual bool is_a_tty() const = 0;
-    [[nodiscard]] virtual InFlightDiag consumed_at(std::size_t i) const = 0;
-    [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
+    virtual void Consume(const InFlightDiag &diag) = 0;
+    [[nodiscard]] virtual bool IsATty() const = 0;
+    [[nodiscard]] virtual InFlightDiag ConsumedAt(std::size_t i) const = 0;
+    [[nodiscard]] virtual std::uint64_t ConsumedCount() const = 0;
 };
 
 /// @brief ignore_consumer is a consumer implementation that simply ignores the
 /// diagnostic.
 class IgnoreConsumer final : public DiagConsumer {
   public:
-    void consume(const InFlightDiag &diag) override;
-    [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
-    [[nodiscard]] std::uint64_t consumed_count() const override;
+    void Consume(const InFlightDiag &diag) override;
+    [[nodiscard]] bool IsATty() const override;
+    [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t ConsumedCount() const override;
 
   private:
     std::uint64_t consumed_count_{};
@@ -167,12 +169,12 @@ class IgnoreConsumer final : public DiagConsumer {
 
 /// @brief stderr_consumer is a consumer implementation that pushes diagnostic
 /// messages to stderr.
-class stderr_consumer final : public DiagConsumer {
+class StderrConsumer final : public DiagConsumer {
   public:
-    void consume(const InFlightDiag &diag) override;
-    [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
-    [[nodiscard]] std::uint64_t consumed_count() const override;
+    void Consume(const InFlightDiag &diag) override;
+    [[nodiscard]] bool IsATty() const override;
+    [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t ConsumedCount() const override;
 
   private:
     std::uint64_t consumed_count_{};
@@ -182,10 +184,10 @@ class stderr_consumer final : public DiagConsumer {
 /// messages to an internal vector for testing purposes.
 class VectorConsumer final : public DiagConsumer {
   public:
-    void consume(const InFlightDiag &diag) override;
-    [[nodiscard]] bool is_a_tty() const override;
-    [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
-    [[nodiscard]] std::uint64_t consumed_count() const override;
+    void Consume(const InFlightDiag &diag) override;
+    [[nodiscard]] bool IsATty() const override;
+    [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
+    [[nodiscard]] std::uint64_t ConsumedCount() const override;
 
   private:
     std::vector<InFlightDiag> diags_;
@@ -198,23 +200,23 @@ class VectorConsumer final : public DiagConsumer {
 /// STANDALONE NOTES
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto N_GENERIC = "note-generic";
+constexpr auto kNoteGeneric = "note-generic";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
 /// WARNINGS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto W_COLOR_PRECISION_LOSS = "color-precision-loss";
-constexpr auto W_KEY_FRAME_NO_MATCHING_TILE = "key-frame-no-matching-tile";
-constexpr auto W_KEY_FRAME_MISSING_COLORS = "key-frame-missing-colors";
-constexpr auto W_ATTRIBUTE_FORMAT_MISMATCH = "attribute-format-mismatch";
-constexpr auto W_MISSING_ATTRIBUTES_CSV = "missing-attributes-csv";
-constexpr auto W_UNUSED_ATTRIBUTE = "unused-attribute";
-constexpr auto W_TRANSPARENCY_COLLAPSE = "transparency-collapse";
-constexpr auto W_UNUSED_MANUAL_PAL_COLOR = "unused-manual-pal-color";
-constexpr auto W_TILE_INDEX_OUT_OF_RANGE = "tile-index-out-of-range";
-constexpr auto W_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
+constexpr auto kWarnColorPrecisionLoss = "color-precision-loss";
+constexpr auto kWarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
+constexpr auto kWarnKeyFrameMissingColors = "key-frame-missing-colors";
+constexpr auto kWarnAttributeFormatMismatch = "attribute-format-mismatch";
+constexpr auto kWarnMissingAttributesCsv = "missing-attributes-csv";
+constexpr auto kWarnUnusedAttribute = "unused-attribute";
+constexpr auto kWarnTransparencyCollapse = "transparency-collapse";
+constexpr auto kWarnUnusedManualPalColor = "unused-manual-pal-color";
+constexpr auto kWarnTileIndexOutOfRange = "tile-index-out-of-range";
+constexpr auto kWarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,8 +224,8 @@ constexpr auto W_PALETTE_INDEX_OUT_OF_RANGE = "palette-index-out-of-range";
 /// ERRORS & FATALS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto E_GENERIC = "error-generic";
-constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
+constexpr auto kErrGeneric = "error-generic";
+constexpr auto kFatalGeneric = "error-fatal-generic";
 
 // clang-format on
 
@@ -241,13 +243,26 @@ constexpr auto E_FATAL_GENERIC = "error-fatal-generic";
 ///
 /// @note The function will terminate the program if the diagnostic name is
 /// invalid.
-DiagTempl diag_templ_for(std::string_view name);
+DiagTempl DiagFor(std::string_view name);
 
 /// @brief Get an iterable view of all diag_templ names in the internal table.
 ///
 /// The identifiers returned from this function can then be used for lookup in
 /// diag_templ_for. This may be useful for range-based for-loops, or other use
 /// cases where the user wants to perform an action for some or all diagnostics.
-std::vector<const char *> all_diag_templ_names();
+std::vector<const char *> AllDiagNames();
+
+/// @brief Get an iterable view of all diag_templ names for a given DiagLevel.
+std::vector<const char *> AllDiagNames(DiagLevel level);
 
 } // namespace porytiles
+
+template <>
+struct std::hash<porytiles::DiagTempl> {
+    std::size_t operator()(const porytiles::DiagTempl &templ) const noexcept {
+        std::size_t seed = 0x39A9C07E;
+        seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(templ.name());
+        seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());
+        return seed;
+    }
+};

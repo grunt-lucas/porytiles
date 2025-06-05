@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+set -Eeuox pipefail
 shopt -s globstar
 
 usage() {
@@ -50,7 +50,7 @@ fi
 
 parse_params "$@"
 if [[ ${#args[@]} -lt 1 ]]; then
-    clang-format -style=file -i Porytiles/lib/**/*.cpp Porytiles/include/**/*.{h,hpp} Porytiles/tools/**/*.{cpp,hpp}
+    clang-format -style=file -i Porytiles/doctests/**/*.{cpp,hpp} Porytiles/include/**/*.{h,hpp} Porytiles/lib/**/*.{cpp,hpp} Porytiles/tests/**/*.{cpp,hpp} Porytiles/tools/**/*.{cpp,hpp}
 else
     clang-format -style=file -i "${args[@]}"
 fi
