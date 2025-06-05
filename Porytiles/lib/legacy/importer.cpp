@@ -583,7 +583,7 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
 
     std::string line;
     std::size_t processedUpToLine = 1;
-    std::size_t enumBehaviorCounter = 0;
+    std::uint8_t enumBehaviorCounter = 0;
     while (std::getline(behaviorFile, line)) {
         std::string buffer;
         std::stringstream stringStream(line);
@@ -591,6 +591,8 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
         while (stringStream >> buffer) {
             tokens.push_back(buffer);
         }
+        // Parse the macro format of the header, e.g.
+        // #define MB_DEEP_WATER 0x12
         if (tokens.size() >= 3 && tokens.at(1).starts_with("MB_") && tokens.at(1) != "MB_INVALID") {
             const std::string &behaviorName = tokens.at(1);
             const std::string &behaviorValueString = tokens.at(2);
@@ -600,7 +602,13 @@ importMetatileBehaviorHeaderHelper(PorytilesContext &ctx, CompilerMode *compiler
                 behaviorMap.insert(std::pair{behaviorName, behaviorVal});
                 behaviorReverseMap.insert(std::pair{behaviorVal, behaviorName});
             }
-        } else if (tokens.size() == 1 && tokens.at(0).starts_with("MB_") && tokens.at(0) != "MB_INVALID") {
+        }
+        // Parse the enum format of the header, e.g.
+        //  MB_DEEP_WATER,
+        // or
+        //  MB_INTERIOR_DEEP_WATER, // Used by interior maps; functionally the same as MB_DEEP_WATER
+        else if (!tokens.empty() && tokens.at(0).starts_with("MB_") && tokens.at(0).back() == ',' &&
+                 tokens.at(0) != "MB_INVALID") {
             std::string &behaviorName = tokens.at(0);
             if (!behaviorName.empty() && behaviorName.back() == ',') {
                 behaviorName.pop_back();
