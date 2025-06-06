@@ -18,34 +18,29 @@ Please see below for guidance on how to name your branch.
 
 
 # Git Workflow and Repository Branch Conventions
-Porytiles's Git workflow and branch name conventions follow the Gitflow model.
-Porytiles-specific idiosyncracies are outlined below.
-For more on the Gitflow model, [please see this writeup.](https://nvie.com/posts/a-successful-git-branching-model/)
-Contributors should be working on topic branches only.
-Admins will handle the housekeeping related to the
-`master`, `develop`, `release`, and `hotfix` branches.
-
-Note: occasionally, I may push small changes directly to `develop`.
-This will happen on occasion,
-especially in cases where opening a PR would create unnecessary noise for repository watchers.
-E.g. if a previous `docs` PR had a typo,
-I may just fix the typo with a direct `develop` push.
+Porytiles follows a Continuous Delivery workflow,
+[as outlined here.](./README.md#release-cadence)
+Changes should not hit the `develop` branch
+until they are ready for release to the userbase.
+Changes that are still baking should remain on a topic branch
+or be disabled via a feature flag.
+Topic branch name conventions are outlined below.
 
 # Topic Branch Conventions
 Some conventions for Porytiles topic branches.
 These follow the labels in the repo.
 Please try to keep branch names compact.
-Following Gitflow, the topic branches should be created off the `develop` branch.
+The topic branches should be created off the `develop` branch.
 The topic branch name should follow the format `<TOPIC>/<DESCRIPTION>`,
 where `<TOPIC>` is one of the topics below,
 and `<DESCRIPTION>` is a very brief description of the change.
 Multi-word branch names should use kebab-case, not snake_case.
 
 ## Bugfixes
-A bugfix should be made on a topic branch titled `bugfix/<DESCRIPTION>`.
+A bugfix should be made on a topic branch titled `bug/<DESCRIPTION>`.
 
 E.g. for a branch that fixes a problem with the attribute file emitter,
-the branch name could be: `bugfix/fix-attr-emit`.
+the branch name could be: `bug/fix-attr-emit`.
 
 ## Documentation
 New documentation should be added on a topic branch titled `docs/<DESCRIPTION>`,
@@ -81,18 +76,19 @@ the branch name could be:
 New tests or test updates should be made on a topic branch titled `tests/<DESCRIPTION>`.
 
 E.g. for a branch that adds tests for palette primers,
-the branch name could be: `<tests/palette-primers>`.
+the branch name could be: `tests/palette-primers`.
 
 # Issues
 Branches that address a filed issue should fall into one of the above categories,
 but use the `<DESCRIPTION>` to tag the issue.
-E.g. if Issue #12 reports a bug, the branch to fix this could be called `bugfix/issue-0012`.
+
+E.g. if Issue #12 reports a bug, the branch to fix this could be called `bug/issue-0012`.
 If Issue #27 requests a feature, the branch to implement this could be called `feature/issue-0027`.
 If necessary, the title may be extended with an additional `/` for more specificity.
 
 E.g. if `issue-0027` contains both a reported bug with the attribute system,
 but the bug is too complex to fix in one pull request, the branches could be:
-`bugfix/issue-0027/add-missing-attr` as well as a `bugfix/issue-0027/fix-emitter`.
+`bug/issue-0027/add-missing-attr` as well as a `bug/issue-0027/fix-emitter`.
 
 # Branch Cleanup
 Please use `git rebase --interactive` to clean up your branch before submitting a PR.
