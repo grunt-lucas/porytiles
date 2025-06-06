@@ -33,7 +33,6 @@ An official video tutorial series is coming at a later date.
   - [Note For Aseprite Users](#note-for-aseprite-users)
 
 ## Why Should I Use This Tool?
-
 Porytiles makes importing from-scratch tilesets (or editing existing tilesets) easier than ever. Think of it this
 way: [Poryscript](https://github.com/huderlem/poryscript), another popular community tool, takes a `.script` file and
 generates a corresponding `.inc` file. Comparably, Porytiles takes a source folder containing RGBA (or indexed) tile
@@ -44,9 +43,10 @@ For more info, please
 see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
 ## Getting Started
-
 First, go ahead and
 follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release).
+You can use Homebrew,
+or you can download a release binary and install it yourself.
 Alternatively, intrepid users may choose
 to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source). Once you've got
 Porytiles working, try the demo steps
@@ -55,6 +55,18 @@ know about Porytiles can be found [in the wiki](https://github.com/grunt-lucas/p
 or [in this video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ). I highly recommend reading the wiki
 articles in order, or watching the video series in order. The wiki and video series are meant to be complementary. If
 you have further questions, I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
+
+## Release Cadence
+Porytiles follows a Continuous Delivery model for release cadence.
+Every commit on the `develop` branch gets packaged
+and published as a nightly release.
+Due to my development style as well as time constraints,
+I don't plan on creating versioned releases for Porytiles.
+I try to keep the commit history clean,
+so you can quickly see what has changed in each nightly release.
+Users are encouraged to install via the brew tap
+(brew works great on WSL, it's very easy to set up).
+With Homebrew, you can run two quick commands and always be up-to-date.
 
 ## Building From Source
 You can use either GCC or Clang,
@@ -106,7 +118,6 @@ If you have a different major version of GCC or you are using an Intel Mac,
 you may need to tweak this command to match your system.
 
 ## Note For Aseprite Users
-
 GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection
 of [useful scripts here.](https://github.com/PKGaspi/AsepriteScripts) Of particular interest is this [
 `export_layers`](https://github.com/PKGaspi/AsepriteScripts/blob/main/scripts/gaspi/export_layers.lua) script, which
