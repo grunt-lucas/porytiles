@@ -26,6 +26,7 @@ An official video tutorial series is coming at a later date.
 - [Porytiles](#porytiles)
   - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
   - [Getting Started](#getting-started)
+  - [Release Cadence](#release-cadence)
   - [Building From Source](#building-from-source)
     - [Dependencies](#dependencies)
     - [Build And Run](#build-and-run)
@@ -64,7 +65,7 @@ Due to my development style as well as time constraints,
 I don't plan on creating versioned releases for Porytiles.
 I try to keep the commit history clean,
 so you can quickly see what has changed in each nightly release.
-Users are encouraged to install via the brew tap
+Users are encouraged to [install via the brew tap](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
 (brew works great on WSL, it's very easy to set up).
 With Homebrew, you can run two quick commands and always be up-to-date.
 
