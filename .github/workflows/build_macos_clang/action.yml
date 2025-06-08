@@ -22,5 +22,7 @@ runs:
           -DCMAKE_FIND_FRAMEWORK="NEVER"
         cd build
         cmake --build .
-        file ./Porytiles/tools/legacy_driver/porytiles
-        otool -L ./Porytiles/tools/legacy_driver/porytiles
+        file ./Porytiles1/tools/driver/porytiles
+        objdump -p ./Porytiles1/tools/driver/porytiles
+        file ./Porytiles2/tools/driver/porytiles2
+        objdump -p ./Porytiles2/tools/driver/porytiles2
