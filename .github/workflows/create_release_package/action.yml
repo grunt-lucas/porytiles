@@ -25,7 +25,7 @@ runs:
         cp -r Resources/Examples "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Readme "./porytiles-${{ inputs.os-arch }}/Resources"
         cp -r Resources/Tests "./porytiles-${{ inputs.os-arch }}/Resources"
-        cp -r Porytiles/vendor "./porytiles-${{ inputs.os-arch }}"
+        cp -r Porytiles1/vendor "./porytiles-${{ inputs.os-arch }}"
 
         pushd "./porytiles-${{ inputs.os-arch }}"
         ./Porytiles1Tests
