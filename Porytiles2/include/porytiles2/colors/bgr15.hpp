@@ -38,10 +38,10 @@ class Bgr15 {
 
     [[nodiscard]] std::string ToJascStr() const;
 
+    [[nodiscard]] static Bgr15 Unpack(std::uint16_t packed_bgr);
+
     // friend std::ostream &operator<<(std::ostream &os, const Bgr15 &bgr);
 };
-
-[[nodiscard]] Bgr15 Unpack(std::uint16_t packed_bgr);
 
 /// Provide a simple way for fmtlib to format Bgr15:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types

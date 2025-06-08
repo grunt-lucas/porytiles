@@ -1,5 +1,7 @@
 #pragma once
 
+/// @file Implementation for the diagnostic engine.
+
 #include <algorithm>
 #include <memory>
 #include <ranges>

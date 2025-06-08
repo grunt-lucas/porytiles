@@ -1,0 +1,7 @@
+PROJECT_NAME           = "Basic Example"
+OUTPUT_DIRECTORY       = Documentation
+INPUT                  = Porytiles2/include Porytiles2/lib Porytiles2/tools
+FILE_PATTERNS          = *.hpp *.cpp
+EXTRACT_ALL            = YES
+GENERATE_HTML          = YES
+RECURSIVE              = YES
