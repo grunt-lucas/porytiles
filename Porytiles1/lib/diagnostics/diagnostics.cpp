@@ -240,7 +240,7 @@ std::uint64_t VectorConsumer::ConsumedCount() const {
 }
 
 // clang-format off
-static const DiagTempl N_GENERIC_TEMPL{kNoteGeneric, DiagLevel::Note, "{}", {}};
+static const DiagTempl N_GENERIC_TEMPL{NoteGeneric, DiagLevel::Note, "{}", {}};
 
 static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
     "color-precision-loss-previously-seen-note",
@@ -266,7 +266,7 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
     }
 };
 static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
-    kWarnColorPrecisionLoss,
+    WarnColorPrecisionLoss,
     DiagLevel::Warning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(5, args.size(), std::source_location::current().function_name());
@@ -293,7 +293,7 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
 
 // TODO : show mode information (primary vs secondary)
 static const DiagTempl W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
-    kWarnKeyFrameNoMatchingTile,
+    WarnKeyFrameNoMatchingTile,
     DiagLevel::Warning,
     "animation '{}' key frame tile '{}' was not present in any metatile entries",
     {}
@@ -328,7 +328,7 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
     }
 };
 static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
-    kWarnKeyFrameMissingColors,
+    WarnKeyFrameMissingColors,
     DiagLevel::Warning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(2, args.size(), std::source_location::current().function_name());
@@ -347,7 +347,7 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
 
 // TODO : make message shorter, possibly shorten file name?
 static const DiagTempl W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{
-    kWarnAttributeFormatMismatch,
+    WarnAttributeFormatMismatch,
     DiagLevel::Warning,
     "{}: too {} attribute columns for base game '{}'",
     {
@@ -360,7 +360,7 @@ static const DiagTempl W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{
 };
 
 static const DiagTempl W_MISSING_ATTRIBUTES_CSV_TEMPL{
-    kWarnMissingAttributesCsv,
+    WarnMissingAttributesCsv,
     DiagLevel::Warning,
     "{}: attributes.csv did not exist",
     {
@@ -373,7 +373,7 @@ static const DiagTempl W_MISSING_ATTRIBUTES_CSV_TEMPL{
 };
 
 static const DiagTempl W_UNUSED_ATTRIBUTE_TEMPL{
-    kWarnUnusedAttribute,
+    WarnUnusedAttribute,
     DiagLevel::Warning,
     "found attribute for nonexistent metatile ID '{}'",
     {
@@ -386,7 +386,7 @@ static const DiagTempl W_UNUSED_ATTRIBUTE_TEMPL{
 };
 
 static const DiagTempl W_TRANSPARENCY_COLLAPSE_TEMPL{
-    kWarnTransparencyCollapse,
+    WarnTransparencyCollapse,
     DiagLevel::Warning,
     "color '{}' at {} '{}' subtile pixel col '{}', row '{}' collapsed to transparent under BGR conversion",
     {
@@ -399,11 +399,11 @@ static const DiagTempl W_TRANSPARENCY_COLLAPSE_TEMPL{
 };
 
 static const DiagTempl W_UNUSED_MANUAL_PAL_COLOR_TEMPL{
-    kWarnUnusedManualPalColor, DiagLevel::Warning, "{}: '{}' was not used in layers or anims", {}
+    WarnUnusedManualPalColor, DiagLevel::Warning, "{}: '{}' was not used in layers or anims", {}
 };
 
 static const DiagTempl W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
-    kWarnTileIndexOutOfRange,
+    WarnTileIndexOutOfRange,
     DiagLevel::Warning,
     "{} '{}': tile index '{}' out of range (sheet size = {})",
     {
@@ -416,7 +416,7 @@ static const DiagTempl W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
 };
 
 static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
-    kWarnPaletteIndexOutOfRange,
+    WarnPaletteIndexOutOfRange,
     DiagLevel::Warning,
     "{} '{}': palette index '{}' out of range (numPalettesTotal = {})",
     {
@@ -428,31 +428,31 @@ static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
     }
 };
 
-static const DiagTempl E_GENERIC_TEMPL{kErrGeneric, DiagLevel::Error, "{}", {}};
+static const DiagTempl E_GENERIC_TEMPL{ErrGeneric, DiagLevel::Error, "{}", {}};
 
-static const DiagTempl E_FATAL_GENERIC_TEMPL{kFatalGeneric, DiagLevel::Fatal, "{}", {}};
+static const DiagTempl E_FATAL_GENERIC_TEMPL{FatalGeneric, DiagLevel::Fatal, "{}", {}};
 
 static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
     // Standalone notes
-    {kNoteGeneric, N_GENERIC_TEMPL},
+    {NoteGeneric, N_GENERIC_TEMPL},
 
     // Tileset compilation warnings
-    {kWarnColorPrecisionLoss, W_COLOR_PRECISION_LOSS_TEMPL},
-    {kWarnKeyFrameNoMatchingTile, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
-    {kWarnKeyFrameMissingColors, W_KEY_FRAME_MISSING_COLORS_TEMPL},
-    {kWarnAttributeFormatMismatch, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
-    {kWarnMissingAttributesCsv, W_MISSING_ATTRIBUTES_CSV_TEMPL},
-    {kWarnUnusedAttribute, W_UNUSED_ATTRIBUTE_TEMPL},
-    {kWarnTransparencyCollapse, W_TRANSPARENCY_COLLAPSE_TEMPL},
-    {kWarnUnusedManualPalColor, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
+    {WarnColorPrecisionLoss, W_COLOR_PRECISION_LOSS_TEMPL},
+    {WarnKeyFrameNoMatchingTile, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
+    {WarnKeyFrameMissingColors, W_KEY_FRAME_MISSING_COLORS_TEMPL},
+    {WarnAttributeFormatMismatch, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
+    {WarnMissingAttributesCsv, W_MISSING_ATTRIBUTES_CSV_TEMPL},
+    {WarnUnusedAttribute, W_UNUSED_ATTRIBUTE_TEMPL},
+    {WarnTransparencyCollapse, W_TRANSPARENCY_COLLAPSE_TEMPL},
+    {WarnUnusedManualPalColor, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
 
     // Tileset decompilation warnings
-    {kWarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
-    {kWarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
+    {WarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
+    {WarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
 
     // Generic errors
-    {kErrGeneric, E_GENERIC_TEMPL},
-    {kFatalGeneric, E_FATAL_GENERIC_TEMPL}
+    {ErrGeneric, E_GENERIC_TEMPL},
+    {FatalGeneric, E_FATAL_GENERIC_TEMPL}
 };
 // clang-format on
 

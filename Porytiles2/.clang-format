@@ -3,7 +3,7 @@ Language: Cpp
 BasedOnStyle: LLVM
 BreakBeforeBraces: Attach
 ColumnLimit: 120
-ReflowComments: Never
+ReflowComments: Always
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never

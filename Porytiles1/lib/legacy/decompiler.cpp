@@ -48,16 +48,16 @@ static void setDecompTileFields(PorytilesContext &ctx, DecompilerMode mode, RGBA
          * tiles are invisible since they are covered by another layer.
          */
         if (tileIndex >= tiles.size()) {
-            ctx.diag->Report(kWarnTileIndexOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+            ctx.diag->Report(WarnTileIndexOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
                              ctx.diag->Bold(decompiledTile.prettify()), ctx.diag->Bold(tileIndex),
                              ctx.diag->Bold(tiles.size()));
-            ctx.diag->ReportPartner(kWarnTileIndexOutOfRange, 0);
+            ctx.diag->ReportPartner(WarnTileIndexOutOfRange, 0);
         }
         if (paletteIndex >= ctx.fieldmapConfig.numPalettesTotal) {
-            ctx.diag->Report(kWarnPaletteIndexOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+            ctx.diag->Report(WarnPaletteIndexOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
                              ctx.diag->Bold(decompiledTile.prettify()), ctx.diag->Bold(paletteIndex),
                              ctx.diag->Bold(ctx.fieldmapConfig.numPalettesTotal));
-            ctx.diag->ReportPartner(kWarnPaletteIndexOutOfRange, 0);
+            ctx.diag->ReportPartner(WarnPaletteIndexOutOfRange, 0);
         }
         const GBATile &gbaTile = std::invoke([&]() -> const GBATile & {
             // tileIndex was invalid, so just grab the very first tile of the primary set (which is transparent)
@@ -96,8 +96,8 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     } else if (tripleImpliedMetatileCount == attributesMap.size()) {
         decompiledTileset->tripleLayer = true;
     } else {
-        ctx.diag->Report(kFatalGeneric, "no layer type was implied by the supplied metatiles and attributes");
-        ctx.diag->Report(kNoteGeneric,
+        ctx.diag->Report(FatalGeneric, "no layer type was implied by the supplied metatiles and attributes");
+        ctx.diag->Report(NoteGeneric,
                          "either you forgot to supply the correct `-target-base-game' option, or a file is corrupted");
         die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode),
                                     fmt::format("no implied layer type"));
@@ -181,7 +181,7 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
     if (ctx.diag->InFlightCountForLevel(DiagLevel::Error) > 0) {
         const auto msg = "errors encountered while decompiling tileset";
-        ctx.diag->Report(kFatalGeneric, msg);
+        ctx.diag->Report(FatalGeneric, msg);
         die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(mode), msg);
     }
 

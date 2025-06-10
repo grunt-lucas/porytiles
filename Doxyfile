@@ -1,7 +1,23 @@
-PROJECT_NAME           = "Basic Example"
-OUTPUT_DIRECTORY       = Documentation
-INPUT                  = Porytiles2/include Porytiles2/lib Porytiles2/tools
+PROJECT_NAME           = Porytiles
+
+INPUT                  = README.md Porytiles2/include Porytiles2/lib Porytiles2/tools
 FILE_PATTERNS          = *.hpp *.cpp
+RECURSIVE              = YES
+
+# Set up README and wiki
+USE_MDFILE_AS_MAINPAGE = README.md
+INPUT                 += Wiki/foo.md Wiki/bar.md
+
+OUTPUT_DIRECTORY       = Documentation
 EXTRACT_ALL            = YES
 GENERATE_HTML          = YES
-RECURSIVE              = YES
+
+# Include class diagrams and browsable source code
+CLASS_DIAGRAMS         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+# Generate vector graphics for diagrams
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+DOT_TRANSPARENT        = YES

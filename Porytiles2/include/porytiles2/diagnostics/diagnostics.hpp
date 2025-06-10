@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file diagnostics.hpp Definitions for various diagnostic-related types.
+ * @copyright Copyright 2025 grunt-lucas. All rights reserved. This project is licensed under the MIT License.
+ */
+
 #include <any>
 #include <functional>
 #include <sstream>
@@ -11,59 +16,61 @@
 
 namespace porytiles {
 
-enum class DiagLevel { Ignored, Note, Remark, Warning, Error, Fatal };
+enum class DiagLevel {
+    /// Foo
+    Ignored,
+    /// Bar
+    Note,
+    Remark,
+    Warning,
+    Error,
+    Fatal
+};
+
 std::string LevelToStr(DiagLevel level);
+
 fmt::terminal_color ColorForLevel(DiagLevel level);
+
 int LevelPriority(DiagLevel level);
 
-/// @brief DiagEngine coordinates the generation and consumption of diagnostic
-/// messages.
-///
-/// The full definition for this class is in diagnostics/diagnostic_engine.hpp.
+// The full definition for this class is in diagnostics/diagnostic_engine.hpp.
 class DiagEngine;
 
-/// @brief DiagTempl defines a reusable template for standardized diagnostic
-/// reporting.
-///
-/// @details
-/// DiagTempl is used by the diag_engine to construct the actual diagnostic
-/// instance when one is in-flight. A diag_templ defines a unique name for the
-/// diagnostic as well as some default settings. It provides a template for the
-/// diagnostic message: either in the form of a static format string or a
-/// dynamic builder function. It also contains a list of partner diagnostics.
-/// Partner diagnostics are used for warnings/errors that have associated notes.
+/**
+ * @brief DynamicMsgBuilder is an alias for a dynamic diagnostic message builder function
+ *
+ * @details
+ * DynamicMsgBuilder defines a function signature for building diagnostic messages dynamically. The function signature
+ * accepts:
+ * 1. A boolean flag indicating whether the output is directed to a TTY (terminal).
+ * 2. A DiagLevel noting the actual in-flight level of the diagnostic.
+ * 3. A `vector` of additional parameters (type `std::any`) that are used to customize the diagnostic message.
+ * It returns a `vector` of formatted strings representing the final diagnostic message. Each element in the `vector`
+ * represents a single line of output for a DiagConsumer to consume.
+ */
+using DynamicMsgBuilder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
+                                                                 const std::vector<std::any> &args)>;
+
+/**
+ * @brief DiagTempl defines a reusable template for standardized diagnostic reporting.
+ *
+ * @details
+ * DiagTempl is used by the DiagEngine to construct the actual diagnostic instance when one is in-flight. A DiagTempl
+ * defines a unique name for the diagnostic as well as some default settings. It provides a template for the diagnostic
+ * message: either in the form of a static format string or a dynamic builder function. It also contains a list of
+ * partner diagnostics. Partner diagnostics are used for warnings/errors that have associated notes.
+ */
 class DiagTempl {
-    /// @brief dynamic_msg_builder is an alias for a dynamic diagnostic message
-    /// builder function.
-    ///
-    /// @details dynamic_msg_builder defines a function signature
-    /// for building diagnostic messages dynamically. The function signature
-    /// accepts a boolean flag indicating whether the output is directed to a
-    /// tty (terminal), a diag_level noting the actual in-flight level of the
-    /// diagnostic, and a vector of additional parameters (of type std::any)
-    /// used to customize the diagnostic message. It returns a vector of
-    /// formatted strings representing the final diagnostic message. Each
-    /// element in the vector represents a single line of output for a
-    /// diag_consumer to consume.
-    using dynamic_msg_builder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
-                                                                       const std::vector<std::any> &args)>;
-
-    std::string name_;
-    DiagLevel default_level_;
-    std::string_view static_msg_templ_;
-    dynamic_msg_builder dynamic_msg_builder_;
-    std::vector<DiagTempl> partner_diags_;
-
   public:
     // clang-format off
     explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                      dynamic_msg_builder dynamic_msg_builder) noexcept
+                      DynamicMsgBuilder dynamic_msg_builder) noexcept
         : name_{name},
           default_level_{default_level},
           dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
 
     explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                        dynamic_msg_builder dynamic_msg_builder, const std::vector<DiagTempl> &partner_diags) noexcept
+                        DynamicMsgBuilder dynamic_msg_builder, const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name},
           default_level_{default_level},
           dynamic_msg_builder_{std::move(dynamic_msg_builder)},
@@ -85,14 +92,26 @@ class DiagTempl {
           partner_diags_{partner_diags} {}
     // clang-format on
 
-    [[nodiscard]] const std::string &name() const {
+    [[nodiscard]] std::string_view name() const {
         return name_;
     }
 
+    /**
+     * @brief Get the default diagnostic level of the template.
+     * @return The default DiagLevel.
+     */
     [[nodiscard]] DiagLevel level() const {
         return default_level_;
     }
 
+    /**
+     * @brief Get the static message template.
+     *
+     * @details
+     * The static message template is only used if a dynamic message builder is not provided.
+     *
+     * @return A `std::string_view` of the static message template.
+     */
     [[nodiscard]] std::string_view static_msg_templ() const {
         return static_msg_templ_;
     }
@@ -109,15 +128,31 @@ class DiagTempl {
         return dynamic_msg_builder_(eng, in_flight_level, v);
     }
 
+    /**
+     * @brief Get a `vector` of partner DiagTempl for this DiagTempl.
+     *
+     * @details
+     * Partner diagnostics are reported along with the main diagnostic. They typically used for a DiagLevel::Note that
+     * is tied to a specific warning or error.
+     *
+     * @return A const reference to the `vector` of partner DiagTempl.
+     */
     [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const {
         return partner_diags_;
     }
+
+  private:
+    std::string name_;
+    DiagLevel default_level_;
+    std::string_view static_msg_templ_;
+    DynamicMsgBuilder dynamic_msg_builder_;
+    std::vector<DiagTempl> partner_diags_;
 };
 
-/// @brief in_flight_diag represents an in-flight diagnostic.
+/// @brief InFlightDiag represents an in-flight diagnostic.
 ///
 /// @details
-/// in_flight_diag is generated by the diag_engine by combining the template
+/// InFlightDiag is generated by the DiagEngine by combining the DiagTempl
 /// with context from the various user-defined diagnostic parameters (e.g.,
 /// warnings as errors, specific warning disables, etc.).
 class InFlightDiag {
@@ -152,7 +187,7 @@ class DiagConsumer {
     [[nodiscard]] virtual std::uint64_t ConsumedCount() const = 0;
 };
 
-/// @brief ignore_consumer is a consumer implementation that simply ignores the
+/// @brief IgnoreConsumer is a consumer implementation that simply ignores the
 /// diagnostic.
 class IgnoreConsumer final : public DiagConsumer {
   public:
@@ -165,8 +200,8 @@ class IgnoreConsumer final : public DiagConsumer {
     std::uint64_t consumed_count_{};
 };
 
-/// @brief stderr_consumer is a consumer implementation that pushes diagnostic
-/// messages to stderr.
+/// @brief StderrConsumer is a consumer implementation that pushes diagnostic
+/// messages to `stderr`.
 class StderrConsumer final : public DiagConsumer {
   public:
     void Consume(const InFlightDiag &diag) override;
@@ -178,7 +213,7 @@ class StderrConsumer final : public DiagConsumer {
     std::uint64_t consumed_count_{};
 };
 
-/// @brief vector_consumer is a consumer implementation that pushes diagnostic
+/// @brief VectorConsumer is a consumer implementation that pushes diagnostic
 /// messages to an internal vector for testing purposes.
 class VectorConsumer final : public DiagConsumer {
   public:
@@ -198,23 +233,23 @@ class VectorConsumer final : public DiagConsumer {
 /// STANDALONE NOTES
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kNoteGeneric = "note-generic";
+constexpr auto NoteGeneric = "note-generic";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
 /// WARNINGS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kWarnColorPrecisionLoss = "color-precision-loss";
-constexpr auto kWarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
-constexpr auto kWarnKeyFrameMissingColors = "key-frame-missing-colors";
-constexpr auto kWarnAttributeFormatMismatch = "attribute-format-mismatch";
-constexpr auto kWarnMissingAttributesCsv = "missing-attributes-csv";
-constexpr auto kWarnUnusedAttribute = "unused-attribute";
-constexpr auto kWarnTransparencyCollapse = "transparency-collapse";
-constexpr auto kWarnUnusedManualPalColor = "unused-manual-pal-color";
-constexpr auto kWarnTileIndexOutOfRange = "tile-index-out-of-range";
-constexpr auto kWarnPaletteIndexOutOfRange = "palette-index-out-of-range";
+constexpr auto WarnColorPrecisionLoss = "color-precision-loss";
+constexpr auto WarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
+constexpr auto WarnKeyFrameMissingColors = "key-frame-missing-colors";
+constexpr auto WarnAttributeFormatMismatch = "attribute-format-mismatch";
+constexpr auto WarnMissingAttributesCsv = "missing-attributes-csv";
+constexpr auto WarnUnusedAttribute = "unused-attribute";
+constexpr auto WarnTransparencyCollapse = "transparency-collapse";
+constexpr auto WarnUnusedManualPalColor = "unused-manual-pal-color";
+constexpr auto WarnTileIndexOutOfRange = "tile-index-out-of-range";
+constexpr auto WarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,44 +257,49 @@ constexpr auto kWarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 /// ERRORS & FATALS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kErrGeneric = "error-generic";
-constexpr auto kFatalGeneric = "error-fatal-generic";
+constexpr auto ErrGeneric = "error-generic";
+constexpr auto FatalGeneric = "error-fatal-generic";
 
 // clang-format on
 
-/// @brief Retrieves the diagnostic template corresponding to a given diagnostic
-/// name.
+/// @brief Retrieves the DiagTempl corresponding to a given diagnostic name.
 ///
 /// This function searches an internal table for the provided diagnostic
-/// identifier. If the identifier is found, the corresponding diagnostic
-/// template is returned. If not, the function triggers a panic with an error
-/// message indicating an unknown diagnostic.
+/// name. If a DiagTempl with this name is found, the corresponding DiagTempl
+/// is returned. If not, the function triggers a panic with an error message
+/// indicating an unknown diagnostic name.
 ///
-/// @param name A std::string_view representing the diagnostic name.
-/// @return diag_template The diagnostic template associated with the given
-/// identifier.
+/// @param name A `std::string_view` of the diagnostic name.
+/// @return The DiagTempl associated with the given name.
 ///
 /// @note The function will terminate the program if the diagnostic name is
 /// invalid.
 DiagTempl DiagFor(std::string_view name);
 
-/// @brief Get an iterable view of all diag_templ names in the internal table.
+/// @brief Get an iterable view of all DiagTempl names in the internal table.
 ///
-/// The identifiers returned from this function can then be used for lookup in
-/// diag_templ_for. This may be useful for range-based for-loops, or other use
+/// @details The names returned from this function can then be used for lookup
+/// via DiagFor. This may be useful for range-based for-loops, or other use
 /// cases where the user wants to perform an action for some or all diagnostics.
 std::vector<const char *> AllDiagNames();
 
-/// @brief Get an iterable view of all diag_templ names for a given DiagLevel.
+/// @brief Get an iterable view of all DiagTempl names for a given DiagLevel.
 std::vector<const char *> AllDiagNames(DiagLevel level);
 
 } // namespace porytiles
 
+/// @brief Specialization of `std::hash` for `porytiles::DiagTempl`.
+///
+/// @details
+/// This allows porytiles::DiagTempl objects to be used as keys in
+/// unordered STL containers like `std::unordered_map` and `std::unordered_set`.
+/// The hash value is computed by combining the hash of
+/// the template's name and its DiagLevel.
 template <>
 struct std::hash<porytiles::DiagTempl> {
     std::size_t operator()(const porytiles::DiagTempl &templ) const noexcept {
         std::size_t seed = 0x39A9C07E;
-        seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(templ.name());
+        seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(std::string{templ.name()});
         seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());
         return seed;
     }

@@ -1,6 +1,9 @@
 #pragma once
 
-/// @file Implementation for the diagnostic engine.
+/**
+ * @file diagnostic_engine.hpp Implementation for the diagnostic engine.
+ * @copyright Copyright 2025 grunt-lucas. All rights reserved. This project is licensed under the MIT License.
+ */
 
 #include <algorithm>
 #include <memory>
@@ -14,20 +17,14 @@
 
 namespace porytiles {
 
-/// @brief DiagEngine coordinates the generation and consumption of diagnostic
-/// messages.
-///
-/// @details
-/// DiagEngine manages settings for enabling, disabling, treating warnings as
-/// errors, etc. It uses a DiagConsumer to process the generated diagnostics
-/// according to the engine client's preference.
+/**
+ * @brief DiagEngine coordinates the generation and consumption of diagnostic messages
+ *
+ * @details
+ * DiagEngine manages settings for enabling, disabling, treating warnings as errors, etc. It uses a DiagConsumer to
+ * process the generated diagnostics according to the engine client's preference.
+ */
 class DiagEngine {
-    std::unique_ptr<DiagConsumer> consumer_;
-    bool all_warnings_disabled_;
-    std::unordered_map<std::string, std::set<DiagLevel>> enabled_at_level_;
-    std::unordered_map<std::string, std::uint64_t> diag_counts_;
-    std::vector<InFlightDiag> in_flight_diags_;
-
   public:
     DiagEngine() : consumer_(std::make_unique<IgnoreConsumer>()), all_warnings_disabled_{false} {}
 
@@ -104,6 +101,12 @@ class DiagEngine {
     [[nodiscard]] const DiagConsumer &consumer() const;
 
   private:
+    std::unique_ptr<DiagConsumer> consumer_;
+    bool all_warnings_disabled_;
+    std::unordered_map<std::string, std::set<DiagLevel>> enabled_at_level_;
+    std::unordered_map<std::string, std::uint64_t> diag_counts_;
+    std::vector<InFlightDiag> in_flight_diags_;
+
     template <typename... T>
     void ReportHelper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args) {
         // Fill in message template
