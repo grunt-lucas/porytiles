@@ -18,13 +18,13 @@ namespace porytiles {
 
 enum class DiagLevel {
     /// Foo
-    Ignored,
+    kIgnored,
     /// Bar
-    Note,
-    Remark,
-    Warning,
-    Error,
-    Fatal
+    kNote,
+    kRemark,
+    kWarning,
+    kError,
+    kFatal
 };
 
 std::string LevelToStr(DiagLevel level);

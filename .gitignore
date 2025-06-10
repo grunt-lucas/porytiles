@@ -23,3 +23,6 @@ bar/**
 # We'll be rapidly iterating, no need to clutter the git database with junk.
 ./Documentation/html
 ./Documentation/latex
+
+# Ignore Python venv
+venv/**

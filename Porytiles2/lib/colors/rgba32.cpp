@@ -37,8 +37,8 @@ bool Rgba32::EqualsIgnoringAlpha(const Rgba32 &other) const {
 //     } else if (rgba == kRgbaLime || rgba == bgrToRgba(BGR_LIME)) {
 //         os << "lime";
 //     } else {
-//         os << std::to_string(rgba.red()) << "," << std::to_string(rgba.green()) << "," << std::to_string(rgba.blue());
-//         if (rgba.alpha() != 255) {
+//         os << std::to_string(rgba.red()) << "," << std::to_string(rgba.green()) << "," <<
+//         std::to_string(rgba.blue()); if (rgba.alpha() != 255) {
 //             // Only show alpha if not opaque
 //             os << "," << std::to_string(rgba.alpha());
 //         }

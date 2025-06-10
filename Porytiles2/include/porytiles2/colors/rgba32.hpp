@@ -76,7 +76,8 @@ constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::kAlphaOpaque};
 
 } // namespace porytiles
 
-template <> struct std::hash<porytiles::Rgba32> {
+template <>
+struct std::hash<porytiles::Rgba32> {
     std::size_t operator()(const porytiles::Rgba32 &rgba) const noexcept {
         const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
         const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());

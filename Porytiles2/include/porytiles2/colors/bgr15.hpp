@@ -51,7 +51,8 @@ inline auto format_as(const Bgr15 &bgr) {
 
 } // namespace porytiles
 
-template <> struct std::hash<porytiles::Bgr15> {
+template <>
+struct std::hash<porytiles::Bgr15> {
     std::size_t operator()(const porytiles::Bgr15 &bgr) const noexcept {
         return std::hash<uint16_t>{}(bgr.Pack());
     }

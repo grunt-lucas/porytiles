@@ -7,15 +7,15 @@
 
 namespace porytiles {
 
-/// @brief A smart pointer that represents a non-owning view of a resource.
-///
-/// @details The view_ptr allows for reading and writing.
-/// It is semantically equivalent to a raw pointer.
-/// The purpose of view_ptr is to explicitly signal
-/// that the pointed-to resource is not owned.
-///
-/// @tparam T The pointed-to type.
-template <typename T> class view_ptr {
+/**
+ * @brief A smart pointer that represents a non-owning view of a resource.
+ *
+ * @details
+ * view_ptr allows for reading and writing. It is semantically equivalent to a raw pointer. The purpose of view_ptr is
+ * to explicitly singal that the pointed-to resource is not owned by the owner of the pointer.
+ */
+template <typename T>
+class view_ptr {
   public:
     constexpr view_ptr() noexcept : ptr_(nullptr) {}
 
@@ -69,32 +69,39 @@ template <typename T> class view_ptr {
 };
 
 // Comparison operators
-// TODO : make these members? pros vs. cons
-template <typename T1, typename T2> bool operator==(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
+/// @todo make these members? pros vs. cons
+template <typename T1, typename T2>
+bool operator==(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
     return lhs.get() == rhs.get();
 }
 
-template <typename T1, typename T2> bool operator!=(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
+template <typename T1, typename T2>
+bool operator!=(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
     return !(lhs == rhs);
 }
 
-template <typename T> bool operator==(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
+template <typename T>
+bool operator==(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
     return !lhs;
 }
 
-template <typename T> bool operator==(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
+template <typename T>
+bool operator==(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
     return !rhs;
 }
 
-template <typename T> bool operator!=(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
+template <typename T>
+bool operator!=(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
     return static_cast<bool>(lhs);
 }
 
-template <typename T> bool operator!=(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
+template <typename T>
+bool operator!=(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
     return static_cast<bool>(rhs);
 }
 
 // Deduction guide (C++17)
-template <typename T> view_ptr(T *) -> view_ptr<T>;
+template <typename T>
+view_ptr(T *) -> view_ptr<T>;
 
 } // namespace porytiles
