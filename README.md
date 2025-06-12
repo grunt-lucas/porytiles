@@ -10,19 +10,18 @@ Generation III decompilation projects from [`pret`](https://github.com/pret). Al
 `rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready assets from
 RGBA (or indexed) input assets.
 
-Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the latest build.
-You can also install via Homebrew, [following the instructions here.](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
-
-For detailed documentation about Porytiles internal workings,
-please see the TODO doxygen documentation.
-For tutorials and usage documentation please see [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
-There is a short community-made [video tutorial series here.](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
-An official video tutorial series is coming at a later date.
+## Quick Links
+- [Release binaries](https://github.com/grunt-lucas/porytiles/releases)
+- [Install via Homebrew](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
+- [Doxygen API documentation](https://grunt-lucas.github.io/porytiles)
+- [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
+- [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*
 
 - [Porytiles](#porytiles)
+  - [Quick Links](#quick-links)
   - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
   - [Getting Started](#getting-started)
   - [Release Cadence](#release-cadence)
