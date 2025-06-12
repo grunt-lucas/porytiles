@@ -12,7 +12,7 @@ namespace porytiles {
  *
  * @details
  * view_ptr allows for reading and writing. It is semantically equivalent to a raw pointer. The purpose of view_ptr is
- * to explicitly singal that the pointed-to resource is not owned by the owner of the pointer.
+ * to explicitly signal that the pointed-to resource is not owned by the owner of the pointer.
  */
 template <typename T>
 class view_ptr {
