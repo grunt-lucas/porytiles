@@ -12,7 +12,8 @@ constexpr std::size_t kTileSideLength = 8;
 constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
 
 /// @brief A single 8x8 pixel tile with an arbitrary pixel data type.
-template <typename P> class Tile {
+template <typename P>
+class Tile {
     std::array<P, kTileSize> pix_;
 
   protected:

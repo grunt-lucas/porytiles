@@ -200,23 +200,23 @@ class VectorConsumer final : public DiagConsumer {
 /// STANDALONE NOTES
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kNoteGeneric = "note-generic";
+constexpr auto NoteGeneric = "note-generic";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
 /// WARNINGS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kWarnColorPrecisionLoss = "color-precision-loss";
-constexpr auto kWarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
-constexpr auto kWarnKeyFrameMissingColors = "key-frame-missing-colors";
-constexpr auto kWarnAttributeFormatMismatch = "attribute-format-mismatch";
-constexpr auto kWarnMissingAttributesCsv = "missing-attributes-csv";
-constexpr auto kWarnUnusedAttribute = "unused-attribute";
-constexpr auto kWarnTransparencyCollapse = "transparency-collapse";
-constexpr auto kWarnUnusedManualPalColor = "unused-manual-pal-color";
-constexpr auto kWarnTileIndexOutOfRange = "tile-index-out-of-range";
-constexpr auto kWarnPaletteIndexOutOfRange = "palette-index-out-of-range";
+constexpr auto WarnColorPrecisionLoss = "color-precision-loss";
+constexpr auto WarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
+constexpr auto WarnKeyFrameMissingColors = "key-frame-missing-colors";
+constexpr auto WarnAttributeFormatMismatch = "attribute-format-mismatch";
+constexpr auto WarnMissingAttributesCsv = "missing-attributes-csv";
+constexpr auto WarnUnusedAttribute = "unused-attribute";
+constexpr auto WarnTransparencyCollapse = "transparency-collapse";
+constexpr auto WarnUnusedManualPalColor = "unused-manual-pal-color";
+constexpr auto WarnTileIndexOutOfRange = "tile-index-out-of-range";
+constexpr auto WarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -224,8 +224,8 @@ constexpr auto kWarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 /// ERRORS & FATALS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto kErrGeneric = "error-generic";
-constexpr auto kFatalGeneric = "error-fatal-generic";
+constexpr auto ErrGeneric = "error-generic";
+constexpr auto FatalGeneric = "error-fatal-generic";
 
 // clang-format on
 

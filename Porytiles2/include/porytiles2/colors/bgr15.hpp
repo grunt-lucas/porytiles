@@ -38,10 +38,10 @@ class Bgr15 {
 
     [[nodiscard]] std::string ToJascStr() const;
 
+    [[nodiscard]] static Bgr15 Unpack(std::uint16_t packed_bgr);
+
     // friend std::ostream &operator<<(std::ostream &os, const Bgr15 &bgr);
 };
-
-[[nodiscard]] Bgr15 Unpack(std::uint16_t packed_bgr);
 
 /// Provide a simple way for fmtlib to format Bgr15:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types
@@ -51,7 +51,8 @@ inline auto format_as(const Bgr15 &bgr) {
 
 } // namespace porytiles
 
-template <> struct std::hash<porytiles::Bgr15> {
+template <>
+struct std::hash<porytiles::Bgr15> {
     std::size_t operator()(const porytiles::Bgr15 &bgr) const noexcept {
         return std::hash<uint16_t>{}(bgr.Pack());
     }

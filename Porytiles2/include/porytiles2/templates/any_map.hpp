@@ -36,7 +36,8 @@ class AnyMap {
         return config_.cend();
     }
 
-    template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) const {
+    template <typename T>
+    [[nodiscard]] std::optional<T> Try(const std::string &key) const {
         if (!Contains(key)) {
             return std::nullopt;
         }
@@ -47,7 +48,8 @@ class AnyMap {
         }
     }
 
-    template <typename T> [[nodiscard]] std::optional<T> Get(const std::string &key) const {
+    template <typename T>
+    [[nodiscard]] std::optional<T> Get(const std::string &key) const {
         if (!Contains(key)) {
             Panic("Key not found: " + key);
         }

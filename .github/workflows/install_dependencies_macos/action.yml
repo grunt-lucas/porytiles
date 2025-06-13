@@ -10,3 +10,5 @@ runs:
         brew install zlib
         brew install libpng
         brew install cmake
+        brew install doxygen
+        brew install graphviz

@@ -43,10 +43,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
      */
     if (rgba.alpha != ALPHA_TRANSPARENT && rgba.alpha != ALPHA_OPAQUE) {
         if (errWarn) {
-            ctx.diag->Report(kErrGeneric, fmt::format("invalid alpha value '{}' at '{}' subtile pixel col {}, row {}",
+            ctx.diag->Report(ErrGeneric, fmt::format("invalid alpha value '{}' at '{}' subtile pixel col {}, row {}",
                                                       ctx.diag->Bold(rgba.alpha), ctx.diag->Bold(rgbaFrame.prettify()),
                                                       ctx.diag->Bold(col), ctx.diag->Bold(row)));
-            ctx.diag->Report(kNoteGeneric,
+            ctx.diag->Report(NoteGeneric,
                              fmt::format("alpha value must be either {} for opaque or {} for transparent",
                                          ctx.diag->Bold(ALPHA_OPAQUE), ctx.diag->Bold(ALPHA_TRANSPARENT)));
         }
@@ -63,10 +63,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
          * because it retains end-user visibility while not potentially causing confounding compilation errors later on
          * in the compilation pipeline.
          */
-        ctx.diag->Report(kWarnTransparencyCollapse, ctx.diag->Bold(rgba.jasc()),
+        ctx.diag->Report(WarnTransparencyCollapse, ctx.diag->Bold(rgba.jasc()),
                          ctx.diag->Bold(compilerModeString(compilerMode)), ctx.diag->Bold(rgbaFrame.prettify()),
                          ctx.diag->Bold(col), ctx.diag->Bold(row));
-        ctx.diag->ReportPartner(kWarnTransparencyCollapse, 0);
+        ctx.diag->ReportPartner(WarnTransparencyCollapse, 0);
         return 0;
     }
 
@@ -83,9 +83,9 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
              */
             if (errWarn) {
                 // TODO : we can probably pass rgbaFrame here as a pointer
-                ctx.diag->Report(kWarnColorPrecisionLoss, rgbaFrame, rgba.jasc(), compilerModeString(compilerMode), row,
+                ctx.diag->Report(WarnColorPrecisionLoss, rgbaFrame, rgba.jasc(), compilerModeString(compilerMode), row,
                                  col);
-                ctx.diag->ReportPartner(kWarnColorPrecisionLoss, 0,
+                ctx.diag->ReportPartner(WarnColorPrecisionLoss, 0,
                                         std::get<1>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
                                         std::get<0>(ctx.compilerContext.bgrToRgba.at(pixelBgr)).jasc(),
                                         std::get<2>(ctx.compilerContext.bgrToRgba.at(pixelBgr)),
@@ -105,12 +105,12 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
             // palette size will grow as we add to it
             if (palette.size == PAL_SIZE) {
                 if (errWarn) {
-                    ctx.diag->Report(kErrGeneric,
+                    ctx.diag->Report(ErrGeneric,
                                      fmt::format("too many unique colors, threw at '{}' subtile pixel col {}, row {}",
                                                  ctx.diag->Bold(rgbaFrame.prettify()), ctx.diag->Bold(col),
                                                  ctx.diag->Bold(row)));
                     ctx.diag->Report(
-                        kNoteGeneric,
+                        NoteGeneric,
                         fmt::format("cannot have more than {} unique colors, including the transparency color",
                                     ctx.diag->Bold(PAL_SIZE)));
                 }
@@ -298,12 +298,12 @@ normalizeDecompTiles(PorytilesContext &ctx, CompilerMode compilerMode, const Dec
     }
     for (const auto &remainingRgb : primerRgbColors) {
         for (const auto &path : primerRgbColorPaths.at(remainingRgb)) {
-            ctx.diag->Report(kWarnUnusedManualPalColor, ctx.diag->Bold(path), ctx.diag->Bold(remainingRgb.jasc()));
+            ctx.diag->Report(WarnUnusedManualPalColor, ctx.diag->Bold(path), ctx.diag->Bold(remainingRgb.jasc()));
         }
     }
     for (const auto &remainingRgb : overrideRgbColors) {
         for (const auto &path : overrideRgbColorPaths.at(remainingRgb)) {
-            ctx.diag->Report(kWarnUnusedManualPalColor, ctx.diag->Bold(path), ctx.diag->Bold(remainingRgb.jasc()));
+            ctx.diag->Report(WarnUnusedManualPalColor, ctx.diag->Bold(path), ctx.diag->Bold(remainingRgb.jasc()));
         }
     }
 
@@ -399,9 +399,9 @@ buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode
     }
 
     if (fatalError) {
-        ctx.diag->Report(kFatalGeneric,
+        ctx.diag->Report(FatalGeneric,
                          fmt::format("too many unique colors in {} tileset", compilerModeString(compilerMode)));
-        ctx.diag->Report(kNoteGeneric, fmt::format("{} allowed based on fieldmap configuration, but found {}",
+        ctx.diag->Report(NoteGeneric, fmt::format("{} allowed based on fieldmap configuration, but found {}",
                                                    ctx.diag->Bold(size), ctx.diag->Bold(colorIndex)));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   "too many unique colors total");
@@ -545,10 +545,10 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
              */
             const auto msg = fmt::format("animation '{}' key frame tile '{}' was transparent",
                                          ctx.diag->Bold(normTile.anim), ctx.diag->Bold(normTile.tileIndex));
-            ctx.diag->Report(kFatalGeneric, msg);
+            ctx.diag->Report(FatalGeneric, msg);
             // TODO : how to break up a really long note into multiple lines?
             ctx.diag->Report(
-                kNoteGeneric,
+                NoteGeneric,
                 "this is not allowed, since there would be no way to tell if a transparent user-provided tile on the "
                 "layer sheet referred to the true index 0 transparent tile, or if it was a reference into this "
                 "particular animation");
@@ -575,9 +575,9 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
             const auto msg =
                 fmt::format("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
                             ctx.diag->Bold(normTile.anim), ctx.diag->Bold(normTile.tileIndex));
-            ctx.diag->Report(kFatalGeneric, msg);
+            ctx.diag->Report(FatalGeneric, msg);
             ctx.diag->Report(
-                kNoteGeneric,
+                NoteGeneric,
                 "key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
                                       fmt::format("animation {} had a duplicate key frame tile", normTile.anim));
@@ -641,7 +641,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                ctx.diag->Report(kWarnKeyFrameNoMatchingTile, ctx.diag->Bold(compiled.anims.at(animIndex).animName),
+                ctx.diag->Report(WarnKeyFrameNoMatchingTile, ctx.diag->Bold(compiled.anims.at(animIndex).animName),
                                  ctx.diag->Bold(tileIndex));
             }
         }
@@ -652,7 +652,7 @@ static void assignTilesPrimary(PorytilesContext &ctx, CompiledTileset &compiled,
         const auto msg =
             fmt::format("unique tile count '{}' exceeded limit of '{}'", ctx.diag->Bold(compiled.tiles.size()),
                         ctx.diag->Bold(ctx.fieldmapConfig.numTilesInPrimary));
-        ctx.diag->Report(kFatalGeneric, msg);
+        ctx.diag->Report(FatalGeneric, msg);
         die_compilationTerminated(
             ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::PRIMARY),
             fmt::format("too many unique tiles in {} tileset", compilerModeString(CompilerMode::PRIMARY)));
@@ -712,10 +712,10 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
                  */
                 const auto msg = fmt::format("animation '{}' key frame tile '{}' was transparent",
                                              ctx.diag->Bold(normTile.anim), ctx.diag->Bold(normTile.tileIndex));
-                ctx.diag->Report(kFatalGeneric, msg);
+                ctx.diag->Report(FatalGeneric, msg);
                 // TODO : how to break up a really long note into multiple lines?
                 ctx.diag->Report(
-                    kNoteGeneric,
+                    NoteGeneric,
                     "this is not allowed, since there would be no way to tell if a transparent user-provided tile on "
                     "the "
                     "layer sheet referred to the true index 0 transparent tile, or if it was a reference into this "
@@ -731,10 +731,10 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
                 const auto msg =
                     fmt::format("animation '{}' key frame tile '{}' was present in the paired primary tileset",
                                 ctx.diag->Bold(normTile.anim), ctx.diag->Bold(normTile.tileIndex));
-                ctx.diag->Report(kFatalGeneric, msg);
+                ctx.diag->Report(FatalGeneric, msg);
                 // TODO : how to break up a really long note into multiple lines?
                 ctx.diag->Report(
-                    kNoteGeneric,
+                    NoteGeneric,
                     "this is an error because it renders the animation inoperable, any reference to the key tile in "
                     "the secondary layer sheet will be linked to primary tileset instead of the intended animation");
                 die_compilationTerminated(
@@ -762,9 +762,9 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
             const auto msg =
                 fmt::format("animation '{}' key frame tile '{}' duplicated another key frame tile in this tileset",
                             ctx.diag->Bold(normTile.anim), ctx.diag->Bold(normTile.tileIndex));
-            ctx.diag->Report(kFatalGeneric, msg);
+            ctx.diag->Report(FatalGeneric, msg);
             ctx.diag->Report(
-                kNoteGeneric,
+                NoteGeneric,
                 "key frame tiles must be unique within a tileset, and unique across any paired primary tileset");
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
                                       fmt::format("animation {} had a duplicate key frame tile", normTile.anim));
@@ -836,7 +836,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
         for (std::size_t tileIndex = 0; tileIndex < compiled.anims.at(animIndex).keyFrame().tiles.size(); tileIndex++) {
             const auto &keyTile = compiled.anims.at(animIndex).keyFrame().tiles.at(tileIndex);
             if (!usedKeyFrameTiles.at(keyTile)) {
-                ctx.diag->Report(kWarnKeyFrameNoMatchingTile, ctx.diag->Bold(compiled.anims.at(animIndex).animName),
+                ctx.diag->Report(WarnKeyFrameNoMatchingTile, ctx.diag->Bold(compiled.anims.at(animIndex).animName),
                                  ctx.diag->Bold(tileIndex));
             }
         }
@@ -847,7 +847,7 @@ static void assignTilesSecondary(PorytilesContext &ctx, CompiledTileset &compile
         const auto msg =
             fmt::format("unique tile count '{}' exceeded limit of '{}'", ctx.diag->Bold(compiled.tiles.size()),
                         ctx.diag->Bold(ctx.fieldmapConfig.numTilesInSecondary()));
-        ctx.diag->Report(kFatalGeneric, msg);
+        ctx.diag->Report(FatalGeneric, msg);
         die_compilationTerminated(
             ctx, ctx.compilerSrcPaths.modeBasedSrcPath(CompilerMode::SECONDARY),
             fmt::format("too many unique tiles in {} tileset", compilerModeString(CompilerMode::SECONDARY)));
@@ -998,7 +998,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
             const auto msg = fmt::format("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
                                          ctx.diag->Bold(srcMetatileCount), compilerModeString(compilerMode),
                                          ctx.diag->Bold(ctx.fieldmapConfig.numMetatilesInPrimary));
-            ctx.diag->Report(kFatalGeneric, msg);
+            ctx.diag->Report(FatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                       fmt::format("too many {} metatiles: {} > {}", compilerModeString(compilerMode),
                                                   srcMetatileCount, ctx.fieldmapConfig.numMetatilesInPrimary));
@@ -1010,7 +1010,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
             const auto msg = fmt::format("source metatile count of '{}' exceeded the {} tileset limit of '{}'",
                                          ctx.diag->Bold(srcMetatileCount), compilerModeString(compilerMode),
                                          ctx.diag->Bold(ctx.fieldmapConfig.numMetatilesInSecondary()));
-            ctx.diag->Report(kFatalGeneric, msg);
+            ctx.diag->Report(FatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                       fmt::format("too many {} metatiles: {} > {}", compilerModeString(compilerMode),
                                                   srcMetatileCount, ctx.fieldmapConfig.numMetatilesInSecondary()));

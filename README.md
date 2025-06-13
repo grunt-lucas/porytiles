@@ -10,20 +10,18 @@ Generation III decompilation projects from [`pret`](https://github.com/pret). Al
 `rh-hideout`](https://github.com/rh-hideout). Builds [Porymap](https://github.com/huderlem/porymap)-ready assets from
 RGBA (or indexed) input assets.
 
-Please see the [Releases](https://github.com/grunt-lucas/porytiles/releases) for the newest stable version. If you want
-the latest, possibly unstable changes from the [`develop`](https://github.com/grunt-lucas/porytiles/tree/develop)
-branch, grab the nightly release instead.
-
-For detailed documentation about Porytiles internal workings,
-please see the TODO doxygen documentation.
-For tutorials and usage documentation please see [the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
-There is a short community-made [video tutorial series here.](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
-An official video tutorial series is coming at a later date.
+## Quick Links
+- [Release binaries](https://github.com/grunt-lucas/porytiles/releases)
+- [Install via Homebrew](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
+- [Doxygen API documentation](https://grunt-lucas.github.io/porytiles)
+- [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
+- [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
 
 ![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*
 
 - [Porytiles](#porytiles)
+  - [Quick Links](#quick-links)
   - [Why Should I Use This Tool?](#why-should-i-use-this-tool)
   - [Getting Started](#getting-started)
   - [Release Cadence](#release-cadence)
@@ -44,18 +42,17 @@ For more info, please
 see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
 ## Getting Started
-First, go ahead and
-follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release).
+First, go ahead and follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release).
 You can use Homebrew,
 or you can download a release binary and install it yourself.
 Alternatively, intrepid users may choose
-to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source). Once you've got
-Porytiles working, try the demo steps
-located [at this wiki page](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo). Everything else you need to
-know about Porytiles can be found [in the wiki](https://github.com/grunt-lucas/porytiles/wiki)
-or [in this video tutorial series](https://www.youtube.com/watch?v=dQw4w9WgXcQ). I highly recommend reading the wiki
-articles in order, or watching the video series in order. The wiki and video series are meant to be complementary. If
-you have further questions, I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
+to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source).
+Once you've got Porytiles working,
+try the demo steps located [at this wiki page](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo).
+Everything else you need to know about Porytiles can be found [in the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
+I highly recommend reading the wiki articles in order.
+If you have further questions,
+I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
 
 ## Release Cadence
 Porytiles follows a Continuous Delivery model for release cadence.

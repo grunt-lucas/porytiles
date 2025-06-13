@@ -50,7 +50,12 @@ fi
 
 parse_params "$@"
 if [[ ${#args[@]} -lt 1 ]]; then
-    clang-format -style=file -i Porytiles/doctests/**/*.{cpp,hpp} Porytiles/include/**/*.{h,hpp} Porytiles/lib/**/*.{cpp,hpp} Porytiles/tests/**/*.{cpp,hpp} Porytiles/tools/**/*.{cpp,hpp}
+    clang-format -style=file -i \
+        Porytiles1/include/**/*.{h,hpp,cpp} \
+        Porytiles1/libs/**/*.{h,hpp,cpp} \
+        Porytiles1/tests/**/*.{h,hpp,cpp} \
+        Porytiles1/tools/**/*.{h,hpp,cpp} \
+        Porytiles2/**/*.{h,hpp,cpp}
 else
     clang-format -style=file -i "${args[@]}"
 fi

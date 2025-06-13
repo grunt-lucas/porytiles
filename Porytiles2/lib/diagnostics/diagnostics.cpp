@@ -133,17 +133,17 @@ void ResetStream(std::stringstream &ss) {
 namespace porytiles {
 std::string LevelToStr(DiagLevel level) {
     switch (level) {
-    case DiagLevel::Ignored:
+    case DiagLevel::kIgnored:
         return "ignored";
-    case DiagLevel::Note:
+    case DiagLevel::kNote:
         return "note";
-    case DiagLevel::Remark:
+    case DiagLevel::kRemark:
         return "remark";
-    case DiagLevel::Warning:
+    case DiagLevel::kWarning:
         return "warning";
-    case DiagLevel::Error:
+    case DiagLevel::kError:
         return "error";
-    case DiagLevel::Fatal:
+    case DiagLevel::kFatal:
         return "fatal error";
     default:
         Panic("level_to_str: unknown diag_level");
@@ -152,16 +152,16 @@ std::string LevelToStr(DiagLevel level) {
 
 fmt::terminal_color ColorForLevel(DiagLevel level) {
     switch (level) {
-    case DiagLevel::Ignored:
+    case DiagLevel::kIgnored:
         return fmt::terminal_color::white;
-    case DiagLevel::Note:
+    case DiagLevel::kNote:
         return fmt::terminal_color::cyan;
-    case DiagLevel::Remark:
+    case DiagLevel::kRemark:
         return fmt::terminal_color::green;
-    case DiagLevel::Warning:
+    case DiagLevel::kWarning:
         return fmt::terminal_color::magenta;
-    case DiagLevel::Error:
-    case DiagLevel::Fatal:
+    case DiagLevel::kError:
+    case DiagLevel::kFatal:
         return fmt::terminal_color::red;
     default:
         Panic("color_for_level: unknown diag_level");
@@ -170,17 +170,17 @@ fmt::terminal_color ColorForLevel(DiagLevel level) {
 
 int LevelPriority(DiagLevel level) {
     switch (level) {
-    case DiagLevel::Ignored:
+    case DiagLevel::kIgnored:
         return 0;
-    case DiagLevel::Note:
+    case DiagLevel::kNote:
         return 1;
-    case DiagLevel::Remark:
+    case DiagLevel::kRemark:
         return 2;
-    case DiagLevel::Warning:
+    case DiagLevel::kWarning:
         return 3;
-    case DiagLevel::Error:
+    case DiagLevel::kError:
         return 4;
-    case DiagLevel::Fatal:
+    case DiagLevel::kFatal:
         return 5;
     }
     return -1;
@@ -241,11 +241,11 @@ std::uint64_t VectorConsumer::ConsumedCount() const {
 }
 
 // clang-format off
-static const DiagTempl N_GENERIC_TEMPL{kNoteGeneric, DiagLevel::Note, "{}", {}};
+static const DiagTempl N_GENERIC_TEMPL{NoteGeneric, DiagLevel::kNote, "{}", {}};
 
 static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
     "color-precision-loss-previously-seen-note",
-    DiagLevel::Note,
+    DiagLevel::kNote,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(4, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -267,8 +267,8 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
     }
 };
 static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
-    kWarnColorPrecisionLoss,
-    DiagLevel::Warning,
+    WarnColorPrecisionLoss,
+    DiagLevel::kWarning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(5, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -294,8 +294,8 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
 
 // TODO : show mode information (primary vs secondary)
 static const DiagTempl W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
-    kWarnKeyFrameNoMatchingTile,
-    DiagLevel::Warning,
+    WarnKeyFrameNoMatchingTile,
+    DiagLevel::kWarning,
     "animation '{}' key frame tile '{}' was not present in any metatile entries",
     {}
 };
@@ -303,7 +303,7 @@ static const DiagTempl W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
 // TODO : show mode information (primary vs secondary)
 static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
     "key-frame-missing-colors-list-note",
-    DiagLevel::Note,
+    DiagLevel::kNote,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(1, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -329,8 +329,8 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
     }
 };
 static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
-    kWarnKeyFrameMissingColors,
-    DiagLevel::Warning,
+    WarnKeyFrameMissingColors,
+    DiagLevel::kWarning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level, const std::vector<std::any> &args) -> std::vector<std::string> {
         AssertArgSize(2, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -349,112 +349,112 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
 
 // TODO : make message shorter, possibly shorten file name?
 static const DiagTempl W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{
-    kWarnAttributeFormatMismatch,
-    DiagLevel::Warning,
+    WarnAttributeFormatMismatch,
+    DiagLevel::kWarning,
     "{}: too {} attribute columns for base game '{}'",
     {
         DiagTempl{
             "attribute-format-mismatch-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "unspecified columns will receive default values"
         }
     }
 };
 
 static const DiagTempl W_MISSING_ATTRIBUTES_CSV_TEMPL{
-    kWarnMissingAttributesCsv,
-    DiagLevel::Warning,
+    WarnMissingAttributesCsv,
+    DiagLevel::kWarning,
     "{}: attributes.csv did not exist",
     {
         DiagTempl{
             "missing-attr-csv-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "all attributes will receive default or inferred values"
         }
     }
 };
 
 static const DiagTempl W_UNUSED_ATTRIBUTE_TEMPL{
-    kWarnUnusedAttribute,
-    DiagLevel::Warning,
+    WarnUnusedAttribute,
+    DiagLevel::kWarning,
     "found attribute for nonexistent metatile ID '{}'",
     {
         DiagTempl{
             "unused-attribute-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "{} metatiles found at source path '{}'"
         }
     }
 };
 
 static const DiagTempl W_TRANSPARENCY_COLLAPSE_TEMPL{
-    kWarnTransparencyCollapse,
-    DiagLevel::Warning,
+    WarnTransparencyCollapse,
+    DiagLevel::kWarning,
     "color '{}' at {} '{}' subtile pixel col '{}', row '{}' collapsed to transparent under BGR conversion",
     {
         DiagTempl{
             "transparency-collapse-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "if you did not intend this pixel to be transparent, edit the color on the respective layer sheet"
         }
     }
 };
 
 static const DiagTempl W_UNUSED_MANUAL_PAL_COLOR_TEMPL{
-    kWarnUnusedManualPalColor, DiagLevel::Warning, "{}: '{}' was not used in layers or anims", {}
+    WarnUnusedManualPalColor, DiagLevel::kWarning, "{}: '{}' was not used in layers or anims", {}
 };
 
 static const DiagTempl W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
-    kWarnTileIndexOutOfRange,
-    DiagLevel::Warning,
+    WarnTileIndexOutOfRange,
+    DiagLevel::kWarning,
     "{} '{}': tile index '{}' out of range (sheet size = {})",
     {
         DiagTempl{
             "tile-index-out-of-range-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "substituting primary tile 0 (transparent tile) so decompilation can continue"
         }
     }
 };
 
 static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
-    kWarnPaletteIndexOutOfRange,
-    DiagLevel::Warning,
+    WarnPaletteIndexOutOfRange,
+    DiagLevel::kWarning,
     "{} '{}': palette index '{}' out of range (numPalettesTotal = {})",
     {
         DiagTempl{
             "palette-index-out-of-range-note",
-            DiagLevel::Note,
+            DiagLevel::kNote,
             "substituting palette 0 so decompilation can continue"
         }
     }
 };
 
-static const DiagTempl E_GENERIC_TEMPL{kErrGeneric, DiagLevel::Error, "{}", {}};
+static const DiagTempl E_GENERIC_TEMPL{ErrGeneric, DiagLevel::kError, "{}", {}};
 
-static const DiagTempl E_FATAL_GENERIC_TEMPL{kFatalGeneric, DiagLevel::Fatal, "{}", {}};
+static const DiagTempl E_FATAL_GENERIC_TEMPL{FatalGeneric, DiagLevel::kFatal, "{}", {}};
 
 static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
     // Standalone notes
-    {kNoteGeneric, N_GENERIC_TEMPL},
+    {NoteGeneric, N_GENERIC_TEMPL},
 
     // Tileset compilation warnings
-    {kWarnColorPrecisionLoss, W_COLOR_PRECISION_LOSS_TEMPL},
-    {kWarnKeyFrameNoMatchingTile, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
-    {kWarnKeyFrameMissingColors, W_KEY_FRAME_MISSING_COLORS_TEMPL},
-    {kWarnAttributeFormatMismatch, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
-    {kWarnMissingAttributesCsv, W_MISSING_ATTRIBUTES_CSV_TEMPL},
-    {kWarnUnusedAttribute, W_UNUSED_ATTRIBUTE_TEMPL},
-    {kWarnTransparencyCollapse, W_TRANSPARENCY_COLLAPSE_TEMPL},
-    {kWarnUnusedManualPalColor, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
+    {WarnColorPrecisionLoss, W_COLOR_PRECISION_LOSS_TEMPL},
+    {WarnKeyFrameNoMatchingTile, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
+    {WarnKeyFrameMissingColors, W_KEY_FRAME_MISSING_COLORS_TEMPL},
+    {WarnAttributeFormatMismatch, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
+    {WarnMissingAttributesCsv, W_MISSING_ATTRIBUTES_CSV_TEMPL},
+    {WarnUnusedAttribute, W_UNUSED_ATTRIBUTE_TEMPL},
+    {WarnTransparencyCollapse, W_TRANSPARENCY_COLLAPSE_TEMPL},
+    {WarnUnusedManualPalColor, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
 
     // Tileset decompilation warnings
-    {kWarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
-    {kWarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
+    {WarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
+    {WarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
 
     // Generic errors
-    {kErrGeneric, E_GENERIC_TEMPL},
-    {kFatalGeneric, E_FATAL_GENERIC_TEMPL}
+    {ErrGeneric, E_GENERIC_TEMPL},
+    {FatalGeneric, E_FATAL_GENERIC_TEMPL}
 };
 // clang-format on
 

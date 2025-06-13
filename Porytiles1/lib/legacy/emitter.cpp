@@ -314,7 +314,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                        << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
                        << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
             } else {
-                ctx.diag->Report(kErrGeneric,
+                ctx.diag->Report(ErrGeneric,
                                  fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
                                              ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(),
                                              metatileIndex,
@@ -325,7 +325,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                 outCsv << metatileIndex << ","
                        << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
             } else {
-                ctx.diag->Report(kErrGeneric,
+                ctx.diag->Report(ErrGeneric,
                                  fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
                                              ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(),
                                              metatileIndex,

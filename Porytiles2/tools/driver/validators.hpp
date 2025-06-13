@@ -7,9 +7,9 @@
 #include <CLI/CLI.hpp>
 #include <fmt/format.h>
 
-#include <porytiles2/utilities/utilities.hpp>
 #include <porytiles2/diagnostics/diagnostics.hpp>
 #include <porytiles2/templates/parsing.hpp>
+#include <porytiles2/utilities/utilities.hpp>
 
 class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";
@@ -93,7 +93,7 @@ class DiagnosticIsWarningValidator final : public CLI::Validator {
     explicit DiagnosticIsWarningValidator() : Validator{kHint} {
         name_ = "DIAGNOSTIC_IS_WARNING";
         std::unordered_set<std::string> warning_diags;
-        for (const auto name : porytiles::AllDiagNames(porytiles::DiagLevel::Warning)) {
+        for (const auto name : porytiles::AllDiagNames(porytiles::DiagLevel::kWarning)) {
             warning_diags.insert(name);
         }
         func_ = [warning_diags](const std::string &str) {

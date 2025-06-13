@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <expected>
 #include <memory>
 #include <vector>
-#include <expected>
 
 #include <gsl/pointers>
 

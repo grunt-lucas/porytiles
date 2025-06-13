@@ -21,19 +21,19 @@ TEST(Bgr15Tests, ClassInvariantShouldHold) {
 TEST(Bgr15Tests, PackAndUnpackShouldWork) {
     constexpr Bgr15 bgr_red{253, 0, 0};
     const auto bgr_red_packed = bgr_red.Pack();
-    const auto bgr_red_unpacked = Unpack(bgr_red_packed);
+    const auto bgr_red_unpacked = Bgr15::Unpack(bgr_red_packed);
     ASSERT_EQ(bgr_red_packed, 31);
     ASSERT_EQ(bgr_red_unpacked, bgr_red);
 
     constexpr Bgr15 bgr_green{0, 251, 0};
     const auto bgr_green_packed = bgr_green.Pack();
-    const auto bgr_green_unpacked = Unpack(bgr_green_packed);
+    const auto bgr_green_unpacked = Bgr15::Unpack(bgr_green_packed);
     ASSERT_EQ(bgr_green.Pack(), 992);
     ASSERT_EQ(bgr_green_unpacked, bgr_green);
 
     constexpr Bgr15 bgr_blue{0, 0, 255};
     const auto bgr_blue_packed = bgr_blue.Pack();
-    const auto bgr_blue_unpacked = Unpack(bgr_blue_packed);
+    const auto bgr_blue_unpacked = Bgr15::Unpack(bgr_blue_packed);
     ASSERT_EQ(bgr_blue.Pack(), 31744);
     ASSERT_EQ(bgr_blue_unpacked, bgr_blue);
 }
