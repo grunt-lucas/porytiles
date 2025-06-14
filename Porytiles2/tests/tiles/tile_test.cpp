@@ -8,7 +8,7 @@
 
 using namespace porytiles;
 
-TEST(TileTests, TileAtAndSetShouldWork) {
+TEST(TileTests, AtAndSetShouldWork) {
     Tile<int> tile{};
 
     ASSERT_EQ(0, tile.At(0));

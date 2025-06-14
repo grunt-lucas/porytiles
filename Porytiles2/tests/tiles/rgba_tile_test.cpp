@@ -9,7 +9,7 @@
 
 using namespace porytiles;
 
-TEST(RgbaTileTests, TileIsTransparentShouldUseAlphaCorrectly) {
+TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
     RgbaTile tile{};
 
     tile.Set(12, Rgba32{22, 90, 144});

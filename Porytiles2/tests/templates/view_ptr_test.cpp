@@ -6,7 +6,7 @@
 
 using namespace porytiles;
 
-TEST(ViewPtrTests, ViewPtrReadOperations) {
+TEST(ViewPtrTests, ReadOperations) {
     const auto owner{std::make_unique<std::string>("foobar")};
 
     const view_ptr viewer{owner.get()};
@@ -16,7 +16,7 @@ TEST(ViewPtrTests, ViewPtrReadOperations) {
     ASSERT_EQ(6, viewer->size());
 }
 
-TEST(ViewPtrTests, ViewPtrWriteOperations) {
+TEST(ViewPtrTests, WriteOperations) {
     const auto owner{std::make_unique<std::string>("foobar")};
 
     const view_ptr viewer{owner.get()};

@@ -7,7 +7,7 @@
 
 using namespace porytiles;
 
-TEST(AnyMapTests, AnyMapPutTryGetShouldWork) {
+TEST(AnyMapTests, PutTryGetShouldWork) {
     AnyMap map{};
 
     map.Put("key1", 22);
@@ -28,7 +28,7 @@ TEST(AnyMapTests, AnyMapPutTryGetShouldWork) {
     ASSERT_EXIT(std::ignore = map.Get<int>("key25"), ::testing::KilledBySignal(SIGABRT), "Key not found: key25");
 }
 
-TEST(AnyMapTests, AnyMapGetShouldPanicOnWrongType) {
+TEST(AnyMapTests, GetShouldPanicOnWrongType) {
     AnyMap map{};
 
     map.Put("key1", 22);

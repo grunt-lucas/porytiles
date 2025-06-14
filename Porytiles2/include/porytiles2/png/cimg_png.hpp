@@ -1,0 +1,30 @@
+#pragma once
+
+#include <filesystem>
+
+#include <CImg.h>
+
+#include "./png.hpp"
+
+namespace porytiles {
+
+/**
+ * @brief Implementation of Png that uses the CImg image processing library.
+ */
+class CImgPng final : public Png {
+  public:
+    CImgPng() = default;
+
+    [[nodiscard]] std::expected<void, std::string> Read(const std::filesystem::path &path) override;
+
+    [[nodiscard]] std::expected<void, std::string> Write(const std::filesystem::path &path) override;
+
+    [[nodiscard]] std::size_t Width() const override;
+
+    [[nodiscard]] std::size_t Height() const override;
+
+  private:
+    cimg_library::CImg<std::uint8_t> image_;
+};
+
+} // namespace porytiles
