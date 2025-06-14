@@ -62,9 +62,9 @@ set(CANONICAL_LIB_NAME "porytiles2")
 set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 
 # Configure CImg
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_display=0)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_verbosity=0)
+target_compile_definitions(Porytiles2Lib PUBLIC cimg_use_png)
+target_compile_definitions(Porytiles2Lib PUBLIC cimg_display=0)
+target_compile_definitions(Porytiles2Lib PUBLIC cimg_verbosity=0)
 
 
 #######################################
