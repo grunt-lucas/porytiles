@@ -7,9 +7,13 @@
 
 #include "../diagnostics/diagnostic_engine.hpp"
 #include "../templates/any_map.hpp"
+#include "../templates/view_ptr.hpp"
 
 namespace porytiles {
 
+/**
+ * @brief ArtifactMetadata provides a POD-like class for Operation to declare input and output artifact info.
+ */
 class ArtifactMetadata {
   public:
     ArtifactMetadata(std::string key, const std::type_index type)
@@ -64,7 +68,7 @@ class Operation {
     }
 
   private:
-    DiagEngine *diag_;
+    view_ptr<DiagEngine> diag_;
     std::string name_;
 };
 
