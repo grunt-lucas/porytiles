@@ -15,9 +15,14 @@ TEST(CImgPngTests, DimensionsMethodsShouldWork) {
     ASSERT_EQ(png.Height(), 16);
 }
 
-TEST(CImgPngTests, OpenShouldFailGracefullyOnFileNotFound) {
+TEST(CImgPngTests, OpenShouldFailGracefullyOnBadFile) {
     CImgPng png{};
+
     const auto result = png.Read("Resources/Tests/png/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
     ASSERT_TRUE(result.error().contains("Failed to open file 'Resources/Tests/png/non_existent_file.png'"));
+
+    const auto result2 = png.Read("Resources/Tests/metatile_behaviors.h");
+    ASSERT_FALSE(result2.has_value());
+    ASSERT_TRUE(result2.error().contains("Failed to recognize format of file 'Resources/Tests/metatile_behaviors.h'"));
 }

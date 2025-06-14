@@ -19,6 +19,8 @@ class CImgPng final : public Png {
 
     [[nodiscard]] std::expected<void, std::string> Write(const std::filesystem::path &path) override;
 
+    void Reset(std::size_t width, std::size_t height) override;
+
     [[nodiscard]] std::size_t Width() const override;
 
     [[nodiscard]] std::size_t Height() const override;
