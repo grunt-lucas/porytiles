@@ -18,11 +18,11 @@
 namespace porytiles {
 
 /**
- * @brief DiagEngine coordinates the generation and consumption of diagnostic messages
+ * @brief Coordinates the generation and consumption of diagnostic messages
  *
  * @details
  * DiagEngine manages settings for enabling, disabling, treating warnings as errors, etc. It uses a DiagConsumer to
- * process the generated diagnostics according to the engine client's preference.
+ * process the generated diagnostics according to the engine client's preferences.
  */
 class DiagEngine {
   public:

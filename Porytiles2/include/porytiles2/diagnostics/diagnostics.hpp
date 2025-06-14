@@ -97,7 +97,7 @@ class DiagTempl {
     }
 
     /**
-     * @brief Get the default diagnostic level of the template.
+     * @brief Gets the default diagnostic level of the template.
      * @return The default DiagLevel.
      */
     [[nodiscard]] DiagLevel level() const {
@@ -105,7 +105,7 @@ class DiagTempl {
     }
 
     /**
-     * @brief Get the static message template.
+     * @brief Gets the static message template.
      *
      * @details
      * The static message template is only used if a dynamic message builder is not provided.
@@ -117,7 +117,7 @@ class DiagTempl {
     }
 
     /**
-     * @brief Build a dynamic message for this DiagTempl based on the configured message builder.
+     * @brief Builds a dynamic message for this DiagTempl based on the configured message builder.
      * @tparam Args The format argument types for the message template.
      * @param eng The calling DiagEngine.
      * @param in_flight_level The in-flight level of this diagnostic.
@@ -137,7 +137,7 @@ class DiagTempl {
     }
 
     /**
-     * @brief Get a vector of partner DiagTempl for this DiagTempl.
+     * @brief Gets a vector of partner DiagTempl for this DiagTempl.
      *
      * @details
      * Partner diagnostics are reported along with the main diagnostic. They are typically used for a DiagLevel::Note
@@ -293,7 +293,7 @@ constexpr auto FatalGeneric = "error-fatal-generic";
 /// invalid.
 DiagTempl DiagFor(std::string_view name);
 
-/// @brief Get an iterable view of all DiagTempl names in the internal table.
+/// @brief Gets an iterable view of all DiagTempl names in the internal table.
 ///
 /// @details The names returned from this function can then be used for lookup
 /// via DiagFor. This may be useful for range-based for-loops, or other use
@@ -305,7 +305,7 @@ std::vector<const char *> AllDiagNames(DiagLevel level);
 
 } // namespace porytiles
 
-/// @brief Specialization of `std::hash` for `porytiles::DiagTempl`.
+/// @brief Specialization of `std::hash` for porytiles::DiagTempl.
 ///
 /// @details
 /// This allows porytiles::DiagTempl objects to be used as keys in
