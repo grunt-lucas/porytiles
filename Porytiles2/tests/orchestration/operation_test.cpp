@@ -61,5 +61,5 @@ TEST(OperationTests, BasicOperationFunctionsShouldWork) {
 
     const auto &map = result.value();
     const auto sum = map.Get<int>("sum");
-    ASSERT_EQ(150, sum);
+    EXPECT_EQ(150, sum);
 }

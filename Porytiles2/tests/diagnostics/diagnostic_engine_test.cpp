@@ -7,9 +7,9 @@ using namespace porytiles;
 TEST(WarningTests, WallShouldEnableAllWarnings) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
-    ASSERT_EQ(engine.EnabledAt(WarnColorPrecisionLoss), DiagLevel::kIgnored);
-    ASSERT_EQ(engine.EnabledAt(WarnTransparencyCollapse), DiagLevel::kIgnored);
-    ASSERT_EQ(engine.EnabledAt(WarnUnusedAttribute), DiagLevel::kIgnored);
+    EXPECT_EQ(engine.EnabledAt(WarnColorPrecisionLoss), DiagLevel::kIgnored);
+    EXPECT_EQ(engine.EnabledAt(WarnTransparencyCollapse), DiagLevel::kIgnored);
+    EXPECT_EQ(engine.EnabledAt(WarnUnusedAttribute), DiagLevel::kIgnored);
 
     // RGBATile tile{};
     // engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);
@@ -47,7 +47,7 @@ TEST(WarningTests, WallShouldEnableAllWarnings) {
 
 TEST(WarningTests, IndividualWarningsShouldExplicitlyEnable) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
-    ASSERT_EQ(engine.EnabledAt(WarnColorPrecisionLoss), DiagLevel::kIgnored);
+    EXPECT_EQ(engine.EnabledAt(WarnColorPrecisionLoss), DiagLevel::kIgnored);
 
     // RGBATile tile{};
     // engine.Report(kWarnColorPrecisionLoss, tile, std::string{"foo"}, std::string{"bar"}, 0UL, 0UL);

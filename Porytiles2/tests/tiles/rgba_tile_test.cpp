@@ -13,8 +13,8 @@ TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
     RgbaTile tile{};
 
     tile.Set(12, Rgba32{22, 90, 144});
-    ASSERT_FALSE(tile.IsTransparent(kRgbaMagenta));
+    EXPECT_FALSE(tile.IsTransparent(kRgbaMagenta));
 
     tile.Set(12, Rgba32{22, 90, 144, Rgba32::kAlphaTransparent});
-    ASSERT_TRUE(tile.IsTransparent(kRgbaMagenta));
+    EXPECT_TRUE(tile.IsTransparent(kRgbaMagenta));
 }
