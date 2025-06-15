@@ -10,7 +10,7 @@
 namespace porytiles {
 
 /**
- * @brief Implementation of Png that uses the CImg image processing library.
+ * @brief Implementation of Png using the CImg image processing library.
  */
 class CImgPng final : public Png {
   public:

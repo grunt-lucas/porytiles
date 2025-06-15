@@ -78,7 +78,7 @@ target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(Porytiles2Lib PUBLIC ${PNG_INCLUDE_DIRS})
 
 if (cimg_SOURCE_DIR)
-    target_include_directories(Porytiles2Lib PUBLIC ${cimg_SOURCE_DIR})
+    target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})
 else ()
     message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
 endif ()

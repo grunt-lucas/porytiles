@@ -6,6 +6,7 @@ using namespace porytiles;
 
 TEST(CImgPngTests, DimensionsMethodsShouldWork) {
     CImgPng png{};
+
     ASSERT_EQ(png.Width(), 0);
     ASSERT_EQ(png.Height(), 0);
 
