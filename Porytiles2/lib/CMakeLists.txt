@@ -71,9 +71,8 @@ target_compile_definitions(Porytiles2Lib PUBLIC cimg_verbosity=0)
 #### Configure include directories ####
 #######################################
 
-# Force dependents to include files like <porytiles/compiler.h>, while
-# internally we can simply use "./compiler.h"
-target_include_directories(Porytiles2Lib INTERFACE ${PORYTILES2_INCLUDE_DIR} PRIVATE ${PORYTILES2_INCLUDE_DIR}/${CANONICAL_LIB_NAME})
+target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
+target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Find the libpng include dirs located via find_package
 target_include_directories(Porytiles2Lib PUBLIC ${PNG_INCLUDE_DIRS})

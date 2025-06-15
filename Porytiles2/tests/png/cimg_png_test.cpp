@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <porytiles2/png/cimg_png.hpp>
+#include "png/impl/cimg_png.hpp"
 
 using namespace porytiles;
 

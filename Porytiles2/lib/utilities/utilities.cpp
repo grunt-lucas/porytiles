@@ -1,17 +1,16 @@
-#include "utilities/utilities.hpp"
+#include <porytiles2/utilities/utilities.hpp>
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
-#include "panic/panic.hpp"
-
-#include <regex>
+#include <porytiles2/panic/panic.hpp>
 
 namespace porytiles {
 

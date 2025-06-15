@@ -1,4 +1,4 @@
-#include "panic/panic.hpp"
+#include <porytiles2/panic/panic.hpp>
 
 #include <cstdio>
 #include <cstdlib>

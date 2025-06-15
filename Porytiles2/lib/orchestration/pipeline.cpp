@@ -1,8 +1,8 @@
-#include "orchestration/pipeline.hpp"
+#include <porytiles2/orchestration/pipeline.hpp>
 
 #include <queue>
 
-#include "panic/panic.hpp"
+#include <porytiles2/panic/panic.hpp>
 
 namespace porytiles {
 

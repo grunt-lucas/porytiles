@@ -1,4 +1,4 @@
-#include "diagnostics/diagnostics.hpp"
+#include <porytiles2/diagnostics/diagnostics.hpp>
 
 #include <any>
 #include <ranges>
@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <unordered_set>
 
-#include "diagnostics/diagnostic_engine.hpp"
+#include <porytiles2/diagnostics/diagnostic_engine.hpp>
 
 namespace {
 

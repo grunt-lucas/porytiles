@@ -1,10 +1,11 @@
 #pragma once
 
+#include <expected>
 #include <filesystem>
 
 #include <CImg.h>
 
-#include "./png.hpp"
+#include <porytiles2/png/png.hpp>
 
 namespace porytiles {
 

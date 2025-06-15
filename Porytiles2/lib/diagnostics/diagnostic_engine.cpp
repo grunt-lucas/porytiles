@@ -1,6 +1,6 @@
-#include "diagnostics/diagnostic_engine.hpp"
+#include <porytiles2/diagnostics/diagnostic_engine.hpp>
 
-#include "panic/panic.hpp"
+#include <porytiles2/panic/panic.hpp>
 
 namespace {
 
