@@ -30,19 +30,19 @@ FetchContent_MakeAvailable(CImg)
 FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
 
 # Create the test executable
-add_executable(Porytiles2Tests ${CppSources})
+add_executable(Porytiles2UnitTests ${CppSources})
 
 # Allow the test suite to see private internal implementation files of the library
-target_include_directories(Porytiles2Tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
-target_link_libraries(Porytiles2Tests PRIVATE GTest::gtest_main)
-# gtest_discover_tests(Porytiles2Tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+target_include_directories(Porytiles2UnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
+target_link_libraries(Porytiles2UnitTests PRIVATE GTest::gtest_main)
+# gtest_discover_tests(Porytiles2UnitTests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Link against the Porytiles2 library
-target_link_libraries(Porytiles2Tests PRIVATE Porytiles2Lib)
+target_link_libraries(Porytiles2UnitTests PRIVATE Porytiles2Lib)
 
 # Add CImg to our include directories since we're testing the internal implementation
 if (cimg_SOURCE_DIR)
-    target_include_directories(Porytiles2Tests PRIVATE ${cimg_SOURCE_DIR})
+    target_include_directories(Porytiles2UnitTests PRIVATE ${cimg_SOURCE_DIR})
 else ()
     message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
 endif ()
