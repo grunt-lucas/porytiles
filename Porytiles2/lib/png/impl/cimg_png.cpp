@@ -1,4 +1,4 @@
-#include "./cimg_png.hpp"
+#include <png/impl/cimg_png.hpp>
 
 namespace porytiles {
 
