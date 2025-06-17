@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <array>
 
-#include "../panic/panic.hpp"
-#include "./tile_metadata.hpp"
+#include <porytiles2/panic/panic.hpp>
 
 namespace porytiles {
 

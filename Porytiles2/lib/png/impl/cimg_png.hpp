@@ -1,8 +1,5 @@
 #pragma once
 
-#include <expected>
-#include <filesystem>
-
 #include <CImg.h>
 
 #include <porytiles2/png/png.hpp>
@@ -14,13 +11,7 @@ namespace porytiles {
  */
 class CImgPng final : public Png {
   public:
-    CImgPng() = default;
-
-    [[nodiscard]] std::expected<void, std::string> Read(const std::filesystem::path &path) override;
-
-    [[nodiscard]] std::expected<void, std::string> Write(const std::filesystem::path &path) override;
-
-    void Reset(std::size_t width, std::size_t height) override;
+    explicit CImgPng(const cimg_library::CImg<std::uint8_t> &image);
 
     [[nodiscard]] std::size_t Width() const override;
 

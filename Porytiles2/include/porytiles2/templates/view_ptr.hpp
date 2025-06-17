@@ -3,8 +3,6 @@
 #include <cstddef>
 #include <utility>
 
-#include "../panic/panic.hpp"
-
 namespace porytiles {
 
 /**

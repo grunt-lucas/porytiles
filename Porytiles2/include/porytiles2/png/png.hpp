@@ -1,8 +1,5 @@
 #pragma once
 
-#include <expected>
-#include <string>
-
 namespace porytiles {
 
 /**
@@ -16,12 +13,6 @@ namespace porytiles {
 class Png {
   public:
     virtual ~Png() = default;
-
-    [[nodiscard]] virtual std::expected<void, std::string> Read(const std::filesystem::path &path) = 0;
-
-    [[nodiscard]] virtual std::expected<void, std::string> Write(const std::filesystem::path &path) = 0;
-
-    virtual void Reset(std::size_t width, std::size_t height) = 0;
 
     /**
      * Gets the width of this Png in pixels.

@@ -12,8 +12,8 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "../panic/panic.hpp"
-#include "./diagnostics.hpp"
+#include <porytiles2/diagnostics/diagnostics.hpp>
+#include <porytiles2/panic/panic.hpp>
 
 namespace porytiles {
 

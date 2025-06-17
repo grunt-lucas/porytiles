@@ -1,7 +1,7 @@
 #pragma once
 
-#include "./bgr_pal.hpp"
-#include "./tile.hpp"
+#include <porytiles2/tiles/bgr_pal.hpp>
+#include <porytiles2/tiles/tile.hpp>
 
 namespace porytiles {
 

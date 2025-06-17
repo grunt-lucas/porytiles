@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "./operation.hpp"
+#include <porytiles2/orchestration/operation.hpp>
 
 namespace porytiles {
 

@@ -5,9 +5,9 @@
 
 #include <gsl/pointers>
 
-#include "../diagnostics/diagnostic_engine.hpp"
-#include "../templates/any_map.hpp"
-#include "../templates/view_ptr.hpp"
+#include <porytiles2/diagnostics/diagnostic_engine.hpp>
+#include <porytiles2/templates/any_map.hpp>
+#include <porytiles2/templates/view_ptr.hpp>
 
 namespace porytiles {
 

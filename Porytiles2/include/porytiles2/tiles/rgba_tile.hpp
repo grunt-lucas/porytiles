@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../colors/rgba32.hpp"
-#include "./tile.hpp"
+#include <porytiles2/colors/rgba32.hpp>
+#include <porytiles2/tiles/tile.hpp>
 
 namespace porytiles {
 

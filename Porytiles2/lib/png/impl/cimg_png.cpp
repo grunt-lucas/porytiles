@@ -5,23 +5,8 @@ namespace porytiles {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-std::expected<void, std::string> CImgPng::Read(const std::filesystem::path &path) {
-    const auto path_c_str = path.c_str();
-    try {
-        image_.assign(path_c_str);
-        return {};
-    } catch (const CImgException &e) {
-        return std::unexpected{e.what()};
-    }
-}
-
-void CImgPng::Reset(const std::size_t width, const std::size_t height) {
-    image_.assign(width, height, 1, 4, 0);
-}
-
-/// @todo implement
-std::expected<void, std::string> CImgPng::Write(const std::filesystem::path &path) {
-    return {};
+CImgPng::CImgPng(const CImg<std::uint8_t> &image) {
+    image_.assign(image);
 }
 
 std::size_t CImgPng::Width() const {

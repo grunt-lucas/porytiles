@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "../anims/rgba_anim.hpp"
-#include "../metatiles/rgba_metatile.hpp"
+#include <porytiles2/anims/rgba_anim.hpp>
+#include <porytiles2/metatiles/rgba_metatile.hpp>
 
 namespace porytiles {
 

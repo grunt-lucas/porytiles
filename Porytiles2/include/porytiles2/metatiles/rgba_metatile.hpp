@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "../tiles/rgba_tile.hpp"
+#include <porytiles2/tiles/rgba_tile.hpp>
 
 namespace porytiles {
 

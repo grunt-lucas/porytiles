@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./tile.hpp"
+#include <porytiles2/tiles/tile.hpp>
 
 namespace porytiles {
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../anims/vram_anim.hpp"
-#include "../metatiles/vram_metatile.hpp"
+#include <porytiles2/anims/vram_anim.hpp>
+#include <porytiles2/metatiles/vram_metatile.hpp>
 
 namespace porytiles {
 

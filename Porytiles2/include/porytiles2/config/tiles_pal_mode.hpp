@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 
-#include "../panic/panic.hpp"
+#include <porytiles2/panic/panic.hpp>
 
 namespace porytiles {
 

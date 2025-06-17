@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../colors/bgr15.hpp"
+#include <porytiles2/colors/bgr15.hpp>
 
 namespace porytiles {
 
