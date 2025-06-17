@@ -17,6 +17,10 @@ class CImgPng final : public Png {
 
     [[nodiscard]] std::size_t Height() const override;
 
+    [[nodiscard]] Rgba32 At(std::size_t i) const override;
+
+    [[nodiscard]] Rgba32 At(std::size_t row, std::size_t col) const override;
+
   private:
     cimg_library::CImg<std::uint8_t> image_;
 };
