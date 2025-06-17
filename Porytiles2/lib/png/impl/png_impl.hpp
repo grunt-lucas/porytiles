@@ -7,11 +7,11 @@
 namespace porytiles {
 
 /**
- * @brief Implementation of Png using the CImg image processing library.
+ * @brief Implementation of the Png interface.
  */
-class CImgPng final : public Png {
+class PngImpl final : public Png {
   public:
-    explicit CImgPng(const cimg_library::CImg<std::uint8_t> &image);
+    explicit PngImpl(const cimg_library::CImg<std::uint8_t> &image);
 
     [[nodiscard]] std::size_t Width() const override;
 
