@@ -37,7 +37,8 @@ Rgba32 CImgPng::At(const std::size_t row, const std::size_t col) const {
     const auto green = image_(col, row, 0, 1);
     const auto blue = image_(col, row, 0, 2);
 
-    if (image_.spectrum() != 4) {
+    // PNGs with no alpha channel are considered opaque
+    if (image_.spectrum() == 3) {
         return Rgba32{red, green, blue, Rgba32::kAlphaOpaque};
     }
 
