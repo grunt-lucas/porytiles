@@ -2,8 +2,8 @@
 
 #include <porytiles2/png/png_importer.hpp>
 
-#include <png/impl/png_importer_impl.hpp>
 #include <png/impl/png_impl.hpp>
+#include <png/impl/png_importer_impl.hpp>
 
 using namespace porytiles;
 
