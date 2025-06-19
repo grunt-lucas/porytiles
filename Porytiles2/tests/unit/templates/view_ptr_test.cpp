@@ -9,7 +9,7 @@ using namespace porytiles;
 TEST(ViewPtrTests, ReadOperations) {
     const auto owner{std::make_unique<std::string>("foobar")};
 
-    const view_ptr viewer{owner.get()};
+    const ViewPtr viewer{owner.get()};
 
     EXPECT_EQ("foobar", *viewer);
     EXPECT_EQ("foobar", *viewer.get());
@@ -19,7 +19,7 @@ TEST(ViewPtrTests, ReadOperations) {
 TEST(ViewPtrTests, WriteOperations) {
     const auto owner{std::make_unique<std::string>("foobar")};
 
-    const view_ptr viewer{owner.get()};
+    const ViewPtr viewer{owner.get()};
 
     // Mutate the string through the view
     viewer->at(0) = 'g';

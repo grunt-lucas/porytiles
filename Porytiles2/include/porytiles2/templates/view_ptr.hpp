@@ -9,25 +9,25 @@ namespace porytiles {
  * @brief A smart pointer that represents a non-owning view of a resource.
  *
  * @details
- * The view_ptr allows for reading and writing and is semantically equivalent to a raw pointer. The purpose of view_ptr
+ * The ViewPtr allows for reading and writing and is semantically equivalent to a raw pointer. The purpose of ViewPtr
  * is to explicitly signal that the pointed-to resource is not owned by the owner of the pointer.
  */
 template <typename T>
-class view_ptr {
+class ViewPtr {
   public:
-    constexpr view_ptr() noexcept : ptr_(nullptr) {}
+    constexpr ViewPtr() noexcept : ptr_(nullptr) {}
 
-    explicit constexpr view_ptr(std::nullptr_t) noexcept : ptr_(nullptr) {}
+    explicit constexpr ViewPtr(std::nullptr_t) noexcept : ptr_(nullptr) {}
 
-    explicit view_ptr(T *p) noexcept : ptr_(p) {}
+    explicit ViewPtr(T *p) noexcept : ptr_(p) {}
 
-    view_ptr(const view_ptr &other) noexcept = default;
+    ViewPtr(const ViewPtr &other) noexcept = default;
 
-    view_ptr &operator=(const view_ptr &other) noexcept = default;
+    ViewPtr &operator=(const ViewPtr &other) noexcept = default;
 
-    view_ptr(view_ptr &&other) noexcept : ptr_(other.release()) {}
+    ViewPtr(ViewPtr &&other) noexcept : ptr_(other.release()) {}
 
-    view_ptr &operator=(view_ptr &&other) noexcept {
+    ViewPtr &operator=(ViewPtr &&other) noexcept {
         ptr_ = other.release();
         return *this;
     }
@@ -58,7 +58,7 @@ class view_ptr {
         ptr_ = p;
     }
 
-    void swap(view_ptr &other) noexcept {
+    void swap(ViewPtr &other) noexcept {
         std::swap(ptr_, other.ptr_);
     }
 
@@ -69,37 +69,37 @@ class view_ptr {
 // Comparison operators
 /// @todo make these members? pros vs. cons
 template <typename T1, typename T2>
-bool operator==(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
+bool operator==(const ViewPtr<T1> &lhs, const ViewPtr<T2> &rhs) {
     return lhs.get() == rhs.get();
 }
 
 template <typename T1, typename T2>
-bool operator!=(const view_ptr<T1> &lhs, const view_ptr<T2> &rhs) {
+bool operator!=(const ViewPtr<T1> &lhs, const ViewPtr<T2> &rhs) {
     return !(lhs == rhs);
 }
 
 template <typename T>
-bool operator==(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
+bool operator==(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
     return !lhs;
 }
 
 template <typename T>
-bool operator==(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
+bool operator==(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
     return !rhs;
 }
 
 template <typename T>
-bool operator!=(const view_ptr<T> &lhs, std::nullptr_t) noexcept {
+bool operator!=(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
     return static_cast<bool>(lhs);
 }
 
 template <typename T>
-bool operator!=(std::nullptr_t, const view_ptr<T> &rhs) noexcept {
+bool operator!=(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
     return static_cast<bool>(rhs);
 }
 
 // Deduction guide (C++17)
 template <typename T>
-view_ptr(T *) -> view_ptr<T>;
+ViewPtr(T *) -> ViewPtr<T>;
 
 } // namespace porytiles

@@ -5,7 +5,7 @@
 
 #include <CLI/CLI.hpp>
 
-#include <porytiles2/panic/panic.hpp>
+#include <porytiles2/templates/panic.hpp>
 
 #include "./option.hpp"
 #include "./option_group.hpp"
