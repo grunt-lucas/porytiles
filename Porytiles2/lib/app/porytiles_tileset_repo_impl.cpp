@@ -6,6 +6,7 @@
 
 #include <porytiles2/domain/tilesets/porytiles_tileset.hpp>
 #include <porytiles2/templates/panic.hpp>
+#include <porytiles2/templates/result.hpp>
 
 namespace porytiles {
 
@@ -14,7 +15,7 @@ void PorytilesTilesetRepoImpl::save(const PorytilesTileset &tileset) {
     Panic("unimplemented");
 }
 
-std::expected<std::unique_ptr<PorytilesTileset>, std::string> PorytilesTilesetRepoImpl::load(const std::string &name) {
+Result<std::unique_ptr<PorytilesTileset>> PorytilesTilesetRepoImpl::load(const std::string &name) {
     // TODO : impl
     Panic("unimplemented");
 }
