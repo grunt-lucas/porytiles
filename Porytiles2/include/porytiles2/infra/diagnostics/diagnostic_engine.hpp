@@ -26,10 +26,10 @@ namespace porytiles {
  */
 class DiagEngine {
   public:
-    DiagEngine() : consumer_(std::make_unique<IgnoreConsumer>()), all_warnings_disabled_{false} {}
+    DiagEngine() : consumer_{std::make_unique<IgnoreConsumer>()}, all_warnings_disabled_{false} {}
 
     explicit DiagEngine(std::unique_ptr<DiagConsumer> consumer)
-        : consumer_(std::move(consumer)), all_warnings_disabled_{false} {}
+        : consumer_{std::move(consumer)}, all_warnings_disabled_{false} {}
 
     void EnableAllWarnings();
 
