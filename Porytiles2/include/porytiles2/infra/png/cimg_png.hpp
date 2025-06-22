@@ -2,16 +2,16 @@
 
 #include <CImg.h>
 
-#include <porytiles2/infra/png/png.hpp>
+#include <porytiles2/domain/entities/png.hpp>
 
 namespace porytiles {
 
 /**
- * @brief Implementation of the Png interface.
+ * @brief Implementation of the Png interface using the CImg library.
  */
-class PngImpl final : public Png {
+class CImgPng final : public Png {
   public:
-    explicit PngImpl(const cimg_library::CImg<std::uint8_t> &image);
+    explicit CImgPng(const cimg_library::CImg<std::uint8_t> &image);
 
     [[nodiscard]] std::size_t Width() const override;
 

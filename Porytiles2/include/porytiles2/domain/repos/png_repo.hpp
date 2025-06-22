@@ -5,16 +5,16 @@
 #include <memory>
 #include <string>
 
-#include <porytiles2/infra/png/png.hpp>
+#include <porytiles2/domain/entities/png.hpp>
 
 namespace porytiles {
 
 /**
  * @brief Imports a Png from the filesystem.
  */
-class PngImporter {
+class PngRepo {
   public:
-    virtual ~PngImporter() = default;
+    virtual ~PngRepo() = default;
 
     /**
      * @brief Imports a Png at a given path from the filesystem.

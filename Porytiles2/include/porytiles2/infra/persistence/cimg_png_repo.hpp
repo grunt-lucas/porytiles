@@ -5,14 +5,14 @@
 #include <memory>
 #include <string>
 
-#include <porytiles2/infra/png/png.hpp>
-#include <porytiles2/infra/png/png_importer.hpp>
+#include <porytiles2/domain/entities/png.hpp>
+#include <porytiles2/domain/repos/png_repo.hpp>
 
 namespace porytiles {
 
-class PngImporterImpl final : public PngImporter {
+class CImgPngRepo final : public PngRepo {
   public:
-    PngImporterImpl() = default;
+    CImgPngRepo() = default;
 
     [[nodiscard]] std::expected<std::unique_ptr<Png>, std::string>
     Read(const std::filesystem::path &path) const override;

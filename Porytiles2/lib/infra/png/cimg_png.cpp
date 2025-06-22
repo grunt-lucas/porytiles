@@ -1,4 +1,6 @@
-#include <infra/png/impl/png_impl.hpp>
+#include <porytiles2/infra/png/cimg_png.hpp>
+
+#include <CImg.h>
 
 #include <porytiles2/templates/panic.hpp>
 
@@ -7,26 +9,26 @@ namespace porytiles {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-PngImpl::PngImpl(const CImg<std::uint8_t> &image) {
+CImgPng::CImgPng(const CImg<std::uint8_t> &image) {
     if (image.spectrum() != 3 && image.spectrum() != 4) {
         Panic("CImgPng only supports 3 or 4 channel images");
     }
     image_.assign(image);
 }
 
-std::size_t PngImpl::Width() const {
+std::size_t CImgPng::Width() const {
     return static_cast<std::size_t>(image_.width());
 }
 
-std::size_t PngImpl::Height() const {
+std::size_t CImgPng::Height() const {
     return static_cast<std::size_t>(image_.height());
 }
 
-Rgba32 PngImpl::At(std::size_t i) const {
+Rgba32 CImgPng::At(std::size_t i) const {
     Panic("not implemented");
 }
 
-Rgba32 PngImpl::At(const std::size_t row, const std::size_t col) const {
+Rgba32 CImgPng::At(const std::size_t row, const std::size_t col) const {
     if (col >= Width()) {
         Panic(fmt::format("col {} out of bounds for PNG width {}", col, Width()));
     }

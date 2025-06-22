@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 
-#include <infra/png/impl/png_impl.hpp>
-#include <infra/png/impl/png_importer_impl.hpp>
-#include <porytiles2/infra/png/png_importer.hpp>
+#include <porytiles2/domain/entities/png.hpp>
+#include <porytiles2/domain/repos/png_repo.hpp>
+#include <porytiles2/infra/persistence/cimg_png_repo.hpp>
+#include <porytiles2/infra/png/cimg_png.hpp>
 
 using namespace porytiles;
 
+// TODO : this is technically an integration test
+
 TEST(CImgPngTests, DimensionsMethodsShouldWork) {
-    const std::unique_ptr<PngImporter> importer = std::make_unique<PngImporterImpl>();
+    const std::unique_ptr<PngRepo> importer = std::make_unique<CImgPngRepo>();
     auto result = importer->Read("Resources/Tests/Unit/png/pattern.png");
     ASSERT_TRUE(result.has_value());
 
@@ -17,7 +20,7 @@ TEST(CImgPngTests, DimensionsMethodsShouldWork) {
 }
 
 TEST(CImgPngTests, GetByRowColShouldWork) {
-    const std::unique_ptr<PngImporter> importer = std::make_unique<PngImporterImpl>();
+    const std::unique_ptr<PngRepo> importer = std::make_unique<CImgPngRepo>();
     auto result = importer->Read("Resources/Tests/Unit/png/pattern.png");
     ASSERT_TRUE(result.has_value());
 
@@ -37,7 +40,7 @@ TEST(CImgPngTests, GetByRowColShouldWork) {
 }
 
 TEST(CImgPngTests, OpenShouldFailGracefullyOnBadFile) {
-    const std::unique_ptr<PngImporter> importer = std::make_unique<PngImporterImpl>();
+    const std::unique_ptr<PngRepo> importer = std::make_unique<CImgPngRepo>();
 
     auto result = importer->Read("Resources/Tests/Unit/png/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
