@@ -4,8 +4,8 @@
 
 #include <fmt/format.h>
 
-#include <porytiles2/domain/colors/rgba32.hpp>
-#include <porytiles2/domain/tiles/rgba_tile.hpp>
+#include <porytiles2/domain/value_objects/rgba32.hpp>
+#include <porytiles2/domain/value_objects/rgba_tile.hpp>
 
 using namespace porytiles;
 

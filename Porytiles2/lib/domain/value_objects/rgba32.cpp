@@ -1,4 +1,4 @@
-#include <porytiles2/domain/colors/rgba32.hpp>
+#include <porytiles2/domain/value_objects/rgba32.hpp>
 
 #include <string>
 

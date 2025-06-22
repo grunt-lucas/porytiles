@@ -4,13 +4,13 @@
 #include <memory>
 #include <string>
 
-#include <porytiles2/app/porytiles_tileset_repo.hpp>
-#include <porytiles2/domain/tilesets/porytiles_tileset.hpp>
+#include <porytiles2/domain/aggregates/porytiles_tileset.hpp>
+#include <porytiles2/domain/repos/porytiles_tileset_repo.hpp>
 #include <porytiles2/templates/result.hpp>
 
 namespace porytiles {
 
-class PorytilesTilesetRepoImpl final : public PorytilesTilesetRepo {
+class FilesystemPorytilesTilesetRepo final : public PorytilesTilesetRepo {
   public:
     void save(const PorytilesTileset &tileset) override;
 

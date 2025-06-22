@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include <porytiles2/domain/tilesets/porytiles_tileset.hpp>
+#include <porytiles2/domain/aggregates/porytiles_tileset.hpp>
 #include <porytiles2/templates/result.hpp>
 
 namespace porytiles {
