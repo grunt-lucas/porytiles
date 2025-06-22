@@ -18,9 +18,9 @@ class ProjectPaths {
      * @brief Computes the path to the project `metatile_behaviors.h` file.
      *
      * @details
-     * While BehaviorsHeader by default assumes that `metatile_behaviors.h` lives in the standard location (i.e.
-     * `include/constants`), it can optionally take into account a user-supplied override path or file via
-     * SetBehaviorsHeaderOverridePath and SetBehaviorsHeaderOverrideFile.
+     * While ProjectPaths::BehaviorsHeader by default assumes that `metatile_behaviors.h` lives in the standard location
+     * (i.e. `include/constants`), it can optionally take into account a user-supplied override path or file via
+     * ProjectPaths::SetBehaviorsHeaderOverridePath and ProjectPaths::SetBehaviorsHeaderOverrideFile.
      *
      * @return The path to the project's `metatile_behaviors.h` file.
      */
@@ -32,7 +32,7 @@ class ProjectPaths {
      * @details
      * The supplied override path should point to the directory that contains the `metatile_behaviors.h` file, and it
      * must be relative to the project root. If you need to override the file name itself, see
-     * SetBehaviorsHeaderOverrideFile.
+     * ProjectPaths::SetBehaviorsHeaderOverrideFile.
      *
      * @param override The override behaviors header path.
      */
