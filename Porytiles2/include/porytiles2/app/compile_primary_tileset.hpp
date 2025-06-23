@@ -4,9 +4,9 @@
 
 namespace porytiles {
 
-class CompileTilesetUseCase {
+class CompilePrimaryTileset {
   public:
-    void Compile(const std::string &tileset_name);
+    void Compile(const std::string &name);
 };
 
 } // namespace porytiles
