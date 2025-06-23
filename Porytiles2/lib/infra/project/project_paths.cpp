@@ -6,7 +6,7 @@
 
 namespace porytiles {
 
-static constexpr std::string kBehaviorsHeaderFile = "metatile_behaviors.h";
+static const std::string kBehaviorsHeaderFile = "metatile_behaviors.h";
 static const std::filesystem::path kBehaviorsHeaderPath = std::filesystem::path{"include"} / "constants";
 
 std::filesystem::path ProjectPaths::BottomPng(const std::string &tileset) const {}
