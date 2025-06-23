@@ -15,12 +15,28 @@ class ProjectPaths {
     explicit ProjectPaths(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
 
     /**
-     * @brief Computes the path to the given tileset's Porytiles `bottom.png` file.
+     * @brief Computes the path to the given primary tileset's Porytiles `bottom.png` file.
      *
-     * @param tileset The name of the tileset.
-     * @return The path to the given tileset's `bottom.png` file.
+     * @param tileset The name of the primary tileset.
+     * @return The path to the given primary tileset's `bottom.png` file.
      */
-    [[nodiscard]] std::filesystem::path BottomPng(const std::string &tileset) const;
+    [[nodiscard]] std::filesystem::path PrimaryBottomPng(const std::string &tileset) const;
+
+    /**
+     * @brief Computes the path to the given primary tileset's Porytiles `middle.png` file.
+     *
+     * @param tileset The name of the primary tileset.
+     * @return The path to the given primary tileset's `middle.png` file.
+     */
+    [[nodiscard]] std::filesystem::path PrimaryMiddlePng(const std::string &tileset) const;
+
+    /**
+     * @brief Computes the path to the given primary tileset's Porytiles `top.png` file.
+     *
+     * @param tileset The name of the primary tileset.
+     * @return The path to the given primary tileset's `top.png` file.
+     */
+    [[nodiscard]] std::filesystem::path PrimaryTopPng(const std::string &tileset) const;
 
     /**
      * @brief Computes the path to the project `metatile_behaviors.h` file.
