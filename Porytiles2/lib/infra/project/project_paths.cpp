@@ -9,6 +9,8 @@ namespace porytiles {
 static constexpr std::string kBehaviorsHeaderFile = "metatile_behaviors.h";
 static const std::filesystem::path kBehaviorsHeaderPath = std::filesystem::path{"include"} / "constants";
 
+std::filesystem::path ProjectPaths::BottomPng(const std::string &tileset) const {}
+
 std::filesystem::path ProjectPaths::BehaviorsHeader() const {
     const auto header_path = behaviors_header_override_path_.value_or(kBehaviorsHeaderPath);
     const auto header_file = behaviors_header_override_file_.value_or(kBehaviorsHeaderFile);

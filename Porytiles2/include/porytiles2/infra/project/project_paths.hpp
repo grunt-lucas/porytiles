@@ -15,6 +15,14 @@ class ProjectPaths {
     explicit ProjectPaths(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
 
     /**
+     * @brief Computes the path to the given tileset's Porytiles `bottom.png` file.
+     *
+     * @param tileset The name of the tileset.
+     * @return The path to the given tileset's `bottom.png` file.
+     */
+    [[nodiscard]] std::filesystem::path BottomPng(const std::string &tileset) const;
+
+    /**
      * @brief Computes the path to the project `metatile_behaviors.h` file.
      *
      * @details
@@ -49,6 +57,9 @@ class ProjectPaths {
     std::filesystem::path project_root_;
     std::optional<std::filesystem::path> behaviors_header_override_path_;
     std::optional<std::string> behaviors_header_override_file_;
+
+    // TODO : implement this properly
+    // std::optional<std::filesystem::path> tilesets_root_override_path_;
 };
 
 } // namespace porytiles

@@ -1,4 +1,4 @@
-#include <porytiles2/infra/persistence/filesystem_porytiles_tileset_repo.hpp>
+#include <porytiles2/infra/persistence/project_porytiles_tileset_repo.hpp>
 
 #include <expected>
 #include <memory>
@@ -10,12 +10,12 @@
 
 namespace porytiles {
 
-void FilesystemPorytilesTilesetRepo::save(const PorytilesTileset &tileset) {
+void ProjectPorytilesTilesetRepo::save(const PorytilesTileset &tileset) {
     // TODO : impl
     Panic("unimplemented");
 }
 
-Result<std::unique_ptr<PorytilesTileset>> FilesystemPorytilesTilesetRepo::load(const std::string &name) {
+Result<std::unique_ptr<PorytilesTileset>> ProjectPorytilesTilesetRepo::load(const std::string &name) {
     // TODO : impl
     Panic("unimplemented");
 }

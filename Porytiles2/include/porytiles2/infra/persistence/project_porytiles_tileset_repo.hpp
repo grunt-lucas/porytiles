@@ -10,7 +10,10 @@
 
 namespace porytiles {
 
-class FilesystemPorytilesTilesetRepo final : public PorytilesTilesetRepo {
+/**
+ * @brief Implementation of PorytilesTilesetRepo that uses an in-filesystem `pokeemerald` project as the backing store.
+ */
+class ProjectPorytilesTilesetRepo final : public PorytilesTilesetRepo {
   public:
     void save(const PorytilesTileset &tileset) override;
 
