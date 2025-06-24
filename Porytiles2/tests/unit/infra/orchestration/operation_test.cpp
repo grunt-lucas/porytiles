@@ -1,13 +1,13 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <expected>
 #include <memory>
 #include <vector>
 
-#include <gsl/pointers>
+#include "gsl/pointers"
 
-#include <porytiles2/infra/diagnostics/diagnostic_engine.hpp>
-#include <porytiles2/infra/orchestration/operation.hpp>
+#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
+#include "porytiles2/infra/orchestration/operation.hpp"
 
 using namespace porytiles;
 

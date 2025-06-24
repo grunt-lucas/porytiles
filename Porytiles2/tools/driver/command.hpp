@@ -3,9 +3,9 @@
 #include <iostream>
 #include <string>
 
-#include <CLI/CLI.hpp>
+#include "CLI/CLI.hpp"
 
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/templates/panic.hpp"
 
 #include "./option.hpp"
 #include "./option_group.hpp"

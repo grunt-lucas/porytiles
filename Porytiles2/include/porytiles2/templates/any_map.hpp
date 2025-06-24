@@ -5,7 +5,7 @@
 #include <typeindex>
 #include <unordered_map>
 
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/templates/panic.hpp"
 
 namespace porytiles {
 

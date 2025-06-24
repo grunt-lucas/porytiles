@@ -1,8 +1,8 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <memory>
 
-#include <porytiles2/templates/view_ptr.hpp>
+#include "porytiles2/templates/view_ptr.hpp"
 
 using namespace porytiles;
 

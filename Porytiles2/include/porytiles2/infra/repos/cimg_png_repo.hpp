@@ -5,8 +5,8 @@
 #include <memory>
 #include <string>
 
-#include <porytiles2/domain/entities/png.hpp>
-#include <porytiles2/domain/repos/png_repo.hpp>
+#include "porytiles2/domain/entities/png.hpp"
+#include "porytiles2/domain/repos/png_repo.hpp"
 
 namespace porytiles {
 

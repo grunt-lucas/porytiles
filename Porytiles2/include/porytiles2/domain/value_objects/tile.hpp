@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/templates/panic.hpp"
 
 namespace porytiles {
 

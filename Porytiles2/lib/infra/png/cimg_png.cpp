@@ -1,8 +1,8 @@
-#include <porytiles2/infra/png/cimg_png.hpp>
+#include "porytiles2/infra/png/cimg_png.hpp"
 
-#include <CImg.h>
+#include "CImg.h"
 
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/templates/panic.hpp"
 
 namespace porytiles {
 

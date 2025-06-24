@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <porytiles2/infra/diagnostics/diagnostic_engine.hpp>
+#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
 
 namespace porytiles {
 

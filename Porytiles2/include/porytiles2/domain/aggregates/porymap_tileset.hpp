@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include <porytiles2/domain/entities/vram_anim.hpp>
-#include <porytiles2/domain/entities/vram_metatile.hpp>
+#include "porytiles2/domain/entities/vram_anim.hpp"
+#include "porytiles2/domain/entities/vram_metatile.hpp"
 
 namespace porytiles {
 

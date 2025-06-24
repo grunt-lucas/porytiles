@@ -1,7 +1,7 @@
-#include <CLI/CLI.hpp>
-#include <fmt/format.h>
+#include "CLI/CLI.hpp"
+#include "fmt/format.h"
 
-#include <porytiles2/build_version.h>
+#include "porytiles2/build_version.h"
 
 #include "./command.hpp"
 

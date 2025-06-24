@@ -1,4 +1,4 @@
-#include <porytiles2/infra/utilities/utilities.hpp>
+#include "porytiles2/infra/utilities/utilities.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/templates/panic.hpp"
 
 namespace porytiles {
 

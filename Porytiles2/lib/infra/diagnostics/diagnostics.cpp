@@ -1,12 +1,12 @@
-#include <porytiles2/infra/diagnostics/diagnostics.hpp>
+#include "porytiles2/infra/diagnostics/diagnostics.hpp"
 
 #include <any>
 #include <ranges>
 #include <sstream>
 #include <unistd.h>
 
-#include <porytiles2/infra/diagnostics/diagnostic_engine.hpp>
-#include <porytiles2/templates/panic.hpp>
+#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
+#include "porytiles2/templates/panic.hpp"
 
 namespace {
 

@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <fmt/format.h>
+#include "fmt/format.h"
 
-#include <porytiles2/domain/value_objects/bgr15.hpp>
-#include <porytiles2/domain/value_objects/rgba32.hpp>
+#include "porytiles2/domain/value_objects/bgr15.hpp"
+#include "porytiles2/domain/value_objects/rgba32.hpp"
 
 using namespace porytiles;
 

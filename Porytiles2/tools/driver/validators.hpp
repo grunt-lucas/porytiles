@@ -4,12 +4,12 @@
 #include <filesystem>
 #include <unordered_set>
 
-#include <CLI/CLI.hpp>
-#include <fmt/format.h>
+#include "CLI/CLI.hpp"
+#include "fmt/format.h"
 
-#include <porytiles2/infra/diagnostics/diagnostics.hpp>
-#include <porytiles2/infra/utilities/utilities.hpp>
-#include <porytiles2/templates/parsing.hpp>
+#include "porytiles2/infra/diagnostics/diagnostics.hpp"
+#include "porytiles2/infra/utilities/utilities.hpp"
+#include "porytiles2/templates/parsing.hpp"
 
 class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";

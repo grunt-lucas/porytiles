@@ -1,6 +1,10 @@
-#include <porytiles2/infra/diagnostics/diagnostic_engine.hpp>
+#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
 
-#include <porytiles2/templates/panic.hpp>
+#include <optional>
+#include <string>
+#include <ranges>
+
+#include "porytiles2/templates/panic.hpp"
 
 namespace {
 
