@@ -518,8 +518,7 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
         }
     }
     // If we got here, the matrix failed, print a sad message
-    ctx.diag->Report(FatalGeneric,
-                     "palette assignment parameter search matrix failed to find any suitable parameters");
+    ctx.diag->Report(FatalGeneric, "palette assignment parameter search matrix failed to find any suitable parameters");
     die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                               fmt::format("palette assign param search matrix failed"));
 }

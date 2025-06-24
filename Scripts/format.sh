@@ -52,7 +52,7 @@ parse_params "$@"
 if [[ ${#args[@]} -lt 1 ]]; then
     clang-format -style=file -i \
         Porytiles1/include/**/*.{h,hpp,cpp} \
-        Porytiles1/libs/**/*.{h,hpp,cpp} \
+        Porytiles1/lib/**/*.{h,hpp,cpp} \
         Porytiles1/tests/**/*.{h,hpp,cpp} \
         Porytiles1/tools/**/*.{h,hpp,cpp} \
         Porytiles2/**/*.{h,hpp,cpp}
