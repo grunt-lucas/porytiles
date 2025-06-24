@@ -1,16 +1,17 @@
-#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/infra/diagnostics/diagnostic_engine_factory.hpp"
+#include <porytiles2/app/use_cases/compile_primary_tileset.hpp>
 
-#include <porytiles2/app/compile_primary_tileset.hpp>
 #include <porytiles2/domain/services/tileset_compiler_service.hpp>
+#include <porytiles2/infra/diagnostics/diagnostic_engine.hpp>
+#include <porytiles2/infra/diagnostics/diagnostic_engine_factory.hpp>
 
 namespace porytiles {
 
 void CompilePrimaryTileset::Compile(const std::string &tileset) const {
+    // TODO : we should move Diagnostic stuff into application layer
     const auto diag = &DiagEngineFactory::GetEngine();
 
     // 1. Load the PorytilesTileset source aggregate
-    auto maybe_porytiles_tileset = porytiles_repo_->load(tileset);
+    auto maybe_porytiles_tileset = porytiles_repo_->Load(tileset);
     if (!maybe_porytiles_tileset.has_value()) {
         diag->Report(FatalGeneric, maybe_porytiles_tileset.error());
         return;
@@ -26,7 +27,7 @@ void CompilePrimaryTileset::Compile(const std::string &tileset) const {
 
     // 3. Save the resulting PorymapTileset aggregate
     const std::unique_ptr<PorymapTileset> porymap_tileset = std::move(maybe_porymap_tileset.value());
-    porymap_repo_->save(*porymap_tileset);
+    porymap_repo_->Save(*porymap_tileset);
 }
 
 } // namespace porytiles

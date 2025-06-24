@@ -25,7 +25,7 @@ class PorymapTilesetRepo {
      *
      * @param tileset The PorymapTileset aggregate to save.
      */
-    virtual void save(const PorymapTileset &tileset) = 0;
+    virtual void Save(const PorymapTileset &tileset) = 0;
 
     /**
      * @brief Loads an existing PorymapTileset from storage.
@@ -33,7 +33,7 @@ class PorymapTilesetRepo {
      * @param name The name of the PorymapTileset aggregate to load.
      * @return A Result holding either the loaded PorymapTileset or an error description.
      */
-    virtual Result<std::unique_ptr<PorymapTileset>> load(const std::string &name) = 0;
+    virtual Result<std::unique_ptr<PorymapTileset>> Load(const std::string &name) = 0;
 };
 
 } // namespace porytiles

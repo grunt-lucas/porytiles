@@ -25,7 +25,7 @@ class PorytilesTilesetRepo {
      *
      * @param tileset The PorytilesTileset aggregate to save.
      */
-    virtual void save(const PorytilesTileset &tileset) = 0;
+    virtual void Save(const PorytilesTileset &tileset) = 0;
 
     /**
      * @brief Loads an existing PorytilesTileset from storage.
@@ -33,7 +33,7 @@ class PorytilesTilesetRepo {
      * @param name The name of the PorytilesTileset aggregate to load.
      * @return A `unique_ptr` to the loaded PorytilesTileset, or a string describing the load error.
      */
-    virtual Result<std::unique_ptr<PorytilesTileset>> load(const std::string &name) = 0;
+    virtual Result<std::unique_ptr<PorytilesTileset>> Load(const std::string &name) = 0;
 };
 
 } // namespace porytiles

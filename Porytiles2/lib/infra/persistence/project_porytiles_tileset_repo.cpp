@@ -10,12 +10,12 @@
 
 namespace porytiles {
 
-void ProjectPorytilesTilesetRepo::save(const PorytilesTileset &tileset) {
+void ProjectPorytilesTilesetRepo::Save(const PorytilesTileset &tileset) {
     // TODO : impl
     Panic("unimplemented");
 }
 
-Result<std::unique_ptr<PorytilesTileset>> ProjectPorytilesTilesetRepo::load(const std::string &name) {
+Result<std::unique_ptr<PorytilesTileset>> ProjectPorytilesTilesetRepo::Load(const std::string &name) {
     // TODO : impl
     Panic("unimplemented");
 }
