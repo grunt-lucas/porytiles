@@ -1,4 +1,4 @@
-#include <porytiles2/infra/persistence/cimg_png_repo.hpp>
+#include <porytiles2/infra/repos/cimg_png_repo.hpp>
 
 #include <expected>
 #include <filesystem>
