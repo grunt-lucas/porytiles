@@ -15,7 +15,7 @@ namespace porytiles {
  */
 class ProjectPorytilesTilesetRepo final : public PorytilesTilesetRepo {
   public:
-    void Save(const PorytilesTileset &tileset) override;
+    Result<void> Save(const PorytilesTileset &tileset) override;
 
     Result<std::unique_ptr<PorytilesTileset>> Load(const std::string &name) override;
 };

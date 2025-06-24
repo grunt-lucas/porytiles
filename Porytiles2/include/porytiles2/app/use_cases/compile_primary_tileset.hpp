@@ -6,6 +6,7 @@
 #include <porytiles2/domain/repos/porymap_tileset_repo.hpp>
 #include <porytiles2/domain/repos/porytiles_tileset_repo.hpp>
 #include <porytiles2/domain/services/tileset_compiler_service.hpp>
+#include <porytiles2/templates/result.hpp>
 
 namespace porytiles {
 
@@ -36,8 +37,9 @@ class CompilePrimaryTileset {
      * the compilation operation.
      *
      * @param tileset The name of the primary tileset to compile.
+     * @return An empty Result on success, otherwise an error description.
      */
-    void Compile(const std::string &tileset) const;
+    [[nodiscard]] Result<void> Compile(const std::string &tileset) const;
 
   private:
     std::unique_ptr<PorytilesTilesetRepo> porytiles_repo_;

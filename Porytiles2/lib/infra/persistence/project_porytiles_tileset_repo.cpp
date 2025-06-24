@@ -10,7 +10,7 @@
 
 namespace porytiles {
 
-void ProjectPorytilesTilesetRepo::Save(const PorytilesTileset &tileset) {
+Result<void> ProjectPorytilesTilesetRepo::Save(const PorytilesTileset &tileset) {
     // TODO : impl
     Panic("unimplemented");
 }
