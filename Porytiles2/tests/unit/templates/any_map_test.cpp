@@ -3,7 +3,7 @@
 #include <tuple>
 #include <vector>
 
-#include "porytiles2/templates/any_map.hpp"
+#include "porytiles2/templates/AnyMap.hpp"
 
 using namespace porytiles;
 

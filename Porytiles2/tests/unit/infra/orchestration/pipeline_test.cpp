@@ -5,9 +5,9 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/infra/orchestration/operation.hpp"
-#include "porytiles2/infra/orchestration/pipeline.hpp"
+#include "porytiles2/infra/diagnostics/DiagnosticEngine.hpp"
+#include "porytiles2/infra/orchestration/Operation.hpp"
+#include "porytiles2/infra/orchestration/Pipeline.hpp"
 
 using namespace porytiles;
 

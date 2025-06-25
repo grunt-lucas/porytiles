@@ -1,4 +1,4 @@
-#include "porytiles2/infra/repos/cimg_png_repo.hpp"
+#include "porytiles2/infra/repos/CImgPngRepo.hpp"
 
 #include <expected>
 #include <filesystem>
@@ -7,8 +7,8 @@
 
 #include "CImg.h"
 
-#include "porytiles2/domain/entities/png.hpp"
-#include "porytiles2/infra/png/cimg_png.hpp"
+#include "porytiles2/domain/entities/Png.hpp"
+#include "porytiles2/infra/png/CImgPng.hpp"
 
 namespace porytiles {
 

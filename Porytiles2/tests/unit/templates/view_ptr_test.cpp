@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "porytiles2/templates/view_ptr.hpp"
+#include "porytiles2/templates/ViewPtr.hpp"
 
 using namespace porytiles;
 
