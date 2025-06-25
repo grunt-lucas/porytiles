@@ -1,7 +1,7 @@
 #pragma once
 
-#include "porytiles2/domain/value_objects/Rgba32.hpp"
-#include "porytiles2/domain/value_objects/Tile.hpp"
+#include "porytiles2/domain/valueobj/Rgba32.hpp"
+#include "porytiles2/domain/valueobj/Tile.hpp"
 
 namespace porytiles {
 

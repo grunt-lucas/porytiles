@@ -4,8 +4,8 @@
 
 #include <fmt/format.h>
 
-#include <porytiles2/domain/value_objects/Rgba32.hpp>
-#include <porytiles2/domain/value_objects/RgbaTile.hpp>
+#include <porytiles2/domain/valueobj/Rgba32.hpp>
+#include <porytiles2/domain/valueobj/RgbaTile.hpp>
 
 using namespace porytiles;
 

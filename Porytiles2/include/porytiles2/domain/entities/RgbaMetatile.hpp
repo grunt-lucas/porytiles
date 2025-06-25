@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "porytiles2/domain/value_objects/RgbaTile.hpp"
+#include "porytiles2/domain/valueobj/RgbaTile.hpp"
 
 namespace porytiles {
 
