@@ -16,7 +16,7 @@ Result<void> CompilePrimaryTileset::Compile(const std::string &tileset) const {
     if (!maybe_porytiles_tileset.has_value()) {
         return std::unexpected{fmt::format("failed to load tileset '{}'", tileset)};
     }
-    const std::unique_ptr<PorytilesTileset> porytiles_tileset = std::move(maybe_porytiles_tileset.value());
+    const auto porytiles_tileset = std::move(maybe_porytiles_tileset.value());
 
     // 2. Compile with the TilesetCompilerService domain service
     auto maybe_porymap_tileset = compiler_service_->CompilePrimary(*porytiles_tileset);
@@ -25,7 +25,7 @@ Result<void> CompilePrimaryTileset::Compile(const std::string &tileset) const {
     }
 
     // 3. Save the resulting PorymapTileset aggregate
-    const std::unique_ptr<PorymapTileset> porymap_tileset = std::move(maybe_porymap_tileset.value());
+    const auto porymap_tileset = std::move(maybe_porymap_tileset.value());
     if (const auto maybe_save_result = porymap_repo_->Save(*porymap_tileset); !maybe_save_result.has_value()) {
         return std::unexpected{fmt::format("failed to save tileset '{}'", tileset)};
     }
