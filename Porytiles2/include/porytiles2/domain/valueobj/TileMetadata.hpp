@@ -7,35 +7,32 @@ namespace porytiles {
 enum class TileType { kVram, kFree, kLayered, kAnim, kPrimer, kOverride };
 
 class FreeMetadata {
-    std::size_t tile_index_;
+  std::size_t tile_index_;
 
-  public:
-    explicit FreeMetadata() : tile_index_{0} {}
+public:
+  explicit FreeMetadata() : tile_index_{0} {}
 
-    [[nodiscard]] std::size_t tile_index() const {
-        return tile_index_;
-    }
+  [[nodiscard]] std::size_t tile_index() const { return tile_index_; }
 
-    void set_tile_index(const std::size_t tile_index) {
-        tile_index_ = tile_index;
-    }
+  void set_tile_index(const std::size_t tile_index) {
+    tile_index_ = tile_index;
+  }
 };
 
 class LayeredMetadata {
-    std::size_t metatile_index_;
+  std::size_t metatile_index_;
 
-  public:
-    explicit LayeredMetadata() : metatile_index_{0} {}
+public:
+  explicit LayeredMetadata() : metatile_index_{0} {}
 
-    [[nodiscard]] std::size_t metatile_index() const {
-        return metatile_index_;
-    }
+  [[nodiscard]] std::size_t metatile_index() const { return metatile_index_; }
 
-    void set_metatile_index(const std::size_t metatile_index) {
-        metatile_index_ = metatile_index;
-    }
+  void set_metatile_index(const std::size_t metatile_index) {
+    metatile_index_ = metatile_index;
+  }
 };
 
-using TileMetadata = std::variant<std::monostate, FreeMetadata, LayeredMetadata>;
+using TileMetadata =
+    std::variant<std::monostate, FreeMetadata, LayeredMetadata>;
 
 } // namespace porytiles

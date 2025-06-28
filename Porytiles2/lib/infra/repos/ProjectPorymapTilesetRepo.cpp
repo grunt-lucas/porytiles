@@ -11,13 +11,14 @@
 namespace porytiles {
 
 Result<void> ProjectPorymapTilesetRepo::Save(const PorymapTileset &tileset) {
-    // TODO : impl
-    Panic("unimplemented");
+  // TODO : impl
+  Panic("unimplemented");
 }
 
-Result<std::unique_ptr<PorymapTileset>> ProjectPorymapTilesetRepo::Load(const std::string &name) {
-    // TODO : impl
-    Panic("unimplemented");
+Result<std::unique_ptr<PorymapTileset>>
+ProjectPorymapTilesetRepo::Load(const std::string &name) {
+  // TODO : impl
+  Panic("unimplemented");
 }
 
 } // namespace porytiles

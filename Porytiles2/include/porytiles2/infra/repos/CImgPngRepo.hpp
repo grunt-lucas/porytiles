@@ -11,11 +11,11 @@
 namespace porytiles {
 
 class CImgPngRepo final : public PngRepo {
-  public:
-    CImgPngRepo() = default;
+public:
+  CImgPngRepo() = default;
 
-    [[nodiscard]] std::expected<std::unique_ptr<Png>, std::string>
-    Read(const std::filesystem::path &path) const override;
+  [[nodiscard]] std::expected<std::unique_ptr<Png>, std::string>
+  Read(const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles

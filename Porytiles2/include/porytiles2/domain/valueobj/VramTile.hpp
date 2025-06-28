@@ -5,12 +5,10 @@
 namespace porytiles {
 
 class VramTile final : public Tile<std::uint8_t> {
-  public:
-    VramTile() = default;
+public:
+  VramTile() = default;
 
-    [[nodiscard]] bool IsTransparent() const {
-        return Tile::IsTransparent(0);
-    }
+  [[nodiscard]] bool IsTransparent() const { return Tile::IsTransparent(0); }
 };
 
 } // namespace porytiles

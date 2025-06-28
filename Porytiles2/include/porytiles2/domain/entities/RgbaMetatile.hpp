@@ -7,12 +7,12 @@
 namespace porytiles {
 
 class RgbaMetatile {
-    std::array<RgbaTile, 4> bottom;
-    std::array<RgbaTile, 4> middle;
-    std::array<RgbaTile, 4> top;
+  std::array<RgbaTile, 4> bottom;
+  std::array<RgbaTile, 4> middle;
+  std::array<RgbaTile, 4> top;
 
-  public:
-    RgbaMetatile() = default;
+public:
+  RgbaMetatile() = default;
 };
 
 } // namespace porytiles

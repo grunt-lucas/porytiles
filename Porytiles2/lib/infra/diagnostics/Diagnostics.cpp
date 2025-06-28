@@ -14,86 +14,98 @@ using namespace porytiles;
 
 constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
-void AssertArgSize(std::size_t expected, std::size_t actual, const char *func_name) {
-    if (actual != expected) {
-        Panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
-    }
+void AssertArgSize(std::size_t expected, std::size_t actual,
+                   const char *func_name) {
+  if (actual != expected) {
+    Panic(fmt::format("{}: found {} args but expected {}", func_name, actual,
+                      expected));
+  }
 }
 
 template <typename T>
 T AnyCastOrPanic(const std::any &a, const std::source_location &loc) {
-    try {
-        return std::any_cast<T>(a);
-    } catch (std::bad_any_cast &) {
-        Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
-    }
+  try {
+    return std::any_cast<T>(a);
+  } catch (std::bad_any_cast &) {
+    Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+  }
 }
 
 template <typename T>
 const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
-    auto any_unwrapped = any_cast<T>(a);
-    if (any_unwrapped == nullptr) {
-        Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
-    }
-    return *any_unwrapped;
+  auto any_unwrapped = any_cast<T>(a);
+  if (any_unwrapped == nullptr) {
+    Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+  }
+  return *any_unwrapped;
 }
 
-void PushToStream(std::stringstream &ss, const std::string_view s, const std::size_t n) {
-    for (std::size_t i = 0; i < n; i++) {
-        ss << s;
-    }
+void PushToStream(std::stringstream &ss, const std::string_view s,
+                  const std::size_t n) {
+  for (std::size_t i = 0; i < n; i++) {
+    ss << s;
+  }
 }
 
 void ResetStream(std::stringstream &ss) {
-    ss.clear();
-    ss.str(std::string{});
+  ss.clear();
+  ss.str(std::string{});
 }
 
 // TODO : this is using code from the legacy library, refactor
-// std::vector<std::string> BuildTileHighlight(const DiagEngine &eng, const DiagLevel in_flight_level,
-//                                             const RGBATile &tile, const std::size_t row, const std::size_t col) {
+// std::vector<std::string> BuildTileHighlight(const DiagEngine &eng, const
+// DiagLevel in_flight_level,
+//                                             const RGBATile &tile, const
+//                                             std::size_t row, const
+//                                             std::size_t col) {
 //     std::vector<std::string> highlight{};
 //     std::stringstream ss{};
 //     const fmt::terminal_color level_color = ColorForLevel(in_flight_level);
 
 //     // TODO : std::variant here, see note below
-//     // Eventually we can remove this outer check by introducing better metadata
+//     // Eventually we can remove this outer check by introducing better
+//     metadata
 //     // handling in RGBTile. Specifically, metadata can be a std::variant that
 //     // changes based on the TileType. Then, we can use the visitor pattern to
 //     // create different visit implementations for the different TileTypes.
 //     if (tile.type == TileType::LAYERED) {
 //         for (std::size_t i = 0; i < 16; i++) {
 //             for (std::size_t j = 0; j < 16; j++) {
-//                 // First cell of each row is margin followed by a bar: "       |"
+//                 // First cell of each row is margin followed by a bar: " |"
 //                 if (j == 0) {
 //                     PushToStream(ss, " ", DIAG_MARGIN_SIZE);
 //                     ss << "|";
 //                 }
 
-//                 // General case. Decide if we are drawing the highlighted tile
+//                 // General case. Decide if we are drawing the highlighted
+//                 tile
 //                 // and pixel. If not, draw a "-".
 
-//                 auto styled_x = eng.Style(" X ", fg(level_color) | fmt::emphasis::bold);
-//                 auto styled_star = eng.Style(" * ", fmt::emphasis::bold);
-//                 if (tile.subtile == Subtile::NORTHWEST && i < 8 && j < 8) {
+//                 auto styled_x = eng.Style(" X ", fg(level_color) |
+//                 fmt::emphasis::bold); auto styled_star = eng.Style(" * ",
+//                 fmt::emphasis::bold); if (tile.subtile == Subtile::NORTHWEST
+//                 && i < 8 && j < 8) {
 //                     if (row == i && col == j) {
 //                         ss << format(fmt::runtime("{}"), styled_x);
 //                     } else {
 //                         ss << format(fmt::runtime("{}"), styled_star);
 //                     }
-//                 } else if (tile.subtile == Subtile::NORTHEAST && i < 8 && j >= 8) {
+//                 } else if (tile.subtile == Subtile::NORTHEAST && i < 8 && j
+//                 >= 8) {
 //                     if (row == i && col == j - 8) {
 //                         ss << format(fmt::runtime("{}"), styled_x);
 //                     } else {
 //                         ss << format(fmt::runtime("{}"), styled_star);
 //                     }
-//                 } else if (tile.subtile == Subtile::SOUTHWEST && i >= 8 && j < 8) {
+//                 } else if (tile.subtile == Subtile::SOUTHWEST && i >= 8 && j
+//                 < 8) {
 //                     if (row == i - 8 && col == j) {
 //                         ss << format(fmt::runtime("{}"), styled_x);
 //                     } else {
 //                         ss << format(fmt::runtime("{}"), styled_star);
 //                     }
-//                 } else if (tile.subtile == Subtile::SOUTHEAST && i >= 8 && j >= 8) {
+//                 } else if (tile.subtile == Subtile::SOUTHEAST && i >= 8 && j
+//                 >= 8) {
 //                     if (row == i - 8 && col == j - 8) {
 //                         ss << format(fmt::runtime("{}"), styled_x);
 //                     } else {
@@ -131,113 +143,100 @@ void ResetStream(std::stringstream &ss) {
 
 namespace porytiles {
 std::string LevelToStr(DiagLevel level) {
-    switch (level) {
-    case DiagLevel::kIgnored:
-        return "ignored";
-    case DiagLevel::kNote:
-        return "note";
-    case DiagLevel::kRemark:
-        return "remark";
-    case DiagLevel::kWarning:
-        return "warning";
-    case DiagLevel::kError:
-        return "error";
-    case DiagLevel::kFatal:
-        return "fatal error";
-    default:
-        Panic("level_to_str: unknown diag_level");
-    }
+  switch (level) {
+  case DiagLevel::kIgnored:
+    return "ignored";
+  case DiagLevel::kNote:
+    return "note";
+  case DiagLevel::kRemark:
+    return "remark";
+  case DiagLevel::kWarning:
+    return "warning";
+  case DiagLevel::kError:
+    return "error";
+  case DiagLevel::kFatal:
+    return "fatal error";
+  default:
+    Panic("level_to_str: unknown diag_level");
+  }
 }
 
 fmt::terminal_color ColorForLevel(DiagLevel level) {
-    switch (level) {
-    case DiagLevel::kIgnored:
-        return fmt::terminal_color::white;
-    case DiagLevel::kNote:
-        return fmt::terminal_color::cyan;
-    case DiagLevel::kRemark:
-        return fmt::terminal_color::green;
-    case DiagLevel::kWarning:
-        return fmt::terminal_color::magenta;
-    case DiagLevel::kError:
-    case DiagLevel::kFatal:
-        return fmt::terminal_color::red;
-    default:
-        Panic("color_for_level: unknown diag_level");
-    }
+  switch (level) {
+  case DiagLevel::kIgnored:
+    return fmt::terminal_color::white;
+  case DiagLevel::kNote:
+    return fmt::terminal_color::cyan;
+  case DiagLevel::kRemark:
+    return fmt::terminal_color::green;
+  case DiagLevel::kWarning:
+    return fmt::terminal_color::magenta;
+  case DiagLevel::kError:
+  case DiagLevel::kFatal:
+    return fmt::terminal_color::red;
+  default:
+    Panic("color_for_level: unknown diag_level");
+  }
 }
 
 int LevelPriority(DiagLevel level) {
-    switch (level) {
-    case DiagLevel::kIgnored:
-        return 0;
-    case DiagLevel::kNote:
-        return 1;
-    case DiagLevel::kRemark:
-        return 2;
-    case DiagLevel::kWarning:
-        return 3;
-    case DiagLevel::kError:
-        return 4;
-    case DiagLevel::kFatal:
-        return 5;
-    }
-    return -1;
+  switch (level) {
+  case DiagLevel::kIgnored:
+    return 0;
+  case DiagLevel::kNote:
+    return 1;
+  case DiagLevel::kRemark:
+    return 2;
+  case DiagLevel::kWarning:
+    return 3;
+  case DiagLevel::kError:
+    return 4;
+  case DiagLevel::kFatal:
+    return 5;
+  }
+  return -1;
 }
 
-void IgnoreConsumer::Consume(const InFlightDiag &diag) {
-    consumed_count_++;
-}
+void IgnoreConsumer::Consume(const InFlightDiag &diag) { consumed_count_++; }
 
-bool IgnoreConsumer::IsATty() const {
-    return false;
-}
+bool IgnoreConsumer::IsATty() const { return false; }
 
 InFlightDiag IgnoreConsumer::ConsumedAt(std::size_t i) const {
-    Panic("ignore_consumer::consumed_at: not implemented");
+  Panic("ignore_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t IgnoreConsumer::ConsumedCount() const {
-    return consumed_count_;
-}
+std::uint64_t IgnoreConsumer::ConsumedCount() const { return consumed_count_; }
 
 void StderrConsumer::Consume(const InFlightDiag &diag) {
-    consumed_count_++;
-    const auto msg = diag.msg();
-    std::fputs(msg.c_str(), stderr);
+  consumed_count_++;
+  const auto msg = diag.msg();
+  std::fputs(msg.c_str(), stderr);
 }
 
-bool StderrConsumer::IsATty() const {
-    return isatty(fileno(stderr));
-}
+bool StderrConsumer::IsATty() const { return isatty(fileno(stderr)); }
 
 InFlightDiag StderrConsumer::ConsumedAt(std::size_t i) const {
-    Panic("stderr_consumer::consumed_at: not implemented");
+  Panic("stderr_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t StderrConsumer::ConsumedCount() const {
-    return consumed_count_;
-}
+std::uint64_t StderrConsumer::ConsumedCount() const { return consumed_count_; }
 
 void VectorConsumer::Consume(const InFlightDiag &diag) {
-    diags_.emplace_back(diag);
+  diags_.emplace_back(diag);
 }
 
-bool VectorConsumer::IsATty() const {
-    return false;
-}
+bool VectorConsumer::IsATty() const { return false; }
 
 InFlightDiag VectorConsumer::ConsumedAt(std::size_t i) const {
-    try {
-        return diags_.at(i);
-    } catch (const std::out_of_range &) {
-        Panic(fmt::format("vector_consumer::at: index {} out of range for size {}", i, diags_.size()));
-    }
+  try {
+    return diags_.at(i);
+  } catch (const std::out_of_range &) {
+    Panic(fmt::format("vector_consumer::at: index {} out of range for size {}",
+                      i, diags_.size()));
+  }
 }
 
-std::uint64_t VectorConsumer::ConsumedCount() const {
-    return diags_.size();
-}
+std::uint64_t VectorConsumer::ConsumedCount() const { return diags_.size(); }
 
 // clang-format off
 static const DiagTempl N_GENERIC_TEMPL{NoteGeneric, DiagLevel::kNote, "{}", {}};
@@ -458,28 +457,29 @@ static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
 // clang-format on
 
 DiagTempl DiagFor(const std::string_view name) {
-    AssertOrPanic(DIAG_TEMPLS.contains(name.data()), fmt::format("diag_template_for: unknown diagnostic: {}", name));
-    return DIAG_TEMPLS.at(name.data());
+  AssertOrPanic(DIAG_TEMPLS.contains(name.data()),
+                fmt::format("diag_template_for: unknown diagnostic: {}", name));
+  return DIAG_TEMPLS.at(name.data());
 }
 
 std::vector<const char *> AllDiagNames() {
-    std::vector<const char *> keys{};
-    keys.reserve(DIAG_TEMPLS.size());
-    for (const auto &key : DIAG_TEMPLS | std::views::keys) {
-        keys.push_back(key);
-    }
-    return keys;
+  std::vector<const char *> keys{};
+  keys.reserve(DIAG_TEMPLS.size());
+  for (const auto &key : DIAG_TEMPLS | std::views::keys) {
+    keys.push_back(key);
+  }
+  return keys;
 }
 
 std::vector<const char *> AllDiagNames(const DiagLevel level) {
-    std::vector<const char *> keys{};
-    keys.reserve(DIAG_TEMPLS.size());
-    for (const auto &[name, templ] : DIAG_TEMPLS) {
-        if (templ.level() == level) {
-            keys.push_back(name);
-        }
+  std::vector<const char *> keys{};
+  keys.reserve(DIAG_TEMPLS.size());
+  for (const auto &[name, templ] : DIAG_TEMPLS) {
+    if (templ.level() == level) {
+      keys.push_back(name);
     }
-    return keys;
+  }
+  return keys;
 }
 
 } // namespace porytiles

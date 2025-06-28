@@ -5,16 +5,17 @@
 namespace porytiles {
 
 std::string Rgba32::ToJascStr() const {
-    return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
+  return std::to_string(red_) + " " + std::to_string(green_) + " " +
+         std::to_string(blue_);
 }
 
 bool Rgba32::EqualsIgnoringAlpha(const Rgba32 &other) const {
-    return red_ == other.red_ && green_ == other.green_ && blue_ == other.blue_;
+  return red_ == other.red_ && green_ == other.green_ && blue_ == other.blue_;
 }
 
 // std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba) {
-//     // For debugging purposes, print the solid colors with names rather than int values
-//     if (rgba == kRgbaBlack || rgba == bgrToRgba(BGR_BLACK)) {
+//     // For debugging purposes, print the solid colors with names rather than
+//     int values if (rgba == kRgbaBlack || rgba == bgrToRgba(BGR_BLACK)) {
 //         os << "black";
 //     } else if (rgba == kRgbaRed || rgba == bgrToRgba(BGR_RED)) {
 //         os << "red";
@@ -37,8 +38,9 @@ bool Rgba32::EqualsIgnoringAlpha(const Rgba32 &other) const {
 //     } else if (rgba == kRgbaLime || rgba == bgrToRgba(BGR_LIME)) {
 //         os << "lime";
 //     } else {
-//         os << std::to_string(rgba.red()) << "," << std::to_string(rgba.green()) << "," <<
-//         std::to_string(rgba.blue()); if (rgba.alpha() != 255) {
+//         os << std::to_string(rgba.red()) << "," <<
+//         std::to_string(rgba.green()) << "," << std::to_string(rgba.blue());
+//         if (rgba.alpha() != 255) {
 //             // Only show alpha if not opaque
 //             os << "," << std::to_string(rgba.alpha());
 //         }

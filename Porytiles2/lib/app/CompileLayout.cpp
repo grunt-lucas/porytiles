@@ -9,7 +9,7 @@
 namespace porytiles {
 
 Result<void> CompileLayout::Compile(const std::string &layout) const {
-    Panic("unimplemented");
+  Panic("unimplemented");
 }
 
 } // namespace porytiles

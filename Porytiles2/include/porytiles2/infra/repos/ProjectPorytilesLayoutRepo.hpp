@@ -11,13 +11,15 @@
 namespace porytiles {
 
 /**
- * @brief Implementation of PorytilesLayoutRepo that uses an in-filesystem `pokeemerald` project as the backing store.
+ * @brief Implementation of PorytilesLayoutRepo that uses an in-filesystem
+ * `pokeemerald` project as the backing store.
  */
 class ProjectPorytilesLayoutRepo final : public PorytilesLayoutRepo {
-  public:
-    Result<void> Save(const PorytilesLayout &layout) override;
+public:
+  Result<void> Save(const PorytilesLayout &layout) override;
 
-    Result<std::unique_ptr<PorytilesLayout>> Load(const std::string &name) override;
+  Result<std::unique_ptr<PorytilesLayout>>
+  Load(const std::string &name) override;
 };
 
 } // namespace porytiles

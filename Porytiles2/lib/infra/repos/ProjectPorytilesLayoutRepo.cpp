@@ -11,13 +11,14 @@
 namespace porytiles {
 
 Result<void> ProjectPorytilesLayoutRepo::Save(const PorytilesLayout &layout) {
-    // TODO : impl
-    Panic("unimplemented");
+  // TODO : impl
+  Panic("unimplemented");
 }
 
-Result<std::unique_ptr<PorytilesLayout>> ProjectPorytilesLayoutRepo::Load(const std::string &name) {
-    // TODO : impl
-    Panic("unimplemented");
+Result<std::unique_ptr<PorytilesLayout>>
+ProjectPorytilesLayoutRepo::Load(const std::string &name) {
+  // TODO : impl
+  Panic("unimplemented");
 }
 
 } // namespace porytiles

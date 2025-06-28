@@ -8,8 +8,9 @@
 
 namespace porytiles {
 
-Result<void> CompileSecondaryTileset::Compile(const std::string &tileset) const {
-    Panic("unimplemented");
+Result<void>
+CompileSecondaryTileset::Compile(const std::string &tileset) const {
+  Panic("unimplemented");
 }
 
 } // namespace porytiles

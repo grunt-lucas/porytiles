@@ -11,13 +11,15 @@
 namespace porytiles {
 
 /**
- * @brief Implementation of PorymapTilesetRepo that uses an in-filesystem `pokeemerald` project as the backing store.
+ * @brief Implementation of PorymapTilesetRepo that uses an in-filesystem
+ * `pokeemerald` project as the backing store.
  */
 class ProjectPorymapTilesetRepo final : public PorymapTilesetRepo {
-  public:
-    Result<void> Save(const PorymapTileset &tileset) override;
+public:
+  Result<void> Save(const PorymapTileset &tileset) override;
 
-    Result<std::unique_ptr<PorymapTileset>> Load(const std::string &name) override;
+  Result<std::unique_ptr<PorymapTileset>>
+  Load(const std::string &name) override;
 };
 
 } // namespace porytiles
