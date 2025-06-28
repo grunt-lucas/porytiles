@@ -7,7 +7,8 @@ namespace porytiles {
 
 class PorymapLayout {
     std::string name_;
-    std::vector<int> metatile_indexes_;
+    std::vector<int> map_;
+    std::vector<int> border_;
 };
 
 } // namespace porytiles

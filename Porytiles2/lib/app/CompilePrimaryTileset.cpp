@@ -1,9 +1,7 @@
-#include "../../include/porytiles2/app/CompilePrimaryTileset.hpp"
+#include "porytiles2/app/CompilePrimaryTileset.hpp"
 
 #include <expected>
 #include <memory>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/services/TilesetCompilerService.hpp"
 #include "porytiles2/templates/Result.hpp"

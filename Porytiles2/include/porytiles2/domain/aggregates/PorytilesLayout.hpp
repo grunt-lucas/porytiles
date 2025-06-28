@@ -9,7 +9,8 @@ namespace porytiles {
 
 class PorytilesLayout {
     std::string name_;
-    std::vector<RgbaMetatile> metatiles_;
+    std::vector<RgbaMetatile> map_;
+    std::vector<RgbaMetatile> border_;
 };
 
 } // namespace porytiles
