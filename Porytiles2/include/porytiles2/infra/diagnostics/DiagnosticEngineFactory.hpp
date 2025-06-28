@@ -21,11 +21,20 @@ public:
    * @return A reference to the singleton DiagEngine.
    */
   static DiagEngine &GetEngine() {
+    if (override_) {
+      return *override_;
+    }
     // C++11 guarantees that the initialization of static local variables is
     // thread-safe.
     static DiagEngine engine{std::make_unique<StderrConsumer>()};
     return engine;
   }
+
+  static void Override(DiagEngine *engine) { override_ = engine; }
+
+private:
+  // A raw pointer is used here. The test fixture will own the mock object.
+  inline static DiagEngine *override_ = nullptr;
 };
 
 } // namespace porytiles

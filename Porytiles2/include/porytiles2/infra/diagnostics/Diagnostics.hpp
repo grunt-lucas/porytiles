@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file diagnostics.hpp Definitions for various diagnostic-related types.
+ * @file Diagnostics.hpp Definitions for various diagnostic-related types.
  * @copyright Copyright 2025 grunt-lucas. All rights reserved. This project is
  * licensed under the MIT License.
  */
@@ -68,35 +68,29 @@ using DynamicMsgBuilder = std::function<std::vector<std::string>(
  */
 class DiagTempl {
 public:
-  // clang-format off
-    explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                      DynamicMsgBuilder dynamic_msg_builder) noexcept
-        : name_{name},
-          default_level_{default_level},
-          dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
+  explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                     DynamicMsgBuilder dynamic_msg_builder) noexcept
+      : name_{name}, default_level_{default_level},
+        dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                        DynamicMsgBuilder dynamic_msg_builder, const std::vector<DiagTempl> &partner_diags) noexcept
-        : name_{name},
-          default_level_{default_level},
-          dynamic_msg_builder_{std::move(dynamic_msg_builder)},
-          partner_diags_{partner_diags} {}
+  explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                     DynamicMsgBuilder dynamic_msg_builder,
+                     const std::vector<DiagTempl> &partner_diags) noexcept
+      : name_{name}, default_level_{default_level},
+        dynamic_msg_builder_{std::move(dynamic_msg_builder)},
+        partner_diags_{partner_diags} {}
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                    std::string_view static_msg_templ) noexcept
-        : name_{name},
-          default_level_{default_level},
-          static_msg_templ_{static_msg_templ},
-          dynamic_msg_builder_{nullptr} {}
+  explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                     std::string_view static_msg_templ) noexcept
+      : name_{name}, default_level_{default_level},
+        static_msg_templ_{static_msg_templ}, dynamic_msg_builder_{nullptr} {}
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level,
-                        std::string_view static_msg_templ, const std::vector<DiagTempl> &partner_diags) noexcept
-        : name_{name},
-          default_level_{default_level},
-          static_msg_templ_{static_msg_templ},
-          dynamic_msg_builder_{nullptr},
-          partner_diags_{partner_diags} {}
-  // clang-format on
+  explicit DiagTempl(std::string_view name, DiagLevel default_level,
+                     std::string_view static_msg_templ,
+                     const std::vector<DiagTempl> &partner_diags) noexcept
+      : name_{name}, default_level_{default_level},
+        static_msg_templ_{static_msg_templ}, dynamic_msg_builder_{nullptr},
+        partner_diags_{partner_diags} {}
 
   [[nodiscard]] std::string_view name() const { return name_; }
 

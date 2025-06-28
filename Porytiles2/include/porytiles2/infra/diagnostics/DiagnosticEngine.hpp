@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file diagnostic_engine.hpp Implementation for the diagnostic engine.
+ * @file DiagnosticEngine.hpp Implementation for the diagnostic engine.
  * @copyright Copyright 2025 grunt-lucas. All rights reserved. This project is
  * licensed under the MIT License.
  */
