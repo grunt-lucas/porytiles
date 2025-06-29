@@ -228,8 +228,25 @@ By combining and recombining these policies through an iterative workflow,
 users can build functional layouts and tilesets by simply drawing the maps they want as-is
 and generating the necessary metatiles on an as-needed basis.
 
-# ASD
-TODO
+# Multiple Partner Primary Support
+Niche use case, but would be cool. A secondary could specify multiple partner primaries like:
+```toml
+# my_secondary_tileset.toml
+
+[tileset]
+partner_primaries = [ "general_cave_brown", "general_cave_grey" ]
+```
+The secondary would then supply separate versions of each layer PNG, one for each partner primary.
+E.g. `bottom.general_cave_brown.png`, `bottom.general_cave_grey.png`, etc.
+
+The tileset compiler would enforce that
+e.g. metatile 8 as seen in the `general_cave_brown` version of the layer PNGs
+generates the same metatile data as metatile 8 in `general_cave_grey` version.
+
+This means we must provide some way for users to massage the output ordering of their primary tilesets.
+That way these guarantees can be made.
+I am not sure if this is something that can be done entirely computationally,
+without user intervention.
 
 # Code Organization
 domain-driven design
