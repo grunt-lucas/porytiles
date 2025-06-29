@@ -5,20 +5,43 @@ https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 
 <!-- TOC -->
 * [Architecture](#architecture)
+* [Tileset/Layout TOML File](#tilesetlayout-toml-file)
 * [Use Cases](#use-cases)
   * [Default Assets](#default-assets)
   * [Create Primary Tileset](#create-primary-tileset)
   * [Create Secondary Tileset](#create-secondary-tileset)
+  * [Import Primary Tileset](#import-primary-tileset)
+  * [Import Secondary Tileset](#import-secondary-tileset)
+  * [Import Layout](#import-layout)
+  * [Delete Tileset/Layout](#delete-tilesetlayout)
   * [Compile Primary Tileset](#compile-primary-tileset)
   * [Compile Secondary Tileset](#compile-secondary-tileset)
   * [Create Layout](#create-layout)
   * [Compile Layout](#compile-layout)
-  * [Import Primary Tileset](#import-primary-tileset)
-  * [Import Secondary Tileset](#import-secondary-tileset)
-  * [Import Layout](#import-layout)
-* [Tileset TOML File](#tileset-toml-file)
+* [Incremental Build Support](#incremental-build-support)
 * [Code Organization](#code-organization)
 <!-- TOC -->
+
+# Tileset/Layout TOML File
+Porytiles2 allows users to configure tileset/layout compilation options using a TOML file.
+This will save tons of annoying typing at the CLI.
+
+```toml
+# my_secondary_tileset.toml
+
+[tileset]
+# This field is required for secondary sets, users won't have to specify paired primary at CLI
+partner_primaries = [ "my_cool_primary" ]
+
+[fieldmap-overrides]
+num_pals_primary = 7
+num_metatiles_primary = 2048
+num_metatiles_total = 4096
+
+[palette-assignment]
+force_smart_prune = true
+```
+
 
 # Use Cases
 A summary of the CLI-driver-based use cases Porytiles2 must support.
@@ -111,27 +134,102 @@ const u16 gMetatileAttributes_MyTileset[] = INCBIN_U16("data/tilesets/primary/my
 ```
 
 ## Create Secondary Tileset
+Create a new secondary tileset in `data/tilesets/secondary` with [default assets.](#default-assets)
+
+```sh
+porytiles2 create-tileset MySecondaryTileset --partner-primaries MyTileset
+```
+
+This command will:
+1. Create the requisite Porytiles files
+2. Update the right source and header files
+3. Compile the initial tileset to generate the Porymap tileset files
+
+`my_secondary_tileset.toml` contents:
+```toml
+# my_secondary_tileset.toml
+
+[tileset]
+partner_primaries = [ "my_tileset" ]
+```
 
 ## Import Primary Tileset
+Import an existing primary tileset to Porytiles.
+This is what legacy Porytiles called "decompilation."
+
+```sh
+porytiles2 import-tileset general
+```
+
+This command will:
+1. Perform a complete decompilation
+2. Create the requisite Porytiles files
+3. Perform a compilation to confirm everything works correctly
+
+Importing a tileset will set `incremental = true` by default.
+[See here for more on incremental builds.](#incremental-build-support)
+
+```toml
+# general.toml
+
+[tileset]
+incremental = true
+```
 
 ## Import Secondary Tileset
+TODO
 
 ## Import Layout
+TODO
 
 ## Delete Tileset/Layout
 Should we support deleting tilesets/layouts?
 If we use Clang, we can somewhat easily remove the various code elements associated with a tileset.
 
 ## Compile Primary Tileset
+Compile a tileset in `data/tilesets/primary`, i.e. update the Porymap assets to match the Porytiles assets.
+
+```sh
+porytiles2 compile-tileset MyTileset
+```
+
+This command will:
+1. a
 
 ## Compile Secondary Tileset
+TODO
 
 ## Create Layout
+TODO
 
 ## Compile Layout
+TODO
 
-# Tileset TOML File
+# Incremental Build Support
+TODO
+
+# Layout Metatile Generation
+Layout compilation runs with default: `--unknown-metatile-policy=reject`.
+When the layout compiler encounters a metatile that's not present in the primary or secondary tileset,
+it will error out with a diagnostic message.
+
+Users can optionally supply alternatives:
+`--unknown-metatile-policy=add-to-primary` and `--unknown-metatile-policy=add-to-secondary`.
+When the add-to-primary policy is enabled,
+instead of erroring out upon an unknown metatile,
+the layout compiler will append the metatile to the end of the primary tileset and continue.
+User can specify `--recompile-after=each` or `--recompile-after=all` to control when tileset recompilation happens.
+Either after each time the layout compiler updates the tileset, or at the end after all updates have been made.
+`--recompile-after=each` is much more CPU intensive, but it can catch issues earlier.
+
+The add-to-secondary policy functions the same way, but appending to the secondary tileset instead.
+
+By combining and recombining these policies through an iterative workflow,
+users can build functional layouts and tilesets by simply drawing the maps they want as-is
+and generating the necessary metatiles on an as-needed basis.
+
+# ASD
 TODO
 
 # Code Organization
-DDD
+domain-driven design
