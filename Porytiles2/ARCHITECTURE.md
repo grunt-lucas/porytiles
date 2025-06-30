@@ -25,6 +25,8 @@ https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 * [Layout Metatile Generation](#layout-metatile-generation)
 * [Multiple Partner Primary Support](#multiple-partner-primary-support)
 * [Code Organization](#code-organization)
+* [Compilation](#compilation)
+* [Animations](#animations)
 <!-- TOC -->
 
 # Tileset/Layout TOML File
