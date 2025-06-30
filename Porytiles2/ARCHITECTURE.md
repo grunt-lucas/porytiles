@@ -19,6 +19,8 @@ https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
   * [Create Layout](#create-layout)
   * [Compile Layout](#compile-layout)
 * [Incremental Build Support](#incremental-build-support)
+* [Layout Metatile Generation](#layout-metatile-generation)
+* [Multiple Partner Primary Support](#multiple-partner-primary-support)
 * [Code Organization](#code-organization)
 <!-- TOC -->
 
@@ -58,11 +60,6 @@ Create a new primary tileset in `data/tilesets/primary` with [default assets.](#
 ```sh
 porytiles2 create-tileset MyTileset
 ```
-
-This command will:
-1. Create the requisite Porytiles files
-2. Update the right source and header files
-3. Compile the initial tileset to generate the Porymap tileset files
 
 The resulting tileset directory tree:
 ```
@@ -133,6 +130,11 @@ const u16 gMetatiles_MyTileset[] = INCBIN_U16("data/tilesets/primary/my_tileset/
 const u16 gMetatileAttributes_MyTileset[] = INCBIN_U16("data/tilesets/primary/my_tileset/metatile_attributes.bin");
 ```
 
+### Logic Flow
+1. Create the requisite Porytiles files
+2. Update the right source and header files
+3. Compile the initial tileset to generate the Porymap tileset files
+
 ## Create Secondary Tileset
 Create a new secondary tileset in `data/tilesets/secondary` with [default assets.](#default-assets)
 
@@ -161,11 +163,6 @@ This is what legacy Porytiles called "decompilation."
 porytiles2 import-tileset general
 ```
 
-This command will:
-1. Perform a complete decompilation
-2. Create the requisite Porytiles files
-3. Perform a compilation to confirm everything works correctly
-
 Importing a tileset will set `incremental = true` by default.
 [See here for more on incremental builds.](#incremental-build-support)
 
@@ -175,6 +172,11 @@ Importing a tileset will set `incremental = true` by default.
 [tileset]
 incremental = true
 ```
+
+### Logic Flow
+1. Perform a complete decompilation.
+2. Create the requisite Porytiles files.
+3. Perform a compilation to confirm everything works correctly.
 
 ## Import Secondary Tileset
 TODO
@@ -193,8 +195,15 @@ Compile a tileset in `data/tilesets/primary`, i.e. update the Porymap assets to 
 porytiles2 compile-tileset MyTileset
 ```
 
-This command will:
-1. a
+### Logic Flow
+1. Import the Porymap assets and compute hashes for each.
+2. Import cached LastHash from the Porytiles assets.
+3. If any don't match, bail with message "unimported changes present in Porymap asset X"
+4. If all match, continue.
+5. If newest Porymap asset "modified" timestamp is newer than newest Porytiles asset "modified" timestamp, exit with "nothing to do."
+6. Otherwise, continue with compilation.
+7. Emit compilation result if successful.
+8. Compute hash for each emitted asset and store in Porytiles asset LastHash cache.
 
 ## Compile Secondary Tileset
 TODO
@@ -206,7 +215,8 @@ TODO
 TODO
 
 # Incremental Build Support
-TODO
+User can specify an incremental tileset build by specifying `--incremental`
+or by setting `incremental = true` in the tileset TOML config.
 
 # Layout Metatile Generation
 Layout compilation runs with default: `--unknown-metatile-policy=reject`.
