@@ -9,12 +9,15 @@ https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 * [Use Cases](#use-cases)
   * [Default Assets](#default-assets)
   * [Create Primary Tileset](#create-primary-tileset)
+    * [Logic Flow](#logic-flow)
   * [Create Secondary Tileset](#create-secondary-tileset)
   * [Import Primary Tileset](#import-primary-tileset)
+    * [Logic Flow](#logic-flow-1)
   * [Import Secondary Tileset](#import-secondary-tileset)
   * [Import Layout](#import-layout)
   * [Delete Tileset/Layout](#delete-tilesetlayout)
   * [Compile Primary Tileset](#compile-primary-tileset)
+    * [Logic Flow](#logic-flow-2)
   * [Compile Secondary Tileset](#compile-secondary-tileset)
   * [Create Layout](#create-layout)
   * [Compile Layout](#compile-layout)
@@ -35,15 +38,19 @@ This will save tons of annoying typing at the CLI.
 # This field is required for secondary sets, users won't have to specify paired primary at CLI
 partner_primaries = [ "my_cool_primary" ]
 
-[fieldmap-overrides]
+[fieldmap_overrides]
 num_pals_primary = 7
 num_metatiles_primary = 2048
 num_metatiles_total = 4096
 
-[palette-assignment]
+[palette_assignment]
 force_smart_prune = true
-```
 
+[artifact_checksums]
+"tiles.png" = "0cc175b9c0f1b6a831c399e269772661"
+"palettes/00.pal" = "92eb5ffee6ae2fec3ad71c777531578f"
+# ...
+```
 
 # Use Cases
 A summary of the CLI-driver-based use cases Porytiles2 must support.
@@ -131,9 +138,9 @@ const u16 gMetatileAttributes_MyTileset[] = INCBIN_U16("data/tilesets/primary/my
 ```
 
 ### Logic Flow
-1. Create the requisite Porytiles files
-2. Update the right source and header files
-3. Compile the initial tileset to generate the Porymap tileset files
+1. Create the requisite Porytiles files.
+2. Update the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`.
+3. Compile the initial tileset to generate the Porymap tileset files and `artifact_checksums`.
 
 ## Create Secondary Tileset
 Create a new secondary tileset in `data/tilesets/secondary` with [default assets.](#default-assets)
@@ -143,9 +150,9 @@ porytiles2 create-tileset MySecondaryTileset --partner-primaries MyTileset
 ```
 
 This command will:
-1. Create the requisite Porytiles files
-2. Update the right source and header files
-3. Compile the initial tileset to generate the Porymap tileset files
+1. Create the requisite Porytiles files.
+2. Update the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`.
+3. Compile the initial tileset to generate the Porymap tileset files and `artifact_checksums`.
 
 `my_secondary_tileset.toml` contents:
 ```toml
@@ -197,13 +204,13 @@ porytiles2 compile-tileset MyTileset
 
 ### Logic Flow
 1. Import the Porymap assets and compute hashes for each.
-2. Import cached LastHash from the Porytiles assets.
-3. If any don't match, bail with message "unimported changes present in Porymap asset X"
+2. Import `artifact_checksums` from the tileset TOML.
+3. If any don't match, bail with message "unimported changes present in Porymap asset X."
 4. If all match, continue.
 5. If newest Porymap asset "modified" timestamp is newer than newest Porytiles asset "modified" timestamp, exit with "nothing to do."
 6. Otherwise, continue with compilation.
 7. Emit compilation result if successful.
-8. Compute hash for each emitted asset and store in Porytiles asset LastHash cache.
+8. Compute hash for each emitted asset and store in `artifact_checksums` TOML.
 
 ## Compile Secondary Tileset
 TODO
@@ -217,6 +224,21 @@ TODO
 # Incremental Build Support
 User can specify an incremental tileset build by specifying `--incremental`
 or by setting `incremental = true` in the tileset TOML config.
+
+When incremental is set,
+compilation will not disturb currently existing Porymap assets.
+That is, existing palettes will be treated as "overrides" in the compilation,
+and existing tiles will be left undisturbed (but reused if possible).
+Incremental builds assume any transparent tile is available, and any `0 0 0`
+in a palette can be assumed as a wildcard.
+
+It should be noted:
+since incremental builds don't disturb existing assets,
+that means they also won't remove output assets that aren't used.
+That is, if you remove all instances of a given tile from the metatile sheets,
+an incremental build will still leave that tile in `tiles.png`.
+This is so that incremental builds can be used as a method for editing tilesets
+without disturbing anyone who might depend on that tileset.
 
 # Layout Metatile Generation
 Layout compilation runs with default: `--unknown-metatile-policy=reject`.
@@ -259,4 +281,13 @@ I am not sure if this is something that can be done entirely computationally,
 without user intervention.
 
 # Code Organization
-domain-driven design
+Domain-driven design
+
+# Compilation
+Detailed overview of compilation in Porytiles2.
+
+# Animations
+Detailed overview of animation handling.
+Since decompilation-recompilation and incremental compilation
+are such a big piece of the Porytiles2 flow,
+animation handling needs to be transparently symmetrical.
