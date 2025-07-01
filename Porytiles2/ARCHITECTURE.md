@@ -4,29 +4,29 @@ Outline of the Porytiles2 architecture.
 https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 
 <!-- TOC -->
-* [Architecture](#architecture)
-* [Tileset/Layout TOML File](#tilesetlayout-toml-file)
-* [Use Cases](#use-cases)
-  * [Default Assets](#default-assets)
-  * [Create Primary Tileset](#create-primary-tileset)
-    * [Logic Flow](#logic-flow)
-  * [Create Secondary Tileset](#create-secondary-tileset)
-  * [Import Primary Tileset](#import-primary-tileset)
-    * [Logic Flow](#logic-flow-1)
-  * [Import Secondary Tileset](#import-secondary-tileset)
-  * [Import Layout](#import-layout)
-  * [Delete Tileset/Layout](#delete-tilesetlayout)
-  * [Compile Primary Tileset](#compile-primary-tileset)
-    * [Logic Flow](#logic-flow-2)
-  * [Compile Secondary Tileset](#compile-secondary-tileset)
-  * [Create Layout](#create-layout)
-  * [Compile Layout](#compile-layout)
-* [Incremental Build Support](#incremental-build-support)
-* [Layout Metatile Generation](#layout-metatile-generation)
-* [Multiple Partner Primary Support](#multiple-partner-primary-support)
-* [Code Organization](#code-organization)
-* [Compilation](#compilation)
-* [Animations](#animations)
+- [Architecture](#architecture)
+- [Tileset/Layout TOML File](#tilesetlayout-toml-file)
+- [Use Cases](#use-cases)
+  - [Default Assets](#default-assets)
+  - [Create Primary Tileset](#create-primary-tileset)
+    - [Logic Flow](#logic-flow)
+  - [Create Secondary Tileset](#create-secondary-tileset)
+  - [Import Primary Tileset](#import-primary-tileset)
+    - [Logic Flow](#logic-flow-1)
+  - [Import Secondary Tileset](#import-secondary-tileset)
+  - [Import Layout](#import-layout)
+  - [Delete Tileset/Layout](#delete-tilesetlayout)
+  - [Compile Primary Tileset](#compile-primary-tileset)
+    - [Logic Flow](#logic-flow-2)
+  - [Compile Secondary Tileset](#compile-secondary-tileset)
+  - [Create Layout](#create-layout)
+  - [Compile Layout](#compile-layout)
+- [Incremental Build Support](#incremental-build-support)
+- [Layout Metatile Generation](#layout-metatile-generation)
+- [Multiple Partner Primary Support](#multiple-partner-primary-support)
+- [Code Organization](#code-organization)
+- [Compilation](#compilation)
+- [Animations](#animations)
 <!-- TOC -->
 
 # Tileset/Layout TOML File
@@ -183,9 +183,12 @@ incremental = true
 ```
 
 ### Logic Flow
-1. Perform a complete decompilation.
-2. Create the requisite Porytiles files.
-3. Perform a compilation to confirm everything works correctly.
+1. If Porytiles assets exist, and the newest Porytiles asset is newer than the newest Porymap asset, bail with message "uncompiled changes in Porytiles asset X."
+2. Import the Porymap assets and compute hashes for each.
+3. Perform a complete decompilation.
+4. Create the requisite Porytiles files.
+5. Store hashes from Porymap asset import step in `artifact_checksums` TOML.
+6. Perform a compilation to confirm everything works correctly.
 
 ## Import Secondary Tileset
 TODO
