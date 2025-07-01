@@ -58,7 +58,7 @@ force_smart_prune = true
 A summary of the CLI-driver-based use cases Porytiles2 must support.
 
 ## Default Assets
-Default assets are referenced in use-cases below. They could be simple:
+Default assets are referenced in the use-cases below. They could be simple:
 - one row of metatiles with some example tiles: grass, animated flower
 - one or two non-default attributes in the CSV file
 - a simple animated flower
@@ -274,7 +274,7 @@ The secondary would then supply separate versions of each layer PNG, one for eac
 E.g. `bottom.general_cave_brown.png`, `bottom.general_cave_grey.png`, etc.
 
 The tileset compiler would enforce that
-e.g. metatile 8 as seen in the `general_cave_brown` version of the layer PNGs
+e.g., metatile 8 as seen in the `general_cave_brown` version of the layer PNGs
 generates the same metatile data as metatile 8 in `general_cave_grey` version.
 
 This means we must provide some way for users to massage the output ordering of their primary tilesets.
