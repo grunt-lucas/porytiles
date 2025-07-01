@@ -198,7 +198,7 @@ Should we support deleting tilesets/layouts?
 If we use Clang, we can somewhat easily remove the various code elements associated with a tileset.
 
 ## Compile Primary Tileset
-Compile a tileset in `data/tilesets/primary`, i.e. update the Porymap assets to match the Porytiles assets.
+Compile a tileset in `data/tilesets/primary`, i.e., update the Porymap assets to match the Porytiles assets.
 
 ```sh
 porytiles2 compile-tileset MyTileset
@@ -207,9 +207,9 @@ porytiles2 compile-tileset MyTileset
 ### Logic Flow
 1. Import the Porymap assets and compute hashes for each.
 2. Import `artifact_checksums` from the tileset TOML.
-3. If any don't match, bail with message "unimported changes present in Porymap asset X."
+3. If any don't match, bail with the message "unimported changes present in Porymap asset X."
 4. If all match, continue.
-5. If newest Porymap asset "modified" timestamp is newer than newest Porytiles asset "modified" timestamp, exit with "nothing to do."
+5. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, exit with "nothing to do."
 6. Otherwise, continue with compilation.
 7. Emit compilation result if successful.
 8. Compute hash for each emitted asset and store in `artifact_checksums` TOML.
