@@ -5,28 +5,28 @@
 namespace porytiles {
 
 /**
- * @brief An image in PNG format.
+ * @brief An image with Rgba32 pixel values.
  *
  * @details
- * Clients who need to operate on PNG images can use this interface to avoid
- * dependencies on any particular PNG library. This interface provides a way for
- * clients to read a PNG's metadata and manipulate its contents.
+ * Clients who need to operate on RGB images can use this interface to avoid
+ * dependencies on any particular image library. This interface provides a way
+ * for clients to read image metadata and manipulate its contents.
  */
-class Png {
+class RgbaImage {
 public:
-  virtual ~Png() = default;
+  virtual ~RgbaImage() = default;
 
   /**
-   * @brief Gets the width of this Png in pixels.
+   * @brief Gets the width of this image in pixels.
    *
-   * @return The width of this Png in pixels.
+   * @return The width of this image in pixels.
    */
   [[nodiscard]] virtual std::size_t Width() const = 0;
 
   /**
-   * @brief Gets the height of this Png in pixels.
+   * @brief Gets the height of this image in pixels.
    *
-   * @return The height of this Png in pixels.
+   * @return The height of this image in pixels.
    */
   [[nodiscard]] virtual std::size_t Height() const = 0;
 
@@ -35,8 +35,8 @@ public:
    * index.
    *
    * @details
-   * The one-dimensional index assumes the Png as an array of pixels, where the
-   * length of the array is the Png's width times height.
+   * The one-dimensional index assumes the image as an array of pixels, where
+   * the length of the array is the image's width times height.
    *
    * @param i The one-dimensional pixel index.
    * @return The Rgba32 at the given pixel index.

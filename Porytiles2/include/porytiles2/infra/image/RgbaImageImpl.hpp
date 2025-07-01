@@ -2,16 +2,16 @@
 
 #include <CImg.h>
 
-#include "porytiles2/domain/entities/Png.hpp"
+#include "porytiles2/domain/entities/RgbaImage.hpp"
 
 namespace porytiles {
 
 /**
- * @brief Implementation of the Png interface using the CImg library.
+ * @brief Implementation of the RgbaImage interface.
  */
-class CImgPng final : public Png {
+class RgbaImageImpl final : public RgbaImage {
 public:
-  explicit CImgPng(const cimg_library::CImg<std::uint8_t> &image);
+  explicit RgbaImageImpl(const cimg_library::CImg<std::uint8_t> &image);
 
   [[nodiscard]] std::size_t Width() const override;
 
