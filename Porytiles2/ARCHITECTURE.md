@@ -3,59 +3,14 @@ Outline of the Porytiles2 architecture.
 
 https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 
-<!-- TOC -->
-* [Architecture](#architecture)
-* [Tileset/Layout TOML File](#tilesetlayout-toml-file)
-* [Use Cases](#use-cases)
-  * [Default Assets](#default-assets)
-  * [Create Primary Tileset](#create-primary-tileset)
-    * [Logic Flow](#logic-flow)
-  * [Create Secondary Tileset](#create-secondary-tileset)
-  * [Import Primary Tileset](#import-primary-tileset)
-    * [Logic Flow](#logic-flow-1)
-  * [Import Secondary Tileset](#import-secondary-tileset)
-  * [Import Layout](#import-layout)
-  * [Delete Tileset/Layout](#delete-tilesetlayout)
-  * [Compile Primary Tileset](#compile-primary-tileset)
-    * [Logic Flow](#logic-flow-2)
-  * [Compile Secondary Tileset](#compile-secondary-tileset)
-  * [Create Layout](#create-layout)
-  * [Compile Layout](#compile-layout)
-* [Incremental Build Support](#incremental-build-support)
-* [Layout Metatile Generation](#layout-metatile-generation)
-* [Multiple Partner Primary Support](#multiple-partner-primary-support)
-* [Code Organization](#code-organization)
-* [Compilation](#compilation)
-* [Animations](#animations)
-<!-- TOC -->
+# Code Organization
+Porytiles2 is organized according to domain-driven design principles.
 
-# Tileset/Layout TOML File
-Porytiles2 allows users to configure tileset/layout compilation options using a TOML file.
-This will save tons of annoying typing at the CLI.
-
-```toml
-# my_secondary_tileset.toml
-
-[tileset]
-# This field is required for secondary sets, users won't have to specify paired primary at CLI
-partner_primaries = [ "my_cool_primary" ]
-
-[fieldmap_overrides]
-num_pals_primary = 7
-num_metatiles_primary = 2048
-num_metatiles_total = 4096
-
-[palette_assignment]
-force_smart_prune = true
-
-[artifact_checksums]
-"tiles.png" = "0cc175b9c0f1b6a831c399e269772661"
-"palettes/00.pal" = "92eb5ffee6ae2fec3ad71c777531578f"
-# ...
-```
+## Domain
+TODO : summarize the core domain types
 
 # Use Cases
-A summary of the CLI-driver-based use cases Porytiles2 must support.
+A summary of the use cases Porytiles2 must support.
 
 ## Default Assets
 Default assets are referenced in the use-cases below. They could be simple:
@@ -66,10 +21,19 @@ Default assets are referenced in the use-cases below. They could be simple:
 ## Create Primary Tileset
 Create a new primary tileset in `data/tilesets/primary` with [default assets.](#default-assets)
 
+### CLI Invocation
 ```sh
 porytiles2 create-tileset MyTileset
 ```
 
+### Logic Flow
+1. Check if primary tileset already exists. If so, abort with error message.
+2. Initialize a new Tileset aggregate.
+3. Fill in the PorytilesTilesetComponent with default assets.
+4. Compile the PorytilesTilesetComponent to generate an initial PorymapTilesetComponent and initial artifact checksums.
+5. Persist the Tileset (including updating the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`).
+
+### Outputs
 The resulting tileset directory tree:
 ```
 data/tilesets/primary/
@@ -90,6 +54,7 @@ data/tilesets/primary/
 │  │  ├─ top.png
 │  │  ├─ attributes.csv
 │  │  ├─ my_tileset.toml
+│  │  ├─ artifact_checksums.json
 │  |  ├─ anim/
 │  │  |  ├─ flower/
 │  │  |  |  ├─ key.png
@@ -139,23 +104,22 @@ const u16 gMetatiles_MyTileset[] = INCBIN_U16("data/tilesets/primary/my_tileset/
 const u16 gMetatileAttributes_MyTileset[] = INCBIN_U16("data/tilesets/primary/my_tileset/metatile_attributes.bin");
 ```
 
-### Logic Flow
-1. Create the requisite Porytiles files.
-2. Update the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`.
-3. Compile the initial tileset to generate the Porymap tileset files and `artifact_checksums`.
-
 ## Create Secondary Tileset
 Create a new secondary tileset in `data/tilesets/secondary` with [default assets.](#default-assets)
 
+### CLI Invocation
 ```sh
 porytiles2 create-tileset MySecondaryTileset --partner-primaries MyTileset
 ```
 
-This command will:
-1. Create the requisite Porytiles files.
-2. Update the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`.
-3. Compile the initial tileset to generate the Porymap tileset files and `artifact_checksums`.
+### Logic Flow
+1. Check if secondary tileset already exists. If so, abort with error message.
+2. Initialize a new Tileset aggregate.
+3. Fill in the PorytilesTilesetComponent with default assets.
+4. Compile the PorytilesTilesetComponent to generate an initial PorymapTilesetComponent and initial artifact checksums.
+5. Persist the Tileset (including updating the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`).
 
+### Outputs
 `my_secondary_tileset.toml` contents:
 ```toml
 # my_secondary_tileset.toml
@@ -168,10 +132,22 @@ partner_primaries = [ "my_tileset" ]
 Import an existing primary tileset to Porytiles.
 This is what legacy Porytiles called "decompilation."
 
+### CLI Invocation
 ```sh
 porytiles2 import-tileset general
 ```
 
+### Logic Flow
+1. Check if primary tileset exists. If not, abort with error.
+2. Load the tileset into a Tileset aggregate.
+3. If PorytilesTilesetComponent is not empty (i.e., a `porytiles` folder exists), and the newest Porytiles asset is newer than the newest Porymap asset, bail with message "uncompiled changes in Porytiles asset X."
+4. Import the Porymap assets into the PorymapTilesetComponent and compute checksums for each.
+5. If PorytilesTilesetComponent is not empty and all checksums match, bail with message "nothing to do."
+6. Perform a complete decompilation.
+7. Fill in the PorytilesTilesetComponent with the decompiled assets.
+8. Perform an incremental compilation and re-store checksums.
+
+### Outputs
 Importing a tileset will set `incremental = true` by default.
 [See here for more on incremental builds.](#incremental-build-support)
 
@@ -182,16 +158,8 @@ Importing a tileset will set `incremental = true` by default.
 incremental = true
 ```
 
-### Logic Flow
-1. If Porytiles assets exist, and the newest Porytiles asset is newer than the newest Porymap asset, bail with message "uncompiled changes in Porytiles asset X."
-2. Import the Porymap assets and compute hashes for each.
-3. Perform a complete decompilation.
-4. Create the requisite Porytiles files.
-5. Store hashes from Porymap asset import step in `artifact_checksums` TOML.
-6. Perform a compilation to confirm everything works correctly.
-
 ## Import Secondary Tileset
-TODO
+TODO : fill in use-case details
 
 ## Import Layout
 TODO
@@ -203,19 +171,20 @@ If we use Clang, we can somewhat easily remove the various code elements associa
 ## Compile Primary Tileset
 Compile a tileset in `data/tilesets/primary`, i.e., update the Porymap assets to match the Porytiles assets.
 
+### CLI Invocation
 ```sh
 porytiles2 compile-tileset MyTileset
 ```
 
 ### Logic Flow
-1. Import the Porymap assets and compute hashes for each.
-2. Import `artifact_checksums` from the tileset TOML.
-3. If any don't match, bail with the message "unimported changes present in Porymap asset X."
-4. If all match, continue.
-5. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, exit with "nothing to do."
-6. Otherwise, continue with compilation.
-7. Emit compilation result if successful.
-8. Compute hash for each emitted asset and store in `artifact_checksums` TOML.
+1. Check if primary tileset exists. If not, abort with error.
+2. Load the tileset into a Tileset aggregate.
+3. Compute checksums for each asset in PorymapTilesetComponent.
+4. Compare with checksums in `artifact_checksums.json`, bail with the message "unimported changes present in Porymap asset X."
+5. If all match, continue.
+6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
+7. Otherwise, compile the PorytilesTilesetComponent, generating a new PorymapTilesetComponent.
+8. Persist everything (Porymap assets, compute and send new checksums to `artifact_checksums.json`, etc).
 
 ## Compile Secondary Tileset
 TODO
@@ -226,7 +195,9 @@ TODO
 ## Compile Layout
 TODO
 
-# Incremental Build Support
+# Staging Area For Noteworthy Topics
+
+## Incremental Build Support
 User can specify an incremental tileset build by specifying `--incremental`
 or by setting `incremental = true` in the tileset TOML config.
 
@@ -245,7 +216,7 @@ an incremental build will still leave that tile in `tiles.png`.
 This is so that incremental builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
 
-# Layout Metatile Generation
+## Layout Metatile Generation
 Layout compilation runs with default: `--unknown-metatile-policy=reject`.
 When the layout compiler encounters a metatile that's not present in the primary or secondary tileset,
 it will error out with a diagnostic message.
@@ -265,7 +236,7 @@ By combining and recombining these policies through an iterative workflow,
 users can build functional layouts and tilesets by simply drawing the maps they want as-is
 and generating the necessary metatiles on an as-needed basis.
 
-# Multiple Partner Primary Support
+## Multiple Partner Primary Support
 Niche use case, but would be cool. A secondary could specify multiple partner primaries like:
 ```toml
 # my_secondary_tileset.toml
@@ -285,11 +256,31 @@ That way these guarantees can be made.
 I am not sure if this is something that can be done entirely computationally,
 without user intervention.
 
-# Code Organization
-Domain-driven design
+## Tileset/Layout TOML File
+Porytiles2 allows users to configure tileset/layout compilation options using a TOML file.
+This will save tons of annoying typing at the CLI.
 
-# Compilation
-Detailed overview of compilation in Porytiles2.
+```toml
+# my_secondary_tileset.toml
+
+[tileset]
+# This field is required for secondary sets, users won't have to specify paired primary at CLI
+partner_primaries = [ "my_cool_primary" ]
+
+[fieldmap_overrides]
+num_pals_primary = 7
+num_metatiles_primary = 2048
+num_metatiles_total = 4096
+
+[palette_assignment]
+force_smart_prune = true
+```
+
+# Tileset Compilation
+TODO : detailed overview of tileset compilation in Porytiles2.
+
+# Tileset Decompilation
+TODO : detailed overview of tileset decompilation in Porytiles2.
 
 # Animations
 Detailed overview of animation handling.
