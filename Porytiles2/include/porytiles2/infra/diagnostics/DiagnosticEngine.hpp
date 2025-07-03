@@ -28,9 +28,7 @@ namespace porytiles {
  */
 class DiagEngine {
 public:
-  DiagEngine()
-      : consumer_{std::make_unique<IgnoreConsumer>()},
-        all_warnings_disabled_{false} {}
+  DiagEngine() : consumer_{std::make_unique<IgnoreConsumer>()}, all_warnings_disabled_{false} {}
 
   explicit DiagEngine(std::unique_ptr<DiagConsumer> consumer)
       : consumer_{std::move(consumer)}, all_warnings_disabled_{false} {}
@@ -73,13 +71,11 @@ public:
   }
 
   template <typename... T>
-  void ReportPartner(std::string_view diag, std::size_t partner_index,
-                     T &&...args) {
+  void ReportPartner(std::string_view diag, std::size_t partner_index, T &&...args) {
     const auto &parent_templ = DiagFor(diag);
 
     if (partner_index >= parent_templ.partner_diags().size()) {
-      Panic(fmt::format("partner index {} out of bounds for diag {}",
-                        partner_index, diag));
+      Panic(fmt::format("partner index {} out of bounds for diag {}", partner_index, diag));
     }
 
     // If this diagnostic is not enabled, exit now
@@ -97,9 +93,7 @@ public:
     return fmt::styled(t, consumer_->IsATty() ? ts : fmt::text_style{});
   }
 
-  template <typename T> auto Bold(const T &t) const {
-    return Style(t, fmt::emphasis::bold);
-  }
+  template <typename T> auto Bold(const T &t) const { return Style(t, fmt::emphasis::bold); }
 
   [[nodiscard]] const DiagConsumer &consumer() const;
 
@@ -111,29 +105,23 @@ private:
   std::vector<InFlightDiag> in_flight_diags_;
 
   template <typename... T>
-  void ReportHelper(const DiagTempl &templ, DiagLevel in_flight_level,
-                    T &&...args) {
+  void ReportHelper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args) {
     // Fill in message template
     std::vector<std::string> raw_msg;
     try {
-      raw_msg = templ.BuildDynamicMsg(*this, in_flight_level,
-                                      std::forward<T>(args)...);
+      raw_msg = templ.BuildDynamicMsg(*this, in_flight_level, std::forward<T>(args)...);
     } catch (const std::exception &e) {
-      Panic(
-          fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
+      Panic(fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
     }
 
     // Construct the message string for the consumer
     if (raw_msg.empty()) {
-      Panic(
-          fmt::format("diagnostic {} raw_msg vector was empty", templ.name()));
+      Panic(fmt::format("diagnostic {} raw_msg vector was empty", templ.name()));
     }
-    const std::string constructed_msg =
-        ConstructMsgStr(in_flight_level, templ, raw_msg);
+    const std::string constructed_msg = ConstructMsgStr(in_flight_level, templ, raw_msg);
 
     // Set diagnostic in-flight and then consume it
-    const auto in_flight =
-        InFlightDiag{in_flight_level, constructed_msg, templ};
+    const auto in_flight = InFlightDiag{in_flight_level, constructed_msg, templ};
     in_flight_diags_.push_back(in_flight);
     consumer_->Consume(in_flight);
   }
@@ -142,9 +130,8 @@ private:
 
   [[nodiscard]] bool IsEnabled(std::string_view diag) const;
 
-  [[nodiscard]] std::string
-  ConstructMsgStr(DiagLevel in_flight_level, const DiagTempl &templ,
-                  const std::vector<std::string> &msg) const;
+  [[nodiscard]] std::string ConstructMsgStr(DiagLevel in_flight_level, const DiagTempl &templ,
+                                            const std::vector<std::string> &msg) const;
 };
 
 } // namespace porytiles

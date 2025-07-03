@@ -33,8 +33,7 @@ public:
   explicit NotAlreadyAFileValidator() : Validator{kHint} {
     name_ = "NOT_ALREADY_A_FILE";
     func_ = [](const std::string &str) {
-      if (std::filesystem::exists(str) &&
-          std::filesystem::is_regular_file(str)) {
+      if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
         return std::string{"file already exists: " + str};
       }
       return std::string{};
@@ -49,8 +48,7 @@ public:
   explicit RgbStringValidator() : Validator{kHint} {
     name_ = "RGB_STRING";
     func_ = [](const std::string &str) {
-      const std::vector<std::string> color_components =
-          porytiles::split(str, ",");
+      const std::vector<std::string> color_components = porytiles::split(str, ",");
       if (color_components.size() != 3) {
         return std::string{"invalid rgb string: " + str};
       }
@@ -63,12 +61,10 @@ public:
         return std::string{"invalid rgb red component: " + red_result.error()};
       }
       if (!green_result.has_value()) {
-        return std::string{"invalid rgb green component: " +
-                           green_result.error()};
+        return std::string{"invalid rgb green component: " + green_result.error()};
       }
       if (!blue_result.has_value()) {
-        return std::string{"invalid rgb blue component: " +
-                           blue_result.error()};
+        return std::string{"invalid rgb blue component: " + blue_result.error()};
       }
 
       const auto red = red_result.value();
@@ -97,8 +93,7 @@ public:
   explicit DiagnosticIsWarningValidator() : Validator{kHint} {
     name_ = "DIAGNOSTIC_IS_WARNING";
     std::unordered_set<std::string> warning_diags;
-    for (const auto name :
-         porytiles::AllDiagNames(porytiles::DiagLevel::kWarning)) {
+    for (const auto name : porytiles::AllDiagNames(porytiles::DiagLevel::kWarning)) {
       warning_diags.insert(name);
     }
     func_ = [warning_diags](const std::string &str) {

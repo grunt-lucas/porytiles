@@ -26,14 +26,11 @@ public:
   OptGroupFieldmap()
       // TODO : 'pokeemerald' base game string should be defined by an enum,
       // like TilesPalMode
-      : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0},
-        tiles_total_override_{0}, metatiles_primary_override_{0},
-        metatiles_total_override_{0}, pals_primary_override_{0},
+      : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0}, tiles_total_override_{0},
+        metatiles_primary_override_{0}, metatiles_total_override_{0}, pals_primary_override_{0},
         pals_total_override_{0} {}
 
-  [[nodiscard]] std::string GroupName() override {
-    return "FIELDMAP OVERRIDE OPTIONS";
-  }
+  [[nodiscard]] std::string GroupName() override { return "FIELDMAP OVERRIDE OPTIONS"; }
 
   void RegisterGroup(CLI::App &app) override {
     // TODO : create a base game validator
@@ -61,9 +58,7 @@ public:
         ->group(GroupName());
   }
 
-  [[nodiscard]] const std::string &base_game_preset() const {
-    return base_game_preset_;
-  }
+  [[nodiscard]] const std::string &base_game_preset() const { return base_game_preset_; }
 };
 
 class OptGroupDiagnostics final : public OptGroup {
@@ -72,32 +67,24 @@ class OptGroupDiagnostics final : public OptGroup {
 public:
   OptGroupDiagnostics() = default;
 
-  [[nodiscard]] std::string GroupName() override {
-    return "DIAGNOSTIC OPTIONS";
-  }
+  [[nodiscard]] std::string GroupName() override { return "DIAGNOSTIC OPTIONS"; }
 
   void RegisterGroup(CLI::App &app) override {
-    app.add_option("--warning", diagnostics_,
-                   "Enable given warning diagnostics.")
+    app.add_option("--warning", diagnostics_, "Enable given warning diagnostics.")
         ->check(DiagnosticIsWarningValidator{})
         ->group(GroupName());
-    app.add_option("--no-warning", diagnostics_,
-                   "Disable given warning diagnostics.")
+    app.add_option("--no-warning", diagnostics_, "Disable given warning diagnostics.")
         ->check(DiagnosticIsWarningValidator{})
         ->group(GroupName());
-    app.add_option("--error", diagnostics_,
-                   "Enable given warning diagnostics as errors.")
+    app.add_option("--error", diagnostics_, "Enable given warning diagnostics as errors.")
         ->check(DiagnosticIsWarningValidator{})
         ->group(GroupName());
-    app.add_option("--no-error", diagnostics_,
-                   "Disable given warning diagnostics as errors.")
+    app.add_option("--no-error", diagnostics_, "Disable given warning diagnostics as errors.")
         ->check(DiagnosticIsWarningValidator{})
         ->group(GroupName());
   }
 
-  [[nodiscard]] const std::vector<std::string> &diagnostics() const {
-    return diagnostics_;
-  }
+  [[nodiscard]] const std::vector<std::string> &diagnostics() const { return diagnostics_; }
 };
 
 class OptGroupArtifacts final : public OptGroup {
@@ -124,9 +111,7 @@ public:
 
   [[nodiscard]] const OptOutput &output_opt() const { return output_opt_; }
 
-  [[nodiscard]] const OptTilesPalMode &tiles_pal_mode() const {
-    return tiles_pal_mode_opt_;
-  }
+  [[nodiscard]] const OptTilesPalMode &tiles_pal_mode() const { return tiles_pal_mode_opt_; }
 
   [[nodiscard]] bool metatiles_disabled() const {
     return disable_metatile_generation_opt_.disabled();
@@ -141,9 +126,7 @@ class OptGroupPalAssignmentConfig final : public OptGroup {
 public:
   OptGroupPalAssignmentConfig() = default;
 
-  [[nodiscard]] std::string GroupName() override {
-    return "PAL ASSIGNMENT CONFIG OPTIONS";
-  }
+  [[nodiscard]] std::string GroupName() override { return "PAL ASSIGNMENT CONFIG OPTIONS"; }
 
   void RegisterGroup(CLI::App &app) override {}
 };

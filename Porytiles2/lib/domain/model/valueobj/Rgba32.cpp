@@ -5,8 +5,7 @@
 namespace porytiles {
 
 std::string Rgba32::ToJascStr() const {
-  return std::to_string(red_) + " " + std::to_string(green_) + " " +
-         std::to_string(blue_);
+  return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
 }
 
 bool Rgba32::EqualsIgnoringAlpha(const Rgba32 &other) const {

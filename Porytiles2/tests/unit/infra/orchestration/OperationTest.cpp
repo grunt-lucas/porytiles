@@ -13,8 +13,7 @@ using namespace porytiles;
 
 class TestOperation final : public Operation {
 public:
-  explicit TestOperation(DiagEngine *engine)
-      : Operation{engine}, multiplier_{1} {}
+  explicit TestOperation(DiagEngine *engine) : Operation{engine}, multiplier_{1} {}
 
   [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
     std::vector inputs = {
@@ -30,8 +29,7 @@ public:
     return outputs;
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string>
-  Execute(const AnyMap &inputs) override {
+  [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
     const auto num1 = inputs.Get<int>("num1").value();
     const auto num2 = inputs.Get<int>("num2").value();
     int sum = (num1 + num2) * multiplier_;

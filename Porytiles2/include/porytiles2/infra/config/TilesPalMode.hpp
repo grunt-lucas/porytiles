@@ -9,8 +9,7 @@ namespace porytiles {
 
 enum class TilesPalMode { kTrueColor, kGreyscale };
 
-[[nodiscard]] inline std::optional<TilesPalMode>
-TilesPalModeFromStr(const std::string &str) {
+[[nodiscard]] inline std::optional<TilesPalMode> TilesPalModeFromStr(const std::string &str) {
   if (str == "true-color") {
     return std::optional{TilesPalMode::kTrueColor};
   }

@@ -16,8 +16,8 @@ class Command {
 public:
   virtual ~Command() = default;
 
-  Command(CLI::App &parent_app, const std::string &name,
-          const std::string &desc, const std::string &group)
+  Command(CLI::App &parent_app, const std::string &name, const std::string &desc,
+          const std::string &group)
       : app_(nullptr) {
     if (name.empty()) {
       porytiles::Panic("Command name cannot be empty.");
@@ -25,8 +25,7 @@ public:
 
     app_ = parent_app.add_subcommand(name, desc);
     porytiles::AssertOrPanic(app_ != nullptr,
-                             "CLI::App::add_subcommand returned nullptr for: " +
-                                 name);
+                             "CLI::App::add_subcommand returned nullptr for: " + name);
 
     if (!group.empty()) {
       app_->group(group);
@@ -64,9 +63,7 @@ public:
     diagnostics_opts_.RegisterGroup(cmd);
   }
 
-  void Run() override {
-    std::cout << "Compile tileset command called." << std::endl;
-  }
+  void Run() override { std::cout << "Compile tileset command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "compile-tileset";
@@ -87,9 +84,7 @@ public:
     diagnostics_opts_.RegisterGroup(cmd);
   }
 
-  void Run() override {
-    std::cout << "Compile layout command called." << std::endl;
-  }
+  void Run() override { std::cout << "Compile layout command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "compile-layout";
@@ -110,9 +105,7 @@ public:
     diagnostics_opts_.RegisterGroup(cmd);
   }
 
-  void Run() override {
-    std::cout << "Compile spritesheet command called." << std::endl;
-  }
+  void Run() override { std::cout << "Compile spritesheet command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "compile-spritesheet";
@@ -133,9 +126,7 @@ public:
     diagnostics_opts_.RegisterGroup(cmd);
   }
 
-  void Run() override {
-    std::cout << "Decompile tileset command called." << std::endl;
-  }
+  void Run() override { std::cout << "Decompile tileset command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "decompile-tileset";
@@ -156,9 +147,7 @@ public:
     diagnostics_opts_.RegisterGroup(cmd);
   }
 
-  void Run() override {
-    std::cout << "Decompile layout command called." << std::endl;
-  }
+  void Run() override { std::cout << "Decompile layout command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "decompile-layout";
@@ -175,13 +164,10 @@ public:
   explicit ReduceBitDepthCommand(CLI::App &parent_app)
       : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {}
 
-  void Run() override {
-    std::cout << "Reduce bit depth command called." << std::endl;
-  }
+  void Run() override { std::cout << "Reduce bit depth command called." << std::endl; }
 
 private:
   static constexpr auto kCommandName = "reduce-bit-depth";
-  static constexpr auto kCommandDesc =
-      "Reduce bit depth for given input assets.";
+  static constexpr auto kCommandDesc = "Reduce bit depth for given input assets.";
   static constexpr auto kCommandGroup = "COMMANDS";
 };

@@ -23,8 +23,7 @@ public:
   explicit Tile() : pix_{} {}
 
   [[nodiscard]] virtual bool IsTransparent(const P &transparency) const {
-    return std::ranges::all_of(
-        pix(), [=](const auto &pixel) { return pixel == transparency; });
+    return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
   }
 
   [[nodiscard]] P At(std::size_t i) const {

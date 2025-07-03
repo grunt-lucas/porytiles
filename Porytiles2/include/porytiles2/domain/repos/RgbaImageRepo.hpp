@@ -4,13 +4,13 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/entities/RgbaImage.hpp"
+#include "../model/valueobj/RgbaImage.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
 
 /**
- * @brief Imports an RgbaImage from the filesystem.
+ * @brief Repository interface for importing an RgbaImage from the filesystem.
  */
 class RgbaImageRepo {
 public:

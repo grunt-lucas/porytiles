@@ -25,8 +25,8 @@ TEST(AnyMapTests, PutTryGetShouldWork) {
 
   EXPECT_FALSE(map.Try<double>("key4").has_value());
 
-  EXPECT_EXIT(std::ignore = map.Get<int>("key25"),
-              ::testing::KilledBySignal(SIGABRT), "Key not found: key25");
+  EXPECT_EXIT(std::ignore = map.Get<int>("key25"), ::testing::KilledBySignal(SIGABRT),
+              "Key not found: key25");
 }
 
 TEST(AnyMapTests, GetShouldPanicOnWrongType) {
@@ -36,7 +36,6 @@ TEST(AnyMapTests, GetShouldPanicOnWrongType) {
   map.Put("key2", std::string{"foobar"});
   map.Put("key3", std::vector{1, 2, 3});
 
-  EXPECT_EXIT(std::ignore = map.Get<int>("key2"),
-              ::testing::KilledBySignal(SIGABRT),
+  EXPECT_EXIT(std::ignore = map.Get<int>("key2"), ::testing::KilledBySignal(SIGABRT),
               "Invalid type requested for key: key2");
 }

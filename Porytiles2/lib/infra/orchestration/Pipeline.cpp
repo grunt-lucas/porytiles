@@ -26,15 +26,13 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     const auto inputs = op->DeclareInputs();
     int deps = 0;
     for (const auto &input_artifact : inputs) {
-      if (const auto &in_key = input_artifact.key();
-          producers_.contains(in_key)) {
+      if (const auto &in_key = input_artifact.key(); producers_.contains(in_key)) {
         auto *producer_op = producers_.at(in_key);
         adj_.at(producer_op).push_back(op.get());
         deps++;
       } else {
-        Panic(
-            fmt::format("operation '{}' depends on non-existent artifact: '{}'",
-                        op->name(), in_key));
+        Panic(fmt::format("operation '{}' depends on non-existent artifact: '{}'", op->name(),
+                          in_key));
       }
     }
     in_degree_.insert({op.get(), deps});
@@ -71,8 +69,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
       const auto &key = input_artifact.key();
       const auto val = artifacts.TryAny(key);
       if (!val.has_value()) {
-        Panic(fmt::format("operation '{}' missing input artifact: {}",
-                          op->name(), key));
+        Panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
       }
       inputs.Put(key, val.value());
     }
@@ -84,8 +81,7 @@ std::expected<AnyMap, std::string> Pipeline::Run() const {
     }
 
     // Merge outputs
-    for (auto outputs_map = result.value();
-         const auto &[key, value] : outputs_map) {
+    for (auto outputs_map = result.value(); const auto &[key, value] : outputs_map) {
       if (artifacts.Contains(key)) {
         Panic("duplicate output artifact: " + key);
       }

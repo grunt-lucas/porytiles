@@ -36,13 +36,12 @@ https://github.com/huderlem/porymap)");
   porytiles_app.add_flag(
       "-V,--version",
       [](const size_t) {
-        std::cout << PORYTILES_EXECUTABLE << " " << PORYTILES_BUILD_VERSION
-                  << " " << PORYTILES_BUILD_DATE << std::endl;
+        std::cout << PORYTILES_EXECUTABLE << " " << PORYTILES_BUILD_VERSION << " "
+                  << PORYTILES_BUILD_DATE << std::endl;
         std::exit(0);
       },
       "Print version info and exit.");
-  porytiles_app.get_option("--help")->description(
-      "Print this help message and exit.");
+  porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
   CompileTilesetCommand compile_tileset{porytiles_app};
   CompileLayoutCommand compile_layout{porytiles_app};

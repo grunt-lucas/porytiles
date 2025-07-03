@@ -52,8 +52,7 @@ class DiagEngine;
  * represents a single line of output for a DiagConsumer to consume.
  */
 using DynamicMsgBuilder = std::function<std::vector<std::string>(
-    const DiagEngine &eng, DiagLevel in_flight_level,
-    const std::vector<std::any> &args)>;
+    const DiagEngine &eng, DiagLevel in_flight_level, const std::vector<std::any> &args)>;
 
 /**
  * @brief Defines a reusable template for standardized diagnostic reporting.
@@ -77,20 +76,18 @@ public:
                      DynamicMsgBuilder dynamic_msg_builder,
                      const std::vector<DiagTempl> &partner_diags) noexcept
       : name_{name}, default_level_{default_level},
-        dynamic_msg_builder_{std::move(dynamic_msg_builder)},
-        partner_diags_{partner_diags} {}
+        dynamic_msg_builder_{std::move(dynamic_msg_builder)}, partner_diags_{partner_diags} {}
 
   explicit DiagTempl(std::string_view name, DiagLevel default_level,
                      std::string_view static_msg_templ) noexcept
-      : name_{name}, default_level_{default_level},
-        static_msg_templ_{static_msg_templ}, dynamic_msg_builder_{nullptr} {}
+      : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
+        dynamic_msg_builder_{nullptr} {}
 
   explicit DiagTempl(std::string_view name, DiagLevel default_level,
                      std::string_view static_msg_templ,
                      const std::vector<DiagTempl> &partner_diags) noexcept
-      : name_{name}, default_level_{default_level},
-        static_msg_templ_{static_msg_templ}, dynamic_msg_builder_{nullptr},
-        partner_diags_{partner_diags} {}
+      : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
+        dynamic_msg_builder_{nullptr}, partner_diags_{partner_diags} {}
 
   [[nodiscard]] std::string_view name() const { return name_; }
 
@@ -109,9 +106,7 @@ public:
    *
    * @return A `std::string_view` of the static message template.
    */
-  [[nodiscard]] std::string_view static_msg_templ() const {
-    return static_msg_templ_;
-  }
+  [[nodiscard]] std::string_view static_msg_templ() const { return static_msg_templ_; }
 
   /**
    * @brief Builds a dynamic message for this DiagTempl based on the configured
@@ -124,13 +119,11 @@ public:
    * diagnostic message.
    */
   template <typename... Args>
-  std::vector<std::string> BuildDynamicMsg(const DiagEngine &eng,
-                                           const DiagLevel in_flight_level,
+  std::vector<std::string> BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level,
                                            Args &&...args) const {
     if (dynamic_msg_builder_ == nullptr) {
       std::vector<std::string> v{};
-      v.push_back(fmt::format(fmt::runtime(static_msg_templ_),
-                              std::forward<Args>(args)...));
+      v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));
       return v;
     }
     const std::vector<std::any> v{std::forward<Args>(args)...};
@@ -147,9 +140,7 @@ public:
    *
    * @return A const reference to the vector of partner DiagTempl.
    */
-  [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const {
-    return partner_diags_;
-  }
+  [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const { return partner_diags_; }
 
 private:
   std::string name_;
@@ -167,8 +158,7 @@ private:
 /// warnings as errors, specific warning disables, etc.).
 class InFlightDiag {
 public:
-  explicit InFlightDiag(const DiagLevel level, std::string msg,
-                        DiagTempl templ) noexcept
+  explicit InFlightDiag(const DiagLevel level, std::string msg, DiagTempl templ) noexcept
       : level_{level}, msg_{std::move(msg)}, templ_{std::move(templ)} {}
 
   [[nodiscard]] DiagLevel level() const noexcept { return level_; }
@@ -318,8 +308,7 @@ template <> struct std::hash<porytiles::DiagTempl> {
     std::size_t seed = 0x39A9C07E;
     seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 +
             std::hash<std::string>{}(std::string{templ.name()});
-    seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 +
-            static_cast<std::size_t>(templ.level());
+    seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());
     return seed;
   }
 };

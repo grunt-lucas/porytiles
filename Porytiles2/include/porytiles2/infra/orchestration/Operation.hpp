@@ -22,9 +22,7 @@ public:
 
   [[nodiscard]] const std::string &key() const { return key_; }
 
-  [[nodiscard]] const std::type_index &expected_type() const {
-    return expected_type_;
-  }
+  [[nodiscard]] const std::type_index &expected_type() const { return expected_type_; }
 
   [[nodiscard]] const std::string &description() const { return desc_; }
 
@@ -46,11 +44,9 @@ public:
   [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareInputs() const = 0;
 
   /// @brief Declares the artifacts this operation will produce.
-  [[nodiscard]] virtual std::vector<ArtifactMetadata>
-  DeclareOutputs() const = 0;
+  [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareOutputs() const = 0;
 
-  [[nodiscard]] virtual std::expected<AnyMap, std::string>
-  Execute(const AnyMap &inputs) = 0;
+  [[nodiscard]] virtual std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) = 0;
 
   [[nodiscard]] const DiagEngine &diag() const { return *diag_; }
 

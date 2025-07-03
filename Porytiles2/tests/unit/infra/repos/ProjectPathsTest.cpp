@@ -6,8 +6,7 @@ using namespace porytiles;
 
 TEST(ProjectPathsTests, BehaviorsHeaderDefaultShouldWork) {
   const ProjectPaths paths{"/foo/bar"};
-  EXPECT_EQ(paths.BehaviorsHeader(),
-            "/foo/bar/include/constants/metatile_behaviors.h");
+  EXPECT_EQ(paths.BehaviorsHeader(), "/foo/bar/include/constants/metatile_behaviors.h");
 }
 
 TEST(ProjectPathsTests, BehaviorsHeaderWithConfigShouldWork) {
@@ -17,8 +16,7 @@ TEST(ProjectPathsTests, BehaviorsHeaderWithConfigShouldWork) {
 
   ProjectPaths paths2{"/foo/bar"};
   paths2.SetBehaviorsHeaderOverrideFile("my_cool_header.h");
-  EXPECT_EQ(paths2.BehaviorsHeader(),
-            "/foo/bar/include/constants/my_cool_header.h");
+  EXPECT_EQ(paths2.BehaviorsHeader(), "/foo/bar/include/constants/my_cool_header.h");
 
   ProjectPaths paths3{"/foo/bar"};
   paths3.SetBehaviorsHeaderOverridePath("src");

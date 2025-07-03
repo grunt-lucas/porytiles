@@ -13,8 +13,7 @@ class Bgr15 {
 public:
   constexpr Bgr15() : red_{0}, green_{0}, blue_{0} {}
 
-  constexpr Bgr15(const std::uint8_t red, const std::uint8_t green,
-                  const std::uint8_t blue) {
+  constexpr Bgr15(const std::uint8_t red, const std::uint8_t green, const std::uint8_t blue) {
     // Class invariant: color channels always have the 3 LSBs unset
     red_ = (red >> 3) << 3;
     green_ = (green >> 3) << 3;

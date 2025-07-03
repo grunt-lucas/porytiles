@@ -22,11 +22,9 @@ public:
    * @param compiler_service A pointer to the TilesetCompilerService for this
    * use case.
    */
-  CompilePrimaryTileset(
-      std::unique_ptr<TilesetRepo> tileset_repo,
-      std::unique_ptr<TilesetCompilerService> compiler_service)
-      : tileset_repo_{std::move(tileset_repo)},
-        compiler_service_{std::move(compiler_service)} {}
+  CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo,
+                        std::unique_ptr<TilesetCompilerService> compiler_service)
+      : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)} {}
 
   /**
    * @brief Compiles the primary Tileset with the given tileset name.

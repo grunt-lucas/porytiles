@@ -8,9 +8,8 @@
 
 namespace {
 
-std::optional<std::string>
-construct_flag(const porytiles::DiagLevel in_flight_level,
-               const porytiles::DiagTempl &templ) {
+std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_level,
+                                          const porytiles::DiagTempl &templ) {
   if (in_flight_level == porytiles::DiagLevel::kWarning) {
     return std::optional{fmt::format("-W{}", templ.name())};
   }
@@ -28,8 +27,7 @@ namespace porytiles {
 void DiagEngine::EnableAllWarnings() {
   for (const auto &diag : AllDiagNames()) {
     // Only apply enablement to diagnostics that are default-warnings
-    if (const auto &templ = DiagFor(diag);
-        templ.level() == DiagLevel::kWarning) {
+    if (const auto &templ = DiagFor(diag); templ.level() == DiagLevel::kWarning) {
       EnableAtLevel(diag, DiagLevel::kWarning);
     }
   }
@@ -40,8 +38,7 @@ void DiagEngine::DisableAllWarnings() { all_warnings_disabled_ = true; }
 void DiagEngine::UpgradeEnabledWarningsToErr() {
   for (const auto &diag : AllDiagNames()) {
     // Only apply enablement to diagnostics that are default-warnings
-    if (const auto &templ = DiagFor(diag);
-        templ.level() == DiagLevel::kWarning) {
+    if (const auto &templ = DiagFor(diag); templ.level() == DiagLevel::kWarning) {
       if (enabled_at_level_.contains(diag)) {
         auto &set = enabled_at_level_.at(diag);
         set.insert(DiagLevel::kError);
@@ -59,8 +56,7 @@ void DiagEngine::EnableAtLevel(std::string_view diag, DiagLevel override) {
 
   // Only allow warnings to be upgraded to err or downgraded to warn
   if (override != DiagLevel::kWarning && override != DiagLevel::kError) {
-    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag,
-                      LevelToStr(override)));
+    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
   }
 
   if (enabled_at_level_.contains(diag.data())) {
@@ -80,8 +76,7 @@ void DiagEngine::DisableAtLevel(std::string_view diag, DiagLevel override) {
 
   // Only allow warnings to be upgraded to err or downgraded to warn
   if (override != DiagLevel::kWarning && override != DiagLevel::kError) {
-    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag,
-                      LevelToStr(override)));
+    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
   }
 
   if (enabled_at_level_.contains(diag.data())) {
@@ -97,9 +92,8 @@ DiagLevel DiagEngine::EnabledAt(std::string_view diag) const {
   if (!enabled_at_level_.contains(diag.data())) {
     return DiagLevel::kIgnored;
   }
-  AssertOrPanic(
-      !enabled_at_level_.at(diag.data()).empty(),
-      fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
+  AssertOrPanic(!enabled_at_level_.at(diag.data()).empty(),
+                fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
   // Return the highest level present
   return *enabled_at_level_.at(diag.data()).rbegin();
 }
@@ -129,9 +123,8 @@ DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
 
   // Return level override if present
   if (auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
-    AssertOrPanic(
-        !enabled_at_level_.at(diag_str).empty(),
-        fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
+    AssertOrPanic(!enabled_at_level_.at(diag_str).empty(),
+                  fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
     // Return the highest level present
     return *enabled_at_level_.at(diag_str).rbegin();
   }
@@ -148,10 +141,9 @@ DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
   // TODO : should we have note always enabled? Or should we have the generic
   // error and fatal diagnostics contain a blank note partner? The downside
   // to that approach is we're locked in to having only a single note partner
-  if (const auto &templ = DiagFor(diag); templ.level() == DiagLevel::kNote ||
-                                         templ.level() == DiagLevel::kRemark ||
-                                         templ.level() == DiagLevel::kError ||
-                                         templ.level() == DiagLevel::kFatal) {
+  if (const auto &templ = DiagFor(diag);
+      templ.level() == DiagLevel::kNote || templ.level() == DiagLevel::kRemark ||
+      templ.level() == DiagLevel::kError || templ.level() == DiagLevel::kFatal) {
     return true;
   }
 
@@ -165,8 +157,7 @@ DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
   // The next highest precedence is an explicitly enabled or disabled
   // diagnostic. If the diagnostic is not present in this map, that means
   // it was not set by the user, so it shouldn't be enabled.
-  if (const auto diag_str = std::string{diag};
-      enabled_at_level_.contains(diag_str)) {
+  if (const auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
     return true;
   }
 
@@ -174,10 +165,8 @@ DiagLevel DiagEngine::ComputeLevel(std::string_view diag) const {
   return false;
 }
 
-std::string
-DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level,
-                            const DiagTempl &templ,
-                            const std::vector<std::string> &msg) const {
+std::string DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level, const DiagTempl &templ,
+                                        const std::vector<std::string> &msg) const {
   std::stringstream ss{};
 
   auto level_prefix = fmt::format("{}: ", LevelToStr(in_flight_level));
@@ -195,8 +184,7 @@ DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level,
   // of the first line, so the user can easily identify the source of the
   // diagnostic. Handle that formatting here, styling if the consumer is
   // a tty.
-  if (const auto flag = construct_flag(in_flight_level, templ);
-      flag.has_value()) {
+  if (const auto flag = construct_flag(in_flight_level, templ); flag.has_value()) {
     ss << " [";
     const auto styled_flag = fmt::format("{}", styled(flag.value(), style));
     consumer_->IsATty() ? ss << styled_flag : ss << flag.value();
@@ -207,8 +195,7 @@ DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level,
   ss << std::endl;
 
   // Dump the rest of the message lines (if present).
-  for (const auto msg_view = msg | std::views::drop(1);
-       const auto &line : msg_view) {
+  for (const auto msg_view = msg | std::views::drop(1); const auto &line : msg_view) {
     ss << line << std::endl;
   }
 

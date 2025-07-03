@@ -68,23 +68,19 @@ bool operator!=(const ViewPtr<T1> &lhs, const ViewPtr<T2> &rhs) {
   return !(lhs == rhs);
 }
 
-template <typename T>
-bool operator==(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
+template <typename T> bool operator==(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
   return !lhs;
 }
 
-template <typename T>
-bool operator==(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
+template <typename T> bool operator==(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
   return !rhs;
 }
 
-template <typename T>
-bool operator!=(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
+template <typename T> bool operator!=(const ViewPtr<T> &lhs, std::nullptr_t) noexcept {
   return static_cast<bool>(lhs);
 }
 
-template <typename T>
-bool operator!=(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
+template <typename T> bool operator!=(std::nullptr_t, const ViewPtr<T> &rhs) noexcept {
   return static_cast<bool>(rhs);
 }
 

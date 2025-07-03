@@ -22,8 +22,7 @@ public:
 
   const std::string &name() const { return name_; }
 
-  const std::unordered_map<std::string, std::string> &
-  artifact_checksums() const {
+  const std::unordered_map<std::string, std::string> &artifact_checksums() const {
     return artifact_checksums_;
   }
 

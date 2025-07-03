@@ -20,9 +20,7 @@ public:
     app.get_option(NameLong())->group(group);
   }
 
-  [[nodiscard]] std::string NameCombined() const {
-    return NameShort() + "," + NameLong();
-  }
+  [[nodiscard]] std::string NameCombined() const { return NameShort() + "," + NameLong(); }
 };
 
 class OptOutput final : public Opt {
@@ -51,14 +49,11 @@ class OptTilesPalMode final : public Opt {
   std::string pal_format_;
 
 public:
-  OptTilesPalMode()
-      : pal_format_{TilesPalModeToStr(porytiles::TilesPalMode::kTrueColor)} {}
+  OptTilesPalMode() : pal_format_{TilesPalModeToStr(porytiles::TilesPalMode::kTrueColor)} {}
 
   [[nodiscard]] std::string NameShort() const override { return ""; }
 
-  [[nodiscard]] std::string NameLong() const override {
-    return "--tiles-pal-mode";
-  }
+  [[nodiscard]] std::string NameLong() const override { return "--tiles-pal-mode"; }
 
   void RegisterOpt(CLI::App &app) override {
     app.add_option(NameLong(), pal_format_,
@@ -81,9 +76,7 @@ public:
 
   [[nodiscard]] std::string NameShort() const override { return ""; }
 
-  [[nodiscard]] std::string NameLong() const override {
-    return "--disable-metatile-generation";
-  }
+  [[nodiscard]] std::string NameLong() const override { return "--disable-metatile-generation"; }
 
   void RegisterOpt(CLI::App &app) override {
     app.add_flag(NameLong(), disabled_,
@@ -103,9 +96,7 @@ public:
 
   [[nodiscard]] std::string NameShort() const override { return ""; }
 
-  [[nodiscard]] std::string NameLong() const override {
-    return "--disable-attribute-generation";
-  }
+  [[nodiscard]] std::string NameLong() const override { return "--disable-attribute-generation"; }
 
   void RegisterOpt(CLI::App &app) override {
     app.add_flag(NameLong(), disabled_,
@@ -125,9 +116,7 @@ public:
 
   [[nodiscard]] std::string NameShort() const override { return ""; }
 
-  [[nodiscard]] std::string NameLong() const override {
-    return "--triple-layer";
-  }
+  [[nodiscard]] std::string NameLong() const override { return "--triple-layer"; }
 
   void RegisterOpt(CLI::App &app) override {
     app.add_flag(NameLong(), triple_layer_,
@@ -150,9 +139,7 @@ public:
 
   [[nodiscard]] std::string NameShort() const override { return ""; }
 
-  [[nodiscard]] std::string NameLong() const override {
-    return "--transparency-color";
-  }
+  [[nodiscard]] std::string NameLong() const override { return "--transparency-color"; }
 
   void RegisterOpt(CLI::App &app) override {
     app.add_option(NameLong(), rgb_,

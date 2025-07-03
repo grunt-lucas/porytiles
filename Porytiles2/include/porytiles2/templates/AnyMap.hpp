@@ -15,22 +15,16 @@ public:
 
   // -- Range-for support --
   using iterator = std::unordered_map<std::string, std::any>::iterator;
-  using const_iterator =
-      std::unordered_map<std::string, std::any>::const_iterator;
+  using const_iterator = std::unordered_map<std::string, std::any>::const_iterator;
 
   iterator begin() noexcept { return config_.begin(); }
   iterator end() noexcept { return config_.end(); }
-  [[nodiscard]] const_iterator begin() const noexcept {
-    return config_.begin();
-  }
+  [[nodiscard]] const_iterator begin() const noexcept { return config_.begin(); }
   [[nodiscard]] const_iterator end() const noexcept { return config_.end(); }
-  [[nodiscard]] const_iterator cbegin() const noexcept {
-    return config_.cbegin();
-  }
+  [[nodiscard]] const_iterator cbegin() const noexcept { return config_.cbegin(); }
   [[nodiscard]] const_iterator cend() const noexcept { return config_.cend(); }
 
-  template <typename T>
-  [[nodiscard]] std::optional<T> Try(const std::string &key) const {
+  template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) const {
     if (!Contains(key)) {
       return std::nullopt;
     }
@@ -41,8 +35,7 @@ public:
     }
   }
 
-  template <typename T>
-  [[nodiscard]] std::optional<T> Get(const std::string &key) const {
+  template <typename T> [[nodiscard]] std::optional<T> Get(const std::string &key) const {
     if (!Contains(key)) {
       Panic("Key not found: " + key);
     }
@@ -67,16 +60,11 @@ public:
     return config_.at(key);
   }
 
-  void Put(const std::string &key, const std::any &value) {
-    config_.insert_or_assign(key, value);
-  }
+  void Put(const std::string &key, const std::any &value) { config_.insert_or_assign(key, value); }
 
-  [[nodiscard]] bool Contains(const std::string &key) const {
-    return config_.contains(key);
-  }
+  [[nodiscard]] bool Contains(const std::string &key) const { return config_.contains(key); }
 
-  [[nodiscard]] std::optional<std::type_index>
-  GetType(const std::string &key) const {
+  [[nodiscard]] std::optional<std::type_index> GetType(const std::string &key) const {
     if (!Contains(key)) {
       return std::nullopt;
     }

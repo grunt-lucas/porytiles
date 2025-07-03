@@ -2,3 +2,4 @@
 Language: Cpp
 BasedOnStyle: LLVM
 ReflowComments: Always
+ColumnLimit: 100

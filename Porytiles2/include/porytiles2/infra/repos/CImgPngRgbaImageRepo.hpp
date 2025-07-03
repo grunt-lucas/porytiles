@@ -3,16 +3,19 @@
 #include <expected>
 #include <filesystem>
 #include <memory>
-#include <string>
 
-#include "porytiles2/domain/model/entities/RgbaImage.hpp"
+#include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
 #include "porytiles2/domain/repos/RgbaImageRepo.hpp"
 
 namespace porytiles {
 
-class CImgRgbaImageRepo final : public RgbaImageRepo {
+/**
+ * @brief An implementation of RgbaImageRepo that reads a PNG using the CImg
+ * library.
+ */
+class CImgPngRgbaImageRepo final : public RgbaImageRepo {
 public:
-  CImgRgbaImageRepo() = default;
+  CImgPngRgbaImageRepo() = default;
 
   [[nodiscard]] Result<std::unique_ptr<RgbaImage>>
   Read(const std::filesystem::path &path) const override;

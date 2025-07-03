@@ -14,16 +14,13 @@ using namespace porytiles;
 
 constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
-void AssertArgSize(std::size_t expected, std::size_t actual,
-                   const char *func_name) {
+void AssertArgSize(std::size_t expected, std::size_t actual, const char *func_name) {
   if (actual != expected) {
-    Panic(fmt::format("{}: found {} args but expected {}", func_name, actual,
-                      expected));
+    Panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
   }
 }
 
-template <typename T>
-T AnyCastOrPanic(const std::any &a, const std::source_location &loc) {
+template <typename T> T AnyCastOrPanic(const std::any &a, const std::source_location &loc) {
   try {
     return std::any_cast<T>(a);
   } catch (std::bad_any_cast &) {
@@ -31,8 +28,7 @@ T AnyCastOrPanic(const std::any &a, const std::source_location &loc) {
   }
 }
 
-template <typename T>
-const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
+template <typename T> const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
   auto any_unwrapped = any_cast<T>(a);
   if (any_unwrapped == nullptr) {
     Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
@@ -40,8 +36,7 @@ const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
   return *any_unwrapped;
 }
 
-void PushToStream(std::stringstream &ss, const std::string_view s,
-                  const std::size_t n) {
+void PushToStream(std::stringstream &ss, const std::string_view s, const std::size_t n) {
   for (std::size_t i = 0; i < n; i++) {
     ss << s;
   }
@@ -221,9 +216,7 @@ InFlightDiag StderrConsumer::ConsumedAt(std::size_t i) const {
 
 std::uint64_t StderrConsumer::ConsumedCount() const { return consumed_count_; }
 
-void VectorConsumer::Consume(const InFlightDiag &diag) {
-  diags_.emplace_back(diag);
-}
+void VectorConsumer::Consume(const InFlightDiag &diag) { diags_.emplace_back(diag); }
 
 bool VectorConsumer::IsATty() const { return false; }
 
@@ -231,8 +224,7 @@ InFlightDiag VectorConsumer::ConsumedAt(std::size_t i) const {
   try {
     return diags_.at(i);
   } catch (const std::out_of_range &) {
-    Panic(fmt::format("vector_consumer::at: index {} out of range for size {}",
-                      i, diags_.size()));
+    Panic(fmt::format("vector_consumer::at: index {} out of range for size {}", i, diags_.size()));
   }
 }
 
@@ -244,8 +236,7 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
     "color-precision-loss-previously-seen-note", DiagLevel::kNote,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(4, args.size(),
-                    std::source_location::current().function_name());
+      AssertArgSize(4, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto tile = AnyCastOrPanic<RGBATile>(args[0],
@@ -274,8 +265,7 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
     DiagLevel::kWarning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(5, args.size(),
-                    std::source_location::current().function_name());
+      AssertArgSize(5, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto tile = AnyCastOrPanic<RGBATile>(args[0],
@@ -313,8 +303,7 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
     "key-frame-missing-colors-list-note", DiagLevel::kNote,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(1, args.size(),
-                    std::source_location::current().function_name());
+      AssertArgSize(1, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto missing_colors =
@@ -341,19 +330,14 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
     DiagLevel::kWarning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(2, args.size(),
-                    std::source_location::current().function_name());
+      AssertArgSize(2, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
-      const auto anim_name =
-          AnyCastOrPanic<std::string>(args[0], std::source_location::current());
-      const auto tile_index =
-          AnyCastOrPanic<std::size_t>(args[1], std::source_location::current());
-      constexpr auto msg_templ =
-          "anim '{}' key frame tile '{}' missing essential colors";
+      const auto anim_name = AnyCastOrPanic<std::string>(args[0], std::source_location::current());
+      const auto tile_index = AnyCastOrPanic<std::size_t>(args[1], std::source_location::current());
+      constexpr auto msg_templ = "anim '{}' key frame tile '{}' missing essential colors";
 
-      msg.push_back(
-          fmt::format(msg_templ, eng.Bold(anim_name), eng.Bold(tile_index)));
+      msg.push_back(fmt::format(msg_templ, eng.Bold(anim_name), eng.Bold(tile_index)));
       return msg;
     },
     {W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL}};
@@ -390,10 +374,7 @@ static const DiagTempl W_TRANSPARENCY_COLLAPSE_TEMPL{
                "color on the respective layer sheet"}}};
 
 static const DiagTempl W_UNUSED_MANUAL_PAL_COLOR_TEMPL{
-    WarnUnusedManualPalColor,
-    DiagLevel::kWarning,
-    "{}: '{}' was not used in layers or anims",
-    {}};
+    WarnUnusedManualPalColor, DiagLevel::kWarning, "{}: '{}' was not used in layers or anims", {}};
 
 static const DiagTempl W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
     WarnTileIndexOutOfRange,
@@ -412,8 +393,7 @@ static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
 
 static const DiagTempl E_GENERIC_TEMPL{ErrGeneric, DiagLevel::kError, "{}", {}};
 
-static const DiagTempl E_FATAL_GENERIC_TEMPL{
-    FatalGeneric, DiagLevel::kFatal, "{}", {}};
+static const DiagTempl E_FATAL_GENERIC_TEMPL{FatalGeneric, DiagLevel::kFatal, "{}", {}};
 
 static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
     // Standalone notes
