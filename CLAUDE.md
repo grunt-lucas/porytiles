@@ -96,6 +96,20 @@ Porytiles2 implements:
 - Unit tests are migrating from doctests (Porytiles1) to GoogleTest (Porytiles2)
 - Ignore contents of `Porytiles1` unless I explicitly tell you to work with those files
 
+## Critical Rules - DO NOT VIOLATE
+
+- **NEVER create mock data or simplified components** unless explicitly told to do so
+
+- **NEVER replace existing complex components with simplified versions** - always fix the actual problem
+
+- **ALWAYS work with the existing codebase** - do not create new simplified alternatives
+
+- **ALWAYS find and fix the root cause** of issues instead of creating workarounds
+
+- When debugging issues, focus on fixing the existing implementation, not replacing it
+
+- When something doesn't work, debug and fix it - don't start over with a simple version
+
 ## C++ Code Style
 - Always use braced initialization where possible
 
@@ -114,21 +128,18 @@ class MyClass {
     MyClass() = default;
     
     // ctor initializer lists always use braced initialization where possible
+    // simple ctors can be implemented in the header file
     MyClass(int my_val) : my_val_{my_val} {}
   
     // Method names are PascalCase, but parameter names are snake_case
-    int ComputeSomething(int accum_value) const {
-        // local variable names are snake_case
-        int my_local = 1;
-        
-        return my_local + my_val_ + accum_value;
-    }
+    int ComputeSomething(int accum_value) const;
     
-    void UpdateMyValUsingComplexProcess(int some_param) {
-        // Do something complicated to update my_val_
-    }
+    // Do something complicated to update my_val_
+    // This should be implemented in the cpp file
+    void UpdateMyValUsingComplexProcess(int some_param);
   
     // Simple accessors/mutators also use snake_case, but omit the trailing underscore
+    // Simple accessors/mutators can be implemented in the header file
     const std::string &cool_value() const {
         return cool_value_;
     }
@@ -146,4 +157,11 @@ class MyClass {
     std::string cool_value_;
     int my_val_;
 };
+
+// cpp file implementations
+int MyClass::ComputeSomething(int accum_value) const {
+    // local variable names are snake_case
+    int my_local = 1;
+    return my_local + my_val_ + accum_value;
+}
 ```

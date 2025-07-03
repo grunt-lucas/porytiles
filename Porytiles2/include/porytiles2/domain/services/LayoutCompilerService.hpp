@@ -2,28 +2,22 @@
 
 #include <memory>
 
-#include "porytiles2/domain/model/aggregates/PorymapLayout.hpp"
-#include "porytiles2/domain/model/aggregates/PorytilesLayout.hpp"
+#include "porytiles2/domain/model/aggregates/components/PorymapLayoutComponent.hpp"
+#include "porytiles2/domain/model/aggregates/components/PorytilesLayoutComponent.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
 
 /**
- * @brief A domain service that provides functionality to compile
- * PorytilesLayout to PorymapLayout.
+ * @brief A domain service that provides functionality to compile a
+ * PorytilesLayoutComponent to a PorymapLayoutComponent.
  */
 class LayoutCompilerService {
 public:
   virtual ~LayoutCompilerService() = default;
 
-  /**
-   * @brief Compiles a PorytilesLayout to a PorymapLayout.
-   *
-   * @param layout The PorytilesLayout to compile.
-   * @return A PorymapLayout Result on success, otherwise an error description.
-   */
-  virtual Result<std::unique_ptr<PorymapLayout>>
-  Compile(const PorytilesLayout &layout) = 0;
+  virtual Result<std::unique_ptr<PorymapLayoutComponent>>
+  Compile(const PorytilesLayoutComponent &layout) = 0;
 };
 
 } // namespace porytiles

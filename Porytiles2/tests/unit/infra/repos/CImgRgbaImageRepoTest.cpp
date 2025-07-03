@@ -2,14 +2,14 @@
 
 #include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/domain/repos/RgbaImageRepo.hpp"
-#include "porytiles2/infra/image/RgbaImageImpl.hpp"
-#include "porytiles2/infra/repos/RgbaImageRepoImpl.hpp"
+#include "porytiles2/infra/image/RgbaImagePng.hpp"
+#include "porytiles2/infra/repos/CImgRgbaImageRepo.hpp"
 
 using namespace porytiles;
 
 TEST(RgbaImageRepoImplTest, OpenShouldFailGracefullyOnBadFile) {
   const std::unique_ptr<RgbaImageRepo> importer =
-      std::make_unique<RgbaImageRepoImpl>();
+      std::make_unique<CImgRgbaImageRepo>();
 
   auto result =
       importer->Read("Resources/Tests/Unit/png/non_existent_file.png");

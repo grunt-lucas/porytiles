@@ -2,15 +2,15 @@
 
 #include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/domain/repos/RgbaImageRepo.hpp"
-#include "porytiles2/infra/image/RgbaImageImpl.hpp"
-#include "porytiles2/infra/repos/RgbaImageRepoImpl.hpp"
+#include "porytiles2/infra/image/RgbaImagePng.hpp"
+#include "porytiles2/infra/repos/CImgRgbaImageRepo.hpp"
 
 using namespace porytiles;
 
 TEST(RgbaImageImplTest, DimensionsMethodsShouldWork) {
   cimg_library::CImg<std::uint8_t> image{};
   image.assign("Resources/Tests/Unit/png/pattern.png");
-  const std::unique_ptr<RgbaImage> png = std::make_unique<RgbaImageImpl>(image);
+  const std::unique_ptr<RgbaImage> png = std::make_unique<RgbaImagePng>(image);
 
   EXPECT_EQ(png->Width(), 16);
   EXPECT_EQ(png->Height(), 16);
@@ -19,7 +19,7 @@ TEST(RgbaImageImplTest, DimensionsMethodsShouldWork) {
 TEST(RgbaImageImplTest, GetByRowColShouldWork) {
   cimg_library::CImg<std::uint8_t> image{};
   image.assign("Resources/Tests/Unit/png/pattern.png");
-  const std::unique_ptr<RgbaImage> png = std::make_unique<RgbaImageImpl>(image);
+  const std::unique_ptr<RgbaImage> png = std::make_unique<RgbaImagePng>(image);
 
   constexpr Rgba32 red{255, 0, 0};
   constexpr Rgba32 green{0, 255, 0};

@@ -8,11 +8,9 @@
 
 namespace porytiles {
 
-class PorytilesTileset {
-  std::string name_;
+class PorytilesTilesetComponent {
   std::vector<RgbaMetatile> metatiles_;
   std::vector<RgbaAnim> anims_;
-  std::vector<std::string> partner_tileset_names_;
 };
 
 } // namespace porytiles

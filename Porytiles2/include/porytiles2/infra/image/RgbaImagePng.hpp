@@ -7,11 +7,11 @@
 namespace porytiles {
 
 /**
- * @brief Implementation of the RgbaImage interface.
+ * @brief Implementation of the RgbaImage interface with a backing PNG.
  */
-class RgbaImageImpl final : public RgbaImage {
+class RgbaImagePng final : public RgbaImage {
 public:
-  explicit RgbaImageImpl(const cimg_library::CImg<std::uint8_t> &image);
+  explicit RgbaImagePng(const cimg_library::CImg<std::uint8_t> &image);
 
   [[nodiscard]] std::size_t Width() const override;
 

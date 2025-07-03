@@ -10,9 +10,9 @@
 
 namespace porytiles {
 
-class RgbaImageRepoImpl final : public RgbaImageRepo {
+class CImgRgbaImageRepo final : public RgbaImageRepo {
 public:
-  RgbaImageRepoImpl() = default;
+  CImgRgbaImageRepo() = default;
 
   [[nodiscard]] Result<std::unique_ptr<RgbaImage>>
   Read(const std::filesystem::path &path) const override;

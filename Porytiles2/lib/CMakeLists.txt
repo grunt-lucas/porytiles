@@ -31,7 +31,7 @@ FetchContent_MakeAvailable(GSL)
 # CImg
 FetchContent_Declare(
         CImg
-        GIT_REPOSITORY "https://github.com/dtschump/CImg.git"
+        GIT_REPOSITORY "https://github.com/GreycLab/CImg"
         GIT_TAG "v.3.5.5"
 )
 FetchContent_MakeAvailable(CImg)
