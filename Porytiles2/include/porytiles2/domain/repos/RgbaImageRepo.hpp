@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/entities/RgbaImage.hpp"
+#include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {

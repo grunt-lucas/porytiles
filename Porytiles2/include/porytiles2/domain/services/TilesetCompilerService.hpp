@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "porytiles2/domain/aggregates/PorymapTileset.hpp"
-#include "porytiles2/domain/aggregates/PorytilesTileset.hpp"
+#include "porytiles2/domain/model/aggregates/PorymapTileset.hpp"
+#include "porytiles2/domain/model/aggregates/PorytilesTileset.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {

@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/aggregates/PorytilesLayout.hpp"
+#include "porytiles2/domain/model/aggregates/PorytilesLayout.hpp"
 #include "porytiles2/templates/Panic.hpp"
 #include "porytiles2/templates/Result.hpp"
 

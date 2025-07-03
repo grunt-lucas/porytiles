@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/entities/RgbaImage.hpp"
+#include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/domain/repos/RgbaImageRepo.hpp"
 
 namespace porytiles {

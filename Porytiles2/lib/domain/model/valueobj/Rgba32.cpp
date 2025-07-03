@@ -1,4 +1,4 @@
-#include "porytiles2/domain/valueobj/Rgba32.hpp"
+#include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 
 #include <string>
 

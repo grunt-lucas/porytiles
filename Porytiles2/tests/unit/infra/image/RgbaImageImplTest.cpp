@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "porytiles2/domain/entities/RgbaImage.hpp"
+#include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/domain/repos/RgbaImageRepo.hpp"
 #include "porytiles2/infra/image/RgbaImageImpl.hpp"
 #include "porytiles2/infra/repos/RgbaImageRepoImpl.hpp"

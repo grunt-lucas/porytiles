@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/entities/RgbaAnim.hpp"
-#include "porytiles2/domain/entities/RgbaMetatile.hpp"
+#include "porytiles2/domain/model/entities/RgbaAnim.hpp"
+#include "porytiles2/domain/model/entities/RgbaMetatile.hpp"
 
 namespace porytiles {
 

@@ -1,4 +1,4 @@
-#include "porytiles2/domain/valueobj/Bgr15.hpp"
+#include "porytiles2/domain/model/valueobj/Bgr15.hpp"
 
 namespace porytiles {
 

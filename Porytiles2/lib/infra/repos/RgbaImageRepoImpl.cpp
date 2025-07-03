@@ -7,7 +7,7 @@
 
 #include "CImg.h"
 
-#include "porytiles2/domain/entities/RgbaImage.hpp"
+#include "porytiles2/domain/model/entities/RgbaImage.hpp"
 #include "porytiles2/infra/image/RgbaImageImpl.hpp"
 
 namespace porytiles {

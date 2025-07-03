@@ -2,8 +2,8 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/valueobj/Bgr15.hpp"
-#include "porytiles2/domain/valueobj/Rgba32.hpp"
+#include "porytiles2/domain/model/valueobj/Bgr15.hpp"
+#include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 
 using namespace porytiles;
 
