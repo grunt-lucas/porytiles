@@ -1,4 +1,4 @@
-#include "porytiles2/infra/repos/project/ProjectPaths.hpp"
+#include "porytiles2/infra/repos/ProjectPaths.hpp"
 
 #include <filesystem>
 #include <optional>

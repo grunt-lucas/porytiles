@@ -11,7 +11,7 @@ RgbaImage::RgbaImage(const std::size_t width, const std::size_t height) {
 }
 
 Rgba32 RgbaImage::At(std::size_t i) const {
-  if (constexpr auto size = width_ * height_; i >= size) {
+  if (const auto size = width_ * height_; i >= size) {
     Panic(fmt::format("index {} out of bounds for image size {}", i, size));
   }
 
@@ -30,7 +30,7 @@ Rgba32 RgbaImage::At(std::size_t row, std::size_t col) const {
 }
 
 void RgbaImage::Set(std::size_t i, const Rgba32 &pixel) {
-  if (constexpr auto size = width_ * height_; i >= size) {
+  if (const auto size = width_ * height_; i >= size) {
     Panic(fmt::format("index {} out of bounds for image size {}", i, size));
   }
 

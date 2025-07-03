@@ -35,36 +35,21 @@ CImgPngRgbaImageRepo::Read(const std::filesystem::path &path) const {
 
   RgbaImage image{width, height};
 
-  // TODO : finish the implementation, iterate over the CImg image and fill in the RgbaImage using
-  // the Set method
+  for (std::size_t row = 0; row < height; ++row) {
+    for (std::size_t col = 0; col < width; ++col) {
+      const auto red = cimg_png(col, row, 0, 0);
+      const auto green = cimg_png(col, row, 0, 1);
+      const auto blue = cimg_png(col, row, 0, 2);
+
+      // PNGs with no alpha channel are considered opaque
+      const auto alpha =
+          (cimg_png.spectrum() == 3) ? Rgba32::kAlphaOpaque : cimg_png(col, row, 0, 3);
+
+      image.Set(row, col, Rgba32{red, green, blue, alpha});
+    }
+  }
 
   return std::make_unique<RgbaImage>(std::move(image));
 }
-
-// std::size_t RgbaImagePng::Width() const { return static_cast<std::size_t>(image_.width()); }
-//
-// std::size_t RgbaImagePng::Height() const { return static_cast<std::size_t>(image_.height()); }
-//
-// Rgba32 RgbaImagePng::At(std::size_t i) const { Panic("not implemented"); }
-//
-// Rgba32 RgbaImagePng::At(const std::size_t row, const std::size_t col) const {
-//   if (col >= Width()) {
-//     Panic(fmt::format("col {} out of bounds for PNG width {}", col, Width()));
-//   }
-//   if (row >= Height()) {
-//     Panic(fmt::format("row {} out of bounds for PNG height {}", row, Height()));
-//   }
-//   const auto red = image_(col, row, 0, 0);
-//   const auto green = image_(col, row, 0, 1);
-//   const auto blue = image_(col, row, 0, 2);
-//
-//   // PNGs with no alpha channel are considered opaque
-//   if (image_.spectrum() == 3) {
-//     return Rgba32{red, green, blue, Rgba32::kAlphaOpaque};
-//   }
-//
-//   const auto alpha = image_(col, row, 0, 3);
-//   return Rgba32{red, green, blue, alpha};
-// }
 
 } // namespace porytiles
