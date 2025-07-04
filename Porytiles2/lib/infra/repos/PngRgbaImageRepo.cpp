@@ -1,4 +1,4 @@
-#include "porytiles2/infra/repos/CImgPngRgbaImageRepo.hpp"
+#include "porytiles2/infra/repos/PngRgbaImageRepo.hpp"
 
 #include <expected>
 #include <filesystem>
@@ -16,7 +16,7 @@ using cimg_library::CImg;
 using cimg_library::CImgException;
 
 std::expected<std::unique_ptr<RgbaImage>, std::string>
-CImgPngRgbaImageRepo::Read(const std::filesystem::path &path) const {
+PngRgbaImageRepo::Read(const std::filesystem::path &path) const {
   CImg<std::uint8_t> cimg_png{};
   const auto path_c_str = path.c_str();
   try {
