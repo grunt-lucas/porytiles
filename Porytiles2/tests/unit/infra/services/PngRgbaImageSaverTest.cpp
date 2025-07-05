@@ -12,6 +12,8 @@
 
 using namespace porytiles;
 
+// TODO : this is actually an integration test, set up an integration test folder
+
 class PngRgbaImageSaverTests : public ::testing::Test {
 protected:
   void SetUp() override {
