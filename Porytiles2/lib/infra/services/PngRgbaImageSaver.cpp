@@ -18,9 +18,10 @@ std::expected<void, std::string>
 PngRgbaImageSaver::SaveToFile(const RgbaImage &image, const std::filesystem::path &path) const {
   const auto width = static_cast<int>(image.width());
   const auto height = static_cast<int>(image.height());
-  const auto spectrum = 4; // RGBA
+  constexpr auto spectrum = 4; // RGBA
 
-  CImg<std::uint8_t> cimg_png{width, height, 1, spectrum};
+  // Cannot use braced initializer here, it confuses the compiler
+  CImg<std::uint8_t> cimg_png(width, height, 1, spectrum);
 
   for (std::size_t row = 0; row < image.height(); ++row) {
     for (std::size_t col = 0; col < image.width(); ++col) {
