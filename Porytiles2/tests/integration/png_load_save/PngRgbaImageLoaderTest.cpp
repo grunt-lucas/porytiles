@@ -8,6 +8,8 @@
 
 using namespace porytiles;
 
+// TODO : reorganize test assets
+
 TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -136,7 +138,8 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
   // Test with a key.png file which likely has transparency
-  auto result = loader->LoadFromFile("Resources/Examples/simple_primary_1/anim/flower_white/key.png");
+  const auto result =
+      loader->LoadFromFile("Resources/Examples/simple_primary_1/anim/flower_white/key.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -144,12 +147,11 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
 
   // Check that we have some pixels with alpha values
   bool has_alpha_variation = false;
-  std::uint8_t first_alpha = image.At(0, 0).alpha();
+  const std::uint8_t first_alpha = image.At(0, 0).alpha();
 
   for (std::size_t row = 0; row < image.height() && !has_alpha_variation; ++row) {
     for (std::size_t col = 0; col < image.width() && !has_alpha_variation; ++col) {
-      const auto pixel = image.At(row, col);
-      if (pixel.alpha() != first_alpha) {
+      if (const auto pixel = image.At(row, col); pixel.alpha() != first_alpha) {
         has_alpha_variation = true;
       }
     }

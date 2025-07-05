@@ -12,7 +12,7 @@
 
 using namespace porytiles;
 
-// TODO : this is actually an integration test, set up an integration test folder
+// TODO : reorganize test assets
 
 class PngRgbaImageSaverTests : public ::testing::Test {
 protected:

@@ -1,14 +1,6 @@
 # Enable testing
 enable_testing()
 
-# These tests are "grey box".
-# They're designed to test the Porytiles2 library via the public interface
-# defined in the "include" directory.
-# However, they have access to internal implementation details of the library
-# so that they can test certain classes which aren't exposed in the interface.
-#
-# TODO : Restructure things so those internal classes can be tested via the public interface
-
 # Google Test
 include(FetchContent)
 FetchContent_Declare(
@@ -27,22 +19,25 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(CImg)
 
 # Get all sources in a list
-FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB_RECURSE CppUnitSources CONFIGURE_DEPENDS unit/*.cpp)
+FILE(GLOB_RECURSE CppIntegrationSources CONFIGURE_DEPENDS integration/*.cpp)
 
 # Create the test executable
-add_executable(Porytiles2UnitTests ${CppSources})
+add_executable(Porytiles2UnitTests ${CppUnitSources})
+add_executable(Porytiles2IntegrationTests ${CppIntegrationSources})
 
-# Allow the test suite to see private internal implementation files of the library
-target_include_directories(Porytiles2UnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
 target_link_libraries(Porytiles2UnitTests PRIVATE GTest::gtest_main)
+target_link_libraries(Porytiles2IntegrationTests PRIVATE GTest::gtest_main)
 # gtest_discover_tests(Porytiles2UnitTests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Link against the Porytiles2 library
 target_link_libraries(Porytiles2UnitTests PRIVATE Porytiles2Lib)
+target_link_libraries(Porytiles2IntegrationTests PRIVATE Porytiles2Lib)
 
 # Add CImg to our include directories since we're testing the internal implementation
-if (cimg_SOURCE_DIR)
-    target_include_directories(Porytiles2UnitTests PRIVATE ${cimg_SOURCE_DIR})
-else ()
-    message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
-endif ()
+#if (cimg_SOURCE_DIR)
+#    target_include_directories(Porytiles2UnitTests PRIVATE ${cimg_SOURCE_DIR})
+#    target_include_directories(Porytiles2IntegrationTests PRIVATE ${cimg_SOURCE_DIR})
+#else ()
+#    message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
+#endif ()

@@ -62,9 +62,9 @@ set(CANONICAL_LIB_NAME "porytiles2")
 set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 
 # Configure CImg
-target_compile_definitions(Porytiles2Lib PUBLIC cimg_use_png)
-target_compile_definitions(Porytiles2Lib PUBLIC cimg_display=0)
-target_compile_definitions(Porytiles2Lib PUBLIC cimg_verbosity=0)
+target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
+target_compile_definitions(Porytiles2Lib PRIVATE cimg_display=0)
+target_compile_definitions(Porytiles2Lib PRIVATE cimg_verbosity=0)
 
 
 #######################################
@@ -72,10 +72,10 @@ target_compile_definitions(Porytiles2Lib PUBLIC cimg_verbosity=0)
 #######################################
 
 target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
-target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Find the libpng include dirs located via find_package
-target_include_directories(Porytiles2Lib PUBLIC ${PNG_INCLUDE_DIRS})
+target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
 
 if (cimg_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})

@@ -10,3 +10,4 @@ runs:
         ./build/Porytiles1/tests/Porytiles1Tests
         ./build/Porytiles2/tools/driver/porytiles2 --version
         ./build/Porytiles2/tests/Porytiles2UnitTests
+        ./build/Porytiles2/tests/Porytiles2IntegrationTests
