@@ -66,7 +66,7 @@ Uses `clang-format` with project-specific style configuration.
 Uses `clang-tidy` with `cert-*` checks enabled.
 
 ## Project Structure
-- `Porytiles1/` - Legacy version codebase
+- `Porytiles1/` - Legacy version codebase, ignore this code unless otherwise instructed
 - `Porytiles2/` - Next-generation version with domain-driven design
 - `Resources/` - Test assets and example files
 - `Documentation/` - Doxygen configuration
@@ -91,10 +91,11 @@ Porytiles2 implements:
 
 ## Important Notes
 - Scripts must be run from the main directory (checked via `.porytiles-marker-file`)
-- The project follows a continuous delivery model with nightly releases
-- Both GCC and Clang are supported compilers
-- Unit tests are migrating from doctests (Porytiles1) to GoogleTest (Porytiles2)
+- Both GCC and Clang are supported compilers, so any proposed code should not be compiler-specific
+- Porytiles2 unit tests use the GoogleTest library
 - Ignore contents of `Porytiles1` unless I explicitly tell you to work with those files
+- Never include header files using relative paths
+- Follow const correctness principles
 
 ## Critical Rules - DO NOT VIOLATE
 

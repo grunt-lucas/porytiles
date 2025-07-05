@@ -1,4 +1,4 @@
-#include "porytiles2/infra/repos/PngRgbaImageRepo.hpp"
+#include "porytiles2/infra/services/PngRgbaImageLoader.hpp"
 
 #include <expected>
 #include <filesystem>
@@ -16,7 +16,7 @@ using cimg_library::CImg;
 using cimg_library::CImgException;
 
 std::expected<std::unique_ptr<RgbaImage>, std::string>
-PngRgbaImageRepo::Read(const std::filesystem::path &path) const {
+PngRgbaImageLoader::LoadFromFile(const std::filesystem::path &path) const {
   CImg<std::uint8_t> cimg_png{};
   const auto path_c_str = path.c_str();
   try {
@@ -27,7 +27,7 @@ PngRgbaImageRepo::Read(const std::filesystem::path &path) const {
 
   if (cimg_png.spectrum() != 3 && cimg_png.spectrum() != 4) {
     return std::unexpected{
-        fmt::format("{}: CImgPng repo only supports 3 or 4 channel images", path_c_str)};
+        fmt::format("{}: CImg PNG loader only supports 3 or 4 channel images", path_c_str)};
   }
 
   const auto width = static_cast<std::size_t>(cimg_png.width());
