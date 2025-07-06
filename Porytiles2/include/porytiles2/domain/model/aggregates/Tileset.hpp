@@ -22,14 +22,25 @@ public:
 
   [[nodiscard]] const std::string &name() const { return name_; }
 
-  [[nodiscard]] const std::unordered_map<std::string, std::string> &cached_checksums() const {
-    return cached_checksums_;
+  [[nodiscard]] const PorytilesTilesetComponent &porytiles_component() const {
+    return *porytiles_component_;
+  }
+
+  [[nodiscard]] const PorymapTilesetComponent &porymap_component() const {
+    return *porymap_component_;
+  }
+
+  void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component) {
+    porytiles_component_ = std::move(porytiles_component);
+  }
+
+  void porymap_component(std::unique_ptr<PorymapTilesetComponent> porymap_component) {
+    porymap_component_ = std::move(porymap_component);
   }
 
 private:
   std::string name_;
   std::vector<std::string> partner_names_;
-  std::unordered_map<std::string, std::string> cached_checksums_;
   std::unique_ptr<PorytilesTilesetComponent> porytiles_component_;
   std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };

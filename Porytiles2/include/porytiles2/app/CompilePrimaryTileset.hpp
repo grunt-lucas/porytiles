@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/repos/TilesetRepo.hpp"
+#include "porytiles2/domain/services/ChecksumService.hpp"
 #include "porytiles2/domain/services/TilesetCompiler.hpp"
 #include "porytiles2/templates/Result.hpp"
 
@@ -35,14 +36,15 @@ public:
    * save the tileset assets. Uses the given TilesetCompilationService to
    * perform the compilation operation.
    *
-   * @param name The name of the primary Tileset to compile.
+   * @param tileset_name The name of the primary Tileset to compile.
    * @return An empty Result on success, otherwise an error description.
    */
-  [[nodiscard]] Result<void> Compile(const std::string &name) const;
+  [[nodiscard]] Result<void> Compile(const std::string &tileset_name) const;
 
 private:
   std::unique_ptr<TilesetRepo> tileset_repo_;
   std::unique_ptr<TilesetCompiler> compiler_service_;
+  std::unique_ptr<ChecksumService> checksum_service_;
 };
 
 } // namespace porytiles

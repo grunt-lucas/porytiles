@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
+#include "porytiles2/domain/services/ChecksumService.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -20,18 +21,12 @@ class TilesetRepo {
 public:
   virtual ~TilesetRepo() = default;
 
-  /*
-   * TODO : Partially implement save: we should force implementers to persis updated artifact
-   * checksums. To that end, we can have Save be partially implemented, but then call a virtual
-   * SaveTileset that can be overridden by the implementer.
-   *
-   * How should we handle the artifact checksums? They seem to be a detail more related to data
-   * persistence than the Tileset itself. Is there some way to design things so that we can support
-   * the outlined use cases while avoiding having to store checksums in the Tileset aggregate?
-   */
+  // Constructor injection of ChecksumService
+  explicit TilesetRepo(std::unique_ptr<ChecksumService> checksum_service)
+      : checksum_service_{std::move(checksum_service)} {}
 
   /**
-   * @brief Persists a new or existing Tileset.
+   * @brief Persists a given Tileset and computes new artifact checksums.
    *
    * @details
    * When persisting a Tileset, the repository
@@ -39,7 +34,14 @@ public:
    * @param tileset The Tileset to save.
    * @return An empty Result on success, otherwise an error description.
    */
-  [[nodiscard]] virtual Result<void> Save(const Tileset &tileset) = 0;
+  [[nodiscard]] Result<void> Save(const Tileset &tileset) {
+    if (auto save_result = SaveTileset(tileset); !save_result.has_value()) {
+      return save_result;
+    }
+
+    const auto current_checksums = checksum_service_->ComputePorymapChecksums(tileset);
+    return checksum_service_->StoreChecksums(tileset.name(), current_checksums);
+  }
 
   /**
    * @brief Loads an existing Tileset from storage.
@@ -47,7 +49,7 @@ public:
    * @param name The name of the Tileset to load.
    * @return A Tileset Result on success, otherwise an error description.
    */
-  [[nodiscard]] virtual Result<std::unique_ptr<Tileset>> Load(const std::string &name) = 0;
+  [[nodiscard]] virtual Result<std::unique_ptr<Tileset>> Load(const std::string &name) const = 0;
 
   /**
    * @brief Checks if the given Tileset exists in the backing store.
@@ -57,18 +59,22 @@ public:
    */
   [[nodiscard]] virtual bool Exists(const std::string &name) const = 0;
 
+protected:
   /**
-   * @brief Computes checksums for the artifacts that correspond to this Tileset's
-   * PorymapTilesetComponent.
+   * @brief Persists a given Tileset.
    *
-   * @details
+   * @param tileset The Tileset to save.
+   * @return An empty Result on success, otherwise an error description.
    *
-   *
-   * @param name The name of the Tileset for which to compute checksums.
-   * @return A mapping of artifact identifiers to their computed checksum.
    */
-  [[nodiscard]] virtual std::unordered_map<std::string, std::string>
-  ComputePorymapChecksums(const std::string &name) const = 0;
+  [[nodiscard]] virtual Result<void> SaveTileset(const Tileset &tileset) = 0;
+
+  [[nodiscard]] ChecksumService &checksum_service() { return *checksum_service_; }
+
+  [[nodiscard]] const ChecksumService &checksum_service() const { return *checksum_service_; }
+
+private:
+  std::unique_ptr<ChecksumService> checksum_service_;
 };
 
 } // namespace porytiles

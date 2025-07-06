@@ -16,14 +16,15 @@ namespace porytiles {
  */
 class ProjectTilesetRepo final : public TilesetRepo {
 public:
-  [[nodiscard]] Result<void> Save(const Tileset &tileset) override;
+  explicit ProjectTilesetRepo(std::unique_ptr<ChecksumService> checksum_service)
+      : TilesetRepo{std::move(checksum_service)} {}
 
-  [[nodiscard]] Result<std::unique_ptr<Tileset>> Load(const std::string &name) override;
+  [[nodiscard]] Result<std::unique_ptr<Tileset>> Load(const std::string &name) const override;
 
   [[nodiscard]] bool Exists(const std::string &name) const override;
 
-  [[nodiscard]] std::unordered_map<std::string, std::string>
-  ComputePorymapChecksums(const std::string &name) const override;
+protected:
+  [[nodiscard]] Result<void> SaveTileset(const Tileset &tileset) override;
 };
 
 } // namespace porytiles
