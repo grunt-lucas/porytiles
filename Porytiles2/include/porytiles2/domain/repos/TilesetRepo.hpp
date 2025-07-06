@@ -4,8 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
-#include "porytiles2/domain/services/ChecksumService.hpp"
-#include "porytiles2/domain/services/TimestampService.hpp"
+#include "porytiles2/domain/services/ArtifactMetadataService.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -22,8 +21,8 @@ class TilesetRepo {
 public:
   virtual ~TilesetRepo() = default;
 
-  explicit TilesetRepo(std::unique_ptr<ChecksumService> checksum_service)
-      : checksum_service_{std::move(checksum_service)} {}
+  explicit TilesetRepo(std::unique_ptr<ArtifactMetadataService> checksum_service)
+      : metadata_service_{std::move(checksum_service)} {}
 
   /**
    * @brief Persists a given Tileset and computes new artifact checksums.
@@ -39,8 +38,8 @@ public:
       return save_result;
     }
 
-    const auto current_checksums = checksum_service_->ComputePorymapChecksums(tileset);
-    return checksum_service_->StoreChecksums(tileset.name(), current_checksums);
+    const auto current_checksums = metadata_service_->ComputePorymapChecksums(tileset);
+    return metadata_service_->StoreChecksums(tileset.name(), current_checksums);
   }
 
   /**
@@ -69,12 +68,14 @@ protected:
    */
   [[nodiscard]] virtual Result<void> SaveTileset(const Tileset &tileset) = 0;
 
-  [[nodiscard]] ChecksumService &checksum_service() { return *checksum_service_; }
+  [[nodiscard]] ArtifactMetadataService &metadata_service() { return *metadata_service_; }
 
-  [[nodiscard]] const ChecksumService &checksum_service() const { return *checksum_service_; }
+  [[nodiscard]] const ArtifactMetadataService &metadata_service() const {
+    return *metadata_service_;
+  }
 
 private:
-  std::unique_ptr<ChecksumService> checksum_service_;
+  std::unique_ptr<ArtifactMetadataService> metadata_service_;
 };
 
 } // namespace porytiles

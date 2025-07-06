@@ -17,8 +17,8 @@ Result<void> CompilePrimaryTileset::Compile(const std::string &tileset_name) con
   const auto tileset = std::move(maybe_tileset.value());
 
   // 2. Check for unimported changes
-  auto current_checksums = checksum_service_->ComputePorymapChecksums(*tileset);
-  auto stored_checksums = checksum_service_->LoadStoredChecksums(tileset_name);
+  auto current_checksums = metadata_service_->ComputePorymapChecksums(*tileset);
+  auto stored_checksums = metadata_service_->LoadStoredChecksums(tileset_name);
 
   for (const auto &[artifact, current_sum] : current_checksums) {
     if (auto stored_it = stored_checksums.find(artifact);
@@ -28,9 +28,9 @@ Result<void> CompilePrimaryTileset::Compile(const std::string &tileset_name) con
   }
 
   // 3. Exit early if no changes in Porytiles assets to compile
-  if (timestamp_service_->ArePorymapAssetsNewer(*tileset)) {
-    // nothing to do - Porymap assets are newer than Porytiles assets
+  if (metadata_service_->ArePorymapAssetsNewer(*tileset)) {
     // TODO : display this message to the user
+    // nothing to do - Porymap assets are newer than Porytiles assets
     return {};
   }
 

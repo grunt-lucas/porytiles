@@ -83,7 +83,8 @@ Porytiles2 implements:
 1. Make changes to source files
 2. Format code: `./Scripts/format.sh`
 3. Build: `cmake --build build -j7`
-4. Test: `./build/Porytiles2/tests/Porytiles2UnitTests` and `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+4. Unit Tests: `./build/Porytiles2/tests/Porytiles2UnitTests`
+5. Integration Tests: `./build/Porytiles2/tests/Porytiles2IntegrationTests`
 
 ## C++ Code Style
 Use the following example snippet as a guide for code style.
@@ -140,7 +141,6 @@ int MyClass::ComputeSomething(int accum_value) const {
 ```
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
-
 - **ALWAYS use the code style outlined in the C++ Code Style section above**
 - **Ignore contents of `Porytiles1/` directory** unless I explicitly tell you to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to do so
