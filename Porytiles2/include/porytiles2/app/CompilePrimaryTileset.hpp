@@ -20,12 +20,17 @@ public:
    * repositories and compilation service.
    *
    * @param tileset_repo A pointer to the TilesetRepo for this use case.
-   * @param compiler_service A pointer to the TilesetCompilerService for this
-   * use case.
+   * @param compiler_service A pointer to the TilesetCompilerService for this use case.
+   * @param checksum_service A pointer to the ChecksumService for this use case.
+   * @param timestamp_service A pointer to the TimestampService for this use case.
    */
   CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo,
-                        std::unique_ptr<TilesetCompiler> compiler_service)
-      : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)} {}
+                        std::unique_ptr<TilesetCompiler> compiler_service,
+                        std::unique_ptr<ChecksumService> checksum_service,
+                        std::unique_ptr<TimestampService> timestamp_service)
+      : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)},
+        checksum_service_{std::move(checksum_service)},
+        timestamp_service_{std::move(timestamp_service)} {}
 
   /**
    * @brief Compiles the primary Tileset with the given tileset name.
@@ -45,6 +50,7 @@ private:
   std::unique_ptr<TilesetRepo> tileset_repo_;
   std::unique_ptr<TilesetCompiler> compiler_service_;
   std::unique_ptr<ChecksumService> checksum_service_;
+  std::unique_ptr<TimestampService> timestamp_service_;
 };
 
 } // namespace porytiles

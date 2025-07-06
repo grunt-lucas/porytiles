@@ -27,21 +27,25 @@ Result<void> CompilePrimaryTileset::Compile(const std::string &tileset_name) con
     }
   }
 
-  /*
-   * TODO : If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles
-   * asset "modified" timestamp, bail with "nothing to do."
-   */
+  // 3. Exit early if no changes in Porytiles assets to compile
+  if (timestamp_service_->ArePorymapAssetsNewer(*tileset)) {
+    // nothing to do - Porymap assets are newer than Porytiles assets
+    // TODO : display this message to the user
+    return {};
+  }
 
-  // 3. Perform compilation logic...
+  // 4. Perform compilation logic
   const auto porytiles_component = tileset->porytiles_component();
   auto maybe_porymap_component = compiler_service_->CompilePrimary(porytiles_component);
   if (!maybe_porymap_component.has_value()) {
     return std::unexpected{maybe_porymap_component.error()};
   }
   auto porymap_component = std::move(maybe_porymap_component.value());
+
+  // 5. Update tileset with new Porymap component
   tileset->porymap_component(std::move(porymap_component));
 
-  // 4. Save updated tileset with updated checksums
+  // 6. Persist updated tileset with updated Porymap artifact checksums
   if (const auto save_result = tileset_repo_->Save(*tileset); !save_result.has_value()) {
     return std::unexpected{save_result.error()};
   }

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "porytiles2/infra/repos/ProjectPaths.hpp"
+#include "porytiles2/infra/project/ProjectPaths.hpp"
 
 using namespace porytiles;
 

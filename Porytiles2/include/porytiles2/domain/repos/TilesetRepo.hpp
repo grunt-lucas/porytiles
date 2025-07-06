@@ -5,6 +5,7 @@
 
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
 #include "porytiles2/domain/services/ChecksumService.hpp"
+#include "porytiles2/domain/services/TimestampService.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -21,7 +22,6 @@ class TilesetRepo {
 public:
   virtual ~TilesetRepo() = default;
 
-  // Constructor injection of ChecksumService
   explicit TilesetRepo(std::unique_ptr<ChecksumService> checksum_service)
       : checksum_service_{std::move(checksum_service)} {}
 
