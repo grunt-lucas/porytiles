@@ -20,16 +20,16 @@ public:
       : porytiles_component_{std::move(porytiles_component)},
         porymap_component_{std::move(porymap_component)} {}
 
-  const std::string &name() const { return name_; }
+  [[nodiscard]] const std::string &name() const { return name_; }
 
-  const std::unordered_map<std::string, std::string> &artifact_checksums() const {
-    return artifact_checksums_;
+  [[nodiscard]] const std::unordered_map<std::string, std::string> &cached_checksums() const {
+    return cached_checksums_;
   }
 
 private:
   std::string name_;
   std::vector<std::string> partner_names_;
-  std::unordered_map<std::string, std::string> artifact_checksums_;
+  std::unordered_map<std::string, std::string> cached_checksums_;
   std::unique_ptr<PorytilesTilesetComponent> porytiles_component_;
   std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };

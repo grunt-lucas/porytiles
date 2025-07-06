@@ -4,7 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/repos/TilesetRepo.hpp"
-#include "porytiles2/domain/services/TilesetCompilerService.hpp"
+#include "porytiles2/domain/services/TilesetCompiler.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -23,7 +23,7 @@ public:
    * use case.
    */
   CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo,
-                        std::unique_ptr<TilesetCompilerService> compiler_service)
+                        std::unique_ptr<TilesetCompiler> compiler_service)
       : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)} {}
 
   /**
@@ -42,7 +42,7 @@ public:
 
 private:
   std::unique_ptr<TilesetRepo> tileset_repo_;
-  std::unique_ptr<TilesetCompilerService> compiler_service_;
+  std::unique_ptr<TilesetCompiler> compiler_service_;
 };
 
 } // namespace porytiles

@@ -9,12 +9,12 @@
 namespace porytiles {
 
 /**
- * @brief A domain service that provides functionality to compile a
- * PorytilesTilesetComponent to a PorymapTilesetComponent.
+ * @brief  Service interface for compiling a PorytilesTilesetComponent into a
+ * PorymapTilesetComponent.
  */
-class TilesetCompilerService {
+class TilesetCompiler {
 public:
-  virtual ~TilesetCompilerService() = default;
+  virtual ~TilesetCompiler() = default;
 
   virtual Result<std::unique_ptr<PorymapTilesetComponent>>
   CompilePrimary(const PorytilesTilesetComponent &tileset) = 0;

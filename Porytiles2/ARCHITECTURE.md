@@ -122,7 +122,7 @@ porytiles2 create-tileset MySecondaryTileset --any-partner-primary
 2. Initialize a new `Tileset` aggregate.
 3. Fill in the `PorytilesTilesetComponent` with default assets.
 4. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent` and initial artifact checksums.
-5. Persist the `Tileset` (including updating the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`).
+5. Persist the `Tileset` aggregate (including updating the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`).
 
 ### Outputs
 `my_secondary_tileset.toml` contents:
@@ -140,6 +140,9 @@ For the `--any-partner-primary` case:
 [tileset]
 partner_primaries = [ "*" ]
 ```
+
+## Create Layout
+TODO
 
 ## Import Primary Tileset
 Import an existing primary tileset to Porytiles.
@@ -159,6 +162,7 @@ porytiles2 import-tileset general
 6. Perform a complete decompilation.
 7. Fill in the `PorytilesTilesetComponent` with the decompiled assets.
 8. Perform an incremental compilation and re-store checksums.
+9. Persist the `Tileset` aggregate.
 
 ### Outputs
 Importing a tileset will set `incremental = true` by default.
@@ -197,12 +201,10 @@ porytiles2 compile-tileset MyTileset
 5. If all match, continue.
 6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
 7. Otherwise, compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
-8. Persist everything (Porymap assets, compute and send new checksums to `artifact_checksums.json`, etc.).
+8. Compute new artifact checksums.
+9. Persist the `Tileset` aggregate.
 
 ## Compile Secondary Tileset
-TODO
-
-## Create Layout
 TODO
 
 ## Compile Layout

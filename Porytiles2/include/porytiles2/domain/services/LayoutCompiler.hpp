@@ -9,12 +9,11 @@
 namespace porytiles {
 
 /**
- * @brief A domain service that provides functionality to compile a
- * PorytilesLayoutComponent to a PorymapLayoutComponent.
+ * @brief Service interface for compiling a PorytilesLayoutComponent into a PorymapLayoutComponent.
  */
-class LayoutCompilerService {
+class LayoutCompiler {
 public:
-  virtual ~LayoutCompilerService() = default;
+  virtual ~LayoutCompiler() = default;
 
   virtual Result<std::unique_ptr<PorymapLayoutComponent>>
   Compile(const PorytilesLayoutComponent &layout) = 0;
