@@ -20,33 +20,35 @@ Uses CMake with C++23 standard. The build system requires:
 
 ### Build Commands
 ```bash
-# Configure build
+# Configure debug build
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 
-# Build project
-cd build && cmake --build . -j7
+# Configure debug build with coverage
+cmake -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
-# Alternative: build from root
+# Configure release build
+cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+
+# Build project
 cmake --build build -j7
 ```
 
 ### Build Variants
 Multiple build configurations are available:
-- `cmake-build-debug/` - Debug build
-- `cmake-build-release/` - Release build  
-- `cmake-build-debug-coverage/` - Debug with coverage
-- `cmake-build-debug-gcc/` - Debug with GCC
-- `cmake-build-release-gcc/` - Release with GCC
+- `build/` - Debug build
+- `build-coverage/` - Debug build with coverage
+- `build-release/` - Release build
 
 ## Testing
-Two test suites exist:
-- **Porytiles1**: Legacy doctests at `./build/Porytiles1/tests/Porytiles1Tests`
-- **Porytiles2**: GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
+- Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
+- GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
+- GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
 
 Run all tests:
 ```bash
 ./build/Porytiles1/tests/Porytiles1Tests
 ./build/Porytiles2/tests/Porytiles2UnitTests
+./build/Porytiles2/tests/Porytiles2IntegrationTests
 ```
 
 ## Code Quality Tools
@@ -58,12 +60,6 @@ Located in `Scripts/` directory:
 ./Scripts/format.sh <files>      # Format specific files
 ```
 Uses `clang-format` with project-specific style configuration.
-
-### Linting
-```bash
-./Scripts/tidy.sh <files>        # Run clang-tidy on specific files
-```
-Uses `clang-tidy` with `cert-*` checks enabled.
 
 ## Project Structure
 - `Porytiles1/` - Legacy version codebase, ignore this code unless otherwise instructed
@@ -87,33 +83,9 @@ Porytiles2 implements:
 1. Make changes to source files
 2. Format code: `./Scripts/format.sh`
 3. Build: `cmake --build build -j7`
-4. Test: Run both test suites
-
-## Important Notes
-- Scripts must be run from the main directory (checked via `.porytiles-marker-file`)
-- Both GCC and Clang are supported compilers, so any proposed code should not be compiler-specific
-- Porytiles2 unit tests use the GoogleTest library
-- Ignore contents of `Porytiles1` unless I explicitly tell you to work with those files
-- Never include header files using relative paths
-- Follow const correctness principles
-
-## Critical Rules - DO NOT VIOLATE
-
-- **NEVER create mock data or simplified components** unless explicitly told to do so
-
-- **NEVER replace existing complex components with simplified versions** - always fix the actual problem
-
-- **ALWAYS work with the existing codebase** - do not create new simplified alternatives
-
-- **ALWAYS find and fix the root cause** of issues instead of creating workarounds
-
-- When debugging issues, focus on fixing the existing implementation, not replacing it
-
-- When something doesn't work, debug and fix it - don't start over with a simple version
+4. Test: `./build/Porytiles2/tests/Porytiles2UnitTests` and `./build/Porytiles2/tests/Porytiles2IntegrationTests`
 
 ## C++ Code Style
-- Always use braced initialization where possible
-
 Use the following example snippet as a guide for code style.
 ```C++
 // PascalCase for enum class names
@@ -166,3 +138,19 @@ int MyClass::ComputeSomething(int accum_value) const {
     return my_local + my_val_ + accum_value;
 }
 ```
+
+## **CRITICAL RULES - DO NOT VIOLATE**
+
+- **ALWAYS use the code style outlined in the C++ Code Style section above**
+- **Ignore contents of `Porytiles1/` directory** unless I explicitly tell you to work with those files
+- **NEVER create mock data or simplified components** unless explicitly told to do so
+- **NEVER replace existing complex components with simplified versions** - always fix the actual problem
+- **ALWAYS work with the existing codebase** - do not create new simplified alternatives
+- **ALWAYS find and fix the root cause** of issues instead of creating workarounds
+- When debugging issues, **focus on fixing the existing implementation,** not replacing it
+- When something doesn't work, debug and fix it - **don't start over with a simple version**
+- Use braced initialization **where possible**, but make sure it won't confuse the compiler (e.g. when ambiguous constructors exist)
+- **Never** include header files using relative paths
+- Follow const correctness principles
+- Both GCC and Clang are supported compilers, so any proposed code **should not be compiler-specific**
+
