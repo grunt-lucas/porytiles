@@ -17,6 +17,14 @@ public:
       : project_root_{std::move(project_root)} {}
 
   /**
+   * @brief Computes the path to the given primary tileset's directory.
+   *
+   * @param tileset The name of the primary tileset.
+   * @return The path to the given primary tileset's directory.
+   */
+  [[nodiscard]] std::filesystem::path PrimaryTilesetDirectory(const std::string &tileset) const;
+
+  /**
    * @brief Computes the path to the given primary tileset's Porytiles `bottom.png` file.
    *
    * @param tileset The name of the primary tileset.

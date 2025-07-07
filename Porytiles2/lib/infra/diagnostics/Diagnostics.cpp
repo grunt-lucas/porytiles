@@ -270,20 +270,22 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
 
       // const auto tile = AnyCastOrPanic<RGBATile>(args[0],
       // std::source_location::current()); const auto color =
-      // AnyCastOrPanic<std::string>(args[1], std::source_location::current());
-      // const auto mode = AnyCastOrPanic<std::string>(args[2],
+      // AnyCastOrPanic<std::string>(args[1],
+      // std::source_location::current()); const auto mode =
+      // AnyCastOrPanic<std::string>(args[2],
       // std::source_location::current()); const auto row =
-      // AnyCastOrPanic<std::size_t>(args[3], std::source_location::current());
-      // const auto col = AnyCastOrPanic<std::size_t>(args[4],
+      // AnyCastOrPanic<std::size_t>(args[3],
+      // std::source_location::current()); const auto col =
+      // AnyCastOrPanic<std::size_t>(args[4],
       // std::source_location::current());
 
-      // constexpr auto msg_templ = "{} {}: collapsed to duplicate BGR: '{}' at
-      // col '{}', row '{}'"; msg.push_back(fmt::format(msg_templ,
-      // eng.Bold(mode), eng.Bold(tile.prettify()), eng.Bold(color),
-      // eng.Bold(col),
+      // constexpr auto msg_templ = "{} {}: collapsed to duplicate BGR:
+      // '{}' at col '{}', row '{}'";
+      // msg.push_back(fmt::format(msg_templ, eng.Bold(mode),
+      // eng.Bold(tile.prettify()), eng.Bold(color), eng.Bold(col),
       //                           eng.Bold(row)));
-      // auto highlight = BuildTileHighlight(eng, in_flight_level, tile, row,
-      // col); msg.insert(std::end(msg), std::begin(highlight),
+      // auto highlight = BuildTileHighlight(eng, in_flight_level, tile,
+      // row, col); msg.insert(std::end(msg), std::begin(highlight),
       // std::end(highlight));
 
       return msg;

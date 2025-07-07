@@ -6,30 +6,32 @@
 
 namespace porytiles {
 
-static const std::filesystem::path kTilesetPrimaryRootPath =
+static const std::filesystem::path kPrimaryTilesetsRelativePath =
     std::filesystem::path{"data"} / "tilesets" / "primary";
-static const std::filesystem::path kTilesetSecondaryRootPath =
-    std::filesystem::path{"data"} / "tilesets" / "secondary";
-static const std::filesystem::path kBehaviorsHeaderPath =
+static const std::filesystem::path kBehaviorsHeaderRelativePath =
     std::filesystem::path{"include"} / "constants";
-static const std::string kBehaviorsHeaderFile = "metatile_behaviors.h";
+static const std::string kBehaviorsHeaderFileName = "metatile_behaviors.h";
+
+std::filesystem::path ProjectPaths::PrimaryTilesetDirectory(const std::string &tileset) const {
+  return project_root_ / kPrimaryTilesetsRelativePath / tileset;
+}
 
 std::filesystem::path ProjectPaths::PrimaryBottomPng(const std::string &tileset) const {
-  return kTilesetPrimaryRootPath / tileset / "porytiles" / "bottom.png";
+  return project_root_ / kPrimaryTilesetsRelativePath / tileset / "porytiles" / "bottom.png";
 }
 
 std::filesystem::path ProjectPaths::PrimaryMiddlePng(const std::string &tileset) const {
-  return kTilesetPrimaryRootPath / tileset / "porytiles" / "middle.png";
+  return project_root_ / kPrimaryTilesetsRelativePath / tileset / "porytiles" / "middle.png";
 }
 
 std::filesystem::path ProjectPaths::PrimaryTopPng(const std::string &tileset) const {
-  return kTilesetPrimaryRootPath / tileset / "porytiles" / "top.png";
+  return project_root_ / kPrimaryTilesetsRelativePath / tileset / "porytiles" / "top.png";
 }
 
 std::filesystem::path ProjectPaths::BehaviorsHeader() const {
-  const auto header_path = behaviors_header_override_path_.value_or(kBehaviorsHeaderPath);
-  const auto header_file = behaviors_header_override_file_.value_or(kBehaviorsHeaderFile);
-  return std::filesystem::path{project_root_} / header_path / header_file;
+  const auto header_path = behaviors_header_override_path_.value_or(kBehaviorsHeaderRelativePath);
+  const auto header_file = behaviors_header_override_file_.value_or(kBehaviorsHeaderFileName);
+  return project_root_ / header_path / header_file;
 }
 
 void ProjectPaths::SetBehaviorsHeaderOverridePath(std::filesystem::path override) {
