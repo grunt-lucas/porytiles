@@ -8,8 +8,8 @@
 namespace porytiles {
 
 /**
- * @brief Provides `pokeemerald` project path computational functionality based
- * on a given project root.
+ * @brief Provides `pokeemerald` project path computational functionality based on a given project
+ * root.
  */
 class ProjectPaths {
 public:
@@ -17,8 +17,7 @@ public:
       : project_root_{std::move(project_root)} {}
 
   /**
-   * @brief Computes the path to the given primary tileset's Porytiles
-   * `bottom.png` file.
+   * @brief Computes the path to the given primary tileset's Porytiles `bottom.png` file.
    *
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `bottom.png` file.
@@ -26,8 +25,7 @@ public:
   [[nodiscard]] std::filesystem::path PrimaryBottomPng(const std::string &tileset) const;
 
   /**
-   * @brief Computes the path to the given primary tileset's Porytiles
-   * `middle.png` file.
+   * @brief Computes the path to the given primary tileset's Porytiles `middle.png` file.
    *
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `middle.png` file.
@@ -35,8 +33,7 @@ public:
   [[nodiscard]] std::filesystem::path PrimaryMiddlePng(const std::string &tileset) const;
 
   /**
-   * @brief Computes the path to the given primary tileset's Porytiles `top.png`
-   * file.
+   * @brief Computes the path to the given primary tileset's Porytiles `top.png` file.
    *
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `top.png` file.
@@ -47,10 +44,9 @@ public:
    * @brief Computes the path to the project `metatile_behaviors.h` file.
    *
    * @details
-   * While ProjectPaths::BehaviorsHeader by default assumes that
-   * `metatile_behaviors.h` lives in the standard location (i.e.
-   * `include/constants`), it can optionally take into account a user-supplied
-   * override path or file via ProjectPaths::SetBehaviorsHeaderOverridePath and
+   * While ProjectPaths::BehaviorsHeader by default assumes that `metatile_behaviors.h` lives in the
+   * standard location (i.e. `include/constants`), it can optionally take into account a
+   * user-supplied override path or file via ProjectPaths::SetBehaviorsHeaderOverridePath and
    * ProjectPaths::SetBehaviorsHeaderOverrideFile.
    *
    * @return The path to the project's `metatile_behaviors.h` file.
@@ -62,9 +58,8 @@ public:
    *
    * @details
    * The supplied override path should point to the directory that contains the
-   * `metatile_behaviors.h` file, and it must be relative to the project root.
-   * If you need to override the file name itself, see
-   * ProjectPaths::SetBehaviorsHeaderOverrideFile.
+   * `metatile_behaviors.h` file, and it must be relative to the project root. If you need to
+   * override the file name itself, see ProjectPaths::SetBehaviorsHeaderOverrideFile.
    *
    * @param override The override behaviors header path.
    */
