@@ -12,6 +12,18 @@ namespace porytiles {
 
 using Timestamp = std::filesystem::file_time_type;
 
+/**
+ * @brief Abstract service for managing artifact metadata including checksums and timestamps.
+ *
+ * @details
+ * The ArtifactMetadataProvider provides an interface for accessing and managing metadata
+ * about both Porymap and Porytiles artifacts. This includes computing and storing checksums
+ * for integrity verification, retrieving modification timestamps, and determining temporal
+ * relationships between different artifact sets.
+ *
+ * This service is essential for the compilation pipeline to determine when assets need
+ * to be recompiled based on changes to source files or existing artifacts.
+ */
 class ArtifactMetadataProvider {
 public:
   virtual ~ArtifactMetadataProvider() = default;
@@ -19,9 +31,6 @@ public:
   /**
    * @brief Computes checksums for the artifacts that correspond to the given Tileset's
    * PorymapTilesetComponent.
-   *
-   * @details
-   * TODO : fill in
    *
    * @param tileset The Tileset for which to compute checksums.
    * @return A mapping of artifact identifiers to their computed checksum.
