@@ -12,9 +12,9 @@ namespace porytiles {
 
 using Timestamp = std::filesystem::file_time_type;
 
-class ArtifactMetadataService {
+class ArtifactMetadataProvider {
 public:
-  virtual ~ArtifactMetadataService() = default;
+  virtual ~ArtifactMetadataProvider() = default;
 
   /**
    * @brief Computes checksums for the artifacts that correspond to the given Tileset's

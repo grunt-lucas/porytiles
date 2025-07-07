@@ -4,7 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/repos/TilesetRepo.hpp"
-#include "porytiles2/domain/services/ArtifactMetadataService.hpp"
+#include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 #include "porytiles2/domain/services/TilesetCompiler.hpp"
 #include "porytiles2/templates/Result.hpp"
 
@@ -25,7 +25,7 @@ public:
    */
   CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo,
                         std::unique_ptr<TilesetCompiler> compiler_service,
-                        std::unique_ptr<ArtifactMetadataService> metadata_service)
+                        std::unique_ptr<ArtifactMetadataProvider> metadata_service)
       : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)},
         metadata_service_{std::move(metadata_service)} {}
 
@@ -46,7 +46,7 @@ public:
 private:
   std::unique_ptr<TilesetRepo> tileset_repo_;
   std::unique_ptr<TilesetCompiler> compiler_service_;
-  std::unique_ptr<ArtifactMetadataService> metadata_service_;
+  std::unique_ptr<ArtifactMetadataProvider> metadata_service_;
 };
 
 } // namespace porytiles

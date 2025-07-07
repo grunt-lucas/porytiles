@@ -1,17 +1,17 @@
 // Porytiles2/include/porytiles2/infra/services/FilesystemTimestampService.hpp
 #pragma once
 
-#include "porytiles2/domain/services/ArtifactMetadataService.hpp"
+#include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 
 namespace porytiles {
 
 /**
- * @brief Implementation of ArtifactMetadataService that uses an in-filesystem `pokeemerald` project
- * as the source for artifact metadata.
+ * @brief An implementation of the ArtifactMetadataProvider service that uses an in-filesystem
+ * `pokeemerald` project as the source for artifact metadata.
  */
-class ProjectArtifactMetadataService final : public ArtifactMetadataService {
+class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
 public:
-  ProjectArtifactMetadataService() = default;
+  ProjectArtifactMetadataProvider() = default;
 
   [[nodiscard]] std::unordered_map<std::string, std::string>
   ComputePorymapChecksums(const Tileset &tileset) const override;

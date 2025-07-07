@@ -4,7 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
-#include "porytiles2/domain/services/ArtifactMetadataService.hpp"
+#include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -21,7 +21,7 @@ class TilesetRepo {
 public:
   virtual ~TilesetRepo() = default;
 
-  explicit TilesetRepo(std::unique_ptr<ArtifactMetadataService> checksum_service)
+  explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> checksum_service)
       : metadata_service_{std::move(checksum_service)} {}
 
   /**
@@ -68,14 +68,14 @@ protected:
    */
   [[nodiscard]] virtual Result<void> SaveTileset(const Tileset &tileset) = 0;
 
-  [[nodiscard]] ArtifactMetadataService &metadata_service() { return *metadata_service_; }
+  [[nodiscard]] ArtifactMetadataProvider &metadata_service() { return *metadata_service_; }
 
-  [[nodiscard]] const ArtifactMetadataService &metadata_service() const {
+  [[nodiscard]] const ArtifactMetadataProvider &metadata_service() const {
     return *metadata_service_;
   }
 
 private:
-  std::unique_ptr<ArtifactMetadataService> metadata_service_;
+  std::unique_ptr<ArtifactMetadataProvider> metadata_service_;
 };
 
 } // namespace porytiles

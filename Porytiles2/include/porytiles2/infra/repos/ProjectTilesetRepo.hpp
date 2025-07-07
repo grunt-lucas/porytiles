@@ -6,7 +6,7 @@
 
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
 #include "porytiles2/domain/repos/TilesetRepo.hpp"
-#include "porytiles2/domain/services/ArtifactMetadataService.hpp"
+#include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 #include "porytiles2/templates/Result.hpp"
 
 namespace porytiles {
@@ -17,7 +17,7 @@ namespace porytiles {
  */
 class ProjectTilesetRepo final : public TilesetRepo {
 public:
-  explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataService> metadata_service)
+  explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_service)
       : TilesetRepo{std::move(metadata_service)} {}
 
   [[nodiscard]] Result<std::unique_ptr<Tileset>> Load(const std::string &name) const override;
