@@ -8,6 +8,8 @@ namespace porytiles {
 
 static const std::filesystem::path kPrimaryTilesetsRelativePath =
     std::filesystem::path{"data"} / "tilesets" / "primary";
+static const std::filesystem::path kSecondaryTilesetsRelativePath =
+    std::filesystem::path{"data"} / "tilesets" / "secondary";
 static const std::filesystem::path kBehaviorsHeaderRelativePath =
     std::filesystem::path{"include"} / "constants";
 static const std::string kBehaviorsHeaderFileName = "metatile_behaviors.h";
@@ -26,6 +28,22 @@ std::filesystem::path ProjectPaths::PrimaryMiddlePng(const std::string &tileset)
 
 std::filesystem::path ProjectPaths::PrimaryTopPng(const std::string &tileset) const {
   return project_root_ / kPrimaryTilesetsRelativePath / tileset / "porytiles" / "top.png";
+}
+
+std::filesystem::path ProjectPaths::SecondaryTilesetDirectory(const std::string &tileset) const {
+  return project_root_ / kSecondaryTilesetsRelativePath / tileset;
+}
+
+std::filesystem::path ProjectPaths::SecondaryBottomPng(const std::string &tileset) const {
+  return project_root_ / kSecondaryTilesetsRelativePath / tileset / "porytiles" / "bottom.png";
+}
+
+std::filesystem::path ProjectPaths::SecondaryMiddlePng(const std::string &tileset) const {
+  return project_root_ / kSecondaryTilesetsRelativePath / tileset / "porytiles" / "middle.png";
+}
+
+std::filesystem::path ProjectPaths::SecondaryTopPng(const std::string &tileset) const {
+  return project_root_ / kSecondaryTilesetsRelativePath / tileset / "porytiles" / "top.png";
 }
 
 std::filesystem::path ProjectPaths::BehaviorsHeader() const {

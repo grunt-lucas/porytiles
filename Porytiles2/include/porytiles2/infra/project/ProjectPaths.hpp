@@ -49,6 +49,38 @@ public:
   [[nodiscard]] std::filesystem::path PrimaryTopPng(const std::string &tileset) const;
 
   /**
+   * @brief Computes the path to the given secondary tileset's directory.
+   *
+   * @param tileset The name of the secondary tileset.
+   * @return The path to the given secondary tileset's directory.
+   */
+  [[nodiscard]] std::filesystem::path SecondaryTilesetDirectory(const std::string &tileset) const;
+
+  /**
+   * @brief Computes the path to the given secondary tileset's Porytiles `bottom.png` file.
+   *
+   * @param tileset The name of the secondary tileset.
+   * @return The path to the given secondary tileset's `bottom.png` file.
+   */
+  [[nodiscard]] std::filesystem::path SecondaryBottomPng(const std::string &tileset) const;
+
+  /**
+   * @brief Computes the path to the given secondary tileset's Porytiles `middle.png` file.
+   *
+   * @param tileset The name of the secondary tileset.
+   * @return The path to the given secondary tileset's `middle.png` file.
+   */
+  [[nodiscard]] std::filesystem::path SecondaryMiddlePng(const std::string &tileset) const;
+
+  /**
+   * @brief Computes the path to the given secondary tileset's Porytiles `top.png` file.
+   *
+   * @param tileset The name of the secondary tileset.
+   * @return The path to the given secondary tileset's `top.png` file.
+   */
+  [[nodiscard]] std::filesystem::path SecondaryTopPng(const std::string &tileset) const;
+
+  /**
    * @brief Computes the path to the project `metatile_behaviors.h` file.
    *
    * @details
