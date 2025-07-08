@@ -314,22 +314,20 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                        << terrainTypeString(attributesMap.at(metatileIndex).terrainType) << ","
                        << encounterTypeString(attributesMap.at(metatileIndex).encounterType) << std::endl;
             } else {
-                ctx.diag->Report(ErrGeneric,
-                                 fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
-                                             ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(),
-                                             metatileIndex,
-                                             ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
+                ctx.diag->Report(
+                    ErrGeneric, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                                            ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
+                                            ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         } else {
             if (behaviorReverseMap.contains(attributesMap.at(metatileIndex).metatileBehavior)) {
                 outCsv << metatileIndex << ","
                        << behaviorReverseMap.at(attributesMap.at(metatileIndex).metatileBehavior) << std::endl;
             } else {
-                ctx.diag->Report(ErrGeneric,
-                                 fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
-                                             ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(),
-                                             metatileIndex,
-                                             ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
+                ctx.diag->Report(
+                    ErrGeneric, fmt::format("{}: metatile entry {}: unmapped metatile behavior value '{}'",
+                                            ctx.decompilerSrcPaths.modeBasedAttributePath(mode).string(), metatileIndex,
+                                            ctx.diag->Bold(attributesMap.at(metatileIndex).metatileBehavior)));
             }
         }
     }

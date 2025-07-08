@@ -32,11 +32,11 @@ DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compile
                                      const png::image<png::rgba_pixel> &png) {
     if (png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
         ctx.diag->Report(ErrGeneric, fmt::format("source tiles PNG height '{}' was not divisible by 8",
-                                                  ctx.diag->Bold(png.get_height())));
+                                                 ctx.diag->Bold(png.get_height())));
     }
     if (png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
         ctx.diag->Report(ErrGeneric, fmt::format("source tiles PNG width '{}' was not divisible by 8",
-                                                  ctx.diag->Bold(png.get_width())));
+                                                 ctx.diag->Bold(png.get_width())));
     }
 
     if (ctx.diag->InFlightCountForLevel(DiagLevel::Error) > 0) {
@@ -126,15 +126,15 @@ DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode
                                              const png::image<png::rgba_pixel> &top) {
     if (bottom.get_height() % METATILE_SIDE_LENGTH != 0) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
-                                                  layerString(TileLayer::BOTTOM), ctx.diag->Bold(bottom.get_height())));
+                                                 layerString(TileLayer::BOTTOM), ctx.diag->Bold(bottom.get_height())));
     }
     if (middle.get_height() % METATILE_SIDE_LENGTH != 0) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
-                                                  layerString(TileLayer::MIDDLE), ctx.diag->Bold(middle.get_height())));
+                                                 layerString(TileLayer::MIDDLE), ctx.diag->Bold(middle.get_height())));
     }
     if (top.get_height() % METATILE_SIDE_LENGTH != 0) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} layer source PNG height '{}' was not divisible by 16",
-                                                  layerString(TileLayer::TOP), ctx.diag->Bold(top.get_height())));
+                                                 layerString(TileLayer::TOP), ctx.diag->Bold(top.get_height())));
     }
 
     if (bottom.get_width() != METATILE_SIDE_LENGTH * METATILES_IN_ROW) {
@@ -460,13 +460,13 @@ void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
 
             if (rawFrame.png.get_height() % TILE_SIDE_LENGTH_PIX != 0) {
                 ctx.diag->Report(ErrGeneric, fmt::format("anim {} frame {} PNG height '{}' was not divisible by 8",
-                                                          rawFrame.animName, rawFrame.frameName,
-                                                          ctx.diag->Bold(rawFrame.png.get_height())));
+                                                         rawFrame.animName, rawFrame.frameName,
+                                                         ctx.diag->Bold(rawFrame.png.get_height())));
             }
             if (rawFrame.png.get_width() % TILE_SIDE_LENGTH_PIX != 0) {
                 ctx.diag->Report(ErrGeneric, fmt::format("anim {} frame {} PNG width '{}' was not divisible by 8",
-                                                          rawFrame.animName, rawFrame.frameName,
-                                                          ctx.diag->Bold(rawFrame.png.get_width())));
+                                                         rawFrame.animName, rawFrame.frameName,
+                                                         ctx.diag->Bold(rawFrame.png.get_width())));
             }
 
             if (ctx.diag->InFlightCountForLevel(DiagLevel::Error) > 0) {
@@ -646,7 +646,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->Report(FatalGeneric, msg);
         ctx.diag->Report(NoteGeneric, fmt::format("valid headers are '{}' or '{}'", ctx.diag->Bold("id,behavior"),
-                                                   ctx.diag->Bold("id,behavior,terrainType,encounterType")));
+                                                  ctx.diag->Bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
@@ -667,7 +667,7 @@ importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
         const auto msg = fmt::format("{}: incorrect header row format", filePath);
         ctx.diag->Report(FatalGeneric, msg);
         ctx.diag->Report(NoteGeneric, fmt::format("valid headers are '{}' or '{}'", ctx.diag->Bold("id,behavior"),
-                                                   ctx.diag->Bold("id,behavior,terrainType,encounterType")));
+                                                  ctx.diag->Bold("id,behavior,terrainType,encounterType")));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   fmt::format("{}: incorrect header row format", filePath));
     }
@@ -1192,7 +1192,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
     const std::uint8_t declaredPaletteSize = consumeJascHeader(ctx, compilerMode, paletteFile, fileName);
     if (declaredPaletteSize == 0 || declaredPaletteSize > PAL_SIZE - 1) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} invalid declared size '{}', must be 1 <= size <= 15",
-                                                  ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(declaredPaletteSize)));
+                                                 ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(declaredPaletteSize)));
     }
 
     std::uint8_t lineCount = 4;
@@ -1211,7 +1211,7 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
 
         if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
             ctx.diag->Report(ErrGeneric, fmt::format("{} '{}' was transparent or collapsed to transparent",
-                                                      ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(rgba.jasc())));
+                                                     ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(rgba.jasc())));
         }
 
         primerTile.pixels.at(usedPaletteCount) = rgba;
@@ -1225,8 +1225,8 @@ RGBATile importPalettePrimer(PorytilesContext &ctx, const CompilerMode compilerM
 
     if (usedPaletteCount != declaredPaletteSize) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} used pal size ({}) did not match declared size '{}'",
-                                                  ctx.diag->Bold(fileName + ":"), usedPaletteCount,
-                                                  ctx.diag->Bold(declaredPaletteSize)));
+                                                 ctx.diag->Bold(fileName + ":"), usedPaletteCount,
+                                                 ctx.diag->Bold(declaredPaletteSize)));
     }
     primerTile.primerSize = usedPaletteCount;
 
@@ -1283,7 +1283,7 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
             if (rgbaToBgr(rgba) == rgbaToBgr(ctx.compilerConfig.transparencyColor)) {
                 ctx.diag->Report(ErrGeneric, fmt::format("{}: '{}' was transparent or collapsed to transparent",
-                                                          ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(rgba.jasc())));
+                                                         ctx.diag->Bold(fileName + ":"), ctx.diag->Bold(rgba.jasc())));
             }
             overrideTile.pixels.at(overriddenSlotCount) = rgba;
             overriddenSlotCount++;
@@ -1305,8 +1305,8 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 
     if (usedPaletteCount != declaredPaletteSize) {
         ctx.diag->Report(ErrGeneric, fmt::format("{} used palette size ({}) did not match declared size '{}'",
-                                                  ctx.diag->Bold(fileName + ":"), usedPaletteCount,
-                                                  ctx.diag->Bold(declaredPaletteSize)));
+                                                 ctx.diag->Bold(fileName + ":"), usedPaletteCount,
+                                                 ctx.diag->Bold(declaredPaletteSize)));
     }
 
     // minus 1 for transparent

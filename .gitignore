@@ -1,7 +1,9 @@
 # IDE and filesystem metadata
-.vscode
+.vscode/*
+!.vscode/c_cpp_properties.json
 .idea
 .DS_Store
+.claude
 
 # Build artifacts and executables
 build/**

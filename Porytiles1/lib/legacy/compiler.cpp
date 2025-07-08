@@ -44,11 +44,10 @@ static std::size_t insertRGBA(PorytilesContext &ctx, const CompilerMode compiler
     if (rgba.alpha != ALPHA_TRANSPARENT && rgba.alpha != ALPHA_OPAQUE) {
         if (errWarn) {
             ctx.diag->Report(ErrGeneric, fmt::format("invalid alpha value '{}' at '{}' subtile pixel col {}, row {}",
-                                                      ctx.diag->Bold(rgba.alpha), ctx.diag->Bold(rgbaFrame.prettify()),
-                                                      ctx.diag->Bold(col), ctx.diag->Bold(row)));
-            ctx.diag->Report(NoteGeneric,
-                             fmt::format("alpha value must be either {} for opaque or {} for transparent",
-                                         ctx.diag->Bold(ALPHA_OPAQUE), ctx.diag->Bold(ALPHA_TRANSPARENT)));
+                                                     ctx.diag->Bold(rgba.alpha), ctx.diag->Bold(rgbaFrame.prettify()),
+                                                     ctx.diag->Bold(col), ctx.diag->Bold(row)));
+            ctx.diag->Report(NoteGeneric, fmt::format("alpha value must be either {} for opaque or {} for transparent",
+                                                      ctx.diag->Bold(ALPHA_OPAQUE), ctx.diag->Bold(ALPHA_TRANSPARENT)));
         }
         return INVALID_INDEX_PIXEL_VALUE;
     }
@@ -402,7 +401,7 @@ buildColorIndexMaps(const PorytilesContext &ctx, const CompilerMode compilerMode
         ctx.diag->Report(FatalGeneric,
                          fmt::format("too many unique colors in {} tileset", compilerModeString(compilerMode)));
         ctx.diag->Report(NoteGeneric, fmt::format("{} allowed based on fieldmap configuration, but found {}",
-                                                   ctx.diag->Bold(size), ctx.diag->Bold(colorIndex)));
+                                                  ctx.diag->Bold(size), ctx.diag->Bold(colorIndex)));
         die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(compilerMode),
                                   "too many unique colors total");
     }

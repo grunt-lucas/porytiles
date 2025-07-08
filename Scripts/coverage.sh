@@ -89,6 +89,9 @@ if [[ ! -f default.profraw ]]; then
     exit 1
 fi
 
+# TODO : Porytiles2 CMake build needs these flags to generate coverage correctly
+# "-DCMAKE_CXX_FLAGS=-fcoverage-mapping -fprofile-instr-generate" "-DCMAKE_C_FLAGS=-fcoverage-mapping -fprofile-instr-generate"
+
 if [[ ${args[0]} == "show" ]]; then
     llvm-profdata-wrapper merge -o testcov.profdata default.profraw
     llvm-cov-wrapper show ./debug/bin/porytiles-tests -instr-profile=testcov.profdata "${args[@]:1}"

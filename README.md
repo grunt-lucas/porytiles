@@ -63,12 +63,13 @@ I don't plan on creating versioned releases for Porytiles.
 I try to keep the commit history clean,
 so you can quickly see what has changed in each nightly release.
 Users are encouraged to [install via the brew tap](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
-(brew works great on WSL, it's very easy to set up).
-With Homebrew, you can run two quick commands and always be up-to-date.
+(brew works great on WSL, it's straightforward to set up).
+With Homebrew, you can run two quick commands and always be up to date.
 
 ## Building From Source
 You can use either GCC or Clang,
-provided your installation is reasonably recent and supports most C++20 features.
+provided your installation is reasonably recent
+and supports most C++20 (and some C++23) features.
 [Please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) for more detailed instructions,
 should you need them.
 
@@ -80,9 +81,9 @@ Porytiles's build system will search the system library paths for
 `libpng.a` and `libz.a`.
 If you'd like to link those libraries dynamically,
 or if the CMake configuration is having trouble finding them,
-then you'll need to modify `Porytiles/lib/CMakeLists.txt` appropriately.
+then you'll need to modify `Porytiles1/lib/CMakeLists.txt` appropriately.
 
-You'll also need `cmake` version `3.18` or greater.
+You'll also need `cmake` version `3.20` or greater.
 
 ### Build And Run
 Set up the CMake build folder:
@@ -97,20 +98,20 @@ cmake --build .
 You can check that everything is working like this:
 ```
 cd ..
-./build/Porytiles/doctests/PorytilesDocTests
+./build/Porytiles1/tests/Porytiles1Tests
 ```
 To run the actual tool:
 ```
-./build/Porytiles/tools/driver/porytiles
+./build/Porytiles1/tools/driver/porytiles
 ```
 
 ### Notes For macOS
 On macOS,
 the CMake configuration command typically finds your system clang compiler.
-If you've installed GCC via homebrew and would like to use that instead,
-try this alternative configuration command (assuming you have GCC 14):
+If you've installed GCC via Homebrew and would like to use that instead,
+try this alternative configuration command (assuming you have GCC 15):
 ```
-CXX=g++-14 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_SYSROOT="" -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ -I/opt/homebrew/opt/gcc/include/c++/14 -L/opt/homebrew/opt/gcc/lib/gcc/14"
+CXX=g++-15 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_SYSROOT="" -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ -I/opt/homebrew/opt/gcc/include/c++/15 -L/opt/homebrew/opt/gcc/lib/gcc/15"
 ```
 If you have a different major version of GCC or you are using an Intel Mac,
 you may need to tweak this command to match your system.

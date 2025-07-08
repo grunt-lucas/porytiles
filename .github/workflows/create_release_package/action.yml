@@ -29,7 +29,8 @@ runs:
 
         pushd "./porytiles-${{ inputs.os-arch }}"
         ./Porytiles1Tests
-        ./Porytiles2Tests
+        ./Porytiles2UnitTests
+        ./Porytiles2IntegrationTests
         popd
 
         zip -r "./porytiles-${{ inputs.os-arch }}.zip" "./porytiles-${{ inputs.os-arch }}"

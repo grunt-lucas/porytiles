@@ -1,7 +1,7 @@
 # Enable testing
 enable_testing()
 
-# Fetch and build Google Test
+# Google Test
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -10,11 +10,34 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# Get all sources in a list
-FILE(GLOB TEST_SOURCES */*.cpp)
+# Pull in CImg so we can test internal library impl that uses it
+FetchContent_Declare(
+        CImg
+        GIT_REPOSITORY "https://github.com/dtschump/CImg.git"
+        GIT_TAG "v.3.5.5"
+)
+FetchContent_MakeAvailable(CImg)
 
-add_executable(Porytiles2Tests ${TEST_SOURCES})
-target_include_directories(Porytiles2Tests PRIVATE ${PORYTILES_INCLUDE_DIR})
-target_link_libraries(Porytiles2Tests PRIVATE GTest::gtest_main)
-target_link_libraries(Porytiles2Tests PRIVATE Porytiles2Lib)
-# gtest_discover_tests(Porytiles2Tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# Get all sources in a list
+FILE(GLOB_RECURSE CppUnitSources CONFIGURE_DEPENDS unit/*.cpp)
+FILE(GLOB_RECURSE CppIntegrationSources CONFIGURE_DEPENDS integration/*.cpp)
+
+# Create the test executable
+add_executable(Porytiles2UnitTests ${CppUnitSources})
+add_executable(Porytiles2IntegrationTests ${CppIntegrationSources})
+
+target_link_libraries(Porytiles2UnitTests PRIVATE GTest::gtest_main)
+target_link_libraries(Porytiles2IntegrationTests PRIVATE GTest::gtest_main)
+# gtest_discover_tests(Porytiles2UnitTests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# Link against the Porytiles2 library
+target_link_libraries(Porytiles2UnitTests PRIVATE Porytiles2Lib)
+target_link_libraries(Porytiles2IntegrationTests PRIVATE Porytiles2Lib)
+
+# Add CImg to our include directories since we're testing the internal implementation
+#if (cimg_SOURCE_DIR)
+#    target_include_directories(Porytiles2UnitTests PRIVATE ${cimg_SOURCE_DIR})
+#    target_include_directories(Porytiles2IntegrationTests PRIVATE ${cimg_SOURCE_DIR})
+#else ()
+#    message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
+#endif ()
