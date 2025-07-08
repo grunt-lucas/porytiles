@@ -12,8 +12,12 @@
 namespace porytiles {
 
 /**
- * @brief ArtifactMetadata provides a POD-like class for Operation to declare
- * input and output artifact info.
+ * @brief ArtifactMetadata provides a POD-like class for Operation to declare input and output
+ * artifact info.
+ *
+ * @details
+ * ArtifactMetadata provides a POD-like class for Operation to declare input and output artifact
+ * info.
  */
 class ArtifactMetadata {
 public:

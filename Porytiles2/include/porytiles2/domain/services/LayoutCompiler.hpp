@@ -10,6 +10,9 @@ namespace porytiles {
 
 /**
  * @brief Service interface for compiling a PorytilesLayoutComponent into a PorymapLayoutComponent.
+ *
+ * @details
+ * Service interface for compiling a PorytilesLayoutComponent into a PorymapLayoutComponent.
  */
 class LayoutCompiler {
 public:

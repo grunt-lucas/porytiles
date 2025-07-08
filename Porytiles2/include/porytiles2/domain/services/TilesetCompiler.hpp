@@ -9,8 +9,11 @@
 namespace porytiles {
 
 /**
- * @brief  Service interface for compiling a PorytilesTilesetComponent into a
+ * @brief Service interface for compiling a PorytilesTilesetComponent into a
  * PorymapTilesetComponent.
+ *
+ * @details
+ * Service interface for compiling a PorytilesTilesetComponent into a PorymapTilesetComponent.
  */
 class TilesetCompiler {
 public:

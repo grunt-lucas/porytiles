@@ -12,6 +12,9 @@ namespace porytiles {
 
 /**
  * @brief A complete tileset containing both Porytiles and Porymap components.
+ *
+ * @details
+ * A complete tileset containing both Porytiles and Porymap components.
  */
 class Tileset {
 public:

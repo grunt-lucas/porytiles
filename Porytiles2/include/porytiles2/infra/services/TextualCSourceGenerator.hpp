@@ -48,24 +48,20 @@ private:
   /**
    * @brief Convert tileset name to lowercase for file paths.
    *
+   * @details
    * Converts PascalCase tileset names to lowercase for use in file paths.
    * This follows pokeemerald's naming conventions where tileset names in
    * C code are PascalCase but file paths are lowercase.
    *
    * @param tileset_name The tileset name in PascalCase
    * @return Lowercase version for file paths
-   *
-   * @example
-   * ```cpp
-   * auto path = ToLowercaseFilePath("MyTileset");
-   * // Returns: "my_tileset"
-   * ```
    */
   std::string ToLowercaseFilePath(const std::string &tileset_name) const;
 
   /**
    * @brief Generate individual palette include line.
    *
+   * @details
    * Creates a single INCBIN_U16 line for a palette file with proper
    * indentation and formatting.
    *
@@ -78,6 +74,7 @@ private:
   /**
    * @brief Generate all palette include lines.
    *
+   * @details
    * Creates all 13 palette include lines (00-12) with proper formatting
    * and comma placement.
    *
@@ -89,6 +86,7 @@ private:
   /**
    * @brief Apply indentation to a string.
    *
+   * @details
    * Adds the specified number of indentation levels to each line of the
    * input string. Uses 4 spaces per indentation level.
    *
@@ -101,6 +99,7 @@ private:
   /**
    * @brief Convert string to uppercase.
    *
+   * @details
    * Utility function to convert a string to uppercase for use in
    * include guards and other C preprocessor constructs.
    *
