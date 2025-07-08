@@ -13,6 +13,11 @@ static const std::filesystem::path kSecondaryTilesetsRelativePath =
 static const std::filesystem::path kBehaviorsHeaderRelativePath =
     std::filesystem::path{"include"} / "constants";
 static const std::string kBehaviorsHeaderFileName = "metatile_behaviors.h";
+static const std::filesystem::path kTilesetSourceHeadersRelativePath =
+    std::filesystem::path{"src"} / "data" / "tilesets";
+static const std::string kGraphicsHeaderFileName = "graphics.h";
+static const std::string kHeadersHeaderFileName = "headers.h";
+static const std::string kMetatilesHeaderFileName = "metatiles.h";
 
 std::filesystem::path ProjectPaths::PrimaryTilesetDirectory(const std::string &tileset) const {
   return project_root_ / kPrimaryTilesetsRelativePath / tileset;
@@ -58,6 +63,18 @@ void ProjectPaths::SetBehaviorsHeaderOverridePath(std::filesystem::path override
 
 void ProjectPaths::SetBehaviorsHeaderOverrideFile(std::string override) {
   behaviors_header_override_file_.emplace(std::move(override));
+}
+
+std::filesystem::path ProjectPaths::GraphicsHeader() const {
+  return project_root_ / kTilesetSourceHeadersRelativePath / kGraphicsHeaderFileName;
+}
+
+std::filesystem::path ProjectPaths::HeadersHeader() const {
+  return project_root_ / kTilesetSourceHeadersRelativePath / kHeadersHeaderFileName;
+}
+
+std::filesystem::path ProjectPaths::MetatilesHeader() const {
+  return project_root_ / kTilesetSourceHeadersRelativePath / kMetatilesHeaderFileName;
 }
 
 } // namespace porytiles

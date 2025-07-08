@@ -112,6 +112,39 @@ public:
    */
   void SetBehaviorsHeaderOverrideFile(std::string override);
 
+  /**
+   * @brief Computes the path to the project `graphics.h` file.
+   *
+   * @details
+   * This file contains tileset graphics declarations including palette and tile data.
+   * Located at `src/data/tilesets/graphics.h` in the pokeemerald project structure.
+   *
+   * @return The path to the project's `graphics.h` file.
+   */
+  [[nodiscard]] std::filesystem::path GraphicsHeader() const;
+
+  /**
+   * @brief Computes the path to the project `headers.h` file.
+   *
+   * @details
+   * This file contains tileset struct definitions and tileset configuration data.
+   * Located at `src/data/tilesets/headers.h` in the pokeemerald project structure.
+   *
+   * @return The path to the project's `headers.h` file.
+   */
+  [[nodiscard]] std::filesystem::path HeadersHeader() const;
+
+  /**
+   * @brief Computes the path to the project `metatiles.h` file.
+   *
+   * @details
+   * This file contains metatile and metatile attribute array declarations.
+   * Located at `src/data/tilesets/metatiles.h` in the pokeemerald project structure.
+   *
+   * @return The path to the project's `metatiles.h` file.
+   */
+  [[nodiscard]] std::filesystem::path MetatilesHeader() const;
+
 private:
   std::filesystem::path project_root_;
   std::optional<std::filesystem::path> behaviors_header_override_path_;

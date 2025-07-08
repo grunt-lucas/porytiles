@@ -97,6 +97,20 @@ Porytiles2 implements:
 ## C++ Code Style
 Use the following example snippet as a guide for code style.
 ```C++
+// First include should always be declaration header, if relevant
+#include "porytiles2/domain/MyClass.hpp"
+
+// Next, include C++ stdlib headers with angle brackets
+#include <string>
+#include <vector>
+
+// Next, include project libraries with quotes
+#include "fmt/format.h"
+#include "gsl/pointers"
+
+// Finally, include other Porytiles headers with quotes
+#include "porytiles2/domain/Foo.hpp"
+
 namespace porytiles {
 
 // PascalCase for enum class names

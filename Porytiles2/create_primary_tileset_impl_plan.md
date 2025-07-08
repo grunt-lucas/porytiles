@@ -334,7 +334,7 @@ This implementation plan provides a structured approach to adding the Create Pri
   - Complete implementation of all CSourceGenerator methods
   - PascalCase to snake_case conversion for file paths
   - Proper C code formatting with correct indentation
-  - Template-based string generation using std::format
+  - Template-based string generation using fmt::format
   - All 13 palette entries generated correctly
   - Pokeemerald-compliant C code output
 
@@ -349,11 +349,50 @@ This implementation plan provides a structured approach to adding the Create Pri
 
 ### 🔄 Remaining Work
 
-#### Phase 1: C Source File Modification Infrastructure - Remaining
-- `CSrcFileModifier` interface
-- `PokeemeraldSrcFileModifier` implementation  
-- `HeaderFileParser` service
-- Integration tests for file modification
+#### Phase 1: C Source File Modification Infrastructure - ✅ **COMPLETED**
+- **CSourceFileModifier Interface** - ✅ **COMPLETED**
+  - **Location**: `Porytiles2/include/porytiles2/domain/services/CSourceFileModifier.hpp`
+  - **Features**: 
+    - Complete interface definition with comprehensive documentation
+    - Methods for modifying all three C header files (graphics.h, headers.h, metatiles.h)
+    - Atomic AppendTilesetDeclarations method for complete tileset integration
+    - Clean separation between domain interface and infrastructure implementation
+
+- **ProjectCSourceFileAppender Implementation** - ✅ **COMPLETED**
+  - **Location**: 
+    - Header: `Porytiles2/include/porytiles2/infra/services/ProjectCSourceFileAppender.hpp`
+    - Implementation: `Porytiles2/lib/infra/services/ProjectCSourceFileAppender.cpp`
+  - **Features**:
+    - Complete implementation of all CSourceFileModifier methods
+    - String-based file appending approach using text manipulation
+    - Integration with CSourceGenerator for code generation
+    - Proper error handling with descriptive Result<T> messages
+    - Atomic file operations with proper error propagation
+
+- **HeaderFileParser Service** - ✅ **COMPLETED**
+  - **Location**:
+    - Domain Interface: `Porytiles2/include/porytiles2/domain/services/HeaderFileParser.hpp`
+    - Infrastructure Implementation: `Porytiles2/include/porytiles2/infra/services/TextualHeaderFileParser.hpp`
+    - Implementation: `Porytiles2/lib/infra/services/TextualHeaderFileParser.cpp`
+  - **Features**:
+    - Complete interface for parsing C header files
+    - TextualHeaderFileParser implementation using simple string parsing
+    - Methods for declaration checking, insertion point finding, and validation
+    - Comprehensive error handling and validation
+
+- **ProjectPaths Enhancement** - ✅ **COMPLETED**
+  - **Location**: `Porytiles2/include/porytiles2/infra/project/ProjectPaths.hpp`
+  - **Features**:
+    - Added GraphicsHeader(), HeadersHeader(), and MetatilesHeader() methods
+    - Follows existing patterns and naming conventions
+    - Proper path computation for pokeemerald project structure
+
+- **Comprehensive Testing** - ✅ **COMPLETED**
+  - **Unit Tests**: `Porytiles2/tests/unit/infra/services/ProjectCSourceFileAppenderTest.cpp`
+  - **Unit Tests**: `Porytiles2/tests/unit/infra/services/TextualHeaderFileParserTest.cpp`
+  - **Integration Tests**: `Porytiles2/tests/integration/c_source_file_appender/ProjectCSourceFileAppenderTest.cpp`
+  - **Coverage**: All public methods tested with both success and failure scenarios
+  - **Results**: All 75 unit tests and 24 integration tests passing
 
 #### Phase 2: Default Asset Generation
 - `DefaultAssetGenerator` interface and implementation
