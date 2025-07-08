@@ -55,6 +55,115 @@ The following capabilities are **missing** and need to be implemented:
 - `TextBasedCSrcCodeGenerator` - Text-based C code generation (simpler than AST)
 - `HeaderFileParser` - Service for parsing existing C header structure
 
+#### CSrcCodeGenerator Interface Design
+
+The `CSrcCodeGenerator` interface provides a clean abstraction for generating C source code constructs without coupling to specific file operations or pokeemerald project structure.
+
+```cpp
+class CSrcCodeGenerator {
+public:
+    virtual ~CSrcCodeGenerator() = default;
+    
+    // Generate tileset-related declarations
+    virtual std::string GeneratePaletteDeclaration(const std::string& tileset_name) = 0;
+    virtual std::string GenerateTileDeclaration(const std::string& tileset_name) = 0;
+    virtual std::string GenerateTilesetStructDefinition(const std::string& tileset_name) = 0;
+    virtual std::string GenerateMetatileDeclaration(const std::string& tileset_name) = 0;
+    virtual std::string GenerateMetatileAttributeDeclaration(const std::string& tileset_name) = 0;
+    
+    // Generate proper C formatting
+    virtual std::string FormatWithIndentation(const std::string& code, int indent_level) = 0;
+    virtual std::string GenerateIncludeGuards(const std::string& header_name) = 0;
+};
+
+class TextBasedCSrcCodeGenerator : public CSrcCodeGenerator {
+public:
+    std::string GeneratePaletteDeclaration(const std::string& tileset_name) override {
+        return fmt::format(
+            "const u16 gTilesetPalettes_{}[][16] =\n"
+            "{{\n"
+            "    INCBIN_U16(\"data/tilesets/primary/{}/palettes/00.gbapal\"),\n"
+            "    INCBIN_U16(\"data/tilesets/primary/{}/palettes/01.gbapal\"),\n"
+            "    // ... (palettes 02-12)\n"
+            "}};",
+            tileset_name, tileset_name, tileset_name
+        );
+    }
+    
+    std::string GenerateTileDeclaration(const std::string& tileset_name) override {
+        return fmt::format(
+            "const u32 gTilesetTiles_{}[] = INCBIN_U32(\"data/tilesets/primary/{}/tiles.4bpp.lz\");",
+            tileset_name, tileset_name
+        );
+    }
+    
+    std::string GenerateTilesetStructDefinition(const std::string& tileset_name) override {
+        return fmt::format(
+            "const struct Tileset gTileset_{} =\n"
+            "{{\n"
+            "    .isCompressed = TRUE,\n"
+            "    .isSecondary = FALSE,\n"
+            "    .tiles = gTilesetTiles_{},\n"
+            "    .palettes = gTilesetPalettes_{},\n"
+            "    .metatiles = gMetatiles_{},\n"
+            "    .metatileAttributes = gMetatileAttributes_{},\n"
+            "    .callback = NULL,\n"
+            "}};",
+            tileset_name, tileset_name, tileset_name, tileset_name, tileset_name
+        );
+    }
+    
+    // Additional methods for metatile declarations and formatting...
+};
+```
+
+#### Separation Rationale: CSrcFileModifier vs CSrcCodeGenerator
+
+The separation between `CSrcFileModifier` and `CSrcCodeGenerator` follows the **Single Responsibility Principle** and provides several architectural benefits:
+
+**CSrcFileModifier Responsibilities:**
+- **File I/O Operations**: Reading, parsing, and writing C header files
+- **Insertion Logic**: Finding correct insertion points in existing files
+- **Error Handling**: Managing file system errors and validation
+- **Project Structure**: Understanding pokeemerald-specific file organization
+- **Atomic Operations**: Ensuring all-or-nothing file modifications
+
+**CSrcCodeGenerator Responsibilities:**
+- **Code Generation**: Creating syntactically correct C code constructs
+- **Template Management**: Handling code templates and string formatting
+- **Formatting**: Proper indentation, spacing, and C style conventions
+- **Validation**: Ensuring generated code follows C syntax rules
+- **Abstraction**: Providing clean interface for code generation without file concerns
+
+**Benefits of This Separation:**
+
+1. **Testability**: `CSrcCodeGenerator` can be unit tested independently without file system dependencies
+2. **Reusability**: Code generation logic can be reused across different file modification scenarios
+3. **Maintainability**: Changes to C code templates don't affect file parsing logic
+4. **Flexibility**: Different code generation strategies (template-based, AST-based) can be swapped without changing file modification logic
+5. **Dependency Inversion**: `CSrcFileModifier` depends on the abstraction, not the concrete implementation
+
+**Example Usage Pattern:**
+```cpp
+// CSrcFileModifier orchestrates the process
+Result<void> PokeemeraldSrcFileModifier::AddTilesetDeclarations(const std::string& tileset_name) {
+    // 1. Parse existing file structure
+    auto parsed_file = ParseHeaderFile("src/data/tilesets/graphics.h");
+    
+    // 2. Generate new code using CSrcCodeGenerator
+    auto palette_code = code_generator_->GeneratePaletteDeclaration(tileset_name);
+    auto tile_code = code_generator_->GenerateTileDeclaration(tileset_name);
+    
+    // 3. Find insertion points and modify file
+    auto result = InsertCodeAtLocation(parsed_file, palette_code, InsertionPoint::AfterLastPalette);
+    
+    // 4. Write back to file system
+    return WriteModifiedFile(parsed_file, "src/data/tilesets/graphics.h");
+}
+```
+
+This design allows the high-level file modification logic to remain stable while the code generation implementation can evolve independently.
+
 #### Implementation Details
 
 ```cpp
