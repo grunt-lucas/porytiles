@@ -79,16 +79,26 @@ Porytiles2 implements:
 - Library-based architecture inspired by clang
 - Template-based utilities in `Porytiles2/templates/`
 
-## Development Workflow
-1. Make changes to source files
-2. Format code: `./Scripts/format.sh`
-3. Build: `cmake --build build -j7`
-4. Unit Tests: `./build/Porytiles2/tests/Porytiles2UnitTests`
-5. Integration Tests: `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+## 7 Claude rules
+1. First think through the problem, read the codebase for relevant files, and write a plan to `Porytiles2/claudetasks/TODO.md`.
+2. The plan should have a list of todo items that you can check off as you complete them
+3. Before you begin working, check in with me and I will verify the plan.
+4. Then, begin working on the todo items, marking them as complete as you go.
+5. Every step of the way, give me a high-level explanation of what changes you made
+6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity. Run the format script, unit, and integration tests after you make a code change.
+7. Finally, add a review section to the `Porytiles2/claudetasks/TODO.md` file with a summary of the changes you made and any other relevant information.
+
+## Development Workflow Tools
+1. Format code: `./Scripts/format.sh`
+2. Build: `cmake --build build -j7`
+3. Unit Tests: `./build/Porytiles2/tests/Porytiles2UnitTests`
+4. Integration Tests: `./build/Porytiles2/tests/Porytiles2IntegrationTests`
 
 ## C++ Code Style
 Use the following example snippet as a guide for code style.
 ```C++
+namespace porytiles {
+
 // PascalCase for enum class names
 enum class FooBar {
     // kPascalCase for constants, note the leading k
@@ -138,6 +148,22 @@ int MyClass::ComputeSomething(int accum_value) const {
     int my_local = 1;
     return my_local + my_val_ + accum_value;
 }
+
+} // namespace porytiles
+```
+
+## Doxygen Comment Style
+```C++
+// Always use @brief and @details
+/**
+ * @brief A basic template for Foo.
+ *
+ * @details
+ * More detailed explanation about Foo.
+ */
+class Foo {
+
+};
 ```
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
@@ -152,5 +178,6 @@ int MyClass::ComputeSomething(int accum_value) const {
 - Use braced initialization **where possible**, but make sure it won't confuse the compiler (e.g. when ambiguous constructors exist)
 - **Never** include header files using relative paths
 - Follow const correctness principles
+- Always use namespace `porytiles`, don't create child namespaces
 - Both GCC and Clang are supported compilers, so any proposed code **should not be compiler-specific**
 

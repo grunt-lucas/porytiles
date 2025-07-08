@@ -47,79 +47,21 @@ The following capabilities are **missing** and need to be implemented:
 #### New Classes Required
 
 **Domain Services (Interfaces)**
-- `CSrcFileModifier` - Interface for modifying C header files
-- `CSrcCodeGenerator` - Interface for generating C source code constructs
+- `CSourceFileModifier` - Interface for modifying C header files
+- ✅ `CSourceGenerator` - Interface for generating C source code constructs
 
 **Infrastructure Services (Implementations)**
-- `PokeemeraldSrcFileModifier` - Concrete implementation for pokeemerald project files
-- `TextBasedCSrcCodeGenerator` - Text-based C code generation (simpler than AST)
+- `ProjectCSourceFileModifier` - Concrete implementation for pokeemerald project files
+- ✅ `TextualCSourceGenerator` - Text-based C code generation (simpler than AST)
 - `HeaderFileParser` - Service for parsing existing C header structure
 
-#### CSrcCodeGenerator Interface Design
+#### CSourceGenerator Interface Design
 
-The `CSrcCodeGenerator` interface provides a clean abstraction for generating C source code constructs without coupling to specific file operations or pokeemerald project structure.
+The `CSourceGenerator` interface provides a clean abstraction for generating C source code constructs without coupling to specific file operations or pokeemerald project structure.
 
-```cpp
-class CSrcCodeGenerator {
-public:
-    virtual ~CSrcCodeGenerator() = default;
-    
-    // Generate tileset-related declarations
-    virtual std::string GeneratePaletteDeclaration(const std::string& tileset_name) = 0;
-    virtual std::string GenerateTileDeclaration(const std::string& tileset_name) = 0;
-    virtual std::string GenerateTilesetStructDefinition(const std::string& tileset_name) = 0;
-    virtual std::string GenerateMetatileDeclaration(const std::string& tileset_name) = 0;
-    virtual std::string GenerateMetatileAttributeDeclaration(const std::string& tileset_name) = 0;
-    
-    // Generate proper C formatting
-    virtual std::string FormatWithIndentation(const std::string& code, int indent_level) = 0;
-    virtual std::string GenerateIncludeGuards(const std::string& header_name) = 0;
-};
+#### Separation Rationale: CSrcFileModifier vs CSourceGenerator
 
-class TextBasedCSrcCodeGenerator : public CSrcCodeGenerator {
-public:
-    std::string GeneratePaletteDeclaration(const std::string& tileset_name) override {
-        return fmt::format(
-            "const u16 gTilesetPalettes_{}[][16] =\n"
-            "{{\n"
-            "    INCBIN_U16(\"data/tilesets/primary/{}/palettes/00.gbapal\"),\n"
-            "    INCBIN_U16(\"data/tilesets/primary/{}/palettes/01.gbapal\"),\n"
-            "    // ... (palettes 02-12)\n"
-            "}};",
-            tileset_name, tileset_name, tileset_name
-        );
-    }
-    
-    std::string GenerateTileDeclaration(const std::string& tileset_name) override {
-        return fmt::format(
-            "const u32 gTilesetTiles_{}[] = INCBIN_U32(\"data/tilesets/primary/{}/tiles.4bpp.lz\");",
-            tileset_name, tileset_name
-        );
-    }
-    
-    std::string GenerateTilesetStructDefinition(const std::string& tileset_name) override {
-        return fmt::format(
-            "const struct Tileset gTileset_{} =\n"
-            "{{\n"
-            "    .isCompressed = TRUE,\n"
-            "    .isSecondary = FALSE,\n"
-            "    .tiles = gTilesetTiles_{},\n"
-            "    .palettes = gTilesetPalettes_{},\n"
-            "    .metatiles = gMetatiles_{},\n"
-            "    .metatileAttributes = gMetatileAttributes_{},\n"
-            "    .callback = NULL,\n"
-            "}};",
-            tileset_name, tileset_name, tileset_name, tileset_name, tileset_name
-        );
-    }
-    
-    // Additional methods for metatile declarations and formatting...
-};
-```
-
-#### Separation Rationale: CSrcFileModifier vs CSrcCodeGenerator
-
-The separation between `CSrcFileModifier` and `CSrcCodeGenerator` follows the **Single Responsibility Principle** and provides several architectural benefits:
+The separation between `CSrcFileModifier` and `CSourceGenerator` follows the **Single Responsibility Principle** and provides several architectural benefits:
 
 **CSrcFileModifier Responsibilities:**
 - **File I/O Operations**: Reading, parsing, and writing C header files
@@ -128,7 +70,7 @@ The separation between `CSrcFileModifier` and `CSrcCodeGenerator` follows the **
 - **Project Structure**: Understanding pokeemerald-specific file organization
 - **Atomic Operations**: Ensuring all-or-nothing file modifications
 
-**CSrcCodeGenerator Responsibilities:**
+**CSourceGenerator Responsibilities:**
 - **Code Generation**: Creating syntactically correct C code constructs
 - **Template Management**: Handling code templates and string formatting
 - **Formatting**: Proper indentation, spacing, and C style conventions
@@ -137,63 +79,15 @@ The separation between `CSrcFileModifier` and `CSrcCodeGenerator` follows the **
 
 **Benefits of This Separation:**
 
-1. **Testability**: `CSrcCodeGenerator` can be unit tested independently without file system dependencies
+1. **Testability**: `CSourceGenerator` can be unit tested independently without file system dependencies
 2. **Reusability**: Code generation logic can be reused across different file modification scenarios
 3. **Maintainability**: Changes to C code templates don't affect file parsing logic
 4. **Flexibility**: Different code generation strategies (template-based, AST-based) can be swapped without changing file modification logic
 5. **Dependency Inversion**: `CSrcFileModifier` depends on the abstraction, not the concrete implementation
 
-**Example Usage Pattern:**
-```cpp
-// CSrcFileModifier orchestrates the process
-Result<void> PokeemeraldSrcFileModifier::AddTilesetDeclarations(const std::string& tileset_name) {
-    // 1. Parse existing file structure
-    auto parsed_file = ParseHeaderFile("src/data/tilesets/graphics.h");
-    
-    // 2. Generate new code using CSrcCodeGenerator
-    auto palette_code = code_generator_->GeneratePaletteDeclaration(tileset_name);
-    auto tile_code = code_generator_->GenerateTileDeclaration(tileset_name);
-    
-    // 3. Find insertion points and modify file
-    auto result = InsertCodeAtLocation(parsed_file, palette_code, InsertionPoint::AfterLastPalette);
-    
-    // 4. Write back to file system
-    return WriteModifiedFile(parsed_file, "src/data/tilesets/graphics.h");
-}
-```
-
 This design allows the high-level file modification logic to remain stable while the code generation implementation can evolve independently.
 
 #### Implementation Details
-
-```cpp
-// Domain service interface
-class CSrcFileModifier {
-public:
-    virtual ~CSrcFileModifier() = default;
-    virtual Result<void> AddTilesetDeclarations(const std::string& tileset_name) = 0;
-    virtual Result<void> AddTilesetDefinition(const std::string& tileset_name) = 0;
-    virtual Result<void> AddMetatileDeclarations(const std::string& tileset_name) = 0;
-};
-
-// Infrastructure implementation
-class PokeemeraldSrcFileModifier : public CSrcFileModifier {
-public:
-    PokeemeraldSrcFileModifier(const ProjectPaths& paths);
-    
-    Result<void> AddTilesetDeclarations(const std::string& tileset_name) override;
-    Result<void> AddTilesetDefinition(const std::string& tileset_name) override;
-    Result<void> AddMetatileDeclarations(const std::string& tileset_name) override;
-    
-private:
-    Result<void> ModifyGraphicsHeader(const std::string& tileset_name);
-    Result<void> ModifyHeadersHeader(const std::string& tileset_name);
-    Result<void> ModifyMetatilesHeader(const std::string& tileset_name);
-    
-    ProjectPaths paths_;
-    std::unique_ptr<CSrcCodeGenerator> code_generator_;
-};
-```
 
 **Files to Modify:**
 - `src/data/tilesets/graphics.h` - Add palette and tile data declarations
@@ -417,3 +311,70 @@ data/tilesets/primary/my_tileset/
 5. **Document usage** - Create examples and tutorials for end users
 
 This implementation plan provides a structured approach to adding the Create Primary Tileset feature while leveraging the existing Porytiles2 architecture and maintaining consistency with established patterns.
+
+## Implementation Progress
+
+### ✅ Completed Components
+
+#### Phase 1: C Source File Modification Infrastructure - Partial
+
+**CSourceGenerator Interface** - ✅ **COMPLETED**
+- **Location**: `Porytiles2/include/porytiles2/domain/services/CSourceGenerator.hpp`
+- **Features**: 
+  - Complete interface definition with comprehensive documentation
+  - Methods for generating all required C constructs (palettes, tiles, structs, metatiles, attributes)
+  - Utility methods for formatting and include guards
+  - Clean abstraction separating code generation from file operations
+
+**TextualCSourceGenerator Implementation** - ✅ **COMPLETED**
+- **Location**: 
+  - Header: `Porytiles2/include/porytiles2/infra/services/TextualCSourceGenerator.hpp`
+  - Implementation: `Porytiles2/lib/infra/services/TextualCSourceGenerator.cpp`
+- **Features**:
+  - Complete implementation of all CSourceGenerator methods
+  - PascalCase to snake_case conversion for file paths
+  - Proper C code formatting with correct indentation
+  - Template-based string generation using std::format
+  - All 13 palette entries generated correctly
+  - Pokeemerald-compliant C code output
+
+**Comprehensive Unit Tests** - ✅ **COMPLETED**
+- **Location**: `Porytiles2/tests/unit/infra/services/TextualCSourceGeneratorTest.cpp`
+- **Coverage**:
+  - All public interface methods tested
+  - Edge cases (empty inputs, complex names, formatting)
+  - Correctness validation (syntax, naming conventions, file paths)
+  - Performance characteristics (proper comma placement, correct counts)
+  - Integration validation (well-formed C code output)
+
+### 🔄 Remaining Work
+
+#### Phase 1: C Source File Modification Infrastructure - Remaining
+- `CSrcFileModifier` interface
+- `PokeemeraldSrcFileModifier` implementation  
+- `HeaderFileParser` service
+- Integration tests for file modification
+
+#### Phase 2: Default Asset Generation
+- `DefaultAssetGenerator` interface and implementation
+- `DefaultAttributeGenerator` interface and implementation
+- Grass tile and flower animation generation
+
+#### Phase 3: Create Primary Tileset Use Case
+- `CreatePrimaryTileset` use case orchestrator
+- Integration with existing `TilesetCompiler` and `TilesetRepo`
+
+#### Phase 4: CLI Integration
+- `CreateTilesetCommand` CLI command
+- Driver program integration
+- End-to-end testing
+
+### Key Architectural Decisions Made
+
+1. **Naming Convention**: Changed from `CSrcCodeGenerator` to `CSourceGenerator` for clarity
+2. **Implementation Strategy**: Text-based generation using `std::format` instead of AST manipulation
+3. **Separation of Concerns**: Clean separation between code generation (`CSourceGenerator`) and file operations (`CSrcFileModifier`)
+4. **Testing Strategy**: Comprehensive unit tests with both positive and edge case coverage
+5. **Documentation**: Full Doxygen documentation with examples for all public methods
+
+The foundation for C source code generation is now complete and ready for integration with the file modification infrastructure.
