@@ -8,6 +8,9 @@ namespace porytiles {
 
 /**
  * @brief A factory for creating and retrieving a singleton DiagEngine.
+ *
+ * @details
+ * A factory for creating and retrieving a singleton DiagEngine.
  */
 class DiagEngineFactory {
 public:

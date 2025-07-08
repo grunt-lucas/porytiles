@@ -28,7 +28,8 @@ public:
    * @brief Persists a given Tileset and computes new artifact checksums.
    *
    * @details
-   * When persisting a Tileset, the repository
+   * When persisting a Tileset, the repository saves the tileset and computes
+   * new artifact checksums for the persisted data.
    *
    * @param tileset The Tileset to save.
    * @return An empty Result on success, otherwise an error description.

@@ -10,8 +10,14 @@
 #include "./option.hpp"
 #include "./option_group.hpp"
 
-/// @brief Command is an abstract class that provides basic command
-/// functionality for the Porytiles CLI driver.
+/**
+ * @brief Command is an abstract class that provides basic command functionality for the Porytiles
+ * CLI driver.
+ *
+ * @details
+ * Command is an abstract class that provides basic command functionality for the Porytiles CLI
+ * driver.
+ */
 class Command {
 public:
   virtual ~Command() = default;

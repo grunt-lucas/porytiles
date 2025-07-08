@@ -42,14 +42,6 @@ public:
    *
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
-   *
-   * @example
-   * ```cpp
-   * auto result = modifier->AppendToGraphicsHeader("MyTileset");
-   * if (!result) {
-   *   std::cout << "Failed to modify graphics.h: " << result.error() << std::endl;
-   * }
-   * ```
    */
   [[nodiscard]] virtual Result<void> AppendToGraphicsHeader(const std::string &tileset_name) = 0;
 
@@ -67,14 +59,6 @@ public:
    *
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
-   *
-   * @example
-   * ```cpp
-   * auto result = modifier->AppendToHeadersHeader("MyTileset");
-   * if (!result) {
-   *   std::cout << "Failed to modify headers.h: " << result.error() << std::endl;
-   * }
-   * ```
    */
   [[nodiscard]] virtual Result<void> AppendToHeadersHeader(const std::string &tileset_name) = 0;
 
@@ -92,14 +76,6 @@ public:
    *
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
-   *
-   * @example
-   * ```cpp
-   * auto result = modifier->AppendToMetatilesHeader("MyTileset");
-   * if (!result) {
-   *   std::cout << "Failed to modify metatiles.h: " << result.error() << std::endl;
-   * }
-   * ```
    */
   [[nodiscard]] virtual Result<void> AppendToMetatilesHeader(const std::string &tileset_name) = 0;
 
@@ -117,14 +93,6 @@ public:
    *
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
-   *
-   * @example
-   * ```cpp
-   * auto result = modifier->AppendTilesetDeclarations("MyTileset");
-   * if (!result) {
-   *   std::cout << "Failed to integrate tileset: " << result.error() << std::endl;
-   * }
-   * ```
    */
   [[nodiscard]] virtual Result<void> AppendTilesetDeclarations(const std::string &tileset_name) = 0;
 };
