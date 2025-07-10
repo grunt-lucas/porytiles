@@ -3,11 +3,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace porytiles {
+namespace porytiles11 {
 
 [[noreturn]] void PanicImpl(const char *s) noexcept {
     std::fputs(s, stderr);
     std::abort();
 }
 
-} // namespace porytiles
+} // namespace porytiles11

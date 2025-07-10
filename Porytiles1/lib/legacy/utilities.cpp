@@ -20,7 +20,7 @@
 
 #include <regex>
 
-namespace porytiles {
+namespace porytiles1 {
 
 std::vector<std::string> split(std::string input, const std::string &delimiter) {
     std::vector<std::string> result;
@@ -258,4 +258,4 @@ void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::fi
 }
 #endif // DOCTEST_CONFIG_DISABLE
 
-} // namespace porytiles
+} // namespace porytiles1

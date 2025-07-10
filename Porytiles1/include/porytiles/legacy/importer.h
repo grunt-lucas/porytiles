@@ -20,7 +20,7 @@ using OverridenPaletteSlots = std::vector<std::pair<std::size_t, porytiles::BGR1
  * png::images, and other data structures. The driver is responsible for preparing these types and data structures from
  * the raw input files.
  */
-namespace porytiles {
+namespace porytiles1 {
 
 /**
  * Build a DecompiledTileset from a single source PNG. This tileset is considered "raw", that is, it has no layering.
@@ -63,6 +63,6 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
                                                                  std::ifstream &paletteFile,
                                                                  const std::string &fileName);
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_IMPORTER_H

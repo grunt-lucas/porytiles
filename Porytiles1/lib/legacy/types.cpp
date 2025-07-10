@@ -10,7 +10,7 @@
 #include "legacy/porytiles_context.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 static RGBATile uniformTile(const RGBA32 &color) noexcept {
     RGBATile tile{};
@@ -590,7 +590,7 @@ std::string decompilerModeString(DecompilerMode mode) {
         Panic("types::decompilerModeString unknown decompiler mode");
     }
 }
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("RGBA32 to BGR15 should lose precision") {

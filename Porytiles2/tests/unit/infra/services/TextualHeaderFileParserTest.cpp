@@ -216,7 +216,8 @@ TEST_F(TextualHeaderFileParserTest, ContainsDeclarationShouldHandlePartialMatche
   EXPECT_TRUE(result2.value());
 
   // Should not find non-existent pattern
-  auto result3 = parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_NonExistent");
+  auto result3 =
+      parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_NonExistent");
   EXPECT_TRUE(result3.has_value());
   EXPECT_FALSE(result3.value());
 }

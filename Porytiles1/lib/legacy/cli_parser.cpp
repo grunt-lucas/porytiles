@@ -20,7 +20,7 @@
 #include "legacy/utilities.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
@@ -1324,7 +1324,7 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         die(ctx, "Errors generated during command line parsing. Decompilation terminated.");
     }
 }
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("parseCompile should work as expected with all command lines") {

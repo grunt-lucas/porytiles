@@ -17,7 +17,7 @@
 #include "legacy/utilities.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 constexpr size_t TILES_PNG_WIDTH_IN_TILES = 16;
 
@@ -338,7 +338,7 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
     }
 }
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("emitPalette should write the expected JASC pal to the output stream") {

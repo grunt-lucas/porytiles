@@ -20,7 +20,8 @@ ProjectCSourceFileAppender::ProjectCSourceFileAppender(const gsl::not_null<Proje
                                                        std::unique_ptr<CSourceGenerator> generator)
     : paths_{paths}, generator_{std::move(generator)} {}
 
-Result<void> ProjectCSourceFileAppender::append_to_graphics_header(const std::string &tileset_name) {
+Result<void>
+ProjectCSourceFileAppender::append_to_graphics_header(const std::string &tileset_name) {
   const auto graphics_path = paths_->graphics_header();
 
   // Generate the palette and tile declarations
@@ -45,12 +46,14 @@ Result<void> ProjectCSourceFileAppender::append_to_headers_header(const std::str
   return AppendToFile(headers_path, content);
 }
 
-Result<void> ProjectCSourceFileAppender::append_to_metatiles_header(const std::string &tileset_name) {
+Result<void>
+ProjectCSourceFileAppender::append_to_metatiles_header(const std::string &tileset_name) {
   const auto metatiles_path = paths_->metatiles_header();
 
   // Generate the metatile and attribute declarations
   const auto metatile_declaration = generator_->generate_metatile_declaration(tileset_name);
-  const auto attribute_declaration = generator_->generate_metatile_attribute_declaration(tileset_name);
+  const auto attribute_declaration =
+      generator_->generate_metatile_attribute_declaration(tileset_name);
 
   // Combine the declarations with proper spacing
   const auto content = fmt::format("{}\n\n{}\n", metatile_declaration, attribute_declaration);

@@ -25,7 +25,7 @@
 #include "legacy/utilities.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 static void validateCompileInputs(const PorytilesContext &ctx, const CompilerMode compilerMode) {
     using std::filesystem::exists;
@@ -1133,7 +1133,7 @@ void drive(PorytilesContext &ctx) {
     }
 }
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("drive should emit all expected files for anim_metatiles_2 primary set") {

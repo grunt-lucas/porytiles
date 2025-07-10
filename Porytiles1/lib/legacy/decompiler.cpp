@@ -15,7 +15,7 @@
 #include "legacy/porytiles_context.h"
 #include "legacy/types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 static RGBATile setTilePixels(const PorytilesContext &ctx, const GBATile &gbaTile, const GBAPalette &palette,
                               bool hFlip, bool vFlip) {
@@ -188,7 +188,7 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
     return decompiledTileset;
 }
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("decompile should decompile a basic primary tileset") {

@@ -8,7 +8,7 @@
 #include "./porytiles_context.h"
 #include "./types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 struct DecompiledIndex {
     bool animated;
@@ -25,7 +25,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
         const std::vector<RGBATile> &palettePrimers, const std::vector<RGBATile> &paletteOverrides,
         const std::unordered_map<std::size_t, std::vector<std::pair<std::size_t, BGR15>>> &palOverridesMap);
 
-} // namespace porytiles
+} // namespace porytiles1
 
 /*
  * Some of the types we need are extremely verbose and confusing, so here let's define some better names to make the

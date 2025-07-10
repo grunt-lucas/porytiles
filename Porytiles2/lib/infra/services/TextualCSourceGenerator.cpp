@@ -49,7 +49,8 @@ TextualCSourceGenerator::generate_tileset_struct_definition(const std::string &t
                      tileset_name, tileset_name, tileset_name, tileset_name, tileset_name);
 }
 
-std::string TextualCSourceGenerator::generate_metatile_declaration(const std::string &tileset_name) {
+std::string
+TextualCSourceGenerator::generate_metatile_declaration(const std::string &tileset_name) {
   const auto tileset_path = ToLowercaseFilePath(tileset_name);
 
   return fmt::format(
@@ -67,7 +68,7 @@ TextualCSourceGenerator::generate_metatile_attribute_declaration(const std::stri
 }
 
 std::string TextualCSourceGenerator::format_with_indentation(const std::string &code,
-                                                           int indent_level) {
+                                                             int indent_level) {
   return ApplyIndentation(code, indent_level);
 }
 

@@ -11,7 +11,7 @@
 
 #include "../legacy/types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 enum class DiagLevel { Ignored, Note, Remark, Warning, Error, Fatal };
 std::string LevelToStr(DiagLevel level);
@@ -255,7 +255,7 @@ std::vector<const char *> AllDiagNames();
 /// @brief Get an iterable view of all diag_templ names for a given DiagLevel.
 std::vector<const char *> AllDiagNames(DiagLevel level);
 
-} // namespace porytiles
+} // namespace porytiles1
 
 template <>
 struct std::hash<porytiles::DiagTempl> {

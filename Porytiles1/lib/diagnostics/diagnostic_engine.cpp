@@ -21,7 +21,7 @@ std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_l
 
 } // namespace
 
-namespace porytiles {
+namespace porytiles1 {
 
 void DiagEngine::EnableAllWarnings() {
     for (const auto &diag : AllDiagNames()) {
@@ -202,4 +202,4 @@ std::string DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level, const D
     return ss.str();
 }
 
-} // namespace porytiles
+} // namespace porytiles1

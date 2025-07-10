@@ -24,7 +24,7 @@
 #include "legacy/types.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 /**
  * Insert an rgba32 color into a normalized palette. The color will be converted to bgr15 format in the process,
@@ -1097,7 +1097,7 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
     return compiled;
 }
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("insertRGBA should add new colors in order and return the correct index for a given color") {

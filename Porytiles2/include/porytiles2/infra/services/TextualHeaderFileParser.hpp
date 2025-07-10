@@ -58,7 +58,7 @@ public:
    * @return Result<bool> indicating if the declaration exists or error details
    */
   [[nodiscard]] Result<bool> contains_declaration(const std::filesystem::path &file_path,
-                                                 const std::string &declaration_pattern) override;
+                                                  const std::string &declaration_pattern) override;
 
   /**
    * @brief Find the best insertion point for new declarations.
@@ -71,7 +71,8 @@ public:
    * @param file_path The path to the C header file to analyze
    * @return Result<size_t> containing the line number for insertion or error details
    */
-  [[nodiscard]] Result<size_t> find_insertion_point(const std::filesystem::path &file_path) override;
+  [[nodiscard]] Result<size_t>
+  find_insertion_point(const std::filesystem::path &file_path) override;
 
   /**
    * @brief Validate that a header file has proper C syntax structure.

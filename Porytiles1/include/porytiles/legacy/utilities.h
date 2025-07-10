@@ -7,7 +7,7 @@
 #include "./porytiles_context.h"
 #include "./types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 template <typename T> T parseInteger(const char *integerString, const int base) {
     try {
@@ -51,6 +51,6 @@ void doctestAssertFileBytesIdentical(std::filesystem::path expectedPath, std::fi
 
 void doctestAssertFileLinesIdentical(std::filesystem::path expectedPath, std::filesystem::path actualPath);
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_UTILITIES_H
