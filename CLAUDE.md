@@ -115,9 +115,9 @@ namespace porytiles {
 
 // PascalCase for enum class names
 enum class FooBar {
-    // kPascalCase for constants, note the leading k
-    kFooValue1,
-    kFooValue2
+    // PascalCase for constants, note the leading
+    FooValue1,
+    FooValue2
 };
 
 // PascalCase for class names
@@ -129,12 +129,12 @@ class MyClass {
     // simple ctors can be implemented in the header file
     MyClass(int my_val) : my_val_{my_val} {}
   
-    // Method names are PascalCase, but parameter names are snake_case
-    int ComputeSomething(int accum_value) const;
+    // Method names are snake_case, parameter names are snake_case
+    int compute_something(int accum_value) const;
     
     // Do something complicated to update my_val_
     // This should be implemented in the cpp file
-    void UpdateMyValUsingComplexProcess(int some_param);
+    void update_my_val_with_complex_process(int some_param);
   
     // Simple accessors/mutators also use snake_case, but omit the trailing underscore
     // Simple accessors/mutators can be implemented in the header file
@@ -157,7 +157,7 @@ class MyClass {
 };
 
 // cpp file implementations
-int MyClass::ComputeSomething(int accum_value) const {
+int MyClass::compute_something(int accum_value) const {
     // local variable names are snake_case
     int my_local = 1;
     return my_local + my_val_ + accum_value;
