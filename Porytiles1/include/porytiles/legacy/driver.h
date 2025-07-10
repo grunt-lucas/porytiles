@@ -3,10 +3,10 @@
 
 #include "./porytiles_context.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 void drive(PorytilesContext &ctx);
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_DRIVER_H

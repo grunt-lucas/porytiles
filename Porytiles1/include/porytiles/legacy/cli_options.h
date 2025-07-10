@@ -6,7 +6,7 @@
 
 #include "../diagnostics/diagnostics.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 // ----------------------------
 // |    OPTION DEFINITIONS    |
@@ -472,6 +472,6 @@ constexpr int WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL = 80120;
 // @formatter:on
 // clang-format on
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_CLI_OPTIONS_H

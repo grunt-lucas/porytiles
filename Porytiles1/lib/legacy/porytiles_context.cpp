@@ -6,7 +6,7 @@
 #include "legacy/logger.h"
 #include "legacy/porytiles_exception.h"
 
-namespace porytiles {
+namespace porytiles1 {
 void die(const PorytilesContext &ctx, const std::string &errorMessage) {
     if (ctx.printDieMsg) {
         pt_println(stderr, "{}", errorMessage);
@@ -44,4 +44,4 @@ void die_errorCount(const PorytilesContext &ctx, const std::string &srcPath, con
     }
     throw PorytilesException{errorMessage};
 }
-} // namespace porytiles
+} // namespace porytiles1

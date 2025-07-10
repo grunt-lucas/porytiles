@@ -7,7 +7,7 @@
 #include "./porytiles_context.h"
 #include "./types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 extern const std::size_t TILES_PNG_WIDTH_IN_TILES;
 
@@ -30,6 +30,6 @@ void emitDecompiled(PorytilesContext &ctx, DecompilerMode mode, png::image<png::
                     png::image<png::rgba_pixel> &middle, png::image<png::rgba_pixel> &top, std::ostream &outCsv,
                     const DecompiledTileset &tileset, const std::unordered_map<std::size_t, Attributes> &attributesMap,
                     const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap);
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_EMITTER_H

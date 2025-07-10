@@ -9,7 +9,7 @@
 #include "../build_version.h"
 #include "./porytiles_context.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 template <typename... T>
 void pt_logln(const PorytilesContext &ctx, std::FILE *stream, fmt::format_string<T...> fmt, T &&...args) {
@@ -63,6 +63,6 @@ template <typename... T> void pt_note(fmt::format_string<T...> fmt, T &&...args)
                  fmt::format(fmt, std::forward<T>(args)...));
 }
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_LOGGER_H

@@ -11,7 +11,7 @@
 
 namespace {
 
-using namespace porytiles;
+using namespace porytiles1;
 
 constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
@@ -129,7 +129,7 @@ std::vector<std::string> BuildTileHighlight(const DiagEngine &eng, const DiagLev
 
 } // namespace
 
-namespace porytiles {
+namespace porytiles1 {
 std::string LevelToStr(DiagLevel level) {
     switch (level) {
     case DiagLevel::Ignored:
@@ -481,4 +481,4 @@ std::vector<const char *> AllDiagNames(const DiagLevel level) {
     return keys;
 }
 
-} // namespace porytiles
+} // namespace porytiles1

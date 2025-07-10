@@ -3,7 +3,7 @@
 
 #include "porytiles2/build_version.h"
 
-#include "./command.hpp"
+#include "command.hpp"
 
 int main(const int argc, char **argv) {
   CLI::App porytiles_app{"Porytiles"};

@@ -10,7 +10,7 @@
 #include "../panic/panic.hpp"
 #include "./diagnostics.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 /// @brief DiagEngine coordinates the generation and consumption of diagnostic
 /// messages.
@@ -132,4 +132,4 @@ class DiagEngine {
                                               const std::vector<std::string> &msg) const;
 };
 
-} // namespace porytiles
+} // namespace porytiles1

@@ -8,7 +8,7 @@
 #include "../diagnostics/diagnostics.hpp"
 #include "./types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 struct PorytilesContext;
 
@@ -123,6 +123,6 @@ struct PorytilesContext {
     }
 };
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_PORYTILES_CONTEXT_H

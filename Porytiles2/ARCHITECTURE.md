@@ -197,7 +197,7 @@ porytiles2 compile-tileset MyTileset
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
 3. Compute checksums for each asset in `PorymapTilesetComponent`.
-4. Compare with checksums in `artifact_checksums.json`, bail with the message "unimported changes present in Porymap asset X."
+4. Compare with cached checksums in `artifact_checksums.json`, if any differ, bail with the message "unimported changes present in Porymap asset X."
 5. If all match, continue.
 6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
 7. Otherwise, compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.

@@ -14,7 +14,7 @@
 
 #include "../panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 constexpr std::size_t TILE_SIDE_LENGTH_PIX = 8;
 constexpr std::size_t TILE_NUM_PIX = TILE_SIDE_LENGTH_PIX * TILE_SIDE_LENGTH_PIX;
 constexpr std::size_t METATILE_TILE_SIDE_LENGTH_TILES = 2;
@@ -72,15 +72,15 @@ extern const BGR15 BGR_MAGENTA;
 extern const BGR15 BGR_CYAN;
 extern const BGR15 BGR_WHITE;
 extern const BGR15 BGR_GREY;
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::BGR15> {
-    std::size_t operator()(const porytiles::BGR15 &bgr) const noexcept {
+template <> struct std::hash<porytiles1::BGR15> {
+    std::size_t operator()(const porytiles1::BGR15 &bgr) const noexcept {
         return std::hash<uint16_t>{}(bgr.bgr);
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 constexpr std::uint8_t ALPHA_TRANSPARENT = 0;
 constexpr std::uint8_t ALPHA_OPAQUE = 255;
 
@@ -125,11 +125,11 @@ extern const RGBA32 RGBA_WHITE;
 extern const RGBA32 RGBA_GREY;
 extern const RGBA32 RGBA_PURPLE;
 extern const RGBA32 RGBA_LIME;
-} // namespace porytiles
+} // namespace porytiles1
 
 // TODO : better hash function
-template <> struct std::hash<porytiles::RGBA32> {
-    std::size_t operator()(const porytiles::RGBA32 &rgba) const noexcept {
+template <> struct std::hash<porytiles1::RGBA32> {
+    std::size_t operator()(const porytiles1::RGBA32 &rgba) const noexcept {
         const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red);
         const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green);
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue);
@@ -138,7 +138,7 @@ template <> struct std::hash<porytiles::RGBA32> {
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 
 BGR15 rgbaToBgr(const RGBA32 &rgba) noexcept;
 
@@ -361,10 +361,10 @@ struct GBATile {
 };
 
 extern const GBATile GBA_TILE_TRANSPARENT;
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::GBATile> {
-    std::size_t operator()(const porytiles::GBATile &tile) const noexcept {
+template <> struct std::hash<porytiles1::GBATile> {
+    std::size_t operator()(const porytiles1::GBATile &tile) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto index : tile.colorIndexes) {
@@ -374,7 +374,7 @@ template <> struct std::hash<porytiles::GBATile> {
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 /**
  * A palette of PAL_SIZE (16) BGR15 colors.
  */
@@ -533,10 +533,10 @@ struct NormalizedPixels {
         return this->colorIndexes == other.colorIndexes;
     }
 };
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::NormalizedPixels> {
-    std::size_t operator()(const porytiles::NormalizedPixels &pixels) const noexcept {
+template <> struct std::hash<porytiles1::NormalizedPixels> {
+    std::size_t operator()(const porytiles1::NormalizedPixels &pixels) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto pixel : pixels.colorIndexes) {
@@ -546,27 +546,27 @@ template <> struct std::hash<porytiles::NormalizedPixels> {
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 
 struct NormalizedPalette {
     int size{};
     std::array<BGR15, PAL_SIZE> colors{};
 };
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::NormalizedPalette> {
-    std::size_t operator()(const porytiles::NormalizedPalette &palette) const noexcept {
+template <> struct std::hash<porytiles1::NormalizedPalette> {
+    std::size_t operator()(const porytiles1::NormalizedPalette &palette) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         hashValue ^= std::hash<int>{}(palette.size);
         for (auto color : palette.colors) {
-            hashValue ^= std::hash<porytiles::BGR15>{}(color);
+            hashValue ^= std::hash<porytiles1::BGR15>{}(color);
         }
         return hashValue;
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 
 struct NormalizedTile {
     /*
@@ -667,16 +667,16 @@ struct NormalizedTile {
         return 0;
     }
 };
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::NormalizedTile> {
-    std::size_t operator()(const porytiles::NormalizedTile &tile) const noexcept {
+template <> struct std::hash<porytiles1::NormalizedTile> {
+    std::size_t operator()(const porytiles1::NormalizedTile &tile) const noexcept {
         // TODO : better hash function
         std::size_t hashValue = 0;
         for (const auto &layer : tile.frames) {
-            hashValue ^= std::hash<porytiles::NormalizedPixels>{}(layer);
+            hashValue ^= std::hash<porytiles1::NormalizedPixels>{}(layer);
         }
-        hashValue ^= std::hash<porytiles::NormalizedPalette>{}(tile.palette);
+        hashValue ^= std::hash<porytiles1::NormalizedPalette>{}(tile.palette);
         hashValue ^= std::hash<bool>{}(tile.hFlip);
         hashValue ^= std::hash<bool>{}(tile.vFlip);
         return hashValue;
@@ -690,7 +690,7 @@ template <> struct std::hash<std::pair<std::size_t, std::size_t>> {
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 
 // ---------------------
 // |   CONFIG TYPES    |
@@ -994,6 +994,6 @@ struct DecompilerContext {
     DecompilerContext() : pairedPrimaryTileset{nullptr}, resultTileset{nullptr} {}
 };
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_TYPES_H

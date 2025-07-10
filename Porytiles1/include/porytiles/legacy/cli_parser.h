@@ -3,7 +3,7 @@
 
 #include "./porytiles_context.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 void parseOptions(PorytilesContext &ctx, int argc, char *const *argv);
 

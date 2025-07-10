@@ -8,7 +8,7 @@
 #include "./porytiles_context.h"
 #include "./types.h"
 
-namespace porytiles {
+namespace porytiles1 {
 
 constexpr std::size_t EXPLORATION_CUTOFF_MULTIPLIER = 1'000'000;
 constexpr std::size_t EXPLORATION_MAX_CUTOFF = 100 * EXPLORATION_CUTOFF_MULTIPLIER;
@@ -33,10 +33,10 @@ struct AssignState {
 };
 
 enum class AssignResult { SUCCESS, EXPLORE_CUTOFF_REACHED, NO_SOLUTION_POSSIBLE };
-} // namespace porytiles
+} // namespace porytiles1
 
-template <> struct std::hash<porytiles::AssignState> {
-    std::size_t operator()(const porytiles::AssignState &state) const noexcept {
+template <> struct std::hash<porytiles1::AssignState> {
+    std::size_t operator()(const porytiles1::AssignState &state) const noexcept {
         std::size_t hashValue = 0;
         for (auto colorSet : state.logicalPalettes) {
             hashValue ^= std::hash<std::bitset<240>>{}(colorSet.first);
@@ -46,7 +46,7 @@ template <> struct std::hash<porytiles::AssignState> {
     }
 };
 
-namespace porytiles {
+namespace porytiles1 {
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                               const std::vector<ColorSet> &unassigneds, const std::vector<ColorSet> &unassignedPrimers);
@@ -60,6 +60,6 @@ std::pair<std::vector<ColorSet>, std::vector<ColorSet>>
 runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, const std::vector<ColorSet> &colorSets,
                            const std::vector<ColorSet> &primerColorSets, const std::vector<ColorSet> &overrideColorSets,
                            const std::unordered_map<BGR15, std::size_t> &colorToIndex);
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_PALETTE_ASSIGNMENT_H

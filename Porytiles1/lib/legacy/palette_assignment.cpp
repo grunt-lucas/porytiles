@@ -10,7 +10,7 @@
 #include "legacy/types.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
@@ -523,4 +523,4 @@ runPaletteAssignmentMatrix(PorytilesContext &ctx, CompilerMode compilerMode, con
                               fmt::format("palette assign param search matrix failed"));
 }
 
-} // namespace porytiles
+} // namespace porytiles1

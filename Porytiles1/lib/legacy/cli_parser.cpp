@@ -20,7 +20,7 @@
 #include "legacy/utilities.h"
 #include "panic/panic.hpp"
 
-namespace porytiles {
+namespace porytiles1 {
 
 static void parseGlobalOptions(PorytilesContext &ctx, int argc, char *const *argv);
 
@@ -1324,14 +1324,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         die(ctx, "Errors generated during command line parsing. Decompilation terminated.");
     }
 }
-} // namespace porytiles
+} // namespace porytiles1
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("parseCompile should work as expected with all command lines") {
     // These tests are full of disgusting and evil hacks, avert your gaze
     SUBCASE("Check that the defaults are correct") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 
@@ -1349,8 +1349,8 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
     }
 
     SUBCASE("-Wall should enable everything") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 
@@ -1371,8 +1371,8 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
     }
 
     SUBCASE("-Wall -Werror should enable everything as an error") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 
@@ -1396,8 +1396,8 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
     }
 
     SUBCASE("Should enable a non-default warn, set all to error, then disable the error") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 
@@ -1424,8 +1424,8 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
     }
 
     SUBCASE("Should enable all warnings, then disable one of them") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 
@@ -1449,8 +1449,8 @@ TEST_CASE("parseCompile should work as expected with all command lines") {
     }
 
     SUBCASE("Global warning disable should work, even if a warning was explicitly enabled") {
-        porytiles::PorytilesContext ctx{};
-        ctx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+        porytiles1::PorytilesContext ctx{};
+        ctx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
 
         optind = 1;
 

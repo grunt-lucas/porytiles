@@ -9,12 +9,12 @@
  * For internal errors that signal code bugs, Porytiles will throw one of the standard C++ exception types.
  */
 
-namespace porytiles {
+namespace porytiles1 {
 // Generic porytiles exception class
 class PorytilesException final : public std::runtime_error {
   public:
     explicit PorytilesException(const std::string &msg) : std::runtime_error{msg} {}
 };
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_PORYTILES_EXCEPTION_H

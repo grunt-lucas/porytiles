@@ -8,7 +8,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace porytiles {
+namespace porytiles1 {
 
 /**
  * @brief A wrapper for std::string_view with a taggable std::source_location.
@@ -40,4 +40,4 @@ inline void AssertOrPanic(const bool condition, const StringViewSourceLoc &s) {
     }
 }
 
-} // namespace porytiles
+} // namespace porytiles1

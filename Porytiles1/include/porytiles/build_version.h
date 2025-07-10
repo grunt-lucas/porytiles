@@ -1,7 +1,7 @@
 #ifndef PORYTILES_BUILD_VERSION_H
 #define PORYTILES_BUILD_VERSION_H
 
-namespace porytiles {
+namespace porytiles1 {
 
 #define PORYTILES_STRINGIFY(x) #x
 #define PORYTILES_EXPAND(x) PORYTILES_STRINGIFY(x)
@@ -26,6 +26,6 @@ namespace porytiles {
 #define PORYTILES_BUILD_VERSION PORYTILES_EXPAND(PORYTILES_BUILD_VERSION_)
 #define PORYTILES_BUILD_DATE PORYTILES_EXPAND(PORYTILES_BUILD_DATE_)
 
-} // namespace porytiles
+} // namespace porytiles1
 
 #endif // PORYTILES_BUILD_VERSION_H
