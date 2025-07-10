@@ -4,7 +4,7 @@
 
 #include "porytiles2/infra/diagnostics/DiagnosticEngine.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief A factory for creating and retrieving a singleton DiagEngine.
@@ -40,4 +40,4 @@ private:
   inline static DiagEngine *override_ = nullptr;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

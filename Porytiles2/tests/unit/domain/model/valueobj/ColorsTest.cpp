@@ -5,7 +5,7 @@
 #include "porytiles2/domain/model/valueobj/Bgr15.hpp"
 #include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(Bgr15Tests, ClassInvariantShouldHold) {
   constexpr Bgr15 bgr_red{253, 0, 0};

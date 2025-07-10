@@ -10,7 +10,7 @@
 #include "porytiles2/infra/services/PngRgbaImageLoader.hpp"
 #include "porytiles2/infra/services/PngRgbaImageSaver.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 // TODO : reorganize test assets
 

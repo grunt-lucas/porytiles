@@ -11,7 +11,7 @@
 
 #include <fmt/format.h>
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class ProjectCSourceFileAppenderIntegrationTest : public ::testing::Test {
 protected:

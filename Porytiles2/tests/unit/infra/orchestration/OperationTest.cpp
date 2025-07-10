@@ -9,7 +9,7 @@
 #include "porytiles2/infra/diagnostics/DiagnosticEngine.hpp"
 #include "porytiles2/infra/orchestration/Operation.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class TestOperation final : public Operation {
 public:

@@ -2,7 +2,7 @@
 
 #include "porytiles2/infra/project/ProjectPaths.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(ProjectPathsTests, BehaviorsHeaderDefaultShouldWork) {
   const ProjectPaths paths{"/foo/bar"};

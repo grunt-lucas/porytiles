@@ -3,7 +3,7 @@
 #include <expected>
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Alias for `std::expected<T, std::string>`, where `T` is some type.
@@ -19,4 +19,4 @@ namespace porytiles {
  */
 template <typename T> using Result = std::expected<T, std::string>;
 
-} // namespace porytiles
+} // namespace porytiles2

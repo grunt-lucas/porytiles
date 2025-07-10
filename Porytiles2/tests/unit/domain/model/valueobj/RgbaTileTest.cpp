@@ -7,7 +7,7 @@
 #include <porytiles2/domain/model/valueobj/Rgba32.hpp>
 #include <porytiles2/domain/model/valueobj/RgbaTile.hpp>
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
   RgbaTile tile{};

@@ -2,7 +2,7 @@
 
 #include <variant>
 
-namespace porytiles {
+namespace porytiles2 {
 
 enum class TileType { vram, free, layered, anim, primer, override };
 
@@ -30,4 +30,4 @@ public:
 
 using TileMetadata = std::variant<std::monostate, FreeMetadata, LayeredMetadata>;
 
-} // namespace porytiles
+} // namespace porytiles2

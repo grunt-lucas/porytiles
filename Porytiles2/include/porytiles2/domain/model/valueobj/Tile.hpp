@@ -5,7 +5,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 constexpr std::size_t kTileSideLength = 8;
 constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
@@ -61,4 +61,4 @@ public:
   }
 };
 
-} // namespace porytiles
+} // namespace porytiles2

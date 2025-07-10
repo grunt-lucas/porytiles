@@ -9,7 +9,7 @@
 #include "porytiles2/infra/services/ProjectCSourceFileAppender.hpp"
 #include "porytiles2/infra/services/TextualCSourceGenerator.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class ProjectCSourceFileAppenderTest : public ::testing::Test {
 protected:

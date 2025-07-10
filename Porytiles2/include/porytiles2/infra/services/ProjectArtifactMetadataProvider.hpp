@@ -3,7 +3,7 @@
 
 #include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief An implementation of the ArtifactMetadataProvider service that uses an in-filesystem
@@ -32,4 +32,4 @@ public:
   [[nodiscard]] bool are_porymap_assets_newer(const Tileset &tileset) const override;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

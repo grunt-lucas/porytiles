@@ -1,7 +1,7 @@
 #pragma once
 
-namespace porytiles {
+namespace porytiles2 {
 
 class Bin {};
 
-} // namespace porytiles
+} // namespace porytiles2

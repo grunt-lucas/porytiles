@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Interface for generating C source code constructs related to tileset integration.
@@ -106,4 +106,4 @@ public:
   virtual std::string generate_include_guards(const std::string &header_name) = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

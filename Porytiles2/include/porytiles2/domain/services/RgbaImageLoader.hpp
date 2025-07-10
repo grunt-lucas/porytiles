@@ -6,7 +6,7 @@
 #include "../model/valueobj/RgbaImage.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Service interface for loading RgbaImage instances from various sources.
@@ -34,4 +34,4 @@ public:
   load_from_file(const std::filesystem::path &path) const = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

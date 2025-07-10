@@ -6,7 +6,7 @@
 #include "porytiles2/domain/services/TilesetCompiler.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) const {
   // 1. Load tileset
@@ -53,4 +53,4 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
   return {};
 }
 
-} // namespace porytiles
+} // namespace porytiles2

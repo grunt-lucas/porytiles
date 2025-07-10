@@ -4,7 +4,7 @@
 
 #include "porytiles2/templates/ViewPtr.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(ViewPtrTests, ReadOperations) {
   const auto owner{std::make_unique<std::string>("foobar")};

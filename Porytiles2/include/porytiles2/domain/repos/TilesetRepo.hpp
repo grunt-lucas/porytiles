@@ -7,7 +7,7 @@
 #include "porytiles2/domain/services/ArtifactMetadataProvider.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Repository interface for the Tileset aggregate root.
@@ -79,4 +79,4 @@ private:
   std::unique_ptr<ArtifactMetadataProvider> metadata_service_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

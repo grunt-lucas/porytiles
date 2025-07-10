@@ -6,7 +6,7 @@
 #include "porytiles2/domain/model/aggregates/components/PorytilesTilesetComponent.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Service interface for compiling a PorytilesTilesetComponent into a
@@ -27,4 +27,4 @@ public:
                     const PorymapTilesetComponent &primary_tileset) = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

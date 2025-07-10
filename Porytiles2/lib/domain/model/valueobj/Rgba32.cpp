@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 std::string Rgba32::to_jasc_str() const {
   return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
@@ -47,4 +47,4 @@ bool Rgba32::equals_ignoring_alpha(const Rgba32 &other) const {
 //     return os;
 // }
 
-} // namespace porytiles
+} // namespace porytiles2

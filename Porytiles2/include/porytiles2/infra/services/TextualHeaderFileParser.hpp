@@ -7,7 +7,7 @@
 #include "porytiles2/domain/services/HeaderFileParser.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Text-based implementation of HeaderFileParser for C header files.
@@ -92,4 +92,4 @@ public:
   validate_header_structure(const std::filesystem::path &file_path) override;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

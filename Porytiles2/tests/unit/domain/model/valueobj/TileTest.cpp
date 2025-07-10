@@ -6,7 +6,7 @@
 
 #include <porytiles2/domain/model/valueobj/Tile.hpp>
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(TileTests, AtAndSetShouldWork) {
   Tile<int> tile{};

@@ -6,11 +6,11 @@
 #include "porytiles2/domain/model/entities/RgbaAnim.hpp"
 #include "porytiles2/domain/model/entities/RgbaMetatile.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class PorytilesTilesetComponent {
   std::vector<RgbaMetatile> metatiles_;
   std::vector<RgbaAnim> anims_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

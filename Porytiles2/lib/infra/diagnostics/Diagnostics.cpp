@@ -10,7 +10,7 @@
 
 namespace {
 
-using namespace porytiles;
+using namespace porytiles2;
 
 constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
@@ -136,7 +136,7 @@ void ResetStream(std::stringstream &ss) {
 
 } // namespace
 
-namespace porytiles {
+namespace porytiles2 {
 std::string LevelToStr(DiagLevel level) {
   switch (level) {
   case DiagLevel::kIgnored:
@@ -445,4 +445,4 @@ std::vector<const char *> AllDiagNames(const DiagLevel level) {
   return keys;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

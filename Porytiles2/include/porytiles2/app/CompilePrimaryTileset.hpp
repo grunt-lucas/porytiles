@@ -8,7 +8,7 @@
 #include "porytiles2/domain/services/TilesetCompiler.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Use case for compiling a primary Tileset.
@@ -49,4 +49,4 @@ private:
   std::unique_ptr<ArtifactMetadataProvider> metadata_service_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

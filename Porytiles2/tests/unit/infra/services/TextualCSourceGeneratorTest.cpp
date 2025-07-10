@@ -2,7 +2,7 @@
 
 #include "porytiles2/infra/services/TextualCSourceGenerator.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class TextualCSourceGeneratorTest : public ::testing::Test {
 protected:

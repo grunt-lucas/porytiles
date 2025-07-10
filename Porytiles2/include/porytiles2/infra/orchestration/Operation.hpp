@@ -9,7 +9,7 @@
 #include "porytiles2/templates/AnyMap.hpp"
 #include "porytiles2/templates/ViewPtr.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief ArtifactMetadata provides a POD-like class for Operation to declare input and output
@@ -63,4 +63,4 @@ private:
   std::string name_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

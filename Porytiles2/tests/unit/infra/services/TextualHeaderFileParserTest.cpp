@@ -9,7 +9,7 @@
 
 #include "porytiles2/infra/services/TextualHeaderFileParser.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class TextualHeaderFileParserTest : public ::testing::Test {
 protected:

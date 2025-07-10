@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace porytiles {
+namespace porytiles2 {
 
 class VramAnim {
   std::vector<std::vector<std::uint8_t>> frames_;
@@ -12,4 +12,4 @@ public:
   VramAnim() = default;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

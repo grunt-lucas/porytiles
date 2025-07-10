@@ -8,13 +8,13 @@
 
 namespace {
 
-std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_level,
-                                          const porytiles::DiagTempl &templ) {
-  if (in_flight_level == porytiles::DiagLevel::kWarning) {
+std::optional<std::string> construct_flag(const porytiles2::DiagLevel in_flight_level,
+                                          const porytiles2::DiagTempl &templ) {
+  if (in_flight_level == porytiles2::DiagLevel::kWarning) {
     return std::optional{fmt::format("-W{}", templ.name())};
   }
-  if (templ.level() == porytiles::DiagLevel::kWarning &&
-      in_flight_level == porytiles::DiagLevel::kError) {
+  if (templ.level() == porytiles2::DiagLevel::kWarning &&
+      in_flight_level == porytiles2::DiagLevel::kError) {
     return std::optional{fmt::format("-Werror={}", templ.name())};
   }
   return std::nullopt;
@@ -22,7 +22,7 @@ std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_l
 
 } // namespace
 
-namespace porytiles {
+namespace porytiles2 {
 
 void DiagEngine::EnableAllWarnings() {
   for (const auto &diag : AllDiagNames()) {
@@ -202,4 +202,4 @@ std::string DiagEngine::ConstructMsgStr(const DiagLevel in_flight_level, const D
   return ss.str();
 }
 
-} // namespace porytiles
+} // namespace porytiles2

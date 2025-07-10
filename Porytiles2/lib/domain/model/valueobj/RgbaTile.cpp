@@ -5,7 +5,7 @@
 
 #include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 bool RgbaTile::is_transparent(const Rgba32 &transparency) const {
   return std::ranges::all_of(pix(), [=](const auto &pixel) {
@@ -22,4 +22,4 @@ bool RgbaTile::equals_bgr(const RgbaTile &other) const {
   return true;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

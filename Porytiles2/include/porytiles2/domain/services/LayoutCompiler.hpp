@@ -6,7 +6,7 @@
 #include "porytiles2/domain/model/aggregates/components/PorytilesLayoutComponent.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Service interface for compiling a PorytilesLayoutComponent into a PorymapLayoutComponent.
@@ -22,4 +22,4 @@ public:
   compile(const PorytilesLayoutComponent &layout) = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

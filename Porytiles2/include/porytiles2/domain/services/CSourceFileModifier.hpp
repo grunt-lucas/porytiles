@@ -4,7 +4,7 @@
 
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Interface for modifying C source files to integrate new tilesets.
@@ -99,4 +99,4 @@ public:
   append_tileset_declarations(const std::string &tileset_name) = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

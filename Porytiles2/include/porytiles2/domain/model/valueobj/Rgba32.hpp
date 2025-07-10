@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 class Rgba32 {
   std::uint8_t red_;
@@ -66,10 +66,10 @@ constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::alpha_opaque};
 //     static_cast<std::size_t>(obj.alpha); return seed;
 // }
 
-} // namespace porytiles
+} // namespace porytiles2
 
-template <> struct std::hash<porytiles::Rgba32> {
-  std::size_t operator()(const porytiles::Rgba32 &rgba) const noexcept {
+template <> struct std::hash<porytiles2::Rgba32> {
+  std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept {
     const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
     const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());
     const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());

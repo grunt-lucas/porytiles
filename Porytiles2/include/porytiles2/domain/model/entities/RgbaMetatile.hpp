@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/model/valueobj/RgbaTile.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class RgbaMetatile {
   std::array<RgbaTile, 4> bottom_;
@@ -15,4 +15,4 @@ public:
   RgbaMetatile() = default;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

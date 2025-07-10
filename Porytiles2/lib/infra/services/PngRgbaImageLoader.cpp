@@ -10,7 +10,7 @@
 
 #include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 using cimg_library::CImg;
 using cimg_library::CImgException;
@@ -52,4 +52,4 @@ PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
   return std::make_unique<RgbaImage>(std::move(image));
 }
 
-} // namespace porytiles
+} // namespace porytiles2

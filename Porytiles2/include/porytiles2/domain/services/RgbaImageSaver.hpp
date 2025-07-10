@@ -5,7 +5,7 @@
 #include "../model/valueobj/RgbaImage.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Service interface for saving RgbaImage instances to various formats.
@@ -34,4 +34,4 @@ public:
                                                   const std::filesystem::path &path) const = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

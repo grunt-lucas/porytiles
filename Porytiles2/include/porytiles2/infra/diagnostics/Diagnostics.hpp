@@ -15,7 +15,7 @@
 #include "fmt/color.h"
 #include "fmt/ranges.h"
 
-namespace porytiles {
+namespace porytiles2 {
 
 enum class DiagLevel {
   /// Foo
@@ -313,19 +313,19 @@ std::vector<const char *> AllDiagNames();
  */
 std::vector<const char *> AllDiagNames(DiagLevel level);
 
-} // namespace porytiles
+} // namespace porytiles2
 
 /**
- * @brief Specialization of std::hash for porytiles::DiagTempl.
+ * @brief Specialization of std::hash for porytiles2::DiagTempl.
  *
  * @details
- * This allows porytiles::DiagTempl objects to be used as keys in
+ * This allows porytiles2::DiagTempl objects to be used as keys in
  * unordered STL containers like std::unordered_map and std::unordered_set.
  * The hash value is computed by combining the hash of
  * the template's name and its DiagLevel.
  */
-template <> struct std::hash<porytiles::DiagTempl> {
-  std::size_t operator()(const porytiles::DiagTempl &templ) const noexcept {
+template <> struct std::hash<porytiles2::DiagTempl> {
+  std::size_t operator()(const porytiles2::DiagTempl &templ) const noexcept {
     std::size_t seed = 0x39A9C07E;
     seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 +
             std::hash<std::string>{}(std::string{templ.name()});

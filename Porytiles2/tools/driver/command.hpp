@@ -26,12 +26,12 @@ public:
           const std::string &group)
       : app_(nullptr) {
     if (name.empty()) {
-      porytiles::Panic("Command name cannot be empty.");
+      porytiles2::Panic("Command name cannot be empty.");
     }
 
     app_ = parent_app.add_subcommand(name, desc);
-    porytiles::AssertOrPanic(app_ != nullptr,
-                             "CLI::App::add_subcommand returned nullptr for: " + name);
+    porytiles2::AssertOrPanic(app_ != nullptr,
+                              "CLI::App::add_subcommand returned nullptr for: " + name);
 
     if (!group.empty()) {
       app_->group(group);
@@ -48,7 +48,7 @@ public:
 
   [[nodiscard]] CLI::App &get_app() const {
     if (app_ == nullptr) {
-      porytiles::Panic("app_ should have been initialized by the constructor");
+      porytiles2::Panic("app_ should have been initialized by the constructor");
     }
     return *app_;
   }

@@ -7,7 +7,7 @@
 
 #include "porytiles2/infra/orchestration/Operation.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class Pipeline {
 public:
@@ -22,4 +22,4 @@ private:
   std::vector<Operation *> sorted_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

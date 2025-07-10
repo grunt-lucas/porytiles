@@ -6,7 +6,7 @@
 #include "porytiles2/domain/services/RgbaImageLoader.hpp"
 #include "porytiles2/infra/services/PngRgbaImageLoader.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 // TODO : reorganize test assets
 

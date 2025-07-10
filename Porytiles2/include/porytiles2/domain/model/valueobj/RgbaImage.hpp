@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief An image with Rgba32 pixel values.
@@ -77,4 +77,4 @@ private:
   std::size_t height_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

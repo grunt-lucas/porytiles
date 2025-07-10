@@ -10,7 +10,7 @@
 
 #include <gsl/gsl>
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief String-based implementation of CSourceFileModifier for pokeemerald projects.
@@ -134,4 +134,4 @@ private:
                                        const std::string &content);
 };
 
-} // namespace porytiles
+} // namespace porytiles2

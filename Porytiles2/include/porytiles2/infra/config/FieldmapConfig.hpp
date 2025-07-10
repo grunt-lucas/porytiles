@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace porytiles {
+namespace porytiles2 {
 
 class FieldmapConfig2 {
 public:
@@ -55,4 +55,4 @@ private:
   std::size_t num_tiles_per_metatile_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

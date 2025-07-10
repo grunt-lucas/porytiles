@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief A smart pointer that represents a non-owning view of a resource.
@@ -87,4 +87,4 @@ template <typename T> bool operator!=(std::nullptr_t, const ViewPtr<T> &rhs) noe
 // Deduction guide (C++17)
 template <typename T> ViewPtr(T *) -> ViewPtr<T>;
 
-} // namespace porytiles
+} // namespace porytiles2

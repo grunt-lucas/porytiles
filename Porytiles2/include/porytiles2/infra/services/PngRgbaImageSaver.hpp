@@ -5,7 +5,7 @@
 #include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
 #include "porytiles2/domain/services/RgbaImageSaver.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief An implementation of RgbaImageSaver that writes PNG files.
@@ -23,4 +23,4 @@ public:
                                           const std::filesystem::path &path) const override;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

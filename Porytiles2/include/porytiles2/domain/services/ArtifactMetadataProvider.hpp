@@ -8,7 +8,7 @@
 #include "porytiles2/domain/model/aggregates/Tileset.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 using Timestamp = std::filesystem::file_time_type;
 
@@ -74,4 +74,4 @@ public:
   [[nodiscard]] virtual bool are_porymap_assets_newer(const Tileset &tileset) const = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

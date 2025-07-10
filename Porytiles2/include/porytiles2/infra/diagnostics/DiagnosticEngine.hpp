@@ -16,7 +16,7 @@
 #include "porytiles2/infra/diagnostics/Diagnostics.hpp"
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Coordinates the generation and consumption of diagnostic messages
@@ -134,4 +134,4 @@ private:
                                             const std::vector<std::string> &msg) const;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

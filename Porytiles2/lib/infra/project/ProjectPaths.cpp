@@ -4,7 +4,7 @@
 #include <optional>
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 static const std::filesystem::path kPrimaryTilesetsRelativePath =
     std::filesystem::path{"data"} / "tilesets" / "primary";
@@ -77,4 +77,4 @@ std::filesystem::path ProjectPaths::metatiles_header() const {
   return project_root_ / kTilesetSourceHeadersRelativePath / kMetatilesHeaderFileName;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

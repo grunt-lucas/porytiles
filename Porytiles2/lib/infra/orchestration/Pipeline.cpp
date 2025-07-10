@@ -4,7 +4,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
   // 1) Map each artifact key to the producer op that generates it
@@ -91,4 +91,4 @@ std::expected<AnyMap, std::string> Pipeline::run() const {
   return artifacts;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

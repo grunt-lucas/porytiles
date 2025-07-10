@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/services/CSourceGenerator.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Text-based implementation of CSourceGenerator for pokeemerald projects.
@@ -109,4 +109,4 @@ private:
   std::string ToUppercase(const std::string &input) const;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

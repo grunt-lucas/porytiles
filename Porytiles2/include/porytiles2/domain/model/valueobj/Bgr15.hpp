@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 class Bgr15 {
   std::uint8_t red_;
@@ -41,10 +41,10 @@ public:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types
 inline auto format_as(const Bgr15 &bgr) { return bgr.to_jasc_str(); }
 
-} // namespace porytiles
+} // namespace porytiles2
 
-template <> struct std::hash<porytiles::Bgr15> {
-  std::size_t operator()(const porytiles::Bgr15 &bgr) const noexcept {
+template <> struct std::hash<porytiles2::Bgr15> {
+  std::size_t operator()(const porytiles2::Bgr15 &bgr) const noexcept {
     return std::hash<uint16_t>{}(bgr.pack());
   }
 };

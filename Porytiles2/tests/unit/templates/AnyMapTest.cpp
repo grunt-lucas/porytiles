@@ -5,7 +5,7 @@
 
 #include "porytiles2/templates/AnyMap.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(AnyMapTests, PutTryGetShouldWork) {
   AnyMap map{};

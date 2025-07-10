@@ -1,6 +1,6 @@
 #include "porytiles2/domain/model/valueobj/Bgr15.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 std::string Bgr15::to_jasc_str() const {
   return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
@@ -17,4 +17,4 @@ Bgr15 Bgr15::unpack(const std::uint16_t packed_bgr) {
   return Bgr15{red, green, blue};
 }
 
-} // namespace porytiles
+} // namespace porytiles2

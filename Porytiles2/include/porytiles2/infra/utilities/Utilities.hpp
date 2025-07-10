@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace porytiles {
+namespace porytiles2 {
 
 template <typename T> T parse_integer(const char *integerString, const int base) {
   try {
@@ -40,6 +40,6 @@ std::filesystem::path create_tmpdir();
 
 std::string pal_index_to_file_name(std::size_t index);
 
-} // namespace porytiles
+} // namespace porytiles2
 
 #endif // PORYTILES_UTILITIES_H

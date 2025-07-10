@@ -6,7 +6,7 @@
 #include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
 #include "porytiles2/domain/services/RgbaImageLoader.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief An implementation of RgbaImageLoader that reads PNG files.
@@ -25,4 +25,4 @@ public:
   load_from_file(const std::filesystem::path &path) const override;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

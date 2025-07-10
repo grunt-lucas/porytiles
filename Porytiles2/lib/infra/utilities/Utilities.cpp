@@ -12,7 +12,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 std::vector<std::string> split(std::string input, const std::string &delimiter) {
   std::vector<std::string> result;
@@ -81,4 +81,4 @@ std::string pal_index_to_file_name(std::size_t index) {
   return file;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

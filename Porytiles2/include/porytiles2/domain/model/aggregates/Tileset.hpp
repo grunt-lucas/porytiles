@@ -8,7 +8,7 @@
 #include "porytiles2/domain/model/aggregates/components/PorymapTilesetComponent.hpp"
 #include "porytiles2/domain/model/aggregates/components/PorytilesTilesetComponent.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief A complete tileset containing both Porytiles and Porymap components.
@@ -48,4 +48,4 @@ private:
   std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

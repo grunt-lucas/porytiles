@@ -3,7 +3,7 @@
 #include <expected>
 #include <string>
 
-namespace porytiles {
+namespace porytiles2 {
 
 // ReSharper disable once CppParameterMayBeConst
 template <typename T>
@@ -28,4 +28,4 @@ template <typename T> std::expected<T, std::string> parse_int(std::string_view i
   return parse_int<T>(int_string, 0);
 }
 
-} // namespace porytiles
+} // namespace porytiles2

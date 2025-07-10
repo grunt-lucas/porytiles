@@ -9,7 +9,7 @@
 #include "porytiles2/infra/orchestration/Operation.hpp"
 #include "porytiles2/infra/orchestration/Pipeline.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 class NumSupplierOperation final : public Operation {
 public:

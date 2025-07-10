@@ -2,7 +2,7 @@
 
 #include "porytiles2/infra/diagnostics/DiagnosticEngine.hpp"
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(WarningTests, WallShouldEnableAllWarnings) {
   DiagEngine engine{std::make_unique<IgnoreConsumer>()};

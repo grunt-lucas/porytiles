@@ -2,7 +2,7 @@
 
 #include <porytiles2/domain/model/valueobj/RgbaImage.hpp>
 
-using namespace porytiles;
+using namespace porytiles2;
 
 TEST(RgbaImageTest, DimensionsMethodsShouldWork) {
   constexpr std::size_t width = 10;

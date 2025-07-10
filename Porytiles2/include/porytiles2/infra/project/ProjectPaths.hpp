@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Provides `pokeemerald` project path computational functionality based on a given project
@@ -154,4 +154,4 @@ private:
   // std::optional<std::filesystem::path> tilesets_root_override_path_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

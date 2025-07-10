@@ -9,7 +9,7 @@
 
 #include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 using cimg_library::CImg;
 using cimg_library::CImgException;
@@ -44,4 +44,4 @@ PngRgbaImageSaver::save_to_file(const RgbaImage &image, const std::filesystem::p
   return {};
 }
 
-} // namespace porytiles
+} // namespace porytiles2

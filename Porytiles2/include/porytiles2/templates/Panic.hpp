@@ -8,7 +8,7 @@
 
 #include "fmt/format.h"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief A wrapper for std::string_view with a taggable std::source_location.
@@ -42,4 +42,4 @@ inline void AssertOrPanic(const bool condition, const StringViewSourceLoc &s) {
   }
 }
 
-} // namespace porytiles
+} // namespace porytiles2

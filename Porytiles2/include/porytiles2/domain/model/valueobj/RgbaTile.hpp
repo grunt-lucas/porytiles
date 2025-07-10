@@ -3,7 +3,7 @@
 #include "porytiles2/domain/model/valueobj/Rgba32.hpp"
 #include "porytiles2/domain/model/valueobj/Tile.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class RgbaTile final : public Tile<Rgba32> {
 public:
@@ -14,4 +14,4 @@ public:
   [[nodiscard]] bool equals_bgr(const RgbaTile &other) const;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

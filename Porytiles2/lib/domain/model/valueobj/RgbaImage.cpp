@@ -2,7 +2,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 RgbaImage::RgbaImage(const std::size_t width, const std::size_t height) {
   width_ = width;
@@ -48,4 +48,4 @@ void RgbaImage::set(std::size_t row, std::size_t col, const Rgba32 &pixel) {
   pixels_[row * width_ + col] = pixel;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

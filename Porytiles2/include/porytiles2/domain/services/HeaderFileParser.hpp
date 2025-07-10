@@ -6,7 +6,7 @@
 
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Service for parsing C header files to support modification operations.
@@ -93,4 +93,4 @@ public:
   validate_header_structure(const std::filesystem::path &file_path) = 0;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

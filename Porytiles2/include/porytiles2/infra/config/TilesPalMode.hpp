@@ -5,7 +5,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 enum class TilesPalMode { true_color, greyscale };
 
@@ -33,4 +33,4 @@ inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m) {
   return os << tiles_pal_mode_to_str(m);
 }
 
-} // namespace porytiles
+} // namespace porytiles2

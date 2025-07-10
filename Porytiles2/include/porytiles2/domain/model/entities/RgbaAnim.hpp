@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/model/valueobj/RgbaTile.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class RgbaAnim {
   std::vector<RgbaTile> key_frame_;
@@ -15,4 +15,4 @@ public:
   RgbaAnim() = default;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

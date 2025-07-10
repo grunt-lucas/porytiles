@@ -7,7 +7,7 @@
 
 #include "porytiles2/templates/Panic.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class AnyMap {
 public:
@@ -75,4 +75,4 @@ private:
   std::unordered_map<std::string, std::any> config_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

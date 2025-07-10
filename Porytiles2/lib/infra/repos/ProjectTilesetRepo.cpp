@@ -8,7 +8,7 @@
 #include "porytiles2/templates/Panic.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 Result<std::unique_ptr<Tileset>> ProjectTilesetRepo::load(const std::string &name) const {
   // TODO : impl
@@ -25,4 +25,4 @@ Result<void> ProjectTilesetRepo::save_tileset(const Tileset &tileset) {
   panic("unimplemented");
 }
 
-} // namespace porytiles
+} // namespace porytiles2

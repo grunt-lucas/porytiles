@@ -14,7 +14,7 @@
 #include <fmt/format.h>
 #include <gsl/gsl>
 
-namespace porytiles {
+namespace porytiles2 {
 
 ProjectCSourceFileAppender::ProjectCSourceFileAppender(const gsl::not_null<ProjectPaths *> paths,
                                                        std::unique_ptr<CSourceGenerator> generator)
@@ -131,4 +131,4 @@ Result<void> ProjectCSourceFileAppender::WriteFile(const std::filesystem::path &
   }
 }
 
-} // namespace porytiles
+} // namespace porytiles2

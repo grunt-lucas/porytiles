@@ -7,7 +7,7 @@
 
 #include "fmt/format.h"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /// Number of spaces per indentation level
 static constexpr int kSpacesPerIndent = 4;
@@ -161,4 +161,4 @@ std::string TextualCSourceGenerator::ToUppercase(const std::string &input) const
   return result;
 }
 
-} // namespace porytiles
+} // namespace porytiles2

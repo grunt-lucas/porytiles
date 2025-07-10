@@ -2,7 +2,7 @@
 
 #include "porytiles2/domain/model/valueobj/Tile.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class VramTile final : public Tile<std::uint8_t> {
 public:
@@ -11,4 +11,4 @@ public:
   [[nodiscard]] bool is_transparent() const { return Tile::is_transparent(0); }
 };
 
-} // namespace porytiles
+} // namespace porytiles2

@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/model/valueobj/Bgr15.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 class BgrPal final {
   std::vector<Bgr15> colors_;
@@ -13,4 +13,4 @@ public:
   BgrPal() = default;
 };
 
-} // namespace porytiles
+} // namespace porytiles2

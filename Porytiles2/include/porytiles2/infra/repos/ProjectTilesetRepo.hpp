@@ -12,7 +12,7 @@
 #include "porytiles2/infra/project/ProjectPaths.hpp"
 #include "porytiles2/templates/Result.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 /**
  * @brief Implementation of TilesetRepo that uses an in-filesystem `pokeemerald` project as the
@@ -35,4 +35,4 @@ private:
   const ProjectPaths *paths_;
 };
 
-} // namespace porytiles
+} // namespace porytiles2
