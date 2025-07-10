@@ -31,7 +31,7 @@ public:
    * @return An RgbaImage Result on success, otherwise an error description.
    */
   [[nodiscard]] virtual Result<std::unique_ptr<RgbaImage>>
-  LoadFromFile(const std::filesystem::path &path) const = 0;
+  load_from_file(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles

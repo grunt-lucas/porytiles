@@ -144,127 +144,127 @@ const u16 gMetatileAttributes_General[] = INCBIN_U16("data/tilesets/primary/gene
 TEST_F(ProjectCSourceFileAppenderIntegrationTest,
        AppendToGraphicsHeaderShouldIntegrateWithExistingContent) {
   // Verify existing content is present
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetPalettes_General");
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetTiles_General");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetPalettes_General");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetTiles_General");
 
   // Append new tileset
-  auto result = appender_->AppendToGraphicsHeader("MyNewTileset");
+  auto result = appender_->append_to_graphics_header("MyNewTileset");
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Verify both old and new content exist
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetPalettes_General");
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetTiles_General");
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetPalettes_MyNewTileset");
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetTiles_MyNewTileset");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetPalettes_General");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetTiles_General");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetPalettes_MyNewTileset");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetTiles_MyNewTileset");
 
   // Verify proper file paths are generated
-  AssertFileContains(project_paths_->GraphicsHeader(), "my_new_tileset/palettes/00.gbapal");
-  AssertFileContains(project_paths_->GraphicsHeader(), "my_new_tileset/tiles.4bpp.lz");
+  AssertFileContains(project_paths_->graphics_header(), "my_new_tileset/palettes/00.gbapal");
+  AssertFileContains(project_paths_->graphics_header(), "my_new_tileset/tiles.4bpp.lz");
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest,
        AppendToHeadersHeaderShouldIntegrateWithExistingContent) {
   // Verify existing content is present
-  AssertFileContains(project_paths_->HeadersHeader(), "gTileset_General");
+  AssertFileContains(project_paths_->headers_header(), "gTileset_General");
 
   // Append new tileset
-  auto result = appender_->AppendToHeadersHeader("MyNewTileset");
+  auto result = appender_->append_to_headers_header("MyNewTileset");
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Verify both old and new content exist
-  AssertFileContains(project_paths_->HeadersHeader(), "gTileset_General");
-  AssertFileContains(project_paths_->HeadersHeader(), "gTileset_MyNewTileset");
+  AssertFileContains(project_paths_->headers_header(), "gTileset_General");
+  AssertFileContains(project_paths_->headers_header(), "gTileset_MyNewTileset");
 
   // Verify proper struct fields
-  AssertFileContains(project_paths_->HeadersHeader(), ".isCompressed = TRUE");
-  AssertFileContains(project_paths_->HeadersHeader(), ".isSecondary = FALSE");
-  AssertFileContains(project_paths_->HeadersHeader(), ".tiles = gTilesetTiles_MyNewTileset");
-  AssertFileContains(project_paths_->HeadersHeader(), ".palettes = gTilesetPalettes_MyNewTileset");
+  AssertFileContains(project_paths_->headers_header(), ".isCompressed = TRUE");
+  AssertFileContains(project_paths_->headers_header(), ".isSecondary = FALSE");
+  AssertFileContains(project_paths_->headers_header(), ".tiles = gTilesetTiles_MyNewTileset");
+  AssertFileContains(project_paths_->headers_header(), ".palettes = gTilesetPalettes_MyNewTileset");
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest,
        AppendToMetatilesHeaderShouldIntegrateWithExistingContent) {
   // Verify existing content is present
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatiles_General");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatileAttributes_General");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatiles_General");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatileAttributes_General");
 
   // Append new tileset
-  auto result = appender_->AppendToMetatilesHeader("MyNewTileset");
+  auto result = appender_->append_to_metatiles_header("MyNewTileset");
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Verify both old and new content exist
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatiles_General");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatileAttributes_General");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatiles_MyNewTileset");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatileAttributes_MyNewTileset");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatiles_General");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatileAttributes_General");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatiles_MyNewTileset");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatileAttributes_MyNewTileset");
 
   // Verify proper file paths are generated
-  AssertFileContains(project_paths_->MetatilesHeader(), "my_new_tileset/metatiles.bin");
-  AssertFileContains(project_paths_->MetatilesHeader(), "my_new_tileset/metatile_attributes.bin");
+  AssertFileContains(project_paths_->metatiles_header(), "my_new_tileset/metatiles.bin");
+  AssertFileContains(project_paths_->metatiles_header(), "my_new_tileset/metatile_attributes.bin");
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest, AppendTilesetDeclarationsShouldModifyAllFiles) {
   // Verify initial state
-  AssertFileDoesNotContain(project_paths_->GraphicsHeader(), "TestTileset");
-  AssertFileDoesNotContain(project_paths_->HeadersHeader(), "TestTileset");
-  AssertFileDoesNotContain(project_paths_->MetatilesHeader(), "TestTileset");
+  AssertFileDoesNotContain(project_paths_->graphics_header(), "TestTileset");
+  AssertFileDoesNotContain(project_paths_->headers_header(), "TestTileset");
+  AssertFileDoesNotContain(project_paths_->metatiles_header(), "TestTileset");
 
   // Append complete tileset
-  auto result = appender_->AppendTilesetDeclarations("TestTileset");
+  auto result = appender_->append_tileset_declarations("TestTileset");
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Verify all files were modified
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetPalettes_TestTileset");
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetTiles_TestTileset");
-  AssertFileContains(project_paths_->HeadersHeader(), "gTileset_TestTileset");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatiles_TestTileset");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatileAttributes_TestTileset");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetPalettes_TestTileset");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetTiles_TestTileset");
+  AssertFileContains(project_paths_->headers_header(), "gTileset_TestTileset");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatiles_TestTileset");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatileAttributes_TestTileset");
 
   // Verify existing content is preserved
-  AssertFileContains(project_paths_->GraphicsHeader(), "gTilesetPalettes_General");
-  AssertFileContains(project_paths_->HeadersHeader(), "gTileset_General");
-  AssertFileContains(project_paths_->MetatilesHeader(), "gMetatiles_General");
+  AssertFileContains(project_paths_->graphics_header(), "gTilesetPalettes_General");
+  AssertFileContains(project_paths_->headers_header(), "gTileset_General");
+  AssertFileContains(project_paths_->metatiles_header(), "gMetatiles_General");
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest, MultipleAppendsShouldNotCorruptFiles) {
   // Append multiple tilesets
-  auto result1 = appender_->AppendTilesetDeclarations("TilesetOne");
+  auto result1 = appender_->append_tileset_declarations("TilesetOne");
   EXPECT_TRUE(result1.has_value());
 
-  auto result2 = appender_->AppendTilesetDeclarations("TilesetTwo");
+  auto result2 = appender_->append_tileset_declarations("TilesetTwo");
   EXPECT_TRUE(result2.has_value());
 
-  auto result3 = appender_->AppendTilesetDeclarations("TilesetThree");
+  auto result3 = appender_->append_tileset_declarations("TilesetThree");
   EXPECT_TRUE(result3.has_value());
 
   // Verify all tilesets exist
   const std::vector<std::string> tilesets = {"General", "TilesetOne", "TilesetTwo", "TilesetThree"};
 
   for (const auto &tileset : tilesets) {
-    AssertFileContains(project_paths_->GraphicsHeader(),
+    AssertFileContains(project_paths_->graphics_header(),
                        fmt::format("gTilesetPalettes_{}", tileset));
-    AssertFileContains(project_paths_->GraphicsHeader(), fmt::format("gTilesetTiles_{}", tileset));
-    AssertFileContains(project_paths_->HeadersHeader(), fmt::format("gTileset_{}", tileset));
-    AssertFileContains(project_paths_->MetatilesHeader(), fmt::format("gMetatiles_{}", tileset));
-    AssertFileContains(project_paths_->MetatilesHeader(),
+    AssertFileContains(project_paths_->graphics_header(), fmt::format("gTilesetTiles_{}", tileset));
+    AssertFileContains(project_paths_->headers_header(), fmt::format("gTileset_{}", tileset));
+    AssertFileContains(project_paths_->metatiles_header(), fmt::format("gMetatiles_{}", tileset));
+    AssertFileContains(project_paths_->metatiles_header(),
                        fmt::format("gMetatileAttributes_{}", tileset));
   }
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest, AppendShouldPreserveFileStructure) {
   // Read original files
-  const auto original_graphics = ReadFile(project_paths_->GraphicsHeader());
-  const auto original_headers = ReadFile(project_paths_->HeadersHeader());
-  const auto original_metatiles = ReadFile(project_paths_->MetatilesHeader());
+  const auto original_graphics = ReadFile(project_paths_->graphics_header());
+  const auto original_headers = ReadFile(project_paths_->headers_header());
+  const auto original_metatiles = ReadFile(project_paths_->metatiles_header());
 
   // Append new tileset
-  auto result = appender_->AppendTilesetDeclarations("NewTileset");
+  auto result = appender_->append_tileset_declarations("NewTileset");
   EXPECT_TRUE(result.has_value());
 
   // Read modified files
-  const auto modified_graphics = ReadFile(project_paths_->GraphicsHeader());
-  const auto modified_headers = ReadFile(project_paths_->HeadersHeader());
-  const auto modified_metatiles = ReadFile(project_paths_->MetatilesHeader());
+  const auto modified_graphics = ReadFile(project_paths_->graphics_header());
+  const auto modified_headers = ReadFile(project_paths_->headers_header());
+  const auto modified_metatiles = ReadFile(project_paths_->metatiles_header());
 
   // Verify original content is preserved at the beginning
   EXPECT_TRUE(modified_graphics.starts_with(original_graphics));
@@ -278,13 +278,13 @@ TEST_F(ProjectCSourceFileAppenderIntegrationTest, AppendShouldPreserveFileStruct
 }
 
 TEST_F(ProjectCSourceFileAppenderIntegrationTest, AppendShouldGenerateValidCCode) {
-  auto result = appender_->AppendTilesetDeclarations("ValidCodeTest");
+  auto result = appender_->append_tileset_declarations("ValidCodeTest");
   EXPECT_TRUE(result.has_value());
 
   // Check for valid C syntax patterns
-  const auto graphics_content = ReadFile(project_paths_->GraphicsHeader());
-  const auto headers_content = ReadFile(project_paths_->HeadersHeader());
-  const auto metatiles_content = ReadFile(project_paths_->MetatilesHeader());
+  const auto graphics_content = ReadFile(project_paths_->graphics_header());
+  const auto headers_content = ReadFile(project_paths_->headers_header());
+  const auto metatiles_content = ReadFile(project_paths_->metatiles_header());
 
   // Verify array declarations are properly formatted
   EXPECT_TRUE(graphics_content.find("const u16 gTilesetPalettes_ValidCodeTest[][16] =") !=

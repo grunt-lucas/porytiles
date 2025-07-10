@@ -16,15 +16,15 @@ public:
   explicit NumSupplierOperation(DiagEngine *engine, std::string key, const int value)
       : Operation{engine}, key_{std::move(key)}, value_{value} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override { return {}; }
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override { return {}; }
 
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override {
     return {ArtifactMetadata{key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
+  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
     AnyMap result{};
-    result.Put(key_, value_);
+    result.put(key_, value_);
     return result;
   }
 
@@ -39,7 +39,7 @@ public:
                         std::string out_key = "sum")
       : Operation{engine}, in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override {
     std::vector<ArtifactMetadata> inputs{};
     inputs.reserve(in_keys_.size());
     for (const auto &key : in_keys_) {
@@ -49,17 +49,17 @@ public:
   }
 
   /// @brief Declares the artifacts this operation will produce.
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override {
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override {
     return {ArtifactMetadata{out_key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
+  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
     int sum = 0;
     for (const auto &key : in_keys_) {
-      sum += inputs.Get<int>(key).value();
+      sum += inputs.get<int>(key).value();
     }
     AnyMap outputs{};
-    outputs.Put(out_key_, sum);
+    outputs.put(out_key_, sum);
     return outputs;
   }
 
@@ -73,14 +73,14 @@ public:
   explicit NumConsumerOperation(DiagEngine *engine, std::string key)
       : Operation{engine}, key_{std::move(key)}, consumed_{0} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareInputs() const override {
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override {
     return {ArtifactMetadata{key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::vector<ArtifactMetadata> DeclareOutputs() const override { return {}; }
+  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override { return {}; }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) override {
-    consumed_ = inputs.Get<int>(key_).value();
+  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
+    consumed_ = inputs.get<int>(key_).value();
     return {};
   }
 
@@ -103,6 +103,6 @@ TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
   ops.push_back(consumerOp);
 
   const Pipeline pipeline{ops};
-  const auto result = pipeline.Run();
+  const auto result = pipeline.run();
   ASSERT_EQ(30, std::dynamic_pointer_cast<NumConsumerOperation>(consumerOp)->consumed());
 }

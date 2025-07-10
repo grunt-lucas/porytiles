@@ -13,7 +13,7 @@ class Pipeline {
 public:
   explicit Pipeline(const std::vector<std::shared_ptr<Operation>> &ops);
 
-  [[nodiscard]] std::expected<AnyMap, std::string> Run() const;
+  [[nodiscard]] std::expected<AnyMap, std::string> run() const;
 
 private:
   std::unordered_map<std::string, Operation *> producers_;

@@ -22,7 +22,7 @@ namespace {
  * @param file_path The path to the file to read
  * @return Result<std::vector<std::string>> containing the file lines or error details
  */
-Result<std::vector<std::string>> ReadFileLines(const std::filesystem::path &file_path) {
+Result<std::vector<std::string>> read_file_lines(const std::filesystem::path &file_path) {
   try {
     std::ifstream file{file_path};
     if (!file.is_open()) {
@@ -48,7 +48,7 @@ Result<std::vector<std::string>> ReadFileLines(const std::filesystem::path &file
  * @param str The string to trim
  * @return The trimmed string
  */
-std::string TrimString(const std::string &str) {
+std::string trim_string(const std::string &str) {
   auto start = str.find_first_not_of(" \t\n\r");
   if (start == std::string::npos) {
     return "";
@@ -64,7 +64,7 @@ std::string TrimString(const std::string &str) {
  * @param trimmed_line The trimmed line to check for C header patterns
  * @return True if the line contains C header patterns, false otherwise
  */
-bool HasCHeaderPatterns(const std::string &trimmed_line) {
+bool has_c_header_patterns(const std::string &trimmed_line) {
   return trimmed_line.starts_with("#include") || trimmed_line.starts_with("#ifndef") ||
          trimmed_line.starts_with("#define") || trimmed_line.starts_with("const ") ||
          trimmed_line.starts_with("extern ") || trimmed_line.starts_with("struct ") ||
@@ -74,13 +74,13 @@ bool HasCHeaderPatterns(const std::string &trimmed_line) {
 } // anonymous namespace
 
 Result<std::vector<std::string>>
-TextualHeaderFileParser::ParseHeaderFile(const std::filesystem::path &file_path) {
-  return ReadFileLines(file_path);
+TextualHeaderFileParser::parse_header_file(const std::filesystem::path &file_path) {
+  return read_file_lines(file_path);
 }
 
-Result<bool> TextualHeaderFileParser::ContainsDeclaration(const std::filesystem::path &file_path,
-                                                          const std::string &declaration_pattern) {
-  auto lines_result = ReadFileLines(file_path);
+Result<bool> TextualHeaderFileParser::contains_declaration(const std::filesystem::path &file_path,
+                                                           const std::string &declaration_pattern) {
+  auto lines_result = read_file_lines(file_path);
   if (!lines_result) {
     return std::unexpected{
         fmt::format("Failed to read file {}: {}", file_path.string(), lines_result.error())};
@@ -95,8 +95,9 @@ Result<bool> TextualHeaderFileParser::ContainsDeclaration(const std::filesystem:
   return false;
 }
 
-Result<size_t> TextualHeaderFileParser::FindInsertionPoint(const std::filesystem::path &file_path) {
-  auto lines_result = ReadFileLines(file_path);
+Result<size_t>
+TextualHeaderFileParser::find_insertion_point(const std::filesystem::path &file_path) {
+  auto lines_result = read_file_lines(file_path);
   if (!lines_result) {
     return std::unexpected{
         fmt::format("Failed to read file {}: {}", file_path.string(), lines_result.error())};
@@ -111,7 +112,7 @@ Result<size_t> TextualHeaderFileParser::FindInsertionPoint(const std::filesystem
 }
 
 Result<bool>
-TextualHeaderFileParser::ValidateHeaderStructure(const std::filesystem::path &file_path) {
+TextualHeaderFileParser::validate_header_structure(const std::filesystem::path &file_path) {
   // Check if file exists and is readable
   if (!std::filesystem::exists(file_path)) {
     return std::unexpected{fmt::format("File does not exist: {}", file_path.string())};
@@ -122,7 +123,7 @@ TextualHeaderFileParser::ValidateHeaderStructure(const std::filesystem::path &fi
   }
 
   // Try to read the file
-  auto lines_result = ReadFileLines(file_path);
+  auto lines_result = read_file_lines(file_path);
   if (!lines_result) {
     return std::unexpected{
         fmt::format("Failed to read file {}: {}", file_path.string(), lines_result.error())};
@@ -138,8 +139,8 @@ TextualHeaderFileParser::ValidateHeaderStructure(const std::filesystem::path &fi
   // Check for obvious C header patterns
   bool has_c_content = false;
   for (const auto &line : lines) {
-    const auto trimmed = TrimString(line);
-    if (HasCHeaderPatterns(trimmed)) {
+    const auto trimmed = trim_string(line);
+    if (has_c_header_patterns(trimmed)) {
       has_c_content = true;
       break;
     }

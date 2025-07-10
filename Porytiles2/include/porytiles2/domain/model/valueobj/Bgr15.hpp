@@ -28,23 +28,23 @@ public:
 
   auto operator<=>(const Bgr15 &) const = default;
 
-  [[nodiscard]] std::uint16_t Pack() const;
+  [[nodiscard]] std::uint16_t pack() const;
 
-  [[nodiscard]] std::string ToJascStr() const;
+  [[nodiscard]] std::string to_jasc_str() const;
 
-  [[nodiscard]] static Bgr15 Unpack(std::uint16_t packed_bgr);
+  [[nodiscard]] static Bgr15 unpack(std::uint16_t packed_bgr);
 
   // friend std::ostream &operator<<(std::ostream &os, const Bgr15 &bgr);
 };
 
 /// Provide a simple way for fmtlib to format Bgr15:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types
-inline auto format_as(const Bgr15 &bgr) { return bgr.ToJascStr(); }
+inline auto format_as(const Bgr15 &bgr) { return bgr.to_jasc_str(); }
 
 } // namespace porytiles
 
 template <> struct std::hash<porytiles::Bgr15> {
   std::size_t operator()(const porytiles::Bgr15 &bgr) const noexcept {
-    return std::hash<uint16_t>{}(bgr.Pack());
+    return std::hash<uint16_t>{}(bgr.pack());
   }
 };

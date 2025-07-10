@@ -10,7 +10,7 @@ protected:
 };
 
 TEST_F(TextualCSourceGeneratorTest, GeneratePaletteDeclarationShouldWork) {
-  const std::string result = generator.GeneratePaletteDeclaration("MyTileset");
+  const std::string result = generator.generate_palette_declaration("MyTileset");
 
   // Should contain the proper array declaration
   EXPECT_TRUE(result.find("const u16 gTilesetPalettes_MyTileset[][16] =") != std::string::npos);
@@ -33,7 +33,7 @@ TEST_F(TextualCSourceGeneratorTest, GeneratePaletteDeclarationShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GeneratePaletteDeclarationWithComplexNameShouldWork) {
-  const std::string result = generator.GeneratePaletteDeclaration("MyComplexTilesetName");
+  const std::string result = generator.generate_palette_declaration("MyComplexTilesetName");
 
   // Should preserve PascalCase in C variable name
   EXPECT_TRUE(result.find("gTilesetPalettes_MyComplexTilesetName") != std::string::npos);
@@ -43,7 +43,7 @@ TEST_F(TextualCSourceGeneratorTest, GeneratePaletteDeclarationWithComplexNameSho
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateTileDeclarationShouldWork) {
-  const std::string result = generator.GenerateTileDeclaration("MyTileset");
+  const std::string result = generator.generate_tile_declaration("MyTileset");
 
   // Should contain the proper array declaration with correct name
   EXPECT_TRUE(result.find("const u32 gTilesetTiles_MyTileset[] = ") != std::string::npos);
@@ -59,7 +59,7 @@ TEST_F(TextualCSourceGeneratorTest, GenerateTileDeclarationShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateTilesetStructDefinitionShouldWork) {
-  const std::string result = generator.GenerateTilesetStructDefinition("MyTileset");
+  const std::string result = generator.generate_tileset_struct_definition("MyTileset");
 
   // Should contain the struct declaration
   EXPECT_TRUE(result.find("const struct Tileset gTileset_MyTileset =") != std::string::npos);
@@ -83,7 +83,7 @@ TEST_F(TextualCSourceGeneratorTest, GenerateTilesetStructDefinitionShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateMetatileDeclarationShouldWork) {
-  const std::string result = generator.GenerateMetatileDeclaration("MyTileset");
+  const std::string result = generator.generate_metatile_declaration("MyTileset");
 
   // Should contain the proper array declaration
   EXPECT_TRUE(result.find("const u16 gMetatiles_MyTileset[] = ") != std::string::npos);
@@ -99,7 +99,7 @@ TEST_F(TextualCSourceGeneratorTest, GenerateMetatileDeclarationShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateMetatileAttributeDeclarationShouldWork) {
-  const std::string result = generator.GenerateMetatileAttributeDeclaration("MyTileset");
+  const std::string result = generator.generate_metatile_attribute_declaration("MyTileset");
 
   // Should contain the proper array declaration
   EXPECT_TRUE(result.find("const u16 gMetatileAttributes_MyTileset[] = ") != std::string::npos);
@@ -117,7 +117,7 @@ TEST_F(TextualCSourceGeneratorTest, GenerateMetatileAttributeDeclarationShouldWo
 
 TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationShouldWork) {
   const std::string input = "line1\nline2\nline3";
-  const std::string result = generator.FormatWithIndentation(input, 2);
+  const std::string result = generator.format_with_indentation(input, 2);
 
   // Should have proper indentation (8 spaces = 2 levels * 4 spaces)
   EXPECT_TRUE(result.find("        line1") != std::string::npos);
@@ -127,7 +127,7 @@ TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationShouldWork) {
 
 TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationZeroLevelShouldWork) {
   const std::string input = "line1\nline2";
-  const std::string result = generator.FormatWithIndentation(input, 0);
+  const std::string result = generator.format_with_indentation(input, 0);
 
   // Should return input unchanged
   EXPECT_EQ(result, input);
@@ -135,7 +135,7 @@ TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationZeroLevelShouldWork) {
 
 TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationEmptyLinesShouldWork) {
   const std::string input = "line1\n\nline3";
-  const std::string result = generator.FormatWithIndentation(input, 1);
+  const std::string result = generator.format_with_indentation(input, 1);
 
   // Should indent non-empty lines but not empty lines
   EXPECT_TRUE(result.find("    line1") != std::string::npos);
@@ -146,7 +146,7 @@ TEST_F(TextualCSourceGeneratorTest, FormatWithIndentationEmptyLinesShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateIncludeGuardsShouldWork) {
-  const std::string result = generator.GenerateIncludeGuards("my_header");
+  const std::string result = generator.generate_include_guards("my_header");
 
   // Should contain proper include guards
   EXPECT_TRUE(result.find("#ifndef MY_HEADER_H") != std::string::npos);
@@ -159,7 +159,7 @@ TEST_F(TextualCSourceGeneratorTest, GenerateIncludeGuardsShouldWork) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, GenerateIncludeGuardsWithUnderscoresShouldWork) {
-  const std::string result = generator.GenerateIncludeGuards("my_complex_header");
+  const std::string result = generator.generate_include_guards("my_complex_header");
 
   // Should convert to uppercase properly
   EXPECT_TRUE(result.find("MY_COMPLEX_HEADER_H") != std::string::npos);
@@ -167,24 +167,24 @@ TEST_F(TextualCSourceGeneratorTest, GenerateIncludeGuardsWithUnderscoresShouldWo
 
 TEST_F(TextualCSourceGeneratorTest, ToLowercaseFilePathConversionShouldWork) {
   // Test a simple case
-  const std::string result1 = generator.GenerateTileDeclaration("Simple");
+  const std::string result1 = generator.generate_tile_declaration("Simple");
   EXPECT_TRUE(result1.find("simple/tiles.4bpp.lz") != std::string::npos);
 
   // Test PascalCase conversion
-  const std::string result2 = generator.GenerateTileDeclaration("MyTileset");
+  const std::string result2 = generator.generate_tile_declaration("MyTileset");
   EXPECT_TRUE(result2.find("my_tileset/tiles.4bpp.lz") != std::string::npos);
 
   // Test complex PascalCase
-  const std::string result3 = generator.GenerateTileDeclaration("VeryComplexTilesetName");
+  const std::string result3 = generator.generate_tile_declaration("VeryComplexTilesetName");
   EXPECT_TRUE(result3.find("very_complex_tileset_name/tiles.4bpp.lz") != std::string::npos);
 
   // Test a single character
-  const std::string result4 = generator.GenerateTileDeclaration("A");
+  const std::string result4 = generator.generate_tile_declaration("A");
   EXPECT_TRUE(result4.find("a/tiles.4bpp.lz") != std::string::npos);
 }
 
 TEST_F(TextualCSourceGeneratorTest, PaletteIncludesShouldHaveCorrectCount) {
-  const std::string result = generator.GeneratePaletteDeclaration("Test");
+  const std::string result = generator.generate_palette_declaration("Test");
 
   // Should have exactly 13 palette entries (00-12)
   size_t count = 0;
@@ -202,7 +202,7 @@ TEST_F(TextualCSourceGeneratorTest, PaletteIncludesShouldHaveCorrectCount) {
 }
 
 TEST_F(TextualCSourceGeneratorTest, PaletteIncludesShouldHaveCorrectCommaPlacement) {
-  const std::string result = generator.GeneratePaletteDeclaration("Test");
+  const std::string result = generator.generate_palette_declaration("Test");
 
   // Should have commas after entries 0-11 but not after entry 12
   EXPECT_TRUE(result.find("palettes/00.gbapal\"),") != std::string::npos);
@@ -215,22 +215,22 @@ TEST_F(TextualCSourceGeneratorTest, PaletteIncludesShouldHaveCorrectCommaPlaceme
 
 TEST_F(TextualCSourceGeneratorTest, AllMethodsShouldHandleEmptyInputGracefully) {
   // Test with empty string - should not crash
-  EXPECT_NO_THROW(generator.GeneratePaletteDeclaration(""));
-  EXPECT_NO_THROW(generator.GenerateTileDeclaration(""));
-  EXPECT_NO_THROW(generator.GenerateTilesetStructDefinition(""));
-  EXPECT_NO_THROW(generator.GenerateMetatileDeclaration(""));
-  EXPECT_NO_THROW(generator.GenerateMetatileAttributeDeclaration(""));
-  EXPECT_NO_THROW(generator.GenerateIncludeGuards(""));
-  EXPECT_NO_THROW(generator.FormatWithIndentation("", 0));
-  EXPECT_NO_THROW(generator.FormatWithIndentation("", 1));
+  EXPECT_NO_THROW(generator.generate_palette_declaration(""));
+  EXPECT_NO_THROW(generator.generate_tile_declaration(""));
+  EXPECT_NO_THROW(generator.generate_tileset_struct_definition(""));
+  EXPECT_NO_THROW(generator.generate_metatile_declaration(""));
+  EXPECT_NO_THROW(generator.generate_metatile_attribute_declaration(""));
+  EXPECT_NO_THROW(generator.generate_include_guards(""));
+  EXPECT_NO_THROW(generator.format_with_indentation("", 0));
+  EXPECT_NO_THROW(generator.format_with_indentation("", 1));
 }
 
 TEST_F(TextualCSourceGeneratorTest, GeneratedCodeShouldBeWellFormed) {
-  const std::string palette_decl = generator.GeneratePaletteDeclaration("TestTileset");
-  const std::string tile_decl = generator.GenerateTileDeclaration("TestTileset");
-  const std::string struct_def = generator.GenerateTilesetStructDefinition("TestTileset");
-  const std::string metatile_decl = generator.GenerateMetatileDeclaration("TestTileset");
-  const std::string attr_decl = generator.GenerateMetatileAttributeDeclaration("TestTileset");
+  const std::string palette_decl = generator.generate_palette_declaration("TestTileset");
+  const std::string tile_decl = generator.generate_tile_declaration("TestTileset");
+  const std::string struct_def = generator.generate_tileset_struct_definition("TestTileset");
+  const std::string metatile_decl = generator.generate_metatile_declaration("TestTileset");
+  const std::string attr_decl = generator.generate_metatile_attribute_declaration("TestTileset");
 
   // All should have proper C syntax structure
   EXPECT_TRUE(palette_decl.find("const u16") != std::string::npos);
@@ -249,11 +249,11 @@ TEST_F(TextualCSourceGeneratorTest, GeneratedCodeShouldBeWellFormed) {
 
 TEST_F(TextualCSourceGeneratorTest, ConstistentNamingConventionsShouldBeFollowed) {
   const std::string tileset_name = "MyTestTileset";
-  const std::string palette_decl = generator.GeneratePaletteDeclaration(tileset_name);
-  const std::string tile_decl = generator.GenerateTileDeclaration(tileset_name);
-  const std::string struct_def = generator.GenerateTilesetStructDefinition(tileset_name);
-  const std::string metatile_decl = generator.GenerateMetatileDeclaration(tileset_name);
-  const std::string attr_decl = generator.GenerateMetatileAttributeDeclaration(tileset_name);
+  const std::string palette_decl = generator.generate_palette_declaration(tileset_name);
+  const std::string tile_decl = generator.generate_tile_declaration(tileset_name);
+  const std::string struct_def = generator.generate_tileset_struct_definition(tileset_name);
+  const std::string metatile_decl = generator.generate_metatile_declaration(tileset_name);
+  const std::string attr_decl = generator.generate_metatile_attribute_declaration(tileset_name);
 
   // All should use a consistent naming pattern
   EXPECT_TRUE(palette_decl.find("gTilesetPalettes_MyTestTileset") != std::string::npos);

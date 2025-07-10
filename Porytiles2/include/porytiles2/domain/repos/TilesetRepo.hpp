@@ -34,13 +34,13 @@ public:
    * @param tileset The Tileset to save.
    * @return An empty Result on success, otherwise an error description.
    */
-  [[nodiscard]] Result<void> Save(const Tileset &tileset) {
-    if (auto save_result = SaveTileset(tileset); !save_result.has_value()) {
+  [[nodiscard]] Result<void> save(const Tileset &tileset) {
+    if (auto save_result = save_tileset(tileset); !save_result.has_value()) {
       return save_result;
     }
 
-    const auto current_checksums = metadata_service_->ComputePorymapChecksums(tileset);
-    return metadata_service_->StoreChecksums(tileset.name(), current_checksums);
+    const auto current_checksums = metadata_service_->compute_porymap_checksums(tileset);
+    return metadata_service_->store_checksums(tileset.name(), current_checksums);
   }
 
   /**
@@ -49,7 +49,7 @@ public:
    * @param name The name of the Tileset to load.
    * @return A Tileset Result on success, otherwise an error description.
    */
-  [[nodiscard]] virtual Result<std::unique_ptr<Tileset>> Load(const std::string &name) const = 0;
+  [[nodiscard]] virtual Result<std::unique_ptr<Tileset>> load(const std::string &name) const = 0;
 
   /**
    * @brief Checks if the given Tileset exists in the backing store.
@@ -57,7 +57,7 @@ public:
    * @param name The name of the Tileset to check.
    * @return True if the named tileset exists, false otherwise.
    */
-  [[nodiscard]] virtual bool Exists(const std::string &name) const = 0;
+  [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
 
 protected:
   /**
@@ -67,7 +67,7 @@ protected:
    * @return An empty Result on success, otherwise an error description.
    *
    */
-  [[nodiscard]] virtual Result<void> SaveTileset(const Tileset &tileset) = 0;
+  [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) = 0;
 
   [[nodiscard]] ArtifactMetadataProvider &metadata_service() { return *metadata_service_; }
 

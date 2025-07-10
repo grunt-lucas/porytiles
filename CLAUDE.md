@@ -115,9 +115,9 @@ namespace porytiles {
 
 // PascalCase for enum class names
 enum class FooBar {
-    // PascalCase for constants, note the leading
-    FooValue1,
-    FooValue2
+    // snake_case for the actual constants
+    foo_value_1,
+    foo_value_2
 };
 
 // PascalCase for class names

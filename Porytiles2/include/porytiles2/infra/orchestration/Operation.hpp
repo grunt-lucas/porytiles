@@ -45,12 +45,12 @@ public:
   explicit Operation(const gsl::not_null<DiagEngine *> diag) : diag_{diag} {}
 
   /// @brief Declares the input artifacts required by this operation.
-  [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareInputs() const = 0;
+  [[nodiscard]] virtual std::vector<ArtifactMetadata> declare_inputs() const = 0;
 
   /// @brief Declares the artifacts this operation will produce.
-  [[nodiscard]] virtual std::vector<ArtifactMetadata> DeclareOutputs() const = 0;
+  [[nodiscard]] virtual std::vector<ArtifactMetadata> declare_outputs() const = 0;
 
-  [[nodiscard]] virtual std::expected<AnyMap, std::string> Execute(const AnyMap &inputs) = 0;
+  [[nodiscard]] virtual std::expected<AnyMap, std::string> execute(const AnyMap &inputs) = 0;
 
   [[nodiscard]] const DiagEngine &diag() const { return *diag_; }
 

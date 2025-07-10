@@ -43,7 +43,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
    */
-  [[nodiscard]] virtual Result<void> AppendToGraphicsHeader(const std::string &tileset_name) = 0;
+  [[nodiscard]] virtual Result<void> append_to_graphics_header(const std::string &tileset_name) = 0;
 
   /**
    * @brief Append tileset struct definition to the headers file.
@@ -60,7 +60,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
    */
-  [[nodiscard]] virtual Result<void> AppendToHeadersHeader(const std::string &tileset_name) = 0;
+  [[nodiscard]] virtual Result<void> append_to_headers_header(const std::string &tileset_name) = 0;
 
   /**
    * @brief Append metatile and attribute declarations to the metatiles header.
@@ -77,7 +77,8 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
    */
-  [[nodiscard]] virtual Result<void> AppendToMetatilesHeader(const std::string &tileset_name) = 0;
+  [[nodiscard]] virtual Result<void>
+  append_to_metatiles_header(const std::string &tileset_name) = 0;
 
   /**
    * @brief Append all necessary declarations for a new tileset.
@@ -94,7 +95,8 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Result<void> indicating success or failure with error details
    */
-  [[nodiscard]] virtual Result<void> AppendTilesetDeclarations(const std::string &tileset_name) = 0;
+  [[nodiscard]] virtual Result<void>
+  append_tileset_declarations(const std::string &tileset_name) = 0;
 };
 
 } // namespace porytiles

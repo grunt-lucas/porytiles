@@ -19,7 +19,7 @@ public:
   virtual ~LayoutCompiler() = default;
 
   virtual Result<std::unique_ptr<PorymapLayoutComponent>>
-  Compile(const PorytilesLayoutComponent &layout) = 0;
+  compile(const PorytilesLayoutComponent &layout) = 0;
 };
 
 } // namespace porytiles

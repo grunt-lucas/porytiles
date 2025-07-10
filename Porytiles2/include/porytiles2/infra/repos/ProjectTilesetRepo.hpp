@@ -24,12 +24,12 @@ public:
                               const gsl::not_null<ProjectPaths *> paths)
       : TilesetRepo{std::move(metadata_service)}, paths_{paths} {}
 
-  [[nodiscard]] Result<std::unique_ptr<Tileset>> Load(const std::string &name) const override;
+  [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const override;
 
-  [[nodiscard]] bool Exists(const std::string &name) const override;
+  [[nodiscard]] bool exists(const std::string &name) const override;
 
 protected:
-  [[nodiscard]] Result<void> SaveTileset(const Tileset &tileset) override;
+  [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) override;
 
 private:
   const ProjectPaths *paths_;

@@ -16,7 +16,7 @@ constexpr std::size_t DIAG_MARGIN_SIZE = 7;
 
 void AssertArgSize(std::size_t expected, std::size_t actual, const char *func_name) {
   if (actual != expected) {
-    Panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
+    panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
   }
 }
 
@@ -24,14 +24,14 @@ template <typename T> T AnyCastOrPanic(const std::any &a, const std::source_loca
   try {
     return std::any_cast<T>(a);
   } catch (std::bad_any_cast &) {
-    Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+    panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
   }
 }
 
 template <typename T> const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
   auto any_unwrapped = any_cast<T>(a);
   if (any_unwrapped == nullptr) {
-    Panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
+    panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
   }
   return *any_unwrapped;
 }
@@ -152,7 +152,7 @@ std::string LevelToStr(DiagLevel level) {
   case DiagLevel::kFatal:
     return "fatal error";
   default:
-    Panic("level_to_str: unknown diag_level");
+    panic("level_to_str: unknown diag_level");
   }
 }
 
@@ -170,7 +170,7 @@ fmt::terminal_color ColorForLevel(DiagLevel level) {
   case DiagLevel::kFatal:
     return fmt::terminal_color::red;
   default:
-    Panic("color_for_level: unknown diag_level");
+    panic("color_for_level: unknown diag_level");
   }
 }
 
@@ -197,7 +197,7 @@ void IgnoreConsumer::Consume(const InFlightDiag &diag) { consumed_count_++; }
 bool IgnoreConsumer::IsATty() const { return false; }
 
 InFlightDiag IgnoreConsumer::ConsumedAt(std::size_t i) const {
-  Panic("ignore_consumer::consumed_at: not implemented");
+  panic("ignore_consumer::consumed_at: not implemented");
 }
 
 std::uint64_t IgnoreConsumer::ConsumedCount() const { return consumed_count_; }
@@ -211,7 +211,7 @@ void StderrConsumer::Consume(const InFlightDiag &diag) {
 bool StderrConsumer::IsATty() const { return isatty(fileno(stderr)); }
 
 InFlightDiag StderrConsumer::ConsumedAt(std::size_t i) const {
-  Panic("stderr_consumer::consumed_at: not implemented");
+  panic("stderr_consumer::consumed_at: not implemented");
 }
 
 std::uint64_t StderrConsumer::ConsumedCount() const { return consumed_count_; }
@@ -224,7 +224,7 @@ InFlightDiag VectorConsumer::ConsumedAt(std::size_t i) const {
   try {
     return diags_.at(i);
   } catch (const std::out_of_range &) {
-    Panic(fmt::format("vector_consumer::at: index {} out of range for size {}", i, diags_.size()));
+    panic(fmt::format("vector_consumer::at: index {} out of range for size {}", i, diags_.size()));
   }
 }
 

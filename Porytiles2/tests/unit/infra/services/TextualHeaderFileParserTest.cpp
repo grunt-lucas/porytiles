@@ -43,7 +43,7 @@ TEST_F(TextualHeaderFileParserTest, ParseHeaderFileShouldWork) {
 
   CreateTestFile("test.h", content);
 
-  auto result = parser_->ParseHeaderFile(temp_dir_ / "test.h");
+  auto result = parser_->parse_header_file(temp_dir_ / "test.h");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
@@ -56,7 +56,7 @@ TEST_F(TextualHeaderFileParserTest, ParseHeaderFileShouldWork) {
 }
 
 TEST_F(TextualHeaderFileParserTest, ParseNonExistentFileShouldFail) {
-  auto result = parser_->ParseHeaderFile(temp_dir_ / "nonexistent.h");
+  auto result = parser_->parse_header_file(temp_dir_ / "nonexistent.h");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("Cannot open file for reading") != std::string::npos);
@@ -65,7 +65,7 @@ TEST_F(TextualHeaderFileParserTest, ParseNonExistentFileShouldFail) {
 TEST_F(TextualHeaderFileParserTest, ParseEmptyFileShouldWork) {
   CreateTestFile("empty.h", "");
 
-  auto result = parser_->ParseHeaderFile(temp_dir_ / "empty.h");
+  auto result = parser_->parse_header_file(temp_dir_ / "empty.h");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_TRUE(result.value().empty());
@@ -79,7 +79,7 @@ TEST_F(TextualHeaderFileParserTest, ContainsDeclarationShouldFindExisting) {
 
   CreateTestFile("test.h", content);
 
-  auto result = parser_->ContainsDeclaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
+  auto result = parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_TRUE(result.value());
@@ -91,14 +91,14 @@ TEST_F(TextualHeaderFileParserTest, ContainsDeclarationShouldNotFindMissing) {
 
   CreateTestFile("test.h", content);
 
-  auto result = parser_->ContainsDeclaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
+  auto result = parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_FALSE(result.value());
 }
 
 TEST_F(TextualHeaderFileParserTest, ContainsDeclarationOnNonExistentFileShouldFail) {
-  auto result = parser_->ContainsDeclaration(temp_dir_ / "nonexistent.h", "pattern");
+  auto result = parser_->contains_declaration(temp_dir_ / "nonexistent.h", "pattern");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("Cannot open file for reading") != std::string::npos);
@@ -111,7 +111,7 @@ TEST_F(TextualHeaderFileParserTest, FindInsertionPointShouldReturnEndOfFile) {
 
   CreateTestFile("test.h", content);
 
-  auto result = parser_->FindInsertionPoint(temp_dir_ / "test.h");
+  auto result = parser_->find_insertion_point(temp_dir_ / "test.h");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_EQ(result.value(), 3); // End of file (3 lines)
@@ -120,7 +120,7 @@ TEST_F(TextualHeaderFileParserTest, FindInsertionPointShouldReturnEndOfFile) {
 TEST_F(TextualHeaderFileParserTest, FindInsertionPointOnEmptyFileShouldReturnZero) {
   CreateTestFile("empty.h", "");
 
-  auto result = parser_->FindInsertionPoint(temp_dir_ / "empty.h");
+  auto result = parser_->find_insertion_point(temp_dir_ / "empty.h");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_EQ(result.value(), 0);
@@ -139,7 +139,7 @@ TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldPassForValidHea
 
   CreateTestFile("valid.h", content);
 
-  auto result = parser_->ValidateHeaderStructure(temp_dir_ / "valid.h");
+  auto result = parser_->validate_header_structure(temp_dir_ / "valid.h");
 
   EXPECT_TRUE(result.has_value());
   EXPECT_TRUE(result.value());
@@ -148,7 +148,7 @@ TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldPassForValidHea
 TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldFailForEmptyFile) {
   CreateTestFile("empty.h", "");
 
-  auto result = parser_->ValidateHeaderStructure(temp_dir_ / "empty.h");
+  auto result = parser_->validate_header_structure(temp_dir_ / "empty.h");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("File is empty") != std::string::npos);
@@ -161,7 +161,7 @@ TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldFailForNonCCont
 
   CreateTestFile("notc.h", content);
 
-  auto result = parser_->ValidateHeaderStructure(temp_dir_ / "notc.h");
+  auto result = parser_->validate_header_structure(temp_dir_ / "notc.h");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("does not appear to contain C header content") !=
@@ -169,7 +169,7 @@ TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldFailForNonCCont
 }
 
 TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldFailForNonExistentFile) {
-  auto result = parser_->ValidateHeaderStructure(temp_dir_ / "nonexistent.h");
+  auto result = parser_->validate_header_structure(temp_dir_ / "nonexistent.h");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("File does not exist") != std::string::npos);
@@ -189,7 +189,7 @@ TEST_F(TextualHeaderFileParserTest, ValidateHeaderStructureShouldPassForVariousP
     const std::string filename = fmt::format("pattern{}.h", i);
     CreateTestFile(filename, valid_patterns[i]);
 
-    auto result = parser_->ValidateHeaderStructure(temp_dir_ / filename);
+    auto result = parser_->validate_header_structure(temp_dir_ / filename);
 
     EXPECT_TRUE(result.has_value()) << "Pattern " << i << " should be valid";
     EXPECT_TRUE(result.value()) << "Pattern " << i << " should be valid";
@@ -205,18 +205,18 @@ TEST_F(TextualHeaderFileParserTest, ContainsDeclarationShouldHandlePartialMatche
   CreateTestFile("test.h", content);
 
   // Should find the exact match
-  auto result1 = parser_->ContainsDeclaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
+  auto result1 = parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_MyTileset");
   EXPECT_TRUE(result1.has_value());
   EXPECT_TRUE(result1.value());
 
   // Should find the partial match in comment
   auto result2 =
-      parser_->ContainsDeclaration(temp_dir_ / "test.h", "gTilesetPalettes_OtherTileset");
+      parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_OtherTileset");
   EXPECT_TRUE(result2.has_value());
   EXPECT_TRUE(result2.value());
 
   // Should not find non-existent pattern
-  auto result3 = parser_->ContainsDeclaration(temp_dir_ / "test.h", "gTilesetPalettes_NonExistent");
+  auto result3 = parser_->contains_declaration(temp_dir_ / "test.h", "gTilesetPalettes_NonExistent");
   EXPECT_TRUE(result3.has_value());
   EXPECT_FALSE(result3.value());
 }

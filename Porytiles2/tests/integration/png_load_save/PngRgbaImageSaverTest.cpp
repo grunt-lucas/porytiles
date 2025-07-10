@@ -32,11 +32,11 @@ protected:
     }
   }
 
-  std::filesystem::path GetTempPath(const std::string &filename) const {
+  [[nodiscard]] std::filesystem::path get_tmp_path(const std::string &filename) const {
     return temp_dir_ / filename;
   }
 
-  static RgbaImage CreateTestImage(std::size_t width, std::size_t height) {
+  static RgbaImage create_test_image(std::size_t width, std::size_t height) {
     RgbaImage image{width, height};
 
     // Fill with a simple pattern for testing
@@ -47,7 +47,7 @@ protected:
         const auto blue = static_cast<std::uint8_t>((row + col) % 256);
         const auto alpha = static_cast<std::uint8_t>(255 - ((row + col) % 256));
 
-        image.Set(row, col, Rgba32{red, green, blue, alpha});
+        image.set(row, col, Rgba32{red, green, blue, alpha});
       }
     }
 
@@ -60,21 +60,21 @@ protected:
 };
 
 TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath) {
-  const auto image = CreateTestImage(2, 2);
+  const auto image = create_test_image(2, 2);
 
   // Try to save to a non-existent directory without creating it
   const auto invalid_path = std::filesystem::path{"/non/existent/directory/test.png"};
 
-  auto result = saver_->SaveToFile(image, invalid_path);
+  auto result = saver_->save_to_file(image, invalid_path);
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().contains("Failed to save PNG"));
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile) {
-  const auto image = CreateTestImage(4, 4);
-  const auto file_path = GetTempPath("test_save.png");
+  const auto image = create_test_image(4, 4);
+  const auto file_path = get_tmp_path("test_save.png");
 
-  auto result = saver_->SaveToFile(image, file_path);
+  auto result = saver_->save_to_file(image, file_path);
   ASSERT_TRUE(result.has_value());
 
   // Verify the file was created
@@ -83,15 +83,15 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile) {
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip) {
-  const auto original_image = CreateTestImage(8, 6);
-  const auto file_path = GetTempPath("roundtrip_test.png");
+  const auto original_image = create_test_image(8, 6);
+  const auto file_path = get_tmp_path("roundtrip_test.png");
 
   // Save the image
-  auto save_result = saver_->SaveToFile(original_image, file_path);
+  auto save_result = saver_->save_to_file(original_image, file_path);
   ASSERT_TRUE(save_result.has_value());
 
   // Load it back
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -104,8 +104,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip) {
   // Compare pixel data
   for (std::size_t row = 0; row < original_image.height(); ++row) {
     for (std::size_t col = 0; col < original_image.width(); ++col) {
-      const auto original_pixel = original_image.At(row, col);
-      const auto loaded_pixel = loaded_image.At(row, col);
+      const auto original_pixel = original_image.at(row, col);
+      const auto loaded_pixel = loaded_image.at(row, col);
 
       EXPECT_EQ(loaded_pixel.red(), original_pixel.red())
           << "Red mismatch at (" << row << ", " << col << ")";
@@ -120,10 +120,10 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip) {
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages) {
-  const auto image = CreateTestImage(1, 1);
-  const auto file_path = GetTempPath("small_image.png");
+  const auto image = create_test_image(1, 1);
+  const auto file_path = get_tmp_path("small_image.png");
 
-  auto result = saver_->SaveToFile(image, file_path);
+  auto result = saver_->save_to_file(image, file_path);
   ASSERT_TRUE(result.has_value());
 
   // Verify the file was created and has content
@@ -131,7 +131,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages) {
   EXPECT_GT(std::filesystem::file_size(file_path), 0);
 
   // Verify it can be loaded back
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -143,10 +143,10 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages) {
 TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages) {
   const auto width = 128;
   const auto height = 320;
-  const auto image = CreateTestImage(width, height);
-  const auto file_path = GetTempPath("large_image.png");
+  const auto image = create_test_image(width, height);
+  const auto file_path = get_tmp_path("large_image.png");
 
-  auto result = saver_->SaveToFile(image, file_path);
+  auto result = saver_->save_to_file(image, file_path);
   ASSERT_TRUE(result.has_value());
 
   // Verify the file was created and has a reasonable size
@@ -155,7 +155,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages) {
   EXPECT_GT(std::filesystem::file_size(file_path), 512);
 
   // Verify dimensions can be loaded back correctly
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -171,17 +171,17 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
   for (std::size_t row = 0; row < 4; ++row) {
     for (std::size_t col = 0; col < 4; ++col) {
       const auto alpha = static_cast<std::uint8_t>((row * col * 64) % 256);
-      image.Set(row, col, Rgba32{255, 128, 64, alpha});
+      image.set(row, col, Rgba32{255, 128, 64, alpha});
     }
   }
 
-  const auto file_path = GetTempPath("transparency_test.png");
+  const auto file_path = get_tmp_path("transparency_test.png");
 
-  auto save_result = saver_->SaveToFile(image, file_path);
+  auto save_result = saver_->save_to_file(image, file_path);
   ASSERT_TRUE(save_result.has_value());
 
   // Load it back and verify transparency is preserved
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -189,8 +189,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
 
   for (std::size_t row = 0; row < 4; ++row) {
     for (std::size_t col = 0; col < 4; ++col) {
-      const auto original_pixel = image.At(row, col);
-      const auto loaded_pixel = loaded_image.At(row, col);
+      const auto original_pixel = image.at(row, col);
+      const auto loaded_pixel = loaded_image.at(row, col);
 
       EXPECT_EQ(loaded_pixel.alpha(), original_pixel.alpha())
           << "Alpha mismatch at (" << row << ", " << col << ")";
@@ -199,18 +199,18 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile) {
-  const auto image1 = CreateTestImage(2, 2);
-  const auto image2 = CreateTestImage(3, 3);
-  const auto file_path = GetTempPath("overwrite_test.png");
+  const auto image1 = create_test_image(2, 2);
+  const auto image2 = create_test_image(3, 3);
+  const auto file_path = get_tmp_path("overwrite_test.png");
 
   // Save first image
-  auto result1 = saver_->SaveToFile(image1, file_path);
+  auto result1 = saver_->save_to_file(image1, file_path);
   ASSERT_TRUE(result1.has_value());
 
   const auto first_size = std::filesystem::file_size(file_path);
 
   // Save second image (should overwrite)
-  auto result2 = saver_->SaveToFile(image2, file_path);
+  auto result2 = saver_->save_to_file(image2, file_path);
   ASSERT_TRUE(result2.has_value());
 
   const auto second_size = std::filesystem::file_size(file_path);
@@ -219,7 +219,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile) {
   EXPECT_NE(first_size, second_size);
 
   // Verify the final image is the second one
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -234,17 +234,17 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages) {
   // Create a fully opaque image
   for (std::size_t row = 0; row < 3; ++row) {
     for (std::size_t col = 0; col < 3; ++col) {
-      image.Set(row, col, Rgba32{255, 0, 0, 255}); // Red with full opacity
+      image.set(row, col, Rgba32{255, 0, 0, 255}); // Red with full opacity
     }
   }
 
-  const auto file_path = GetTempPath("opaque_test.png");
+  const auto file_path = get_tmp_path("opaque_test.png");
 
-  auto save_result = saver_->SaveToFile(image, file_path);
+  auto save_result = saver_->save_to_file(image, file_path);
   ASSERT_TRUE(save_result.has_value());
 
   // Load it back and verify all pixels are opaque
-  auto load_result = loader_->LoadFromFile(file_path);
+  auto load_result = loader_->load_from_file(file_path);
   ASSERT_TRUE(load_result.has_value());
   ASSERT_NE(load_result.value(), nullptr);
 
@@ -252,7 +252,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages) {
 
   for (std::size_t row = 0; row < 3; ++row) {
     for (std::size_t col = 0; col < 3; ++col) {
-      const auto pixel = loaded_image.At(row, col);
+      const auto pixel = loaded_image.at(row, col);
       EXPECT_EQ(pixel.alpha(), 255) << "Pixel should be opaque at (" << row << ", " << col << ")";
       EXPECT_EQ(pixel.red(), 255) << "Red should be 255 at (" << row << ", " << col << ")";
       EXPECT_EQ(pixel.green(), 0) << "Green should be 0 at (" << row << ", " << col << ")";

@@ -36,14 +36,14 @@ public:
    * @return A mapping of artifact identifiers to their computed checksum.
    */
   [[nodiscard]] virtual std::unordered_map<std::string, std::string>
-  ComputePorymapChecksums(const Tileset &tileset) const = 0;
+  compute_porymap_checksums(const Tileset &tileset) const = 0;
 
   [[nodiscard]] virtual std::unordered_map<std::string, std::string>
-  LoadStoredChecksums(const std::string &tileset_name) const = 0;
+  load_stored_checksums(const std::string &tileset_name) const = 0;
 
   [[nodiscard]] virtual Result<void>
-  StoreChecksums(const std::string &tileset_name,
-                 const std::unordered_map<std::string, std::string> &checksums) = 0;
+  store_checksums(const std::string &tileset_name,
+                  const std::unordered_map<std::string, std::string> &checksums) = 0;
 
   /**
    * @brief Gets the modification timestamps for all Porymap artifacts associated with the given
@@ -53,7 +53,7 @@ public:
    * @return A mapping of artifact identifiers to their modification timestamps.
    */
   [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
-  GetPorymapTimestamps(const Tileset &tileset) const = 0;
+  get_porymap_timestamps(const Tileset &tileset) const = 0;
 
   /**
    * @brief Gets the modification timestamps for all Porytiles artifacts associated with the given
@@ -63,7 +63,7 @@ public:
    * @return A mapping of artifact identifiers to their modification timestamps.
    */
   [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
-  GetPorytilesTimestamps(const Tileset &tileset) const = 0;
+  get_porytiles_timestamps(const Tileset &tileset) const = 0;
 
   /**
    * @brief Determines if any Porymap assets are newer than any Porytiles assets.
@@ -71,7 +71,7 @@ public:
    * @param tileset The Tileset to check.
    * @return True if Porymap assets are newer, false otherwise.
    */
-  [[nodiscard]] virtual bool ArePorymapAssetsNewer(const Tileset &tileset) const = 0;
+  [[nodiscard]] virtual bool are_porymap_assets_newer(const Tileset &tileset) const = 0;
 };
 
 } // namespace porytiles

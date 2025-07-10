@@ -15,7 +15,7 @@ static constexpr int kSpacesPerIndent = 4;
 /// Number of palette entries in a pokeemerald tileset
 static constexpr int kNumPaletteEntries = 13;
 
-std::string TextualCSourceGenerator::GeneratePaletteDeclaration(const std::string &tileset_name) {
+std::string TextualCSourceGenerator::generate_palette_declaration(const std::string &tileset_name) {
   const auto tileset_path = ToLowercaseFilePath(tileset_name);
   const auto palette_includes = GenerateAllPaletteIncludes(tileset_path);
 
@@ -26,7 +26,7 @@ std::string TextualCSourceGenerator::GeneratePaletteDeclaration(const std::strin
                      tileset_name, palette_includes);
 }
 
-std::string TextualCSourceGenerator::GenerateTileDeclaration(const std::string &tileset_name) {
+std::string TextualCSourceGenerator::generate_tile_declaration(const std::string &tileset_name) {
   const auto tileset_path = ToLowercaseFilePath(tileset_name);
 
   return fmt::format(
@@ -35,7 +35,7 @@ std::string TextualCSourceGenerator::GenerateTileDeclaration(const std::string &
 }
 
 std::string
-TextualCSourceGenerator::GenerateTilesetStructDefinition(const std::string &tileset_name) {
+TextualCSourceGenerator::generate_tileset_struct_definition(const std::string &tileset_name) {
   return fmt::format("const struct Tileset gTileset_{} =\n"
                      "{{\n"
                      "    .isCompressed = TRUE,\n"
@@ -49,7 +49,7 @@ TextualCSourceGenerator::GenerateTilesetStructDefinition(const std::string &tile
                      tileset_name, tileset_name, tileset_name, tileset_name, tileset_name);
 }
 
-std::string TextualCSourceGenerator::GenerateMetatileDeclaration(const std::string &tileset_name) {
+std::string TextualCSourceGenerator::generate_metatile_declaration(const std::string &tileset_name) {
   const auto tileset_path = ToLowercaseFilePath(tileset_name);
 
   return fmt::format(
@@ -58,7 +58,7 @@ std::string TextualCSourceGenerator::GenerateMetatileDeclaration(const std::stri
 }
 
 std::string
-TextualCSourceGenerator::GenerateMetatileAttributeDeclaration(const std::string &tileset_name) {
+TextualCSourceGenerator::generate_metatile_attribute_declaration(const std::string &tileset_name) {
   const auto tileset_path = ToLowercaseFilePath(tileset_name);
 
   return fmt::format("const u16 gMetatileAttributes_{}[] = "
@@ -66,12 +66,12 @@ TextualCSourceGenerator::GenerateMetatileAttributeDeclaration(const std::string 
                      tileset_name, tileset_path);
 }
 
-std::string TextualCSourceGenerator::FormatWithIndentation(const std::string &code,
+std::string TextualCSourceGenerator::format_with_indentation(const std::string &code,
                                                            int indent_level) {
   return ApplyIndentation(code, indent_level);
 }
 
-std::string TextualCSourceGenerator::GenerateIncludeGuards(const std::string &header_name) {
+std::string TextualCSourceGenerator::generate_include_guards(const std::string &header_name) {
   const auto uppercase_name = ToUppercase(header_name);
 
   return fmt::format("#ifndef {}_H\n"

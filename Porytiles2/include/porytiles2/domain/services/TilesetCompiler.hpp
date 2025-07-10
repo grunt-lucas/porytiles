@@ -20,11 +20,11 @@ public:
   virtual ~TilesetCompiler() = default;
 
   virtual Result<std::unique_ptr<PorymapTilesetComponent>>
-  CompilePrimary(const PorytilesTilesetComponent &tileset) = 0;
+  compile_primary(const PorytilesTilesetComponent &tileset) = 0;
 
   virtual Result<std::unique_ptr<PorymapTilesetComponent>>
-  CompileSecondary(const PorytilesTilesetComponent &tileset,
-                   const PorymapTilesetComponent &primary_tileset) = 0;
+  compile_secondary(const PorytilesTilesetComponent &tileset,
+                    const PorymapTilesetComponent &primary_tileset) = 0;
 };
 
 } // namespace porytiles

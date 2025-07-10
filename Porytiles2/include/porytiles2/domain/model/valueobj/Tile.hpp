@@ -22,40 +22,40 @@ public:
 
   explicit Tile() : pix_{} {}
 
-  [[nodiscard]] virtual bool IsTransparent(const P &transparency) const {
+  [[nodiscard]] virtual bool is_transparent(const P &transparency) const {
     return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
   }
 
   [[nodiscard]] P At(std::size_t i) const {
     if (i >= kTileSize) {
-      Panic(fmt::format("Index {} out of bounds", i));
+      panic(fmt::format("Index {} out of bounds", i));
     }
     return pix_[i];
   }
 
   [[nodiscard]] P At(std::size_t row, std::size_t col) const {
     if (row >= kTileSideLength) {
-      Panic(fmt::format("Row index {} out of bounds", row));
+      panic(fmt::format("Row index {} out of bounds", row));
     }
     if (col >= kTileSideLength) {
-      Panic(fmt::format("Col index {} out of bounds", col));
+      panic(fmt::format("Col index {} out of bounds", col));
     }
     return pix_[row * kTileSideLength + col];
   }
 
   void Set(std::size_t i, const P &p) {
     if (i >= kTileSize) {
-      Panic(fmt::format("Index {} out of bounds", i));
+      panic(fmt::format("Index {} out of bounds", i));
     }
     pix_[i] = p;
   }
 
   void Set(std::size_t row, std::size_t col, const P &p) {
     if (row >= kTileSideLength) {
-      Panic(fmt::format("Row index {} out of bounds", row));
+      panic(fmt::format("Row index {} out of bounds", row));
     }
     if (col >= kTileSideLength) {
-      Panic(fmt::format("Col index {} out of bounds", col));
+      panic(fmt::format("Col index {} out of bounds", col));
     }
     pix_[row * kTileSideLength + col] = p;
   }

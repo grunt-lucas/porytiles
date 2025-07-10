@@ -28,7 +28,7 @@ struct StringViewSourceLoc {
   std::source_location loc_;
 };
 
-[[noreturn]] inline void Panic(const StringViewSourceLoc &s) {
+[[noreturn]] inline void panic(const StringViewSourceLoc &s) {
   const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
   std::fputs(msg.c_str(), stderr);
   std::abort();

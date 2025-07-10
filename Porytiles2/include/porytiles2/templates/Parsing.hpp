@@ -7,7 +7,7 @@ namespace porytiles {
 
 // ReSharper disable once CppParameterMayBeConst
 template <typename T>
-std::expected<T, std::string> ParseInt(std::string_view int_string, const int base) {
+std::expected<T, std::string> parse_int(std::string_view int_string, const int base) {
   T arg;
   std::size_t pos;
 
@@ -24,8 +24,8 @@ std::expected<T, std::string> ParseInt(std::string_view int_string, const int ba
 }
 
 // ReSharper disable once CppParameterMayBeConst
-template <typename T> std::expected<T, std::string> ParseInt(std::string_view int_string) {
-  return ParseInt<T>(int_string, 0);
+template <typename T> std::expected<T, std::string> parse_int(std::string_view int_string) {
+  return parse_int<T>(int_string, 0);
 }
 
 } // namespace porytiles

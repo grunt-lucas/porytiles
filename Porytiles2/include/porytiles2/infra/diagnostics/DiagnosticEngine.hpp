@@ -75,7 +75,7 @@ public:
     const auto &parent_templ = DiagFor(diag);
 
     if (partner_index >= parent_templ.partner_diags().size()) {
-      Panic(fmt::format("partner index {} out of bounds for diag {}", partner_index, diag));
+      panic(fmt::format("partner index {} out of bounds for diag {}", partner_index, diag));
     }
 
     // If this diagnostic is not enabled, exit now
@@ -111,12 +111,12 @@ private:
     try {
       raw_msg = templ.BuildDynamicMsg(*this, in_flight_level, std::forward<T>(args)...);
     } catch (const std::exception &e) {
-      Panic(fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
+      panic(fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
     }
 
     // Construct the message string for the consumer
     if (raw_msg.empty()) {
-      Panic(fmt::format("diagnostic {} raw_msg vector was empty", templ.name()));
+      panic(fmt::format("diagnostic {} raw_msg vector was empty", templ.name()));
     }
     const std::string constructed_msg = ConstructMsgStr(in_flight_level, templ, raw_msg);
 

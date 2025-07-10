@@ -29,7 +29,7 @@ public:
    * @param i The one-dimensional pixel index.
    * @return The Rgba32 at the given pixel index.
    */
-  [[nodiscard]] Rgba32 At(std::size_t i) const;
+  [[nodiscard]] Rgba32 at(std::size_t i) const;
 
   /**
    * @brief Fetches the Rgba32 color value at a given row and column.
@@ -38,7 +38,7 @@ public:
    * @param col The pixel column.
    * @return The Rgba32 at the given row and column.
    */
-  [[nodiscard]] Rgba32 At(std::size_t row, std::size_t col) const;
+  [[nodiscard]] Rgba32 at(std::size_t row, std::size_t col) const;
 
   /**
    * @brief Sets the Rgba32 color value at a given one-dimensional pixel index.
@@ -46,7 +46,7 @@ public:
    * @param i The one-dimensional pixel idnex.
    * @param pixel The Rgba32 to set at the given pixel index.
    */
-  void Set(std::size_t i, const Rgba32 &pixel);
+  void set(std::size_t i, const Rgba32 &pixel);
 
   /**
    * @brief Sets the Rgba32 color value at a given row and column.
@@ -55,7 +55,7 @@ public:
    * @param col The pixel column.
    * @param pixel The Rgba32 to set at the given pixel row and column.
    */
-  void Set(std::size_t row, std::size_t col, const Rgba32 &pixel);
+  void set(std::size_t row, std::size_t col, const Rgba32 &pixel);
 
   /**
    * @brief Gets the width of this image in pixels.

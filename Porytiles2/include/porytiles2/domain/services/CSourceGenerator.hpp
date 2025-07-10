@@ -29,7 +29,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Complete C declaration string for palette data
    */
-  virtual std::string GeneratePaletteDeclaration(const std::string &tileset_name) = 0;
+  virtual std::string generate_palette_declaration(const std::string &tileset_name) = 0;
 
   /**
    * @brief Generate tile data declaration for a tileset.
@@ -41,7 +41,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Complete C declaration string for tile data
    */
-  virtual std::string GenerateTileDeclaration(const std::string &tileset_name) = 0;
+  virtual std::string generate_tile_declaration(const std::string &tileset_name) = 0;
 
   /**
    * @brief Generate tileset struct definition.
@@ -54,7 +54,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Complete C struct definition string
    */
-  virtual std::string GenerateTilesetStructDefinition(const std::string &tileset_name) = 0;
+  virtual std::string generate_tileset_struct_definition(const std::string &tileset_name) = 0;
 
   /**
    * @brief Generate metatile data declaration.
@@ -66,7 +66,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Complete C declaration string for metatile data
    */
-  virtual std::string GenerateMetatileDeclaration(const std::string &tileset_name) = 0;
+  virtual std::string generate_metatile_declaration(const std::string &tileset_name) = 0;
 
   /**
    * @brief Generate metatile attribute data declaration.
@@ -78,7 +78,7 @@ public:
    * @param tileset_name The name of the tileset (e.g., "MyTileset")
    * @return Complete C declaration string for metatile attribute data
    */
-  virtual std::string GenerateMetatileAttributeDeclaration(const std::string &tileset_name) = 0;
+  virtual std::string generate_metatile_attribute_declaration(const std::string &tileset_name) = 0;
 
   /**
    * @brief Format code with proper indentation.
@@ -91,7 +91,7 @@ public:
    * @param indent_level The indentation level (0 = no indentation)
    * @return Formatted code string with proper indentation
    */
-  virtual std::string FormatWithIndentation(const std::string &code, int indent_level) = 0;
+  virtual std::string format_with_indentation(const std::string &code, int indent_level) = 0;
 
   /**
    * @brief Generate include guards for header files.
@@ -103,7 +103,7 @@ public:
    * @param header_name The name of the header file (without extension)
    * @return Include guard string with proper formatting
    */
-  virtual std::string GenerateIncludeGuards(const std::string &header_name) = 0;
+  virtual std::string generate_include_guards(const std::string &header_name) = 0;
 };
 
 } // namespace porytiles

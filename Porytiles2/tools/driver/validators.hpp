@@ -53,9 +53,9 @@ public:
         return std::string{"invalid rgb string: " + str};
       }
 
-      const auto red_result = porytiles::ParseInt<int>(color_components[0]);
-      const auto green_result = porytiles::ParseInt<int>(color_components[1]);
-      const auto blue_result = porytiles::ParseInt<int>(color_components[2]);
+      const auto red_result = porytiles::parse_int<int>(color_components[0]);
+      const auto green_result = porytiles::parse_int<int>(color_components[1]);
+      const auto blue_result = porytiles::parse_int<int>(color_components[2]);
 
       if (!red_result.has_value()) {
         return std::string{"invalid rgb red component: " + red_result.error()};

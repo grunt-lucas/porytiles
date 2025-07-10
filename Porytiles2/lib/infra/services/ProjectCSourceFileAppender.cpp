@@ -20,12 +20,12 @@ ProjectCSourceFileAppender::ProjectCSourceFileAppender(const gsl::not_null<Proje
                                                        std::unique_ptr<CSourceGenerator> generator)
     : paths_{paths}, generator_{std::move(generator)} {}
 
-Result<void> ProjectCSourceFileAppender::AppendToGraphicsHeader(const std::string &tileset_name) {
-  const auto graphics_path = paths_->GraphicsHeader();
+Result<void> ProjectCSourceFileAppender::append_to_graphics_header(const std::string &tileset_name) {
+  const auto graphics_path = paths_->graphics_header();
 
   // Generate the palette and tile declarations
-  const auto palette_declaration = generator_->GeneratePaletteDeclaration(tileset_name);
-  const auto tile_declaration = generator_->GenerateTileDeclaration(tileset_name);
+  const auto palette_declaration = generator_->generate_palette_declaration(tileset_name);
+  const auto tile_declaration = generator_->generate_tile_declaration(tileset_name);
 
   // Combine the declarations with proper spacing
   const auto content = fmt::format("{}\n\n{}\n", palette_declaration, tile_declaration);
@@ -33,11 +33,11 @@ Result<void> ProjectCSourceFileAppender::AppendToGraphicsHeader(const std::strin
   return AppendToFile(graphics_path, content);
 }
 
-Result<void> ProjectCSourceFileAppender::AppendToHeadersHeader(const std::string &tileset_name) {
-  const auto headers_path = paths_->HeadersHeader();
+Result<void> ProjectCSourceFileAppender::append_to_headers_header(const std::string &tileset_name) {
+  const auto headers_path = paths_->headers_header();
 
   // Generate the tileset struct definition
-  const auto struct_definition = generator_->GenerateTilesetStructDefinition(tileset_name);
+  const auto struct_definition = generator_->generate_tileset_struct_definition(tileset_name);
 
   // Add the struct definition with proper spacing
   const auto content = fmt::format("{}\n", struct_definition);
@@ -45,12 +45,12 @@ Result<void> ProjectCSourceFileAppender::AppendToHeadersHeader(const std::string
   return AppendToFile(headers_path, content);
 }
 
-Result<void> ProjectCSourceFileAppender::AppendToMetatilesHeader(const std::string &tileset_name) {
-  const auto metatiles_path = paths_->MetatilesHeader();
+Result<void> ProjectCSourceFileAppender::append_to_metatiles_header(const std::string &tileset_name) {
+  const auto metatiles_path = paths_->metatiles_header();
 
   // Generate the metatile and attribute declarations
-  const auto metatile_declaration = generator_->GenerateMetatileDeclaration(tileset_name);
-  const auto attribute_declaration = generator_->GenerateMetatileAttributeDeclaration(tileset_name);
+  const auto metatile_declaration = generator_->generate_metatile_declaration(tileset_name);
+  const auto attribute_declaration = generator_->generate_metatile_attribute_declaration(tileset_name);
 
   // Combine the declarations with proper spacing
   const auto content = fmt::format("{}\n\n{}\n", metatile_declaration, attribute_declaration);
@@ -59,17 +59,17 @@ Result<void> ProjectCSourceFileAppender::AppendToMetatilesHeader(const std::stri
 }
 
 Result<void>
-ProjectCSourceFileAppender::AppendTilesetDeclarations(const std::string &tileset_name) {
+ProjectCSourceFileAppender::append_tileset_declarations(const std::string &tileset_name) {
   // Perform all three operations in sequence
-  if (auto result = AppendToGraphicsHeader(tileset_name); !result) {
+  if (auto result = append_to_graphics_header(tileset_name); !result) {
     return std::unexpected{fmt::format("Failed to append to graphics.h: {}", result.error())};
   }
 
-  if (auto result = AppendToHeadersHeader(tileset_name); !result) {
+  if (auto result = append_to_headers_header(tileset_name); !result) {
     return std::unexpected{fmt::format("Failed to append to headers.h: {}", result.error())};
   }
 
-  if (auto result = AppendToMetatilesHeader(tileset_name); !result) {
+  if (auto result = append_to_metatiles_header(tileset_name); !result) {
     return std::unexpected{fmt::format("Failed to append to metatiles.h: {}", result.error())};
   }
 

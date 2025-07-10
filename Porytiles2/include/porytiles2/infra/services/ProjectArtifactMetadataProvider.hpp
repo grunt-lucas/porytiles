@@ -14,22 +14,22 @@ public:
   ProjectArtifactMetadataProvider() = default;
 
   [[nodiscard]] std::unordered_map<std::string, std::string>
-  ComputePorymapChecksums(const Tileset &tileset) const override;
+  compute_porymap_checksums(const Tileset &tileset) const override;
 
   [[nodiscard]] std::unordered_map<std::string, std::string>
-  LoadStoredChecksums(const std::string &tileset_name) const override;
+  load_stored_checksums(const std::string &tileset_name) const override;
 
   [[nodiscard]] Result<void>
-  StoreChecksums(const std::string &tileset_name,
-                 const std::unordered_map<std::string, std::string> &checksums) override;
+  store_checksums(const std::string &tileset_name,
+                  const std::unordered_map<std::string, std::string> &checksums) override;
 
   [[nodiscard]] std::unordered_map<std::string, Timestamp>
-  GetPorymapTimestamps(const Tileset &tileset) const override;
+  get_porymap_timestamps(const Tileset &tileset) const override;
 
   [[nodiscard]] std::unordered_map<std::string, Timestamp>
-  GetPorytilesTimestamps(const Tileset &tileset) const override;
+  get_porytiles_timestamps(const Tileset &tileset) const override;
 
-  [[nodiscard]] bool ArePorymapAssetsNewer(const Tileset &tileset) const override;
+  [[nodiscard]] bool are_porymap_assets_newer(const Tileset &tileset) const override;
 };
 
 } // namespace porytiles

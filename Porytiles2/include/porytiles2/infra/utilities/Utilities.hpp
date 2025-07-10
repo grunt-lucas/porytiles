@@ -7,7 +7,7 @@
 
 namespace porytiles {
 
-template <typename T> T parseInteger(const char *integerString, const int base) {
+template <typename T> T parse_integer(const char *integerString, const int base) {
   try {
     std::size_t pos;
     T arg = std::stoi(integerString, &pos, base);
@@ -23,22 +23,22 @@ template <typename T> T parseInteger(const char *integerString, const int base) 
   throw std::runtime_error("utilities::parseInteger reached unreachable code path");
 }
 
-template <typename T> T parseInteger(const char *integerString) {
-  return parseInteger<T>(integerString, 0);
+template <typename T> T parse_integer(const char *integerString) {
+  return parse_integer<T>(integerString, 0);
 }
 
 std::vector<std::string> split(std::string input, const std::string &delimiter);
 
-bool checkFullStringMatch(const std::string &str, const std::string &pattern);
+bool check_full_string_match(const std::string &str, const std::string &pattern);
 
 void trim(std::string &string);
 
-std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir,
-                                     const std::string &fileName);
+std::filesystem::path get_tmpfile_path(const std::filesystem::path &parentDir,
+                                       const std::string &fileName);
 
-std::filesystem::path createTmpdir();
+std::filesystem::path create_tmpdir();
 
-std::string palIndexToFileName(std::size_t index);
+std::string pal_index_to_file_name(std::size_t index);
 
 } // namespace porytiles
 

@@ -10,19 +10,19 @@
 
 namespace porytiles {
 
-Result<std::unique_ptr<Tileset>> ProjectTilesetRepo::Load(const std::string &name) const {
+Result<std::unique_ptr<Tileset>> ProjectTilesetRepo::load(const std::string &name) const {
   // TODO : impl
-  Panic("unimplemented");
+  panic("unimplemented");
 }
 
-bool ProjectTilesetRepo::Exists(const std::string &name) const {
+bool ProjectTilesetRepo::exists(const std::string &name) const {
   // TODO : impl
-  Panic("unimplemented");
+  panic("unimplemented");
 }
 
-Result<void> ProjectTilesetRepo::SaveTileset(const Tileset &tileset) {
+Result<void> ProjectTilesetRepo::save_tileset(const Tileset &tileset) {
   // TODO : impl
-  Panic("unimplemented");
+  panic("unimplemented");
 }
 
 } // namespace porytiles

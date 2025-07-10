@@ -27,7 +27,7 @@ std::vector<std::string> split(std::string input, const std::string &delimiter) 
   return result;
 }
 
-bool checkFullStringMatch(const std::string &str, const std::string &pattern) {
+bool check_full_string_match(const std::string &str, const std::string &pattern) {
   try {
     const std::regex re{pattern};
     return std::regex_match(str, re);
@@ -45,12 +45,12 @@ void trim(std::string &string) {
                string.end());
 }
 
-std::filesystem::path getTmpfilePath(const std::filesystem::path &parentDir,
-                                     const std::string &fileName) {
+std::filesystem::path get_tmpfile_path(const std::filesystem::path &parentDir,
+                                       const std::string &fileName) {
   return std::filesystem::temp_directory_path() / parentDir / fileName;
 }
 
-std::filesystem::path createTmpdir() {
+std::filesystem::path create_tmpdir() {
   int maxTries = 1000;
   auto tmpDir = std::filesystem::temp_directory_path();
   int i = 0;
@@ -66,14 +66,14 @@ std::filesystem::path createTmpdir() {
       break;
     }
     if (i == maxTries) {
-      Panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+      panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
     }
     i++;
   }
   return path;
 }
 
-std::string palIndexToFileName(std::size_t index) {
+std::string pal_index_to_file_name(std::size_t index) {
   std::string file = std::to_string(index) + ".png";
   if (index < 10) {
     file = "0" + file;

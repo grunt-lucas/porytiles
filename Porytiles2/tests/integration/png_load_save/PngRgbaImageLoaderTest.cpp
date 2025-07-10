@@ -13,12 +13,12 @@ using namespace porytiles;
 TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-  auto result = loader->LoadFromFile("Resources/Tests/Unit/png/non_existent_file.png");
+  auto result = loader->load_from_file("Resources/Tests/Unit/png/non_existent_file.png");
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().contains(
       "Failed to open file 'Resources/Tests/Unit/png/non_existent_file.png'"));
 
-  auto result2 = loader->LoadFromFile("Resources/Tests/Unit/metatile_behaviors.h");
+  auto result2 = loader->load_from_file("Resources/Tests/Unit/metatile_behaviors.h");
   ASSERT_FALSE(result2.has_value());
   EXPECT_TRUE(result2.error().contains("Failed to recognize format of file "
                                        "'Resources/Tests/Unit/metatile_behaviors.h'"));
@@ -27,7 +27,7 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
 TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-  const auto result = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
+  const auto result = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -40,7 +40,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
   // Use one of the available PNG files that should be RGB (3-channel)
-  const auto result = loader->LoadFromFile("Resources/Examples/simple_primary_1/bottom.png");
+  const auto result = loader->load_from_file("Resources/Examples/simple_primary_1/bottom.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -52,8 +52,8 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha) {
   bool has_opaque_pixels = false;
   for (std::size_t row = 0; row < image.height(); ++row) {
     for (std::size_t col = 0; col < image.width(); ++col) {
-      const auto pixel = image.At(row, col);
-      if (pixel.alpha() == Rgba32::kAlphaOpaque) {
+      const auto pixel = image.at(row, col);
+      if (pixel.alpha() == Rgba32::alpha_opaque) {
         has_opaque_pixels = true;
         break;
       }
@@ -67,7 +67,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha) {
 TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-  auto result = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
+  auto result = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -77,22 +77,22 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly) {
   EXPECT_GT(image.height(), 0);
 
   // Verify we can access pixels within the bounds
-  EXPECT_NO_THROW(std::ignore = image.At(0, 0));
-  EXPECT_NO_THROW(std::ignore = image.At(image.height() - 1, image.width() - 1));
+  EXPECT_NO_THROW(std::ignore = image.at(0, 0));
+  EXPECT_NO_THROW(std::ignore = image.at(image.height() - 1, image.width() - 1));
 }
 
 TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-  auto result = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
+  auto result = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
   const auto &image = *result.value();
 
   // Test that we can read pixel data using both access methods
-  const auto pixel_by_coords = image.At(0, 0);
-  const auto pixel_by_index = image.At(0);
+  const auto pixel_by_coords = image.at(0, 0);
+  const auto pixel_by_index = image.at(0);
 
   EXPECT_EQ(pixel_by_coords.red(), pixel_by_index.red());
   EXPECT_EQ(pixel_by_coords.green(), pixel_by_index.green());
@@ -101,7 +101,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly) {
 
   // Verify that all pixel values are valid (0-255)
   for (std::size_t i = 0; i < image.width() * image.height(); ++i) {
-    const auto pixel = image.At(i);
+    const auto pixel = image.at(i);
     EXPECT_GE(pixel.red(), 0);
     EXPECT_LE(pixel.red(), 255);
     EXPECT_GE(pixel.green(), 0);
@@ -124,7 +124,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats) {
       "Resources/Examples/simple_primary_1/anim/flower_white/key.png"};
 
   for (const auto &file : test_files) {
-    auto result = loader->LoadFromFile(file);
+    auto result = loader->load_from_file(file);
     ASSERT_TRUE(result.has_value()) << "Failed to read file: " << file;
     ASSERT_NE(result.value(), nullptr) << "Null image for file: " << file;
 
@@ -139,7 +139,7 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
 
   // Test with a key.png file which likely has transparency
   const auto result =
-      loader->LoadFromFile("Resources/Examples/simple_primary_1/anim/flower_white/key.png");
+      loader->load_from_file("Resources/Examples/simple_primary_1/anim/flower_white/key.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -147,11 +147,11 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
 
   // Check that we have some pixels with alpha values
   bool has_alpha_variation = false;
-  const std::uint8_t first_alpha = image.At(0, 0).alpha();
+  const std::uint8_t first_alpha = image.at(0, 0).alpha();
 
   for (std::size_t row = 0; row < image.height() && !has_alpha_variation; ++row) {
     for (std::size_t col = 0; col < image.width() && !has_alpha_variation; ++col) {
-      if (const auto pixel = image.At(row, col); pixel.alpha() != first_alpha) {
+      if (const auto pixel = image.at(row, col); pixel.alpha() != first_alpha) {
         has_alpha_variation = true;
       }
     }
@@ -160,7 +160,7 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
   // The key.png should have some transparency variation, but if not,
   // at least verify all alpha values are valid
   for (std::size_t i = 0; i < image.width() * image.height(); ++i) {
-    const auto pixel = image.At(i);
+    const auto pixel = image.at(i);
     EXPECT_GE(pixel.alpha(), 0);
     EXPECT_LE(pixel.alpha(), 255);
   }
@@ -170,7 +170,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
   // Test with pattern.png which should be a small test image
-  auto result = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
+  auto result = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
   ASSERT_TRUE(result.has_value());
   ASSERT_NE(result.value(), nullptr);
 
@@ -183,7 +183,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages) {
   // Test accessing all pixels in a small image
   for (std::size_t row = 0; row < image.height(); ++row) {
     for (std::size_t col = 0; col < image.width(); ++col) {
-      EXPECT_NO_THROW(std::ignore = image.At(row, col));
+      EXPECT_NO_THROW(std::ignore = image.at(row, col));
     }
   }
 }
@@ -192,8 +192,8 @@ TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile) {
   const std::unique_ptr<RgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
   // Read the same file multiple times to ensure consistent results
-  auto result1 = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
-  auto result2 = loader->LoadFromFile("Resources/Tests/Unit/png/pattern.png");
+  auto result1 = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
+  auto result2 = loader->load_from_file("Resources/Tests/Unit/png/pattern.png");
 
   ASSERT_TRUE(result1.has_value());
   ASSERT_TRUE(result2.has_value());
@@ -209,8 +209,8 @@ TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile) {
 
   // Images should have same pixel data
   for (std::size_t i = 0; i < image1.width() * image1.height(); ++i) {
-    const auto pixel1 = image1.At(i);
-    const auto pixel2 = image2.At(i);
+    const auto pixel1 = image1.at(i);
+    const auto pixel2 = image2.at(i);
 
     EXPECT_EQ(pixel1.red(), pixel2.red());
     EXPECT_EQ(pixel1.green(), pixel2.green());

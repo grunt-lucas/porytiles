@@ -50,13 +50,13 @@ void DiagEngine::UpgradeEnabledWarningsToErr() {
 void DiagEngine::EnableAtLevel(std::string_view diag, DiagLevel override) {
   // Only allow warns to be overridden for the warning-as-error case
   if (const auto &templ = DiagFor(diag); templ.level() != DiagLevel::kWarning) {
-    Panic("cannot change diagnostic enablement level for non-warning "
+    panic("cannot change diagnostic enablement level for non-warning "
           "diagnostics");
   }
 
   // Only allow warnings to be upgraded to err or downgraded to warn
   if (override != DiagLevel::kWarning && override != DiagLevel::kError) {
-    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
+    panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
   }
 
   if (enabled_at_level_.contains(diag.data())) {
@@ -70,13 +70,13 @@ void DiagEngine::EnableAtLevel(std::string_view diag, DiagLevel override) {
 void DiagEngine::DisableAtLevel(std::string_view diag, DiagLevel override) {
   // Only allow warns to be overridden for the warning-as-error case
   if (const auto &templ = DiagFor(diag); templ.level() != DiagLevel::kWarning) {
-    Panic("cannot change diagnostic enablement level for non-warning "
+    panic("cannot change diagnostic enablement level for non-warning "
           "diagnostics");
   }
 
   // Only allow warnings to be upgraded to err or downgraded to warn
   if (override != DiagLevel::kWarning && override != DiagLevel::kError) {
-    Panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
+    panic(fmt::format("cannot override diagnostic '{}' level to {}", diag, LevelToStr(override)));
   }
 
   if (enabled_at_level_.contains(diag.data())) {

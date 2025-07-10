@@ -56,12 +56,12 @@ protected:
 };
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendToGraphicsHeaderShouldWork) {
-  auto result = appender_->AppendToGraphicsHeader("MyTileset");
+  auto result = appender_->append_to_graphics_header("MyTileset");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Read the modified file
-  const auto graphics_path = project_paths_->GraphicsHeader();
+  const auto graphics_path = project_paths_->graphics_header();
   const auto content = ReadFile(graphics_path);
 
   // Should contain original content
@@ -79,12 +79,12 @@ TEST_F(ProjectCSourceFileAppenderTest, AppendToGraphicsHeaderShouldWork) {
 }
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendToHeadersHeaderShouldWork) {
-  auto result = appender_->AppendToHeadersHeader("MyTileset");
+  auto result = appender_->append_to_headers_header("MyTileset");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Read the modified file
-  const auto headers_path = project_paths_->HeadersHeader();
+  const auto headers_path = project_paths_->headers_header();
   const auto content = ReadFile(headers_path);
 
   // Should contain original content
@@ -100,12 +100,12 @@ TEST_F(ProjectCSourceFileAppenderTest, AppendToHeadersHeaderShouldWork) {
 }
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendToMetatilesHeaderShouldWork) {
-  auto result = appender_->AppendToMetatilesHeader("MyTileset");
+  auto result = appender_->append_to_metatiles_header("MyTileset");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Read the modified file
-  const auto metatiles_path = project_paths_->MetatilesHeader();
+  const auto metatiles_path = project_paths_->metatiles_header();
   const auto content = ReadFile(metatiles_path);
 
   // Should contain original content
@@ -120,14 +120,14 @@ TEST_F(ProjectCSourceFileAppenderTest, AppendToMetatilesHeaderShouldWork) {
 }
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendTilesetDeclarationsShouldWork) {
-  auto result = appender_->AppendTilesetDeclarations("TestTileset");
+  auto result = appender_->append_tileset_declarations("TestTileset");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
   // Check all three files were modified
-  const auto graphics_content = ReadFile(project_paths_->GraphicsHeader());
-  const auto headers_content = ReadFile(project_paths_->HeadersHeader());
-  const auto metatiles_content = ReadFile(project_paths_->MetatilesHeader());
+  const auto graphics_content = ReadFile(project_paths_->graphics_header());
+  const auto headers_content = ReadFile(project_paths_->headers_header());
+  const auto metatiles_content = ReadFile(project_paths_->metatiles_header());
 
   // Graphics file should contain palette and tile declarations
   EXPECT_TRUE(graphics_content.find("gTilesetPalettes_TestTileset") != std::string::npos);
@@ -143,20 +143,20 @@ TEST_F(ProjectCSourceFileAppenderTest, AppendTilesetDeclarationsShouldWork) {
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendToNonExistentFileShouldFail) {
   // Remove the graphics file
-  std::filesystem::remove(project_paths_->GraphicsHeader());
+  std::filesystem::remove(project_paths_->graphics_header());
 
-  auto result = appender_->AppendToGraphicsHeader("MyTileset");
+  auto result = appender_->append_to_graphics_header("MyTileset");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("Cannot open file for reading") != std::string::npos);
 }
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendWithComplexTilesetNameShouldWork) {
-  auto result = appender_->AppendToGraphicsHeader("MyComplexTilesetName");
+  auto result = appender_->append_to_graphics_header("MyComplexTilesetName");
 
   EXPECT_TRUE(result.has_value()) << "Expected success but got error: " << result.error();
 
-  const auto content = ReadFile(project_paths_->GraphicsHeader());
+  const auto content = ReadFile(project_paths_->graphics_header());
 
   // Should preserve PascalCase in C variable names
   EXPECT_TRUE(content.find("gTilesetPalettes_MyComplexTilesetName") != std::string::npos);
@@ -169,14 +169,14 @@ TEST_F(ProjectCSourceFileAppenderTest, AppendWithComplexTilesetNameShouldWork) {
 
 TEST_F(ProjectCSourceFileAppenderTest, MultipleAppendsShouldAccumulate) {
   // Append first tileset
-  auto result1 = appender_->AppendToGraphicsHeader("TilesetOne");
+  auto result1 = appender_->append_to_graphics_header("TilesetOne");
   EXPECT_TRUE(result1.has_value());
 
   // Append second tileset
-  auto result2 = appender_->AppendToGraphicsHeader("TilesetTwo");
+  auto result2 = appender_->append_to_graphics_header("TilesetTwo");
   EXPECT_TRUE(result2.has_value());
 
-  const auto content = ReadFile(project_paths_->GraphicsHeader());
+  const auto content = ReadFile(project_paths_->graphics_header());
 
   // Should contain both tilesets
   EXPECT_TRUE(content.find("gTilesetPalettes_TilesetOne") != std::string::npos);
@@ -187,14 +187,14 @@ TEST_F(ProjectCSourceFileAppenderTest, MultipleAppendsShouldAccumulate) {
 
 TEST_F(ProjectCSourceFileAppenderTest, AppendTilesetDeclarationsFailureInMiddleShouldPropagate) {
   // Remove the headers file to cause a failure in the middle
-  std::filesystem::remove(project_paths_->HeadersHeader());
+  std::filesystem::remove(project_paths_->headers_header());
 
-  auto result = appender_->AppendTilesetDeclarations("TestTileset");
+  auto result = appender_->append_tileset_declarations("TestTileset");
 
   EXPECT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().find("Failed to append to headers.h") != std::string::npos);
 
   // Graphics file should still be modified (operation is not atomic)
-  const auto graphics_content = ReadFile(project_paths_->GraphicsHeader());
+  const auto graphics_content = ReadFile(project_paths_->graphics_header());
   EXPECT_TRUE(graphics_content.find("gTilesetPalettes_TestTileset") != std::string::npos);
 }

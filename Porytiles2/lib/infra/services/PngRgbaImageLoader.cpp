@@ -16,7 +16,7 @@ using cimg_library::CImg;
 using cimg_library::CImgException;
 
 std::expected<std::unique_ptr<RgbaImage>, std::string>
-PngRgbaImageLoader::LoadFromFile(const std::filesystem::path &path) const {
+PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
   CImg<std::uint8_t> cimg_png{};
   const auto path_c_str = path.c_str();
   try {
@@ -43,9 +43,9 @@ PngRgbaImageLoader::LoadFromFile(const std::filesystem::path &path) const {
 
       // PNGs with no alpha channel are considered opaque
       const auto alpha =
-          (cimg_png.spectrum() == 3) ? Rgba32::kAlphaOpaque : cimg_png(col, row, 0, 3);
+          (cimg_png.spectrum() == 3) ? Rgba32::alpha_opaque : cimg_png(col, row, 0, 3);
 
-      image.Set(row, col, Rgba32{red, green, blue, alpha});
+      image.set(row, col, Rgba32{red, green, blue, alpha});
     }
   }
 

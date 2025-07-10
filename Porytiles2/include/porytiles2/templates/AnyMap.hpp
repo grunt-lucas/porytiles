@@ -24,8 +24,8 @@ public:
   [[nodiscard]] const_iterator cbegin() const noexcept { return config_.cbegin(); }
   [[nodiscard]] const_iterator cend() const noexcept { return config_.cend(); }
 
-  template <typename T> [[nodiscard]] std::optional<T> Try(const std::string &key) const {
-    if (!Contains(key)) {
+  template <typename T> [[nodiscard]] std::optional<T> try_get(const std::string &key) const {
+    if (!contains(key)) {
       return std::nullopt;
     }
     try {
@@ -35,37 +35,37 @@ public:
     }
   }
 
-  template <typename T> [[nodiscard]] std::optional<T> Get(const std::string &key) const {
-    if (!Contains(key)) {
-      Panic("Key not found: " + key);
+  template <typename T> [[nodiscard]] std::optional<T> get(const std::string &key) const {
+    if (!contains(key)) {
+      panic("Key not found: " + key);
     }
     try {
       return std::optional{std::any_cast<T>(config_.at(key))};
     } catch (const std::bad_any_cast &) {
-      Panic("Invalid type requested for key: " + key);
+      panic("Invalid type requested for key: " + key);
     }
   }
 
-  [[nodiscard]] std::optional<std::any> TryAny(const std::string &key) const {
-    if (!Contains(key)) {
+  [[nodiscard]] std::optional<std::any> try_get_any(const std::string &key) const {
+    if (!contains(key)) {
       return std::nullopt;
     }
     return std::optional{config_.at(key)};
   }
 
-  [[nodiscard]] std::any GetAny(const std::string &key) const {
-    if (!Contains(key)) {
-      Panic("Key not found: " + key);
+  [[nodiscard]] std::any get_any(const std::string &key) const {
+    if (!contains(key)) {
+      panic("Key not found: " + key);
     }
     return config_.at(key);
   }
 
-  void Put(const std::string &key, const std::any &value) { config_.insert_or_assign(key, value); }
+  void put(const std::string &key, const std::any &value) { config_.insert_or_assign(key, value); }
 
-  [[nodiscard]] bool Contains(const std::string &key) const { return config_.contains(key); }
+  [[nodiscard]] bool contains(const std::string &key) const { return config_.contains(key); }
 
-  [[nodiscard]] std::optional<std::type_index> GetType(const std::string &key) const {
-    if (!Contains(key)) {
+  [[nodiscard]] std::optional<std::type_index> get_type(const std::string &key) const {
+    if (!contains(key)) {
       return std::nullopt;
     }
     return config_.at(key).type();

@@ -30,8 +30,8 @@ public:
    * @param path The path where the image file should be saved.
    * @return A Result indicating success or containing an error description.
    */
-  [[nodiscard]] virtual Result<void> SaveToFile(const RgbaImage &image,
-                                                const std::filesystem::path &path) const = 0;
+  [[nodiscard]] virtual Result<void> save_to_file(const RgbaImage &image,
+                                                  const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles

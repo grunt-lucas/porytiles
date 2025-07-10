@@ -41,7 +41,7 @@ public:
    * @param tileset_name The name of the primary Tileset to compile.
    * @return An empty Result on success, otherwise an error description.
    */
-  [[nodiscard]] Result<void> Compile(const std::string &tileset_name) const;
+  [[nodiscard]] Result<void> compile(const std::string &tileset_name) const;
 
 private:
   std::unique_ptr<TilesetRepo> tileset_repo_;

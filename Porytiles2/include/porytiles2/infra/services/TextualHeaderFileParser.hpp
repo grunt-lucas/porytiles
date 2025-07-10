@@ -43,7 +43,7 @@ public:
    * @return Result<std::vector<std::string>> containing the file lines or error details
    */
   [[nodiscard]] Result<std::vector<std::string>>
-  ParseHeaderFile(const std::filesystem::path &file_path) override;
+  parse_header_file(const std::filesystem::path &file_path) override;
 
   /**
    * @brief Check if a header file contains a specific declaration.
@@ -57,7 +57,7 @@ public:
    * @param declaration_pattern The pattern to search for (e.g., "gTileset_MyTileset")
    * @return Result<bool> indicating if the declaration exists or error details
    */
-  [[nodiscard]] Result<bool> ContainsDeclaration(const std::filesystem::path &file_path,
+  [[nodiscard]] Result<bool> contains_declaration(const std::filesystem::path &file_path,
                                                  const std::string &declaration_pattern) override;
 
   /**
@@ -71,7 +71,7 @@ public:
    * @param file_path The path to the C header file to analyze
    * @return Result<size_t> containing the line number for insertion or error details
    */
-  [[nodiscard]] Result<size_t> FindInsertionPoint(const std::filesystem::path &file_path) override;
+  [[nodiscard]] Result<size_t> find_insertion_point(const std::filesystem::path &file_path) override;
 
   /**
    * @brief Validate that a header file has proper C syntax structure.
@@ -88,7 +88,7 @@ public:
    * @return Result<bool> indicating if the file is valid or error details
    */
   [[nodiscard]] Result<bool>
-  ValidateHeaderStructure(const std::filesystem::path &file_path) override;
+  validate_header_structure(const std::filesystem::path &file_path) override;
 };
 
 } // namespace porytiles

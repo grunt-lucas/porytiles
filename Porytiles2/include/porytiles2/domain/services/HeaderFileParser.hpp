@@ -45,7 +45,7 @@ public:
    * @return Result<std::vector<std::string>> containing the file lines or error details
    */
   [[nodiscard]] virtual Result<std::vector<std::string>>
-  ParseHeaderFile(const std::filesystem::path &file_path) = 0;
+  parse_header_file(const std::filesystem::path &file_path) = 0;
 
   /**
    * @brief Check if a header file contains a specific declaration.
@@ -60,8 +60,8 @@ public:
    * @return Result<bool> indicating if the declaration exists or error details
    */
   [[nodiscard]] virtual Result<bool>
-  ContainsDeclaration(const std::filesystem::path &file_path,
-                      const std::string &declaration_pattern) = 0;
+  contains_declaration(const std::filesystem::path &file_path,
+                       const std::string &declaration_pattern) = 0;
 
   /**
    * @brief Find the best insertion point for new declarations.
@@ -75,7 +75,7 @@ public:
    * @return Result<size_t> containing the line number for insertion or error details
    */
   [[nodiscard]] virtual Result<size_t>
-  FindInsertionPoint(const std::filesystem::path &file_path) = 0;
+  find_insertion_point(const std::filesystem::path &file_path) = 0;
 
   /**
    * @brief Validate that a header file has proper C syntax structure.
@@ -90,7 +90,7 @@ public:
    * @return Result<bool> indicating if the file is valid or error details
    */
   [[nodiscard]] virtual Result<bool>
-  ValidateHeaderStructure(const std::filesystem::path &file_path) = 0;
+  validate_header_structure(const std::filesystem::path &file_path) = 0;
 };
 
 } // namespace porytiles

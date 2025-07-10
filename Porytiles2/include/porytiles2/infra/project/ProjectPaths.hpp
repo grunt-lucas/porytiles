@@ -22,7 +22,7 @@ public:
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's directory.
    */
-  [[nodiscard]] std::filesystem::path PrimaryTilesetDirectory(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path primary_tileset_directory(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given primary tileset's Porytiles `bottom.png` file.
@@ -30,7 +30,7 @@ public:
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `bottom.png` file.
    */
-  [[nodiscard]] std::filesystem::path PrimaryBottomPng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path primary_bottom_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given primary tileset's Porytiles `middle.png` file.
@@ -38,7 +38,7 @@ public:
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `middle.png` file.
    */
-  [[nodiscard]] std::filesystem::path PrimaryMiddlePng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path primary_middle_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given primary tileset's Porytiles `top.png` file.
@@ -46,7 +46,7 @@ public:
    * @param tileset The name of the primary tileset.
    * @return The path to the given primary tileset's `top.png` file.
    */
-  [[nodiscard]] std::filesystem::path PrimaryTopPng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path primary_top_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given secondary tileset's directory.
@@ -54,7 +54,7 @@ public:
    * @param tileset The name of the secondary tileset.
    * @return The path to the given secondary tileset's directory.
    */
-  [[nodiscard]] std::filesystem::path SecondaryTilesetDirectory(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path secondary_tileset_directory(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given secondary tileset's Porytiles `bottom.png` file.
@@ -62,7 +62,7 @@ public:
    * @param tileset The name of the secondary tileset.
    * @return The path to the given secondary tileset's `bottom.png` file.
    */
-  [[nodiscard]] std::filesystem::path SecondaryBottomPng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path secondary_bottom_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given secondary tileset's Porytiles `middle.png` file.
@@ -70,7 +70,7 @@ public:
    * @param tileset The name of the secondary tileset.
    * @return The path to the given secondary tileset's `middle.png` file.
    */
-  [[nodiscard]] std::filesystem::path SecondaryMiddlePng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path secondary_middle_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the given secondary tileset's Porytiles `top.png` file.
@@ -78,7 +78,7 @@ public:
    * @param tileset The name of the secondary tileset.
    * @return The path to the given secondary tileset's `top.png` file.
    */
-  [[nodiscard]] std::filesystem::path SecondaryTopPng(const std::string &tileset) const;
+  [[nodiscard]] std::filesystem::path secondary_top_png(const std::string &tileset) const;
 
   /**
    * @brief Computes the path to the project `metatile_behaviors.h` file.
@@ -91,7 +91,7 @@ public:
    *
    * @return The path to the project's `metatile_behaviors.h` file.
    */
-  [[nodiscard]] std::filesystem::path BehaviorsHeader() const;
+  [[nodiscard]] std::filesystem::path behaviors_header() const;
 
   /**
    * @brief Sets an override path for the metatile behaviors header.
@@ -103,14 +103,14 @@ public:
    *
    * @param override The override behaviors header path.
    */
-  void SetBehaviorsHeaderOverridePath(std::filesystem::path override);
+  void set_behaviors_header_override_path(std::filesystem::path override);
 
   /**
    * @brief Sets an override file name for the metatile behaviors header.
    *
    * @param override The override behaviors header file name.
    */
-  void SetBehaviorsHeaderOverrideFile(std::string override);
+  void set_behaviors_header_override_file(std::string override);
 
   /**
    * @brief Computes the path to the project `graphics.h` file.
@@ -121,7 +121,7 @@ public:
    *
    * @return The path to the project's `graphics.h` file.
    */
-  [[nodiscard]] std::filesystem::path GraphicsHeader() const;
+  [[nodiscard]] std::filesystem::path graphics_header() const;
 
   /**
    * @brief Computes the path to the project `headers.h` file.
@@ -132,7 +132,7 @@ public:
    *
    * @return The path to the project's `headers.h` file.
    */
-  [[nodiscard]] std::filesystem::path HeadersHeader() const;
+  [[nodiscard]] std::filesystem::path headers_header() const;
 
   /**
    * @brief Computes the path to the project `metatiles.h` file.
@@ -143,7 +143,7 @@ public:
    *
    * @return The path to the project's `metatiles.h` file.
    */
-  [[nodiscard]] std::filesystem::path MetatilesHeader() const;
+  [[nodiscard]] std::filesystem::path metatiles_header() const;
 
 private:
   std::filesystem::path project_root_;

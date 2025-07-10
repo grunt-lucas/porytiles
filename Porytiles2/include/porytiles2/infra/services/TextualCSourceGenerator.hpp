@@ -36,13 +36,13 @@ public:
   ~TextualCSourceGenerator() override = default;
 
   // CSourceGenerator interface implementation
-  std::string GeneratePaletteDeclaration(const std::string &tileset_name) override;
-  std::string GenerateTileDeclaration(const std::string &tileset_name) override;
-  std::string GenerateTilesetStructDefinition(const std::string &tileset_name) override;
-  std::string GenerateMetatileDeclaration(const std::string &tileset_name) override;
-  std::string GenerateMetatileAttributeDeclaration(const std::string &tileset_name) override;
-  std::string FormatWithIndentation(const std::string &code, int indent_level) override;
-  std::string GenerateIncludeGuards(const std::string &header_name) override;
+  std::string generate_palette_declaration(const std::string &tileset_name) override;
+  std::string generate_tile_declaration(const std::string &tileset_name) override;
+  std::string generate_tileset_struct_definition(const std::string &tileset_name) override;
+  std::string generate_metatile_declaration(const std::string &tileset_name) override;
+  std::string generate_metatile_attribute_declaration(const std::string &tileset_name) override;
+  std::string format_with_indentation(const std::string &code, int indent_level) override;
+  std::string generate_include_guards(const std::string &header_name) override;
 
 private:
   /**

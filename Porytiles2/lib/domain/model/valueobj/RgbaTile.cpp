@@ -7,13 +7,13 @@
 
 namespace porytiles {
 
-bool RgbaTile::IsTransparent(const Rgba32 &transparency) const {
+bool RgbaTile::is_transparent(const Rgba32 &transparency) const {
   return std::ranges::all_of(pix(), [=](const auto &pixel) {
-    return pixel == transparency || pixel.alpha() == Rgba32::kAlphaTransparent;
+    return pixel == transparency || pixel.alpha() == Rgba32::alpha_transparent;
   });
 }
 
-bool RgbaTile::EqualsBgr(const RgbaTile &other) const {
+bool RgbaTile::equals_bgr(const RgbaTile &other) const {
   // for (std::size_t i = 0; i < TILE_NUM_PIX; i++) {
   //     if (rgbaToBgr(this->pixels.at(i)) != rgbaToBgr(other.pixels.at(i))) {
   //         return false;

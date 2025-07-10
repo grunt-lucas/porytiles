@@ -15,7 +15,7 @@ using cimg_library::CImg;
 using cimg_library::CImgException;
 
 std::expected<void, std::string>
-PngRgbaImageSaver::SaveToFile(const RgbaImage &image, const std::filesystem::path &path) const {
+PngRgbaImageSaver::save_to_file(const RgbaImage &image, const std::filesystem::path &path) const {
   const auto width = static_cast<int>(image.width());
   const auto height = static_cast<int>(image.height());
   constexpr auto spectrum = 4; // RGBA
@@ -25,7 +25,7 @@ PngRgbaImageSaver::SaveToFile(const RgbaImage &image, const std::filesystem::pat
 
   for (std::size_t row = 0; row < image.height(); ++row) {
     for (std::size_t col = 0; col < image.width(); ++col) {
-      const auto pixel = image.At(row, col);
+      const auto pixel = image.at(row, col);
 
       cimg_png(col, row, 0, 0) = pixel.red();
       cimg_png(col, row, 0, 1) = pixel.green();

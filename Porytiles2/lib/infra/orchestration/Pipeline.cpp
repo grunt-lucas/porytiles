@@ -9,10 +9,10 @@ namespace porytiles {
 Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
   // 1) Map each artifact key to the producer op that generates it
   for (auto &op : ops) {
-    for (const auto &output_artifact : op->DeclareOutputs()) {
+    for (const auto &output_artifact : op->declare_outputs()) {
       const auto &out_key = output_artifact.key();
       if (producers_.contains(out_key)) {
-        Panic("duplicate producers for key: " + out_key);
+        panic("duplicate producers for key: " + out_key);
       }
       producers_.insert({out_key, op.get()});
     }
@@ -23,7 +23,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     adj_.try_emplace(op.get(), std::vector<Operation *>{});
   }
   for (auto &op : ops) {
-    const auto inputs = op->DeclareInputs();
+    const auto inputs = op->declare_inputs();
     int deps = 0;
     for (const auto &input_artifact : inputs) {
       if (const auto &in_key = input_artifact.key(); producers_.contains(in_key)) {
@@ -31,7 +31,7 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
         adj_.at(producer_op).push_back(op.get());
         deps++;
       } else {
-        Panic(fmt::format("operation '{}' depends on non-existent artifact: '{}'", op->name(),
+        panic(fmt::format("operation '{}' depends on non-existent artifact: '{}'", op->name(),
                           in_key));
       }
     }
@@ -56,36 +56,36 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     }
   }
   if (sorted_.size() != ops.size()) {
-    Panic("cycle detected in pipeline dependencies");
+    panic("cycle detected in pipeline dependencies");
   }
 }
 
-std::expected<AnyMap, std::string> Pipeline::Run() const {
+std::expected<AnyMap, std::string> Pipeline::run() const {
   AnyMap artifacts{};
   for (auto *op : sorted_) {
     // Gather inputs for the operation
     AnyMap inputs{};
-    for (auto &input_artifact : op->DeclareInputs()) {
+    for (auto &input_artifact : op->declare_inputs()) {
       const auto &key = input_artifact.key();
-      const auto val = artifacts.TryAny(key);
+      const auto val = artifacts.try_get_any(key);
       if (!val.has_value()) {
-        Panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
+        panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
       }
-      inputs.Put(key, val.value());
+      inputs.put(key, val.value());
     }
 
     // Execute the operation
-    auto result = op->Execute(inputs);
+    auto result = op->execute(inputs);
     if (!result.has_value()) {
       return result;
     }
 
     // Merge outputs
     for (auto outputs_map = result.value(); const auto &[key, value] : outputs_map) {
-      if (artifacts.Contains(key)) {
-        Panic("duplicate output artifact: " + key);
+      if (artifacts.contains(key)) {
+        panic("duplicate output artifact: " + key);
       }
-      artifacts.Put(key, value);
+      artifacts.put(key, value);
     }
   }
   return artifacts;
