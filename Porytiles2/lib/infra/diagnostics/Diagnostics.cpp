@@ -12,15 +12,15 @@ namespace {
 
 using namespace porytiles2;
 
-constexpr std::size_t DIAG_MARGIN_SIZE = 7;
+constexpr std::size_t diag_margin_size = 7;
 
-void AssertArgSize(std::size_t expected, std::size_t actual, const char *func_name) {
+void assert_arg_size(std::size_t expected, std::size_t actual, const char *func_name) {
   if (actual != expected) {
     panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
   }
 }
 
-template <typename T> T AnyCastOrPanic(const std::any &a, const std::source_location &loc) {
+template <typename T> T any_cast_or_panic(const std::any &a, const std::source_location &loc) {
   try {
     return std::any_cast<T>(a);
   } catch (std::bad_any_cast &) {
@@ -28,7 +28,8 @@ template <typename T> T AnyCastOrPanic(const std::any &a, const std::source_loca
   }
 }
 
-template <typename T> const T &AnyCastOrPanic(const std::any *a, const std::source_location &loc) {
+template <typename T>
+const T &any_cast_or_panic(const std::any *a, const std::source_location &loc) {
   auto any_unwrapped = any_cast<T>(a);
   if (any_unwrapped == nullptr) {
     panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
@@ -36,13 +37,13 @@ template <typename T> const T &AnyCastOrPanic(const std::any *a, const std::sour
   return *any_unwrapped;
 }
 
-void PushToStream(std::stringstream &ss, const std::string_view s, const std::size_t n) {
+void push_to_stream(std::stringstream &ss, const std::string_view s, const std::size_t n) {
   for (std::size_t i = 0; i < n; i++) {
     ss << s;
   }
 }
 
-void ResetStream(std::stringstream &ss) {
+void reset_stream(std::stringstream &ss) {
   ss.clear();
   ss.str(std::string{});
 }
@@ -137,90 +138,90 @@ void ResetStream(std::stringstream &ss) {
 } // namespace
 
 namespace porytiles2 {
-std::string LevelToStr(DiagLevel level) {
+std::string level_to_str(DiagLevel level) {
   switch (level) {
-  case DiagLevel::kIgnored:
+  case DiagLevel::ignored:
     return "ignored";
-  case DiagLevel::kNote:
+  case DiagLevel::note:
     return "note";
-  case DiagLevel::kRemark:
+  case DiagLevel::remark:
     return "remark";
-  case DiagLevel::kWarning:
+  case DiagLevel::warning:
     return "warning";
-  case DiagLevel::kError:
+  case DiagLevel::error:
     return "error";
-  case DiagLevel::kFatal:
+  case DiagLevel::fatal:
     return "fatal error";
   default:
     panic("level_to_str: unknown diag_level");
   }
 }
 
-fmt::terminal_color ColorForLevel(DiagLevel level) {
+fmt::terminal_color color_for_level(DiagLevel level) {
   switch (level) {
-  case DiagLevel::kIgnored:
+  case DiagLevel::ignored:
     return fmt::terminal_color::white;
-  case DiagLevel::kNote:
+  case DiagLevel::note:
     return fmt::terminal_color::cyan;
-  case DiagLevel::kRemark:
+  case DiagLevel::remark:
     return fmt::terminal_color::green;
-  case DiagLevel::kWarning:
+  case DiagLevel::warning:
     return fmt::terminal_color::magenta;
-  case DiagLevel::kError:
-  case DiagLevel::kFatal:
+  case DiagLevel::error:
+  case DiagLevel::fatal:
     return fmt::terminal_color::red;
   default:
     panic("color_for_level: unknown diag_level");
   }
 }
 
-int LevelPriority(DiagLevel level) {
+int level_priority(DiagLevel level) {
   switch (level) {
-  case DiagLevel::kIgnored:
+  case DiagLevel::ignored:
     return 0;
-  case DiagLevel::kNote:
+  case DiagLevel::note:
     return 1;
-  case DiagLevel::kRemark:
+  case DiagLevel::remark:
     return 2;
-  case DiagLevel::kWarning:
+  case DiagLevel::warning:
     return 3;
-  case DiagLevel::kError:
+  case DiagLevel::error:
     return 4;
-  case DiagLevel::kFatal:
+  case DiagLevel::fatal:
     return 5;
   }
   return -1;
 }
 
-void IgnoreConsumer::Consume(const InFlightDiag &diag) { consumed_count_++; }
+void IgnoreConsumer::consume(const InFlightDiag &diag) { consumed_count_++; }
 
-bool IgnoreConsumer::IsATty() const { return false; }
+bool IgnoreConsumer::is_a_tty() const { return false; }
 
-InFlightDiag IgnoreConsumer::ConsumedAt(std::size_t i) const {
+InFlightDiag IgnoreConsumer::consumed_at(std::size_t i) const {
   panic("ignore_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t IgnoreConsumer::ConsumedCount() const { return consumed_count_; }
+std::uint64_t IgnoreConsumer::consumed_count() const { return consumed_count_; }
 
-void StderrConsumer::Consume(const InFlightDiag &diag) {
+void StderrConsumer::consume(const InFlightDiag &diag) {
   consumed_count_++;
   const auto msg = diag.msg();
   std::fputs(msg.c_str(), stderr);
 }
 
-bool StderrConsumer::IsATty() const { return isatty(fileno(stderr)); }
+bool StderrConsumer::is_a_tty() const { return isatty(fileno(stderr)); }
 
-InFlightDiag StderrConsumer::ConsumedAt(std::size_t i) const {
+InFlightDiag StderrConsumer::consumed_at(std::size_t i) const {
   panic("stderr_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t StderrConsumer::ConsumedCount() const { return consumed_count_; }
+std::uint64_t StderrConsumer::consumed_count() const { return consumed_count_; }
 
-void VectorConsumer::Consume(const InFlightDiag &diag) { diags_.emplace_back(diag); }
+void VectorConsumer::consume(const InFlightDiag &diag) { diags_.emplace_back(diag); }
 
-bool VectorConsumer::IsATty() const { return false; }
+bool VectorConsumer::is_a_tty() const { return false; }
 
-InFlightDiag VectorConsumer::ConsumedAt(std::size_t i) const {
+InFlightDiag VectorConsumer::consumed_at(std::size_t i) const {
   try {
     return diags_.at(i);
   } catch (const std::out_of_range &) {
@@ -228,15 +229,15 @@ InFlightDiag VectorConsumer::ConsumedAt(std::size_t i) const {
   }
 }
 
-std::uint64_t VectorConsumer::ConsumedCount() const { return diags_.size(); }
+std::uint64_t VectorConsumer::consumed_count() const { return diags_.size(); }
 
-static const DiagTempl N_GENERIC_TEMPL{NoteGeneric, DiagLevel::kNote, "{}", {}};
+static const DiagTempl n_generic_templ{note_generic, DiagLevel::note, "{}", {}};
 
-static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
-    "color-precision-loss-previously-seen-note", DiagLevel::kNote,
+static const DiagTempl w_color_precision_loss_note_templ{
+    "color-precision-loss-previously-seen-note", DiagLevel::note,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(4, args.size(), std::source_location::current().function_name());
+      assert_arg_size(4, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto tile = AnyCastOrPanic<RGBATile>(args[0],
@@ -260,12 +261,12 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_NOTE_TEMPL{
 
       return msg;
     }};
-static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
-    WarnColorPrecisionLoss,
-    DiagLevel::kWarning,
+static const DiagTempl w_color_precision_loss_templ{
+    warn_color_precision_loss,
+    DiagLevel::warning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(5, args.size(), std::source_location::current().function_name());
+      assert_arg_size(5, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto tile = AnyCastOrPanic<RGBATile>(args[0],
@@ -290,22 +291,22 @@ static const DiagTempl W_COLOR_PRECISION_LOSS_TEMPL{
 
       return msg;
     },
-    {W_COLOR_PRECISION_LOSS_NOTE_TEMPL}};
+    {w_color_precision_loss_note_templ}};
 
 // TODO : show mode information (primary vs secondary)
-static const DiagTempl W_KEY_FRAME_NO_MATCHING_TILE_TEMPL{
-    WarnKeyFrameNoMatchingTile,
-    DiagLevel::kWarning,
+static const DiagTempl w_key_frame_no_matching_tile_templ{
+    warn_key_frame_no_matching_tile,
+    DiagLevel::warning,
     "animation '{}' key frame tile '{}' was not present in any metatile "
     "entries",
     {}};
 
 // TODO : show mode information (primary vs secondary)
-static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
-    "key-frame-missing-colors-list-note", DiagLevel::kNote,
+static const DiagTempl w_key_frame_missing_colors_note_templ{
+    "key-frame-missing-colors-list-note", DiagLevel::note,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(1, args.size(), std::source_location::current().function_name());
+      assert_arg_size(1, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
       // const auto missing_colors =
@@ -327,117 +328,121 @@ static const DiagTempl W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL{
       // msg.push_back(ss.str());
       return msg;
     }};
-static const DiagTempl W_KEY_FRAME_MISSING_COLORS_TEMPL{
-    WarnKeyFrameMissingColors,
-    DiagLevel::kWarning,
+static const DiagTempl w_key_frame_missing_colors_templ{
+    warn_key_frame_missing_colors,
+    DiagLevel::warning,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
-      AssertArgSize(2, args.size(), std::source_location::current().function_name());
+      assert_arg_size(2, args.size(), std::source_location::current().function_name());
       std::vector<std::string> msg{};
 
-      const auto anim_name = AnyCastOrPanic<std::string>(args[0], std::source_location::current());
-      const auto tile_index = AnyCastOrPanic<std::size_t>(args[1], std::source_location::current());
+      const auto anim_name =
+          any_cast_or_panic<std::string>(args[0], std::source_location::current());
+      const auto tile_index =
+          any_cast_or_panic<std::size_t>(args[1], std::source_location::current());
       constexpr auto msg_templ = "anim '{}' key frame tile '{}' missing essential colors";
 
       msg.push_back(fmt::format(msg_templ, eng.Bold(anim_name), eng.Bold(tile_index)));
       return msg;
     },
-    {W_KEY_FRAME_MISSING_COLORS_NOTE_TEMPL}};
+    {w_key_frame_missing_colors_note_templ}};
 
 // TODO : make message shorter, possibly shorten file name?
-static const DiagTempl W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL{
-    WarnAttributeFormatMismatch,
-    DiagLevel::kWarning,
+static const DiagTempl w_attribute_format_mismatch_templ{
+    warn_attribute_format_mismatch,
+    DiagLevel::warning,
     "{}: too {} attribute columns for base game '{}'",
-    {DiagTempl{"attribute-format-mismatch-note", DiagLevel::kNote,
+    {DiagTempl{"attribute-format-mismatch-note", DiagLevel::note,
                "unspecified columns will receive default values"}}};
 
-static const DiagTempl W_MISSING_ATTRIBUTES_CSV_TEMPL{
-    WarnMissingAttributesCsv,
-    DiagLevel::kWarning,
+static const DiagTempl w_missing_attributes_csv_templ{
+    warn_missing_attributes_csv,
+    DiagLevel::warning,
     "{}: attributes.csv did not exist",
-    {DiagTempl{"missing-attr-csv-note", DiagLevel::kNote,
+    {DiagTempl{"missing-attr-csv-note", DiagLevel::note,
                "all attributes will receive default or inferred values"}}};
 
-static const DiagTempl W_UNUSED_ATTRIBUTE_TEMPL{
-    WarnUnusedAttribute,
-    DiagLevel::kWarning,
+static const DiagTempl w_unused_attribute_templ{
+    warn_unused_attribute,
+    DiagLevel::warning,
     "found attribute for nonexistent metatile ID '{}'",
-    {DiagTempl{"unused-attribute-note", DiagLevel::kNote,
+    {DiagTempl{"unused-attribute-note", DiagLevel::note,
                "{} metatiles found at source path '{}'"}}};
 
-static const DiagTempl W_TRANSPARENCY_COLLAPSE_TEMPL{
-    WarnTransparencyCollapse,
-    DiagLevel::kWarning,
+static const DiagTempl w_transparency_collapse_templ{
+    warn_transparency_collapse,
+    DiagLevel::warning,
     "color '{}' at {} '{}' subtile pixel col '{}', row '{}' collapsed to "
     "transparent under BGR conversion",
-    {DiagTempl{"transparency-collapse-note", DiagLevel::kNote,
+    {DiagTempl{"transparency-collapse-note", DiagLevel::note,
                "if you did not intend this pixel to be transparent, edit the "
                "color on the respective layer sheet"}}};
 
-static const DiagTempl W_UNUSED_MANUAL_PAL_COLOR_TEMPL{
-    WarnUnusedManualPalColor, DiagLevel::kWarning, "{}: '{}' was not used in layers or anims", {}};
+static const DiagTempl w_unused_manual_pal_color_templ{warn_unused_manual_pal_color,
+                                                       DiagLevel::warning,
+                                                       "{}: '{}' was not used in layers or anims",
+                                                       {}};
 
-static const DiagTempl W_TILE_INDEX_OUT_OF_RANGE_TEMPL{
-    WarnTileIndexOutOfRange,
-    DiagLevel::kWarning,
+static const DiagTempl w_tile_index_out_of_range_templ{
+    warn_tile_index_out_of_range,
+    DiagLevel::warning,
     "{} '{}': tile index '{}' out of range (sheet size = {})",
-    {DiagTempl{"tile-index-out-of-range-note", DiagLevel::kNote,
+    {DiagTempl{"tile-index-out-of-range-note", DiagLevel::note,
                "substituting primary tile 0 (transparent tile) so "
                "decompilation can continue"}}};
 
-static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
-    WarnPaletteIndexOutOfRange,
-    DiagLevel::kWarning,
+static const DiagTempl w_palette_index_out_of_range_templ{
+    warn_palette_index_out_of_range,
+    DiagLevel::warning,
     "{} '{}': palette index '{}' out of range (numPalettesTotal = {})",
-    {DiagTempl{"palette-index-out-of-range-note", DiagLevel::kNote,
+    {DiagTempl{"palette-index-out-of-range-note", DiagLevel::note,
                "substituting palette 0 so decompilation can continue"}}};
 
-static const DiagTempl E_GENERIC_TEMPL{ErrGeneric, DiagLevel::kError, "{}", {}};
+static const DiagTempl e_generic_templ{err_generic, DiagLevel::error, "{}", {}};
 
-static const DiagTempl E_FATAL_GENERIC_TEMPL{FatalGeneric, DiagLevel::kFatal, "{}", {}};
+static const DiagTempl e_fatal_generic_templ{fatal_generic, DiagLevel::fatal, "{}", {}};
 
-static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
+static const std::unordered_map<const char *, DiagTempl> diag_templs{
     // Standalone notes
-    {NoteGeneric, N_GENERIC_TEMPL},
+    {note_generic, n_generic_templ},
 
     // Tileset compilation warnings
-    {WarnColorPrecisionLoss, W_COLOR_PRECISION_LOSS_TEMPL},
-    {WarnKeyFrameNoMatchingTile, W_KEY_FRAME_NO_MATCHING_TILE_TEMPL},
-    {WarnKeyFrameMissingColors, W_KEY_FRAME_MISSING_COLORS_TEMPL},
-    {WarnAttributeFormatMismatch, W_ATTRIBUTE_FORMAT_MISMATCH_TEMPL},
-    {WarnMissingAttributesCsv, W_MISSING_ATTRIBUTES_CSV_TEMPL},
-    {WarnUnusedAttribute, W_UNUSED_ATTRIBUTE_TEMPL},
-    {WarnTransparencyCollapse, W_TRANSPARENCY_COLLAPSE_TEMPL},
-    {WarnUnusedManualPalColor, W_UNUSED_MANUAL_PAL_COLOR_TEMPL},
+    {warn_color_precision_loss, w_color_precision_loss_templ},
+    {warn_key_frame_no_matching_tile, w_key_frame_no_matching_tile_templ},
+    {warn_key_frame_missing_colors, w_key_frame_missing_colors_templ},
+    {warn_attribute_format_mismatch, w_attribute_format_mismatch_templ},
+    {warn_missing_attributes_csv, w_missing_attributes_csv_templ},
+    {warn_unused_attribute, w_unused_attribute_templ},
+    {warn_transparency_collapse, w_transparency_collapse_templ},
+    {warn_unused_manual_pal_color, w_unused_manual_pal_color_templ},
 
     // Tileset decompilation warnings
-    {WarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
-    {WarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
+    {warn_tile_index_out_of_range, w_tile_index_out_of_range_templ},
+    {warn_palette_index_out_of_range, w_palette_index_out_of_range_templ},
 
     // Generic errors
-    {ErrGeneric, E_GENERIC_TEMPL},
-    {FatalGeneric, E_FATAL_GENERIC_TEMPL}};
+    {err_generic, e_generic_templ},
+    {fatal_generic, e_fatal_generic_templ}};
 
-DiagTempl DiagFor(const std::string_view name) {
-  AssertOrPanic(DIAG_TEMPLS.contains(name.data()),
+DiagTempl diag_for(const std::string_view name) {
+  AssertOrPanic(diag_templs.contains(name.data()),
                 fmt::format("diag_template_for: unknown diagnostic: {}", name));
-  return DIAG_TEMPLS.at(name.data());
+  return diag_templs.at(name.data());
 }
 
-std::vector<const char *> AllDiagNames() {
+std::vector<const char *> all_diag_names() {
   std::vector<const char *> keys{};
-  keys.reserve(DIAG_TEMPLS.size());
-  for (const auto &key : DIAG_TEMPLS | std::views::keys) {
+  keys.reserve(diag_templs.size());
+  for (const auto &key : diag_templs | std::views::keys) {
     keys.push_back(key);
   }
   return keys;
 }
 
-std::vector<const char *> AllDiagNames(const DiagLevel level) {
+std::vector<const char *> all_diag_names(const DiagLevel level) {
   std::vector<const char *> keys{};
-  keys.reserve(DIAG_TEMPLS.size());
-  for (const auto &[name, templ] : DIAG_TEMPLS) {
+  keys.reserve(diag_templs.size());
+  for (const auto &[name, templ] : diag_templs) {
     if (templ.level() == level) {
       keys.push_back(name);
     }

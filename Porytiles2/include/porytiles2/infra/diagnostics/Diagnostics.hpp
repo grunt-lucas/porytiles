@@ -19,20 +19,20 @@ namespace porytiles2 {
 
 enum class DiagLevel {
   /// Foo
-  kIgnored,
+  ignored,
   /// Bar
-  kNote,
-  kRemark,
-  kWarning,
-  kError,
-  kFatal
+  note,
+  remark,
+  warning,
+  error,
+  fatal
 };
 
-std::string LevelToStr(DiagLevel level);
+std::string level_to_str(DiagLevel level);
 
-fmt::terminal_color ColorForLevel(DiagLevel level);
+fmt::terminal_color color_for_level(DiagLevel level);
 
-int LevelPriority(DiagLevel level);
+int level_priority(DiagLevel level);
 
 // The full definition for this class is in diagnostics/diagnostic_engine.hpp.
 class DiagEngine;
@@ -185,10 +185,10 @@ private:
 class DiagConsumer {
 public:
   virtual ~DiagConsumer() = default;
-  virtual void Consume(const InFlightDiag &diag) = 0;
-  [[nodiscard]] virtual bool IsATty() const = 0;
-  [[nodiscard]] virtual InFlightDiag ConsumedAt(std::size_t i) const = 0;
-  [[nodiscard]] virtual std::uint64_t ConsumedCount() const = 0;
+  virtual void consume(const InFlightDiag &diag) = 0;
+  [[nodiscard]] virtual bool is_a_tty() const = 0;
+  [[nodiscard]] virtual InFlightDiag consumed_at(std::size_t i) const = 0;
+  [[nodiscard]] virtual std::uint64_t consumed_count() const = 0;
 };
 
 /**
@@ -199,10 +199,10 @@ public:
  */
 class IgnoreConsumer final : public DiagConsumer {
 public:
-  void Consume(const InFlightDiag &diag) override;
-  [[nodiscard]] bool IsATty() const override;
-  [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
-  [[nodiscard]] std::uint64_t ConsumedCount() const override;
+  void consume(const InFlightDiag &diag) override;
+  [[nodiscard]] bool is_a_tty() const override;
+  [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
+  [[nodiscard]] std::uint64_t consumed_count() const override;
 
 private:
   std::uint64_t consumed_count_{};
@@ -216,10 +216,10 @@ private:
  */
 class StderrConsumer final : public DiagConsumer {
 public:
-  void Consume(const InFlightDiag &diag) override;
-  [[nodiscard]] bool IsATty() const override;
-  [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
-  [[nodiscard]] std::uint64_t ConsumedCount() const override;
+  void consume(const InFlightDiag &diag) override;
+  [[nodiscard]] bool is_a_tty() const override;
+  [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
+  [[nodiscard]] std::uint64_t consumed_count() const override;
 
 private:
   std::uint64_t consumed_count_{};
@@ -233,10 +233,10 @@ private:
  */
 class VectorConsumer final : public DiagConsumer {
 public:
-  void Consume(const InFlightDiag &diag) override;
-  [[nodiscard]] bool IsATty() const override;
-  [[nodiscard]] InFlightDiag ConsumedAt(std::size_t i) const override;
-  [[nodiscard]] std::uint64_t ConsumedCount() const override;
+  void consume(const InFlightDiag &diag) override;
+  [[nodiscard]] bool is_a_tty() const override;
+  [[nodiscard]] InFlightDiag consumed_at(std::size_t i) const override;
+  [[nodiscard]] std::uint64_t consumed_count() const override;
 
 private:
   std::vector<InFlightDiag> diags_;
@@ -249,23 +249,23 @@ private:
 /// STANDALONE NOTES
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto NoteGeneric = "note-generic";
+constexpr auto note_generic = "note-generic";
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
 /// WARNINGS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto WarnColorPrecisionLoss = "color-precision-loss";
-constexpr auto WarnKeyFrameNoMatchingTile = "key-frame-no-matching-tile";
-constexpr auto WarnKeyFrameMissingColors = "key-frame-missing-colors";
-constexpr auto WarnAttributeFormatMismatch = "attribute-format-mismatch";
-constexpr auto WarnMissingAttributesCsv = "missing-attributes-csv";
-constexpr auto WarnUnusedAttribute = "unused-attribute";
-constexpr auto WarnTransparencyCollapse = "transparency-collapse";
-constexpr auto WarnUnusedManualPalColor = "unused-manual-pal-color";
-constexpr auto WarnTileIndexOutOfRange = "tile-index-out-of-range";
-constexpr auto WarnPaletteIndexOutOfRange = "palette-index-out-of-range";
+constexpr auto warn_color_precision_loss = "color-precision-loss";
+constexpr auto warn_key_frame_no_matching_tile = "key-frame-no-matching-tile";
+constexpr auto warn_key_frame_missing_colors = "key-frame-missing-colors";
+constexpr auto warn_attribute_format_mismatch = "attribute-format-mismatch";
+constexpr auto warn_missing_attributes_csv = "missing-attributes-csv";
+constexpr auto warn_unused_attribute = "unused-attribute";
+constexpr auto warn_transparency_collapse = "transparency-collapse";
+constexpr auto warn_unused_manual_pal_color = "unused-manual-pal-color";
+constexpr auto warn_tile_index_out_of_range = "tile-index-out-of-range";
+constexpr auto warn_palette_index_out_of_range = "palette-index-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -273,8 +273,8 @@ constexpr auto WarnPaletteIndexOutOfRange = "palette-index-out-of-range";
 /// ERRORS & FATALS
 ///
 ////////////////////////////////////////////////////////////////////////////////
-constexpr auto ErrGeneric = "error-generic";
-constexpr auto FatalGeneric = "error-fatal-generic";
+constexpr auto err_generic = "error-generic";
+constexpr auto fatal_generic = "error-fatal-generic";
 
 // clang-format on
 
@@ -293,7 +293,7 @@ constexpr auto FatalGeneric = "error-fatal-generic";
  * @note The function will terminate the program if the diagnostic name is
  * invalid.
  */
-DiagTempl DiagFor(std::string_view name);
+DiagTempl diag_for(std::string_view name);
 
 /**
  * @brief Gets an iterable view of all DiagTempl names in the internal table.
@@ -303,7 +303,7 @@ DiagTempl DiagFor(std::string_view name);
  * via DiagFor. This may be useful for range-based for-loops, or other use
  * cases where the user wants to perform an action for some or all diagnostics.
  */
-std::vector<const char *> AllDiagNames();
+std::vector<const char *> all_diag_names();
 
 /**
  * @brief Get an iterable view of all DiagTempl names for a given DiagLevel.
@@ -311,7 +311,7 @@ std::vector<const char *> AllDiagNames();
  * @details
  * Get an iterable view of all DiagTempl names for a given DiagLevel.
  */
-std::vector<const char *> AllDiagNames(DiagLevel level);
+std::vector<const char *> all_diag_names(DiagLevel level);
 
 } // namespace porytiles2
 

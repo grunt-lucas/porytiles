@@ -111,7 +111,7 @@ Use the following example snippet as a guide for code style.
 // Finally, include other Porytiles headers with quotes
 #include "porytiles2/domain/Foo.hpp"
 
-namespace porytiles {
+namespace porytiles2 {
 
 // PascalCase for enum class names
 enum class FooBar {
@@ -163,17 +163,17 @@ int MyClass::compute_something(int accum_value) const {
     return my_local + my_val_ + accum_value;
 }
 
-} // namespace porytiles
+} // namespace porytiles2
 ```
 
 ## Doxygen Comment Style
 ```C++
 // Always use @brief and @details
 /**
- * @brief A basic template for Foo.
+ * @brief A basic class for for modeling foos.
  *
  * @details
- * More detailed explanation about Foo.
+ * The Foo class assumes that your foos are all like bars, but different.
  */
 class Foo {
 

@@ -33,34 +33,34 @@ public:
   explicit DiagEngine(std::unique_ptr<DiagConsumer> consumer)
       : consumer_{std::move(consumer)}, all_warnings_disabled_{false} {}
 
-  void EnableAllWarnings();
+  void enable_all_warnings();
 
-  void DisableAllWarnings();
+  void disable_all_warnings();
 
-  void UpgradeEnabledWarningsToErr();
+  void upgrade_enabled_warnings_to_err();
 
-  void EnableAtLevel(std::string_view diag, DiagLevel override);
+  void enable_at_level(std::string_view diag, DiagLevel override);
 
-  void DisableAtLevel(std::string_view diag, DiagLevel override);
+  void disable_at_level(std::string_view diag, DiagLevel override);
 
-  [[nodiscard]] DiagLevel EnabledAt(std::string_view diag) const;
+  [[nodiscard]] DiagLevel enabled_at(std::string_view diag) const;
 
-  [[nodiscard]] std::uint64_t InFlightCountForLevel(DiagLevel level) const;
+  [[nodiscard]] std::uint64_t in_flight_count_for_level(DiagLevel level) const;
 
-  [[nodiscard]] std::uint64_t InFlightCountFor(std::string_view diag) const;
+  [[nodiscard]] std::uint64_t in_flight_count_for(std::string_view diag) const;
 
   // ReSharper disable once CppParameterMayBeConst
-  template <typename... T> void Report(std::string_view diag, T &&...args) {
+  template <typename... T> void report(std::string_view diag, T &&...args) {
     // If this diagnostic is not enabled, exit now
-    if (!IsEnabled(diag)) {
+    if (!is_enabled(diag)) {
       return;
     }
-    const auto &templ = DiagFor(diag);
+    const auto &templ = diag_for(diag);
 
     // Compute in-flight level based on user settings
-    const auto in_flight_level = ComputeLevel(diag);
+    const auto in_flight_level = compute_level(diag);
 
-    ReportHelper(templ, in_flight_level, std::forward<T>(args)...);
+    report_helper(templ, in_flight_level, std::forward<T>(args)...);
 
     // Increment diagnostic counts
     auto diag_str = std::string{diag};
@@ -71,29 +71,29 @@ public:
   }
 
   template <typename... T>
-  void ReportPartner(std::string_view diag, std::size_t partner_index, T &&...args) {
-    const auto &parent_templ = DiagFor(diag);
+  void report_partner(std::string_view diag, std::size_t partner_index, T &&...args) {
+    const auto &parent_templ = diag_for(diag);
 
     if (partner_index >= parent_templ.partner_diags().size()) {
       panic(fmt::format("partner index {} out of bounds for diag {}", partner_index, diag));
     }
 
     // If this diagnostic is not enabled, exit now
-    if (!IsEnabled(diag)) {
+    if (!is_enabled(diag)) {
       return;
     }
 
     const auto &partner_templ = parent_templ.partner_diags().at(partner_index);
     const auto in_flight_level = partner_templ.level();
 
-    ReportHelper(partner_templ, in_flight_level, std::forward<T>(args)...);
+    report_helper(partner_templ, in_flight_level, std::forward<T>(args)...);
   }
 
-  template <typename T> auto Style(const T &t, fmt::text_style ts) const {
-    return fmt::styled(t, consumer_->IsATty() ? ts : fmt::text_style{});
+  template <typename T> auto style(const T &t, fmt::text_style ts) const {
+    return fmt::styled(t, consumer_->is_a_tty() ? ts : fmt::text_style{});
   }
 
-  template <typename T> auto Bold(const T &t) const { return Style(t, fmt::emphasis::bold); }
+  template <typename T> auto Bold(const T &t) const { return style(t, fmt::emphasis::bold); }
 
   [[nodiscard]] const DiagConsumer &consumer() const;
 
@@ -105,7 +105,7 @@ private:
   std::vector<InFlightDiag> in_flight_diags_;
 
   template <typename... T>
-  void ReportHelper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args) {
+  void report_helper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args) {
     // Fill in message template
     std::vector<std::string> raw_msg;
     try {
@@ -118,20 +118,20 @@ private:
     if (raw_msg.empty()) {
       panic(fmt::format("diagnostic {} raw_msg vector was empty", templ.name()));
     }
-    const std::string constructed_msg = ConstructMsgStr(in_flight_level, templ, raw_msg);
+    const std::string constructed_msg = construct_msg_str(in_flight_level, templ, raw_msg);
 
     // Set diagnostic in-flight and then consume it
     const auto in_flight = InFlightDiag{in_flight_level, constructed_msg, templ};
     in_flight_diags_.push_back(in_flight);
-    consumer_->Consume(in_flight);
+    consumer_->consume(in_flight);
   }
 
-  [[nodiscard]] DiagLevel ComputeLevel(std::string_view diag) const;
+  [[nodiscard]] DiagLevel compute_level(std::string_view diag) const;
 
-  [[nodiscard]] bool IsEnabled(std::string_view diag) const;
+  [[nodiscard]] bool is_enabled(std::string_view diag) const;
 
-  [[nodiscard]] std::string ConstructMsgStr(DiagLevel in_flight_level, const DiagTempl &templ,
-                                            const std::vector<std::string> &msg) const;
+  [[nodiscard]] std::string construct_msg_str(DiagLevel in_flight_level, const DiagTempl &templ,
+                                              const std::vector<std::string> &msg) const;
 };
 
 } // namespace porytiles2

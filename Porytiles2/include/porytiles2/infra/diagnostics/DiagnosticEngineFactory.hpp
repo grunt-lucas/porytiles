@@ -23,7 +23,7 @@ public:
    *
    * @return A reference to the singleton DiagEngine.
    */
-  static DiagEngine &GetEngine() {
+  static DiagEngine &engine() {
     if (override_) {
       return *override_;
     }
@@ -33,7 +33,7 @@ public:
     return engine;
   }
 
-  static void Override(DiagEngine *engine) { override_ = engine; }
+  static void override_engine(DiagEngine *engine) { override_ = engine; }
 
 private:
   // A raw pointer is used here. The test fixture will own the mock object.
