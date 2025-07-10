@@ -192,13 +192,13 @@ std::unique_ptr<DecompiledTileset> decompile(PorytilesContext &ctx, DecompilerMo
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("decompile should decompile a basic primary tileset") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.fieldmapConfig.numPalettesInPrimary = 6;
     ctx.fieldmapConfig.numPalettesTotal = 13;
     ctx.fieldmapConfig.numTilesInPrimary = 512;
     ctx.fieldmapConfig.numTilesTotal = 1024;
-    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
     ctx.compilerConfig.tripleLayer = true;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_2/primary/bottom.png"}));
@@ -207,13 +207,13 @@ TEST_CASE("decompile should decompile a basic primary tileset") {
     png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/simple_metatiles_2/primary/bottom.png"};
     png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_2/primary/top.png"};
-    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+    porytiles1::DecompiledTileset decompiledPrimary = porytiles1::importLayeredTilesFromPngs(
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
+    auto compiledPrimary = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     auto decompiledViaAlgorithm =
-        porytiles::decompile(ctx, porytiles::DecompilerMode::PRIMARY, *compiledPrimary,
+        porytiles1::decompile(ctx, porytiles1::DecompilerMode::PRIMARY, *compiledPrimary,
                              compiledPrimary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
 
     CHECK(decompiledViaAlgorithm->tiles.size() == decompiledPrimary.tiles.size());
@@ -223,13 +223,13 @@ TEST_CASE("decompile should decompile a basic primary tileset") {
 }
 
 TEST_CASE("decompile should decompile a basic secondary tileset") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.fieldmapConfig.numPalettesInPrimary = 6;
     ctx.fieldmapConfig.numPalettesTotal = 13;
     ctx.fieldmapConfig.numTilesInPrimary = 512;
     ctx.fieldmapConfig.numTilesTotal = 1024;
-    ctx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    ctx.compilerConfig.primaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
+    ctx.compilerConfig.secondaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
     ctx.compilerConfig.tripleLayer = true;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_2/primary/bottom.png"}));
@@ -238,10 +238,10 @@ TEST_CASE("decompile should decompile a basic secondary tileset") {
     png::image<png::rgba_pixel> bottomPrimary{"Resources/Doctests/simple_metatiles_2/primary/bottom.png"};
     png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_2/primary/top.png"};
-    porytiles::DecompiledTileset decompiledPrimary = porytiles::importLayeredTilesFromPngs(
-        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottomPrimary,
+    porytiles1::DecompiledTileset decompiledPrimary = porytiles1::importLayeredTilesFromPngs(
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottomPrimary,
         middlePrimary, topPrimary);
-    auto compiledPrimary = porytiles::compile(ctx, porytiles::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
+    auto compiledPrimary = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
     ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
 
     REQUIRE(
@@ -252,15 +252,15 @@ TEST_CASE("decompile should decompile a basic secondary tileset") {
     png::image<png::rgba_pixel> bottomSecondary{"Resources/Doctests/simple_metatiles_2/secondary/bottom.png"};
     png::image<png::rgba_pixel> middleSecondary{"Resources/Doctests/simple_metatiles_2/secondary/middle.png"};
     png::image<png::rgba_pixel> topSecondary{"Resources/Doctests/simple_metatiles_2/secondary/top.png"};
-    porytiles::DecompiledTileset decompiledSecondary = porytiles::importLayeredTilesFromPngs(
-        ctx, porytiles::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles::Attributes>{},
+    porytiles1::DecompiledTileset decompiledSecondary = porytiles1::importLayeredTilesFromPngs(
+        ctx, porytiles1::CompilerMode::SECONDARY, std::unordered_map<std::size_t, porytiles1::Attributes>{},
         bottomSecondary, middleSecondary, topSecondary);
     auto compiledSecondary =
-        porytiles::compile(ctx, porytiles::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
+        porytiles1::compile(ctx, porytiles1::CompilerMode::SECONDARY, decompiledSecondary, {}, {}, {});
 
     ctx.decompilerContext.pairedPrimaryTileset = std::move(ctx.compilerContext.pairedPrimaryTileset);
     auto decompiledViaAlgorithm =
-        porytiles::decompile(ctx, porytiles::DecompilerMode::SECONDARY, *compiledSecondary,
+        porytiles1::decompile(ctx, porytiles1::DecompilerMode::SECONDARY, *compiledSecondary,
                              compiledSecondary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
 
     CHECK(decompiledViaAlgorithm->tiles.size() == decompiledSecondary.tiles.size());

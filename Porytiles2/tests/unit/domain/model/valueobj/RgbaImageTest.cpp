@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <porytiles2/domain/model/valueobj/RgbaImage.hpp>
+#include <porytiles2/domain/model/valueobj/rgba_image.hpp>
 
 using namespace porytiles2;
 

@@ -8,12 +8,12 @@
 
 namespace {
 
-std::optional<std::string> construct_flag(const porytiles::DiagLevel in_flight_level,
-                                          const porytiles::DiagTempl &templ) {
-    if (in_flight_level == porytiles::DiagLevel::Warning) {
+std::optional<std::string> construct_flag(const porytiles1::DiagLevel in_flight_level,
+                                          const porytiles1::DiagTempl &templ) {
+    if (in_flight_level == porytiles1::DiagLevel::Warning) {
         return std::optional{fmt::format("-W{}", templ.name())};
     }
-    if (templ.level() == porytiles::DiagLevel::Warning && in_flight_level == porytiles::DiagLevel::Error) {
+    if (templ.level() == porytiles1::DiagLevel::Warning && in_flight_level == porytiles1::DiagLevel::Error) {
         return std::optional{fmt::format("-Werror={}", templ.name())};
     }
     return std::nullopt;

@@ -1,9 +1,9 @@
-#include "porytiles2/domain/model/valueobj/RgbaTile.hpp"
+#include "porytiles2/domain/model/valueobj/rgba_tile.hpp"
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <ranges>
 
-#include "porytiles2/domain/model/valueobj/Rgba32.hpp"
+#include "porytiles2/domain/model/valueobj/rgba32.hpp"
 
 namespace porytiles2 {
 

@@ -258,8 +258,8 @@ std::vector<const char *> AllDiagNames(DiagLevel level);
 } // namespace porytiles1
 
 template <>
-struct std::hash<porytiles::DiagTempl> {
-    std::size_t operator()(const porytiles::DiagTempl &templ) const noexcept {
+struct std::hash<porytiles1::DiagTempl> {
+    std::size_t operator()(const porytiles1::DiagTempl &templ) const noexcept {
         std::size_t seed = 0x39A9C07E;
         seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(templ.name());
         seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());

@@ -594,21 +594,21 @@ std::string decompilerModeString(DecompilerMode mode) {
 
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("RGBA32 to BGR15 should lose precision") {
-    porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
-    porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
+    porytiles1::RGBA32 rgb1 = {0, 1, 2, 3};
+    porytiles1::RGBA32 rgb2 = {255, 255, 255, 255};
 
-    porytiles::BGR15 bgr1 = rgbaToBgr(rgb1);
-    porytiles::BGR15 bgr2 = rgbaToBgr(rgb2);
+    porytiles1::BGR15 bgr1 = rgbaToBgr(rgb1);
+    porytiles1::BGR15 bgr2 = rgbaToBgr(rgb2);
 
-    CHECK(bgr1 == porytiles::BGR15{0});
-    CHECK(bgr2 == porytiles::BGR15{32767}); // this value is uint16 max divided by two, i.e. 15 bits are set
+    CHECK(bgr1 == porytiles1::BGR15{0});
+    CHECK(bgr2 == porytiles1::BGR15{32767}); // this value is uint16 max divided by two, i.e. 15 bits are set
 }
 
 TEST_CASE("RGBA32 should be ordered component-wise") {
-    porytiles::RGBA32 rgb1 = {0, 1, 2, 3};
-    porytiles::RGBA32 rgb2 = {1, 2, 3, 4};
-    porytiles::RGBA32 rgb3 = {2, 3, 4, 5};
-    porytiles::RGBA32 zeros = {0, 0, 0, 0};
+    porytiles1::RGBA32 rgb1 = {0, 1, 2, 3};
+    porytiles1::RGBA32 rgb2 = {1, 2, 3, 4};
+    porytiles1::RGBA32 rgb3 = {2, 3, 4, 5};
+    porytiles1::RGBA32 zeros = {0, 0, 0, 0};
 
     CHECK(zeros == zeros);
     CHECK(zeros < rgb1);
@@ -617,16 +617,16 @@ TEST_CASE("RGBA32 should be ordered component-wise") {
 }
 
 TEST_CASE("BGR15 to RGBA should upconvert RGB channels to multiples of 8") {
-    porytiles::RGBA32 rgb1 = {0, 8, 80, 255};
-    porytiles::RGBA32 rgb2 = {255, 255, 255, 255};
-    porytiles::RGBA32 rgb3 = {2, 165, 96, 255};
+    porytiles1::RGBA32 rgb1 = {0, 8, 80, 255};
+    porytiles1::RGBA32 rgb2 = {255, 255, 255, 255};
+    porytiles1::RGBA32 rgb3 = {2, 165, 96, 255};
 
-    porytiles::BGR15 bgr1 = rgbaToBgr(rgb1);
-    porytiles::BGR15 bgr2 = rgbaToBgr(rgb2);
-    porytiles::BGR15 bgr3 = rgbaToBgr(rgb3);
+    porytiles1::BGR15 bgr1 = rgbaToBgr(rgb1);
+    porytiles1::BGR15 bgr2 = rgbaToBgr(rgb2);
+    porytiles1::BGR15 bgr3 = rgbaToBgr(rgb3);
 
-    CHECK(porytiles::bgrToRgba(bgr1) == porytiles::RGBA32{0, 8, 80, 255});
-    CHECK(porytiles::bgrToRgba(bgr2) == porytiles::RGBA32{248, 248, 248, 255});
-    CHECK(porytiles::bgrToRgba(bgr3) == porytiles::RGBA32{0, 160, 96, 255});
+    CHECK(porytiles1::bgrToRgba(bgr1) == porytiles1::RGBA32{0, 8, 80, 255});
+    CHECK(porytiles1::bgrToRgba(bgr2) == porytiles1::RGBA32{248, 248, 248, 255});
+    CHECK(porytiles1::bgrToRgba(bgr3) == porytiles1::RGBA32{0, 160, 96, 255});
 }
 #endif // DOCTEST_CONFIG_DISABLE

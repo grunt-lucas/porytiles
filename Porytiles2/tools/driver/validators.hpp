@@ -7,10 +7,10 @@
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
 
-#include "porytiles2/infra/config/TilesPalMode.hpp"
-#include "porytiles2/infra/diagnostics/Diagnostics.hpp"
-#include "porytiles2/infra/utilities/Utilities.hpp"
-#include "porytiles2/templates/Parsing.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/infra/diagnostics/diagnostics.hpp"
+#include "porytiles2/infra/utilities/utilities.hpp"
+#include "porytiles2/templates/parsing.hpp"
 
 class TilesPalModeValidator final : public CLI::Validator {
   static constexpr auto kHint = "MODE";

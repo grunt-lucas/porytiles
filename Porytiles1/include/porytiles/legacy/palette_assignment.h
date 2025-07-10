@@ -35,8 +35,8 @@ struct AssignState {
 enum class AssignResult { SUCCESS, EXPLORE_CUTOFF_REACHED, NO_SOLUTION_POSSIBLE };
 } // namespace porytiles1
 
-template <> struct std::hash<porytiles::AssignState> {
-    std::size_t operator()(const porytiles::AssignState &state) const noexcept {
+template <> struct std::hash<porytiles1::AssignState> {
+    std::size_t operator()(const porytiles1::AssignState &state) const noexcept {
         std::size_t hashValue = 0;
         for (auto colorSet : state.logicalPalettes) {
             hashValue ^= std::hash<std::bitset<240>>{}(colorSet.first);

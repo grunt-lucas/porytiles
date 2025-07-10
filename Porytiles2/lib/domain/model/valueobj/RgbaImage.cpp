@@ -1,6 +1,6 @@
-#include "porytiles2/domain/model/valueobj/RgbaImage.hpp"
+#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
 
-#include "porytiles2/templates/Panic.hpp"
+#include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
 

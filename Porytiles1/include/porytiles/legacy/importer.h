@@ -12,7 +12,7 @@
 /**
  * This unwieldy type represents a list of palette slot indexes and the override color for that index.
  */
-using OverridenPaletteSlots = std::vector<std::pair<std::size_t, porytiles::BGR15>>;
+using OverridenPaletteSlots = std::vector<std::pair<std::size_t, porytiles1::BGR15>>;
 
 /**
  * Utility functions for building core Porytiles types from sanitized input types and data structures. The importer

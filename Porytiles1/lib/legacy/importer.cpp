@@ -1320,51 +1320,51 @@ std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContex
 #ifndef DOCTEST_CONFIG_DISABLE
 TEST_CASE("importTilesFromPng should read an RGBA PNG into a DecompiledTileset in tile-wise left-to-right, "
           "top-to-bottom order") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/2x2_pattern_1.png"}));
     png::image<png::rgba_pixel> png1{"Resources/Doctests/2x2_pattern_1.png"};
 
-    porytiles::DecompiledTileset tiles = porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, png1);
+    porytiles1::DecompiledTileset tiles = porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, png1);
 
     // Tile 0 should have blue stripe from top left to bottom right
-    CHECK(tiles.tiles[0].pixels[0] == porytiles::RGBA_BLUE);
-    CHECK(tiles.tiles[0].pixels[9] == porytiles::RGBA_BLUE);
-    CHECK(tiles.tiles[0].pixels[54] == porytiles::RGBA_BLUE);
-    CHECK(tiles.tiles[0].pixels[63] == porytiles::RGBA_BLUE);
-    CHECK(tiles.tiles[0].pixels[1] == porytiles::RGBA_MAGENTA);
-    CHECK(tiles.tiles[0].type == porytiles::TileType::FREESTANDING);
+    CHECK(tiles.tiles[0].pixels[0] == porytiles1::RGBA_BLUE);
+    CHECK(tiles.tiles[0].pixels[9] == porytiles1::RGBA_BLUE);
+    CHECK(tiles.tiles[0].pixels[54] == porytiles1::RGBA_BLUE);
+    CHECK(tiles.tiles[0].pixels[63] == porytiles1::RGBA_BLUE);
+    CHECK(tiles.tiles[0].pixels[1] == porytiles1::RGBA_MAGENTA);
+    CHECK(tiles.tiles[0].type == porytiles1::TileType::FREESTANDING);
     CHECK(tiles.tiles[0].tileIndex == 0);
 
     // Tile 1 should have red stripe from top right to bottom left
-    CHECK(tiles.tiles[1].pixels[7] == porytiles::RGBA_RED);
-    CHECK(tiles.tiles[1].pixels[14] == porytiles::RGBA_RED);
-    CHECK(tiles.tiles[1].pixels[49] == porytiles::RGBA_RED);
-    CHECK(tiles.tiles[1].pixels[56] == porytiles::RGBA_RED);
-    CHECK(tiles.tiles[1].pixels[0] == porytiles::RGBA_MAGENTA);
-    CHECK(tiles.tiles[1].type == porytiles::TileType::FREESTANDING);
+    CHECK(tiles.tiles[1].pixels[7] == porytiles1::RGBA_RED);
+    CHECK(tiles.tiles[1].pixels[14] == porytiles1::RGBA_RED);
+    CHECK(tiles.tiles[1].pixels[49] == porytiles1::RGBA_RED);
+    CHECK(tiles.tiles[1].pixels[56] == porytiles1::RGBA_RED);
+    CHECK(tiles.tiles[1].pixels[0] == porytiles1::RGBA_MAGENTA);
+    CHECK(tiles.tiles[1].type == porytiles1::TileType::FREESTANDING);
     CHECK(tiles.tiles[1].tileIndex == 1);
 
     // Tile 2 should have green stripe from top right to bottom left
-    CHECK(tiles.tiles[2].pixels[7] == porytiles::RGBA_GREEN);
-    CHECK(tiles.tiles[2].pixels[14] == porytiles::RGBA_GREEN);
-    CHECK(tiles.tiles[2].pixels[49] == porytiles::RGBA_GREEN);
-    CHECK(tiles.tiles[2].pixels[56] == porytiles::RGBA_GREEN);
-    CHECK(tiles.tiles[2].pixels[0] == porytiles::RGBA_MAGENTA);
-    CHECK(tiles.tiles[2].type == porytiles::TileType::FREESTANDING);
+    CHECK(tiles.tiles[2].pixels[7] == porytiles1::RGBA_GREEN);
+    CHECK(tiles.tiles[2].pixels[14] == porytiles1::RGBA_GREEN);
+    CHECK(tiles.tiles[2].pixels[49] == porytiles1::RGBA_GREEN);
+    CHECK(tiles.tiles[2].pixels[56] == porytiles1::RGBA_GREEN);
+    CHECK(tiles.tiles[2].pixels[0] == porytiles1::RGBA_MAGENTA);
+    CHECK(tiles.tiles[2].type == porytiles1::TileType::FREESTANDING);
     CHECK(tiles.tiles[2].tileIndex == 2);
 
     // Tile 3 should have yellow stripe from top left to bottom right
-    CHECK(tiles.tiles[3].pixels[0] == porytiles::RGBA_YELLOW);
-    CHECK(tiles.tiles[3].pixels[9] == porytiles::RGBA_YELLOW);
-    CHECK(tiles.tiles[3].pixels[54] == porytiles::RGBA_YELLOW);
-    CHECK(tiles.tiles[3].pixels[63] == porytiles::RGBA_YELLOW);
-    CHECK(tiles.tiles[3].pixels[1] == porytiles::RGBA_MAGENTA);
-    CHECK(tiles.tiles[3].type == porytiles::TileType::FREESTANDING);
+    CHECK(tiles.tiles[3].pixels[0] == porytiles1::RGBA_YELLOW);
+    CHECK(tiles.tiles[3].pixels[9] == porytiles1::RGBA_YELLOW);
+    CHECK(tiles.tiles[3].pixels[54] == porytiles1::RGBA_YELLOW);
+    CHECK(tiles.tiles[3].pixels[63] == porytiles1::RGBA_YELLOW);
+    CHECK(tiles.tiles[3].pixels[1] == porytiles1::RGBA_MAGENTA);
+    CHECK(tiles.tiles[3].type == porytiles1::TileType::FREESTANDING);
     CHECK(tiles.tiles[3].tileIndex == 3);
 }
 
 TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a DecompiledTileset in correct metatile order") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_1/bottom.png"}));
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/simple_metatiles_1/middle.png"}));
@@ -1374,99 +1374,99 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
     png::image<png::rgba_pixel> middle{"Resources/Doctests/simple_metatiles_1/middle.png"};
     png::image<png::rgba_pixel> top{"Resources/Doctests/simple_metatiles_1/top.png"};
 
-    porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
-        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
+    porytiles1::DecompiledTileset tiles = porytiles1::importLayeredTilesFromPngs(
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom, middle,
         top);
 
     // Metatile 0 bottom layer
-    CHECK(tiles.tiles[0] == porytiles::RGBA_TILE_RED);
-    CHECK(tiles.tiles[0].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[0].layer == porytiles::TileLayer::BOTTOM);
+    CHECK(tiles.tiles[0] == porytiles1::RGBA_TILE_RED);
+    CHECK(tiles.tiles[0].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[0].layer == porytiles1::TileLayer::BOTTOM);
     CHECK(tiles.tiles[0].metatileIndex == 0);
-    CHECK(tiles.tiles[0].subtile == porytiles::Subtile::NORTHWEST);
-    CHECK(tiles.tiles[1] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[1].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[1].layer == porytiles::TileLayer::BOTTOM);
+    CHECK(tiles.tiles[0].subtile == porytiles1::Subtile::NORTHWEST);
+    CHECK(tiles.tiles[1] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[1].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[1].layer == porytiles1::TileLayer::BOTTOM);
     CHECK(tiles.tiles[1].metatileIndex == 0);
-    CHECK(tiles.tiles[1].subtile == porytiles::Subtile::NORTHEAST);
-    CHECK(tiles.tiles[2] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[2].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[2].layer == porytiles::TileLayer::BOTTOM);
+    CHECK(tiles.tiles[1].subtile == porytiles1::Subtile::NORTHEAST);
+    CHECK(tiles.tiles[2] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[2].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[2].layer == porytiles1::TileLayer::BOTTOM);
     CHECK(tiles.tiles[2].metatileIndex == 0);
-    CHECK(tiles.tiles[2].subtile == porytiles::Subtile::SOUTHWEST);
-    CHECK(tiles.tiles[3] == porytiles::RGBA_TILE_YELLOW);
-    CHECK(tiles.tiles[3].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[3].layer == porytiles::TileLayer::BOTTOM);
+    CHECK(tiles.tiles[2].subtile == porytiles1::Subtile::SOUTHWEST);
+    CHECK(tiles.tiles[3] == porytiles1::RGBA_TILE_YELLOW);
+    CHECK(tiles.tiles[3].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[3].layer == porytiles1::TileLayer::BOTTOM);
     CHECK(tiles.tiles[3].metatileIndex == 0);
-    CHECK(tiles.tiles[3].subtile == porytiles::Subtile::SOUTHEAST);
+    CHECK(tiles.tiles[3].subtile == porytiles1::Subtile::SOUTHEAST);
 
     // Metatile 0 middle layer
-    CHECK(tiles.tiles[4] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[4].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[4].layer == porytiles::TileLayer::MIDDLE);
+    CHECK(tiles.tiles[4] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[4].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[4].layer == porytiles1::TileLayer::MIDDLE);
     CHECK(tiles.tiles[4].metatileIndex == 0);
-    CHECK(tiles.tiles[4].subtile == porytiles::Subtile::NORTHWEST);
-    CHECK(tiles.tiles[5] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[5].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[5].layer == porytiles::TileLayer::MIDDLE);
+    CHECK(tiles.tiles[4].subtile == porytiles1::Subtile::NORTHWEST);
+    CHECK(tiles.tiles[5] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[5].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[5].layer == porytiles1::TileLayer::MIDDLE);
     CHECK(tiles.tiles[5].metatileIndex == 0);
-    CHECK(tiles.tiles[5].subtile == porytiles::Subtile::NORTHEAST);
-    CHECK(tiles.tiles[6] == porytiles::RGBA_TILE_GREEN);
-    CHECK(tiles.tiles[6].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[6].layer == porytiles::TileLayer::MIDDLE);
+    CHECK(tiles.tiles[5].subtile == porytiles1::Subtile::NORTHEAST);
+    CHECK(tiles.tiles[6] == porytiles1::RGBA_TILE_GREEN);
+    CHECK(tiles.tiles[6].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[6].layer == porytiles1::TileLayer::MIDDLE);
     CHECK(tiles.tiles[6].metatileIndex == 0);
-    CHECK(tiles.tiles[6].subtile == porytiles::Subtile::SOUTHWEST);
-    CHECK(tiles.tiles[7] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[7].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[7].layer == porytiles::TileLayer::MIDDLE);
+    CHECK(tiles.tiles[6].subtile == porytiles1::Subtile::SOUTHWEST);
+    CHECK(tiles.tiles[7] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[7].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[7].layer == porytiles1::TileLayer::MIDDLE);
     CHECK(tiles.tiles[7].metatileIndex == 0);
-    CHECK(tiles.tiles[7].subtile == porytiles::Subtile::SOUTHEAST);
+    CHECK(tiles.tiles[7].subtile == porytiles1::Subtile::SOUTHEAST);
 
     // Metatile 0 top layer
-    CHECK(tiles.tiles[8] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[8].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[8].layer == porytiles::TileLayer::TOP);
+    CHECK(tiles.tiles[8] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[8].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[8].layer == porytiles1::TileLayer::TOP);
     CHECK(tiles.tiles[8].metatileIndex == 0);
-    CHECK(tiles.tiles[8].subtile == porytiles::Subtile::NORTHWEST);
-    CHECK(tiles.tiles[9] == porytiles::RGBA_TILE_BLUE);
-    CHECK(tiles.tiles[9].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[9].layer == porytiles::TileLayer::TOP);
+    CHECK(tiles.tiles[8].subtile == porytiles1::Subtile::NORTHWEST);
+    CHECK(tiles.tiles[9] == porytiles1::RGBA_TILE_BLUE);
+    CHECK(tiles.tiles[9].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[9].layer == porytiles1::TileLayer::TOP);
     CHECK(tiles.tiles[9].metatileIndex == 0);
-    CHECK(tiles.tiles[9].subtile == porytiles::Subtile::NORTHEAST);
-    CHECK(tiles.tiles[10] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[10].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[10].layer == porytiles::TileLayer::TOP);
+    CHECK(tiles.tiles[9].subtile == porytiles1::Subtile::NORTHEAST);
+    CHECK(tiles.tiles[10] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[10].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[10].layer == porytiles1::TileLayer::TOP);
     CHECK(tiles.tiles[10].metatileIndex == 0);
-    CHECK(tiles.tiles[10].subtile == porytiles::Subtile::SOUTHWEST);
-    CHECK(tiles.tiles[11] == porytiles::RGBA_TILE_MAGENTA);
-    CHECK(tiles.tiles[11].type == porytiles::TileType::LAYERED);
-    CHECK(tiles.tiles[11].layer == porytiles::TileLayer::TOP);
+    CHECK(tiles.tiles[10].subtile == porytiles1::Subtile::SOUTHWEST);
+    CHECK(tiles.tiles[11] == porytiles1::RGBA_TILE_MAGENTA);
+    CHECK(tiles.tiles[11].type == porytiles1::TileType::LAYERED);
+    CHECK(tiles.tiles[11].layer == porytiles1::TileLayer::TOP);
     CHECK(tiles.tiles[11].metatileIndex == 0);
-    CHECK(tiles.tiles[11].subtile == porytiles::Subtile::SOUTHEAST);
+    CHECK(tiles.tiles[11].subtile == porytiles1::Subtile::SOUTHEAST);
 }
 
 TEST_CASE("importAnimTiles should read each animation and correctly populate the DecompiledTileset anims field") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.printDieMsg = false;
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_flower_white"}));
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_flower_yellow"}));
 
-    porytiles::AnimationPng<png::rgba_pixel> white00{
+    porytiles1::AnimationPng<png::rgba_pixel> white00{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/00.png"}, "anim_flower_white", "00.png"};
-    porytiles::AnimationPng<png::rgba_pixel> white01{
+    porytiles1::AnimationPng<png::rgba_pixel> white01{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/01.png"}, "anim_flower_white", "01.png"};
-    porytiles::AnimationPng<png::rgba_pixel> white02{
+    porytiles1::AnimationPng<png::rgba_pixel> white02{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_white/02.png"}, "anim_flower_white", "02.png"};
 
-    porytiles::AnimationPng<png::rgba_pixel> yellow00{
+    porytiles1::AnimationPng<png::rgba_pixel> yellow00{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/00.png"}, "anim_flower_yellow", "00.png"};
-    porytiles::AnimationPng<png::rgba_pixel> yellow01{
+    porytiles1::AnimationPng<png::rgba_pixel> yellow01{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/01.png"}, "anim_flower_yellow", "01.png"};
-    porytiles::AnimationPng<png::rgba_pixel> yellow02{
+    porytiles1::AnimationPng<png::rgba_pixel> yellow02{
         png::image<png::rgba_pixel>{"Resources/Doctests/anim_flower_yellow/02.png"}, "anim_flower_yellow", "02.png"};
 
-    std::vector<porytiles::AnimationPng<png::rgba_pixel>> whiteAnim{};
-    std::vector<porytiles::AnimationPng<png::rgba_pixel>> yellowAnim{};
+    std::vector<porytiles1::AnimationPng<png::rgba_pixel>> whiteAnim{};
+    std::vector<porytiles1::AnimationPng<png::rgba_pixel>> yellowAnim{};
 
     whiteAnim.push_back(white00);
     whiteAnim.push_back(white01);
@@ -1476,13 +1476,13 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
     yellowAnim.push_back(yellow01);
     yellowAnim.push_back(yellow02);
 
-    std::vector<std::vector<porytiles::AnimationPng<png::rgba_pixel>>> anims{};
+    std::vector<std::vector<porytiles1::AnimationPng<png::rgba_pixel>>> anims{};
     anims.push_back(whiteAnim);
     anims.push_back(yellowAnim);
 
-    porytiles::DecompiledTileset tiles{};
+    porytiles1::DecompiledTileset tiles{};
 
-    porytiles::importAnimTiles(ctx, porytiles::CompilerMode::PRIMARY, anims, tiles);
+    porytiles1::importAnimTiles(ctx, porytiles1::CompilerMode::PRIMARY, anims, tiles);
 
     CHECK(tiles.anims.size() == 2);
     CHECK(tiles.anims.at(0).size() == 3);
@@ -1492,215 +1492,215 @@ TEST_CASE("importAnimTiles should read each animation and correctly populate the
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame0_tile0.png"}));
     png::image<png::rgba_pixel> frame0Tile0Png{"Resources/Doctests/anim_flower_white/expected/frame0_tile0.png"};
-    porytiles::DecompiledTileset frame0Tile0 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png);
+    porytiles1::DecompiledTileset frame0Tile0 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile0Png);
     CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0) == frame0Tile0.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame0_tile1.png"}));
     png::image<png::rgba_pixel> frame0Tile1Png{"Resources/Doctests/anim_flower_white/expected/frame0_tile1.png"};
-    porytiles::DecompiledTileset frame0Tile1 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png);
+    porytiles1::DecompiledTileset frame0Tile1 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile1Png);
     CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1) == frame0Tile1.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame0_tile2.png"}));
     png::image<png::rgba_pixel> frame0Tile2Png{"Resources/Doctests/anim_flower_white/expected/frame0_tile2.png"};
-    porytiles::DecompiledTileset frame0Tile2 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png);
+    porytiles1::DecompiledTileset frame0Tile2 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile2Png);
     CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2) == frame0Tile2.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame0_tile3.png"}));
     png::image<png::rgba_pixel> frame0Tile3Png{"Resources/Doctests/anim_flower_white/expected/frame0_tile3.png"};
-    porytiles::DecompiledTileset frame0Tile3 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png);
+    porytiles1::DecompiledTileset frame0Tile3 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile3Png);
     CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3) == frame0Tile3.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(0).tiles.at(3).type == porytiles1::TileType::ANIM);
 
     // white flower, frame 1
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame1_tile0.png"}));
     png::image<png::rgba_pixel> frame1Tile0Png{"Resources/Doctests/anim_flower_white/expected/frame1_tile0.png"};
-    porytiles::DecompiledTileset frame1Tile0 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png);
+    porytiles1::DecompiledTileset frame1Tile0 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile0Png);
     CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0) == frame1Tile0.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame1_tile1.png"}));
     png::image<png::rgba_pixel> frame1Tile1Png{"Resources/Doctests/anim_flower_white/expected/frame1_tile1.png"};
-    porytiles::DecompiledTileset frame1Tile1 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png);
+    porytiles1::DecompiledTileset frame1Tile1 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile1Png);
     CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1) == frame1Tile1.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame1_tile2.png"}));
     png::image<png::rgba_pixel> frame1Tile2Png{"Resources/Doctests/anim_flower_white/expected/frame1_tile2.png"};
-    porytiles::DecompiledTileset frame1Tile2 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png);
+    porytiles1::DecompiledTileset frame1Tile2 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile2Png);
     CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2) == frame1Tile2.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame1_tile3.png"}));
     png::image<png::rgba_pixel> frame1Tile3Png{"Resources/Doctests/anim_flower_white/expected/frame1_tile3.png"};
-    porytiles::DecompiledTileset frame1Tile3 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png);
+    porytiles1::DecompiledTileset frame1Tile3 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile3Png);
     CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3) == frame1Tile3.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(1).tiles.at(3).type == porytiles1::TileType::ANIM);
 
     // white flower, frame 2
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame2_tile0.png"}));
     png::image<png::rgba_pixel> frame2Tile0Png{"Resources/Doctests/anim_flower_white/expected/frame2_tile0.png"};
-    porytiles::DecompiledTileset frame2Tile0 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png);
+    porytiles1::DecompiledTileset frame2Tile0 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile0Png);
     CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0) == frame2Tile0.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame2_tile1.png"}));
     png::image<png::rgba_pixel> frame2Tile1Png{"Resources/Doctests/anim_flower_white/expected/frame2_tile1.png"};
-    porytiles::DecompiledTileset frame2Tile1 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png);
+    porytiles1::DecompiledTileset frame2Tile1 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile1Png);
     CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1) == frame2Tile1.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame2_tile2.png"}));
     png::image<png::rgba_pixel> frame2Tile2Png{"Resources/Doctests/anim_flower_white/expected/frame2_tile2.png"};
-    porytiles::DecompiledTileset frame2Tile2 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png);
+    porytiles1::DecompiledTileset frame2Tile2 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile2Png);
     CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2) == frame2Tile2.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_white/expected/frame2_tile3.png"}));
     png::image<png::rgba_pixel> frame2Tile3Png{"Resources/Doctests/anim_flower_white/expected/frame2_tile3.png"};
-    porytiles::DecompiledTileset frame2Tile3 =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png);
+    porytiles1::DecompiledTileset frame2Tile3 =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile3Png);
     CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3) == frame2Tile3.tiles.at(0));
-    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(0).frames.at(2).tiles.at(3).type == porytiles1::TileType::ANIM);
 
     // yellow flower, frame 0
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame0_tile0.png"}));
     png::image<png::rgba_pixel> frame0Tile0Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame0_tile0.png"};
-    porytiles::DecompiledTileset frame0Tile0_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile0Png_yellow);
+    porytiles1::DecompiledTileset frame0Tile0_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile0Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0) == frame0Tile0_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame0_tile1.png"}));
     png::image<png::rgba_pixel> frame0Tile1Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame0_tile1.png"};
-    porytiles::DecompiledTileset frame0Tile1_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile1Png_yellow);
+    porytiles1::DecompiledTileset frame0Tile1_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile1Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1) == frame0Tile1_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame0_tile2.png"}));
     png::image<png::rgba_pixel> frame0Tile2Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame0_tile2.png"};
-    porytiles::DecompiledTileset frame0Tile2_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile2Png_yellow);
+    porytiles1::DecompiledTileset frame0Tile2_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile2Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2) == frame0Tile2_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame0_tile3.png"}));
     png::image<png::rgba_pixel> frame0Tile3Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame0_tile3.png"};
-    porytiles::DecompiledTileset frame0Tile3_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame0Tile3Png_yellow);
+    porytiles1::DecompiledTileset frame0Tile3_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame0Tile3Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3) == frame0Tile3_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(0).tiles.at(3).type == porytiles1::TileType::ANIM);
 
     // yellow flower, frame 1
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame1_tile0.png"}));
     png::image<png::rgba_pixel> frame1Tile0Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame1_tile0.png"};
-    porytiles::DecompiledTileset frame1Tile0_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile0Png_yellow);
+    porytiles1::DecompiledTileset frame1Tile0_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile0Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0) == frame1Tile0_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame1_tile1.png"}));
     png::image<png::rgba_pixel> frame1Tile1Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame1_tile1.png"};
-    porytiles::DecompiledTileset frame1Tile1_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile1Png_yellow);
+    porytiles1::DecompiledTileset frame1Tile1_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile1Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1) == frame1Tile1_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame1_tile2.png"}));
     png::image<png::rgba_pixel> frame1Tile2Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame1_tile2.png"};
-    porytiles::DecompiledTileset frame1Tile2_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile2Png_yellow);
+    porytiles1::DecompiledTileset frame1Tile2_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile2Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2) == frame1Tile2_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame1_tile3.png"}));
     png::image<png::rgba_pixel> frame1Tile3Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame1_tile3.png"};
-    porytiles::DecompiledTileset frame1Tile3_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame1Tile3Png_yellow);
+    porytiles1::DecompiledTileset frame1Tile3_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame1Tile3Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3) == frame1Tile3_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(1).tiles.at(3).type == porytiles1::TileType::ANIM);
 
     // yellow flower, frame 2
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame2_tile0.png"}));
     png::image<png::rgba_pixel> frame2Tile0Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame2_tile0.png"};
-    porytiles::DecompiledTileset frame2Tile0_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile0Png_yellow);
+    porytiles1::DecompiledTileset frame2Tile0_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile0Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0) == frame2Tile0_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(0).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame2_tile1.png"}));
     png::image<png::rgba_pixel> frame2Tile1Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame2_tile1.png"};
-    porytiles::DecompiledTileset frame2Tile1_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile1Png_yellow);
+    porytiles1::DecompiledTileset frame2Tile1_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile1Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1) == frame2Tile1_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(1).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame2_tile2.png"}));
     png::image<png::rgba_pixel> frame2Tile2Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame2_tile2.png"};
-    porytiles::DecompiledTileset frame2Tile2_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile2Png_yellow);
+    porytiles1::DecompiledTileset frame2Tile2_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile2Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2) == frame2Tile2_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(2).type == porytiles1::TileType::ANIM);
 
     REQUIRE(std::filesystem::exists(
         std::filesystem::path{"Resources/Doctests/anim_flower_yellow/expected/frame2_tile3.png"}));
     png::image<png::rgba_pixel> frame2Tile3Png_yellow{
         "Resources/Doctests/anim_flower_yellow/expected/frame2_tile3.png"};
-    porytiles::DecompiledTileset frame2Tile3_yellow =
-        porytiles::importTilesFromPng(ctx, porytiles::CompilerMode::PRIMARY, frame2Tile3Png_yellow);
+    porytiles1::DecompiledTileset frame2Tile3_yellow =
+        porytiles1::importTilesFromPng(ctx, porytiles1::CompilerMode::PRIMARY, frame2Tile3Png_yellow);
     CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3) == frame2Tile3_yellow.tiles.at(0));
-    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles::TileType::ANIM);
+    CHECK(tiles.anims.at(1).frames.at(2).tiles.at(3).type == porytiles1::TileType::ANIM);
 }
 
 TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tileset via layer type inference") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.compilerConfig.tripleLayer = false;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/dual_layer_metatiles_1/bottom.png"}));
@@ -1711,98 +1711,98 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
     png::image<png::rgba_pixel> middle{"Resources/Doctests/dual_layer_metatiles_1/middle.png"};
     png::image<png::rgba_pixel> top{"Resources/Doctests/dual_layer_metatiles_1/top.png"};
 
-    porytiles::DecompiledTileset tiles = porytiles::importLayeredTilesFromPngs(
-        ctx, porytiles::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles::Attributes>{}, bottom, middle,
+    porytiles1::DecompiledTileset tiles = porytiles1::importLayeredTilesFromPngs(
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom, middle,
         top);
 
     // Metatile 0
-    CHECK(tiles.tiles.at(0).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(1).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(2).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(3).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(4).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(5).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(6).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(7).attributes.layerType == porytiles::LayerType::COVERED);
+    CHECK(tiles.tiles.at(0).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(1).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(2).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(3).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(4).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(5).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(6).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(7).attributes.layerType == porytiles1::LayerType::COVERED);
 
     // Metatile 1
-    CHECK(tiles.tiles.at(8).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(9).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(10).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(11).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(12).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(13).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(14).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(15).attributes.layerType == porytiles::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(8).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(9).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(10).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(11).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(12).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(13).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(14).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(15).attributes.layerType == porytiles1::LayerType::NORMAL);
 
     // Metatile 2
-    CHECK(tiles.tiles.at(16).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(17).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(18).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(19).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(20).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(21).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(22).attributes.layerType == porytiles::LayerType::SPLIT);
-    CHECK(tiles.tiles.at(23).attributes.layerType == porytiles::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(16).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(17).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(18).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(19).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(20).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(21).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(22).attributes.layerType == porytiles1::LayerType::SPLIT);
+    CHECK(tiles.tiles.at(23).attributes.layerType == porytiles1::LayerType::SPLIT);
 
     // Metatile 3
-    CHECK(tiles.tiles.at(24).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(25).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(26).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(27).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(28).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(29).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(30).attributes.layerType == porytiles::LayerType::COVERED);
-    CHECK(tiles.tiles.at(31).attributes.layerType == porytiles::LayerType::COVERED);
+    CHECK(tiles.tiles.at(24).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(25).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(26).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(27).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(28).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(29).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(30).attributes.layerType == porytiles1::LayerType::COVERED);
+    CHECK(tiles.tiles.at(31).attributes.layerType == porytiles1::LayerType::COVERED);
 
     // Metatile 4
-    CHECK(tiles.tiles.at(32).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(33).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(34).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(35).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(36).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(37).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(38).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(39).attributes.layerType == porytiles::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(32).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(33).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(34).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(35).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(36).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(37).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(38).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(39).attributes.layerType == porytiles1::LayerType::NORMAL);
 
     // Metatile 5
-    CHECK(tiles.tiles.at(40).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(41).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(42).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(43).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(44).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(45).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(46).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(47).attributes.layerType == porytiles::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(40).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(41).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(42).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(43).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(44).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(45).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(46).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(47).attributes.layerType == porytiles1::LayerType::NORMAL);
 
     // Metatile 6
-    CHECK(tiles.tiles.at(48).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(49).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(50).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(51).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(52).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(53).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(54).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(55).attributes.layerType == porytiles::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(48).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(49).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(50).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(51).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(52).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(53).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(54).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(55).attributes.layerType == porytiles1::LayerType::NORMAL);
 
     // Metatile 7
-    CHECK(tiles.tiles.at(56).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(57).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(58).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(59).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(60).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(61).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(62).attributes.layerType == porytiles::LayerType::NORMAL);
-    CHECK(tiles.tiles.at(63).attributes.layerType == porytiles::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(56).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(57).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(58).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(59).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(60).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(61).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(62).attributes.layerType == porytiles1::LayerType::NORMAL);
+    CHECK(tiles.tiles.at(63).attributes.layerType == porytiles1::LayerType::NORMAL);
 }
 
 TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expected") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.printDieMsg = false;
 
     std::ifstream behaviorFile{"Resources/Doctests/metatile_behaviors.h"};
     auto [behaviorMap, behaviorReverseMap] =
-        porytiles::importMetatileBehaviorHeader(ctx, porytiles::CompilerMode::PRIMARY, behaviorFile);
+        porytiles1::importMetatileBehaviorHeader(ctx, porytiles1::CompilerMode::PRIMARY, behaviorFile);
     behaviorFile.close();
 
     CHECK(!behaviorMap.contains("MB_INVALID"));
@@ -1819,13 +1819,13 @@ TEST_CASE("importMetatileBehaviorHeader should parse metatile behaviors as expec
 }
 
 TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
-    porytiles::PorytilesContext ctx{};
+    porytiles1::PorytilesContext ctx{};
     ctx.printDieMsg = false;
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
 
     SUBCASE("It should parse an Emerald-style attributes CSV correctly") {
-        auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+        auto attributesMap = porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
                                                                 "Resources/Doctests/csv/correct_1.csv");
         CHECK_FALSE(attributesMap.contains(0));
         CHECK_FALSE(attributesMap.contains(1));
@@ -1840,7 +1840,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
     }
 
     SUBCASE("It should parse a Firered-style attributes CSV correctly") {
-        auto attributesMap = porytiles::importAttributesFromCsv(ctx, porytiles::CompilerMode::PRIMARY, behaviorMap,
+        auto attributesMap = porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
                                                                 "Resources/Doctests/csv/correct_2.csv");
         CHECK_FALSE(attributesMap.contains(0));
         CHECK_FALSE(attributesMap.contains(1));
@@ -1851,30 +1851,30 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
         CHECK_FALSE(attributesMap.contains(6));
 
         CHECK(attributesMap.at(2).metatileBehavior == behaviorMap.at("MB_NORMAL"));
-        CHECK(attributesMap.at(2).terrainType == porytiles::TerrainType::NORMAL);
-        CHECK(attributesMap.at(2).encounterType == porytiles::EncounterType::NONE);
+        CHECK(attributesMap.at(2).terrainType == porytiles1::TerrainType::NORMAL);
+        CHECK(attributesMap.at(2).encounterType == porytiles1::EncounterType::NONE);
         CHECK(attributesMap.at(4).metatileBehavior == behaviorMap.at("MB_NORMAL"));
-        CHECK(attributesMap.at(4).terrainType == porytiles::TerrainType::NORMAL);
-        CHECK(attributesMap.at(4).encounterType == porytiles::EncounterType::NONE);
+        CHECK(attributesMap.at(4).terrainType == porytiles1::TerrainType::NORMAL);
+        CHECK(attributesMap.at(4).encounterType == porytiles1::EncounterType::NONE);
     }
 }
 
 TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tileset correctly") {
-    porytiles::PorytilesContext compileCtx{};
-    std::filesystem::path parentDir = porytiles::createTmpdir();
+    porytiles1::PorytilesContext compileCtx{};
+    std::filesystem::path parentDir = porytiles1::createTmpdir();
     compileCtx.output.path = parentDir;
-    compileCtx.subcommand = porytiles::Subcommand::COMPILE_PRIMARY;
+    compileCtx.subcommand = porytiles1::Subcommand::COMPILE_PRIMARY;
     compileCtx.printDieMsg = false;
-    compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
-    compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles::AssignAlgorithm::DFS;
+    compileCtx.compilerConfig.primaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
+    compileCtx.compilerConfig.secondaryAssignAlgorithm = porytiles1::AssignAlgorithm::DFS;
 
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_2/primary"}));
     compileCtx.compilerSrcPaths.primarySourcePath = "Resources/Doctests/anim_metatiles_2/primary";
     REQUIRE(std::filesystem::exists(std::filesystem::path{"Resources/Doctests/metatile_behaviors.h"}));
     compileCtx.compilerSrcPaths.metatileBehaviors = "Resources/Doctests/metatile_behaviors.h";
-    porytiles::drive(compileCtx);
+    porytiles1::drive(compileCtx);
 
-    porytiles::PorytilesContext decompileCtx{};
+    porytiles1::PorytilesContext decompileCtx{};
     decompileCtx.decompilerSrcPaths.primarySourcePath = parentDir;
 
     std::ifstream metatiles{decompileCtx.decompilerSrcPaths.primaryMetatilesBin(), std::ios::binary};
@@ -1893,10 +1893,10 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
         paletteFileNames.emplace_back(paletteFile.c_str());
     }
     // TODO tests : (importCompiledTileset should import a triple-layer...) actually test anims import
-    auto [importedTileset, attributesMap] = porytiles::importCompiledTileset(
-        decompileCtx, porytiles::DecompilerMode::PRIMARY, metatiles, attributes,
+    auto [importedTileset, attributesMap] = porytiles1::importCompiledTileset(
+        decompileCtx, porytiles1::DecompilerMode::PRIMARY, metatiles, attributes,
         std::unordered_map<std::uint8_t, std::string>{}, tilesheetPng, paletteFiles, paletteFileNames,
-        std::vector<std::vector<porytiles::AnimationPng<png::index_pixel>>>{});
+        std::vector<std::vector<porytiles1::AnimationPng<png::index_pixel>>>{});
     metatiles.close();
     attributes.close();
     std::for_each(paletteFiles.begin(), paletteFiles.end(),
@@ -1907,9 +1907,9 @@ TEST_CASE("importCompiledTileset should import a triple-layer pokeemerald tilese
 
     CHECK((compileCtx.compilerContext.resultTileset)->metatileEntries.size() == importedTileset.metatileEntries.size());
     for (std::size_t entryIndex = 0; entryIndex < importedTileset.metatileEntries.size(); entryIndex++) {
-        const porytiles::MetatileEntry &expectedEntry =
+        const porytiles1::MetatileEntry &expectedEntry =
             (compileCtx.compilerContext.resultTileset)->metatileEntries.at(entryIndex);
-        const porytiles::MetatileEntry &actualEntry = importedTileset.metatileEntries.at(entryIndex);
+        const porytiles1::MetatileEntry &actualEntry = importedTileset.metatileEntries.at(entryIndex);
         CHECK(expectedEntry.tileIndex == actualEntry.tileIndex);
         CHECK(expectedEntry.hFlip == actualEntry.hFlip);
         CHECK(expectedEntry.vFlip == actualEntry.vFlip);

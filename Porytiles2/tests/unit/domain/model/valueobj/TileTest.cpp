@@ -4,7 +4,7 @@
 
 #include <fmt/format.h>
 
-#include <porytiles2/domain/model/valueobj/Tile.hpp>
+#include <porytiles2/domain/model/valueobj/tile.hpp>
 
 using namespace porytiles2;
 

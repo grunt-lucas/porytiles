@@ -36,13 +36,13 @@ compile(PorytilesContext &ctx, CompilerMode compilerMode, const DecompiledTilese
 // clang-format off
 
 // ColorSets won't account for transparency color, we will handle that at the end
-using ColorSet = std::pair<std::bitset<porytiles::MAX_BG_PALETTES * (porytiles::PAL_SIZE - 1)>, std::size_t>;
+using ColorSet = std::pair<std::bitset<porytiles1::MAX_BG_PALETTES * (porytiles1::PAL_SIZE - 1)>, std::size_t>;
 
 template <> struct std::hash<ColorSet> {
   std::size_t operator()(const ColorSet &colorSet) const noexcept
   {
     // TODO : better hash function
-    return std::hash<std::bitset<porytiles::MAX_BG_PALETTES * (porytiles::PAL_SIZE - 1)>>{}(colorSet.first) ^
+    return std::hash<std::bitset<porytiles1::MAX_BG_PALETTES * (porytiles1::PAL_SIZE - 1)>>{}(colorSet.first) ^
            std::hash<std::size_t>{}(colorSet.second);
   }
 };
@@ -50,7 +50,7 @@ template <> struct std::hash<ColorSet> {
 // @formatter:on
 // clang-format on
 
-using IndexAndNormTile = std::pair<porytiles::DecompiledIndex, porytiles::NormalizedTile>;
-using IndexedNormTileWithColorSet = std::tuple<porytiles::DecompiledIndex, porytiles::NormalizedTile, ColorSet>;
+using IndexAndNormTile = std::pair<porytiles1::DecompiledIndex, porytiles1::NormalizedTile>;
+using IndexedNormTileWithColorSet = std::tuple<porytiles1::DecompiledIndex, porytiles1::NormalizedTile, ColorSet>;
 
 #endif // PORYTILES_COMPILER_H
