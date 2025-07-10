@@ -34,7 +34,7 @@ struct StringViewSourceLoc {
   std::abort();
 }
 
-inline void AssertOrPanic(const bool condition, const StringViewSourceLoc &s) {
+inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s) {
   if (!condition) {
     const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
     std::fputs(msg.c_str(), stderr);

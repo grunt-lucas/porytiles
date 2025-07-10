@@ -425,7 +425,7 @@ static const std::unordered_map<const char *, DiagTempl> diag_templs{
     {fatal_generic, e_fatal_generic_templ}};
 
 DiagTempl diag_for(const std::string_view name) {
-  AssertOrPanic(diag_templs.contains(name.data()),
+  assert_or_panic(diag_templs.contains(name.data()),
                 fmt::format("diag_template_for: unknown diagnostic: {}", name));
   return diag_templs.at(name.data());
 }

@@ -4,7 +4,7 @@
 
 #include "CLI/CLI.hpp"
 
-#include "./option.hpp"
+#include "option.hpp"
 
 class OptGroup {
 public:

@@ -7,7 +7,6 @@
 
 #include "porytiles2/infra/diagnostics/DiagnosticEngine.hpp"
 #include "porytiles2/templates/AnyMap.hpp"
-#include "porytiles2/templates/ViewPtr.hpp"
 
 namespace porytiles2 {
 
@@ -59,7 +58,7 @@ public:
   void set_name(const std::string &name) { name_ = name; }
 
 private:
-  ViewPtr<DiagEngine> diag_;
+  DiagEngine *diag_;
   std::string name_;
 };
 

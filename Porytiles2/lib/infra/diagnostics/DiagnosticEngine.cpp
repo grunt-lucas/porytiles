@@ -92,7 +92,7 @@ DiagLevel DiagEngine::enabled_at(std::string_view diag) const {
   if (!enabled_at_level_.contains(diag.data())) {
     return DiagLevel::ignored;
   }
-  AssertOrPanic(!enabled_at_level_.at(diag.data()).empty(),
+  assert_or_panic(!enabled_at_level_.at(diag.data()).empty(),
                 fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
   // Return the highest level present
   return *enabled_at_level_.at(diag.data()).rbegin();
@@ -123,7 +123,7 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
 
   // Return level override if present
   if (auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
-    AssertOrPanic(!enabled_at_level_.at(diag_str).empty(),
+    assert_or_panic(!enabled_at_level_.at(diag_str).empty(),
                   fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
     // Return the highest level present
     return *enabled_at_level_.at(diag_str).rbegin();
