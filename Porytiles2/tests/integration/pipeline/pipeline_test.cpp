@@ -57,7 +57,7 @@ class SumOperation final : public Operation {
     [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
         int sum = 0;
         for (const auto &key : in_keys_) {
-            sum += inputs.get<int>(key).value();
+            sum += inputs.get_unwrapped<int>(key).value();
         }
         ArtifactBundle outputs{};
         outputs.put(out_key_, sum);
@@ -83,7 +83,7 @@ class NumConsumerOperation final : public Operation {
     }
 
     [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
-        consumed_ = inputs.get<int>(key_).value();
+        consumed_ = inputs.get_unwrapped<int>(key_).value();
         return {};
     }
 

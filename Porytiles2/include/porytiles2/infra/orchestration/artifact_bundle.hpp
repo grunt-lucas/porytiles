@@ -1,11 +1,11 @@
 #pragma once
 
 #include <any>
-#include <expected>
 #include <optional>
 #include <typeindex>
 #include <unordered_map>
 
+#include "porytiles2/infra/orchestration/artifact_declaration.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -45,7 +45,7 @@ class ArtifactBundle {
     }
 
     template <typename T>
-    [[nodiscard]] std::optional<T> get_unwrap(const std::string &key) const {
+    [[nodiscard]] std::optional<T> get_unwrapped(const std::string &key) const {
         if (!contains(key)) {
             return std::nullopt;
         }
@@ -69,6 +69,18 @@ class ArtifactBundle {
             return std::nullopt;
         }
         return config_.at(key).type();
+    }
+
+    [[nodiscard]] bool satisfies_declarations(const std::vector<ArtifactDeclaration> &declarations) const {
+        for (const auto &decl : declarations) {
+            if (!contains(decl.key())) {
+                return false;
+            }
+            if (decl.expected_type() != type_index_of(decl.key())) {
+                return false;
+            }
+        }
+        return true;
     }
 
   private:

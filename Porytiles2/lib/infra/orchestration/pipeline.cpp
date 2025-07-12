@@ -60,14 +60,14 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     }
 }
 
-Result<void> Pipeline::run() {
-    ArtifactBundle artifacts{};
+Result<void> Pipeline::run() const {
+    ArtifactBundle artifact_pool{};
     for (auto *op : sorted_) {
         // Gather inputs for the operation
         ArtifactBundle inputs{};
         for (auto &input_artifact : op->declare_inputs()) {
             const auto &key = input_artifact.key();
-            const auto val = artifacts.get(key);
+            const auto val = artifact_pool.get(key);
             if (!val.has_value()) {
                 panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
             }
@@ -81,14 +81,14 @@ Result<void> Pipeline::run() {
         }
 
         // Merge outputs
-        for (auto outputs_map = result.value(); const auto &[key, value] : outputs_map) {
-            if (artifacts.contains(key)) {
-                panic("duplicate output artifact: " + key);
+        auto output_bundle = result.value();
+        for (const auto &[key, value] : output_bundle) {
+            if (artifact_pool.contains(key)) {
+                panic(fmt::format("op '{}' output artifact '{}' already present in artifact pool", op->name(), key));
             }
-            artifacts.put(key, value);
+            artifact_pool.put(key, value);
         }
     }
-    leftover_artifacts_ = artifacts;
     return {};
 }
 

@@ -31,8 +31,8 @@ class TestOperation final : public Operation {
     }
 
     [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
-        const auto num1 = inputs.get<int>("num1").value();
-        const auto num2 = inputs.get<int>("num2").value();
+        const auto num1 = inputs.get_unwrapped<int>("num1").value();
+        const auto num2 = inputs.get_unwrapped<int>("num2").value();
         int sum = (num1 + num2) * multiplier_;
         ArtifactBundle outputs{};
         outputs.put("sum", sum);
@@ -61,6 +61,6 @@ TEST(OperationTests, BasicOperationFunctionsShouldWork) {
     ASSERT_TRUE(result.has_value());
 
     const auto &map = result.value();
-    const auto sum = map.get<int>("sum");
+    const auto sum = map.get_unwrapped<int>("sum");
     EXPECT_EQ(150, sum);
 }
