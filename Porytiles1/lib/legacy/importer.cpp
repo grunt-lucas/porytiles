@@ -1375,8 +1375,8 @@ TEST_CASE("importLayeredTilesFromPngs should read the RGBA PNGs into a Decompile
     png::image<png::rgba_pixel> top{"Resources/Doctests/simple_metatiles_1/top.png"};
 
     porytiles1::DecompiledTileset tiles = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom, middle,
-        top);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom,
+        middle, top);
 
     // Metatile 0 bottom layer
     CHECK(tiles.tiles[0] == porytiles1::RGBA_TILE_RED);
@@ -1712,8 +1712,8 @@ TEST_CASE("importLayeredTilesFromPngs should correctly import a dual layer tiles
     png::image<png::rgba_pixel> top{"Resources/Doctests/dual_layer_metatiles_1/top.png"};
 
     porytiles1::DecompiledTileset tiles = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom, middle,
-        top);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom,
+        middle, top);
 
     // Metatile 0
     CHECK(tiles.tiles.at(0).attributes.layerType == porytiles1::LayerType::COVERED);
@@ -1826,7 +1826,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
 
     SUBCASE("It should parse an Emerald-style attributes CSV correctly") {
         auto attributesMap = porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/correct_1.csv");
+                                                                 "Resources/Doctests/csv/correct_1.csv");
         CHECK_FALSE(attributesMap.contains(0));
         CHECK_FALSE(attributesMap.contains(1));
         CHECK_FALSE(attributesMap.contains(2));
@@ -1841,7 +1841,7 @@ TEST_CASE("importAttributesFromCsv should parse source CSVs as expected") {
 
     SUBCASE("It should parse a Firered-style attributes CSV correctly") {
         auto attributesMap = porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/correct_2.csv");
+                                                                 "Resources/Doctests/csv/correct_2.csv");
         CHECK_FALSE(attributesMap.contains(0));
         CHECK_FALSE(attributesMap.contains(1));
         CHECK(attributesMap.contains(2));

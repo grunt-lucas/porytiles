@@ -419,8 +419,8 @@ TEST_CASE("emitTilesPng should emit the expected tiles.png file") {
     png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_2/primary/top.png"};
     porytiles1::DecompiledTileset decompiledPrimary = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottomPrimary,
-        middlePrimary, topPrimary);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{},
+        bottomPrimary, middlePrimary, topPrimary);
 
     auto compiledPrimary = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
@@ -465,8 +465,8 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
     png::image<png::rgba_pixel> top{"Resources/Doctests/simple_metatiles_1/top.png"};
 
     porytiles1::DecompiledTileset decompiled = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom, middle,
-        top);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottom,
+        middle, top);
     auto compiled = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiled, {}, {}, {});
 
     std::filesystem::path tmpPath = porytiles1::getTmpfilePath(parentDir, "emitMetatilesBin_test.bin");
@@ -529,7 +529,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes") {
             std::filesystem::path{"Resources/Doctests/anim_metatiles_2/primary/attributes.csv"}));
         auto attributesMap =
             porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                               "Resources/Doctests/anim_metatiles_2/primary/attributes.csv");
+                                                "Resources/Doctests/anim_metatiles_2/primary/attributes.csv");
 
         REQUIRE(
             std::filesystem::exists(std::filesystem::path{"Resources/Doctests/anim_metatiles_2/primary/bottom.png"}));
@@ -616,7 +616,7 @@ TEST_CASE("emitAttributes should correctly emit metatile attributes") {
             std::filesystem::path{"Resources/Doctests/anim_metatiles_2_dual/primary/attributes.csv"}));
         auto attributesMap =
             porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                               "Resources/Doctests/anim_metatiles_2_dual/primary/attributes.csv");
+                                                "Resources/Doctests/anim_metatiles_2_dual/primary/attributes.csv");
 
         REQUIRE(std::filesystem::exists(
             std::filesystem::path{"Resources/Doctests/anim_metatiles_2_dual/primary/bottom.png"}));
