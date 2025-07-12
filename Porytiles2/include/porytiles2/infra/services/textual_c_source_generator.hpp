@@ -22,27 +22,27 @@ namespace porytiles2 {
  * additional methods or parameters.
  */
 class TextualCSourceGenerator final : public CSourceGenerator {
-public:
-  /**
-   * @brief Virtual destructor.
-   */
-  ~TextualCSourceGenerator() override = default;
+  public:
+    /**
+     * @brief Virtual destructor.
+     */
+    ~TextualCSourceGenerator() override = default;
 
-  /**
-   * @brief Default constructor.
-   *
-   * Creates a new TextualCSourceGenerator with default formatting settings.
-   */
-  TextualCSourceGenerator() = default;
+    /**
+     * @brief Default constructor.
+     *
+     * Creates a new TextualCSourceGenerator with default formatting settings.
+     */
+    TextualCSourceGenerator() = default;
 
-  // CSourceGenerator interface implementation
-  std::string generate_palette_declaration(const std::string &tileset_name) override;
-  std::string generate_tile_declaration(const std::string &tileset_name) override;
-  std::string generate_tileset_struct_definition(const std::string &tileset_name) override;
-  std::string generate_metatile_declaration(const std::string &tileset_name) override;
-  std::string generate_metatile_attribute_declaration(const std::string &tileset_name) override;
-  std::string format_with_indentation(const std::string &code, int indent_level) override;
-  std::string generate_include_guards(const std::string &header_name) override;
+    // CSourceGenerator interface implementation
+    std::string generate_palette_declaration(const std::string &tileset_name) override;
+    std::string generate_tile_declaration(const std::string &tileset_name) override;
+    std::string generate_tileset_struct_definition(const std::string &tileset_name) override;
+    std::string generate_metatile_declaration(const std::string &tileset_name) override;
+    std::string generate_metatile_attribute_declaration(const std::string &tileset_name) override;
+    std::string format_with_indentation(const std::string &code, int indent_level) override;
+    std::string generate_include_guards(const std::string &header_name) override;
 };
 
 } // namespace porytiles2

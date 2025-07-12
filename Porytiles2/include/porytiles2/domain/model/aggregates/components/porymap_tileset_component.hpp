@@ -9,8 +9,8 @@
 namespace porytiles2 {
 
 class PorymapTilesetComponent {
-  std::vector<VramMetatile> metatiles_;
-  std::vector<VramAnim> anims_;
+    std::vector<VramMetatile> metatiles_;
+    std::vector<VramAnim> anims_;
 };
 
 } // namespace porytiles2

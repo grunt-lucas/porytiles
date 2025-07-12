@@ -7,42 +7,51 @@
 namespace porytiles2 {
 
 class Rgba32 {
-  std::uint8_t red_;
-  std::uint8_t green_;
-  std::uint8_t blue_;
-  std::uint8_t alpha_;
+    std::uint8_t red_;
+    std::uint8_t green_;
+    std::uint8_t blue_;
+    std::uint8_t alpha_;
 
-public:
-  static constexpr std::uint8_t alpha_transparent = 0;
-  static constexpr std::uint8_t alpha_opaque = 255;
+  public:
+    static constexpr std::uint8_t alpha_transparent = 0;
+    static constexpr std::uint8_t alpha_opaque = 255;
 
-  constexpr Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
+    constexpr Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
 
-  constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue,
-                   std::uint8_t alpha = alpha_opaque)
-      : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
+    constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = alpha_opaque)
+        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
 
-  [[nodiscard]] std::uint8_t red() const { return red_; }
+    [[nodiscard]] std::uint8_t red() const {
+        return red_;
+    }
 
-  [[nodiscard]] std::uint8_t green() const { return green_; }
+    [[nodiscard]] std::uint8_t green() const {
+        return green_;
+    }
 
-  [[nodiscard]] std::uint8_t blue() const { return blue_; }
+    [[nodiscard]] std::uint8_t blue() const {
+        return blue_;
+    }
 
-  [[nodiscard]] std::uint8_t alpha() const { return alpha_; }
+    [[nodiscard]] std::uint8_t alpha() const {
+        return alpha_;
+    }
 
-  bool operator==(const Rgba32 &rgba) const = default;
-  auto operator<=>(const Rgba32 &rgba) const = default;
+    bool operator==(const Rgba32 &rgba) const = default;
+    auto operator<=>(const Rgba32 &rgba) const = default;
 
-  [[nodiscard]] std::string to_jasc_str() const;
+    [[nodiscard]] std::string to_jasc_str() const;
 
-  [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
+    [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
 
-  // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
+    // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
 };
 
 /// Provide a simple way for fmtlib to format Rgba32:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types
-inline auto format_as(const Rgba32 &rgba) { return rgba.to_jasc_str(); }
+inline auto format_as(const Rgba32 &rgba) {
+    return rgba.to_jasc_str();
+}
 
 constexpr Rgba32 kRgbaBlack{0, 0, 0, Rgba32::alpha_opaque};
 constexpr Rgba32 kRgbaWhite{255, 255, 255, Rgba32::alpha_opaque};
@@ -68,12 +77,13 @@ constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::alpha_opaque};
 
 } // namespace porytiles2
 
-template <> struct std::hash<porytiles2::Rgba32> {
-  std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept {
-    const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
-    const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());
-    const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());
-    const std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha());
-    return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
-  }
+template <>
+struct std::hash<porytiles2::Rgba32> {
+    std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept {
+        const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
+        const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());
+        const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());
+        const std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha());
+        return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
+    }
 };

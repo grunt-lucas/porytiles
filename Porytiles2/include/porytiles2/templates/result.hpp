@@ -18,6 +18,7 @@ namespace porytiles2 {
  * @tparam T The type of the expected result
  * @tparam E The error type, defaults to `std::string`
  */
-template <typename T, typename E = std::string> using Result = std::expected<T, E>;
+template <typename T, typename E = std::string>
+using Result = std::expected<T, E>;
 
 } // namespace porytiles2
