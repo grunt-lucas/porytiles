@@ -208,13 +208,13 @@ TEST_CASE("decompile should decompile a basic primary tileset") {
     png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_2/primary/top.png"};
     porytiles1::DecompiledTileset decompiledPrimary = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottomPrimary,
-        middlePrimary, topPrimary);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{},
+        bottomPrimary, middlePrimary, topPrimary);
     auto compiledPrimary = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
 
     auto decompiledViaAlgorithm =
         porytiles1::decompile(ctx, porytiles1::DecompilerMode::PRIMARY, *compiledPrimary,
-                             compiledPrimary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
+                              compiledPrimary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
 
     CHECK(decompiledViaAlgorithm->tiles.size() == decompiledPrimary.tiles.size());
     for (std::size_t i = 0; i < decompiledViaAlgorithm->tiles.size(); i++) {
@@ -239,8 +239,8 @@ TEST_CASE("decompile should decompile a basic secondary tileset") {
     png::image<png::rgba_pixel> middlePrimary{"Resources/Doctests/simple_metatiles_2/primary/middle.png"};
     png::image<png::rgba_pixel> topPrimary{"Resources/Doctests/simple_metatiles_2/primary/top.png"};
     porytiles1::DecompiledTileset decompiledPrimary = porytiles1::importLayeredTilesFromPngs(
-        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{}, bottomPrimary,
-        middlePrimary, topPrimary);
+        ctx, porytiles1::CompilerMode::PRIMARY, std::unordered_map<std::size_t, porytiles1::Attributes>{},
+        bottomPrimary, middlePrimary, topPrimary);
     auto compiledPrimary = porytiles1::compile(ctx, porytiles1::CompilerMode::PRIMARY, decompiledPrimary, {}, {}, {});
     ctx.compilerContext.pairedPrimaryTileset = std::move(compiledPrimary);
 
@@ -261,7 +261,7 @@ TEST_CASE("decompile should decompile a basic secondary tileset") {
     ctx.decompilerContext.pairedPrimaryTileset = std::move(ctx.compilerContext.pairedPrimaryTileset);
     auto decompiledViaAlgorithm =
         porytiles1::decompile(ctx, porytiles1::DecompilerMode::SECONDARY, *compiledSecondary,
-                             compiledSecondary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
+                              compiledSecondary->generateAttributesMap(ctx.compilerConfig.tripleLayer));
 
     CHECK(decompiledViaAlgorithm->tiles.size() == decompiledSecondary.tiles.size());
     for (std::size_t i = 0; i < decompiledViaAlgorithm->tiles.size(); i++) {

@@ -1769,13 +1769,13 @@ TEST_CASE("error_invalidCsvRowFormat should trigger correctly when a row format 
 
     SUBCASE("Emerald row format, missing field") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/incorrect_row_format_1.csv"),
+                                                                 "Resources/Doctests/csv/incorrect_row_format_1.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 1);
     }
     SUBCASE("Firered row format, missing field") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/incorrect_row_format_2.csv"),
+                                                                 "Resources/Doctests/csv/incorrect_row_format_2.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 2);
     }
@@ -1791,7 +1791,7 @@ TEST_CASE("error_unknownMetatileBehavior should trigger correctly when a row has
 
     SUBCASE("Emerald row format, missing metatile behavior") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/unknown_behavior_1.csv"),
+                                                                 "Resources/Doctests/csv/unknown_behavior_1.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 2);
     }
@@ -1807,7 +1807,7 @@ TEST_CASE("error_duplicateAttribute should trigger correctly when two rows speci
 
     SUBCASE("Duplicate metatile definition test 1") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/duplicate_definition_1.csv"),
+                                                                 "Resources/Doctests/csv/duplicate_definition_1.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 2);
     }
@@ -1823,7 +1823,7 @@ TEST_CASE("error_invalidTerrainType should trigger correctly when a row specifie
 
     SUBCASE("Invalid TerrainType test 1") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/invalid_terrain_type_1.csv"),
+                                                                 "Resources/Doctests/csv/invalid_terrain_type_1.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 1);
     }
@@ -1839,7 +1839,7 @@ TEST_CASE("error_invalidEncounterType should trigger correctly when a row specif
 
     SUBCASE("Invalid EncounterType test 1") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/invalid_encounter_type_1.csv"),
+                                                                 "Resources/Doctests/csv/invalid_encounter_type_1.csv"),
                              "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
         CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 1);
     }
@@ -2018,28 +2018,28 @@ TEST_CASE("fatalerror_invalidAttributesCsvHeader should trigger when an attribut
 
     SUBCASE("Completely missing header") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/missing_header_1.csv"),
+                                                                 "Resources/Doctests/csv/missing_header_1.csv"),
                              "Resources/Doctests/csv/missing_header_1.csv: incorrect header row format",
                              porytiles1::PorytilesException);
     }
 
     SUBCASE("Header missing id field") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/missing_header_2.csv"),
+                                                                 "Resources/Doctests/csv/missing_header_2.csv"),
                              "Resources/Doctests/csv/missing_header_2.csv: incorrect header row format",
                              porytiles1::PorytilesException);
     }
 
     SUBCASE("Header missing behavior field") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/missing_header_3.csv"),
+                                                                 "Resources/Doctests/csv/missing_header_3.csv"),
                              "Resources/Doctests/csv/missing_header_3.csv: incorrect header row format",
                              porytiles1::PorytilesException);
     }
 
     SUBCASE("Header has terrainType but missing encounterType") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/missing_header_4.csv"),
+                                                                 "Resources/Doctests/csv/missing_header_4.csv"),
                              "Resources/Doctests/csv/missing_header_4.csv: incorrect header row format",
                              porytiles1::PorytilesException);
     }
@@ -2054,14 +2054,14 @@ TEST_CASE(
 
     SUBCASE("Invalid integer format 1") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/invalid_id_column_1.csv"),
+                                                                 "Resources/Doctests/csv/invalid_id_column_1.csv"),
                              "Resources/Doctests/csv/invalid_id_column_1.csv: invalid id foo",
                              porytiles1::PorytilesException);
     }
 
     SUBCASE("Invalid integer format 2") {
         CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                                "Resources/Doctests/csv/invalid_id_column_2.csv"),
+                                                                 "Resources/Doctests/csv/invalid_id_column_2.csv"),
                              "Resources/Doctests/csv/invalid_id_column_2.csv: invalid id 6bar",
                              porytiles1::PorytilesException);
     }
@@ -2166,7 +2166,7 @@ TEST_CASE("warn_tooManyAttributesForTargetGame should correctly warn") {
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
     CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                            "Resources/Doctests/csv/correct_2.csv"),
+                                                             "Resources/Doctests/csv/correct_2.csv"),
                          "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
     CHECK(ctx.diag->InFlightCountFor(porytiles1::WarnAttributeFormatMismatch) == 1);
     CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 1);
@@ -2182,7 +2182,7 @@ TEST_CASE("warn_tooFewAttributesForTargetGame should correctly warn") {
 
     std::unordered_map<std::string, std::uint8_t> behaviorMap = {{"MB_NORMAL", 0}};
     CHECK_THROWS_WITH_AS(porytiles1::importAttributesFromCsv(ctx, porytiles1::CompilerMode::PRIMARY, behaviorMap,
-                                                            "Resources/Doctests/csv/correct_1.csv"),
+                                                             "Resources/Doctests/csv/correct_1.csv"),
                          "errors generated during attributes CSV parsing", porytiles1::PorytilesException);
     CHECK(ctx.diag->InFlightCountFor(porytiles1::WarnAttributeFormatMismatch) == 1);
     CHECK(ctx.diag->InFlightCountForLevel(porytiles1::DiagLevel::Error) == 1);
