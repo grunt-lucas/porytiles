@@ -8,13 +8,14 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/model/valueobj/rgba_image.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-std::expected<void, std::string>
+Result<void>
 PngRgbaImageSaver::save_to_file(const RgbaImage &image, const std::filesystem::path &path) const {
   const auto width = static_cast<int>(image.width());
   const auto height = static_cast<int>(image.height());

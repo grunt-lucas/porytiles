@@ -8,6 +8,7 @@
 
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
 #include "porytiles2/infra/orchestration/operation.hpp"
+#include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
 
@@ -15,27 +16,27 @@ class TestOperation final : public Operation {
 public:
   explicit TestOperation(DiagEngine *engine) : Operation{engine}, multiplier_{1} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override {
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
     std::vector inputs = {
-        ArtifactMetadata{"num1", typeid(int)},
-        ArtifactMetadata{"num2", typeid(int)},
+        ArtifactDeclaration{"num1", typeid(int)},
+        ArtifactDeclaration{"num2", typeid(int)},
     };
     return inputs;
   }
 
   /// @brief Declares the artifacts this operation will produce.
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override {
-    std::vector outputs = {ArtifactMetadata{"sum", typeid(int)}};
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
+    std::vector outputs = {ArtifactDeclaration{"sum", typeid(int)}};
     return outputs;
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
+  [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
     const auto num1 = inputs.get<int>("num1").value();
     const auto num2 = inputs.get<int>("num2").value();
     int sum = (num1 + num2) * multiplier_;
-    AnyMap outputs{};
+    ArtifactBundle outputs{};
     outputs.put("sum", sum);
-    return std::expected<AnyMap, std::string>{outputs};
+    return outputs;
   }
 
   void set_multiplier(const int value) { multiplier_ = value; }
@@ -47,7 +48,7 @@ private:
 TEST(OperationTests, BasicOperationFunctionsShouldWork) {
   DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
-  AnyMap inputs{};
+  ArtifactBundle inputs{};
   inputs.put("num1", 10);
   inputs.put("num2", 5);
 

@@ -2,6 +2,7 @@
 
 #include <queue>
 
+#include "porytiles2/infra/orchestration/operation.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -60,11 +61,11 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
   }
 }
 
-std::expected<AnyMap, std::string> Pipeline::run() const {
-  AnyMap artifacts{};
+Result<void> Pipeline::run() {
+  ArtifactBundle artifacts{};
   for (auto *op : sorted_) {
     // Gather inputs for the operation
-    AnyMap inputs{};
+    ArtifactBundle inputs{};
     for (auto &input_artifact : op->declare_inputs()) {
       const auto &key = input_artifact.key();
       const auto val = artifacts.try_get_any(key);
@@ -77,7 +78,7 @@ std::expected<AnyMap, std::string> Pipeline::run() const {
     // Execute the operation
     auto result = op->execute(inputs);
     if (!result.has_value()) {
-      return result;
+      return std::unexpected{fmt::format("operation '{}' failed: {}", op->name(), result.error())};
     }
 
     // Merge outputs
@@ -88,7 +89,8 @@ std::expected<AnyMap, std::string> Pipeline::run() const {
       artifacts.put(key, value);
     }
   }
-  return artifacts;
+  leftover_artifacts_ = artifacts;
+  return {};
 }
 
 } // namespace porytiles2

@@ -1,3 +1,4 @@
+```C++
 #include "gtest/gtest.h"
 
 #include <tuple>
@@ -39,3 +40,4 @@ TEST(AnyMapTests, GetShouldPanicOnWrongType) {
   EXPECT_EXIT(std::ignore = map.get<int>("key2"), ::testing::KilledBySignal(SIGABRT),
               "Invalid type requested for key: key2");
 }
+```

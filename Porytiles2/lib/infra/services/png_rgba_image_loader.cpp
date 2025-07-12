@@ -9,13 +9,14 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/model/valueobj/rgba_image.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-std::expected<std::unique_ptr<RgbaImage>, std::string>
+Result<std::unique_ptr<RgbaImage>>
 PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
   CImg<std::uint8_t> cimg_png{};
   const auto path_c_str = path.c_str();

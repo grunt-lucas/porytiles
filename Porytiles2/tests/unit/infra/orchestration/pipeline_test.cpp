@@ -8,6 +8,7 @@
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
 #include "porytiles2/infra/orchestration/operation.hpp"
 #include "porytiles2/infra/orchestration/pipeline.hpp"
+#include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
 
@@ -16,14 +17,14 @@ public:
   explicit NumSupplierOperation(DiagEngine *engine, std::string key, const int value)
       : Operation{engine}, key_{std::move(key)}, value_{value} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override { return {}; }
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override { return {}; }
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override {
-    return {ArtifactMetadata{key_, typeid(int)}};
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
+    return {ArtifactDeclaration{key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
-    AnyMap result{};
+  [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
+    ArtifactBundle result{};
     result.put(key_, value_);
     return result;
   }
@@ -39,8 +40,8 @@ public:
                         std::string out_key = "sum")
       : Operation{engine}, in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override {
-    std::vector<ArtifactMetadata> inputs{};
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
+    std::vector<ArtifactDeclaration> inputs{};
     inputs.reserve(in_keys_.size());
     for (const auto &key : in_keys_) {
       inputs.emplace_back(key, typeid(int));
@@ -48,17 +49,16 @@ public:
     return inputs;
   }
 
-  /// @brief Declares the artifacts this operation will produce.
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override {
-    return {ArtifactMetadata{out_key_, typeid(int)}};
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
+    return {ArtifactDeclaration{out_key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
+  [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
     int sum = 0;
     for (const auto &key : in_keys_) {
       sum += inputs.get<int>(key).value();
     }
-    AnyMap outputs{};
+    ArtifactBundle outputs{};
     outputs.put(out_key_, sum);
     return outputs;
   }
@@ -73,13 +73,13 @@ public:
   explicit NumConsumerOperation(DiagEngine *engine, std::string key)
       : Operation{engine}, key_{std::move(key)}, consumed_{0} {}
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_inputs() const override {
-    return {ArtifactMetadata{key_, typeid(int)}};
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
+    return {ArtifactDeclaration{key_, typeid(int)}};
   }
 
-  [[nodiscard]] std::vector<ArtifactMetadata> declare_outputs() const override { return {}; }
+  [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override { return {}; }
 
-  [[nodiscard]] std::expected<AnyMap, std::string> execute(const AnyMap &inputs) override {
+  [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
     consumed_ = inputs.get<int>(key_).value();
     return {};
   }
@@ -102,7 +102,7 @@ TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
   const auto consumerOp = std::make_shared<NumConsumerOperation>(&engine, "sum");
   ops.push_back(consumerOp);
 
-  const Pipeline pipeline{ops};
+  Pipeline pipeline{ops};
   const auto result = pipeline.run();
-  ASSERT_EQ(30, std::dynamic_pointer_cast<NumConsumerOperation>(consumerOp)->consumed());
+  ASSERT_EQ(30, consumerOp->consumed());
 }
