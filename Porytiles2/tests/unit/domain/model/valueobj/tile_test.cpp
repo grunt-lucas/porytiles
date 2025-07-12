@@ -13,11 +13,9 @@ TEST(TileTests, AtAndSetShouldWork) {
 
     EXPECT_EQ(0, tile.At(0));
     EXPECT_EQ(0, tile.At(63));
-    EXPECT_EXIT(std::ignore = tile.At(kTileSize), ::testing::KilledBySignal(SIGABRT), "Index 64 out of bounds");
-    EXPECT_EXIT(std::ignore = tile.At(kTileSideLength, 2), ::testing::KilledBySignal(SIGABRT),
-                "Row index 8 out of bounds");
-    EXPECT_EXIT(std::ignore = tile.At(0, kTileSideLength), ::testing::KilledBySignal(SIGABRT),
-                "Col index 8 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.At(kTileSize), "Index 64 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.At(kTileSideLength, 2), "Row index 8 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.At(0, kTileSideLength), "Col index 8 out of bounds");
 
     // Set value using index, fetch using row/col
     tile.Set(22, 10);

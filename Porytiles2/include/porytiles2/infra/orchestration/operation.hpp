@@ -1,7 +1,6 @@
 #pragma once
 
 #include <expected>
-#include <typeindex>
 
 #include "gsl/pointers"
 

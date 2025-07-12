@@ -128,10 +128,8 @@ TEST(RgbaImageTest, AtByIndexOutOfBoundsPanic) {
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
 
-    EXPECT_EXIT(std::ignore = image.at(6), ::testing::KilledBySignal(SIGABRT),
-                "index 6 out of bounds for image size 6");
-    EXPECT_EXIT(std::ignore = image.at(100), ::testing::KilledBySignal(SIGABRT),
-                "index 100 out of bounds for image size 6");
+    EXPECT_DEATH(std::ignore = image.at(6), "index 6 out of bounds for image size 6");
+    EXPECT_DEATH(std::ignore = image.at(100), "index 100 out of bounds for image size 6");
 }
 
 TEST(RgbaImageTest, AtByRowColColumnOutOfBoundsPanic) {
@@ -139,10 +137,8 @@ TEST(RgbaImageTest, AtByRowColColumnOutOfBoundsPanic) {
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
 
-    EXPECT_EXIT(std::ignore = image.at(0, 3), ::testing::KilledBySignal(SIGABRT),
-                "col 3 out of bounds for image width 3");
-    EXPECT_EXIT(std::ignore = image.at(1, 10), ::testing::KilledBySignal(SIGABRT),
-                "col 10 out of bounds for image width 3");
+    EXPECT_DEATH(std::ignore = image.at(0, 3), "col 3 out of bounds for image width 3");
+    EXPECT_DEATH(std::ignore = image.at(1, 10), "col 10 out of bounds for image width 3");
 }
 
 TEST(RgbaImageTest, AtByRowColRowOutOfBoundsPanic) {
@@ -150,10 +146,8 @@ TEST(RgbaImageTest, AtByRowColRowOutOfBoundsPanic) {
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
 
-    EXPECT_EXIT(std::ignore = image.at(2, 0), ::testing::KilledBySignal(SIGABRT),
-                "row 2 out of bounds for image height 2");
-    EXPECT_EXIT(std::ignore = image.at(5, 1), ::testing::KilledBySignal(SIGABRT),
-                "row 5 out of bounds for image height 2");
+    EXPECT_DEATH(std::ignore = image.at(2, 0), "row 2 out of bounds for image height 2");
+    EXPECT_DEATH(std::ignore = image.at(5, 1), "row 5 out of bounds for image height 2");
 }
 
 TEST(RgbaImageTest, SetByIndexOutOfBoundsPanic) {
@@ -162,9 +156,8 @@ TEST(RgbaImageTest, SetByIndexOutOfBoundsPanic) {
     RgbaImage image{width, height};
     constexpr Rgba32 test_pixel{255, 0, 0, 255};
 
-    EXPECT_EXIT(image.set(4, test_pixel), ::testing::KilledBySignal(SIGABRT), "index 4 out of bounds for image size 4");
-    EXPECT_EXIT(image.set(50, test_pixel), ::testing::KilledBySignal(SIGABRT),
-                "index 50 out of bounds for image size 4");
+    EXPECT_DEATH(image.set(4, test_pixel), "index 4 out of bounds for image size 4");
+    EXPECT_DEATH(image.set(50, test_pixel), "index 50 out of bounds for image size 4");
 }
 
 TEST(RgbaImageTest, SetByRowColColumnOutOfBoundsPanic) {
@@ -173,10 +166,8 @@ TEST(RgbaImageTest, SetByRowColColumnOutOfBoundsPanic) {
     RgbaImage image{width, height};
     constexpr Rgba32 test_pixel{255, 0, 0, 255};
 
-    EXPECT_EXIT(image.set(0, 2, test_pixel), ::testing::KilledBySignal(SIGABRT),
-                "col 2 out of bounds for image width 2");
-    EXPECT_EXIT(image.set(1, 5, test_pixel), ::testing::KilledBySignal(SIGABRT),
-                "col 5 out of bounds for image width 2");
+    EXPECT_DEATH(image.set(0, 2, test_pixel), "col 2 out of bounds for image width 2");
+    EXPECT_DEATH(image.set(1, 5, test_pixel), "col 5 out of bounds for image width 2");
 }
 
 TEST(RgbaImageTest, SetByRowColRowOutOfBoundsPanic) {
@@ -185,8 +176,6 @@ TEST(RgbaImageTest, SetByRowColRowOutOfBoundsPanic) {
     RgbaImage image{width, height};
     constexpr Rgba32 test_pixel{255, 0, 0, 255};
 
-    EXPECT_EXIT(image.set(2, 0, test_pixel), ::testing::KilledBySignal(SIGABRT),
-                "row 2 out of bounds for image height 2");
-    EXPECT_EXIT(image.set(10, 1, test_pixel), ::testing::KilledBySignal(SIGABRT),
-                "row 10 out of bounds for image height 2");
+    EXPECT_DEATH(image.set(2, 0, test_pixel), "row 2 out of bounds for image height 2");
+    EXPECT_DEATH(image.set(10, 1, test_pixel), "row 10 out of bounds for image height 2");
 }
