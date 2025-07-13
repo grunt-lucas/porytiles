@@ -7,31 +7,31 @@
 namespace porytiles2 {
 
 /**
- * @brief A specification for artifacts required or produced by orchestration operations.
+ * @brief A specification for operands required or produced by orchestration operations.
  *
  * @details
- * ArtifactDeclaration provides a POD-like class that Operations use to declare input and output
- * artifact metadata. Each declaration specifies a key name, expected type, and optional
+ * OperandDeclaration provides a POD-like class that Operations use to declare input and output
+ * operand metadata. Each declaration specifies a key name, expected type, and optional
  * human-readable description. This enables the orchestration framework to validate that
- * ArtifactBundle contents match Operation requirements at runtime.
+ * OperandDeclaration contents match Operation requirements at runtime.
  */
-class ArtifactDeclaration {
+class OperandDeclaration {
   public:
     /**
-     * @brief Constructs an artifact declaration with the specified key and type.
+     * @brief Constructs an operand declaration with the specified key and type.
      *
      * @details
      * The description is initialized to match the key by default, but can be
      * customized using set_description().
      *
-     * @param key The unique identifier for this artifact
+     * @param key The unique identifier for this operand
      * @param type The expected C++ type represented as `std::type_index`
      */
-    ArtifactDeclaration(std::string key, const std::type_index type)
+    OperandDeclaration(std::string key, const std::type_index type)
         : key_{std::move(key)}, expected_type_{type}, desc_{key} {}
 
     /**
-     * @brief Gets the artifact's unique identifier.
+     * @brief Gets the operand's unique identifier.
      *
      * @return const reference to the key string
      */
@@ -40,7 +40,7 @@ class ArtifactDeclaration {
     }
 
     /**
-     * @brief Gets the expected type information for this artifact.
+     * @brief Gets the expected type information for this operand.
      *
      * @return const reference to the std::type_index representing the expected type
      */
@@ -49,7 +49,7 @@ class ArtifactDeclaration {
     }
 
     /**
-     * @brief Gets the human-readable description of this artifact.
+     * @brief Gets the human-readable description of this operand.
      *
      * @return const reference to the description string
      */
@@ -58,9 +58,9 @@ class ArtifactDeclaration {
     }
 
     /**
-     * @brief Sets a custom description for this artifact.
+     * @brief Sets a custom description for this operand.
      *
-     * @param desc The new description text to associate with this artifact
+     * @param desc The new description text to associate with this operand
      */
     void set_description(const std::string &desc) {
         desc_ = desc;

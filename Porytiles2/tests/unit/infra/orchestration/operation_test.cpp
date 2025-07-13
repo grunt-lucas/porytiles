@@ -16,25 +16,25 @@ class TestOperation final : public Operation {
   public:
     explicit TestOperation(DiagEngine *engine) : Operation{engine}, multiplier_{1} {}
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
         std::vector inputs = {
-            ArtifactDeclaration{"num1", typeid(int)},
-            ArtifactDeclaration{"num2", typeid(int)},
+            OperandDeclaration{"num1", typeid(int)},
+            OperandDeclaration{"num2", typeid(int)},
         };
         return inputs;
     }
 
-    /// @brief Declares the artifacts this operation will produce.
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
-        std::vector outputs = {ArtifactDeclaration{"sum", typeid(int)}};
+    /// @brief Declares the operands this operation will produce.
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+        std::vector outputs = {OperandDeclaration{"sum", typeid(int)}};
         return outputs;
     }
 
-    [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         const auto num1 = inputs.get_unwrapped<int>("num1").value();
         const auto num2 = inputs.get_unwrapped<int>("num2").value();
         int sum = (num1 + num2) * multiplier_;
-        ArtifactBundle outputs{};
+        OperandBundle outputs{};
         outputs.put("sum", sum);
         return outputs;
     }
@@ -50,7 +50,7 @@ class TestOperation final : public Operation {
 TEST(OperationTests, BasicOperationFunctionsShouldWork) {
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
-    ArtifactBundle inputs{};
+    OperandBundle inputs{};
     inputs.put("num1", 10);
     inputs.put("num2", 5);
 

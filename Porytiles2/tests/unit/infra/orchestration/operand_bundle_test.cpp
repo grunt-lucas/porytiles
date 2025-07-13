@@ -5,13 +5,13 @@
 #include <typeindex>
 #include <vector>
 
-#include "porytiles2/infra/orchestration/artifact_bundle.hpp"
-#include "porytiles2/infra/orchestration/artifact_declaration.hpp"
+#include "porytiles2/infra/orchestration/operand_bundle.hpp"
+#include "porytiles2/infra/orchestration/operand_declaration.hpp"
 
 using namespace porytiles2;
 
 TEST(ArtifactBundleTests, BasicPutAndGetShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     bundle.put("test_key", 42);
 
@@ -23,14 +23,14 @@ TEST(ArtifactBundleTests, BasicPutAndGetShouldWork) {
 }
 
 TEST(ArtifactBundleTests, GetNonExistentKeyShouldReturnNullopt) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     const auto result = bundle.get("non_existent");
     EXPECT_FALSE(result.has_value());
 }
 
 TEST(ArtifactBundleTests, GetUnwrappedShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     bundle.put("string_key", std::string{"hello"});
     bundle.put("int_key", 123);
@@ -45,14 +45,14 @@ TEST(ArtifactBundleTests, GetUnwrappedShouldWork) {
 }
 
 TEST(ArtifactBundleTests, GetUnwrappedNonExistentKeyShouldReturnNullopt) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     const auto result = bundle.get_unwrapped<int>("non_existent");
     EXPECT_FALSE(result.has_value());
 }
 
 TEST(ArtifactBundleTests, GetUnwrappedWrongTypeShouldPanic) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     bundle.put("string_key", std::string{"hello"});
 
@@ -60,7 +60,7 @@ TEST(ArtifactBundleTests, GetUnwrappedWrongTypeShouldPanic) {
 }
 
 TEST(ArtifactBundleTests, ContainsShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     EXPECT_FALSE(bundle.contains("test_key"));
 
@@ -70,7 +70,7 @@ TEST(ArtifactBundleTests, ContainsShouldWork) {
 }
 
 TEST(ArtifactBundleTests, TypeIndexOfShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     bundle.put("int_key", 42);
     bundle.put("string_key", std::string{"hello"});
@@ -85,55 +85,55 @@ TEST(ArtifactBundleTests, TypeIndexOfShouldWork) {
 }
 
 TEST(ArtifactBundleTests, TypeIndexOfNonExistentKeyShouldReturnNullopt) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     const auto result = bundle.type_index_of("non_existent");
     EXPECT_FALSE(result.has_value());
 }
 
 TEST(ArtifactBundleTests, SatisfiesDeclarationsWithMatchingBundleShouldReturnTrue) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
     bundle.put("num1", 42);
     bundle.put("text", std::string{"hello"});
 
-    std::vector<ArtifactDeclaration> declarations = {ArtifactDeclaration{"num1", typeid(int)},
-                                                     ArtifactDeclaration{"text", typeid(std::string)}};
+    std::vector<OperandDeclaration> declarations = {OperandDeclaration{"num1", typeid(int)},
+                                                     OperandDeclaration{"text", typeid(std::string)}};
 
     EXPECT_TRUE(bundle.satisfies_declarations(declarations));
 }
 
 TEST(ArtifactBundleTests, SatisfiesDeclarationsWithMissingKeyShouldReturnFalse) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
     bundle.put("num1", 42);
 
-    std::vector<ArtifactDeclaration> declarations = {ArtifactDeclaration{"num1", typeid(int)},
-                                                     ArtifactDeclaration{"missing_key", typeid(std::string)}};
+    std::vector<OperandDeclaration> declarations = {OperandDeclaration{"num1", typeid(int)},
+                                                     OperandDeclaration{"missing_key", typeid(std::string)}};
 
     EXPECT_FALSE(bundle.satisfies_declarations(declarations));
 }
 
 TEST(ArtifactBundleTests, SatisfiesDeclarationsWithWrongTypeShouldReturnFalse) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
     bundle.put("num1", 42);
     bundle.put("text", std::string{"hello"});
 
-    std::vector<ArtifactDeclaration> declarations = {
-        ArtifactDeclaration{"num1", typeid(int)}, ArtifactDeclaration{"text", typeid(int)} // Wrong type
+    std::vector<OperandDeclaration> declarations = {
+        OperandDeclaration{"num1", typeid(int)}, OperandDeclaration{"text", typeid(int)} // Wrong type
     };
 
     EXPECT_FALSE(bundle.satisfies_declarations(declarations));
 }
 
 TEST(ArtifactBundleTests, EmptyDeclarationsShouldReturnTrue) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
-    std::vector<ArtifactDeclaration> declarations{};
+    std::vector<OperandDeclaration> declarations{};
 
     EXPECT_TRUE(bundle.satisfies_declarations(declarations));
 }
 
 TEST(ArtifactBundleTests, IteratorSupportShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
     bundle.put("key1", 1);
     bundle.put("key2", 2);
     bundle.put("key3", 3);
@@ -148,11 +148,11 @@ TEST(ArtifactBundleTests, IteratorSupportShouldWork) {
 }
 
 TEST(ArtifactBundleTests, ConstIteratorShouldWork) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
     bundle.put("key1", 1);
     bundle.put("key2", 2);
 
-    const ArtifactBundle &const_bundle = bundle;
+    const OperandBundle &const_bundle = bundle;
 
     int count = 0;
     for (auto it = const_bundle.cbegin(); it != const_bundle.cend(); ++it) {
@@ -163,7 +163,7 @@ TEST(ArtifactBundleTests, ConstIteratorShouldWork) {
 }
 
 TEST(ArtifactBundleTests, PutShouldOverwriteExistingValue) {
-    ArtifactBundle bundle{};
+    OperandBundle bundle{};
 
     bundle.put("key", 42);
     EXPECT_EQ(42, bundle.get_unwrapped<int>("key").value());

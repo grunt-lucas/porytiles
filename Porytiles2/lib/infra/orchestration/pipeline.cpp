@@ -8,10 +8,10 @@
 namespace porytiles2 {
 
 Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
-    // 1) Map each artifact key to the producer op that generates it
+    // 1) Map each operandt key to the producer op that generates it
     for (auto &op : ops) {
-        for (const auto &output_artifact : op->declare_outputs()) {
-            const auto &out_key = output_artifact.key();
+        for (const auto &output_operandt : op->declare_outputs()) {
+            const auto &out_key = output_operandt.key();
             if (producers_.contains(out_key)) {
                 panic("duplicate producers for key: " + out_key);
             }
@@ -26,13 +26,13 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     for (auto &op : ops) {
         const auto inputs = op->declare_inputs();
         int deps = 0;
-        for (const auto &input_artifact : inputs) {
-            if (const auto &in_key = input_artifact.key(); producers_.contains(in_key)) {
+        for (const auto &input_operandt : inputs) {
+            if (const auto &in_key = input_operandt.key(); producers_.contains(in_key)) {
                 auto *producer_op = producers_.at(in_key);
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
             } else {
-                panic(fmt::format("operation '{}' depends on non-existent artifact: '{}'", op->name(), in_key));
+                panic(fmt::format("operation '{}' depends on non-existent operandt: '{}'", op->name(), in_key));
             }
         }
         in_degree_.insert({op.get(), deps});
@@ -61,15 +61,15 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
 }
 
 Result<void> Pipeline::run() const {
-    ArtifactBundle artifact_pool{};
+    OperandBundle operand_pool{};
     for (auto *op : sorted_) {
         // Gather inputs for the operation
-        ArtifactBundle inputs{};
-        for (auto &input_artifact : op->declare_inputs()) {
-            const auto &key = input_artifact.key();
-            const auto val = artifact_pool.get(key);
+        OperandBundle inputs{};
+        for (auto &input_operand : op->declare_inputs()) {
+            const auto &key = input_operand.key();
+            const auto val = operand_pool.get(key);
             if (!val.has_value()) {
-                panic(fmt::format("operation '{}' missing input artifact: {}", op->name(), key));
+                panic(fmt::format("operation '{}' missing input operand: {}", op->name(), key));
             }
             inputs.put(key, val.value());
         }
@@ -83,10 +83,10 @@ Result<void> Pipeline::run() const {
         // Merge outputs
         auto output_bundle = result.value();
         for (const auto &[key, value] : output_bundle) {
-            if (artifact_pool.contains(key)) {
-                panic(fmt::format("op '{}' output artifact '{}' already present in artifact pool", op->name(), key));
+            if (operand_pool.contains(key)) {
+                panic(fmt::format("op '{}' output operand '{}' already present in operand pool", op->name(), key));
             }
-            artifact_pool.put(key, value);
+            operand_pool.put(key, value);
         }
     }
     return {};

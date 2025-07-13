@@ -17,16 +17,16 @@ class NumSupplierOperation final : public Operation {
     explicit NumSupplierOperation(DiagEngine *engine, std::string key, const int value)
         : Operation{engine}, key_{std::move(key)}, value_{value} {}
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
         return {};
     }
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
-        return {ArtifactDeclaration{key_, typeid(int)}};
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+        return {OperandDeclaration{key_, typeid(int)}};
     }
 
-    [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
-        ArtifactBundle result{};
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
+        OperandBundle result{};
         result.put(key_, value_);
         return result;
     }
@@ -41,8 +41,8 @@ class SumOperation final : public Operation {
     explicit SumOperation(DiagEngine *engine, std::vector<std::string> in_keys, std::string out_key = "sum")
         : Operation{engine}, in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)} {}
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
-        std::vector<ArtifactDeclaration> inputs{};
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+        std::vector<OperandDeclaration> inputs{};
         inputs.reserve(in_keys_.size());
         for (const auto &key : in_keys_) {
             inputs.emplace_back(key, typeid(int));
@@ -50,16 +50,16 @@ class SumOperation final : public Operation {
         return inputs;
     }
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
-        return {ArtifactDeclaration{out_key_, typeid(int)}};
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+        return {OperandDeclaration{out_key_, typeid(int)}};
     }
 
-    [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         int sum = 0;
         for (const auto &key : in_keys_) {
             sum += inputs.get_unwrapped<int>(key).value();
         }
-        ArtifactBundle outputs{};
+        OperandBundle outputs{};
         outputs.put(out_key_, sum);
         return outputs;
     }
@@ -74,15 +74,15 @@ class NumConsumerOperation final : public Operation {
     explicit NumConsumerOperation(DiagEngine *engine, std::string key)
         : Operation{engine}, key_{std::move(key)}, consumed_{0} {}
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_inputs() const override {
-        return {ArtifactDeclaration{key_, typeid(int)}};
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+        return {OperandDeclaration{key_, typeid(int)}};
     }
 
-    [[nodiscard]] std::vector<ArtifactDeclaration> declare_outputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
         return {};
     }
 
-    [[nodiscard]] Result<ArtifactBundle> execute(const ArtifactBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         consumed_ = inputs.get_unwrapped<int>(key_).value();
         return {};
     }
