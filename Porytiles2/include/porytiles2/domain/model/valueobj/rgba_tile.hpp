@@ -7,7 +7,7 @@ namespace porytiles2 {
 
 class RgbaTile final : public Tile<Rgba32> {
   public:
-    explicit RgbaTile() : Tile{} {}
+    RgbaTile() = default;
 
     [[nodiscard]] bool is_transparent(const Rgba32 &transparency) const override;
 

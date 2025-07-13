@@ -12,9 +12,9 @@ using namespace porytiles2;
 TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
     RgbaTile tile{};
 
-    tile.Set(12, Rgba32{22, 90, 144});
+    tile.set(12, Rgba32{22, 90, 144});
     EXPECT_FALSE(tile.is_transparent(kRgbaMagenta));
 
-    tile.Set(12, Rgba32{22, 90, 144, Rgba32::alpha_transparent});
+    tile.set(12, Rgba32{22, 90, 144, Rgba32::alpha_transparent});
     EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
 }

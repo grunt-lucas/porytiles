@@ -7,19 +7,12 @@
 
 namespace porytiles2 {
 
-constexpr std::size_t kTileSideLength = 8;
-constexpr std::size_t kTileSize = kTileSideLength * kTileSideLength;
+constexpr std::size_t tile_side_length = 8;
+constexpr std::size_t tile_size = tile_side_length * tile_side_length;
 
 /// @brief A single 8x8 pixel tile with an arbitrary pixel data type.
 template <typename P>
 class Tile {
-    std::array<P, kTileSize> pix_;
-
-  protected:
-    [[nodiscard]] const std::array<P, kTileSize> &pix() const {
-        return pix_;
-    }
-
   public:
     virtual ~Tile() = default;
 
@@ -29,39 +22,47 @@ class Tile {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
     }
 
-    [[nodiscard]] P At(std::size_t i) const {
-        if (i >= kTileSize) {
-            panic(fmt::format("Index {} out of bounds", i));
+    [[nodiscard]] P at(std::size_t i) const {
+        if (i >= tile_size) {
+            panic(fmt::format("index {} out of bounds", i));
         }
         return pix_[i];
     }
 
-    [[nodiscard]] P At(std::size_t row, std::size_t col) const {
-        if (row >= kTileSideLength) {
-            panic(fmt::format("Row index {} out of bounds", row));
+    [[nodiscard]] P at(std::size_t row, std::size_t col) const {
+        if (row >= tile_side_length) {
+            panic(fmt::format("row index {} out of bounds", row));
         }
-        if (col >= kTileSideLength) {
-            panic(fmt::format("Col index {} out of bounds", col));
+        if (col >= tile_side_length) {
+            panic(fmt::format("col index {} out of bounds", col));
         }
-        return pix_[row * kTileSideLength + col];
+        return pix_[row * tile_side_length + col];
     }
 
-    void Set(std::size_t i, const P &p) {
-        if (i >= kTileSize) {
-            panic(fmt::format("Index {} out of bounds", i));
+    void set(std::size_t i, const P &p) {
+        if (i >= tile_size) {
+            panic(fmt::format("index {} out of bounds", i));
         }
         pix_[i] = p;
     }
 
-    void Set(std::size_t row, std::size_t col, const P &p) {
-        if (row >= kTileSideLength) {
-            panic(fmt::format("Row index {} out of bounds", row));
+    void set(std::size_t row, std::size_t col, const P &p) {
+        if (row >= tile_side_length) {
+            panic(fmt::format("row index {} out of bounds", row));
         }
-        if (col >= kTileSideLength) {
-            panic(fmt::format("Col index {} out of bounds", col));
+        if (col >= tile_side_length) {
+            panic(fmt::format("col index {} out of bounds", col));
         }
-        pix_[row * kTileSideLength + col] = p;
+        pix_[row * tile_side_length + col] = p;
     }
+
+  protected:
+    [[nodiscard]] const std::array<P, tile_size> &pix() const {
+        return pix_;
+    }
+
+  private:
+    std::array<P, tile_size> pix_;
 };
 
 } // namespace porytiles2
