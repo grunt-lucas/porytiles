@@ -5,7 +5,7 @@
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
-#include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -23,7 +23,8 @@ class CompilePrimaryTileset {
      * @param compiler_service A pointer to the TilesetCompilerService for this use case.
      * @param metadata_service A pointer to the ArtifactMetadataService for this use case.
      */
-    CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<TilesetCompiler> compiler_service,
+    CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo,
+                          std::unique_ptr<PrimaryTilesetCompiler> compiler_service,
                           std::unique_ptr<ArtifactMetadataProvider> metadata_service)
         : tileset_repo_{std::move(tileset_repo)}, compiler_service_{std::move(compiler_service)},
           metadata_service_{std::move(metadata_service)} {}
@@ -44,7 +45,7 @@ class CompilePrimaryTileset {
 
   private:
     std::unique_ptr<TilesetRepo> tileset_repo_;
-    std::unique_ptr<TilesetCompiler> compiler_service_;
+    std::unique_ptr<PrimaryTilesetCompiler> compiler_service_;
     std::unique_ptr<ArtifactMetadataProvider> metadata_service_;
 };
 

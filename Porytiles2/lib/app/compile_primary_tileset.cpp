@@ -3,7 +3,7 @@
 #include <expected>
 #include <memory>
 
-#include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -36,7 +36,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
 
     // 4. Perform compilation logic
     const auto porytiles_component = tileset->porytiles_component();
-    auto maybe_porymap_component = compiler_service_->compile_primary(porytiles_component);
+    auto maybe_porymap_component = compiler_service_->compile(porytiles_component);
     if (!maybe_porymap_component.has_value()) {
         return std::unexpected{maybe_porymap_component.error()};
     }

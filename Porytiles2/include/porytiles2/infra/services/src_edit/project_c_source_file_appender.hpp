@@ -30,7 +30,7 @@ namespace porytiles2 {
  * - CSourceGenerator: For generating the C code constructs to append
  *
  * This class follows the established patterns in the Porytiles2 codebase:
- * - Uses Result<T> for error handling
+ * - Uses Result for error handling
  * - Implements domain interface in infrastructure layer
  * - Uses dependency injection for services
  * - Provides detailed error messages for debugging
