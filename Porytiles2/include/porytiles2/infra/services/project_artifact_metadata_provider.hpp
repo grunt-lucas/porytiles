@@ -1,7 +1,8 @@
-// Porytiles2/include/porytiles2/infra/services/FilesystemTimestampService.hpp
 #pragma once
 
 #include "gsl/pointers"
+
+#include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/infra/project/project_paths.hpp"
 
@@ -13,7 +14,9 @@ namespace porytiles2 {
  */
 class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
   public:
-    explicit ProjectArtifactMetadataProvider(const gsl::not_null<ProjectPaths *> paths) : paths_{paths} {}
+    explicit ProjectArtifactMetadataProvider(const gsl::not_null<ProjectPaths *> paths,
+                                             const gsl::not_null<TilesetRepo *> tileset_repo)
+        : paths_{paths}, tileset_repo_{tileset_repo} {}
 
     [[nodiscard]] std::unordered_map<std::string, std::string>
     compute_porymap_checksums(const Tileset &tileset) const override;
@@ -35,6 +38,7 @@ class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
 
   private:
     const ProjectPaths *paths_;
+    TilesetRepo *tileset_repo_;
 };
 
 } // namespace porytiles2
