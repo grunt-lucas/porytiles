@@ -42,7 +42,8 @@ class ArtifactMetadataProvider {
     load_stored_checksums(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual Result<void>
-    store_checksums(const std::string &tileset_name, const std::unordered_map<std::string, std::string> &checksums) = 0;
+    store_checksums(const std::string &tileset_name,
+                    const std::unordered_map<std::string, std::string> &checksums) const = 0;
 
     /**
      * @brief Gets the modification timestamps for all Porymap artifacts associated with the given

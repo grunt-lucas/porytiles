@@ -21,8 +21,9 @@ class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
     [[nodiscard]] std::unordered_map<std::string, std::string>
     load_stored_checksums(const std::string &tileset_name) const override;
 
-    [[nodiscard]] Result<void> store_checksums(const std::string &tileset_name,
-                                               const std::unordered_map<std::string, std::string> &checksums) override;
+    [[nodiscard]] Result<void>
+    store_checksums(const std::string &tileset_name,
+                    const std::unordered_map<std::string, std::string> &checksums) const override;
 
     [[nodiscard]] std::unordered_map<std::string, Timestamp>
     get_porymap_timestamps(const Tileset &tileset) const override;

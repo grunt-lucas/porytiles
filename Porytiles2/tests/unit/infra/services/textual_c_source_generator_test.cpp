@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "porytiles2/infra/services/textual_c_source_generator.hpp"
+#include "../../../../include/porytiles2/infra/services/src_edit/textual_c_source_generator.hpp"
 
 using namespace porytiles2;
 

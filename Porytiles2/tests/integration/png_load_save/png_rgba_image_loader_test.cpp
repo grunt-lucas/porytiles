@@ -2,9 +2,9 @@
 
 #include <tuple>
 
+#include "../../../include/porytiles2/infra/services/rgba_image/png_rgba_image_loader.hpp"
 #include "porytiles2/domain/model/valueobj/rgba_image.hpp"
 #include "porytiles2/domain/services/rgba_image_loader.hpp"
-#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 
 using namespace porytiles2;
 

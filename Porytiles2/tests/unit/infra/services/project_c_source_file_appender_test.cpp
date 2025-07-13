@@ -5,9 +5,9 @@
 #include <memory>
 #include <string>
 
+#include "../../../../include/porytiles2/infra/services/src_edit/project_c_source_file_appender.hpp"
+#include "../../../../include/porytiles2/infra/services/src_edit/textual_c_source_generator.hpp"
 #include "porytiles2/infra/project/project_paths.hpp"
-#include "porytiles2/infra/services/project_c_source_file_appender.hpp"
-#include "porytiles2/infra/services/textual_c_source_generator.hpp"
 
 using namespace porytiles2;
 
