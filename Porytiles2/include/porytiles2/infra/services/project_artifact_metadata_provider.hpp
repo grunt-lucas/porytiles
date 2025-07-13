@@ -1,7 +1,9 @@
 // Porytiles2/include/porytiles2/infra/services/FilesystemTimestampService.hpp
 #pragma once
 
+#include "gsl/pointers"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
+#include "porytiles2/infra/project/project_paths.hpp"
 
 namespace porytiles2 {
 
@@ -11,7 +13,7 @@ namespace porytiles2 {
  */
 class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
   public:
-    ProjectArtifactMetadataProvider() = default;
+    explicit ProjectArtifactMetadataProvider(const gsl::not_null<ProjectPaths *> paths) : paths_{paths} {}
 
     [[nodiscard]] std::unordered_map<std::string, std::string>
     compute_porymap_checksums(const Tileset &tileset) const override;
@@ -29,6 +31,9 @@ class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
     get_porytiles_timestamps(const Tileset &tileset) const override;
 
     [[nodiscard]] bool are_porymap_assets_newer(const Tileset &tileset) const override;
+
+  private:
+    const ProjectPaths *paths_;
 };
 
 } // namespace porytiles2
