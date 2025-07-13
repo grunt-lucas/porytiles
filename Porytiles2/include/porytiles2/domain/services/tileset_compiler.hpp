@@ -16,15 +16,14 @@ namespace porytiles2 {
  * Service interface for compiling a PorytilesTilesetComponent into a PorymapTilesetComponent.
  */
 class TilesetCompiler {
-public:
-  virtual ~TilesetCompiler() = default;
+  public:
+    virtual ~TilesetCompiler() = default;
 
-  virtual Result<std::unique_ptr<PorymapTilesetComponent>>
-  compile_primary(const PorytilesTilesetComponent &tileset) = 0;
+    virtual Result<std::unique_ptr<PorymapTilesetComponent>>
+    compile_primary(const PorytilesTilesetComponent &tileset) = 0;
 
-  virtual Result<std::unique_ptr<PorymapTilesetComponent>>
-  compile_secondary(const PorytilesTilesetComponent &tileset,
-                    const PorymapTilesetComponent &primary_tileset) = 0;
+    virtual Result<std::unique_ptr<PorymapTilesetComponent>>
+    compile_secondary(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &primary_tileset) = 0;
 };
 
 } // namespace porytiles2

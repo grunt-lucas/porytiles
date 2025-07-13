@@ -36,24 +36,24 @@ namespace porytiles2 {
  * - Provides detailed error messages for debugging
  */
 class ProjectCSourceFileAppender final : public CSourceFileModifier {
-public:
-  /**
-   * @brief Constructs a ProjectCSourceFileAppender with required dependencies.
-   *
-   * @param paths Project path computation service (must not be null)
-   * @param generator C source code generation service
-   */
-  explicit ProjectCSourceFileAppender(gsl::not_null<ProjectPaths *> paths,
-                                      std::unique_ptr<CSourceGenerator> generator);
+  public:
+    /**
+     * @brief Constructs a ProjectCSourceFileAppender with required dependencies.
+     *
+     * @param paths Project path computation service (must not be null)
+     * @param generator C source code generation service
+     */
+    explicit ProjectCSourceFileAppender(gsl::not_null<ProjectPaths *> paths,
+                                        std::unique_ptr<CSourceGenerator> generator);
 
-  [[nodiscard]] Result<void> append_to_graphics_header(const std::string &tileset_name) override;
-  [[nodiscard]] Result<void> append_to_headers_header(const std::string &tileset_name) override;
-  [[nodiscard]] Result<void> append_to_metatiles_header(const std::string &tileset_name) override;
-  [[nodiscard]] Result<void> append_tileset_declarations(const std::string &tileset_name) override;
+    [[nodiscard]] Result<void> append_to_graphics_header(const std::string &tileset_name) override;
+    [[nodiscard]] Result<void> append_to_headers_header(const std::string &tileset_name) override;
+    [[nodiscard]] Result<void> append_to_metatiles_header(const std::string &tileset_name) override;
+    [[nodiscard]] Result<void> append_tileset_declarations(const std::string &tileset_name) override;
 
-private:
-  const ProjectPaths *paths_;
-  std::unique_ptr<CSourceGenerator> generator_;
+  private:
+    const ProjectPaths *paths_;
+    std::unique_ptr<CSourceGenerator> generator_;
 };
 
 } // namespace porytiles2

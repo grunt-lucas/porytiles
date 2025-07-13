@@ -6,12 +6,12 @@
 namespace porytiles2 {
 
 class RgbaTile final : public Tile<Rgba32> {
-public:
-  explicit RgbaTile() : Tile{} {}
+  public:
+    explicit RgbaTile() : Tile{} {}
 
-  [[nodiscard]] bool is_transparent(const Rgba32 &transparency) const override;
+    [[nodiscard]] bool is_transparent(const Rgba32 &transparency) const override;
 
-  [[nodiscard]] bool equals_bgr(const RgbaTile &other) const;
+    [[nodiscard]] bool equals_bgr(const RgbaTile &other) const;
 };
 
 } // namespace porytiles2

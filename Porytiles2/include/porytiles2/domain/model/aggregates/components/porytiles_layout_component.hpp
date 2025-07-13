@@ -8,8 +8,8 @@
 namespace porytiles2 {
 
 class PorytilesLayoutComponent {
-  std::vector<RgbaMetatile> map_;
-  std::vector<RgbaMetatile> border_;
+    std::vector<RgbaMetatile> map_;
+    std::vector<RgbaMetatile> border_;
 };
 
 } // namespace porytiles2

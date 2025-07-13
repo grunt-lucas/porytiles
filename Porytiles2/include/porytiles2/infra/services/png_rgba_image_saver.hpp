@@ -16,11 +16,10 @@ namespace porytiles2 {
  * implementation. Users of the Porytiles library need not concern themselves with CImg details.
  */
 class PngRgbaImageSaver final : public RgbaImageSaver {
-public:
-  PngRgbaImageSaver() = default;
+  public:
+    PngRgbaImageSaver() = default;
 
-  [[nodiscard]] Result<void> save_to_file(const RgbaImage &image,
-                                          const std::filesystem::path &path) const override;
+    [[nodiscard]] Result<void> save_to_file(const RgbaImage &image, const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles2

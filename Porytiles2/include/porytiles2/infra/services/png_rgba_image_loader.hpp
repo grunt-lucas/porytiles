@@ -18,11 +18,10 @@ namespace porytiles2 {
  * details.
  */
 class PngRgbaImageLoader final : public RgbaImageLoader {
-public:
-  PngRgbaImageLoader() = default;
+  public:
+    PngRgbaImageLoader() = default;
 
-  [[nodiscard]] Result<std::unique_ptr<RgbaImage>>
-  load_from_file(const std::filesystem::path &path) const override;
+    [[nodiscard]] Result<std::unique_ptr<RgbaImage>> load_from_file(const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles2

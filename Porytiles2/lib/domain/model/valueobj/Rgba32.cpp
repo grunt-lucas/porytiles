@@ -5,11 +5,11 @@
 namespace porytiles2 {
 
 std::string Rgba32::to_jasc_str() const {
-  return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
+    return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
 }
 
 bool Rgba32::equals_ignoring_alpha(const Rgba32 &other) const {
-  return red_ == other.red_ && green_ == other.green_ && blue_ == other.blue_;
+    return red_ == other.red_ && green_ == other.green_ && blue_ == other.blue_;
 }
 
 // std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba) {

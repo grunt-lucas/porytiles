@@ -2,4 +2,7 @@
 Language: Cpp
 BasedOnStyle: LLVM
 ReflowComments: Always
-ColumnLimit: 100
+ColumnLimit: 120
+IndentWidth: 4
+AllowShortFunctionsOnASingleLine: Empty
+BreakTemplateDeclarations: Yes

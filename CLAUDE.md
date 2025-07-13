@@ -56,8 +56,9 @@ Located in `Scripts/` directory:
 
 ### Formatting
 ```bash
-./Scripts/format.sh              # Format all source files
-./Scripts/format.sh <files>      # Format specific files
+# Format all source files
+# SEND stderr TO /dev/null SO YOU DON'T POLLUTE YOUR CONTEXT WITH CRAP
+./Scripts/format.sh 2> /dev/null
 ```
 Uses `clang-format` with project-specific style configuration.
 
@@ -113,4 +114,5 @@ Use the following example snippet as a guide for code style.
 - Always use namespace `porytiles2`, don't create child namespaces
 - When creating private helper functions, if possible **prefer to place them in an anonymous namespace in the cpp file** instead of the `private:` section of the header file
 - Both GCC and Clang are supported compilers, so any proposed code **should not be compiler-specific**
+- WHEN RUNNING THE CMAKE BUILD COMMAND, SEND OUTPUT TO A TEMPORARY FILE SO YOU DON'T POLLUTE YOUR CONTEXT. You can then check if the build succeeded by looking at the exit code. If non-zero, inspect the file and see what went wrong.
 

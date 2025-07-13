@@ -17,21 +17,21 @@ namespace porytiles2 {
  * mechanisms.
  */
 class RgbaImageLoader {
-public:
-  virtual ~RgbaImageLoader() = default;
+  public:
+    virtual ~RgbaImageLoader() = default;
 
-  /**
-   * @brief Loads an RgbaImage from a file at the given path.
-   *
-   * @details
-   * If the given path does not exist or does not describe a file in a supported format, it returns
-   * an error message. Otherwise, the initialized RgbaImage is returned.
-   *
-   * @param path The path of the image file to load.
-   * @return An RgbaImage Result on success, otherwise an error description.
-   */
-  [[nodiscard]] virtual Result<std::unique_ptr<RgbaImage>>
-  load_from_file(const std::filesystem::path &path) const = 0;
+    /**
+     * @brief Loads an RgbaImage from a file at the given path.
+     *
+     * @details
+     * If the given path does not exist or does not describe a file in a supported format, it
+     * returns an error message. Otherwise, the initialized RgbaImage is returned.
+     *
+     * @param path The path of the image file to load.
+     * @return An RgbaImage Result on success, otherwise an error description.
+     */
+    [[nodiscard]] virtual Result<std::unique_ptr<RgbaImage>>
+    load_from_file(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

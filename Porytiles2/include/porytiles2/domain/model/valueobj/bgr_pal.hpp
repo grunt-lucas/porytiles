@@ -7,10 +7,10 @@
 namespace porytiles2 {
 
 class BgrPal final {
-  std::vector<Bgr15> colors_;
+    std::vector<Bgr15> colors_;
 
-public:
-  BgrPal() = default;
+  public:
+    BgrPal() = default;
 };
 
 } // namespace porytiles2

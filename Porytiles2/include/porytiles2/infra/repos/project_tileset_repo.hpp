@@ -19,20 +19,20 @@ namespace porytiles2 {
  * backing store.
  */
 class ProjectTilesetRepo final : public TilesetRepo {
-public:
-  explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_service,
-                              const gsl::not_null<ProjectPaths *> paths)
-      : TilesetRepo{std::move(metadata_service)}, paths_{paths} {}
+  public:
+    explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_service,
+                                const gsl::not_null<ProjectPaths *> paths)
+        : TilesetRepo{std::move(metadata_service)}, paths_{paths} {}
 
-  [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const override;
+    [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const override;
 
-  [[nodiscard]] bool exists(const std::string &name) const override;
+    [[nodiscard]] bool exists(const std::string &name) const override;
 
-protected:
-  [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) override;
+  protected:
+    [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) override;
 
-private:
-  const ProjectPaths *paths_;
+  private:
+    const ProjectPaths *paths_;
 };
 
 } // namespace porytiles2

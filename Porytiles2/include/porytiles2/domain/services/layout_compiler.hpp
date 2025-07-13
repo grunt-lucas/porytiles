@@ -15,11 +15,10 @@ namespace porytiles2 {
  * Service interface for compiling a PorytilesLayoutComponent into a PorymapLayoutComponent.
  */
 class LayoutCompiler {
-public:
-  virtual ~LayoutCompiler() = default;
+  public:
+    virtual ~LayoutCompiler() = default;
 
-  virtual Result<std::unique_ptr<PorymapLayoutComponent>>
-  compile(const PorytilesLayoutComponent &layout) = 0;
+    virtual Result<std::unique_ptr<PorymapLayoutComponent>> compile(const PorytilesLayoutComponent &layout) = 0;
 };
 
 } // namespace porytiles2
