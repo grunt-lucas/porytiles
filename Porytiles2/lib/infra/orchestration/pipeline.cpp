@@ -75,7 +75,7 @@ Result<void> Pipeline::run() const {
         }
 
         // Execute the operation
-        auto result = op->execute(inputs);
+        auto result = op->apply(inputs);
         if (!result.has_value()) {
             return std::unexpected{fmt::format("operation '{}' failed: {}", op->name(), result.error())};
         }

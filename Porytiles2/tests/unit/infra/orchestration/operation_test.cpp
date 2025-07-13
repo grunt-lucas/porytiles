@@ -30,6 +30,11 @@ class TestOperation final : public Operation {
         return outputs;
     }
 
+    void set_multiplier(const int value) {
+        multiplier_ = value;
+    }
+
+  protected:
     [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         const auto num1 = inputs.get_unwrapped<int>("num1").value();
         const auto num2 = inputs.get_unwrapped<int>("num2").value();
@@ -37,10 +42,6 @@ class TestOperation final : public Operation {
         OperandBundle outputs{};
         outputs.put("sum", sum);
         return outputs;
-    }
-
-    void set_multiplier(const int value) {
-        multiplier_ = value;
     }
 
   private:
@@ -57,7 +58,7 @@ TEST(OperationTests, BasicOperationFunctionsShouldWork) {
     TestOperation operation{&engine};
     operation.set_multiplier(10);
 
-    const auto result = operation.execute(inputs);
+    const auto result = operation.apply(inputs);
     ASSERT_TRUE(result.has_value());
 
     const auto &map = result.value();
