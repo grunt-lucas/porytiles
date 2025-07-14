@@ -76,12 +76,17 @@ class ArtifactMetadataProvider {
     get_porytiles_timestamps(const Tileset &tileset) const = 0;
 
     /**
-     * @brief Determines if any Porymap assets are newer than any Porytiles assets.
+     * @brief Determines if the oldest Porymap asset is newer than the newest Porytiles asset.
      *
-     * @param tileset The Tileset to check.
+     * @details
+     * If the oldest Porymap asset is newer than the newest Porytiles asset, then it's safe to assume there are no
+     * uncompiled changes present in the Porytiles assets. Compiler services can benefit from this information to
+     * eliminate duplicate or unnecessary work.
+     *
+     * @param tileset_name The name of the tileset for which to load checksums.
      * @return True if Porymap assets are newer, false otherwise.
      */
-    [[nodiscard]] virtual bool are_porymap_assets_newer(const Tileset &tileset) const = 0;
+    [[nodiscard]] virtual bool are_porymap_assets_newer(const std::string &tileset_name) const = 0;
 };
 
 } // namespace porytiles2

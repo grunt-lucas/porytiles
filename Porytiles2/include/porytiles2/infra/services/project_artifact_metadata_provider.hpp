@@ -34,7 +34,7 @@ class ProjectArtifactMetadataProvider final : public ArtifactMetadataProvider {
     [[nodiscard]] std::unordered_map<std::string, Timestamp>
     get_porytiles_timestamps(const Tileset &tileset) const override;
 
-    [[nodiscard]] bool are_porymap_assets_newer(const Tileset &tileset) const override;
+    [[nodiscard]] bool are_porymap_assets_newer(const std::string &tileset_name) const override;
 
   private:
     const ProjectPaths *paths_;
