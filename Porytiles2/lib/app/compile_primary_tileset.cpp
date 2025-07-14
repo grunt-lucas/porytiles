@@ -21,8 +21,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     auto stored_checksums = metadata_service_->load_stored_checksums(tileset_name);
 
     for (const auto &[artifact, current_sum] : current_checksums) {
-        auto stored_it = stored_checksums.find(artifact);
-        if (stored_it != stored_checksums.end() && stored_it->second != current_sum) {
+        if (stored_checksums.contains(artifact) && stored_checksums[artifact] != current_sum) {
             // TODO : instead of bailing early, collect all errors and bail at the end
             return std::unexpected{"unimported changes present in Porymap asset " + artifact};
         }
