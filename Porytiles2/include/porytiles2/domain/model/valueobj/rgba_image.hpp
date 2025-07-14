@@ -10,9 +10,8 @@ namespace porytiles2 {
  * @brief An image with Rgba32 pixel values.
  *
  * @details
- * Clients who need to operate on RGB images can use this class to read image
- * data and manipulate image contents. This value type makes no assumptions
- * about the underlying image storage format.
+ * Clients who need to operate on RGB images can use this class to read image data and manipulate image contents. This
+ * value type makes no assumptions about the underlying image storage format.
  */
 class RgbaImage {
   public:
