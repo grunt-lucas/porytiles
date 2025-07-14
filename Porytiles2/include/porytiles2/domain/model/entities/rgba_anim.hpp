@@ -7,12 +7,13 @@
 namespace porytiles2 {
 
 class RgbaAnim {
+  public:
+    RgbaAnim() = default;
+
+  private:
     std::vector<RgbaTile> key_frame_;
     std::vector<std::vector<RgbaTile>> frames_;
     std::string name_;
-
-  public:
-    RgbaAnim() = default;
 };
 
 } // namespace porytiles2
