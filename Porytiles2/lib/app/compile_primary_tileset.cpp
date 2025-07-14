@@ -28,7 +28,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     }
 
     // 3. Exit early if no changes in Porytiles assets to compile
-    if (metadata_service_->are_porymap_assets_newer(*tileset)) {
+    if (metadata_service_->are_porymap_assets_newer(tileset->name())) {
         // TODO : display this message to the user
         // nothing to do - Porymap assets are newer than Porytiles assets
         return {};
