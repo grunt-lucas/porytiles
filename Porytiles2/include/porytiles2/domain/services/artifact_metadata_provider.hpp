@@ -29,8 +29,7 @@ class ArtifactMetadataProvider {
     virtual ~ArtifactMetadataProvider() = default;
 
     /**
-     * @brief Computes checksums for the artifacts that correspond to the given Tileset's
-     * PorymapTilesetComponent.
+     * @brief Computes checksums for the artifacts that correspond to the given Tileset's PorymapTilesetComponent.
      *
      * @param tileset The Tileset for which to compute checksums.
      * @return A mapping of artifact identifiers to their computed checksum.
@@ -38,16 +37,28 @@ class ArtifactMetadataProvider {
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
     compute_porymap_checksums(const Tileset &tileset) const = 0;
 
+    /**
+     * @brief Loads previously stored checksums for the given tileset.
+     *
+     * @param tileset_name The name of the tileset for which to load checksums.
+     * @return A mapping of artifact identifiers to their stored checksums.
+     */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
     load_stored_checksums(const std::string &tileset_name) const = 0;
 
+    /**
+     * @brief Stores checksums for the given tileset to persistent storage.
+     *
+     * @param tileset_name The name of the tileset for which to store checksums.
+     * @param checksums A mapping of artifact identifiers to their checksums to be stored.
+     * @return Result indicating success or failure of the storage operation.
+     */
     [[nodiscard]] virtual Result<void>
     store_checksums(const std::string &tileset_name,
                     const std::unordered_map<std::string, std::string> &checksums) const = 0;
 
     /**
-     * @brief Gets the modification timestamps for all Porymap artifacts associated with the given
-     * Tileset.
+     * @brief Gets the modification timestamps for all Porymap artifacts associated with the given Tileset.
      *
      * @param tileset The Tileset for which to get Porymap artifact timestamps.
      * @return A mapping of artifact identifiers to their modification timestamps.
@@ -56,8 +67,7 @@ class ArtifactMetadataProvider {
     get_porymap_timestamps(const Tileset &tileset) const = 0;
 
     /**
-     * @brief Gets the modification timestamps for all Porytiles artifacts associated with the given
-     * Tileset.
+     * @brief Gets the modification timestamps for all Porytiles artifacts associated with the given Tileset.
      *
      * @param tileset The Tileset for which to get Porytiles artifact timestamps.
      * @return A mapping of artifact identifiers to their modification timestamps.
