@@ -43,7 +43,7 @@ class RgbaImage {
     /**
      * @brief Sets the Rgba32 color value at a given one-dimensional pixel index.
      *
-     * @param i The one-dimensional pixel idnex.
+     * @param i The one-dimensional pixel index.
      * @param pixel The Rgba32 to set at the given pixel index.
      */
     void set(std::size_t i, const Rgba32 &pixel);
