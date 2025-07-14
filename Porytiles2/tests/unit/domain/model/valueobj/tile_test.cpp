@@ -2,9 +2,9 @@
 
 #include <tuple>
 
-#include <fmt/format.h>
+#include "fmt/format.h"
 
-#include <porytiles2/domain/model/valueobj/tile.hpp>
+#include "porytiles2/domain/model/valueobj/tile.hpp"
 
 using namespace porytiles2;
 
@@ -13,9 +13,9 @@ TEST(TileTests, AtAndSetShouldWork) {
 
     EXPECT_EQ(0, tile.at(0));
     EXPECT_EQ(0, tile.at(63));
-    EXPECT_DEATH(std::ignore = tile.at(tile_size), "index 64 out of bounds");
-    EXPECT_DEATH(std::ignore = tile.at(tile_side_length, 2), "row index 8 out of bounds");
-    EXPECT_DEATH(std::ignore = tile.at(0, tile_side_length), "col index 8 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.at(Tile<int>::tile_size), "index 64 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.at(Tile<int>::tile_side_length, 2), "row index 8 out of bounds");
+    EXPECT_DEATH(std::ignore = tile.at(0, Tile<int>::tile_side_length), "col index 8 out of bounds");
 
     // Set value using index, fetch using row/col
     tile.set(22, 10);

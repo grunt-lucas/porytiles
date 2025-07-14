@@ -7,13 +7,17 @@
 
 namespace porytiles2 {
 
-constexpr std::size_t tile_side_length = 8;
-constexpr std::size_t tile_size = tile_side_length * tile_side_length;
-
-/// @brief A single 8x8 pixel tile with an arbitrary pixel data type.
+/**
+ * @brief A single 8x8 pixel tile with an arbitrary pixel data type.
+ *
+ * @tparam P The pixel type for this Tile
+ */
 template <typename P>
 class Tile {
   public:
+    static constexpr std::size_t tile_side_length = 8;
+    static constexpr std::size_t tile_size = tile_side_length * tile_side_length;
+
     virtual ~Tile() = default;
 
     explicit Tile() : pix_{} {}

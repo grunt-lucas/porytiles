@@ -2,8 +2,9 @@
 
 #include <filesystem>
 
-#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
-#include "porytiles2/domain/services/rgba_image_saver.hpp"
+#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "porytiles2/domain/model/valueobj/rgba32.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
@@ -15,11 +16,11 @@ namespace porytiles2 {
  * from an RgbaImage. However, these external library details are entirely encapsulated within the
  * implementation. Users of the Porytiles library need not concern themselves with CImg details.
  */
-class PngRgbaImageSaver final : public RgbaImageSaver {
+class PngRgbaImageSaver final {
   public:
     PngRgbaImageSaver() = default;
 
-    [[nodiscard]] Result<void> save_to_file(const RgbaImage &image, const std::filesystem::path &path) const override;
+    [[nodiscard]] Result<void> save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2

@@ -8,7 +8,8 @@
 #include "CImg.h"
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
+#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "porytiles2/domain/model/valueobj/rgba32.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -16,7 +17,7 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<std::unique_ptr<RgbaImage>> PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
+Result<std::unique_ptr<Image<Rgba32>>> PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
     CImg<std::uint8_t> cimg_png{};
     const auto path_c_str = path.c_str();
     try {
@@ -32,7 +33,7 @@ Result<std::unique_ptr<RgbaImage>> PngRgbaImageLoader::load_from_file(const std:
     const auto width = static_cast<std::size_t>(cimg_png.width());
     const auto height = static_cast<std::size_t>(cimg_png.height());
 
-    RgbaImage image{width, height};
+    Image<Rgba32> image{width, height};
 
     for (std::size_t row = 0; row < height; ++row) {
         for (std::size_t col = 0; col < width; ++col) {
@@ -47,7 +48,7 @@ Result<std::unique_ptr<RgbaImage>> PngRgbaImageLoader::load_from_file(const std:
         }
     }
 
-    return std::make_unique<RgbaImage>(std::move(image));
+    return std::make_unique<Image<Rgba32>>(std::move(image));
 }
 
 } // namespace porytiles2

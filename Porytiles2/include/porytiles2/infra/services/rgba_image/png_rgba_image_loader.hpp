@@ -3,13 +3,14 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
-#include "porytiles2/domain/services/rgba_image_loader.hpp"
+#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "porytiles2/domain/model/valueobj/rgba32.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief An implementation of RgbaImageLoader that reads PNG files.
+ * @brief An image loader that reads PNG files to create an Image with Rgba32 pixel type.
  *
  * @details
  * This loader's underlying implementation uses the CImg image processing library to read PNG data
@@ -17,11 +18,11 @@ namespace porytiles2 {
  * within the implementation. Users of the Porytiles library need not concern themselves with CImg
  * details.
  */
-class PngRgbaImageLoader final : public RgbaImageLoader {
+class PngRgbaImageLoader final {
   public:
     PngRgbaImageLoader() = default;
 
-    [[nodiscard]] Result<std::unique_ptr<RgbaImage>> load_from_file(const std::filesystem::path &path) const override;
+    [[nodiscard]] Result<std::unique_ptr<Image<Rgba32>>> load_from_file(const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2

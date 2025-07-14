@@ -7,7 +7,8 @@
 #include "CImg.h"
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
+#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "porytiles2/domain/model/valueobj/rgba32.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -15,7 +16,7 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<void> PngRgbaImageSaver::save_to_file(const RgbaImage &image, const std::filesystem::path &path) const {
+Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const {
     const auto width = static_cast<int>(image.width());
     const auto height = static_cast<int>(image.height());
     constexpr auto spectrum = 4; // RGBA
