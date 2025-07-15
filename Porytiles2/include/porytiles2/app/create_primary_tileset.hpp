@@ -4,45 +4,41 @@
 #include <string>
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/artifact_metadata_provider.hpp"
+#include "porytiles2/domain/services/asset_generator.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief Use case for compiling a primary Tileset.
+ * @brief Use case for creating a primary Tileset.
  */
-class CompilePrimaryTileset {
+class CreatePrimaryTileset {
   public:
     /**
-     * @brief Constructs a CompilePrimaryTileset use case with the given repositories and services.
+     * @brief Constructs a CreatePrimaryTileset use case with the given repositories and services.
      *
      * @param tileset_repo A pointer to the TilesetRepo for this use case.
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
      * @param metadata_provider A pointer to the ArtifactMetadataService for this use case.
      */
-    CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler,
-                          std::unique_ptr<ArtifactMetadataProvider> metadata_provider)
+    CreatePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler,
+                         std::unique_ptr<ArtifactMetadataProvider> metadata_provider)
         : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)},
           metadata_provider_{std::move(metadata_provider)} {}
 
     /**
-     * @brief Compiles the primary Tileset with the given tileset name.
+     * @brief Creates the primary Tileset with the given tileset name.
      *
-     * @details
-     * Given a primary tileset by name, compile the PorytilesTileset assets into PorymapTileset assets. Uses the use
-     * case's configured repos to load and save the tileset assets. Uses the given TilesetCompilationService to perform
-     * the compilation operation.
-     *
-     * @param tileset_name The name of the primary Tileset to compile.
+     * @param tileset_name The name of the primary Tileset to create.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] Result<void> compile(const std::string &tileset_name) const;
+    [[nodiscard]] Result<void> create(const std::string &tileset_name) const;
 
   private:
     std::unique_ptr<TilesetRepo> tileset_repo_;
     std::unique_ptr<PrimaryTilesetCompiler> compiler_;
+    std::unique_ptr<AssetGenerator> asset_generator_;
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
 };
 

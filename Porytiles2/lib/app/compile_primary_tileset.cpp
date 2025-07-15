@@ -17,8 +17,8 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     const auto tileset = std::move(maybe_tileset.value());
 
     // 2. Check for unimported changes
-    auto current_checksums = metadata_service_->compute_porymap_checksums(*tileset);
-    auto stored_checksums = metadata_service_->load_stored_checksums(tileset_name);
+    auto current_checksums = metadata_provider_->compute_porymap_checksums(*tileset);
+    auto stored_checksums = metadata_provider_->load_stored_checksums(tileset_name);
 
     for (const auto &[artifact, current_sum] : current_checksums) {
         if (stored_checksums.contains(artifact) && stored_checksums[artifact] != current_sum) {
@@ -28,7 +28,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     }
 
     // 3. Exit early if no changes in Porytiles assets to compile
-    if (metadata_service_->are_porymap_assets_newer(tileset->name())) {
+    if (metadata_provider_->are_porymap_assets_newer(tileset->name())) {
         // TODO : display this message to the user
         // nothing to do - Porymap assets are newer than Porytiles assets
         return {};
@@ -36,7 +36,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
 
     // 4. Perform compilation logic
     const auto porytiles_component = tileset->porytiles_component();
-    auto maybe_porymap_component = compiler_service_->compile(porytiles_component);
+    auto maybe_porymap_component = compiler_->compile(porytiles_component);
     if (!maybe_porymap_component.has_value()) {
         return std::unexpected{maybe_porymap_component.error()};
     }
@@ -48,6 +48,11 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     // 6. Persist updated tileset with updated Porymap artifact checksums
     if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
         return std::unexpected{save_result.error()};
+    }
+    auto new_checksums = metadata_provider_->compute_porymap_checksums(*tileset);
+    auto store_checksum_result = metadata_provider_->store_checksums(tileset_name, new_checksums);
+    if (!store_checksum_result.has_value()) {
+        return std::unexpected{store_checksum_result.error()};
     }
 
     return {};
