@@ -30,8 +30,9 @@ porytiles2 create-tileset MyTileset
 1. Check if the primary tileset already exists. If so, abort with an error message.
 2. Initialize a `PorytilesTilesetComponent` with default assets.
 3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
-4. Initialize a new `Tileset` aggregate with the components, while also generating the initial artifact checksums.
-5. Persist the `Tileset` (including updating the right source and header files, i.e. `graphics.h`, `headers.h`, and `metatiles.h`).
+4. Initialize a new `Tileset` aggregate with the components.
+5. Generate checksums and update the source and header files.
+6. Persist the `Tileset`.
 
 ### Outputs
 The resulting tileset directory tree:

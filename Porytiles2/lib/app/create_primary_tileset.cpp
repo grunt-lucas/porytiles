@@ -27,22 +27,25 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     }
     auto porymap_component = std::move(maybe_porymap_component.value());
 
-    // 4. Initialize a new `Tileset` aggregate with the components, also generating the initial artifact checksums.
+    // 4. Initialize a new `Tileset` aggregate with the components.
     Tileset tileset{std::move(porytiles_component), std::move(porymap_component)};
 
-    // 5. Persist the `Tileset` (including updating the right source/header files and generating checksums).
+    // 5. Generate checksums and update the source and header files.
     auto new_checksums = metadata_provider_->compute_porymap_checksums(tileset);
     if (auto store_checksum_result = metadata_provider_->store_checksums(tileset_name, new_checksums);
         !store_checksum_result.has_value()) {
         return std::unexpected{store_checksum_result.error()};
     }
+    // TODO : this should use HeaderFileParser for more sophisticated error handling
+    if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
+        !header_update_result.has_value()) {
+        return std::unexpected{header_update_result.error()};
+    }
+
+    // 6. Persist the `Tileset`.
     if (const auto save_result = tileset_repo_->save(tileset); !save_result.has_value()) {
         return std::unexpected{save_result.error()};
     }
-    /*
-     * TODO : use HeaderFileParser, CSourceGenerator, and CSourceFileModifier to update graphics.h, headers.h, and
-     * metatiles.h
-     */
 
     return {};
 }
