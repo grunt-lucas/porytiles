@@ -6,8 +6,8 @@
 
 #include "porytiles2/domain/model/valueobj/image.hpp"
 #include "porytiles2/domain/model/valueobj/rgba32.hpp"
-#include "porytiles2/infra/services/rgba_image/png_rgba_image_loader.hpp"
-#include "porytiles2/infra/services/rgba_image/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/image/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/image/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
