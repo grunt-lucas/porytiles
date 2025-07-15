@@ -28,6 +28,10 @@ ProjectArtifactMetadataProvider::get_porytiles_timestamps(const Tileset &tileset
     panic("TODO : unimplemented");
 }
 
+bool ProjectArtifactMetadataProvider::are_porytiles_assets_newer(const std::string &tileset_name) const {
+    panic("TODO : unimplemented");
+}
+
 bool ProjectArtifactMetadataProvider::are_porymap_assets_newer(const std::string &tileset_name) const {
     panic("TODO : unimplemented");
 }
