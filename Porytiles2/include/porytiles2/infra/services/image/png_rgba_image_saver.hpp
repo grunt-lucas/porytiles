@@ -9,11 +9,11 @@
 namespace porytiles2 {
 
 /**
- * @brief An implementation of RgbaImageSaver that writes PNG files.
+ * @brief An image saver that saves PNG files from an Image with an Rgba32 pixel type.
  *
  * @details
  * This saver's underlying implementation uses the CImg image processing library to write PNG data
- * from an RgbaImage. However, these external library details are entirely encapsulated within the
+ * from an rgba Image. However, these external library details are entirely encapsulated within the
  * implementation. Users of the Porytiles library need not concern themselves with CImg details.
  */
 class PngRgbaImageSaver final {
