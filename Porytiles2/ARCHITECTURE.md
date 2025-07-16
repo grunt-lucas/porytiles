@@ -217,15 +217,15 @@ TODO
 TODO : EXPLAIN
 
 ## Incremental Build Support
-User can specify an incremental tileset build by specifying `--incremental`
-or by setting `incremental = true` in the tileset TOML config.
+User can specify an incremental tileset build by specifying `--incremental=keep-unused`
+or by setting `incremental = keep-unused` in the tileset TOML config.
 
 When incremental is set,
 compilation will not disturb currently existing Porymap assets.
 That is, existing palettes will be treated as "overrides" in the compilation,
 and existing tiles will be left undisturbed (but reused if possible).
-Incremental builds assume any transparent tile is available, and any `0 0 0`
-in a palette can be assumed as a wildcard.
+Incremental builds assume any transparent tile is available,
+and any `0 0 0` in a palette can be assumed as a wildcard.
 
 It should be noted:
 since incremental builds don't disturb existing assets,
@@ -234,6 +234,15 @@ That is, if you remove all instances of a given tile from the metatile sheets,
 an incremental build will still leave that tile in `tiles.png`.
 This is so that incremental builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
+We can provide some kind of option like `--incremental=remove-unused` to modify this behavior?
+
+One problem we need to solve:
+if we pre-populate the final `tiles.png` representation,
+we'll need some way to provide a normalized view of the pre-populated tiles.
+Consider the case where we do an incremental build on a vanilla tileset.
+The tiles in a vanilla `tiles.png` are not normalized,
+so in order for Porytiles to successfully avoid duplicating assets
+we'll need some kind of normalized view that is also aware of the underlying "true" tile configuration. 
 
 ## Layout Metatile Generation
 Layout compilation runs with default: `--unknown-metatile-policy=reject`.
