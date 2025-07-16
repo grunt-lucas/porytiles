@@ -11,6 +11,9 @@ namespace porytiles2 {
 class PrimaryTilesetCompilerPipeline final : PrimaryTilesetCompiler {
   public:
     Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset) override;
+
+    Result<std::unique_ptr<PorymapTilesetComponent>>
+    compile_incremental(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context) override;
 };
 
 } // namespace porytiles2

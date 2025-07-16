@@ -71,7 +71,7 @@ elif [[ ${args[0]} == "NOTE" || ${args[0]} == "note" ]]; then
     rg 'NOTE :'
 elif [[ ${args[0]} == "FEATURE" || ${args[0]} == "feature" ]]; then
     rg 'FEATURE :'
-elif [[ ${args[0]} == "tests" ]] then
+elif [[ ${args[0]} == "tests" ]]; then
     rg 'TODO tests :'
 else
     echo "error: unknown command \`${args[0]}'"
