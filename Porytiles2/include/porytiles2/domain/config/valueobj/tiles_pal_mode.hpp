@@ -26,7 +26,7 @@ enum class TilesPalMode { true_color, greyscale };
     case TilesPalMode::greyscale:
         return "greyscale";
     }
-    panic("unhandled OutputPalette value");
+    panic("unhandled TilesPalMode value");
 }
 
 inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m) {

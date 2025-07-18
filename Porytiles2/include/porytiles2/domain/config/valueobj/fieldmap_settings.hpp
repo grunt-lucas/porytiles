@@ -4,12 +4,12 @@
 
 namespace porytiles2 {
 
-class FieldmapConfig2 {
+class FieldmapSettings {
   public:
-    FieldmapConfig2(const std::size_t num_tiles_in_primary, const std::size_t num_tiles_total,
-                    const std::size_t num_metatiles_in_primary, const std::size_t num_metatiles_total,
-                    const std::size_t num_pals_in_primary, const std::size_t num_pals_total,
-                    const std::size_t max_map_data_size, const std::size_t num_tiles_per_metatile)
+    FieldmapSettings(const std::size_t num_tiles_in_primary, const std::size_t num_tiles_total,
+                     const std::size_t num_metatiles_in_primary, const std::size_t num_metatiles_total,
+                     const std::size_t num_pals_in_primary, const std::size_t num_pals_total,
+                     const std::size_t max_map_data_size, const std::size_t num_tiles_per_metatile)
         : num_tiles_in_primary_(num_tiles_in_primary), num_tiles_total_(num_tiles_total),
           num_metatiles_in_primary_(num_metatiles_in_primary), num_metatiles_total_(num_metatiles_total),
           num_pals_in_primary_(num_pals_in_primary), num_pals_total_(num_pals_total),
