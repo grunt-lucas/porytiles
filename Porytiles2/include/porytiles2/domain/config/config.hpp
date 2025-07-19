@@ -7,11 +7,11 @@
 
 namespace porytiles2 {
 
-class Config {
+class Config final {
   public:
     Config() = default;
 
-    [[nodiscard]] virtual std::unique_ptr<Config> merge(const Config &other) const = 0;
+    [[nodiscard]] std::optional<IncrementalBuildMode> incremental_build_mode() const;
 
   private:
     std::optional<IncrementalBuildMode> incremental_build_mode_;
