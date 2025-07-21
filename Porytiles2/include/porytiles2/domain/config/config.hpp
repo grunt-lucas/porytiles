@@ -1,20 +1,20 @@
 #pragma once
 
-#include <memory>
-#include <optional>
-
 #include "porytiles2/domain/config/valueobj/incremental_build_mode.hpp"
+#include "porytiles2/domain/config/valueobj/tileset_settings.hpp"
 
 namespace porytiles2 {
 
-class Config final {
+/**
+ * @brief Interface that defines a complete application configuration.
+ */
+class Config {
   public:
-    Config() = default;
+    virtual ~Config() = default;
 
-    [[nodiscard]] std::optional<IncrementalBuildMode> incremental_build_mode() const;
+    [[nodiscard]] virtual TilesetSettings tileset_settings(const std::string &tileset_name) const = 0;
 
-  private:
-    std::optional<IncrementalBuildMode> incremental_build_mode_;
+    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode() const = 0;
 };
 
 } // namespace porytiles2

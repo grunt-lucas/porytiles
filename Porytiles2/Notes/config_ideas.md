@@ -34,7 +34,7 @@ Porytiles2/
 
 ### Config (Aggregate Root)
 
-```cpp
+```c++
 // include/porytiles2/domain/config/config.hpp
 namespace porytiles2 {
 
@@ -77,7 +77,7 @@ class Config {
 
 ### Value Objects
 
-```cpp
+```c++
 // include/porytiles2/domain/config/fieldmap_settings.hpp
 namespace porytiles2 {
 
@@ -102,7 +102,7 @@ class FieldmapSettings {
 } // namespace porytiles2
 ```
 
-```cpp
+```c++
 // include/porytiles2/domain/config/palette_assignment_settings.hpp
 namespace porytiles2 {
 
@@ -131,7 +131,7 @@ class PaletteAssignmentSettings {
 
 ### Repository Interface
 
-```cpp
+```c++
 // include/porytiles2/domain/repos/config_repository.hpp
 namespace porytiles2 {
 
@@ -151,7 +151,7 @@ class ConfigRepository {
 
 ## Application Layer
 
-```cpp
+```c++
 // include/porytiles2/application/services/config_service.hpp
 namespace porytiles2 {
 
@@ -181,7 +181,7 @@ class ConfigService {
 
 ### Partial Configuration
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/partial_config.hpp
 namespace porytiles2 {
 
@@ -218,7 +218,7 @@ struct PartialConfig {
 
 ### Configuration Sources
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/cli_config_source.hpp
 namespace porytiles2 {
 
@@ -240,7 +240,7 @@ class CliConfigSource {
 } // namespace porytiles2
 ```
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/env_config_source.hpp
 namespace porytiles2 {
 
@@ -262,7 +262,7 @@ class EnvConfigSource {
 } // namespace porytiles2
 ```
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/toml_config_source.hpp
 namespace porytiles2 {
 
@@ -286,7 +286,7 @@ class TomlConfigSource {
 
 ### Configuration Merging
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/config_layer_merger.hpp
 namespace porytiles2 {
 
@@ -318,7 +318,7 @@ class ConfigLayerMerger {
 
 ### Repository Implementation
 
-```cpp
+```c++
 // include/porytiles2/infrastructure/config/config_repository_impl.hpp
 namespace porytiles2 {
 
@@ -368,3 +368,66 @@ class ConfigRepositoryImpl : public ConfigRepository {
 4. Default values (lowest priority)
 
 This design maintains clean architecture boundaries while providing the flexibility to add new configuration sources or change implementation details without affecting the domain model.
+
+---
+
+# My Design
+
+## Config Interface
+```c++
+class Config {
+  public:
+    virtual ~Config() = default;
+
+    // Fieldmap Settings
+    [[nodiscard]] virtual std::size_t num_tiles_primary(const std::string &tileset_name) const = 0;
+    
+    [[nodiscard]] virtual std::size_t num_tiles_total(const std::string &tileset_name) const = 0;
+    
+    [[nodiscard]] std::size_t num_tiles_secondary(const std::string &tileset_name) const {
+        if (num_tiles_total() < num_tiles_primary()) {
+            panic("bad state");
+        }
+        return num_tiles_total() - num_tiles_primary();
+    }
+
+    // Build settings
+    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const = 0;
+};
+```
+The Config interface defines the complete configuration for Porytiles.
+Domain and app layer code operates with this interface -- it doesn't need to worry about implementation.
+Every config value is either virtual (i.e. comes from user) or is defined in terms of other virtual values
+
+## LazyLayeredConfig
+```c++
+class LazyLayeredConfig : public Config {
+  public:
+    [[nodiscard]] std::size_t num_tiles_primary(const std::string &tileset_name) const override {
+    
+    }
+    
+    [[nodiscard]] virtual std::size_t num_tiles_total(const std::string &tileset_name) const override {
+    
+    }
+
+    // Build settings
+    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const override {
+    
+    }
+};
+```
+The LazyLayeredConfig provides a Config implementation that pulls a final config value from multiple possible sources.
+It should:
++ provide the value from the highest priority layer, lazily (i.e. only loads upon first request, then caches)
++ track the provenance of the value (e.g. did it come from tileset TOML? environment? default value?)
++ hard panic if no value is found, this is a programmer error (programmer should at least provide a default layer)
++ provide a way to dump itself for debugging purposes
+
+## ConfigLayer
+```c++
+class ConfigLayer {
+  public:
+    virtual std::optional<std::size_t> num_tiles_primary(const std::string &tileset_name) const = 0;
+};
+```
