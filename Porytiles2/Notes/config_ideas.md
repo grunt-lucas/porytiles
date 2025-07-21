@@ -396,8 +396,8 @@ class Config {
 };
 ```
 The Config interface defines the complete configuration for Porytiles.
-Domain and app layer code operates with this interface -- it doesn't need to worry about implementation.
-Every config value is either virtual (i.e. comes from user) or is defined in terms of other virtual values
+Domain and app layer operate with this interface—they don't need to worry about implementation.
+Every config value is either virtual (i.e. comes from user) or is defined in terms of other virtual values.
 
 ## LazyLayeredConfig
 ```c++
@@ -417,17 +417,73 @@ class LazyLayeredConfig : public Config {
     }
 };
 ```
-The LazyLayeredConfig provides a Config implementation that pulls a final config value from multiple possible sources.
+The LazyLayeredConfig provides a Config implementation that pulls a config value from multiple possible sources.
 It should:
 + provide the value from the highest priority layer, lazily (i.e. only loads upon first request, then caches)
 + track the provenance of the value (e.g. did it come from tileset TOML? environment? default value?)
 + hard panic if no value is found, this is a programmer error (programmer should at least provide a default layer)
 + provide a way to dump itself for debugging purposes
 
-## ConfigLayer
+## ConfigLayerProvider
 ```c++
-class ConfigLayer {
+template <typename T>
+struct LayerValue {
+    std::optional<T> value;
+    std::string metadata;
+};
+
+class ConfigLayerProvider {
   public:
-    virtual std::optional<std::size_t> num_tiles_primary(const std::string &tileset_name) const = 0;
+    virtual ~ConfigLayerProvider() = default;
+  
+    // The name of this provider, can be displayed for debugging purposes
+    virtual std::string name() const = 0;
+  
+    virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset_name) const = 0;
+    
+    virtual LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset_name) const = 0;
 };
 ```
+The ConfigLayerProvider defines an interface to which any ConfigLayerProvider must adhere.
+It's basically just a copy of Config but with std::optional return types.
+It's technically a DRY violation-a better solution would be to use some kind of code-gen,
+wherein we define the config params and both Config and ConfigLayerProvider are generated from the spec.
+
+## ConfigLayerProvider Implementation Examples
+```c++
+class TomlConfigLayerProvider : public ConfigLayerProvider {
+  public:
+    TomlConfigLayerProvider(gsl::non_null<ProjectPaths *> paths);
+  
+    std::string name() const override {
+        return "Toml";
+    }
+  
+    std::optional<std::size_t> num_tiles_primary(const std::string &tileset_name) const override {
+        // Open file at:
+        //   paths->toml_config(tileset_name)
+        // Read value if present
+        return LayerValue{parsed, "primary.general.fieldmap.num_tiles_primary"};
+    }
+    
+    std::optional<IncrementalBuildMode> incremental_build_mode(const std::string &tileset_name) const override {
+    
+    }
+};
+
+class DefaultConfigLayerProvider : public ConfigLayerProvider {
+  public:  
+    std::string name() const override {
+        return "Default";
+    }
+
+    std::optional<std::size_t> num_tiles_primary(const std::string &tileset_name) const override {
+        return LayerValue{512, ""};
+    }
+    
+    std::optional<IncrementalBuildMode> incremental_build_mode(const std::string &tileset_name) const override {
+        return return LayerValue{IncrementalBuildMode::off, ""};
+    }
+};
+```
+Here's a couple examples of some possible ConfigLayerProvider implementations.
