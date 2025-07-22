@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "porytiles2/domain/config/valueobj/incremental_build_mode.hpp"
 #include "porytiles2/domain/config/valueobj/tileset_settings.hpp"
 

@@ -10,7 +10,7 @@ class ConfigSource {
   public:
     virtual ~ConfigSource() = default;
 
-    [[nodiscard]] virtual LayeredConfig read_config() const = 0;
+    [[nodiscard]] virtual LazyLayeredConfig read_config() const = 0;
 
     /**
      * @brief Gets the name of this config source; useful for debugging.
