@@ -487,3 +487,104 @@ class DefaultConfigLayerProvider : public ConfigLayerProvider {
 };
 ```
 Here's a couple examples of some possible ConfigLayerProvider implementations.
+
+---
+
+# LazyLayeredConfig Implementation Plan
+
+## Class Structure
+The class needs:
+- A vector of `ConfigLayerProvider` pointers ordered by priority (highest first)
+- Mutable cache maps for each config value type
+- Mutable provenance maps to track where each value came from
+
+## Header File Additions
+```c++
+class LazyLayeredConfig final : public Config {
+  public:
+    // Constructor takes providers in priority order (highest priority first)
+    explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigLayerProvider>> providers);
+    
+    // ... existing virtual function declarations ...
+    
+  private:
+    // Helper template for lazy loading and caching
+    template<typename T>
+    T get_value(const std::string &key, 
+                const std::string &tileset_name,
+                std::function<LayerValue<T>(const ConfigLayerProvider&, const std::string&)> getter) const;
+    
+    // Providers in priority order (highest first)
+    std::vector<std::unique_ptr<ConfigLayerProvider>> providers_;
+    
+    // Caches - mutable because we cache on const methods
+    mutable std::unordered_map<std::string, std::size_t> size_t_cache_;
+    mutable std::unordered_map<std::string, IncrementalBuildMode> enum_cache_;
+    
+    // Provenance tracking
+    mutable std::unordered_map<std::string, std::string> provenance_;
+};
+```
+
+## Sample Implementation for `num_tiles_primary`:
+
+```c++
+std::size_t LazyLayeredConfig::num_tiles_primary(const std::string &tileset_name) const {
+    // Create a unique cache key for this value
+    std::string cache_key = fmt::format("num_tiles_primary:{}", tileset_name);
+    
+    // Check if already cached
+    auto it = size_t_cache_.find(cache_key);
+    if (it != size_t_cache_.end()) {
+        return it->second;
+    }
+    
+    // Search through providers in priority order
+    for (const auto &provider : providers_) {
+        LayerValue<std::size_t> layer_value = provider->num_tiles_primary(tileset_name);
+        
+        if (layer_value.value.has_value()) {
+            // Cache the value
+            size_t_cache_[cache_key] = layer_value.value.value();
+            
+            // Track provenance
+            provenance_[cache_key] = fmt::format("{}: {}", 
+                provider->name(), 
+                layer_value.metadata);
+            
+            return layer_value.value.value();
+        }
+    }
+    
+    // No value found in any layer - this is a programmer error
+    panic(fmt::format("No value found for num_tiles_primary({}) in any config layer. "
+                      "Programmer must provide at least a default layer.", tileset_name));
+}
+```
+
+## Generic Helper Template (optional optimization):
+```c++
+template<typename T>
+T LazyLayeredConfig::get_value(
+    const std::string &key,
+    const std::string &tileset_name, 
+    std::function<LayerValue<T>(const ConfigLayerProvider&, const std::string&)> getter) const {
+    
+    // Check appropriate cache based on type
+    // ... implementation details ...
+}
+```
+
+## Key Design Decisions:
+
+1. **Lazy Loading**: Values are only fetched when first requested
+2. **Caching**: Once fetched, values are cached to avoid repeated lookups
+3. **Provenance Tracking**: We store which provider gave us each value with metadata
+4. **Panic on Missing**: If no provider has a value, we panic (programmer error)
+5. **Priority Order**: Providers are consulted in order, first non-empty value wins
+
+The implementation is straightforward - check cache first, then iterate through providers until we find a value, cache it, and return it. All other methods follow the same pattern.
+
+---
+
+
