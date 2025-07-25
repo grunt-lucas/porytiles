@@ -1,5 +1,7 @@
 #pragma once
 
+#include <any>
+#include <unordered_map>
 #include <vector>
 
 #include "porytiles2/domain/config/config.hpp"
@@ -36,22 +38,6 @@ class LazyLayeredConfig final : public Config {
     explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigLayerProvider>> &&providers)
         : providers_{std::move(providers)} {}
 
-    /**
-     * @brief foo
-     *
-     * @tparam Args bar
-     * @param args baz
-     * @return bat
-     */
-    template <typename... Args>
-    static LazyLayeredConfig create(Args &&...args) {
-        static_assert((std::is_base_of_v<ConfigLayerProvider, Args> && ...));
-        std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
-        providers.reserve(sizeof...(args));
-        (providers.push_back(std::forward<Args>(args)), ...);
-        return LazyLayeredConfig{std::move(providers)};
-    }
-
     /*
      * Fieldmap Settings
      */
@@ -81,6 +67,9 @@ class LazyLayeredConfig final : public Config {
   private:
     // Providers in priority order (highest first)
     std::vector<std::unique_ptr<ConfigLayerProvider>> providers_;
+
+    mutable std::unordered_map<std::string, std::string> provenance_;
+    mutable std::unordered_map<std::string, std::any> cache_;
 };
 
 } // namespace porytiles2

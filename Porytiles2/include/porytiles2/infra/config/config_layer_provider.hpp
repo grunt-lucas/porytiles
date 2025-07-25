@@ -19,10 +19,10 @@ struct LayerValue {
 };
 
 /**
- * @brief Defines an interface which Config implementations can use to load config values.
+ * @brief An interface which Config implementations can use to load config values.
  *
  * @details
- * ConfigLayerProvider is basically just a copy of Config but with std::optional return types. It's technically a DRY
+ * ConfigLayerProvider is basically just a copy of Config but with LayerValue return types. It's technically a DRY
  * violation; a better solution would be to use some kind of code-gen, wherein we define the config params and both
  * Config and ConfigLayerProvider are generated from the spec.
  */
