@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -70,6 +71,18 @@ class LazyLayeredConfig final : public Config {
 
     mutable std::unordered_map<std::string, std::string> provenance_;
     mutable std::unordered_map<std::string, std::any> cache_;
+
+    /**
+     * @brief Resolves config values using the common caching and provider iteration pattern.
+     *
+     * @tparam T The return type of the config value
+     * @param cache_key The key to use for caching this value
+     * @param provider_call Function that calls the appropriate method on a ConfigLayerProvider
+     * @return The resolved config value
+     */
+    template <typename T>
+    T resolve_config_value(const std::string &cache_key,
+                           std::function<LayerValue<T>(const ConfigLayerProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2
