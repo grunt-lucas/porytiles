@@ -12,7 +12,7 @@ namespace porytiles2 {
 
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
- * sources.
+ * ConfigLayerProvider.
  *
  * @details
  * LazyLayeredConfig provides the following functionality:
