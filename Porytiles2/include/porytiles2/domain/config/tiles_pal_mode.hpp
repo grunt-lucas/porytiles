@@ -19,7 +19,7 @@ enum class TilesPalMode { true_color, greyscale };
     return std::nullopt;
 }
 
-[[nodiscard]] inline std::string tiles_pal_mode_to_str(const TilesPalMode m) {
+[[nodiscard]] inline std::string to_string(const TilesPalMode m) {
     switch (m) {
     case TilesPalMode::true_color:
         return "true-color";
@@ -30,7 +30,7 @@ enum class TilesPalMode { true_color, greyscale };
 }
 
 inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m) {
-    return os << tiles_pal_mode_to_str(m);
+    return os << to_string(m);
 }
 
 } // namespace porytiles2

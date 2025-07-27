@@ -12,7 +12,7 @@ namespace porytiles2 {
 
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
- * ConfigLayerProvider.
+ * ConfigLayerProviders.
  *
  * @details
  * LazyLayeredConfig provides the following functionality:
@@ -65,12 +65,37 @@ class LazyLayeredConfig final : public Config {
 
     [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const override;
 
+    /**
+     * @brief Dumps the current state of the config for debugging purposes.
+     *
+     * @details
+     * Returns a string showing each cached config key, actual value, and source layer name with metadata.
+     * Only cached values are shown (values that have been requested at least once).
+     *
+     * @return A formatted string representation of the config state
+     */
+    [[nodiscard]] std::string dump() const;
+
+    /**
+     * @brief Forces all configuration values to be cached immediately for all known tilesets.
+     *
+     * @details
+     * This function eagerly evaluates and caches all configuration values by calling each config method.
+     * This is useful for warming up the cache before performance-critical operations or for ensuring
+     * all configuration is validated at startup. The function requires a list of tileset names to
+     * evaluate tileset-specific configuration values.
+     *
+     * @param tileset_names List of tileset names to evaluate configuration for
+     */
+    void warmup_cache(const std::vector<std::string> &tileset_names) const;
+
   private:
     // Providers in priority order (highest first)
     std::vector<std::unique_ptr<ConfigLayerProvider>> providers_;
 
     mutable std::unordered_map<std::string, std::string> provenance_;
     mutable std::unordered_map<std::string, std::any> cache_;
+    mutable std::unordered_map<std::string, std::string> cache_values_;
 
     /**
      * @brief Resolves config values using the common caching and provider iteration pattern.

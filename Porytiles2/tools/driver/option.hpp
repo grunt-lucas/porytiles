@@ -57,7 +57,7 @@ class OptTilesPalMode final : public Opt {
     std::string pal_format_;
 
   public:
-    OptTilesPalMode() : pal_format_{tiles_pal_mode_to_str(porytiles2::TilesPalMode::true_color)} {}
+    OptTilesPalMode() : pal_format_{to_string(porytiles2::TilesPalMode::true_color)} {}
 
     [[nodiscard]] std::string NameShort() const override {
         return "";
