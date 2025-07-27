@@ -2,6 +2,7 @@
 
 #include <any>
 #include <functional>
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -43,17 +44,17 @@ class LazyLayeredConfig final : public Config {
      * Fieldmap Settings
      */
 
-    [[nodiscard]] std::size_t num_tiles_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_tiles_primary() const override;
 
-    [[nodiscard]] std::size_t num_tiles_total(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_tiles_total() const override;
 
-    [[nodiscard]] std::size_t num_metatiles_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_metatiles_primary() const override;
 
-    [[nodiscard]] std::size_t num_metatiles_total(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_metatiles_total() const override;
 
-    [[nodiscard]] std::size_t num_pals_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_pals_primary() const override;
 
-    [[nodiscard]] std::size_t num_pals_total(const std::string &tileset_name) const override;
+    [[nodiscard]] std::size_t num_pals_total() const override;
 
     [[nodiscard]] std::size_t max_map_data_size() const override;
 
@@ -94,7 +95,7 @@ class LazyLayeredConfig final : public Config {
     std::vector<std::unique_ptr<ConfigLayerProvider>> providers_;
 
     mutable std::unordered_map<std::string, std::string> provenance_;
-    mutable std::unordered_map<std::string, std::any> cache_;
+    mutable std::map<std::string, std::any> cache_;
     mutable std::unordered_map<std::string, std::string> cache_values_;
 
     /**

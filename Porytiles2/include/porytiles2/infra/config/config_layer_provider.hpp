@@ -35,23 +35,23 @@ class ConfigLayerProvider {
      *
      * @return The name of this config layer
      */
-    virtual std::string name() const = 0;
+    [[nodiscard]] virtual std::string name() const = 0;
 
     /*
      * Fieldmap Settings
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary() const = 0;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total() const = 0;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary() const = 0;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total() const = 0;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary() const = 0;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total() const = 0;
 
     [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size() const = 0;
 

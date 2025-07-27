@@ -24,40 +24,38 @@ class Config {
      * Fieldmap Settings
      */
 
-    [[nodiscard]] virtual std::size_t num_tiles_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_tiles_primary() const = 0;
 
-    [[nodiscard]] virtual std::size_t num_tiles_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_tiles_total() const = 0;
 
-    [[nodiscard]] std::size_t num_tiles_secondary(const std::string &tileset_name) const {
-        if (num_tiles_total(tileset_name) < num_tiles_primary(tileset_name)) {
-            panic(fmt::format("num_tiles_total({}) < num_tiles_primary({})", num_tiles_total(tileset_name),
-                              num_tiles_primary(tileset_name)));
+    [[nodiscard]] std::size_t num_tiles_secondary() const {
+        if (num_tiles_total() < num_tiles_primary()) {
+            panic(fmt::format("num_tiles_total({}) < num_tiles_primary({})", num_tiles_total(), num_tiles_primary()));
         }
-        return num_tiles_total(tileset_name) - num_tiles_primary(tileset_name);
+        return num_tiles_total() - num_tiles_primary();
     }
 
-    [[nodiscard]] virtual std::size_t num_metatiles_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_metatiles_primary() const = 0;
 
-    [[nodiscard]] virtual std::size_t num_metatiles_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_metatiles_total() const = 0;
 
-    [[nodiscard]] std::size_t num_metatiles_secondary(const std::string &tileset_name) const {
-        if (num_tiles_total(tileset_name) < num_tiles_primary(tileset_name)) {
-            panic(fmt::format("num_metatiles_total({}) < num_metatiles_primary({})", num_metatiles_total(tileset_name),
-                              num_metatiles_primary(tileset_name)));
+    [[nodiscard]] std::size_t num_metatiles_secondary() const {
+        if (num_tiles_total() < num_tiles_primary()) {
+            panic(fmt::format("num_metatiles_total({}) < num_metatiles_primary({})", num_metatiles_total(),
+                              num_metatiles_primary()));
         }
-        return num_metatiles_total(tileset_name) - num_metatiles_primary(tileset_name);
+        return num_metatiles_total() - num_metatiles_primary();
     }
 
-    [[nodiscard]] virtual std::size_t num_pals_primary(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_pals_primary() const = 0;
 
-    [[nodiscard]] virtual std::size_t num_pals_total(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::size_t num_pals_total() const = 0;
 
-    [[nodiscard]] std::size_t num_pals_secondary(const std::string &tileset_name) const {
-        if (num_tiles_total(tileset_name) < num_tiles_primary(tileset_name)) {
-            panic(fmt::format("num_pals_total({}) < num_pals_primary({})", num_pals_total(tileset_name),
-                              num_pals_primary(tileset_name)));
+    [[nodiscard]] std::size_t num_pals_secondary() const {
+        if (num_tiles_total() < num_tiles_primary()) {
+            panic(fmt::format("num_pals_total({}) < num_pals_primary({})", num_pals_total(), num_pals_primary()));
         }
-        return num_pals_total(tileset_name) - num_pals_primary(tileset_name);
+        return num_pals_total() - num_pals_primary();
     }
 
     [[nodiscard]] virtual std::size_t max_map_data_size() const = 0;

@@ -24,17 +24,17 @@ class DefaultProvider : public ConfigLayerProvider {
      * Fieldmap Settings
      */
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_primary() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_total(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_total() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_primary(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_primary() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_total() const override;
 
     [[nodiscard]] LayerValue<std::size_t> max_map_data_size() const override;
 

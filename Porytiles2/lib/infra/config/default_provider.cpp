@@ -6,27 +6,27 @@ std::string DefaultProvider::name() const {
     return "DefaultProvider";
 }
 
-LayerValue<std::size_t> DefaultProvider::num_tiles_primary(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_tiles_primary() const {
     return {512, "default value"};
 }
 
-LayerValue<std::size_t> DefaultProvider::num_tiles_total(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_tiles_total() const {
     return {1024, "default value"};
 }
 
-LayerValue<std::size_t> DefaultProvider::num_metatiles_primary(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_metatiles_primary() const {
     return {512, "default value"};
 }
 
-LayerValue<std::size_t> DefaultProvider::num_metatiles_total(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_metatiles_total() const {
     return {1024, "default value"};
 }
 
-LayerValue<std::size_t> DefaultProvider::num_pals_primary(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_pals_primary() const {
     return {6, "default value"};
 }
 
-LayerValue<std::size_t> DefaultProvider::num_pals_total(const std::string &tileset_name) const {
+LayerValue<std::size_t> DefaultProvider::num_pals_total() const {
     return {13, "default value"};
 }
 
