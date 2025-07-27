@@ -22,13 +22,13 @@ struct LayerValue {
  * @brief An interface which Config implementations can use to load config values.
  *
  * @details
- * ConfigLayerProvider is basically just a copy of Config but with LayerValue return types. It's technically a DRY
+ * ConfigProvider is basically just a copy of Config but with LayerValue return types. It's technically a DRY
  * violation; a better solution would be to use some kind of code-gen, wherein we define the config params and both
- * Config and ConfigLayerProvider are generated from the spec.
+ * Config and ConfigProvider are generated from the spec.
  */
-class ConfigLayerProvider {
+class ConfigProvider {
   public:
-    virtual ~ConfigLayerProvider() = default;
+    virtual ~ConfigProvider() = default;
 
     /**
      * @brief Gets the name of this config layer, useful for debugging/diagnostic purposes.

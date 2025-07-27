@@ -5,20 +5,20 @@
 namespace porytiles2 {
 
 /**
- * @brief A default implementation of ConfigLayerProvider that provides sensible default values.
+ * @brief A default implementation of ConfigProvider that provides sensible default values.
  *
  * @details
  * This provider returns default values for all configuration parameters. It's useful as a base layer in a configuration
  * system where other providers can override specific values.
  */
-class DefaultProvider : public ConfigLayerProvider {
+class DefaultProvider : public ConfigProvider {
   public:
     /**
      * @brief Gets the name of this config layer.
      *
      * @return The name "DefaultProvider"
      */
-    std::string name() const override;
+    [[nodiscard]] std::string name() const override;
 
     /*
      * Fieldmap Settings

@@ -13,7 +13,7 @@ namespace porytiles2 {
 
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
- * ConfigLayerProviders.
+ * ConfigProviders.
  *
  * @details
  * LazyLayeredConfig provides the following functionality:
@@ -25,11 +25,11 @@ namespace porytiles2 {
 class LazyLayeredConfig final : public Config {
   public:
     /**
-     * @brief Constructs a LazyLayeredConfig with a list of ConfigLayerProviders in priority order, highest to lowest.
+     * @brief Constructs a LazyLayeredConfig with a list of ConfigProvider in priority order, highest to lowest.
      *
      * @details
      * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of
-     * ConfigLayerProviders in order. That is, the first provider in the list will be consulted first, and the next
+     * ConfigProviders in order. That is, the first provider in the list will be consulted first, and the next
      * provider will only be consulted if the first does not supply the config value. And so on. It is the programmer's
      * responsibility to provide a default layer as the final provider in the list. If any config value resolution call
      * chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
@@ -37,7 +37,7 @@ class LazyLayeredConfig final : public Config {
      *
      * @param providers The list of providers in priority order
      */
-    explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigLayerProvider>> &&providers)
+    explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigProvider>> &&providers)
         : providers_{std::move(providers)} {}
 
     /*
@@ -86,13 +86,13 @@ class LazyLayeredConfig final : public Config {
      * all configuration is validated at startup. The function requires a list of tileset names to
      * evaluate tileset-specific configuration values.
      *
-     * @param tileset_names List of tileset names to evaluate configuration for
+     * @param tileset_names List of tileset names for which to evaluate the configuration
      */
     void warmup_cache(const std::vector<std::string> &tileset_names) const;
 
   private:
     // Providers in priority order (highest first)
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers_;
+    std::vector<std::unique_ptr<ConfigProvider>> providers_;
 
     mutable std::unordered_map<std::string, std::string> provenance_;
     mutable std::map<std::string, std::any> cache_;
@@ -101,14 +101,14 @@ class LazyLayeredConfig final : public Config {
     /**
      * @brief Resolves config values using the common caching and provider iteration pattern.
      *
-     * @tparam T The return type of the config value
+     * @tparam T The type of the config value
      * @param cache_key The key to use for caching this value
-     * @param provider_call Function that calls the appropriate method on a ConfigLayerProvider
+     * @param provider_call Function that calls the appropriate method on a ConfigProvider
      * @return The resolved config value
      */
     template <typename T>
     T resolve_config_value(const std::string &cache_key,
-                           std::function<LayerValue<T>(const ConfigLayerProvider &)> provider_call) const;
+                           std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

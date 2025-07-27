@@ -4,7 +4,7 @@
 
 using namespace porytiles2;
 
-class MockDefaultProvider final : public ConfigLayerProvider {
+class MockDefaultProvider final : public ConfigProvider {
   public:
     explicit MockDefaultProvider() : name_{"MockDefaultProvider"}, metadata_{"defaulted"} {}
 
@@ -54,7 +54,7 @@ class MockDefaultProvider final : public ConfigLayerProvider {
     std::string metadata_;
 };
 
-class MockConfigurableProvider final : public ConfigLayerProvider {
+class MockConfigurableProvider final : public ConfigProvider {
   public:
     explicit MockConfigurableProvider(std::string name, std::string metadata)
         : name_{std::move(name)}, metadata_{std::move(metadata)} {}
@@ -120,7 +120,7 @@ class MockConfigurableProvider final : public ConfigLayerProvider {
 };
 
 TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     auto mock_toml = std::make_unique<MockConfigurableProvider>("MockTomlProvider", "from toml file");
     mock_toml->num_tiles_primary_ = 2000;
     auto mock_env = std::make_unique<MockConfigurableProvider>("MockEnvProvider", "from env");
@@ -151,7 +151,7 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue) {
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldReturnNoCachedValuesWhenCold) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     providers.push_back(std::make_unique<MockDefaultProvider>());
 
     LazyLayeredConfig config{std::move(providers)};
@@ -161,7 +161,7 @@ TEST(LazyLayeredConfigTest, DumpShouldReturnNoCachedValuesWhenCold) {
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldShowCachedValuesWithProvenance) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     auto mock_toml = std::make_unique<MockConfigurableProvider>("MockTomlProvider", "from toml file");
     mock_toml->num_tiles_primary_ = 2000;
     auto mock_env = std::make_unique<MockConfigurableProvider>("MockEnvProvider", "from env");
@@ -191,7 +191,7 @@ TEST(LazyLayeredConfigTest, DumpShouldShowCachedValuesWithProvenance) {
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     providers.push_back(std::make_unique<MockConfigurableProvider>("MockProvider1", "metadata"));
     providers.push_back(std::make_unique<MockDefaultProvider>());
 
@@ -210,7 +210,7 @@ TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues) {
 }
 
 TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     auto mock_toml = std::make_unique<MockConfigurableProvider>("MockTomlProvider", "from toml file");
     mock_toml->num_tiles_total_ = 1000;
     providers.push_back(std::move(mock_toml));
@@ -241,7 +241,7 @@ TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues) {
 }
 
 TEST(LazyLayeredConfigTest, WarmupCacheWithEmptyTilesetList) {
-    std::vector<std::unique_ptr<ConfigLayerProvider>> providers;
+    std::vector<std::unique_ptr<ConfigProvider>> providers;
     providers.push_back(std::make_unique<MockDefaultProvider>());
 
     LazyLayeredConfig config{std::move(providers)};
