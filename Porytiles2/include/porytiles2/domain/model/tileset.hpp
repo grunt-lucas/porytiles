@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "porytiles2/domain/model/aggregates/components/porymap_tileset_component.hpp"
-#include "porytiles2/domain/model/aggregates/components/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/model/porymap_tileset_component.hpp"
+#include "porytiles2/domain/model/porytiles_tileset_component.hpp"
 
 namespace porytiles2 {
 

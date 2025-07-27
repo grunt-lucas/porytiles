@@ -1,4 +1,4 @@
-#include "porytiles2/domain/model/entities/rgba_metatile.hpp"
+#include "porytiles2/domain/model/rgba_metatile.hpp"
 
 #include <utility>
 

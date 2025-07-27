@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/model/aggregates/tileset.hpp"
+#include "../../../include/porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 

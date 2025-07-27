@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "../../../domain/model/image.hpp"
 #include "porytiles2/domain/model/valueobj/rgba32.hpp"
 #include "porytiles2/templates/result.hpp"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "porytiles2/domain/model/valueobj/rgba32.hpp"
-#include "porytiles2/domain/model/valueobj/tile.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/model/tile.hpp"
 
 namespace porytiles2 {
 

@@ -1,8 +1,8 @@
-#include "porytiles2/domain/model/aggregates/components/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/model/porytiles_tileset_component.hpp"
 
 #include <utility>
 
-#include "porytiles2/domain/model/entities/rgba_metatile.hpp"
+#include "porytiles2/domain/model/rgba_metatile.hpp"
 
 namespace porytiles2 {
 

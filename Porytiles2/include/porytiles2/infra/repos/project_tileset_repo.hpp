@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/model/aggregates/tileset.hpp"
+#include "../../domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/infra/project/project_paths.hpp"

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "porytiles2/domain/model/valueobj/bgr15.hpp"
+#include "porytiles2/domain/model/bgr15.hpp"
 
 namespace porytiles2 {
 

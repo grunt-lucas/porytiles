@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <porytiles2/domain/model/valueobj/image.hpp>
-#include <porytiles2/domain/model/valueobj/rgba32.hpp>
+#include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
 
 using namespace porytiles2;
 

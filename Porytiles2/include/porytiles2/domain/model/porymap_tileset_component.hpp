@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "porytiles2/domain/model/entities/vram_metatile.hpp"
+#include "porytiles2/domain/model/vram_metatile.hpp"
 
 namespace porytiles2 {
 

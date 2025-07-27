@@ -1,8 +1,8 @@
-#include "porytiles2/domain/model/aggregates/components/porymap_tileset_component.hpp"
+#include "porytiles2/domain/model/porymap_tileset_component.hpp"
 
 #include <utility>
 
-#include "porytiles2/domain/model/entities/vram_metatile.hpp"
+#include "porytiles2/domain/model/vram_metatile.hpp"
 
 namespace porytiles2 {
 

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/model/entities/RgbaMetatile.hpp"
+#include "porytiles2/domain/model/rgba_metatile.hpp"
 
 namespace porytiles2 {
 

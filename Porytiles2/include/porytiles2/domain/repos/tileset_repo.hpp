@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/model/aggregates/tileset.hpp"
+#include "../model/tileset.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/templates/result.hpp"
 
