@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "../model/tileset.hpp"
+#include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
