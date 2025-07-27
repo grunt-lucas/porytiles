@@ -68,11 +68,7 @@ class TilesetRepo {
      */
     [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) = 0;
 
-    [[nodiscard]] ArtifactMetadataProvider &metadata_service() {
-        return *metadata_provider_;
-    }
-
-    [[nodiscard]] const ArtifactMetadataProvider &metadata_service() const {
+    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
         return *metadata_provider_;
     }
 
