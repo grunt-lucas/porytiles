@@ -13,7 +13,7 @@ namespace porytiles2 {
 
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
- * ConfigProviders.
+ * \link ConfigProvider ConfigProviders \endlink.
  *
  * @details
  * LazyLayeredConfig provides the following functionality:
@@ -28,12 +28,12 @@ class LazyLayeredConfig final : public Config {
      * @brief Constructs a LazyLayeredConfig with a list of ConfigProvider in priority order, highest to lowest.
      *
      * @details
-     * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of
-     * ConfigProviders in order. That is, the first provider in the list will be consulted first, and the next
-     * provider will only be consulted if the first does not supply the config value. And so on. It is the programmer's
-     * responsibility to provide a default layer as the final provider in the list. If any config value resolution call
-     * chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
-     * panic.
+     * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
+     * ConfigProvider ConfigProviders \endlink in order. That is, the first provider in the list will be consulted
+     * first, and the next provider will only be consulted if the first does not supply the config value. And so on. It
+     * is the programmer's responsibility to provide a default layer as the final provider in the list. If any config
+     * value resolution call chain reaches the end of the provider list without finding a value, the LazyLayeredConfig
+     * will terminate with a panic.
      *
      * @param providers The list of providers in priority order
      */
