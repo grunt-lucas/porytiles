@@ -8,11 +8,11 @@
 namespace porytiles2 {
 
 /**
- * @brief A single 8x8 pixel tile with an arbitrary pixel data type.
+ * @brief An 8x8 pixel value object with an arbitrary pixel data type.
  *
- * @tparam P The pixel type for this Tile
+ * @tparam PixelType The pixel type of this Tile
  */
-template <typename P>
+template <typename PixelType>
 class Tile {
   public:
     static constexpr std::size_t tile_side_length = 8;
@@ -22,18 +22,18 @@ class Tile {
 
     explicit Tile() : pix_{} {}
 
-    [[nodiscard]] virtual bool is_transparent(const P &transparency) const {
+    [[nodiscard]] virtual bool is_transparent(const PixelType &transparency) const {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
     }
 
-    [[nodiscard]] P at(std::size_t i) const {
+    [[nodiscard]] PixelType at(std::size_t i) const {
         if (i >= tile_size) {
             panic(fmt::format("index {} out of bounds", i));
         }
         return pix_[i];
     }
 
-    [[nodiscard]] P at(std::size_t row, std::size_t col) const {
+    [[nodiscard]] PixelType at(std::size_t row, std::size_t col) const {
         if (row >= tile_side_length) {
             panic(fmt::format("row index {} out of bounds", row));
         }
@@ -43,14 +43,14 @@ class Tile {
         return pix_[row * tile_side_length + col];
     }
 
-    void set(std::size_t i, const P &p) {
+    void set(std::size_t i, const PixelType &p) {
         if (i >= tile_size) {
             panic(fmt::format("index {} out of bounds", i));
         }
         pix_[i] = p;
     }
 
-    void set(std::size_t row, std::size_t col, const P &p) {
+    void set(std::size_t row, std::size_t col, const PixelType &p) {
         if (row >= tile_side_length) {
             panic(fmt::format("row index {} out of bounds", row));
         }
@@ -61,12 +61,12 @@ class Tile {
     }
 
   protected:
-    [[nodiscard]] const std::array<P, tile_size> &pix() const {
+    [[nodiscard]] const std::array<PixelType, tile_size> &pix() const {
         return pix_;
     }
 
   private:
-    std::array<P, tile_size> pix_;
+    std::array<PixelType, tile_size> pix_;
 };
 
 } // namespace porytiles2
