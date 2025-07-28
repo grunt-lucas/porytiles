@@ -3,6 +3,7 @@
 #include <any>
 #include <functional>
 #include <map>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
