@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -13,6 +14,7 @@ namespace porytiles2 {
  * @tparam PixelType The pixel type of this Tile
  */
 template <typename PixelType>
+    requires SupportsTransparency<PixelType>
 class Tile {
   public:
     static constexpr std::size_t tile_side_length = 8;
@@ -22,8 +24,8 @@ class Tile {
 
     explicit Tile() : pix_{} {}
 
-    [[nodiscard]] virtual bool is_transparent(const PixelType &transparency) const {
-        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel == transparency; });
+    [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const {
+        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
     [[nodiscard]] PixelType at(std::size_t i) const {

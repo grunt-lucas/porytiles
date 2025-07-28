@@ -21,6 +21,9 @@ class Rgba32 {
     constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = alpha_opaque)
         : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
 
+    bool operator==(const Rgba32 &rgba) const = default;
+    auto operator<=>(const Rgba32 &rgba) const = default;
+
     [[nodiscard]] std::uint8_t red() const {
         return red_;
     }
@@ -37,8 +40,7 @@ class Rgba32 {
         return alpha_;
     }
 
-    bool operator==(const Rgba32 &rgba) const = default;
-    auto operator<=>(const Rgba32 &rgba) const = default;
+    [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] std::string to_jasc_str() const;
 

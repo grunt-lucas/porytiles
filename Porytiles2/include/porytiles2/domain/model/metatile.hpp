@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/domain/model/tile.hpp"
 
 namespace porytiles2 {
@@ -15,9 +16,10 @@ namespace porytiles2 {
  * @tparam PixelType The pixel type of this Metatile's Tile objects
  */
 template <typename PixelType>
+    requires SupportsTransparency<PixelType>
 class Metatile {
   public:
-    Metatile() = default;
+    Metatile() : id_{} {}
 
     /**
      * @brief bar
