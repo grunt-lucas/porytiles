@@ -6,8 +6,10 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/orchestration/operand_bundle.hpp"
+#include "porytiles2/domain/orchestration/operand_declaration.hpp"
+#include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/infra/orchestration/operation.hpp"
 #include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;

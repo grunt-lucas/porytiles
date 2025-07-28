@@ -4,9 +4,9 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/orchestration/operand_bundle.hpp"
+#include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/infra/orchestration/operand_bundle.hpp"
-#include "porytiles2/infra/orchestration/operand_declaration.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -31,10 +31,6 @@ class Operation {
         return execute(inputs);
     }
 
-    [[nodiscard]] const DiagEngine &diag() const {
-        return *diag_;
-    }
-
     [[nodiscard]] const std::string &name() const {
         return name_;
     }
@@ -47,7 +43,6 @@ class Operation {
     [[nodiscard]] virtual Result<OperandBundle> execute(const OperandBundle &inputs) = 0;
 
   private:
-    DiagEngine *diag_;
     std::string name_;
 };
 
