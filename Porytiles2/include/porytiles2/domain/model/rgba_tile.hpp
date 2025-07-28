@@ -9,8 +9,6 @@ class RgbaTile final : public Tile<Rgba32> {
   public:
     RgbaTile() = default;
 
-    [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const override;
-
     [[nodiscard]] bool equals_as_bgr(const RgbaTile &other) const;
 };
 

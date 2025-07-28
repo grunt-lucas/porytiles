@@ -24,6 +24,16 @@ class Tile {
 
     explicit Tile() : pix_{} {}
 
+    /**
+     * @brief Checks if this entire tile is transparent.
+     *
+     * @details
+     * A tile is considered transparent if all of its pixels are either intrinsically transparent or are extrinsically
+     * transparent, according to the provided extrinsic transparency value.
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return True if all pixels in the tile are transparent, false otherwise
+     */
     [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
     }

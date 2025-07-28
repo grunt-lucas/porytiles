@@ -8,6 +8,8 @@ namespace porytiles2 {
 class RgbaMetatile : public Metatile<Rgba32> {
   public:
     RgbaMetatile() = default;
+
+    [[nodiscard]] bool equals_as_bgr(const RgbaMetatile &other) const;
 };
 
 } // namespace porytiles2

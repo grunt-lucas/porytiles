@@ -22,10 +22,14 @@ class Metatile {
     Metatile() : id_{} {}
 
     /**
-     * @brief bar
+     * @brief Checks if this entire metatile is transparent.
      *
-     * @param transparency foo
-     * @return True if all Tiles in this Metatile are transparent.
+     * @details
+     * A metatile is considered transparent if all tiles in all three layers (bottom, middle,
+     * and top) are transparent, according to the provided transparency value.
+     *
+     * @param transparency The transparency value to check each tile against
+     * @return True if all tiles in all layers are transparent, false otherwise
      */
     [[nodiscard]] bool is_transparent(const PixelType &transparency) const {
         const bool bottom_transparent =

@@ -37,6 +37,17 @@ class Bgr15 {
         return alpha_;
     }
 
+    /**
+     * @brief Checks if this color should be treated as transparent.
+     *
+     * @details
+     * A BGR15 color is considered transparent if either the color matches the extrinsic
+     * transparency color (ignoring alpha values) or if this color's intrinsic alpha value
+     * indicates transparency.
+     *
+     * @param extrinsic The extrinsic transparency color to check against
+     * @return True if this color should be treated as transparent, false otherwise
+     */
     [[nodiscard]] bool is_transparent(const Bgr15 &extrinsic) const;
 
     [[nodiscard]] std::uint16_t pack() const;
