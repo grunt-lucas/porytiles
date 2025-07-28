@@ -15,8 +15,6 @@ class Operation {
   public:
     virtual ~Operation() = default;
 
-    explicit Operation(const gsl::not_null<DiagEngine *> diag) : diag_{diag} {}
-
     /// @brief Declares the input operands required by this operation.
     [[nodiscard]] virtual std::vector<OperandDeclaration> declare_inputs() const = 0;
 

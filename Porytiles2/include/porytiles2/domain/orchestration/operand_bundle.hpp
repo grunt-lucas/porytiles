@@ -5,7 +5,7 @@
 #include <typeindex>
 #include <unordered_map>
 
-#include "porytiles2/infra/orchestration/operand_declaration.hpp"
+#include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
