@@ -4,8 +4,8 @@
 #include <memory>
 #include <random>
 
-#include "../../../include/porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/valueobj/rgba32.hpp"
+#include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/infra/services/image/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/image/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
