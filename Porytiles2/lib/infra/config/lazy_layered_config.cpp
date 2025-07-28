@@ -13,8 +13,8 @@
 namespace porytiles2 {
 
 template <typename T>
-T LazyLayeredConfig::resolve_config_value(
-    const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const {
+T LazyLayeredConfig::resolve_config_value(const std::string &cache_key,
+                                          std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const {
     /*
      * We need to declare this here to the to_string call below can resolve to either the std:: version or one of our
      * custom versions.
@@ -43,49 +43,46 @@ T LazyLayeredConfig::resolve_config_value(
 }
 
 std::size_t LazyLayeredConfig::num_tiles_primary() const {
-    return resolve_config_value<std::size_t>(fmt::format("num_tiles_primary"), [](const ConfigProvider &provider) {
-        return provider.num_tiles_primary();
-    });
+    return resolve_config_value<std::size_t>(
+        fmt::format("num_tiles_primary"), [](const ConfigProvider &provider) { return provider.num_tiles_primary(); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_total() const {
-    return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_total"), [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
+    return resolve_config_value<std::size_t>(fmt::format("num_tiles_total"),
+                                             [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_primary() const {
-    return resolve_config_value<std::size_t>(
-        fmt::format("num_metatiles_primary"),
-        [](const ConfigProvider &provider) { return provider.num_metatiles_primary(); });
+    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_primary"), [](const ConfigProvider &provider) {
+        return provider.num_metatiles_primary();
+    });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_total() const {
-    return resolve_config_value<std::size_t>(
-        fmt::format("num_metatiles_total"),
-        [](const ConfigProvider &provider) { return provider.num_metatiles_total(); });
+    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_total"), [](const ConfigProvider &provider) {
+        return provider.num_metatiles_total();
+    });
 }
 
 std::size_t LazyLayeredConfig::num_pals_primary() const {
-    return resolve_config_value<std::size_t>(fmt::format("num_pals_primary"), [](const ConfigProvider &provider) {
-        return provider.num_pals_primary();
-    });
+    return resolve_config_value<std::size_t>(
+        fmt::format("num_pals_primary"), [](const ConfigProvider &provider) { return provider.num_pals_primary(); });
 }
 
 std::size_t LazyLayeredConfig::num_pals_total() const {
-    return resolve_config_value<std::size_t>(
-        fmt::format("num_pals_total"), [](const ConfigProvider &provider) { return provider.num_pals_total(); });
+    return resolve_config_value<std::size_t>(fmt::format("num_pals_total"),
+                                             [](const ConfigProvider &provider) { return provider.num_pals_total(); });
 }
 
 std::size_t LazyLayeredConfig::max_map_data_size() const {
-    return resolve_config_value<std::size_t>(fmt::format("max_map_data_size"), [](const ConfigProvider &provider) {
-        return provider.max_map_data_size();
-    });
+    return resolve_config_value<std::size_t>(
+        fmt::format("max_map_data_size"), [](const ConfigProvider &provider) { return provider.max_map_data_size(); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_per_metatile() const {
-    return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_per_metatile"),
-        [](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(); });
+    return resolve_config_value<std::size_t>(fmt::format("num_tiles_per_metatile"), [](const ConfigProvider &provider) {
+        return provider.num_tiles_per_metatile();
+    });
 }
 
 IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string &tileset_name) const {

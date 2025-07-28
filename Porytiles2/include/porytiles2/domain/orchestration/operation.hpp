@@ -1,12 +1,11 @@
 #pragma once
 
 #include <expected>
-
-#include "gsl/pointers"
+#include <vector>
 
 #include "porytiles2/domain/orchestration/operand_bundle.hpp"
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
-#include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
+#include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
