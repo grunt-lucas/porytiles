@@ -9,8 +9,8 @@ Usage: format.sh
        format.sh <file ...>
        format.sh --help
 
-Run \`clang-format' on the provided source files. If no source files are
-provided, runs on the default set of source files.
+Run 'clang-format' on the provided source files. If no source files are
+provided, runs on the default set of source files (the Porytiles2 project).
 
 Options:
     -h, --help      Print this help and exit.
@@ -50,12 +50,11 @@ fi
 
 parse_params "$@"
 if [[ ${#args[@]} -lt 1 ]]; then
-    clang-format -style=file -i \
-        Porytiles1/include/**/*.{h,hpp,cpp} \
-        Porytiles1/lib/**/*.{h,hpp,cpp} \
-        Porytiles1/tests/**/*.{h,hpp,cpp} \
-        Porytiles1/tools/**/*.{h,hpp,cpp} \
-        Porytiles2/**/*.{h,hpp,cpp}
+    clang-format -style=file -i Porytiles2/**/*.{h,hpp,cpp} # \
+        # Porytiles1/include/**/*.{h,hpp,cpp} \
+        # Porytiles1/lib/**/*.{h,hpp,cpp} \
+        # Porytiles1/tests/**/*.{h,hpp,cpp} \
+        # Porytiles1/tools/**/*.{h,hpp,cpp}
 else
     clang-format -style=file -i "${args[@]}"
 fi

@@ -4,11 +4,11 @@
 #include <memory>
 #include <random>
 
-#include "porytiles2/domain/model/valueobj/rgba_image.hpp"
-#include "porytiles2/domain/services/rgba_image_loader.hpp"
-#include "porytiles2/domain/services/rgba_image_saver.hpp"
-#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
-#include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/infra/services/image/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/image/png_rgba_image_saver.hpp"
+#include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
 
@@ -36,8 +36,8 @@ class PngRgbaImageSaverTests : public ::testing::Test {
         return temp_dir_ / filename;
     }
 
-    static RgbaImage create_test_image(std::size_t width, std::size_t height) {
-        RgbaImage image{width, height};
+    static Image<Rgba32> create_test_image(std::size_t width, std::size_t height) {
+        Image<Rgba32> image{width, height};
 
         // Fill with a simple pattern for testing
         for (std::size_t row = 0; row < height; ++row) {
@@ -54,8 +54,8 @@ class PngRgbaImageSaverTests : public ::testing::Test {
         return image;
     }
 
-    std::unique_ptr<RgbaImageSaver> saver_;
-    std::unique_ptr<RgbaImageLoader> loader_;
+    std::unique_ptr<PngRgbaImageSaver> saver_;
+    std::unique_ptr<PngRgbaImageLoader> loader_;
     std::filesystem::path temp_dir_;
 };
 
@@ -163,7 +163,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages) {
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
-    RgbaImage image{4, 4};
+    Image<Rgba32> image{4, 4};
 
     // Create a pattern with varying transparency
     for (std::size_t row = 0; row < 4; ++row) {
@@ -227,7 +227,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile) {
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages) {
-    RgbaImage image{3, 3};
+    Image<Rgba32> image{3, 3};
 
     // Create a fully opaque image
     for (std::size_t row = 0; row < 3; ++row) {

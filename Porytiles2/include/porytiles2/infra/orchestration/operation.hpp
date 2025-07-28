@@ -23,7 +23,13 @@ class Operation {
     /// @brief Declares the operands this operation will produce.
     [[nodiscard]] virtual std::vector<OperandDeclaration> declare_outputs() const = 0;
 
-    [[nodiscard]] virtual Result<OperandBundle> execute(const OperandBundle &inputs) = 0;
+    [[nodiscard]] virtual Result<OperandBundle> apply(const OperandBundle &inputs) {
+        const auto declared_inputs = declare_inputs();
+        if (!inputs.satisfies_declarations(declared_inputs)) {
+            panic(fmt::format("op '{}' declared inputs were not satisfied", name()));
+        }
+        return execute(inputs);
+    }
 
     [[nodiscard]] const DiagEngine &diag() const {
         return *diag_;
@@ -36,6 +42,9 @@ class Operation {
     void set_name(const std::string &name) {
         name_ = name;
     }
+
+  protected:
+    [[nodiscard]] virtual Result<OperandBundle> execute(const OperandBundle &inputs) = 0;
 
   private:
     DiagEngine *diag_;

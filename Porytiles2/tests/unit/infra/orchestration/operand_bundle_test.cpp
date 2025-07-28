@@ -97,7 +97,7 @@ TEST(ArtifactBundleTests, SatisfiesDeclarationsWithMatchingBundleShouldReturnTru
     bundle.put("text", std::string{"hello"});
 
     std::vector<OperandDeclaration> declarations = {OperandDeclaration{"num1", typeid(int)},
-                                                     OperandDeclaration{"text", typeid(std::string)}};
+                                                    OperandDeclaration{"text", typeid(std::string)}};
 
     EXPECT_TRUE(bundle.satisfies_declarations(declarations));
 }
@@ -107,7 +107,7 @@ TEST(ArtifactBundleTests, SatisfiesDeclarationsWithMissingKeyShouldReturnFalse) 
     bundle.put("num1", 42);
 
     std::vector<OperandDeclaration> declarations = {OperandDeclaration{"num1", typeid(int)},
-                                                     OperandDeclaration{"missing_key", typeid(std::string)}};
+                                                    OperandDeclaration{"missing_key", typeid(std::string)}};
 
     EXPECT_FALSE(bundle.satisfies_declarations(declarations));
 }

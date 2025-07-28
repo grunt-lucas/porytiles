@@ -25,6 +25,7 @@ class NumSupplierOperation final : public Operation {
         return {OperandDeclaration{key_, typeid(int)}};
     }
 
+  protected:
     [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         OperandBundle result{};
         result.put(key_, value_);
@@ -54,6 +55,7 @@ class SumOperation final : public Operation {
         return {OperandDeclaration{out_key_, typeid(int)}};
     }
 
+  protected:
     [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         int sum = 0;
         for (const auto &key : in_keys_) {
@@ -82,13 +84,14 @@ class NumConsumerOperation final : public Operation {
         return {};
     }
 
+    [[nodiscard]] int consumed() const {
+        return consumed_;
+    }
+
+  protected:
     [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
         consumed_ = inputs.get_unwrapped<int>(key_).value();
         return {};
-    }
-
-    [[nodiscard]] int consumed() const {
-        return consumed_;
     }
 
   private:

@@ -7,7 +7,7 @@
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
 
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/diagnostics/diagnostics.hpp"
 #include "porytiles2/infra/utilities/utilities.hpp"
 #include "porytiles2/templates/parsing.hpp"
