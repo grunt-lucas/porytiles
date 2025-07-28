@@ -1,19 +1,19 @@
-#include "porytiles2/infra/orchestration/pipeline.hpp"
+#include "porytiles2/domain/orchestration/pipeline.hpp"
 
 #include <queue>
 
-#include "porytiles2/infra/orchestration/operation.hpp"
+#include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
 
 Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
-    // 1) Map each operandt key to the producer op that generates it
+    // 1) Map each operand key to the producer op that generates it
     for (auto &op : ops) {
-        for (const auto &output_operandt : op->declare_outputs()) {
-            const auto &out_key = output_operandt.key();
+        for (const auto &output_operand : op->declare_outputs()) {
+            const auto &out_key = output_operand.key();
             if (producers_.contains(out_key)) {
-                panic("duplicate producers for key: " + out_key);
+                panic(fmt::format("duplicate producers for key: {}", out_key));
             }
             producers_.insert({out_key, op.get()});
         }
@@ -26,13 +26,13 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     for (auto &op : ops) {
         const auto inputs = op->declare_inputs();
         int deps = 0;
-        for (const auto &input_operandt : inputs) {
-            if (const auto &in_key = input_operandt.key(); producers_.contains(in_key)) {
+        for (const auto &input_operand : inputs) {
+            if (const auto &in_key = input_operand.key(); producers_.contains(in_key)) {
                 auto *producer_op = producers_.at(in_key);
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
             } else {
-                panic(fmt::format("operation '{}' depends on non-existent operandt: '{}'", op->name(), in_key));
+                panic(fmt::format("operation '{}' depends on non-existent operand: '{}'", op->name(), in_key));
             }
         }
         in_degree_.insert({op.get(), deps});

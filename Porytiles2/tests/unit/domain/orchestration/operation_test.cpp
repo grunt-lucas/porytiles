@@ -6,15 +6,17 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/orchestration/operand_bundle.hpp"
+#include "porytiles2/domain/orchestration/operand_declaration.hpp"
+#include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/infra/orchestration/operation.hpp"
 #include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
 
 class TestOperation final : public Operation {
   public:
-    explicit TestOperation(DiagEngine *engine) : Operation{engine}, multiplier_{1} {}
+    explicit TestOperation() : multiplier_{1} {}
 
     [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
         std::vector inputs = {
@@ -49,13 +51,11 @@ class TestOperation final : public Operation {
 };
 
 TEST(OperationTests, BasicOperationFunctionsShouldWork) {
-    DiagEngine engine{std::make_unique<IgnoreConsumer>()};
-
     OperandBundle inputs{};
     inputs.put("num1", 10);
     inputs.put("num2", 5);
 
-    TestOperation operation{&engine};
+    TestOperation operation{};
     operation.set_multiplier(10);
 
     const auto result = operation.apply(inputs);

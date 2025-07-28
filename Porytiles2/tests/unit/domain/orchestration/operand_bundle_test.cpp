@@ -5,8 +5,8 @@
 #include <typeindex>
 #include <vector>
 
-#include "porytiles2/infra/orchestration/operand_bundle.hpp"
-#include "porytiles2/infra/orchestration/operand_declaration.hpp"
+#include "porytiles2/domain/orchestration/operand_bundle.hpp"
+#include "porytiles2/domain/orchestration/operand_declaration.hpp"
 
 using namespace porytiles2;
 
