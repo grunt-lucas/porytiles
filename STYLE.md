@@ -84,6 +84,19 @@ int MyClass::compute_something(int accum_value) const {
  * The Foo class assumes that your foos are all like bars, but different.
  */
 class Foo {
-
+  public:
+   // NOTICE:
+   // a blank line between @brief and @details
+   // a blank line between @details and the other doc tags
+   /**
+    * @brief Computes a bar with a given factor.
+    *
+    * @details
+    * The factor is used to compute the bar.
+    *
+    * @param factor The factor to use
+    * @return The computed bar
+    */
+    int compute_bar(int factor); 
 };
 ```
