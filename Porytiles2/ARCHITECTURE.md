@@ -157,7 +157,7 @@ porytiles2 import-tileset general
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
-3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the newest Porytiles asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
+3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the oldest Porytiles asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
 4. Import the Porymap assets into the `PorymapTilesetComponent` and compute checksums for each.
 5. If `PorytilesTilesetComponent` is not empty and all checksums match, bail with the message "nothing to do."
 6. Perform a complete decompilation.
@@ -165,8 +165,10 @@ porytiles2 import-tileset general
 8. Perform an incremental compilation and re-store checksums.
 9. Persist the `Tileset` aggregate.
 
+TODO: review the timestamp and checksum logic here to make sure it actually catches uncompiled changes
+
 ### Outputs
-Importing a tileset will set `incremental = true` by default.
+Importing a tileset for the first time will set `incremental = true` by default.
 [See here for more on incremental builds.](#incremental-build-support)
 
 ```toml
@@ -200,10 +202,12 @@ porytiles2 compile-tileset MyTileset
 3. Compute checksums for each asset in `PorymapTilesetComponent`.
 4. Compare with cached checksums in `artifact_checksums.json`, if any differ, bail with the message "unimported changes present in Porymap asset X."
 5. If all match, continue.
-6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
+6. If the oldest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
 7. Otherwise, compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
 8. Compute new artifact checksums.
 9. Persist the `Tileset` aggregate.
+
+TODO: review the timestamp and checksum logic here to make sure it actually catches unimported changes
 
 ## Compile Secondary Tileset
 TODO

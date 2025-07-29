@@ -35,7 +35,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     }
     // 5. If all match, continue.
 
-    // 6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified"
+    // 6. If the oldest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified"
     // timestamp, bail with "nothing to do."
     if (metadata_provider_->are_porymap_assets_newer(tileset->name())) {
         // TODO : display this message to the user

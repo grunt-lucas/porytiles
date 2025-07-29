@@ -20,7 +20,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     }
     const auto tileset = std::move(maybe_tileset.value());
 
-    // 3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the newest Porytiles
+    // 3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the oldest Porytiles
     // asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
 
     // 4. Import the Porymap assets into the `PorymapTilesetComponent` and compute checksums for each.
