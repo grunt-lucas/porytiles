@@ -1,16 +1,13 @@
 #pragma once
 
+#include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/tile.hpp"
 
 namespace porytiles2 {
 
-class VramTile final : public Tile<std::uint8_t> {
+class VramTile final : public Tile<IndexPixel> {
   public:
     VramTile() = default;
-
-    [[nodiscard]] bool is_transparent() const {
-        return Tile::is_transparent(0);
-    }
 };
 
 } // namespace porytiles2

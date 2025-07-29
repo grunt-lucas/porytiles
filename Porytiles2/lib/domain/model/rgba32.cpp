@@ -4,6 +4,10 @@
 
 namespace porytiles2 {
 
+[[nodiscard]] bool Rgba32::is_transparent(const Rgba32 &extrinsic) const {
+    return extrinsic.equals_ignoring_alpha(*this) || alpha_ == alpha_transparent;
+}
+
 std::string Rgba32::to_jasc_str() const {
     return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
 }

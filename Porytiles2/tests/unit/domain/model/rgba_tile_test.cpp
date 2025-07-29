@@ -9,12 +9,33 @@
 
 using namespace porytiles2;
 
-TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
+TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly) {
     RgbaTile tile{};
 
-    tile.set(12, Rgba32{22, 90, 144});
-    EXPECT_FALSE(tile.is_transparent(kRgbaMagenta));
+    for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {
+        tile.set(i, Rgba32{255, 0, 255});
+    }
 
+    EXPECT_FALSE(tile.is_transparent(kRgbaBlack));
+    EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
+}
+
+TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
+    // Default-constructed RgbaTile is zeroed, i.e. black and transparent
+    const RgbaTile tile{};
+    EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
+}
+
+TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly) {
+    RgbaTile tile{};
+
+    for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {
+        tile.set(i, Rgba32{255, 0, 255});
+    }
+
+    // Set a pixel to non-magenta, but set alpha channel to transparent
     tile.set(12, Rgba32{22, 90, 144, Rgba32::alpha_transparent});
+
+    EXPECT_FALSE(tile.is_transparent(kRgbaBlack));
     EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
 }

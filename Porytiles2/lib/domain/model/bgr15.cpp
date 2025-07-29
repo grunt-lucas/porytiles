@@ -2,6 +2,10 @@
 
 namespace porytiles2 {
 
+[[nodiscard]] bool Bgr15::is_transparent(const Bgr15 &extrinsic) const {
+    return extrinsic.equals_ignoring_alpha(*this) || alpha_ == Rgba32::alpha_transparent;
+}
+
 std::string Bgr15::to_jasc_str() const {
     return std::to_string(red_) + " " + std::to_string(green_) + " " + std::to_string(blue_);
 }
@@ -15,6 +19,10 @@ Bgr15 Bgr15::unpack(const std::uint16_t packed_bgr) {
     const std::uint8_t green = (packed_bgr >> 5 & 0x1f) << 3;
     const std::uint8_t blue = (packed_bgr >> 10 & 0x1f) << 3;
     return Bgr15{red, green, blue};
+}
+
+bool Bgr15::equals_ignoring_alpha(const Bgr15 &other) const {
+    return red_ == other.red_ && green_ == other.green_ && blue_ == other.blue_;
 }
 
 } // namespace porytiles2
