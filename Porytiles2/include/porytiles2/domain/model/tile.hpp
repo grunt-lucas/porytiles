@@ -24,6 +24,8 @@ class Tile {
 
     explicit Tile() : pix_{} {}
 
+    bool operator==(const Tile &) const = default;
+
     /**
      * @brief Checks if this entire tile is transparent.
      *

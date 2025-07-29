@@ -21,6 +21,8 @@ class Metatile {
   public:
     Metatile() : id_{} {}
 
+    bool operator==(const Metatile &) const = default;
+
     /**
      * @brief Checks if this entire metatile is transparent.
      *
