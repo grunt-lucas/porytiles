@@ -7,7 +7,7 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/infra/services/src_edit/textual_header_file_parser.hpp"
+#include "porytiles2/infra/services/textual_header_file_parser.hpp"
 
 using namespace porytiles2;
 
