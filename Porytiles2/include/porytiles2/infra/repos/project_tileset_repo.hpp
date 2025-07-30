@@ -29,7 +29,7 @@ class ProjectTilesetRepo final : public TilesetRepo {
     [[nodiscard]] bool exists(const std::string &name) const override;
 
   protected:
-    [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) override;
+    [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) const override;
 
   private:
     const ProjectPaths *paths_;

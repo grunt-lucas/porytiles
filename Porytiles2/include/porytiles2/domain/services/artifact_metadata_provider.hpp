@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "fmt/format.h"
+
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/templates/result.hpp"
 
@@ -163,6 +165,71 @@ class ArtifactMetadataProvider {
         }
 
         return oldest_porymap > newest_porytiles;
+    }
+
+    /**
+     * @brief Finds all artifacts with unsynced changes compared to cached checksums.
+     *
+     * @details
+     * This method compares current checksums against cached checksums for the specified artifact keys and returns a
+     * vector of keys that don't match.
+     *
+     * @param tileset_name The name of the tileset to check
+     * @param artifact_keys The keys of artifacts to check
+     * @return Vector of artifact keys that have mismatched checksums
+     */
+    [[nodiscard]] virtual std::vector<std::string>
+    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<std::string> &artifact_keys) const {
+        const auto checksums = compute_artifact_checksums(tileset_name);
+        const auto cached_checksums = load_cached_checksums(tileset_name);
+
+        return check_artifact_sync_impl(artifact_keys, checksums, cached_checksums);
+    }
+
+    /**
+     * @brief Checks if all artifact checksums match their cached values.
+     *
+     * @details
+     * This method compares current checksums against cached checksums for the specified artifact keys and returns true
+     * if all match. It's effectively a convenience wrapper around find_unsynced_artifacts that simply checks if there
+     * are no unsynced artifacts.
+     *
+     * @param tileset_name The name of the tileset to check
+     * @param artifact_keys The keys of artifacts to check
+     * @return True if all checksums match, false if any differ
+     */
+    [[nodiscard]] virtual bool all_checksums_match(const std::string &tileset_name,
+                                                   const std::vector<std::string> &artifact_keys) const {
+        return find_unsynced_artifacts(tileset_name, artifact_keys).empty();
+    }
+
+  private:
+    /**
+     * @brief Implementation helper for checking artifact synchronization.
+     *
+     * @details
+     * This method encapsulates the common logic for comparing checksums between current and cached values and returns
+     * all mismatched keys.
+     *
+     * @param artifact_keys The keys to check
+     * @param checksums Current checksums
+     * @param cached_checksums Cached checksums
+     * @return Vector of keys that have mismatched checksums
+     */
+    [[nodiscard]] static std::vector<std::string>
+    check_artifact_sync_impl(const std::vector<std::string> &artifact_keys,
+                             const std::unordered_map<std::string, std::string> &checksums,
+                             const std::unordered_map<std::string, std::string> &cached_checksums) {
+        std::vector<std::string> mismatched_keys;
+        for (const auto &key : artifact_keys) {
+            const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
+            const auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
+            // TODO: more specific error message if one of the above is actually empty?
+            if (checksum_for_key != cached_checksum_for_key) {
+                mismatched_keys.push_back(key);
+            }
+        }
+        return mismatched_keys;
     }
 };
 

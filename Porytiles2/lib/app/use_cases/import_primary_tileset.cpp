@@ -25,42 +25,30 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
         return std::unexpected{"PorymapTilesetComponent was empty"};
     }
 
-    // 4. Compute current checksums and fetch cached checksums for the `Tileset`.
-    auto checksums = tileset_repo_->metadata_provider().compute_artifact_checksums(tileset_name);
-    auto cached_checksums = tileset_repo_->metadata_provider().load_cached_checksums(tileset_name);
-
-    // 5. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
+    // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
     // any differ, bail with the message "uncompiled changes present in Porytiles asset X."
     if (tileset->porytiles_component() != nullptr) {
         const auto porytiles_keys = tileset_repo_->metadata_provider().get_porytiles_artifact_keys(tileset_name);
-        for (const auto &key : porytiles_keys) {
-            auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
-            auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
-            // TODO: more specific error message if one of the above is actually empty
-            if (checksum_for_key != cached_checksum_for_key) {
-                return std::unexpected{fmt::format("uncompiled changes present in Porytiles asset {}", key)};
-            }
+        const auto mismatched_keys =
+            tileset_repo_->metadata_provider().find_unsynced_artifacts(tileset_name, porytiles_keys);
+        if (!mismatched_keys.empty()) {
+            return std::unexpected{"uncompiled changes present in Porytiles assets: TODO keys here"};
         }
     }
 
-    // 6. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
+    // 5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
     // message "nothing to do."
     const auto porymap_keys = tileset_repo_->metadata_provider().get_porymap_artifact_keys(tileset_name);
-    auto has_checksum_changed = [&checksums, &cached_checksums](const auto &key) {
-        auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
-        auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
-        return checksum_for_key != cached_checksum_for_key;
-    };
-    if (std::ranges::none_of(porymap_keys, has_checksum_changed)) {
+    if (tileset_repo_->metadata_provider().all_checksums_match(tileset_name, porymap_keys)) {
         // TODO: display a nothing_to_do message to the user
         return {};
     }
 
-    // 7. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+    // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
 
-    // 8. Perform an incremental compilation.
+    // 7. Perform an incremental compilation.
 
-    // 9. Persist the `Tileset` (which also caches the checksums).
+    // 8. Persist the `Tileset` (which also caches the checksums).
 
     return {};
 }

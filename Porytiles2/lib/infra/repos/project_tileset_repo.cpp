@@ -20,7 +20,7 @@ bool ProjectTilesetRepo::exists(const std::string &name) const {
     panic("unimplemented");
 }
 
-Result<void> ProjectTilesetRepo::save_tileset(const Tileset &tileset) {
+Result<void> ProjectTilesetRepo::save_tileset(const Tileset &tileset) const {
     // TODO : impl
     panic("unimplemented");
 }

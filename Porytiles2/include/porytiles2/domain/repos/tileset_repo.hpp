@@ -33,7 +33,7 @@ class TilesetRepo {
      * @param tileset The Tileset to save.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] Result<void> save(const Tileset &tileset) {
+    [[nodiscard]] Result<void> save(const Tileset &tileset) const {
         if (auto save_result = save_tileset(tileset); !save_result.has_value()) {
             return save_result;
         }
@@ -70,7 +70,7 @@ class TilesetRepo {
      * @return An empty Result on success, otherwise an error description.
      *
      */
-    [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) = 0;
+    [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) const = 0;
 
   private:
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
