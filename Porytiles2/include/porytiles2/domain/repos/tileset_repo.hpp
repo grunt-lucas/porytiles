@@ -58,6 +58,10 @@ class TilesetRepo {
      */
     [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
 
+    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
+        return *metadata_provider_;
+    }
+
   protected:
     /**
      * @brief Persists a given Tileset.
@@ -67,10 +71,6 @@ class TilesetRepo {
      *
      */
     [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) = 0;
-
-    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
-        return *metadata_provider_;
-    }
 
   private:
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;

@@ -30,7 +30,30 @@ class ArtifactMetadataProvider {
     virtual ~ArtifactMetadataProvider() = default;
 
     /**
-     * @brief Computes checksums for the artifacts that belong to the given tileset.
+     * @brief Gets all keys for Porytiles artifacts in the given Tileset.
+     *
+     * @details
+     * Each Porytiles artifact must have a unique key by which the ArtifactMetadataProvider and the TilesetRepo can
+     * identify it.
+     *
+     * @return A vector of Porytiles artifact keys for the given Tileset
+     */
+    [[nodiscard]] virtual std::vector<std::string>
+    get_porytiles_artifact_keys(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Gets all keys for Porymap artifacts in the given Tileset.
+     *
+     * @details
+     * Each Porymap artifact must have a unique key by which the ArtifactMetadataProvider and the TilesetRepo can
+     * identify it.
+     *
+     * @return A vector of Porymap artifact keys for the given Tileset
+     */
+    [[nodiscard]] virtual std::vector<std::string> get_porymap_artifact_keys(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Computes checksums for the artifacts that belong to the given Tileset.
      *
      * @param tileset_name The name of the tileset for which to compute checksums
      * @return A mapping of artifact identifiers to their computed checksum
@@ -39,18 +62,18 @@ class ArtifactMetadataProvider {
     compute_artifact_checksums(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Loads the cached checksums for the given tileset.
+     * @brief Loads the cached checksums for the given Tileset.
      *
-     * @param tileset_name The name of the tileset for which to load cached checksums
+     * @param tileset_name The name of the Tileset for which to load cached checksums
      * @return A mapping of artifact identifiers to their cached checksums
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
     load_cached_checksums(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Caches checksums for the given tileset to persistent storage.
+     * @brief Caches checksums for the given Tileset to persistent storage.
      *
-     * @param tileset_name The name of the tileset for which to cache checksums
+     * @param tileset_name The name of the Tileset for which to cache checksums
      * @param checksums A mapping of artifact identifiers to their checksums to be cached
      * @return Result indicating success or failure of the cache operation
      */
@@ -61,7 +84,7 @@ class ArtifactMetadataProvider {
     /**
      * @brief Gets the modification timestamps for all Porymap artifacts associated with the given Tileset.
      *
-     * @param tileset_name The name of the tileset for which to get timestamps
+     * @param tileset_name The name of the Tileset for which to get timestamps
      * @return A mapping of artifact identifiers to their modification timestamps
      */
     [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
@@ -70,7 +93,7 @@ class ArtifactMetadataProvider {
     /**
      * @brief Gets the modification timestamps for all Porytiles artifacts associated with the given Tileset.
      *
-     * @param tileset_name The name of the tileset for which to get timestamps
+     * @param tileset_name The name of the Tileset for which to get timestamps
      * @return A mapping of artifact identifiers to their modification timestamps
      */
     [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
@@ -79,7 +102,7 @@ class ArtifactMetadataProvider {
     /**
      * @brief Determines if the oldest Porytiles asset is newer than the newest Porymap asset.
      *
-     * @param tileset_name The name of the tileset for which to check asset modification times
+     * @param tileset_name The name of the Tileset for which to check asset modification times
      * @return True if Porytiles assets are newer, false otherwise
      */
     [[nodiscard]] virtual bool are_porytiles_assets_newer(const std::string &tileset_name) const {
@@ -112,7 +135,7 @@ class ArtifactMetadataProvider {
     /**
      * @brief Determines if the oldest Porymap asset is newer than the newest Porytiles asset.
      *
-     * @param tileset_name The name of the tileset for which to check asset modification times
+     * @param tileset_name The name of the Tileset for which to check asset modification times
      * @return True if Porymap assets are newer, false otherwise
      */
     [[nodiscard]] virtual bool are_porymap_assets_newer(const std::string &tileset_name) const {
