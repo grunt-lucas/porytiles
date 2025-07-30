@@ -218,10 +218,10 @@ TODO
 TODO : EXPLAIN
 
 ## Incremental Build Support
-User can specify an incremental tileset build by specifying `--incremental=keep-unused`
+User can specify an incremental tileset build by specifying `--incremental=keep-unused` at the CLI
 or by setting `incremental = keep-unused` in the tileset TOML config.
 
-When incremental is set,
+When `incremental=keep-unused` is set,
 compilation will not disturb currently existing Porymap assets.
 That is, existing palettes will be treated as "overrides" in the compilation,
 and existing tiles will be left undisturbed (but reused if possible).
@@ -235,7 +235,11 @@ That is, if you remove all instances of a given tile from the metatile sheets,
 an incremental build will still leave that tile in `tiles.png`.
 This is so that incremental builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
-We can provide some kind of option like `--incremental=remove-unused` to modify this behavior?
+
+We provide `incremental=remove-unused` to modify this behavior.
+When `incremental=remove-unused` is set, we leave existing tiles undisturbed like before.
+But we sweep the tiles/pals at the end and remove any that are no longer in use.
+That means we'll need some kind of usage counter mechanism.
 
 One problem we need to solve:
 if we pre-populate the final `tiles.png` representation,

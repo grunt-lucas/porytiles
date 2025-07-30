@@ -20,6 +20,22 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     }
     const auto tileset = std::move(maybe_tileset.value());
 
+    // 3. If `PorymapTilesetComponent` is empty, bail with error.
+
+    // 4. Compute checksums for the `Tileset`.
+
+    // 5. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
+    // any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+
+    // 6. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
+    // message "nothing to do."
+
+    // 7. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+
+    // 8. Perform an incremental compilation.
+
+    // 9. Persist the `Tileset` (which also caches the checksums).
+
     return {};
 }
 
