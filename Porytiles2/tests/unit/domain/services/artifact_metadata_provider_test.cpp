@@ -12,11 +12,11 @@ using namespace ::testing;
 
 class MockArtifactMetadataProvider : public ArtifactMetadataProvider {
   public:
-    MOCK_METHOD((std::unordered_map<std::string, std::string>), compute_porymap_checksums, (const Tileset &tileset),
-                (const, override));
-    MOCK_METHOD((std::unordered_map<std::string, std::string>), load_stored_checksums,
+    MOCK_METHOD((std::unordered_map<std::string, std::string>), compute_artifact_checksums,
                 (const std::string &tileset_name), (const, override));
-    MOCK_METHOD((Result<void>), store_checksums,
+    MOCK_METHOD((std::unordered_map<std::string, std::string>), load_cached_checksums,
+                (const std::string &tileset_name), (const, override));
+    MOCK_METHOD((Result<void>), cache_checksums,
                 ((const std::string &tileset_name), (const std::unordered_map<std::string, std::string> &checksums)),
                 (const, override));
     MOCK_METHOD((std::unordered_map<std::string, Timestamp>), get_porymap_timestamps, (const std::string &tileset_name),

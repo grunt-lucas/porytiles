@@ -31,8 +31,8 @@ porytiles2 create-tileset MyTileset
 2. Initialize a `PorytilesTilesetComponent` with default assets.
 3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
 4. Initialize a new `Tileset` aggregate with the components.
-5. Generate checksums and update the source and header files.
-6. Persist the `Tileset`.
+5. Update the source and header files.
+6. Persist the `Tileset` (which also caches the checksums).
 
 ### Outputs
 The resulting tileset directory tree:
@@ -157,13 +157,13 @@ porytiles2 import-tileset general
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
-3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the oldest Porytiles asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
-4. Import the Porymap assets into the `PorymapTilesetComponent` and compute checksums for each.
-5. If `PorytilesTilesetComponent` is not empty and all checksums match, bail with the message "nothing to do."
-6. Perform a complete decompilation.
-7. Fill in the `PorytilesTilesetComponent` with the decompiled assets.
-8. Perform an incremental compilation and re-store checksums.
-9. Persist the `Tileset` aggregate.
+3. If `PorymapTilesetComponent` is empty, bail with error.
+4. Compute checksums for the `Tileset`.
+5. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+6. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
+7. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+8. Perform an incremental compilation.
+9. Persist the `Tileset` (which also caches the checksums).
 
 TODO: review the timestamp and checksum logic here to make sure it actually catches uncompiled changes
 
@@ -199,13 +199,12 @@ porytiles2 compile-tileset MyTileset
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
-3. Compute checksums for each asset in `PorymapTilesetComponent`.
-4. Compare with cached checksums in `artifact_checksums.json`, if any differ, bail with the message "unimported changes present in Porymap asset X."
-5. If all match, continue.
-6. If the oldest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
-7. Otherwise, compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
-8. Compute new artifact checksums.
-9. Persist the `Tileset` aggregate.
+3. If `PorytilesTilesetComponent` is empty, bail with error.
+4. Compute checksums for the `Tileset`.
+5. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any differ, bail with the message "unimported changes present in Porymap asset X."
+6. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
+7. Compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
+8. Persist the `Tileset` (which also caches the checksums).
 
 ## Compile Secondary Tileset
 TODO

@@ -22,18 +22,18 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     }
     const auto tileset = std::move(maybe_tileset.value());
 
-    // 3. Compute checksums for each asset in `PorymapTilesetComponent`.
-    auto current_checksums = metadata_provider_->compute_porymap_checksums(*tileset);
-    auto stored_checksums = metadata_provider_->load_stored_checksums(tileset_name);
+    // 3. Compute checksums for the `Tileset`.
+    auto current_checksums = metadata_provider_->compute_artifact_checksums(tileset_name);
+    auto cached_checksums = metadata_provider_->load_cached_checksums(tileset_name);
 
     // 4. Compare with cached checksums, if any differ, bail
+    // 5. If all match, continue.
     for (const auto &[artifact, current_sum] : current_checksums) {
-        if (stored_checksums.contains(artifact) && stored_checksums[artifact] != current_sum) {
+        if (cached_checksums.contains(artifact) && cached_checksums[artifact] != current_sum) {
             // TODO : instead of bailing early, collect all errors and bail at the end
             return std::unexpected{"unimported changes present in Porymap asset " + artifact};
         }
     }
-    // 5. If all match, continue.
 
     // 6. If the oldest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified"
     // timestamp, bail with "nothing to do."
@@ -52,14 +52,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     auto porymap_component = std::move(maybe_porymap_component.value());
     tileset->porymap_component(std::move(porymap_component));
 
-    // 8. Compute new artifact checksums.
-    auto new_checksums = metadata_provider_->compute_porymap_checksums(*tileset);
-    auto store_checksum_result = metadata_provider_->store_checksums(tileset_name, new_checksums);
-    if (!store_checksum_result.has_value()) {
-        return std::unexpected{store_checksum_result.error()};
-    }
-
-    // 9. Persist the `Tileset` aggregate.
+    // 8. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
         return std::unexpected{save_result.error()};
     }

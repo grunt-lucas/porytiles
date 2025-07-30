@@ -30,32 +30,32 @@ class ArtifactMetadataProvider {
     virtual ~ArtifactMetadataProvider() = default;
 
     /**
-     * @brief Computes checksums for the artifacts that correspond to the given Tileset's PorymapTilesetComponent.
+     * @brief Computes checksums for the artifacts that belong to the given tileset.
      *
-     * @param tileset The Tileset for which to compute checksums
+     * @param tileset_name The name of the tileset for which to compute checksums
      * @return A mapping of artifact identifiers to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
-    compute_porymap_checksums(const Tileset &tileset) const = 0;
+    compute_artifact_checksums(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Loads previously stored checksums for the given tileset.
+     * @brief Loads the cached checksums for the given tileset.
      *
-     * @param tileset_name The name of the tileset for which to load checksums
-     * @return A mapping of artifact identifiers to their stored checksums
+     * @param tileset_name The name of the tileset for which to load cached checksums
+     * @return A mapping of artifact identifiers to their cached checksums
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
-    load_stored_checksums(const std::string &tileset_name) const = 0;
+    load_cached_checksums(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Stores checksums for the given tileset to persistent storage.
+     * @brief Caches checksums for the given tileset to persistent storage.
      *
-     * @param tileset_name The name of the tileset for which to store checksums
-     * @param checksums A mapping of artifact identifiers to their checksums to be stored
-     * @return Result indicating success or failure of the storage operation
+     * @param tileset_name The name of the tileset for which to cache checksums
+     * @param checksums A mapping of artifact identifiers to their checksums to be cached
+     * @return Result indicating success or failure of the cache operation
      */
     [[nodiscard]] virtual Result<void>
-    store_checksums(const std::string &tileset_name,
+    cache_checksums(const std::string &tileset_name,
                     const std::unordered_map<std::string, std::string> &checksums) const = 0;
 
     /**

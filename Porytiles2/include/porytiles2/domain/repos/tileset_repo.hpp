@@ -24,10 +24,10 @@ class TilesetRepo {
         : metadata_provider_{std::move(metadata_provider)} {}
 
     /**
-     * @brief Persists a given Tileset and computes new artifact checksums.
+     * @brief Persists a given Tileset and caches new artifact checksums.
      *
      * @details
-     * When persisting a Tileset, the repository saves the tileset and computes new artifact checksums for the persisted
+     * When persisting a Tileset, the repository saves the tileset and caches new artifact checksums for the persisted
      * data.
      *
      * @param tileset The Tileset to save.
@@ -38,8 +38,8 @@ class TilesetRepo {
             return save_result;
         }
 
-        const auto current_checksums = metadata_provider_->compute_porymap_checksums(tileset);
-        return metadata_provider_->store_checksums(tileset.name(), current_checksums);
+        const auto current_checksums = metadata_provider_->compute_artifact_checksums(tileset.name());
+        return metadata_provider_->cache_checksums(tileset.name(), current_checksums);
     }
 
     /**

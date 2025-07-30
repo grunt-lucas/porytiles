@@ -30,19 +30,14 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     // 4. Initialize a new `Tileset` aggregate with the components.
     Tileset tileset{std::move(porytiles_component), std::move(porymap_component)};
 
-    // 5. Generate checksums and update the source and header files.
-    auto new_checksums = metadata_provider_->compute_porymap_checksums(tileset);
-    if (auto store_checksum_result = metadata_provider_->store_checksums(tileset_name, new_checksums);
-        !store_checksum_result.has_value()) {
-        return std::unexpected{store_checksum_result.error()};
-    }
+    // 5. Update the source and header files.
     // TODO : this should use HeaderFileParser for more sophisticated error handling
     if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
         !header_update_result.has_value()) {
         return std::unexpected{header_update_result.error()};
     }
 
-    // 6. Persist the `Tileset`.
+    // 6. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(tileset); !save_result.has_value()) {
         return std::unexpected{save_result.error()};
     }
