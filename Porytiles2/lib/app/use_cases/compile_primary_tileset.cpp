@@ -47,12 +47,12 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     // 6. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
     // message "nothing to do."
     const auto porytiles_keys = tileset_repo_->metadata_provider().get_porytiles_artifact_keys(tileset_name);
-    const bool has_changes = std::ranges::any_of(porytiles_keys, [&checksums, &cached_checksums](const auto &key) {
+    auto has_checksum_changed = [&checksums, &cached_checksums](const auto &key) {
         auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
         auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
         return checksum_for_key != cached_checksum_for_key;
-    });
-    if (!has_changes) {
+    };
+    if (std::ranges::none_of(porytiles_keys, has_checksum_changed)) {
         // TODO: display a nothing_to_do message to the user
         return {};
     }

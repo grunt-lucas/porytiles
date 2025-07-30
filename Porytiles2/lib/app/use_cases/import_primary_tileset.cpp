@@ -36,6 +36,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
         for (const auto &key : porytiles_keys) {
             auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
             auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
+            // TODO: more specific error message if one of the above is actually empty
             if (checksum_for_key != cached_checksum_for_key) {
                 return std::unexpected{fmt::format("uncompiled changes present in Porytiles asset {}", key)};
             }
@@ -44,6 +45,16 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 
     // 6. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
     // message "nothing to do."
+    const auto porymap_keys = tileset_repo_->metadata_provider().get_porymap_artifact_keys(tileset_name);
+    auto has_checksum_changed = [&checksums, &cached_checksums](const auto &key) {
+        auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
+        auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
+        return checksum_for_key != cached_checksum_for_key;
+    };
+    if (std::ranges::none_of(porymap_keys, has_checksum_changed)) {
+        // TODO: display a nothing_to_do message to the user
+        return {};
+    }
 
     // 7. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
 
