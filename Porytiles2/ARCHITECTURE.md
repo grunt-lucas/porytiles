@@ -207,8 +207,6 @@ porytiles2 compile-tileset MyTileset
 8. Compute new artifact checksums.
 9. Persist the `Tileset` aggregate.
 
-TODO: review the timestamp and checksum logic here to make sure it actually catches unimported changes
-
 ## Compile Secondary Tileset
 TODO
 
