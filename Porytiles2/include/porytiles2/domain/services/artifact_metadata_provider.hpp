@@ -24,19 +24,19 @@ using Timestamp = std::filesystem::file_time_type;
  * Porytiles artifacts. This includes computing and storing checksums for integrity verification, retrieving
  * modification timestamps, and determining temporal relationships between different artifact sets.
  *
- * This service is essential for the compilation pipeline to determine when assets need
- * to be recompiled based on changes to source files or existing artifacts.
+ * This service is essential for the compilation pipeline to determine when assets need to be recompiled based on
+ * changes to source files or existing artifacts.
  */
 class ArtifactMetadataProvider {
   public:
     virtual ~ArtifactMetadataProvider() = default;
 
     /**
-     * @brief Gets all keys for Porytiles artifacts in the given Tileset.
+     * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
      *
      * @details
-     * Each Porytiles artifact must have a unique key by which the ArtifactMetadataProvider and the TilesetRepo can
-     * identify it.
+     * Each Porytiles artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify
+     * it. The format of these keys and the method for producing them are implementation-defined.
      *
      * @return A vector of Porytiles artifact keys for the given Tileset
      */
@@ -44,11 +44,11 @@ class ArtifactMetadataProvider {
     get_porytiles_artifact_keys(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Gets all keys for Porymap artifacts in the given Tileset.
+     * @brief Gets the keys for all Porymap artifacts present in the given Tileset.
      *
      * @details
-     * Each Porymap artifact must have a unique key by which the ArtifactMetadataProvider and the TilesetRepo can
-     * identify it.
+     * Each Porymap artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify it.
+     * The format of these keys and the method for producing them are implementation-defined.
      *
      * @return A vector of Porymap artifact keys for the given Tileset
      */
@@ -57,7 +57,7 @@ class ArtifactMetadataProvider {
     /**
      * @brief Computes checksums for the artifacts that belong to the given Tileset.
      *
-     * @param tileset_name The name of the tileset for which to compute checksums
+     * @param tileset_name The name of the Tileset for which to compute checksums
      * @return A mapping of artifact identifiers to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
