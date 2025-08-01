@@ -16,6 +16,25 @@ namespace porytiles2 {
 
 using Timestamp = std::filesystem::file_time_type;
 
+enum class ArtifactType {
+    metatiles_bin,
+    metatile_attributes_bin,
+    tiles_png,
+    pals,
+    pal_n,
+    porymap_anim,
+    porymap_anim_frame,
+    bottom_png,
+    middle_png,
+    top_png,
+    attributes_csv,
+    overrides,
+    override_n,
+    porytiles_anim,
+    porytiles_anim_frame,
+    porytiles_anim_key_frame
+};
+
 /**
  * @brief Abstract service for managing artifact metadata including checksums and timestamps.
  *
@@ -53,6 +72,28 @@ class ArtifactMetadataProvider {
      * @return A vector of Porymap artifact keys for the given Tileset
      */
     [[nodiscard]] virtual std::vector<std::string> get_porymap_artifact_keys(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Gets the keys for all artifacts (both Porytiles and Porymap) present in the given Tileset.
+     *
+     * @details
+     * This method combines the results from both get_porytiles_artifact_keys() and get_porymap_artifact_keys() to
+     * provide a comprehensive list of all artifact keys associated with the tileset.
+     *
+     * @param tileset_name The name of the Tileset for which to get all artifact keys
+     * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset
+     */
+    [[nodiscard]] virtual std::vector<std::string> get_all_artifact_keys(const std::string &tileset_name) const {
+        const auto porytiles_keys = get_porytiles_artifact_keys(tileset_name);
+        const auto porymap_keys = get_porymap_artifact_keys(tileset_name);
+
+        std::vector<std::string> result;
+        result.reserve(porytiles_keys.size() + porymap_keys.size());
+        result.insert(result.end(), porytiles_keys.begin(), porytiles_keys.end());
+        result.insert(result.end(), porymap_keys.begin(), porymap_keys.end());
+
+        return result;
+    }
 
     /**
      * @brief Computes checksums for the artifacts that belong to the given Tileset.
@@ -179,12 +220,7 @@ class ArtifactMetadataProvider {
      * @return Vector of artifact keys that have mismatched checksums
      */
     [[nodiscard]] virtual std::vector<std::string>
-    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<std::string> &artifact_keys) const {
-        const auto checksums = compute_artifact_checksums(tileset_name);
-        const auto cached_checksums = load_cached_checksums(tileset_name);
-
-        return check_artifact_sync_impl(artifact_keys, checksums, cached_checksums);
-    }
+    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<std::string> &artifact_keys) const;
 
     /**
      * @brief Checks if all artifact checksums match their cached values.
@@ -199,38 +235,7 @@ class ArtifactMetadataProvider {
      * @return True if all checksums match, false if any differ
      */
     [[nodiscard]] virtual bool all_checksums_match(const std::string &tileset_name,
-                                                   const std::vector<std::string> &artifact_keys) const {
-        return find_unsynced_artifacts(tileset_name, artifact_keys).empty();
-    }
-
-  private:
-    /**
-     * @brief Implementation helper for checking artifact synchronization.
-     *
-     * @details
-     * This method encapsulates the common logic for comparing checksums between current and cached values and returns
-     * all mismatched keys.
-     *
-     * @param artifact_keys The keys to check
-     * @param checksums Current checksums
-     * @param cached_checksums Cached checksums
-     * @return Vector of keys that have mismatched checksums
-     */
-    [[nodiscard]] static std::vector<std::string>
-    check_artifact_sync_impl(const std::vector<std::string> &artifact_keys,
-                             const std::unordered_map<std::string, std::string> &checksums,
-                             const std::unordered_map<std::string, std::string> &cached_checksums) {
-        std::vector<std::string> mismatched_keys;
-        for (const auto &key : artifact_keys) {
-            const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
-            const auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
-            // TODO: more specific error message if one of the above is actually empty?
-            if (checksum_for_key != cached_checksum_for_key) {
-                mismatched_keys.push_back(key);
-            }
-        }
-        return mismatched_keys;
-    }
+                                                   const std::vector<std::string> &artifact_keys) const;
 };
 
 } // namespace porytiles2
