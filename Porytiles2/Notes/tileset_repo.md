@@ -1,102 +1,133 @@
-# A `std::any` Solution
+# Proposed Draft Implementation
 ```c++
-#include <any>
-#include <string>
-#include <vector>
-#include <filesystem> // For an example implementation
 
-// Dummy types for the example
-struct VramMetatile {};
-struct Attributes {};
-class Tileset {
-  public:
-    const std::string& name() const { return name_; }
-    // porymap_component().metatiles() and porymap_component().attributes() assumed to exist
-  private:
-    std::string name_{"example_tileset"};
+struct Artifact {
+    enum class Type { metatiles_bin, porytiles_anim_key_frame, porytiles_anim_frame };
+    std::optional<std::string> name;
+    std::optional<int> index;
 };
 
-
-// --- INTERFACES ---
-
-class IKeyProvider {
+class ArtifactKeyProvider {
   public:
-    virtual ~IKeyProvider() = default;
-    virtual std::any porymap_metatiles(const std::string &tileset_name) const = 0;
-    virtual std::any porymap_attributes(const std::string &tileset_name) const = 0;
+    virtual std::any key_for(const std::string &tileset_name, const Artifact &artifact) const = 0;
+    virtual std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const = 0;
+    virtual std::set<std::string> discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
     virtual bool exists(const std::any &key) const = 0;
 };
 
-class IWriter {
+class ArtifactWriter {
   public:
-    virtual ~IWriter() = default;
-    virtual void write(const std::any &key, const std::vector<VramMetatile> &metatiles) = 0;
-    virtual void write(const std::any &key, const std::vector<Attributes> &attr) = 0;
-};
-```
-```c++
-// --- CONCRETE IMPLEMENTATIONS ---
-
-class FilePathKeyProvider : public IKeyProvider {
-  public:
-    std::any porymap_metatiles(const std::string &tileset_name) const override {
-        return std::filesystem::path{tileset_name + "/metatiles.bin"};
-    }
-
-    std::any porymap_attributes(const std::string &tileset_name) const override {
-        return std::filesystem::path{tileset_name + "/attributes.bin"};
-    }
-
-    bool exists(const std::any &key) const override {
-        // Cast the 'any' to the expected type. Throws std::bad_any_cast if types mismatch.
-        return std::filesystem::exists(std::any_cast<std::filesystem::path>(key));
-    }
+    virtual write(const std::any &key, const Artifact &artifact, const Tileset &src) = 0;
 };
 
-class FileWriter : public IWriter {
+class ArtifactReader {
   public:
-    void write(const std::any &key, const std::vector<VramMetatile> &metatiles) override {
-        const auto path = std::any_cast<std::filesystem::path>(key);
-        // ... logic to write metatiles to file at 'path'
-        std::cout << "Writing metatiles to: " << path << std::endl;
-    }
+    virtual read(const std::any &key, const Artifact &artifact, Tileset &dest) = 0;
+}
 
-    void write(const std::any &key, const std::vector<Attributes> &attr) override {
-        const auto path = std::any_cast<std::filesystem::path>(key);
-        // ... logic to write attributes to file at 'path'
-        std::cout << "Writing attributes to: " << path << std::endl;
-    }
-};
-```
-
-```c++
 class TilesetRepo {
   public:
-    // Dependencies are injected via references to the abstract interfaces.
-    TilesetRepo(const IKeyProvider &provider, IWriter &writer)
-        : key_provider_{provider}, writer_{writer} {}
+    Result<std::unique_ptr<Tileset>> load(const std::string &name) {
+        // Fail as late as possible
+        bool fail_at_exit = false;
 
-    void save_tileset(const Tileset &tileset) {
-        // The repo doesn't know or care what type the key is.
-        // It just passes the std::any from the provider to the writer.
-        auto metatiles_key = key_provider_.porymap_metatiles(tileset.name());
-        auto attr_key = key_provider_.porymap_attributes(tileset.name());
-
-        if (key_provider_.exists(metatiles_key)) {
-            std::cout << "Key exists, overwriting..." << std::endl;
+        /*
+         * Confirm tileset exists.
+         */
+        if (!exists(name)) {
+            return std::unexpected{"does not exist"};
         }
 
-        // Dummy data for the example
-        std::vector<VramMetatile> metatiles_data;
-        std::vector<Attributes> attributes_data;
-        
-        writer_.write(metatiles_key, metatiles_data);
-        writer_.write(attr_key, attributes_data);
+        /*
+         * Init tileset components, to be filled below.
+         */
+        auto tileset = std::make_unique<ProjectTileset>();
+        tileset->name(name);
+        tileset.porymap_component(std::make_unique<PorymapTilesetComponent>());
+        tileset.porytiles_component(std::make_unique<PorytilesTilesetComponent>());
+
+        /*
+         * Load artifacts from required keys first. We can check if they exist before performing a read op.
+         */
+        auto metatiles_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatiles_bin});
+        // this should also be possible
+        // would check that the artifact at the given key exists
+        if (!key_provider_.exists(metatiles_key)) {
+            return std::unexpected{"missing required artifact metatiles.bin"};
+        }
+        reader_.read(metatiles_key, Artifact{Artifact::Type::metatiles_bin}, *tileset);
+
+        auto attr_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatile_attr_bin});
+        reader_.read(attr_key, Artifact{Artifact::Type::metatile_attr_bin}, *tileset);
+
+        // More artifacts...
+
+        /*
+         * Now load optional artifacts, e.g. attributes csv, pal overrides, anims, etc.
+         */
+        auto attr_csv_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::attributes_csv});
+        if (key_provider_.exists(attr_csv_key)) {
+            reader_.read(attr_csv_key, Artifact{Artifact::Type::attributes_csv}, *tileset);
+        } else {
+            // Emit warning to user about missing attr csv
+        }
+
+        for (int i = 0; i < Tileset::num_pals; i++) {
+            auto override_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::override, i});
+            if (key_provider_.exists(override_key)) {
+                reader_.read(override_key, Artifact{Artifact::Type::override, i}, *tileset);
+            }
+        }
+
+        std::set<std::string> porytiles_anims = key_provider_.discover_porytiles_anims(tileset.name());
+        for (const auto &anim : porytiles_anims) {
+            // Read key frame
+            auto key_frame_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::anim_key_frame, anim});
+            if (!key_provider_.exists(key_frame_key)) {
+                // TODO: emit specific error to user
+                fail_at_exit = true;
+            }
+            reader_.read(key_frame_key, Artifact{Artifact::Type::anim_key_frame, anim}, *tileset);
+
+            // Read frame 00.png
+            auto frame_00_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::anim_frame, anim, 0});
+            if (!key_provider_.exists(frame_00_key)) {
+                // TODO: emit specific error to user
+                fail_at_exit = true;
+            }
+            reader_.read(frame_00_key, Artifact{Artifact::Type::anim_frame, anim, 0}, *tileset);
+
+            // Read the rest of the (optional) frames
+            std::set<int> frames = key_provider_.discover_porytiles_anim_frames(tileset.name(), anim);
+            for (const auto frame : frames) {
+                // TODO: fill in logic here
+            }
+        }
+
+        if (fail_at_exit) {
+            return std::unexpected{"error loading tileset"};
+        }
+
+        return tileset;
+    }
+
+    Result<void> save_tileset(const Tileset &tileset) {
+        auto metatiles_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatiles_bin});
+        auto attr_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatile_attr_bin});
+
+        writer_.write(metatiles_key, Artifact{Artifact::Type::metatiles_bin}, tileset);
+        writer_.write(attr_key, Artifact{Artifact::Type::metatile_attr_bin}, tileset);
+
+        /*
+         * TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g. removed an anim,
+         * the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem.
+         */
     }
 
   private:
-    const IKeyProvider &key_provider_;
-    IWriter &writer_;
+    ArtifactKeyProvider key_provider_;
+    ArtifactWriter writer_;
+    ArtifactReader reader_;
 };
 ```
 
