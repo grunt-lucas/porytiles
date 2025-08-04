@@ -10,8 +10,12 @@ struct Artifact {
 class ArtifactKeyProvider {
   public:
     virtual std::any key_for(const std::string &tileset_name, const Artifact &artifact) const = 0;
+
     virtual std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const = 0;
     virtual std::set<std::string> discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
+    virtual std::set<std::string> discover_porymap_anims(const std::string &tileset_name) const = 0;
+    virtual std::set<std::string> discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
+
     virtual bool exists(const std::any &key) const = 0;
 };
 
@@ -65,6 +69,7 @@ class TilesetRepo {
         /*
          * Now load optional artifacts, e.g. attributes csv, pal overrides, anims, etc.
          */
+        // attributes.csv
         auto attr_csv_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::attributes_csv});
         if (key_provider_.exists(attr_csv_key)) {
             reader_.read(attr_csv_key, Artifact{Artifact::Type::attributes_csv}, *tileset);
@@ -72,6 +77,7 @@ class TilesetRepo {
             // Emit warning to user about missing attr csv
         }
 
+        // palette overrides
         for (int i = 0; i < Tileset::num_pals; i++) {
             auto override_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::override, i});
             if (key_provider_.exists(override_key)) {
@@ -79,12 +85,13 @@ class TilesetRepo {
             }
         }
 
+        // porytiles anims
         std::set<std::string> porytiles_anims = key_provider_.discover_porytiles_anims(tileset.name());
         for (const auto &anim : porytiles_anims) {
             // Read key frame
             auto key_frame_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::anim_key_frame, anim});
             if (!key_provider_.exists(key_frame_key)) {
-                // TODO: emit specific error to user
+                // TODO: emit validation error: missing required key frame
                 fail_at_exit = true;
             }
             reader_.read(key_frame_key, Artifact{Artifact::Type::anim_key_frame, anim}, *tileset);
@@ -92,17 +99,26 @@ class TilesetRepo {
             // Read frame 00.png
             auto frame_00_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::anim_frame, anim, 0});
             if (!key_provider_.exists(frame_00_key)) {
-                // TODO: emit specific error to user
+                // TODO: emit validation error: missing required 00.png
                 fail_at_exit = true;
             }
             reader_.read(frame_00_key, Artifact{Artifact::Type::anim_frame, anim, 0}, *tileset);
 
             // Read the rest of the (optional) frames
             std::set<int> frames = key_provider_.discover_porytiles_anim_frames(tileset.name(), anim);
+            int expected_frame = 1;
             for (const auto frame : frames) {
-                // TODO: fill in logic here
+                if (frame != expected_frame) {
+                    // TODO: emit validation error: frame {} did not match expected frame {}
+                    fail_at_exit = true;
+                }
+                auto frame_n_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::anim_frame, anim, frame});
+                reader_.read(frame_n_key, Artifact{Artifact::Type::anim_frame, anim, frame}, *tileset);
+                expected_frame++;
             }
         }
+
+        // porymap anims would be the same, but without key frame logic
 
         if (fail_at_exit) {
             return std::unexpected{"error loading tileset"};
@@ -129,5 +145,6 @@ class TilesetRepo {
     ArtifactWriter writer_;
     ArtifactReader reader_;
 };
+
 ```
 

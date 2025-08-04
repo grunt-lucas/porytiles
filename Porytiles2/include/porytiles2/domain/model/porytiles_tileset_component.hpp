@@ -24,6 +24,8 @@ class PorytilesTilesetComponent {
         return metatiles_;
     }
 
+    [[nodiscard]] bool is_empty() const;
+
   private:
     std::vector<RgbaMetatile> metatiles_;
 };

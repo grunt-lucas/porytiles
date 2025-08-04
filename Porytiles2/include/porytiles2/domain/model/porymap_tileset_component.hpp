@@ -24,6 +24,8 @@ class PorymapTilesetComponent {
         return metatiles_;
     }
 
+    [[nodiscard]] bool is_empty() const;
+
   private:
     std::vector<VramMetatile> metatiles_;
 };
