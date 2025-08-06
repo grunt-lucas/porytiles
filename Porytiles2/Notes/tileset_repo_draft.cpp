@@ -58,6 +58,9 @@ class TilesetRepo {
         reader_.read(metatiles_key, Artifact{Artifact::Type::metatiles_bin}, *tileset);
 
         auto attr_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatile_attr_bin});
+        if (!key_provider_.exists(attr_key)) {
+            return std::unexpected{"missing required porymap artifact metatile_attributes.bin"};
+        }
         reader_.read(attr_key, Artifact{Artifact::Type::metatile_attr_bin}, *tileset);
 
         auto bottom_png_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::bottom_png});
