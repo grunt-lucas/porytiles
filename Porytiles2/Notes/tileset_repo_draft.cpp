@@ -1,5 +1,3 @@
-# Proposed Draft Implementation
-```c++
 
 struct Artifact {
     enum class Type { metatiles_bin, porytiles_anim_key_frame, porytiles_anim_frame };
@@ -21,12 +19,12 @@ class ArtifactKeyProvider {
 
 class ArtifactWriter {
   public:
-    virtual write(const std::any &key, const Artifact &artifact, const Tileset &src) = 0;
+    virtual write(const std::any &dest_key, const Artifact &artifact, const Tileset &src) = 0;
 };
 
 class ArtifactReader {
   public:
-    virtual read(const std::any &key, const Artifact &artifact, Tileset &dest) = 0;
+    virtual read(Tileset &dest, const std::any &src_key, const Artifact &artifact) = 0;
 }
 
 class TilesetRepo {
@@ -54,15 +52,20 @@ class TilesetRepo {
          * Load artifacts from required keys first. We can check if they exist before performing a read op.
          */
         auto metatiles_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatiles_bin});
-        // this should also be possible
-        // would check that the artifact at the given key exists
         if (!key_provider_.exists(metatiles_key)) {
-            return std::unexpected{"missing required artifact metatiles.bin"};
+            return std::unexpected{"missing required porymap artifact metatiles.bin"};
         }
         reader_.read(metatiles_key, Artifact{Artifact::Type::metatiles_bin}, *tileset);
 
         auto attr_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::metatile_attr_bin});
         reader_.read(attr_key, Artifact{Artifact::Type::metatile_attr_bin}, *tileset);
+
+        auto bottom_png_key = key_provider_.key_for(tileset.name(), Artifact{Artifact::Type::bottom_png});
+        if (!key_provider_.exists(bottom_png_key)) {
+            return std::unexpected{"missing required porytiles artifact bottom.png"};
+        }
+        // TODO: in this case, bottom.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
+        reader_.read(bottom_png_key, Artifact{Artifact::Type::bottom_png}, *tileset);
 
         // More artifacts...
 
@@ -145,6 +148,4 @@ class TilesetRepo {
     ArtifactWriter writer_;
     ArtifactReader reader_;
 };
-
-```
 
