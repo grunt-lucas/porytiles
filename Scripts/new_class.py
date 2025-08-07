@@ -28,6 +28,11 @@ def create_class_header(class_name, header_path):
     # Create full path
     full_path = os.path.join(header_path, hpp_filename)
     
+    # Check if file already exists
+    if os.path.exists(full_path):
+        print(f"file {full_path} already exists")
+        return
+    
     # Create header file content
     content = f"""#pragma once
 
@@ -69,6 +74,11 @@ def create_class_impl(class_name, impl_path, layer_path):
     # Create full path
     full_path = os.path.join(impl_path, cpp_filename)
     
+    # Check if file already exists
+    if os.path.exists(full_path):
+        print(f"file {full_path} already exists")
+        return
+    
     # Create impl file content
     content = f"""#include "porytiles2/{layer_path}/{snake_class_name}.hpp"
 
@@ -99,6 +109,11 @@ def create_class_test(class_name, test_path, layer_path):
     
     # Create full path
     full_path = os.path.join(test_path, cpp_filename)
+    
+    # Check if file already exists
+    if os.path.exists(full_path):
+        print(f"file {full_path} already exists")
+        return
     
     # Create impl file content
     content = f"""#include "gtest/gtest.h"

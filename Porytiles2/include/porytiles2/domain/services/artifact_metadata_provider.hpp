@@ -16,25 +16,6 @@ namespace porytiles2 {
 
 using Timestamp = std::filesystem::file_time_type;
 
-enum class ArtifactType {
-    metatiles_bin,
-    metatile_attributes_bin,
-    tiles_png,
-    pals,
-    pal_n,
-    porymap_anim,
-    porymap_anim_frame,
-    bottom_png,
-    middle_png,
-    top_png,
-    attributes_csv,
-    overrides,
-    override_n,
-    porytiles_anim,
-    porytiles_anim_frame,
-    porytiles_anim_key_frame
-};
-
 /**
  * @brief Abstract service for managing artifact metadata including checksums and timestamps.
  *

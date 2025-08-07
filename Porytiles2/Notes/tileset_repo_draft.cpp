@@ -22,18 +22,19 @@ class TilesetArtifactKeyProvider {
     // Should check if an artifact for the given key actually exists in the backing store.
     virtual bool exists(const std::any &key) const = 0;
 
-    // Implementations of ArtifactKeyProvider (e.g. ProjectArtifactKeyProvider) may choose to build a cache of tilesets in the ctor.
-    // That way, the key_for function can focus solely on static path building as opposed to searching a backing store.
+    // Implementations of ArtifactKeyProvider (e.g. ProjectArtifactKeyProvider) may choose to build a cache of tilesets's
+    // primary or secondary status in the ctor. That way, the key_for function can focus solely on static path building
+    // as opposed to searching a backing store.
 };
 
 class TilesetArtifactWriter {
   public:
-    virtual write(const std::any &dest_key, const Artifact &artifact, const Tileset &src) = 0;
+    virtual Result<void> write(const std::any &dest_key, const Artifact &artifact, const Tileset &src) = 0;
 };
 
 class TilesetArtifactReader {
   public:
-    virtual read(Tileset &dest, const std::any &src_key, const Artifact &artifact) = 0;
+    virtual Result<void> read(Tileset &dest, const std::any &src_key, const Artifact &artifact) = 0;
 }
 
 class TilesetRepo {
