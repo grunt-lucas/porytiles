@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "../../domain/model/tileset.hpp"
+#include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/infra/project/project_paths.hpp"
@@ -20,16 +20,18 @@ namespace porytiles2 {
  */
 class ProjectTilesetRepo final : public TilesetRepo {
   public:
-    explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_service,
+    explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
+                                std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
+                                std::unique_ptr<TilesetArtifactReader> reader,
+                                std::unique_ptr<TilesetArtifactWriter> writer,
                                 const gsl::not_null<ProjectPaths *> paths)
-        : TilesetRepo{std::move(metadata_service)}, paths_{paths} {}
-
-    [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const override;
+        : TilesetRepo{std::move(metadata_provider), std::move(key_provider), std::move(reader), std::move(writer)},
+          paths_{paths} {}
 
     [[nodiscard]] bool exists(const std::string &name) const override;
 
   protected:
-    [[nodiscard]] Result<void> save_tileset(const Tileset &tileset) override;
+    [[nodiscard]] std::unique_ptr<Tileset> create_empty_tileset() const override;
 
   private:
     const ProjectPaths *paths_;

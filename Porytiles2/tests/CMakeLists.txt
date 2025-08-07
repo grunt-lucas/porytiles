@@ -26,8 +26,8 @@ FILE(GLOB_RECURSE CppIntegrationSources CONFIGURE_DEPENDS integration/*.cpp)
 add_executable(Porytiles2UnitTests ${CppUnitSources})
 add_executable(Porytiles2IntegrationTests ${CppIntegrationSources})
 
-target_link_libraries(Porytiles2UnitTests PRIVATE GTest::gtest_main)
-target_link_libraries(Porytiles2IntegrationTests PRIVATE GTest::gtest_main)
+target_link_libraries(Porytiles2UnitTests PRIVATE GTest::gtest_main GTest::gmock)
+target_link_libraries(Porytiles2IntegrationTests PRIVATE GTest::gtest_main GTest::gmock)
 # gtest_discover_tests(Porytiles2UnitTests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Link against the Porytiles2 library

@@ -20,13 +20,11 @@ class ImportPrimaryTileset {
      *
      * @param tileset_repo A pointer to the TilesetRepo for this use case
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case
-     * @param metadata_provider A pointer to the ArtifactMetadataService for this use case
      * @param config A pointer to the Config for this use case
      */
     ImportPrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler,
-                         std::unique_ptr<ArtifactMetadataProvider> metadata_provider, std::unique_ptr<Config> config)
-        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)},
-          metadata_provider_{std::move(metadata_provider)}, config_{std::move(config)} {}
+                         std::unique_ptr<Config> config)
+        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)} {}
 
     /**
      * @brief Imports the primary Tileset with the given tileset name.
@@ -39,7 +37,6 @@ class ImportPrimaryTileset {
   private:
     std::unique_ptr<TilesetRepo> tileset_repo_;
     std::unique_ptr<PrimaryTilesetCompiler> compiler_;
-    std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
     std::unique_ptr<Config> config_;
 };
 

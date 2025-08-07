@@ -16,8 +16,11 @@ template <typename T>
 T LazyLayeredConfig::resolve_config_value(const std::string &cache_key,
                                           std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const {
     /*
-     * We need to declare this here to the to_string call below can resolve to either the std:: version or one of our
-     * custom versions.
+     * WARNING! HACK ALERT! WARNING!
+     * DO NOT DELETE THIS USING STATEMENT.
+     *
+     * We need to declare this here so that the to_string call below can resolve to either the std:: version or one of
+     * our custom versions automagically.
      */
     using std::to_string;
 

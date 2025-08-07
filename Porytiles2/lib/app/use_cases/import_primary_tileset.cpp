@@ -20,20 +20,35 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     }
     const auto tileset = std::move(maybe_tileset.value());
 
-    // 3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the newest Porytiles
-    // asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
+    // 3. If `PorymapTilesetComponent` is empty, bail with error.
+    if (tileset->porymap_component()->is_empty()) {
+        return std::unexpected{"PorymapTilesetComponent was empty"};
+    }
 
-    // 4. Import the Porymap assets into the `PorymapTilesetComponent` and compute checksums for each.
+    // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
+    // any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+    if (!tileset->porytiles_component()->is_empty()) {
+        const auto porytiles_keys = tileset_repo_->metadata_provider().get_porytiles_artifact_keys(tileset_name);
+        const auto mismatched_keys =
+            tileset_repo_->metadata_provider().find_unsynced_artifacts(tileset_name, porytiles_keys);
+        if (!mismatched_keys.empty()) {
+            return std::unexpected{"uncompiled changes present in Porytiles assets: TODO keys here"};
+        }
+    }
 
-    // 5. If `PorytilesTilesetComponent` is not empty and all checksums match, bail with the message "nothing to do."
+    // 5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
+    // message "nothing to do."
+    const auto porymap_keys = tileset_repo_->metadata_provider().get_porymap_artifact_keys(tileset_name);
+    if (tileset_repo_->metadata_provider().all_checksums_match(tileset_name, porymap_keys)) {
+        // TODO: display a nothing_to_do message to the user
+        return {};
+    }
 
-    // 6. Perform a complete decompilation.
+    // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
 
-    // 7. Fill in the `PorytilesTilesetComponent` with the decompiled assets.
+    // 7. Perform an incremental compilation.
 
-    // 8. Perform an incremental compilation and re-store checksums.
-
-    // 9. Persist the `Tileset` aggregate.
+    // 8. Persist the `Tileset` (which also caches the checksums).
 
     return {};
 }

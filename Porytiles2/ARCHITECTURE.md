@@ -31,8 +31,8 @@ porytiles2 create-tileset MyTileset
 2. Initialize a `PorytilesTilesetComponent` with default assets.
 3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
 4. Initialize a new `Tileset` aggregate with the components.
-5. Generate checksums and update the source and header files.
-6. Persist the `Tileset`.
+5. Update the source and header files.
+6. Persist the `Tileset` (which also caches the checksums).
 
 ### Outputs
 The resulting tileset directory tree:
@@ -157,16 +157,17 @@ porytiles2 import-tileset general
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
-3. If `PorytilesTilesetComponent` is not empty (i.e., a `porytiles` folder exists), and the newest Porytiles asset is newer than the newest Porymap asset, bail with the message "uncompiled changes in Porytiles asset X."
-4. Import the Porymap assets into the `PorymapTilesetComponent` and compute checksums for each.
-5. If `PorytilesTilesetComponent` is not empty and all checksums match, bail with the message "nothing to do."
-6. Perform a complete decompilation.
-7. Fill in the `PorytilesTilesetComponent` with the decompiled assets.
-8. Perform an incremental compilation and re-store checksums.
-9. Persist the `Tileset` aggregate.
+3. If `PorymapTilesetComponent` is empty, bail with error.
+4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
+6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+7. Perform an incremental compilation.
+8. Persist the `Tileset` (which also caches the checksums).
+
+TODO: review the timestamp and checksum logic here to make sure it actually catches uncompiled changes
 
 ### Outputs
-Importing a tileset will set `incremental = true` by default.
+Importing a tileset for the first time will set `incremental = true` by default.
 [See here for more on incremental builds.](#incremental-build-support)
 
 ```toml
@@ -197,13 +198,11 @@ porytiles2 compile-tileset MyTileset
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
 2. Load the tileset into a `Tileset` aggregate.
-3. Compute checksums for each asset in `PorymapTilesetComponent`.
-4. Compare with cached checksums in `artifact_checksums.json`, if any differ, bail with the message "unimported changes present in Porymap asset X."
-5. If all match, continue.
-6. If the newest Porymap asset "modified" timestamp is newer than the newest Porytiles asset "modified" timestamp, bail with "nothing to do."
-7. Otherwise, compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
-8. Compute new artifact checksums.
-9. Persist the `Tileset` aggregate.
+3. If `PorytilesTilesetComponent` is empty, bail with error.
+4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any differ, bail with the message "unimported changes present in Porymap asset X."
+5. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
+6. Compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
+7. Persist the `Tileset` (which also caches the checksums).
 
 ## Compile Secondary Tileset
 TODO
@@ -217,10 +216,10 @@ TODO
 TODO : EXPLAIN
 
 ## Incremental Build Support
-User can specify an incremental tileset build by specifying `--incremental=keep-unused`
+User can specify an incremental tileset build by specifying `--incremental=keep-unused` at the CLI
 or by setting `incremental = keep-unused` in the tileset TOML config.
 
-When incremental is set,
+When `incremental=keep-unused` is set,
 compilation will not disturb currently existing Porymap assets.
 That is, existing palettes will be treated as "overrides" in the compilation,
 and existing tiles will be left undisturbed (but reused if possible).
@@ -234,7 +233,11 @@ That is, if you remove all instances of a given tile from the metatile sheets,
 an incremental build will still leave that tile in `tiles.png`.
 This is so that incremental builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
-We can provide some kind of option like `--incremental=remove-unused` to modify this behavior?
+
+We provide `incremental=remove-unused` to modify this behavior.
+When `incremental=remove-unused` is set, we leave existing tiles undisturbed like before.
+But we sweep the tiles/pals at the end and remove any that are no longer in use.
+That means we'll need some kind of usage counter mechanism.
 
 One problem we need to solve:
 if we pre-populate the final `tiles.png` representation,
