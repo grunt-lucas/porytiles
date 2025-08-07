@@ -6,7 +6,7 @@
 namespace porytiles2 {
 
 /**
- * @brief Represents a Pokémon Emerald tileset artifact with type and optional metadata.
+ * @brief Represents a Pokémon Generation III decomp tileset artifact with type and optional metadata.
  *
  * @details
  * A tileset artifact is a file or data component that belongs to a tileset. Each artifact has a specific type (such as
