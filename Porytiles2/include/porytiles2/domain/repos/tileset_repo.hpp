@@ -82,18 +82,6 @@ class TilesetRepo {
         return *metadata_provider_;
     }
 
-  protected:
-    /**
-     * @brief Creates an empty tileset instance for loading.
-     *
-     * @details
-     * Load calls this factory method to create the appropriate tileset type.
-     * Derived classes should override this to create their specific tileset implementation.
-     *
-     * @return A unique pointer to a new empty Tileset instance.
-     */
-    [[nodiscard]] virtual std::unique_ptr<Tileset> create_empty_tileset() const = 0;
-
   private:
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
     std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;

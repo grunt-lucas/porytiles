@@ -10,11 +10,6 @@
 
 namespace porytiles2 {
 
-std::unique_ptr<Tileset> ProjectTilesetRepo::create_empty_tileset() const {
-    // TODO: this should return a ProjectTileset
-    return std::make_unique<Tileset>();
-}
-
 bool ProjectTilesetRepo::exists(const std::string &name) const {
     // TODO : impl
     panic("unimplemented");

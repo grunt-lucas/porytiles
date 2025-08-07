@@ -30,9 +30,6 @@ class ProjectTilesetRepo final : public TilesetRepo {
 
     [[nodiscard]] bool exists(const std::string &name) const override;
 
-  protected:
-    [[nodiscard]] std::unique_ptr<Tileset> create_empty_tileset() const override;
-
   private:
     const ProjectPaths *paths_;
 };
