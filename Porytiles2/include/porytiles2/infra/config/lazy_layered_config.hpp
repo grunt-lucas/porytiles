@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "porytiles2/domain/config/config.hpp"
-#include "porytiles2/infra/config/config_layer_provider.hpp"
+#include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
