@@ -3,7 +3,10 @@
 #include <memory>
 #include <string>
 
-#include "../model/tileset.hpp"
+#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
+#include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/templates/result.hpp"
 
@@ -20,8 +23,23 @@ class TilesetRepo {
   public:
     virtual ~TilesetRepo() = default;
 
-    explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider)
-        : metadata_provider_{std::move(metadata_provider)} {}
+    /**
+     * @brief Constructs a TilesetRepo with the required dependencies.
+     *
+     * @details
+     * Initializes the repository with all necessary components for tileset persistence operations. These dependencies
+     * provide the concrete implementations for metadata management, key generation, and artifact I/O operations.
+     *
+     * @param metadata_provider Provider for computing and caching artifact checksums
+     * @param key_provider Provider for generating keys and discovering artifacts in the backing store
+     * @param reader Reader implementation for loading artifacts from the backing store
+     * @param writer Writer implementation for saving artifacts to the backing store
+     */
+    explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
+                         std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
+                         std::unique_ptr<TilesetArtifactReader> reader, std::unique_ptr<TilesetArtifactWriter> writer)
+        : metadata_provider_{std::move(metadata_provider)}, key_provider_{std::move(key_provider)},
+          reader_{std::move(reader)}, writer_{std::move(writer)} {}
 
     /**
      * @brief Persists a given Tileset and caches new artifact checksums.
@@ -58,6 +76,15 @@ class TilesetRepo {
      */
     [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
 
+    /**
+     * @brief Gets a reference to the metadata provider.
+     *
+     * @details
+     * Provides access to the metadata provider for computing artifact checksums and managing artifact caches. This is
+     * primarily used by derived implementations for checksum validation and caching operations.
+     *
+     * @return Reference to the artifact metadata provider
+     */
     [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
         return *metadata_provider_;
     }
@@ -74,6 +101,9 @@ class TilesetRepo {
 
   private:
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
+    std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;
+    std::unique_ptr<TilesetArtifactReader> reader_;
+    std::unique_ptr<TilesetArtifactWriter> writer_;
 };
 
 } // namespace porytiles2
