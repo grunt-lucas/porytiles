@@ -51,14 +51,7 @@ class TilesetRepo {
      * @param tileset The Tileset to save.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] Result<void> save(const Tileset &tileset) const {
-        if (auto save_result = save_tileset(tileset); !save_result.has_value()) {
-            return save_result;
-        }
-
-        const auto current_checksums = metadata_provider_->compute_artifact_checksums(tileset.name());
-        return metadata_provider_->cache_checksums(tileset.name(), current_checksums);
-    }
+    [[nodiscard]] Result<void> save(const Tileset &tileset) const;
 
     /**
      * @brief Loads an existing Tileset from storage.
@@ -66,7 +59,7 @@ class TilesetRepo {
      * @param name The name of the Tileset to load.
      * @return A Tileset Result on success, otherwise an error description.
      */
-    [[nodiscard]] virtual Result<std::unique_ptr<Tileset>> load(const std::string &name) const = 0;
+    [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const;
 
     /**
      * @brief Checks if the given Tileset exists in the backing store.
@@ -91,13 +84,15 @@ class TilesetRepo {
 
   protected:
     /**
-     * @brief Persists a given Tileset.
+     * @brief Creates an empty tileset instance for loading.
      *
-     * @param tileset The Tileset to save.
-     * @return An empty Result on success, otherwise an error description.
+     * @details
+     * Load calls this factory method to create the appropriate tileset type.
+     * Derived classes should override this to create their specific tileset implementation.
      *
+     * @return A unique pointer to a new empty Tileset instance.
      */
-    [[nodiscard]] virtual Result<void> save_tileset(const Tileset &tileset) const = 0;
+    [[nodiscard]] virtual std::unique_ptr<Tileset> create_empty_tileset() const = 0;
 
   private:
     std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
