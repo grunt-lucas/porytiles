@@ -15,9 +15,9 @@ class TilesetArtifactKeyProvider {
 
     // The "discover" method family should actually search the backing store to determine which, if any, optional assets were supplied.
     virtual std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const = 0;
-    virtual std::set<std::string> discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
+    virtual std::set<int> discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
     virtual std::set<std::string> discover_porymap_anims(const std::string &tileset_name) const = 0;
-    virtual std::set<std::string> discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
+    virtual std::set<int> discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
 
     // Should check if an artifact for the given key actually exists in the backing store.
     virtual bool exists(const std::any &key) const = 0;
