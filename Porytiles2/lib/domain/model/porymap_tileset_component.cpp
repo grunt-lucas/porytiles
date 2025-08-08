@@ -10,4 +10,8 @@ void PorymapTilesetComponent::push_back(VramMetatile metatile) {
     metatiles_.push_back(std::move(metatile));
 }
 
+bool PorymapTilesetComponent::is_empty() const {
+    return metatiles_.empty();
+}
+
 } // namespace porytiles2

@@ -10,4 +10,8 @@ void PorytilesTilesetComponent::push_back(RgbaMetatile metatile) {
     metatiles_.push_back(std::move(metatile));
 }
 
+bool PorytilesTilesetComponent::is_empty() const {
+    return metatiles_.empty();
+}
+
 } // namespace porytiles2
