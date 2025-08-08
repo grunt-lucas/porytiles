@@ -5,9 +5,9 @@
 
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/domain/repos/tileset_artifact_metadata_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles2/domain/services/tileset_artifact_metadata_provider.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {

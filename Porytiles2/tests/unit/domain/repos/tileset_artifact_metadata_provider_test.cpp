@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/services/tileset_artifact_metadata_provider.hpp"
+#include "../../../../include/porytiles2/domain/repos/tileset_artifact_metadata_provider.hpp"
 
 using namespace porytiles2;
 using namespace ::testing;

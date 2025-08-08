@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/domain/repos/tileset_artifact_metadata_provider.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/tileset_artifact_metadata_provider.hpp"
 
 namespace porytiles2 {
 

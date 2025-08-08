@@ -2,15 +2,12 @@
 
 #include <chrono>
 #include <filesystem>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 
-#include "fmt/format.h"
-
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/templates/result.hpp"
-
-#include <ranges>
 
 namespace porytiles2 {
 
