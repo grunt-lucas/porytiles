@@ -318,3 +318,14 @@ Detailed overview of animation handling.
 Since decompilation-recompilation and incremental compilation
 are such a big piece of the Porytiles2 flow,
 animation handling needs to be transparently symmetrical.
+
+One big difference from the Porytiles1 system:
+Porymap animations now have a key.png frame.
+Why? We need this to allow for seamless decompilation-recompilation.
+For vanilla tilesets that are being imported for the first time,
+we'll need some way to automatically generate animation key frames
+as well as determine where on the layer sheet the key frames should be used.
+This can probably be inferred by inspecting the animation code,
+which contains hardcoded tileset offsets for each animation.
+After everything is imported the first time,
+we can compute animation offsets via our generated anim code.

@@ -213,6 +213,16 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
 
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
          const auto &anim : porymap_anims) {
+        // Read key frame
+        auto key_frame_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_key_frame, anim});
+        if (!key_provider_->exists(key_frame_key)) {
+            // TODO: emit validation error: missing required key frame
+            // TODO: technically this field is optional: consider case for first-time import of vanilla tileset
+            fail_at_exit = true;
+            continue;
+        }
+        reader_->read(*tileset, key_frame_key, TilesetArtifact{porymap_anim_key_frame, anim});
+
         // Read frame 00.png
         auto frame_00_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_frame, anim, 0});
         if (!key_provider_->exists(frame_00_key)) {
