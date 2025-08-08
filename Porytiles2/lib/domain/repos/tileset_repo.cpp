@@ -6,26 +6,46 @@
 namespace porytiles2 {
 
 /*
- * TODO: how can we make these operations atomic, specifically the save operation?
- */
-
-/*
  * TODO: we need better error handling, specifically the std::unexpected returns should be more descriptive
  */
 
 Result<void> TilesetRepo::save(const Tileset &tileset) const {
     using enum TilesetArtifact::Type;
 
+    // Begin transaction for atomic writes
+    if (auto result = writer_->begin_transaction(); !result) {
+        return result;
+    }
+
+    // Perform all write operations within the transaction
     auto metatiles_key = key_provider_->key_for(tileset.name(), TilesetArtifact{metatiles_bin});
-    writer_->write(metatiles_key, TilesetArtifact{metatiles_bin}, tileset);
+    if (auto result = writer_->write(metatiles_key, TilesetArtifact{metatiles_bin}, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
+
     auto attr_key = key_provider_->key_for(tileset.name(), TilesetArtifact{metatile_attributes_bin});
-    writer_->write(attr_key, TilesetArtifact{metatile_attributes_bin}, tileset);
+    if (auto result = writer_->write(attr_key, TilesetArtifact{metatile_attributes_bin}, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
 
     // TODO: fill in rest of the artifacts...
 
-    // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
-    // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem.
+    // Commit all writes atomically
+    if (auto result = writer_->commit(); !result) {
+        // Commit failed, attempt rollback (though it may not be necessary after failed commit)
+        std::ignore = writer_->rollback();
+        return result;
+    }
 
+    // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
+    // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem. Perhaps
+    // this can be part of the tileset commit logic? E.g. if we implement the ProjectArtifactWriter using simple
+    // filesystem directory move operations, this will be handled automatically since the new directory won't contain
+    // any of the stale artifacts.
+
+    // Cache checksums after successful save
     const auto current_checksums = metadata_provider_->compute_artifact_checksums(tileset.name());
     return metadata_provider_->cache_checksums(tileset.name(), current_checksums);
 }
