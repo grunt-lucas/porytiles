@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
+#include "../repos/project_tileset_key_provider.hpp"
 #include "porytiles2/domain/services/c_source_file_modifier.hpp"
 #include "porytiles2/domain/services/c_source_generator.hpp"
-#include "porytiles2/infra/project/project_paths.hpp"
 #include "porytiles2/templates/result.hpp"
 
 #include <gsl/gsl>
@@ -43,7 +43,7 @@ class ProjectCSourceFileAppender final : public CSourceFileModifier {
      * @param paths Project path computation service (must not be null)
      * @param generator C source code generation service
      */
-    explicit ProjectCSourceFileAppender(gsl::not_null<ProjectPaths *> paths,
+    explicit ProjectCSourceFileAppender(gsl::not_null<ProjectTilesetKeyProvider *> paths,
                                         std::unique_ptr<CSourceGenerator> generator);
 
     [[nodiscard]] Result<void> append_to_graphics_header(const std::string &tileset_name) override;
@@ -52,7 +52,7 @@ class ProjectCSourceFileAppender final : public CSourceFileModifier {
     [[nodiscard]] Result<void> append_tileset_declarations(const std::string &tileset_name) override;
 
   private:
-    const ProjectPaths *paths_;
+    const ProjectTilesetKeyProvider *paths_;
     std::unique_ptr<CSourceGenerator> generator_;
 };
 

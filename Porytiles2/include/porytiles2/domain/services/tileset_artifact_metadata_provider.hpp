@@ -27,9 +27,9 @@ using Timestamp = std::filesystem::file_time_type;
  * This service is essential for the compilation pipeline to determine when assets need to be recompiled based on
  * changes to source files or existing artifacts.
  */
-class ArtifactMetadataProvider {
+class TilesetArtifactMetadataProvider {
   public:
-    virtual ~ArtifactMetadataProvider() = default;
+    virtual ~TilesetArtifactMetadataProvider() = default;
 
     /**
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.

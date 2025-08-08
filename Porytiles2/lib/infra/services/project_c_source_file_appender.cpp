@@ -6,9 +6,9 @@
 #include <sstream>
 #include <string>
 
+#include "../../../include/porytiles2/infra/repos/project_tileset_key_provider.hpp"
 #include "porytiles2/domain/services/c_source_file_modifier.hpp"
 #include "porytiles2/domain/services/c_source_generator.hpp"
-#include "porytiles2/infra/project/project_paths.hpp"
 #include "porytiles2/templates/result.hpp"
 
 #include <fmt/format.h>
@@ -67,7 +67,7 @@ porytiles2::Result<void> append_to_file(const std::filesystem::path &file_path, 
 
 namespace porytiles2 {
 
-ProjectCSourceFileAppender::ProjectCSourceFileAppender(const gsl::not_null<ProjectPaths *> paths,
+ProjectCSourceFileAppender::ProjectCSourceFileAppender(const gsl::not_null<ProjectTilesetKeyProvider *> paths,
                                                        std::unique_ptr<CSourceGenerator> generator)
     : paths_{paths}, generator_{std::move(generator)} {}
 

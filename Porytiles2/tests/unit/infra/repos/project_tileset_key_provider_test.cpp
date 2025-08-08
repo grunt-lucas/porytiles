@@ -1,37 +1,37 @@
 #include "gtest/gtest.h"
 
-#include "porytiles2/infra/project/project_paths.hpp"
+#include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
 
 using namespace porytiles2;
 
 TEST(ProjectPathsTests, BehaviorsHeaderDefaultShouldWork) {
-    const ProjectPaths paths{"/foo/bar"};
+    const ProjectTilesetKeyProvider paths{"/foo/bar"};
     EXPECT_EQ(paths.behaviors_header(), "/foo/bar/include/constants/metatile_behaviors.h");
 }
 
 TEST(ProjectPathsTests, BehaviorsHeaderWithConfigShouldWork) {
-    ProjectPaths paths1{"/foo/bar"};
+    ProjectTilesetKeyProvider paths1{"/foo/bar"};
     paths1.set_behaviors_header_override_path("src");
     EXPECT_EQ(paths1.behaviors_header(), "/foo/bar/src/metatile_behaviors.h");
 
-    ProjectPaths paths2{"/foo/bar"};
+    ProjectTilesetKeyProvider paths2{"/foo/bar"};
     paths2.set_behaviors_header_override_file("my_cool_header.h");
     EXPECT_EQ(paths2.behaviors_header(), "/foo/bar/include/constants/my_cool_header.h");
 
-    ProjectPaths paths3{"/foo/bar"};
+    ProjectTilesetKeyProvider paths3{"/foo/bar"};
     paths3.set_behaviors_header_override_path("src");
     paths3.set_behaviors_header_override_file("my_cool_header.h");
     EXPECT_EQ(paths3.behaviors_header(), "/foo/bar/src/my_cool_header.h");
 }
 
 TEST(ProjectPathsTests, PrimaryTilesetDirectoryShouldWork) {
-    const ProjectPaths paths{"/foo/bar"};
+    const ProjectTilesetKeyProvider paths{"/foo/bar"};
     EXPECT_EQ(paths.primary_tileset_directory("general"), "/foo/bar/data/tilesets/primary/general");
     EXPECT_EQ(paths.primary_tileset_directory("building"), "/foo/bar/data/tilesets/primary/building");
 }
 
 TEST(ProjectPathsTests, PrimaryTilesetPngFilesShouldWork) {
-    const ProjectPaths paths{"/foo/bar"};
+    const ProjectTilesetKeyProvider paths{"/foo/bar"};
 
     EXPECT_EQ(paths.primary_bottom_png("general"), "/foo/bar/data/tilesets/primary/general/porytiles/bottom.png");
     EXPECT_EQ(paths.primary_middle_png("general"), "/foo/bar/data/tilesets/primary/general/porytiles/middle.png");
@@ -43,13 +43,13 @@ TEST(ProjectPathsTests, PrimaryTilesetPngFilesShouldWork) {
 }
 
 TEST(ProjectPathsTests, SecondaryTilesetDirectoryShouldWork) {
-    const ProjectPaths paths{"/foo/bar"};
+    const ProjectTilesetKeyProvider paths{"/foo/bar"};
     EXPECT_EQ(paths.secondary_tileset_directory("petalburg_woods"), "/foo/bar/data/tilesets/secondary/petalburg_woods");
     EXPECT_EQ(paths.secondary_tileset_directory("route_104"), "/foo/bar/data/tilesets/secondary/route_104");
 }
 
 TEST(ProjectPathsTests, SecondaryTilesetPngFilesShouldWork) {
-    const ProjectPaths paths{"/foo/bar"};
+    const ProjectTilesetKeyProvider paths{"/foo/bar"};
 
     EXPECT_EQ(paths.secondary_bottom_png("petalburg_woods"),
               "/foo/bar/data/tilesets/secondary/petalburg_woods/porytiles/bottom.png");

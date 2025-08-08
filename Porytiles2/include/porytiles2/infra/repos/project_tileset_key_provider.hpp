@@ -5,15 +5,13 @@
 #include <string>
 #include <utility>
 
+#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+
 namespace porytiles2 {
 
-/**
- * @brief Provides `pokeemerald` project path computational functionality based on a given project
- * root.
- */
-class ProjectPaths {
+class ProjectTilesetKeyProvider : public TilesetArtifactKeyProvider {
   public:
-    explicit ProjectPaths(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
+    explicit ProjectTilesetKeyProvider(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
 
     /**
      * @brief Computes the path to the given primary tileset's directory.
@@ -148,9 +146,6 @@ class ProjectPaths {
     std::filesystem::path project_root_;
     std::optional<std::filesystem::path> behaviors_header_override_path_;
     std::optional<std::string> behaviors_header_override_file_;
-
-    // TODO : implement this properly
-    // std::optional<std::filesystem::path> tilesets_root_override_path_;
 };
 
 } // namespace porytiles2

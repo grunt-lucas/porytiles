@@ -5,12 +5,12 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/services/artifact_metadata_provider.hpp"
+#include "porytiles2/domain/services/tileset_artifact_metadata_provider.hpp"
 
 using namespace porytiles2;
 using namespace ::testing;
 
-class MockArtifactMetadataProvider : public ArtifactMetadataProvider {
+class MockArtifactMetadataProvider : public TilesetArtifactMetadataProvider {
   public:
     MOCK_METHOD((std::vector<std::string>), get_porytiles_artifact_keys, (const std::string &tileset_name),
                 (const, override));

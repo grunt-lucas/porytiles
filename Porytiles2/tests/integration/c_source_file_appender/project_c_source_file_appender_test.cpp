@@ -7,7 +7,7 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/infra/project/project_paths.hpp"
+#include "../../../include/porytiles2/infra/repos/project_tileset_key_provider.hpp"
 #include "porytiles2/infra/services/project_c_source_file_appender.hpp"
 #include "porytiles2/infra/services/textual_c_source_generator.hpp"
 
@@ -24,7 +24,7 @@ class ProjectCSourceFileAppenderIntegrationTest : public ::testing::Test {
         create_project_structure();
 
         // Create ProjectPaths and services
-        project_paths_ = std::make_unique<ProjectPaths>(temp_dir_);
+        project_paths_ = std::make_unique<ProjectTilesetKeyProvider>(temp_dir_);
         auto generator = std::make_unique<TextualCSourceGenerator>();
         appender_ =
             std::make_unique<ProjectCSourceFileAppender>(gsl::not_null(project_paths_.get()), std::move(generator));
@@ -136,7 +136,7 @@ const u16 gMetatileAttributes_General[] = INCBIN_U16("data/tilesets/primary/gene
     }
 
     std::filesystem::path temp_dir_;
-    std::unique_ptr<ProjectPaths> project_paths_;
+    std::unique_ptr<ProjectTilesetKeyProvider> project_paths_;
     std::unique_ptr<ProjectCSourceFileAppender> appender_;
 };
 
