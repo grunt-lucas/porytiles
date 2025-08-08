@@ -39,12 +39,13 @@ class TilesetArtifact {
         attributes_csv,           ///< CSV file containing metatile attribute overrides
         porytiles_anim_key_frame, ///< Key frame PNG for Porytiles animation
         porytiles_anim_frame,     ///< Animation frame PNG for Porytiles animation
-        override_n,               ///< JASC palette override file
-        metatiles_bin,            ///< Metatile data output for Porymap
-        metatile_attributes_bin,  ///< Metatile attributes output for Porymap
-        tiles_png,                ///< Combined tile sheet PNG output for Porymap
-        porymap_anim_frame,       ///< Animation frame for Porymap format
-        pal_n                     ///< JASC palette data file
+        pal_override_n,           ///< JASC palette override file
+        // pal_hint_n,            // TODO: pal hints could be like Porytiles1's palette primers?
+        metatiles_bin,           ///< Metatile data output for Porymap
+        metatile_attributes_bin, ///< Metatile attributes output for Porymap
+        tiles_png,               ///< Combined tile sheet PNG output for Porymap
+        porymap_anim_frame,      ///< Animation frame for Porymap format
+        pal_n                    ///< JASC palette data file
     };
 
     /**

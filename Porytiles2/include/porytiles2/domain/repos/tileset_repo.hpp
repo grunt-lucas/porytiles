@@ -73,8 +73,7 @@ class TilesetRepo {
      * @brief Gets a reference to the metadata provider.
      *
      * @details
-     * Provides access to the metadata provider for computing artifact checksums and managing artifact caches. This is
-     * primarily used by derived implementations for checksum validation and caching operations.
+     * Provides access to the metadata provider for derived implementations to use.
      *
      * @return Reference to the artifact metadata provider
      */

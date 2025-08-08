@@ -18,19 +18,61 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const {
     }
 
     // Perform all write operations within the transaction
-    auto metatiles_key = key_provider_->key_for(tileset.name(), TilesetArtifact{metatiles_bin});
-    if (auto result = writer_->write(metatiles_key, TilesetArtifact{metatiles_bin}, tileset); !result) {
+
+    // Porytiles assets
+    // TODO: fill in the override and anim artifacts
+
+    auto bottom_png_artifact = TilesetArtifact{bottom_png};
+    auto bottom_png_key = key_provider_->key_for(tileset.name(), bottom_png_artifact);
+    if (auto result = writer_->write(bottom_png_key, bottom_png_artifact, tileset); !result) {
         std::ignore = writer_->rollback();
         return result;
     }
 
-    auto attr_key = key_provider_->key_for(tileset.name(), TilesetArtifact{metatile_attributes_bin});
-    if (auto result = writer_->write(attr_key, TilesetArtifact{metatile_attributes_bin}, tileset); !result) {
+    auto middle_png_artifact = TilesetArtifact{middle_png};
+    auto middle_png_key = key_provider_->key_for(tileset.name(), middle_png_artifact);
+    if (auto result = writer_->write(middle_png_key, middle_png_artifact, tileset); !result) {
         std::ignore = writer_->rollback();
         return result;
     }
 
-    // TODO: fill in rest of the artifacts...
+    auto top_png_artifact = TilesetArtifact{top_png};
+    auto top_png_key = key_provider_->key_for(tileset.name(), top_png_artifact);
+    if (auto result = writer_->write(top_png_key, top_png_artifact, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
+
+    auto attr_csv_artifact = TilesetArtifact{attributes_csv};
+    auto attr_csv_key = key_provider_->key_for(tileset.name(), attr_csv_artifact);
+    if (auto result = writer_->write(attr_csv_key, attr_csv_artifact, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
+
+    // Porymap assets
+    // TODO: fill in the pal and anim artifacts
+
+    auto metatiles_artifact = TilesetArtifact{metatiles_bin};
+    auto metatiles_key = key_provider_->key_for(tileset.name(), metatiles_artifact);
+    if (auto result = writer_->write(metatiles_key, metatiles_artifact, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
+
+    auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
+    auto attr_key = key_provider_->key_for(tileset.name(), attr_artifact);
+    if (auto result = writer_->write(attr_key, attr_artifact, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
+
+    auto tiles_png_artifact = TilesetArtifact{tiles_png};
+    auto tiles_png_key = key_provider_->key_for(tileset.name(), tiles_png_artifact);
+    if (auto result = writer_->write(tiles_png_key, tiles_png_artifact, tileset); !result) {
+        std::ignore = writer_->rollback();
+        return result;
+    }
 
     // Commit all writes atomically
     if (auto result = writer_->commit(); !result) {
@@ -66,47 +108,50 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     tileset->porytiles_component(std::make_unique<PorytilesTilesetComponent>());
     tileset->porymap_component(std::make_unique<PorymapTilesetComponent>());
 
-    // Load artifacts from required keys first. We can check if they exist before performing a read op.
-    const auto metatiles_key = key_provider_->key_for(tileset->name(), TilesetArtifact{metatiles_bin});
-    if (!key_provider_->exists(metatiles_key)) {
-        return std::unexpected{"missing required porymap artifact metatiles.bin"};
-    }
-    reader_->read(*tileset, metatiles_key, TilesetArtifact{metatiles_bin});
+    // Porytiles assets
+    // TODO: fill in override artifacts
 
-    const auto attr_key = key_provider_->key_for(tileset->name(), TilesetArtifact{metatile_attributes_bin});
-    if (!key_provider_->exists(attr_key)) {
-        return std::unexpected{"missing required porymap artifact metatile_attributes.bin"};
-    }
-    reader_->read(*tileset, attr_key, TilesetArtifact{metatile_attributes_bin});
-
-    auto bottom_png_key = key_provider_->key_for(tileset->name(), TilesetArtifact{bottom_png});
+    const auto bottom_png_artifact = TilesetArtifact{bottom_png};
+    const auto bottom_png_key = key_provider_->key_for(tileset->name(), bottom_png_artifact);
     if (!key_provider_->exists(bottom_png_key)) {
         return std::unexpected{"missing required porytiles artifact bottom.png"};
     }
     // TODO: in this case, bottom.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
-    reader_->read(*tileset, bottom_png_key, TilesetArtifact{bottom_png});
+    reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
 
-    // TODO: fill in rest of the required artifacts...
+    const auto middle_png_artifact = TilesetArtifact{middle_png};
+    const auto middle_png_key = key_provider_->key_for(tileset->name(), middle_png_artifact);
+    if (!key_provider_->exists(middle_png_key)) {
+        return std::unexpected{"missing required porytiles artifact middle.png"};
+    }
+    // TODO: in this case, middle.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
+    reader_->read(*tileset, middle_png_key, middle_png_artifact);
 
-    // Now load optional artifacts, e.g. attributes csv, pal overrides, anims, etc.
-    // attributes.csv
-    if (const auto attr_csv_key = key_provider_->key_for(tileset->name(), TilesetArtifact{attributes_csv});
-        key_provider_->exists(attr_csv_key)) {
-        reader_->read(*tileset, attr_csv_key, TilesetArtifact{attributes_csv});
+    const auto top_png_artifact = TilesetArtifact{top_png};
+    const auto top_png_key = key_provider_->key_for(tileset->name(), top_png_artifact);
+    if (!key_provider_->exists(top_png_key)) {
+        return std::unexpected{"missing required porytiles artifact top.png"};
+    }
+    // TODO: in this case, top.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
+    reader_->read(*tileset, top_png_key, top_png_artifact);
+
+    const auto attr_csv_artifact = TilesetArtifact{attributes_csv};
+    const auto attr_csv_key = key_provider_->key_for(tileset->name(), attr_csv_artifact);
+    if (key_provider_->exists(attr_csv_key)) {
+        reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
     } else {
         // TODO: emit warning to user about missing attr csv
     }
 
     // palette overrides
-    constexpr int num_pals = 6; // TODO: Get this from Tileset class or config
-    for (int i = 0; i < num_pals; i++) {
-        if (auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{override_n, i});
-            key_provider_->exists(override_key)) {
-            reader_->read(*tileset, override_key, TilesetArtifact{override_n, i});
-        }
-    }
+    // constexpr int num_pals = 6; // TODO: Get this from Tileset class or config
+    // for (int i = 0; i < num_pals; i++) {
+    //     if (auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
+    //         key_provider_->exists(override_key)) {
+    //         reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
+    //     }
+    // }
 
-    // porytiles anims
     for (const std::set<std::string> porytiles_anims = key_provider_->discover_porytiles_anims(tileset->name());
          const auto &anim : porytiles_anims) {
         // Read key frame
@@ -142,7 +187,30 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
         }
     }
 
-    // porymap anims
+    // Porymap assets
+    // TODO: fill in pal artifacts
+
+    const auto metatiles_artifact = TilesetArtifact{metatiles_bin};
+    const auto metatiles_key = key_provider_->key_for(tileset->name(), metatiles_artifact);
+    if (!key_provider_->exists(metatiles_key)) {
+        return std::unexpected{"missing required porymap artifact metatiles.bin"};
+    }
+    reader_->read(*tileset, metatiles_key, metatiles_artifact);
+
+    const auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
+    const auto attr_key = key_provider_->key_for(tileset->name(), attr_artifact);
+    if (!key_provider_->exists(attr_key)) {
+        return std::unexpected{"missing required porymap artifact metatile_attributes.bin"};
+    }
+    reader_->read(*tileset, attr_key, attr_artifact);
+
+    const auto tiles_png_artifact = TilesetArtifact{tiles_png};
+    const auto tiles_png_key = key_provider_->key_for(tileset->name(), tiles_png_artifact);
+    if (!key_provider_->exists(tiles_png_key)) {
+        return std::unexpected{"missing required porymap artifact tiles.png"};
+    }
+    reader_->read(*tileset, attr_key, tiles_png_artifact);
+
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
          const auto &anim : porymap_anims) {
         // Read frame 00.png
