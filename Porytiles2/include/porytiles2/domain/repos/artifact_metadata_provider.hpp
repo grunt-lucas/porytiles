@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -24,9 +25,9 @@ using Timestamp = std::filesystem::file_time_type;
  * Among other things, this service is essential for the compilation pipeline to determine when assets need to be
  * recompiled based on changes to source files or existing artifacts.
  */
-class TilesetArtifactMetadataProvider {
+class ArtifactMetadataProvider {
   public:
-    virtual ~TilesetArtifactMetadataProvider() = default;
+    virtual ~ArtifactMetadataProvider() = default;
 
     /**
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
@@ -37,7 +38,7 @@ class TilesetArtifactMetadataProvider {
      *
      * @return A vector of Porytiles artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<std::string>
+    [[nodiscard]] virtual std::vector<ArtifactKey>
     get_porytiles_artifact_keys(const std::string &tileset_name) const = 0;
 
     /**
@@ -49,7 +50,7 @@ class TilesetArtifactMetadataProvider {
      *
      * @return A vector of Porymap artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<std::string> get_porymap_artifact_keys(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual std::vector<ArtifactKey> get_porymap_artifact_keys(const std::string &tileset_name) const = 0;
 
     /**
      * @brief Gets the keys for all artifacts (both Porytiles and Porymap) present in the given Tileset.
@@ -61,11 +62,11 @@ class TilesetArtifactMetadataProvider {
      * @param tileset_name The name of the Tileset for which to get all artifact keys
      * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<std::string> get_all_artifact_keys(const std::string &tileset_name) const {
+    [[nodiscard]] virtual std::vector<ArtifactKey> get_all_artifact_keys(const std::string &tileset_name) const {
         const auto porytiles_keys = get_porytiles_artifact_keys(tileset_name);
         const auto porymap_keys = get_porymap_artifact_keys(tileset_name);
 
-        std::vector<std::string> result;
+        std::vector<ArtifactKey> result;
         result.reserve(porytiles_keys.size() + porymap_keys.size());
         result.insert(result.end(), porytiles_keys.begin(), porytiles_keys.end());
         result.insert(result.end(), porymap_keys.begin(), porymap_keys.end());
@@ -79,7 +80,7 @@ class TilesetArtifactMetadataProvider {
      * @param tileset_name The name of the Tileset for which to compute checksums
      * @return A mapping of artifact keys to their computed checksum
      */
-    [[nodiscard]] virtual std::unordered_map<std::string, std::string>
+    [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
     compute_artifact_checksums(const std::string &tileset_name) const = 0;
 
     /**
@@ -88,7 +89,7 @@ class TilesetArtifactMetadataProvider {
      * @param tileset_name The name of the Tileset for which to load cached checksums
      * @return A mapping of artifact keys to their cached checksums
      */
-    [[nodiscard]] virtual std::unordered_map<std::string, std::string>
+    [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
     load_cached_checksums(const std::string &tileset_name) const = 0;
 
     /**
@@ -100,7 +101,7 @@ class TilesetArtifactMetadataProvider {
      */
     [[nodiscard]] virtual Result<void>
     cache_checksums(const std::string &tileset_name,
-                    const std::unordered_map<std::string, std::string> &checksums) const = 0;
+                    const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
 
     /**
      * @brief Gets the modification timestamps for all Porymap artifacts associated with the given Tileset.
@@ -108,7 +109,7 @@ class TilesetArtifactMetadataProvider {
      * @param tileset_name The name of the Tileset for which to get timestamps
      * @return A mapping of artifact keys to their modification timestamps
      */
-    [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
+    [[nodiscard]] virtual std::unordered_map<ArtifactKey, Timestamp>
     get_porymap_timestamps(const std::string &tileset_name) const = 0;
 
     /**
@@ -117,7 +118,7 @@ class TilesetArtifactMetadataProvider {
      * @param tileset_name The name of the Tileset for which to get timestamps
      * @return A mapping of artifact keys to their modification timestamps
      */
-    [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
+    [[nodiscard]] virtual std::unordered_map<ArtifactKey, Timestamp>
     get_porytiles_timestamps(const std::string &tileset_name) const = 0;
 
     /**
@@ -197,8 +198,8 @@ class TilesetArtifactMetadataProvider {
      * @param artifact_keys The keys of artifacts to check
      * @return Vector of artifact keys that have mismatched checksums
      */
-    [[nodiscard]] virtual std::vector<std::string>
-    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<std::string> &artifact_keys) const;
+    [[nodiscard]] virtual std::vector<ArtifactKey>
+    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
 
     /**
      * @brief Checks if all artifact checksums match their cached values.
@@ -213,7 +214,7 @@ class TilesetArtifactMetadataProvider {
      * @return True if all checksums match, false if any differ
      */
     [[nodiscard]] virtual bool all_checksums_match(const std::string &tileset_name,
-                                                   const std::vector<std::string> &artifact_keys) const;
+                                                   const std::vector<ArtifactKey> &artifact_keys) const;
 };
 
 } // namespace porytiles2

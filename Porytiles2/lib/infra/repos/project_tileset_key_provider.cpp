@@ -12,7 +12,11 @@ static const std::filesystem::path kPrimaryTilesetsRelativePath =
 static const std::filesystem::path kSecondaryTilesetsRelativePath =
     std::filesystem::path{"data"} / "tilesets" / "secondary";
 
-std::string ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const {
+ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const {
+    panic("TODO: unimplemented");
+}
+
+bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const {
     panic("TODO: unimplemented");
 }
 

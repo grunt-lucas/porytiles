@@ -4,8 +4,8 @@
 #include <string>
 
 #include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/repos/artifact_metadata_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
-#include "porytiles2/domain/repos/tileset_artifact_metadata_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/templates/result.hpp"
@@ -35,7 +35,7 @@ class TilesetRepo {
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
      */
-    explicit TilesetRepo(std::unique_ptr<TilesetArtifactMetadataProvider> metadata_provider,
+    explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
                          std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
                          std::unique_ptr<TilesetArtifactReader> reader, std::unique_ptr<TilesetArtifactWriter> writer)
         : metadata_provider_{std::move(metadata_provider)}, key_provider_{std::move(key_provider)},
@@ -77,12 +77,12 @@ class TilesetRepo {
      *
      * @return Reference to the artifact metadata provider
      */
-    [[nodiscard]] TilesetArtifactMetadataProvider &metadata_provider() const {
+    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
         return *metadata_provider_;
     }
 
   private:
-    std::unique_ptr<TilesetArtifactMetadataProvider> metadata_provider_;
+    std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
     std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;
     std::unique_ptr<TilesetArtifactReader> reader_;
     std::unique_ptr<TilesetArtifactWriter> writer_;

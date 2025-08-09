@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 
 #include <unordered_map>
@@ -26,7 +27,7 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
   public:
     explicit ProjectTilesetKeyProvider(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
 
-    [[nodiscard]] std::string key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
+    [[nodiscard]] ArtifactKey key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
 
     [[nodiscard]] std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const override;
 
@@ -38,7 +39,7 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
     [[nodiscard]] std::set<int> discover_porymap_anim_frames(const std::string &tileset_name,
                                                              const std::string &anim_name) const override;
 
-    [[nodiscard]] bool exists(const std::string &key) const override;
+    [[nodiscard]] bool exists(const ArtifactKey &key) const override;
 
   private:
     std::filesystem::path project_root_;

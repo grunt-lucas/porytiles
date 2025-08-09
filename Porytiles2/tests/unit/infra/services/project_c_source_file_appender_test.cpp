@@ -30,8 +30,8 @@ class ProjectCSourceFileAppenderTest : public ::testing::Test {
         // Create ProjectPaths and services
         project_paths_ = std::make_unique<ProjectTilesetKeyProvider>(temp_dir_);
         auto generator = std::make_unique<TextualCSourceGenerator>();
-        appender_ = std::make_unique<ProjectCSourceFileAppender>(gsl::not_null<ProjectTilesetKeyProvider *>(project_paths_.get()),
-                                                                 std::move(generator));
+        appender_ = std::make_unique<ProjectCSourceFileAppender>(
+            gsl::not_null<ProjectTilesetKeyProvider *>(project_paths_.get()), std::move(generator));
     }
 
     void TearDown() override {
