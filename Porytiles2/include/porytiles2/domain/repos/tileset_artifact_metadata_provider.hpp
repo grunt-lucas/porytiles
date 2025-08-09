@@ -21,8 +21,8 @@ using Timestamp = std::filesystem::file_time_type;
  * Porytiles artifacts. This includes computing and storing checksums for integrity verification, retrieving
  * modification timestamps, and determining temporal relationships between different artifact sets.
  *
- * This service is essential for the compilation pipeline to determine when assets need to be recompiled based on
- * changes to source files or existing artifacts.
+ * Among other things, this service is essential for the compilation pipeline to determine when assets need to be
+ * recompiled based on changes to source files or existing artifacts.
  */
 class TilesetArtifactMetadataProvider {
   public:
@@ -77,7 +77,7 @@ class TilesetArtifactMetadataProvider {
      * @brief Computes checksums for the artifacts that belong to the given Tileset.
      *
      * @param tileset_name The name of the Tileset for which to compute checksums
-     * @return A mapping of artifact identifiers to their computed checksum
+     * @return A mapping of artifact keys to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
     compute_artifact_checksums(const std::string &tileset_name) const = 0;
@@ -86,7 +86,7 @@ class TilesetArtifactMetadataProvider {
      * @brief Loads the cached checksums for the given Tileset.
      *
      * @param tileset_name The name of the Tileset for which to load cached checksums
-     * @return A mapping of artifact identifiers to their cached checksums
+     * @return A mapping of artifact keys to their cached checksums
      */
     [[nodiscard]] virtual std::unordered_map<std::string, std::string>
     load_cached_checksums(const std::string &tileset_name) const = 0;
@@ -95,7 +95,7 @@ class TilesetArtifactMetadataProvider {
      * @brief Caches checksums for the given Tileset to persistent storage.
      *
      * @param tileset_name The name of the Tileset for which to cache checksums
-     * @param checksums A mapping of artifact identifiers to their checksums to be cached
+     * @param checksums A mapping of artifact keys to their checksums to be cached
      * @return Result indicating success or failure of the cache operation
      */
     [[nodiscard]] virtual Result<void>
@@ -106,7 +106,7 @@ class TilesetArtifactMetadataProvider {
      * @brief Gets the modification timestamps for all Porymap artifacts associated with the given Tileset.
      *
      * @param tileset_name The name of the Tileset for which to get timestamps
-     * @return A mapping of artifact identifiers to their modification timestamps
+     * @return A mapping of artifact keys to their modification timestamps
      */
     [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
     get_porymap_timestamps(const std::string &tileset_name) const = 0;
@@ -115,7 +115,7 @@ class TilesetArtifactMetadataProvider {
      * @brief Gets the modification timestamps for all Porytiles artifacts associated with the given Tileset.
      *
      * @param tileset_name The name of the Tileset for which to get timestamps
-     * @return A mapping of artifact identifiers to their modification timestamps
+     * @return A mapping of artifact keys to their modification timestamps
      */
     [[nodiscard]] virtual std::unordered_map<std::string, Timestamp>
     get_porytiles_timestamps(const std::string &tileset_name) const = 0;

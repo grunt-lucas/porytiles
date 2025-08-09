@@ -26,7 +26,7 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
   public:
     explicit ProjectTilesetKeyProvider(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
 
-    [[nodiscard]] std::any key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
+    [[nodiscard]] std::string key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
 
     [[nodiscard]] std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const override;
 
@@ -38,7 +38,7 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
     [[nodiscard]] std::set<int> discover_porymap_anim_frames(const std::string &tileset_name,
                                                              const std::string &anim_name) const override;
 
-    [[nodiscard]] bool exists(const std::any &key) const override;
+    [[nodiscard]] bool exists(const std::string &key) const override;
 
   private:
     std::filesystem::path project_root_;
