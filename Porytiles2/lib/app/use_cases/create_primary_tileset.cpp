@@ -31,11 +31,11 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     Tileset tileset{std::move(porytiles_component), std::move(porymap_component)};
 
     // 5. Update the source and header files.
-    // TODO : this should use HeaderFileParser for more sophisticated error handling
-    if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
-        !header_update_result.has_value()) {
-        return std::unexpected{header_update_result.error()};
-    }
+    // TODO : this should use some kind of capable C source modification utility
+    // if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
+    //     !header_update_result.has_value()) {
+    //     return std::unexpected{header_update_result.error()};
+    // }
 
     // 6. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(tileset); !save_result.has_value()) {
