@@ -144,7 +144,8 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     }
 
     // palette overrides
-    // constexpr int num_pals = 6; // TODO: Get this from Tileset class or config
+    // TODO: don't hardcode this num_pals value
+    // constexpr int num_pals = 16;
     // for (int i = 0; i < num_pals; i++) {
     //     if (auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
     //         key_provider_->exists(override_key)) {

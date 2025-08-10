@@ -132,7 +132,16 @@ class TilesetArtifactKeyProvider {
         const auto attr_csv_key = key_for(tileset_name, TilesetArtifact{attributes_csv});
         result.push_back(attr_csv_key);
 
-        // TODO: fill in overrides and anims
+        // TODO: don't hardcode this num_pals value
+        constexpr int num_pals = 16;
+        for (int i = 0; i < num_pals; i++) {
+            const auto override_key = key_for(tileset_name, TilesetArtifact{pal_override_n, i});
+            if (exists(override_key)) {
+                result.push_back(override_key);
+            }
+        }
+
+        // TODO: fill in anims
 
         return result;
     }
@@ -157,7 +166,14 @@ class TilesetArtifactKeyProvider {
         const auto tiles_png_key = key_for(tileset_name, TilesetArtifact{tiles_png});
         result.push_back(tiles_png_key);
 
-        // TODO: fill in pals and anims
+        // TODO: don't hardcode this num_pals value
+        constexpr int num_pals = 16;
+        for (int i = 0; i < num_pals; i++) {
+            const auto pal_key = key_for(tileset_name, TilesetArtifact{pal_n, i});
+            result.push_back(pal_key);
+        }
+
+        // TODO: fill in anims
 
         return result;
     }
