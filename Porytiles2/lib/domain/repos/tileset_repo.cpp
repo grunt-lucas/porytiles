@@ -109,7 +109,6 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     tileset->porymap_component(std::make_unique<PorymapTilesetComponent>());
 
     // Porytiles assets
-    // TODO: fill in override artifacts
 
     const auto bottom_png_artifact = TilesetArtifact{bottom_png};
     const auto bottom_png_key = key_provider_->key_for(tileset->name(), bottom_png_artifact);
@@ -143,15 +142,14 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
         // TODO: emit warning to user about missing attr csv
     }
 
-    // palette overrides
-    // TODO: don't hardcode this num_pals value
-    // constexpr int num_pals = 16;
-    // for (int i = 0; i < num_pals; i++) {
-    //     if (auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
-    //         key_provider_->exists(override_key)) {
-    //         reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
-    //     }
-    // }
+    // TODO: don't hardcode this num_pal_overrides value
+    constexpr int num_pal_overrides = 16;
+    for (int i = 0; i < num_pal_overrides; i++) {
+        const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
+        if (key_provider_->exists(override_key)) {
+            reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
+        }
+    }
 
     for (const std::set<std::string> porytiles_anims = key_provider_->discover_porytiles_anims(tileset->name());
          const auto &anim : porytiles_anims) {
@@ -189,7 +187,6 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     }
 
     // Porymap assets
-    // TODO: fill in pal artifacts
 
     const auto metatiles_artifact = TilesetArtifact{metatiles_bin};
     const auto metatiles_key = key_provider_->key_for(tileset->name(), metatiles_artifact);
@@ -211,6 +208,15 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
         return std::unexpected{"missing required porymap artifact tiles.png"};
     }
     reader_->read(*tileset, attr_key, tiles_png_artifact);
+
+    // TODO: don't hardcode this num_pals value
+    constexpr int num_pals = 16;
+    for (int i = 0; i < num_pals; i++) {
+        const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
+        if (key_provider_->exists(pal_key)) {
+            reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
+        }
+    }
 
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
          const auto &anim : porymap_anims) {
