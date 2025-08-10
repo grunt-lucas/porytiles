@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
@@ -36,12 +38,11 @@ class TilesetRepo {
      * @param writer Writer implementation for saving artifacts to the backing store
      */
     explicit TilesetRepo(
-        std::unique_ptr<ArtifactChecksumProvider> checksum_provider,
-        std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
-        std::unique_ptr<TilesetArtifactReader> reader,
-        std::unique_ptr<TilesetArtifactWriter> writer)
-        : checksum_provider_{std::move(checksum_provider)}, key_provider_{std::move(key_provider)},
-          reader_{std::move(reader)}, writer_{std::move(writer)} {}
+        gsl::not_null<ArtifactChecksumProvider *> checksum_provider,
+        gsl::not_null<TilesetArtifactKeyProvider *> key_provider,
+        gsl::not_null<TilesetArtifactReader *> reader,
+        gsl::not_null<TilesetArtifactWriter *> writer)
+        : checksum_provider_{checksum_provider}, key_provider_{key_provider}, reader_{reader}, writer_{writer} {}
 
     /**
      * @brief Persists a given Tileset and caches new artifact checksums.
@@ -90,10 +91,10 @@ class TilesetRepo {
     }
 
   private:
-    std::unique_ptr<ArtifactChecksumProvider> checksum_provider_;
-    std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;
-    std::unique_ptr<TilesetArtifactReader> reader_;
-    std::unique_ptr<TilesetArtifactWriter> writer_;
+    ArtifactChecksumProvider *checksum_provider_;
+    TilesetArtifactKeyProvider *key_provider_;
+    TilesetArtifactReader *reader_;
+    TilesetArtifactWriter *writer_;
 };
 
 } // namespace porytiles2

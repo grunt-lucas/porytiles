@@ -12,8 +12,6 @@
 
 namespace porytiles2 {
 
-using Timestamp = std::filesystem::file_time_type;
-
 /**
  * @brief Abstract service for managing artifact checksums.
  *
@@ -28,9 +26,6 @@ using Timestamp = std::filesystem::file_time_type;
 class ArtifactChecksumProvider {
   public:
     virtual ~ArtifactChecksumProvider() = default;
-
-    // TODO: get_porytiles_artifact_keys and get_porymap_artifact_keys should be moved into the
-    // TilesetArtifactKeyProvider class. They can be defined purely in terms of the other provided interface methods.
 
     /**
      * @brief Computes checksums for the artifacts that belong to the given Tileset.
