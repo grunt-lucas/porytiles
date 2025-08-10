@@ -24,7 +24,7 @@ class OptGroupFieldmap final : public OptGroup {
 
   public:
     OptGroupFieldmap()
-        // TODO : 'pokeemerald' base game string should be defined by an enum,
+        // TODO: 'pokeemerald' base game string should be defined by an enum,
         // like TilesPalMode
         : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0}, tiles_total_override_{0},
           metatiles_primary_override_{0}, metatiles_total_override_{0}, pals_primary_override_{0},
@@ -35,7 +35,7 @@ class OptGroupFieldmap final : public OptGroup {
     }
 
     void RegisterGroup(CLI::App &app) override {
-        // TODO : create a base game validator
+        // TODO: create a base game validator
         app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
             ->group(GroupName())
             ->capture_default_str();

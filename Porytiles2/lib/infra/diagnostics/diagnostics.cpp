@@ -49,7 +49,7 @@ void reset_stream(std::stringstream &ss) {
     ss.str(std::string{});
 }
 
-// TODO : this is using code from the legacy library, refactor
+// TODO: this is using code from the legacy library, refactor
 // std::vector<std::string> BuildTileHighlight(const DiagEngine &eng, const
 // DiagLevel in_flight_level,
 //                                             const RGBATile &tile, const
@@ -59,7 +59,7 @@ void reset_stream(std::stringstream &ss) {
 //     std::stringstream ss{};
 //     const fmt::terminal_color level_color = ColorForLevel(in_flight_level);
 
-//     // TODO : std::variant here, see note below
+//     // TODO: std::variant here, see note below
 //     // Eventually we can remove this outer check by introducing better
 //     metadata
 //     // handling in RGBTile. Specifically, metadata can be a std::variant that
@@ -310,7 +310,7 @@ static const DiagTempl w_color_precision_loss_templ{
     },
     {w_color_precision_loss_note_templ}};
 
-// TODO : show mode information (primary vs secondary)
+// TODO: show mode information (primary vs secondary)
 static const DiagTempl w_key_frame_no_matching_tile_templ{
     warn_key_frame_no_matching_tile,
     DiagLevel::warning,
@@ -318,7 +318,7 @@ static const DiagTempl w_key_frame_no_matching_tile_templ{
     "entries",
     {}};
 
-// TODO : show mode information (primary vs secondary)
+// TODO: show mode information (primary vs secondary)
 static const DiagTempl w_key_frame_missing_colors_note_templ{
     "key-frame-missing-colors-list-note", DiagLevel::note,
     [](const DiagEngine &eng, const DiagLevel in_flight_level,
@@ -362,7 +362,7 @@ static const DiagTempl w_key_frame_missing_colors_templ{
     },
     {w_key_frame_missing_colors_note_templ}};
 
-// TODO : make message shorter, possibly shorten file name?
+// TODO: make message shorter, possibly shorten file name?
 static const DiagTempl w_attribute_format_mismatch_templ{
     warn_attribute_format_mismatch,
     DiagLevel::warning,

@@ -7,7 +7,7 @@ https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html
 Porytiles2 is organized according to domain-driven design principles.
 
 ## Domain
-TODO : summarize the core domain types
+TODO: summarize the core domain types
 
 # Use Cases
 A summary of the use cases Porytiles2 must support.
@@ -178,7 +178,7 @@ incremental = true
 ```
 
 ## Import Secondary Tileset
-TODO : fill in use-case details
+TODO: fill in use-case details
 
 ## Import Layout
 TODO
@@ -213,7 +213,7 @@ TODO
 # Staging Area For Noteworthy Topics
 
 ## Artifact Checksums
-TODO : EXPLAIN
+TODO: EXPLAIN
 
 ## Incremental Build Support
 User can specify an incremental tileset build by specifying `--incremental=keep-unused` at the CLI
@@ -308,10 +308,10 @@ force_smart_prune = true
 ```
 
 # Tileset Compilation
-TODO : detailed overview of tileset compilation in Porytiles2.
+TODO: detailed overview of tileset compilation in Porytiles2.
 
 # Tileset Decompilation
-TODO : detailed overview of tileset decompilation in Porytiles2.
+TODO: detailed overview of tileset decompilation in Porytiles2.
 
 # Animations
 Detailed overview of animation handling.

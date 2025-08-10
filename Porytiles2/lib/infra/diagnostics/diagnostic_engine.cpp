@@ -141,7 +141,7 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
     // If this diagnostic is a note, remark, error, or fatal by default, it is
     // always enabled.
     //
-    // TODO : should we have note always enabled? Or should we have the generic
+    // TODO: should we have note always enabled? Or should we have the generic
     // error and fatal diagnostics contain a blank note partner? The downside
     // to that approach is we're locked in to having only a single note partner
     if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::note || templ.level() == DiagLevel::remark ||

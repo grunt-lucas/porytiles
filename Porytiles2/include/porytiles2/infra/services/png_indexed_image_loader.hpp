@@ -20,7 +20,7 @@ class PngIndexedImageLoader final {
   public:
     PngIndexedImageLoader() = default;
 
-    // TODO : this should return the internal palette as well
+    // TODO: this should return the internal palette as well
     [[nodiscard]] Result<std::unique_ptr<Image<std::uint8_t>>> load_from_file(const std::filesystem::path &path) const;
 };
 
