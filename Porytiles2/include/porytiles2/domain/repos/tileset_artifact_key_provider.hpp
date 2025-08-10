@@ -20,9 +20,10 @@ namespace porytiles2 {
  * involve I/O to search the backing store). Implementations may choose to cache expensive lookups during construction
  * to optimize performance.
  *
- * From the interface's perspective, tileset artifact keys are simple strings. If a particular implementation requires a
- * complex key type, the implementation must take care to ensure that this key type is string-constructable. Luckily,
- * rich string-based formats like JSON should be able to support almost any imaginable key schema.
+ * From the interface's perspective, tileset artifact keys are simple strings wrapped by the ArtifactKey class. If a
+ * particular implementation requires a complex key type, the implementation must take care to ensure that this key type
+ * is string-constructable. Luckily, rich string-based formats like JSON should be able to support almost any imaginable
+ * key schema.
  */
 class TilesetArtifactKeyProvider {
   public:
