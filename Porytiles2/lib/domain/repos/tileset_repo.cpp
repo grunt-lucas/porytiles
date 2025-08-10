@@ -88,8 +88,8 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const {
     // any of the stale artifacts.
 
     // Cache checksums after successful save
-    const auto current_checksums = metadata_provider_->compute_artifact_checksums(tileset.name());
-    return metadata_provider_->cache_checksums(tileset.name(), current_checksums);
+    const auto current_checksums = checksum_provider_->compute_artifact_checksums(tileset.name());
+    return checksum_provider_->cache_checksums(tileset.name(), current_checksums);
 }
 
 Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const {

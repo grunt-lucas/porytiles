@@ -31,7 +31,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     if (!tileset->porymap_component()->is_empty()) {
         const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
         const auto mismatched_keys =
-            tileset_repo_->metadata_provider().find_unsynced_artifacts(tileset_name, porymap_keys);
+            tileset_repo_->checksum_provider().find_unsynced_artifacts(tileset_name, porymap_keys);
         if (!mismatched_keys.empty()) {
             return std::unexpected{"unimported changes present in Porymap assets: TODO keys here"};
         }
@@ -40,7 +40,7 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     // 5. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
     // message "nothing to do."
     const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
-    if (tileset_repo_->metadata_provider().all_checksums_match(tileset_name, porytiles_keys)) {
+    if (tileset_repo_->checksum_provider().all_checksums_match(tileset_name, porytiles_keys)) {
         // TODO: display a nothing_to_do message to the user
         return {};
     }

@@ -1,4 +1,4 @@
-#include "porytiles2/domain/repos/artifact_metadata_provider.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -6,7 +6,7 @@
 
 namespace porytiles2 {
 
-std::vector<ArtifactKey> ArtifactMetadataProvider::find_unsynced_artifacts(
+std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_artifacts(
     const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const {
     const auto checksums = compute_artifact_checksums(tileset_name);
     const auto cached_checksums = load_cached_checksums(tileset_name);
@@ -23,7 +23,7 @@ std::vector<ArtifactKey> ArtifactMetadataProvider::find_unsynced_artifacts(
     return mismatched_keys;
 }
 
-bool ArtifactMetadataProvider::all_checksums_match(
+bool ArtifactChecksumProvider::all_checksums_match(
     const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const {
     return find_unsynced_artifacts(tileset_name, artifact_keys).empty();
 }

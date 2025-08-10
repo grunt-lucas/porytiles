@@ -114,7 +114,7 @@ class TilesetArtifactKeyProvider {
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
      *
      * @details
-     * Each Porytiles artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify
+     * Each Porytiles artifact has a unique key by which the ArtifactChecksumProvider and the TilesetRepo can identify
      * it. The format of these keys and the method for producing them are implementation-defined.
      *
      * @return A vector of Porytiles artifact keys for the given Tileset
@@ -150,7 +150,7 @@ class TilesetArtifactKeyProvider {
      * @brief Gets the keys for all Porymap artifacts present in the given Tileset.
      *
      * @details
-     * Each Porymap artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify it.
+     * Each Porymap artifact has a unique key by which the ArtifactChecksumProvider and the TilesetRepo can identify it.
      * The format of these keys and the method for producing them are implementation-defined.
      *
      * @return A vector of Porymap artifact keys for the given Tileset

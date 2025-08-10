@@ -4,7 +4,7 @@
 #include <string>
 
 #include "porytiles2/domain/model/tileset.hpp"
-#include "porytiles2/domain/repos/artifact_metadata_provider.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
@@ -30,17 +30,17 @@ class TilesetRepo {
      * Initializes the repository with all necessary components for tileset persistence operations. These dependencies
      * provide the concrete implementations for metadata management, key generation, and artifact I/O operations.
      *
-     * @param metadata_provider Provider for computing and caching artifact checksums
+     * @param checksum_provider Provider for computing and caching artifact checksums
      * @param key_provider Provider for generating keys and discovering artifacts in the backing store
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
      */
     explicit TilesetRepo(
-        std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
+        std::unique_ptr<ArtifactChecksumProvider> checksum_provider,
         std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
         std::unique_ptr<TilesetArtifactReader> reader,
         std::unique_ptr<TilesetArtifactWriter> writer)
-        : metadata_provider_{std::move(metadata_provider)}, key_provider_{std::move(key_provider)},
+        : checksum_provider_{std::move(checksum_provider)}, key_provider_{std::move(key_provider)},
           reader_{std::move(reader)}, writer_{std::move(writer)} {}
 
     /**
@@ -72,25 +72,25 @@ class TilesetRepo {
     [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
 
     /**
-     * @brief Gets a reference to the metadata provider for this repo.
+     * @brief Gets a reference to the ArtifactChecksumProvider for this repo.
      *
-     * @return Reference to the artifact metadata provider
+     * @return Reference to the provider
      */
-    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
-        return *metadata_provider_;
+    [[nodiscard]] ArtifactChecksumProvider &checksum_provider() const {
+        return *checksum_provider_;
     }
 
     /**
-     * @brief Gets a reference to the artifact key provider for this repo.
+     * @brief Gets a reference to the TilesetArtifactKeyProvider for this repo.
      *
-     * @return Reference to the artifact key provider
+     * @return Reference to the provider
      */
     [[nodiscard]] TilesetArtifactKeyProvider &key_provider() const {
         return *key_provider_;
     }
 
   private:
-    std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
+    std::unique_ptr<ArtifactChecksumProvider> checksum_provider_;
     std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;
     std::unique_ptr<TilesetArtifactReader> reader_;
     std::unique_ptr<TilesetArtifactWriter> writer_;
