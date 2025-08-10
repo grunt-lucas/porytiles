@@ -31,50 +31,6 @@ class ArtifactMetadataProvider {
 
     // TODO: get_porytiles_artifact_keys and get_porymap_artifact_keys should be moved into the
     // TilesetArtifactKeyProvider class. They can be defined purely in terms of the other provided interface methods.
-    /**
-     * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
-     *
-     * @details
-     * Each Porytiles artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify
-     * it. The format of these keys and the method for producing them are implementation-defined.
-     *
-     * @return A vector of Porytiles artifact keys for the given Tileset
-     */
-    [[nodiscard]] virtual std::vector<ArtifactKey>
-    get_porytiles_artifact_keys(const std::string &tileset_name) const = 0;
-
-    /**
-     * @brief Gets the keys for all Porymap artifacts present in the given Tileset.
-     *
-     * @details
-     * Each Porymap artifact has a unique key by which the ArtifactMetadataProvider and the TilesetRepo can identify it.
-     * The format of these keys and the method for producing them are implementation-defined.
-     *
-     * @return A vector of Porymap artifact keys for the given Tileset
-     */
-    [[nodiscard]] virtual std::vector<ArtifactKey> get_porymap_artifact_keys(const std::string &tileset_name) const = 0;
-
-    /**
-     * @brief Gets the keys for all artifacts (both Porytiles and Porymap) present in the given Tileset.
-     *
-     * @details
-     * This method combines the results from both get_porytiles_artifact_keys() and get_porymap_artifact_keys() to
-     * provide a comprehensive list of all artifact keys associated with the tileset.
-     *
-     * @param tileset_name The name of the Tileset for which to get all artifact keys
-     * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset
-     */
-    [[nodiscard]] virtual std::vector<ArtifactKey> get_all_artifact_keys(const std::string &tileset_name) const {
-        const auto porytiles_keys = get_porytiles_artifact_keys(tileset_name);
-        const auto porymap_keys = get_porymap_artifact_keys(tileset_name);
-
-        std::vector<ArtifactKey> result;
-        result.reserve(porytiles_keys.size() + porymap_keys.size());
-        result.insert(result.end(), porytiles_keys.begin(), porytiles_keys.end());
-        result.insert(result.end(), porymap_keys.begin(), porymap_keys.end());
-
-        return result;
-    }
 
     /**
      * @brief Computes checksums for the artifacts that belong to the given Tileset.

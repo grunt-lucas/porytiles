@@ -72,15 +72,21 @@ class TilesetRepo {
     [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
 
     /**
-     * @brief Gets a reference to the metadata provider.
-     *
-     * @details
-     * Provides access to the metadata provider for derived implementations to use.
+     * @brief Gets a reference to the metadata provider for this repo.
      *
      * @return Reference to the artifact metadata provider
      */
     [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
         return *metadata_provider_;
+    }
+
+    /**
+     * @brief Gets a reference to the artifact key provider for this repo.
+     *
+     * @return Reference to the artifact key provider
+     */
+    [[nodiscard]] TilesetArtifactKeyProvider &key_provider() const {
+        return *key_provider_;
     }
 
   private:
