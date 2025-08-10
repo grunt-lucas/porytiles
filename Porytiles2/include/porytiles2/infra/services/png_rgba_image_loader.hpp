@@ -13,10 +13,9 @@ namespace porytiles2 {
  * @brief An image loader that reads PNG files to create an Image with an Rgba32 pixel type.
  *
  * @details
- * This loader's underlying implementation uses the CImg image processing library to read PNG data
- * and load it into an Image. However, these external library details are entirely encapsulated
- * within the implementation. Users of the Porytiles library need not concern themselves with CImg
- * details.
+ * This loader's underlying implementation uses the CImg image processing library to read PNG data and load it into an
+ * Image. However, these external library details are entirely encapsulated within the implementation. Users of the
+ * Porytiles library need not concern themselves with CImg details.
  */
 class PngRgbaImageLoader final {
   public:

@@ -12,8 +12,6 @@
 
 using namespace porytiles2;
 
-// TODO: reorganize test assets
-
 class PngRgbaImageSaverTests : public ::testing::Test {
   protected:
     void SetUp() override {

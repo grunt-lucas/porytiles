@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 
@@ -15,11 +17,11 @@ namespace porytiles2 {
 class ProjectTilesetRepo final : public TilesetRepo {
   public:
     explicit ProjectTilesetRepo(
-        std::unique_ptr<ArtifactChecksumProvider> checksum_provider,
-        std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
-        std::unique_ptr<TilesetArtifactReader> reader,
-        std::unique_ptr<TilesetArtifactWriter> writer)
-        : TilesetRepo{std::move(checksum_provider), std::move(key_provider), std::move(reader), std::move(writer)} {}
+        gsl::not_null<ArtifactChecksumProvider *> checksum_provider,
+        gsl::not_null<TilesetArtifactKeyProvider *> key_provider,
+        gsl::not_null<TilesetArtifactReader *> reader,
+        gsl::not_null<TilesetArtifactWriter *> writer)
+        : TilesetRepo{checksum_provider, key_provider, reader, writer} {}
 
     [[nodiscard]] bool exists(const std::string &name) const override;
 };
