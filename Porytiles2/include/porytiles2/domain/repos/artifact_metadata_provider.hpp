@@ -29,6 +29,8 @@ class ArtifactMetadataProvider {
   public:
     virtual ~ArtifactMetadataProvider() = default;
 
+    // TODO: get_porytiles_artifact_keys and get_porymap_artifact_keys should be moved into the
+    // TilesetArtifactKeyProvider class. They can be defined purely in terms of the other provided interface methods.
     /**
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
      *
@@ -102,6 +104,8 @@ class ArtifactMetadataProvider {
     [[nodiscard]] virtual Result<void>
     cache_checksums(const std::string &tileset_name,
                     const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
+
+    // TODO: do we still need the timestamp code?
 
     /**
      * @brief Gets the modification timestamps for all Porymap artifacts associated with the given Tileset.
