@@ -13,21 +13,35 @@ using namespace ::testing;
 
 class MockArtifactMetadataProvider : public ArtifactMetadataProvider {
   public:
-    MOCK_METHOD((std::vector<ArtifactKey>), get_porytiles_artifact_keys, (const std::string &tileset_name),
-                (const, override));
-    MOCK_METHOD((std::vector<ArtifactKey>), get_porymap_artifact_keys, (const std::string &tileset_name),
-                (const, override));
-    MOCK_METHOD((std::unordered_map<ArtifactKey, std::string>), compute_artifact_checksums,
-                (const std::string &tileset_name), (const, override));
-    MOCK_METHOD((std::unordered_map<ArtifactKey, std::string>), load_cached_checksums,
-                (const std::string &tileset_name), (const, override));
-    MOCK_METHOD((Result<void>), cache_checksums,
-                ((const std::string &tileset_name), (const std::unordered_map<ArtifactKey, std::string> &checksums)),
-                (const, override));
-    MOCK_METHOD((std::unordered_map<ArtifactKey, Timestamp>), get_porymap_timestamps, (const std::string &tileset_name),
-                (const, override));
-    MOCK_METHOD((std::unordered_map<ArtifactKey, Timestamp>), get_porytiles_timestamps,
-                (const std::string &tileset_name), (const, override));
+    MOCK_METHOD(
+        (std::vector<ArtifactKey>), get_porytiles_artifact_keys, (const std::string &tileset_name), (const, override));
+    MOCK_METHOD(
+        (std::vector<ArtifactKey>), get_porymap_artifact_keys, (const std::string &tileset_name), (const, override));
+    MOCK_METHOD(
+        (std::unordered_map<ArtifactKey, std::string>),
+        compute_artifact_checksums,
+        (const std::string &tileset_name),
+        (const, override));
+    MOCK_METHOD(
+        (std::unordered_map<ArtifactKey, std::string>),
+        load_cached_checksums,
+        (const std::string &tileset_name),
+        (const, override));
+    MOCK_METHOD(
+        (Result<void>),
+        cache_checksums,
+        ((const std::string &tileset_name), (const std::unordered_map<ArtifactKey, std::string> &checksums)),
+        (const, override));
+    MOCK_METHOD(
+        (std::unordered_map<ArtifactKey, Timestamp>),
+        get_porymap_timestamps,
+        (const std::string &tileset_name),
+        (const, override));
+    MOCK_METHOD(
+        (std::unordered_map<ArtifactKey, Timestamp>),
+        get_porytiles_timestamps,
+        (const std::string &tileset_name),
+        (const, override));
 };
 
 class ArtifactMetadataProviderTest : public ::testing::Test {
@@ -59,9 +73,10 @@ TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_Ret
 TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMatch_ReturnsUnsyncedKeys) {
     // Setup: Some checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
-    std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"},
-                                                                      {ArtifactKey{"key2"}, "checksum2_modified"},
-                                                                      {ArtifactKey{"key3"}, "checksum3"}};
+    std::unordered_map<ArtifactKey, std::string> current_checksums = {
+        {ArtifactKey{"key1"}, "checksum1"},
+        {ArtifactKey{"key2"}, "checksum2_modified"},
+        {ArtifactKey{"key3"}, "checksum3"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
@@ -79,9 +94,10 @@ TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMat
 TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatch_ReturnsAllKeys) {
     // Setup: All checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
-    std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1_modified"},
-                                                                      {ArtifactKey{"key2"}, "checksum2_modified"},
-                                                                      {ArtifactKey{"key3"}, "checksum3_modified"}};
+    std::unordered_map<ArtifactKey, std::string> current_checksums = {
+        {ArtifactKey{"key1"}, "checksum1_modified"},
+        {ArtifactKey{"key2"}, "checksum2_modified"},
+        {ArtifactKey{"key3"}, "checksum3_modified"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
@@ -101,8 +117,8 @@ TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksu
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}}; // key2 missing
-    std::unordered_map<ArtifactKey, std::string> cached_checksums = {{ArtifactKey{"key1"}, "checksum1"},
-                                                                     {ArtifactKey{"key2"}, "checksum2"}};
+    std::unordered_map<ArtifactKey, std::string> cached_checksums = {
+        {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}};
 
     EXPECT_CALL(provider_, compute_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
@@ -118,8 +134,8 @@ TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksu
 TEST_F(ArtifactMetadataProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum_ReturnsUnsyncedKey) {
     // Setup: Key is missing from cached checksums but present in current
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}};
-    std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"},
-                                                                      {ArtifactKey{"key2"}, "checksum2"}};
+    std::unordered_map<ArtifactKey, std::string> current_checksums = {
+        {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}}; // key2 missing
 
@@ -173,9 +189,10 @@ TEST_F(ArtifactMetadataProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue) {
 TEST_F(ArtifactMetadataProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFalse) {
     // Setup: Some checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
-    std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"},
-                                                                      {ArtifactKey{"key2"}, "checksum2_modified"},
-                                                                      {ArtifactKey{"key3"}, "checksum3"}};
+    std::unordered_map<ArtifactKey, std::string> current_checksums = {
+        {ArtifactKey{"key1"}, "checksum1"},
+        {ArtifactKey{"key2"}, "checksum2_modified"},
+        {ArtifactKey{"key3"}, "checksum3"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 

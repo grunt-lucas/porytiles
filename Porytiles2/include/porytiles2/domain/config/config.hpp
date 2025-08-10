@@ -41,8 +41,11 @@ class Config {
 
     [[nodiscard]] std::size_t num_metatiles_secondary() const {
         if (num_tiles_total() < num_tiles_primary()) {
-            panic(fmt::format("num_metatiles_total({}) < num_metatiles_primary({})", num_metatiles_total(),
-                              num_metatiles_primary()));
+            panic(
+                fmt::format(
+                    "num_metatiles_total({}) < num_metatiles_primary({})",
+                    num_metatiles_total(),
+                    num_metatiles_primary()));
         }
         return num_metatiles_total() - num_metatiles_primary();
     }

@@ -6,3 +6,6 @@ ColumnLimit: 120
 IndentWidth: 4
 AllowShortFunctionsOnASingleLine: Empty
 BreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+BinPackParameters: false

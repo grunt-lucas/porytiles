@@ -31,13 +31,13 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
 
     [[nodiscard]] std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const override;
 
-    [[nodiscard]] std::set<int> discover_porytiles_anim_frames(const std::string &tileset_name,
-                                                               const std::string &anim_name) const override;
+    [[nodiscard]] std::set<int>
+    discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
     [[nodiscard]] std::set<std::string> discover_porymap_anims(const std::string &tileset_name) const override;
 
-    [[nodiscard]] std::set<int> discover_porymap_anim_frames(const std::string &tileset_name,
-                                                             const std::string &anim_name) const override;
+    [[nodiscard]] std::set<int>
+    discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
     [[nodiscard]] bool exists(const ArtifactKey &key) const override;
 

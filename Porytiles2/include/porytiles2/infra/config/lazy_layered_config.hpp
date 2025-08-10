@@ -108,8 +108,8 @@ class LazyLayeredConfig final : public Config {
      * @return The resolved config value
      */
     template <typename T>
-    T resolve_config_value(const std::string &cache_key,
-                           std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+    T resolve_config_value(
+        const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

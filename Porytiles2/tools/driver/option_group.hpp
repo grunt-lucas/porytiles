@@ -39,23 +39,31 @@ class OptGroupFieldmap final : public OptGroup {
         app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
             ->group(GroupName())
             ->capture_default_str();
-        app.add_option("--tiles-primary-override", tiles_primary_override_,
-                       "Override the number of tiles in the primary tileset.")
+        app.add_option(
+               "--tiles-primary-override",
+               tiles_primary_override_,
+               "Override the number of tiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--tiles-total-override", tiles_total_override_,
-                       "Override the total number of tiles in the tileset.")
+        app.add_option(
+               "--tiles-total-override", tiles_total_override_, "Override the total number of tiles in the tileset.")
             ->group(GroupName());
-        app.add_option("--metatiles-primary-override", metatiles_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+        app.add_option(
+               "--metatiles-primary-override",
+               metatiles_primary_override_,
+               "Override the number of metatiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--metatiles-total-override", metatiles_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+        app.add_option(
+               "--metatiles-total-override",
+               metatiles_total_override_,
+               "Override the total number of metatiles in the tileset.")
             ->group(GroupName());
-        app.add_option("--pals-primary-override", pals_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+        app.add_option(
+               "--pals-primary-override",
+               pals_primary_override_,
+               "Override the number of metatiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--pals-total-override", pals_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+        app.add_option(
+               "--pals-total-override", pals_total_override_, "Override the total number of metatiles in the tileset.")
             ->group(GroupName());
     }
 

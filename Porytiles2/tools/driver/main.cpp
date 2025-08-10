@@ -8,7 +8,9 @@
 int main(const int argc, char **argv) {
     CLI::App porytiles_app{"Porytiles"};
 
-    porytiles_app.description(fmt::format(R"(porytiles {} {}
+    porytiles_app.description(
+        fmt::format(
+            R"(porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 
 Overworld tileset compiler for use with the pokeruby, pokefirered, and
@@ -17,7 +19,8 @@ compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
 assets from RGBA (or indexed) input assets.
 
 Home Page: https://github.com/grunt-lucas/porytiles)",
-                                          std::string{PORYTILES_BUILD_VERSION}, std::string{PORYTILES_BUILD_DATE}));
+            std::string{PORYTILES_BUILD_VERSION},
+            std::string{PORYTILES_BUILD_DATE}));
 
     porytiles_app.footer(
         R"(To get more help with Porytiles, check out the guides at:

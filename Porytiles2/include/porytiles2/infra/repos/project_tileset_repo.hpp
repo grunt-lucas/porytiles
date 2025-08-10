@@ -14,10 +14,11 @@ namespace porytiles2 {
  */
 class ProjectTilesetRepo final : public TilesetRepo {
   public:
-    explicit ProjectTilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
-                                std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
-                                std::unique_ptr<TilesetArtifactReader> reader,
-                                std::unique_ptr<TilesetArtifactWriter> writer)
+    explicit ProjectTilesetRepo(
+        std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
+        std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
+        std::unique_ptr<TilesetArtifactReader> reader,
+        std::unique_ptr<TilesetArtifactWriter> writer)
         : TilesetRepo{std::move(metadata_provider), std::move(key_provider), std::move(reader), std::move(writer)} {}
 
     [[nodiscard]] bool exists(const std::string &name) const override;

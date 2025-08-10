@@ -17,8 +17,9 @@ class Tileset {
   public:
     Tileset() = default;
 
-    Tileset(std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
-            std::unique_ptr<PorymapTilesetComponent> porymap_component)
+    Tileset(
+        std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
+        std::unique_ptr<PorymapTilesetComponent> porymap_component)
         : porytiles_component_{std::move(porytiles_component)}, porymap_component_{std::move(porymap_component)} {}
 
     [[nodiscard]] const std::string &name() const {

@@ -40,8 +40,8 @@ class TilesetArtifactKeyProvider {
      * @param artifact The artifact details specifying type, name, and index as applicable
      * @return The key for the given tileset artifact
      */
-    [[nodiscard]] virtual ArtifactKey key_for(const std::string &tileset_name,
-                                              const TilesetArtifact &artifact) const = 0;
+    [[nodiscard]] virtual ArtifactKey
+    key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const = 0;
 
     /**
      * @brief Discovers the names of all Porytiles animations available for a tileset.
@@ -67,8 +67,8 @@ class TilesetArtifactKeyProvider {
      * @param anim_name The name of the animation to search for frames
      * @return Set of frame indices found in the backing store (typically starting from 1)
      */
-    [[nodiscard]] virtual std::set<int> discover_porytiles_anim_frames(const std::string &tileset_name,
-                                                                       const std::string &anim_name) const = 0;
+    [[nodiscard]] virtual std::set<int>
+    discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
 
     /**
      * @brief Discovers the names of all Porymap animations available for a tileset.
@@ -93,8 +93,8 @@ class TilesetArtifactKeyProvider {
      * @param anim_name The name of the animation to search for frames
      * @return Set of frame indices found in the backing store
      */
-    [[nodiscard]] virtual std::set<int> discover_porymap_anim_frames(const std::string &tileset_name,
-                                                                     const std::string &anim_name) const = 0;
+    [[nodiscard]] virtual std::set<int>
+    discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const = 0;
 
     /**
      * @brief Checks whether an artifact exists in the backing store for the given key.

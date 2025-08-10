@@ -22,8 +22,10 @@ class CreatePrimaryTileset {
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
      * @param asset_generator A pointer to the AssetGenerator for this use case.
      */
-    CreatePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler,
-                         std::unique_ptr<AssetGenerator> asset_generator)
+    CreatePrimaryTileset(
+        std::unique_ptr<TilesetRepo> tileset_repo,
+        std::unique_ptr<PrimaryTilesetCompiler> compiler,
+        std::unique_ptr<AssetGenerator> asset_generator)
         : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)},
           asset_generator_{std::move(asset_generator)} {}
 

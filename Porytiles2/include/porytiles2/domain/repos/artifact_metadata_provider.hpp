@@ -101,9 +101,8 @@ class ArtifactMetadataProvider {
      * @param checksums A mapping of artifact keys to their checksums to be cached
      * @return Result indicating success or failure of the cache operation
      */
-    [[nodiscard]] virtual Result<void>
-    cache_checksums(const std::string &tileset_name,
-                    const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
+    [[nodiscard]] virtual Result<void> cache_checksums(
+        const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
 
     // TODO: do we still need the timestamp code?
 
@@ -217,8 +216,8 @@ class ArtifactMetadataProvider {
      * @param artifact_keys The keys of artifacts to check
      * @return True if all checksums match, false if any differ
      */
-    [[nodiscard]] virtual bool all_checksums_match(const std::string &tileset_name,
-                                                   const std::vector<ArtifactKey> &artifact_keys) const;
+    [[nodiscard]] virtual bool
+    all_checksums_match(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
 };
 
 } // namespace porytiles2

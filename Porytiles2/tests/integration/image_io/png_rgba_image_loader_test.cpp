@@ -21,8 +21,9 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
 
     auto result2 = loader->load_from_file("Resources/Tests/Unit/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
-    EXPECT_TRUE(result2.error().contains("Failed to recognize format of file "
-                                         "'Resources/Tests/Unit/metatile_behaviors.h'"));
+    EXPECT_TRUE(result2.error().contains(
+        "Failed to recognize format of file "
+        "'Resources/Tests/Unit/metatile_behaviors.h'"));
 }
 
 TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile) {
@@ -119,8 +120,10 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats) {
 
     // Test reading different PNG files to ensure the reader works with various formats
     const std::vector<std::string> test_files = {
-        "Resources/Examples/simple_primary_1/bottom.png", "Resources/Examples/simple_primary_1/middle.png",
-        "Resources/Examples/simple_primary_1/top.png", "Resources/Examples/simple_primary_1/anim/flower_white/key.png"};
+        "Resources/Examples/simple_primary_1/bottom.png",
+        "Resources/Examples/simple_primary_1/middle.png",
+        "Resources/Examples/simple_primary_1/top.png",
+        "Resources/Examples/simple_primary_1/anim/flower_white/key.png"};
 
     for (const auto &file : test_files) {
         auto result = loader->load_from_file(file);

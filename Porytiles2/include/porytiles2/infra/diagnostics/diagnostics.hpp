@@ -51,8 +51,8 @@ class DiagEngine;
  * representing the final diagnostic message. Each element in the `vector`
  * represents a single line of output for a DiagConsumer to consume.
  */
-using DynamicMsgBuilder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
-                                                                 const std::vector<std::any> &args)>;
+using DynamicMsgBuilder = std::function<std::vector<std::string>(
+    const DiagEngine &eng, DiagLevel in_flight_level, const std::vector<std::any> &args)>;
 
 /**
  * @brief Defines a reusable template for standardized diagnostic reporting.
@@ -70,8 +70,11 @@ class DiagTempl {
     explicit DiagTempl(std::string_view name, DiagLevel default_level, DynamicMsgBuilder dynamic_msg_builder) noexcept
         : name_{name}, default_level_{default_level}, dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level, DynamicMsgBuilder dynamic_msg_builder,
-                       const std::vector<DiagTempl> &partner_diags) noexcept
+    explicit DiagTempl(
+        std::string_view name,
+        DiagLevel default_level,
+        DynamicMsgBuilder dynamic_msg_builder,
+        const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name}, default_level_{default_level}, dynamic_msg_builder_{std::move(dynamic_msg_builder)},
           partner_diags_{partner_diags} {}
 
@@ -79,8 +82,11 @@ class DiagTempl {
         : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr} {}
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level, std::string_view static_msg_templ,
-                       const std::vector<DiagTempl> &partner_diags) noexcept
+    explicit DiagTempl(
+        std::string_view name,
+        DiagLevel default_level,
+        std::string_view static_msg_templ,
+        const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
           dynamic_msg_builder_{nullptr}, partner_diags_{partner_diags} {}
 
@@ -120,8 +126,8 @@ class DiagTempl {
      * diagnostic message.
      */
     template <typename... Args>
-    std::vector<std::string> BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level,
-                                             Args &&...args) const {
+    std::vector<std::string>
+    BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level, Args &&...args) const {
         if (dynamic_msg_builder_ == nullptr) {
             std::vector<std::string> v{};
             v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));

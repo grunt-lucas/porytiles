@@ -8,8 +8,8 @@
 
 namespace {
 
-std::optional<std::string> construct_flag(const porytiles2::DiagLevel in_flight_level,
-                                          const porytiles2::DiagTempl &templ) {
+std::optional<std::string>
+construct_flag(const porytiles2::DiagLevel in_flight_level, const porytiles2::DiagTempl &templ) {
     if (in_flight_level == porytiles2::DiagLevel::warning) {
         return std::optional{fmt::format("-W{}", templ.name())};
     }
@@ -51,8 +51,9 @@ void DiagEngine::upgrade_enabled_warnings_to_err() {
 void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
-        panic("cannot change diagnostic enablement level for non-warning "
-              "diagnostics");
+        panic(
+            "cannot change diagnostic enablement level for non-warning "
+            "diagnostics");
     }
 
     // Only allow warnings to be upgraded to err or downgraded to warn
@@ -71,8 +72,9 @@ void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
 void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override) {
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
-        panic("cannot change diagnostic enablement level for non-warning "
-              "diagnostics");
+        panic(
+            "cannot change diagnostic enablement level for non-warning "
+            "diagnostics");
     }
 
     // Only allow warnings to be upgraded to err or downgraded to warn
@@ -93,8 +95,8 @@ DiagLevel DiagEngine::enabled_at(std::string_view diag) const {
     if (!enabled_at_level_.contains(diag.data())) {
         return DiagLevel::ignored;
     }
-    assert_or_panic(!enabled_at_level_.at(diag.data()).empty(),
-                    fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
+    assert_or_panic(
+        !enabled_at_level_.at(diag.data()).empty(), fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
     // Return the highest level present
     return *enabled_at_level_.at(diag.data()).rbegin();
 }
@@ -126,8 +128,8 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
 
     // Return level override if present
     if (auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
-        assert_or_panic(!enabled_at_level_.at(diag_str).empty(),
-                        fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
+        assert_or_panic(
+            !enabled_at_level_.at(diag_str).empty(), fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
         // Return the highest level present
         return *enabled_at_level_.at(diag_str).rbegin();
     }
@@ -167,8 +169,8 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
     return false;
 }
 
-std::string DiagEngine::construct_msg_str(const DiagLevel in_flight_level, const DiagTempl &templ,
-                                          const std::vector<std::string> &msg) const {
+std::string DiagEngine::construct_msg_str(
+    const DiagLevel in_flight_level, const DiagTempl &templ, const std::vector<std::string> &msg) const {
     std::stringstream ss{};
 
     auto level_prefix = fmt::format("{}: ", level_to_str(in_flight_level));

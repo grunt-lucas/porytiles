@@ -22,8 +22,10 @@ class ImportPrimaryTileset {
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case
      * @param config A pointer to the Config for this use case
      */
-    ImportPrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler,
-                         std::unique_ptr<Config> config)
+    ImportPrimaryTileset(
+        std::unique_ptr<TilesetRepo> tileset_repo,
+        std::unique_ptr<PrimaryTilesetCompiler> compiler,
+        std::unique_ptr<Config> config)
         : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)} {}
 
     /**

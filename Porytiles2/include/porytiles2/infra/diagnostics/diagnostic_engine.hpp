@@ -135,8 +135,8 @@ class DiagEngine {
 
     [[nodiscard]] bool is_enabled(std::string_view diag) const;
 
-    [[nodiscard]] std::string construct_msg_str(DiagLevel in_flight_level, const DiagTempl &templ,
-                                                const std::vector<std::string> &msg) const;
+    [[nodiscard]] std::string
+    construct_msg_str(DiagLevel in_flight_level, const DiagTempl &templ, const std::vector<std::string> &msg) const;
 };
 
 } // namespace porytiles2

@@ -13,8 +13,8 @@
 namespace porytiles2 {
 
 template <typename T>
-T LazyLayeredConfig::resolve_config_value(const std::string &cache_key,
-                                          std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const {
+T LazyLayeredConfig::resolve_config_value(
+    const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const {
     /*
      * WARNING! HACK ALERT! WARNING!
      * DO NOT DELETE THIS USING STATEMENT.
@@ -51,8 +51,8 @@ std::size_t LazyLayeredConfig::num_tiles_primary() const {
 }
 
 std::size_t LazyLayeredConfig::num_tiles_total() const {
-    return resolve_config_value<std::size_t>(fmt::format("num_tiles_total"),
-                                             [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
+    return resolve_config_value<std::size_t>(
+        fmt::format("num_tiles_total"), [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_primary() const {
@@ -73,8 +73,8 @@ std::size_t LazyLayeredConfig::num_pals_primary() const {
 }
 
 std::size_t LazyLayeredConfig::num_pals_total() const {
-    return resolve_config_value<std::size_t>(fmt::format("num_pals_total"),
-                                             [](const ConfigProvider &provider) { return provider.num_pals_total(); });
+    return resolve_config_value<std::size_t>(
+        fmt::format("num_pals_total"), [](const ConfigProvider &provider) { return provider.num_pals_total(); });
 }
 
 std::size_t LazyLayeredConfig::max_map_data_size() const {

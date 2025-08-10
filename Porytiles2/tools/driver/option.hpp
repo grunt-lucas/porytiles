@@ -40,10 +40,12 @@ class OptOutput final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_option(NameCombined(), output_path_,
-                       "Output generated files to the directory specified by PATH. "
-                       "If any element of PATH does not "
-                       "exist, it will be created.")
+        app.add_option(
+               NameCombined(),
+               output_path_,
+               "Output generated files to the directory specified by PATH. "
+               "If any element of PATH does not "
+               "exist, it will be created.")
             ->check(NotAlreadyAFileValidator{})
             ->capture_default_str();
     }
@@ -68,11 +70,13 @@ class OptTilesPalMode final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_option(NameLong(), pal_format_,
-                       "Set the palette mode for the output 'tiles.png'. Valid "
-                       "settings are 'true-color' or 'greyscale'. These "
-                       "settings are for human visual purposes only and have no "
-                       "effect on the final in-game tiles.")
+        app.add_option(
+               NameLong(),
+               pal_format_,
+               "Set the palette mode for the output 'tiles.png'. Valid "
+               "settings are 'true-color' or 'greyscale'. These "
+               "settings are for human visual purposes only and have no "
+               "effect on the final in-game tiles.")
             ->check(TilesPalModeValidator{})
             ->capture_default_str();
     }
@@ -97,10 +101,12 @@ class OptDisableMetatileGeneration final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_flag(NameLong(), disabled_,
-                     "Disable generation of 'metatiles.bin'. Only enable this if "
-                     "you want to manage metatiles manually "
-                     "via Porymap.");
+        app.add_flag(
+            NameLong(),
+            disabled_,
+            "Disable generation of 'metatiles.bin'. Only enable this if "
+            "you want to manage metatiles manually "
+            "via Porymap.");
     }
 
     [[nodiscard]] bool disabled() const {
@@ -123,10 +129,12 @@ class OptDisableAttributeGeneration final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_flag(NameLong(), disabled_,
-                     "Disable generation of 'metatile_attributes.bin'. Only enable "
-                     "this if you want to manage metatile "
-                     "attributes manually via Porymap.");
+        app.add_flag(
+            NameLong(),
+            disabled_,
+            "Disable generation of 'metatile_attributes.bin'. Only enable "
+            "this if you want to manage metatile "
+            "attributes manually via Porymap.");
     }
 
     [[nodiscard]] bool disabled() const {
@@ -149,13 +157,15 @@ class OptTripleLayer final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_flag(NameLong(), triple_layer_,
-                     "Enable triple-layer compilation mode. If this option is not "
-                     "supplied, Porytiles assumes you are compiling "
-                     "a dual-layer tileset. For dual-layer tilesets the layer type "
-                     "will be inferred from your source layer "
-                     "PNGs, so compilation will error out if any metatiles contain "
-                     "content on all three layers.");
+        app.add_flag(
+            NameLong(),
+            triple_layer_,
+            "Enable triple-layer compilation mode. If this option is not "
+            "supplied, Porytiles assumes you are compiling "
+            "a dual-layer tileset. For dual-layer tilesets the layer type "
+            "will be inferred from your source layer "
+            "PNGs, so compilation will error out if any metatiles contain "
+            "content on all three layers.");
     }
 
     [[nodiscard]] bool dual_layer() const {
@@ -178,9 +188,11 @@ class OptTransparencyColor final : public Opt {
     }
 
     void RegisterOpt(CLI::App &app) override {
-        app.add_option(NameLong(), rgb_,
-                       "Select RGB color <R,G,B> to represent transparency in your "
-                       "layer source PNGs.")
+        app.add_option(
+               NameLong(),
+               rgb_,
+               "Select RGB color <R,G,B> to represent transparency in your "
+               "layer source PNGs.")
             ->check(RgbStringValidator{})
             ->capture_default_str();
     }

@@ -251,8 +251,10 @@ std::uint64_t VectorConsumer::consumed_count() const {
 static const DiagTempl n_generic_templ{note_generic, DiagLevel::note, "{}", {}};
 
 static const DiagTempl w_color_precision_loss_note_templ{
-    "color-precision-loss-previously-seen-note", DiagLevel::note,
-    [](const DiagEngine &eng, const DiagLevel in_flight_level,
+    "color-precision-loss-previously-seen-note",
+    DiagLevel::note,
+    [](const DiagEngine &eng,
+       const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
         assert_arg_size(4, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -281,7 +283,8 @@ static const DiagTempl w_color_precision_loss_note_templ{
 static const DiagTempl w_color_precision_loss_templ{
     warn_color_precision_loss,
     DiagLevel::warning,
-    [](const DiagEngine &eng, const DiagLevel in_flight_level,
+    [](const DiagEngine &eng,
+       const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
         assert_arg_size(5, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -320,8 +323,10 @@ static const DiagTempl w_key_frame_no_matching_tile_templ{
 
 // TODO: show mode information (primary vs secondary)
 static const DiagTempl w_key_frame_missing_colors_note_templ{
-    "key-frame-missing-colors-list-note", DiagLevel::note,
-    [](const DiagEngine &eng, const DiagLevel in_flight_level,
+    "key-frame-missing-colors-list-note",
+    DiagLevel::note,
+    [](const DiagEngine &eng,
+       const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
         assert_arg_size(1, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -348,7 +353,8 @@ static const DiagTempl w_key_frame_missing_colors_note_templ{
 static const DiagTempl w_key_frame_missing_colors_templ{
     warn_key_frame_missing_colors,
     DiagLevel::warning,
-    [](const DiagEngine &eng, const DiagLevel in_flight_level,
+    [](const DiagEngine &eng,
+       const DiagLevel in_flight_level,
        const std::vector<std::any> &args) -> std::vector<std::string> {
         assert_arg_size(2, args.size(), std::source_location::current().function_name());
         std::vector<std::string> msg{};
@@ -386,26 +392,31 @@ static const DiagTempl w_transparency_collapse_templ{
     DiagLevel::warning,
     "color '{}' at {} '{}' subtile pixel col '{}', row '{}' collapsed to "
     "transparent under BGR conversion",
-    {DiagTempl{"transparency-collapse-note", DiagLevel::note,
-               "if you did not intend this pixel to be transparent, edit the "
-               "color on the respective layer sheet"}}};
+    {DiagTempl{
+        "transparency-collapse-note",
+        DiagLevel::note,
+        "if you did not intend this pixel to be transparent, edit the "
+        "color on the respective layer sheet"}}};
 
 static const DiagTempl w_unused_manual_pal_color_templ{
     warn_unused_manual_pal_color, DiagLevel::warning, "{}: '{}' was not used in layers or anims", {}};
 
-static const DiagTempl w_tile_index_out_of_range_templ{warn_tile_index_out_of_range,
-                                                       DiagLevel::warning,
-                                                       "{} '{}': tile index '{}' out of range (sheet size = {})",
-                                                       {DiagTempl{"tile-index-out-of-range-note", DiagLevel::note,
-                                                                  "substituting primary tile 0 (transparent tile) so "
-                                                                  "decompilation can continue"}}};
+static const DiagTempl w_tile_index_out_of_range_templ{
+    warn_tile_index_out_of_range,
+    DiagLevel::warning,
+    "{} '{}': tile index '{}' out of range (sheet size = {})",
+    {DiagTempl{
+        "tile-index-out-of-range-note",
+        DiagLevel::note,
+        "substituting primary tile 0 (transparent tile) so "
+        "decompilation can continue"}}};
 
 static const DiagTempl w_palette_index_out_of_range_templ{
     warn_palette_index_out_of_range,
     DiagLevel::warning,
     "{} '{}': palette index '{}' out of range (numPalettesTotal = {})",
-    {DiagTempl{"palette-index-out-of-range-note", DiagLevel::note,
-               "substituting palette 0 so decompilation can continue"}}};
+    {DiagTempl{
+        "palette-index-out-of-range-note", DiagLevel::note, "substituting palette 0 so decompilation can continue"}}};
 
 static const DiagTempl e_generic_templ{err_generic, DiagLevel::error, "{}", {}};
 

@@ -35,9 +35,11 @@ class TilesetRepo {
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
      */
-    explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
-                         std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
-                         std::unique_ptr<TilesetArtifactReader> reader, std::unique_ptr<TilesetArtifactWriter> writer)
+    explicit TilesetRepo(
+        std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
+        std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
+        std::unique_ptr<TilesetArtifactReader> reader,
+        std::unique_ptr<TilesetArtifactWriter> writer)
         : metadata_provider_{std::move(metadata_provider)}, key_provider_{std::move(key_provider)},
           reader_{std::move(reader)}, writer_{std::move(writer)} {}
 
