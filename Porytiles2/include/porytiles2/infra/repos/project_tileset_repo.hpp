@@ -5,7 +5,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
+#include "../../domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 
 namespace porytiles2 {

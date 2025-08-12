@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/valueobj/image.hpp"
+#include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {

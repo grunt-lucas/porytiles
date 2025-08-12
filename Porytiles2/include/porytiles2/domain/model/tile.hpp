@@ -30,8 +30,8 @@ class Tile {
      * @brief Checks if this entire tile is transparent.
      *
      * @details
-     * A tile is considered transparent if all of its pixels are either intrinsically transparent or are extrinsically
-     * transparent, according to the provided extrinsic transparency value.
+     * A tile is transparent if all of its pixels are either intrinsically transparent or are extrinsically transparent,
+     * according to the provided extrinsic transparency value.
      *
      * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return True if all pixels in the tile are transparent, false otherwise

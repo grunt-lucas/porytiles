@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
+#include "../../../../include/porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 
 using namespace porytiles2;

@@ -6,6 +6,7 @@ class IndexPixel {
   public:
     IndexPixel() : index_{0} {}
 
+    // NOLINTNEXTLINE(google-explicit-constructor)
     IndexPixel(unsigned int index) : index_{index} {}
 
     [[nodiscard]] unsigned int index() const {

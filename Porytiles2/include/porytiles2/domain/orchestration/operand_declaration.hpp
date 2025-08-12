@@ -10,10 +10,9 @@ namespace porytiles2 {
  * @brief A specification for operands required or produced by orchestration operations.
  *
  * @details
- * OperandDeclaration provides a POD-like class that Operations use to declare input and output
- * operand metadata. Each declaration specifies a key name, expected type, and optional
- * human-readable description. This enables the orchestration framework to validate that
- * OperandDeclaration contents match Operation requirements at runtime.
+ * OperandDeclaration provides a POD-like class that Operations use to declare input and output operand metadata. Each
+ * declaration specifies a key name, expected type, and optional human-readable description. This enables the
+ * orchestration framework to validate that OperandDeclaration contents match Operation requirements at runtime.
  */
 class OperandDeclaration {
   public:
@@ -21,8 +20,8 @@ class OperandDeclaration {
      * @brief Constructs an operand declaration with the specified key and type.
      *
      * @details
-     * The description is initialized to match the key by default, but can be
-     * customized using set_description().
+     * The constructor initializes the description to match the given key. The description setter provides a way to
+     * update this OperandDeclaration with a custom description.
      *
      * @param key The unique identifier for this operand
      * @param type The expected C++ type represented as `std::type_index`

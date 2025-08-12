@@ -27,8 +27,8 @@ class Metatile {
      * @brief Checks if this entire metatile is transparent.
      *
      * @details
-     * A metatile is considered transparent if all tiles in all three layers (bottom, middle,
-     * and top) are transparent, according to the provided transparency value.
+     * A metatile is transparent if all tiles in all three layers (bottom, middle, and top) are transparent, according
+     * to the provided transparency value.
      *
      * @param transparency The transparency value to check each tile against
      * @return True if all tiles in all layers are transparent, false otherwise
