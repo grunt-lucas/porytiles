@@ -20,7 +20,7 @@ namespace porytiles2 {
  * LazyLayeredConfig provides the following functionality:
  * - fetches the value from the highest priority layer, lazily (i.e., only loads upon first request, then caches)
  * - tracks the provenance of the value (e.g., did it come from tileset TOML? environment? default value?)
- * - hard panics if no value is found, this is a programmer error (programmer should at least provide a default layer)
+ * - hard panics if no value exists, this is a programmer error (programmer should at least provide a default layer)
  * - provides a way to dump itself for debugging purposes
  */
 class LazyLayeredConfig final : public Config {
@@ -30,11 +30,11 @@ class LazyLayeredConfig final : public Config {
      *
      * @details
      * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
-     * ConfigProvider ConfigProviders \endlink in order. That is, the first provider in the list will be consulted
-     * first, and the next provider will only be consulted if the first does not supply the config value. And so on. It
-     * is the programmer's responsibility to provide a default layer as the final provider in the list. If any config
-     * value resolution call chain reaches the end of the provider list without finding a value, the LazyLayeredConfig
-     * will terminate with a panic.
+     * ConfigProvider ConfigProviders \endlink in order. That is, it will consult the first provider in the list
+     * first, and the next provider only if the first does not supply the config value. And so on. It is the
+     * programmer's responsibility to provide a default layer as the final provider in the list. If any config value
+     * resolution call chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will
+     * terminate with a panic.
      *
      * @param providers The list of providers in priority order
      */
@@ -66,6 +66,10 @@ class LazyLayeredConfig final : public Config {
      */
 
     [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const override;
+
+    /*
+     * LazyLayeredConfig Specific Functionality
+     */
 
     /**
      * @brief Dumps the current state of the config for debugging purposes.
