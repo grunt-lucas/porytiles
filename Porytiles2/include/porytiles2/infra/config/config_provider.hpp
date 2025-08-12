@@ -23,8 +23,12 @@ struct LayerValue {
  *
  * @details
  * ConfigProvider is basically just a copy of Config but with LayerValue return types. It's technically a DRY
- * violation; a better solution would be to use some kind of code-gen, wherein we define the config params and both
- * Config and ConfigProvider are generated from the spec.
+ * violation; a better solution would be to use some kind of code-gen, wherein the config params are defined in a common
+ * spec and both Config and ConfigProvider are generated from the spec.
+ *
+ * ConfigProvider provides a default implementation for each method which returns an empty LayerValue. This is helpful
+ * for ConfigProvider implementations, since often the implementations may not want to provide a value for every config
+ * param.
  */
 class ConfigProvider {
   public:
@@ -41,28 +45,28 @@ class ConfigProvider {
      * Fieldmap Settings
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size() const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile() const = 0;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile() const;
 
     /*
      * Build Settings
      */
 
     [[nodiscard]] virtual LayerValue<IncrementalBuildMode>
-    incremental_build_mode(const std::string &tileset_name) const = 0;
+    incremental_build_mode(const std::string &tileset_name) const;
 };
 
 } // namespace porytiles2

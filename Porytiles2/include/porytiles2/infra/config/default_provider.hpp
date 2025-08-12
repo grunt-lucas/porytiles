@@ -11,7 +11,7 @@ namespace porytiles2 {
  * This provider returns default values for all configuration parameters. It's useful as a base layer in a configuration
  * system where other providers can override specific values.
  */
-class DefaultProvider : public ConfigProvider {
+class DefaultProvider final : public ConfigProvider {
   public:
     /**
      * @brief Gets the name of this config layer.
