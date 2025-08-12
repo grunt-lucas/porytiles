@@ -71,8 +71,8 @@ class LazyLayeredConfig final : public Config {
      * @brief Dumps the current state of the config for debugging purposes.
      *
      * @details
-     * Returns a string showing each cached config key, actual value, and source layer name with metadata.
-     * Only cached values are shown (values that have been requested at least once).
+     * Returns a string showing each cached config key, actual value, and source layer name with metadata. Only cached
+     * values are shown (values that have been requested at least once).
      *
      * @return A formatted string representation of the config state
      */
@@ -82,10 +82,9 @@ class LazyLayeredConfig final : public Config {
      * @brief Forces all configuration values to be cached immediately for all known tilesets.
      *
      * @details
-     * This function eagerly evaluates and caches all configuration values by calling each config method.
-     * This is useful for warming up the cache before performance-critical operations or for ensuring
-     * all configuration is validated at startup. The function requires a list of tileset names to
-     * evaluate tileset-specific configuration values.
+     * This function eagerly evaluates and caches all configuration values by calling each config method. This is useful
+     * for warming up the cache before performance-critical operations or for validating all config values at startup.
+     * The function requires a list of tileset names to evaluate tileset-specific configuration values.
      *
      * @param tileset_names List of tileset names for which to evaluate the configuration
      */

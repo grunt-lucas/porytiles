@@ -52,6 +52,10 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
         return std::unexpected{maybe_porymap_component.error()};
     }
     auto porymap_component = std::move(maybe_porymap_component.value());
+    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
+    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
+    // component. So we'll need to pull them from the original component and inject them into this one before
+    // persisting.
     tileset->porymap_component(std::move(porymap_component));
 
     // 7. Persist the `Tileset` (which also caches the checksums).

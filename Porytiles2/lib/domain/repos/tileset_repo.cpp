@@ -85,7 +85,9 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const {
     // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem. Perhaps
     // this can be part of the tileset commit logic? E.g. if we implement the ProjectArtifactWriter using simple
     // filesystem directory move operations, this will be handled automatically since the new directory won't contain
-    // any of the stale artifacts.
+    // any of the stale artifacts. We'll just need to make sure we don't clobber anything that is present in one of the
+    // tileset components but isn't an explicit result of a de/compilation operation, e.g. pal overrides, pal hints, PLA
+    // files, etc.
 
     // Cache checksums after successful save
     const auto current_checksums = checksum_provider_->compute_artifact_checksums(tileset.name());
