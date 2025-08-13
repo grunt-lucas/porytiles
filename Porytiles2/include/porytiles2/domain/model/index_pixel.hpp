@@ -17,7 +17,7 @@ class IndexPixel {
      * @brief Checks if this indexed pixel is transparent.
      *
      * @details
-     * In indexed color mode, palette index 0 is conventionally reserved for transparency.
+     * In indexed color mode, palette index 0 is conventionally the transparent color.
      *
      * @param unused The extrinsic transparency value (unused for indexed pixels)
      * @return True if the palette index is 0, false otherwise
