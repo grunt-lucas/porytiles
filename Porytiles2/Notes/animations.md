@@ -193,15 +193,30 @@ which contains hardcoded tileset offsets for each animation.
 After everything is imported the first time,
 on subsequent imports we can compute animation offsets via our generated anim code.
 
-## TODO: How to handle VDests system? See Evegrande/Mauville city flowers, Route104 windy water, etc
+## TODO: How to handle VDests system? See Evergrande/Mauville city flowers, Route104 windy water, etc
+```c++
+static void QueueAnimTiles_Rustboro_WindyWater(u16 timer_div, u8 timer_mod) {
+    timer_div -= timer_mod;
+    timer_div %= ARRAY_COUNT(gTilesetAnims_Rustboro_WindyWater);
+    if (gTilesetAnims_Rustboro_WindyWater[timer_div]) {
+        AppendTilesetAnimToBuffer(gTilesetAnims_Rustboro_WindyWater[timer_div], gTilesetAnims_Rustboro_WindyWater_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
+    }
+}
+```
+This part should be fairly easy.
+The timer div and mod parameters can be specified in the anim params file.
+Everything else in this function is stock.
+
+
 
 ## Tileset Modelling
 How should we model animations in the Tileset aggregate type?
 
 ### Porytiles Component
 - Frame PNGs
-- animation_parameters.json
-  - See above for the format
+- Container to store data from `animation_parameters.json`
+  - See above for the format of the JSON
+  - Could be something like `std::map<std::string, AnimationParams>`
 
 ### Porymap Component
 - Compiled frame PNGs
