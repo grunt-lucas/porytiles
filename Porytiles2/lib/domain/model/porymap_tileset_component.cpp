@@ -6,12 +6,12 @@
 
 namespace porytiles2 {
 
-void PorymapTilesetComponent::push_back(VramMetatile metatile) {
-    metatiles_.push_back(std::move(metatile));
+void PorymapTilesetComponent::push_back(TilemapEntry entry) {
+    metatiles_bin_.push_back(std::move(entry));
 }
 
 bool PorymapTilesetComponent::is_empty() const {
-    return metatiles_.empty();
+    return metatiles_bin_.empty();
 }
 
 } // namespace porytiles2
