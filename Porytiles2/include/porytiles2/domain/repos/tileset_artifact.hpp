@@ -105,7 +105,7 @@ class TilesetArtifact {
     /**
      * @brief Gets the artifact name if present.
      *
-     * @return Optional name string, or nullopt if no name is associated with this artifact
+     * @return Optional name string, or nullopt if the artifact has no associated name
      */
     [[nodiscard]] std::optional<std::string> name() const {
         return name_;
@@ -114,7 +114,7 @@ class TilesetArtifact {
     /**
      * @brief Gets the artifact index if present.
      *
-     * @return Optional index value, or nullopt if no index is associated with this artifact
+     * @return Optional index value, or nullopt if the artifact has no associated index
      */
     [[nodiscard]] std::optional<int> index() const {
         return index_;
