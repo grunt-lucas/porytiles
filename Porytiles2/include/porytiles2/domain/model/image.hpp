@@ -20,6 +20,12 @@ namespace porytiles2 {
 template <typename P>
 class Image {
   public:
+    Image() {
+        width_ = 0;
+        height_ = 0;
+        pixels_.resize(0);
+    }
+
     Image(std::size_t width, std::size_t height) {
         width_ = width;
         height_ = height;
@@ -106,6 +112,15 @@ class Image {
      */
     [[nodiscard]] std::size_t height() const {
         return height_;
+    }
+
+    /**
+     * @brief Gets the size of this image in pixels.
+     *
+     * @return The size of this image in pixels.
+     */
+    [[nodiscard]] std::size_t size() const {
+        return pixels_.size();
     }
 
   private:

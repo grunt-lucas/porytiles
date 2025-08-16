@@ -30,14 +30,6 @@ class Tileset {
         name_ = std::move(name);
     }
 
-    [[nodiscard]] const std::vector<std::string> &partner_names() const {
-        return partner_names_;
-    }
-
-    void partner_names(std::vector<std::string> partner_names) {
-        partner_names_ = std::move(partner_names);
-    }
-
     [[nodiscard]] const PorytilesTilesetComponent *porytiles_component() const {
         return porytiles_component_.get();
     }
@@ -56,7 +48,6 @@ class Tileset {
 
   private:
     std::string name_;
-    std::vector<std::string> partner_names_;
     std::unique_ptr<PorytilesTilesetComponent> porytiles_component_;
     std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };
