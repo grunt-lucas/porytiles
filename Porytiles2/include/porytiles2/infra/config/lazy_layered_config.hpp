@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "porytiles2/domain/config/config.hpp"
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
@@ -23,7 +23,7 @@ namespace porytiles2 {
  * - hard panics if no value exists, this is a programmer error (programmer should at least provide a default layer)
  * - provides a way to dump itself for debugging purposes
  */
-class LazyLayeredConfig final : public Config {
+class LazyLayeredConfig final : public DomainConfig {
   public:
     /**
      * @brief Constructs a LazyLayeredConfig with a list of ConfigProvider in priority order, highest to lowest.

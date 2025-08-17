@@ -10,15 +10,17 @@
 namespace porytiles2 {
 
 /**
- * @brief Interface that defines a complete application configuration.
+ * @brief Interface that defines a complete domain layer configuration.
  *
  * @details
- * Domain and app layer operate with this interface -- they don't need to worry about implementation. Every config value
- * is either virtual (i.e., comes from the user) or is defined in terms of other virtual values.
+ * Domain and app layer operate with this interface - they don't need to worry about implementation. Every config value
+ * is either virtual (i.e., comes from the user) or defined in terms of other virtual values.
+ *
+ * TODO: how to handle infrastructure specific configuration? We don't want it polluting the domain interface
  */
-class Config {
+class DomainConfig {
   public:
-    virtual ~Config() = default;
+    virtual ~DomainConfig() = default;
 
     /*
      * Fieldmap Settings

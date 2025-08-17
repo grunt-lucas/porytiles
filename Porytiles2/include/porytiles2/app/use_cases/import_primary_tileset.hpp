@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/config/config.hpp"
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
@@ -25,7 +25,7 @@ class ImportPrimaryTileset {
     ImportPrimaryTileset(
         std::unique_ptr<TilesetRepo> tileset_repo,
         std::unique_ptr<PrimaryTilesetCompiler> compiler,
-        std::unique_ptr<Config> config)
+        std::unique_ptr<DomainConfig> config)
         : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)} {}
 
     /**
@@ -39,7 +39,7 @@ class ImportPrimaryTileset {
   private:
     std::unique_ptr<TilesetRepo> tileset_repo_;
     std::unique_ptr<PrimaryTilesetCompiler> compiler_;
-    std::unique_ptr<Config> config_;
+    std::unique_ptr<DomainConfig> config_;
 };
 
 } // namespace porytiles2
