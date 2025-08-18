@@ -17,8 +17,8 @@ namespace porytiles2 {
  * abstracts the reading logic from the specific storage format and location.
  *
  * Implementations handle the details of parsing different artifact types and updating the correct components within the
- * target Tileset. The interface uses type-erased keys (std::any) to support different backing store implementations
- * (filesystem paths, database keys, URLs, etc.).
+ * target Tileset. The interface uses ArtifactKey to support different backing store implementations (filesystem paths,
+ * database keys, URLs, etc.), as long as the key is string-representable.
  */
 class TilesetArtifactReader {
   public:
@@ -40,7 +40,7 @@ class TilesetArtifactReader {
      * @param artifact The artifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> read(Tileset &dest, const std::any &src_key, const TilesetArtifact &artifact) = 0;
+    virtual Result<void> read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) = 0;
 };
 
 } // namespace porytiles2

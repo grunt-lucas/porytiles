@@ -3,6 +3,7 @@
 #include <any>
 
 #include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/result.hpp"
 
@@ -28,7 +29,7 @@ class TilesetArtifactWriter {
      * @brief Begins a new transaction for atomic write operations.
      *
      * @details
-     * Starts a transaction that buffers all subsequent write operations until commit() is called. If a transaction is
+     * Starts a transaction that buffers all subsequent write operations until a commit() call. If a transaction is
      * already active, this should return an error.
      *
      * @return Empty Result on success, otherwise an error description
@@ -71,15 +72,15 @@ class TilesetArtifactWriter {
      * extracting the correct data from the Tileset components (Porymap or Porytiles components, palettes, animations,
      * etc.).
      *
-     * If a transaction is active (via begin_transaction()), the write should be buffered until commit() is called.
-     * If no transaction is active, the behavior is implementation-defined (immediate write or error).
+     * If a transaction is active (via begin_transaction()), the write should buffer until a commit() call. If no
+     * transaction is active, the behavior is implementation-defined (immediate write or error).
      *
      * @param dest_key The key identifying the destination location in the backing store
      * @param artifact The artifact specification including type and optional metadata
      * @param src The Tileset object containing the data to be written
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> write(const std::any &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
+    virtual Result<void> write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2

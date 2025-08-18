@@ -117,7 +117,6 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     if (!key_provider_->exists(bottom_png_key)) {
         return std::unexpected{"missing required porytiles artifact bottom.png"};
     }
-    // TODO: in this case, bottom.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
     reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
 
     const auto middle_png_artifact = TilesetArtifact{middle_png};
@@ -125,7 +124,6 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     if (!key_provider_->exists(middle_png_key)) {
         return std::unexpected{"missing required porytiles artifact middle.png"};
     }
-    // TODO: in this case, middle.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
     reader_->read(*tileset, middle_png_key, middle_png_artifact);
 
     const auto top_png_artifact = TilesetArtifact{top_png};
@@ -133,7 +131,6 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     if (!key_provider_->exists(top_png_key)) {
         return std::unexpected{"missing required porytiles artifact top.png"};
     }
-    // TODO: in this case, top.png does not map directly onto a field of PorytilesTilesetComponent, how to handle?
     reader_->read(*tileset, top_png_key, top_png_artifact);
 
     const auto attr_csv_artifact = TilesetArtifact{attributes_csv};
