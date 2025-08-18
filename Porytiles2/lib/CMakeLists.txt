@@ -36,6 +36,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CImg)
 
+# png++
+FetchContent_Declare(
+        pngpp
+        GIT_REPOSITORY "https://github.com/usagi/pngpp"
+)
+FetchContent_MakeAvailable(pngpp)
+
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
 find_library(PNG_STATIC
@@ -77,10 +84,17 @@ target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
 # Find the libpng include dirs located via find_package
 target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
 
+# CImg and png++ are header-only, so we pull the sources and add headers to include path
 if (cimg_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})
 else ()
     message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
+endif ()
+
+if (pngpp_SOURCE_DIR)
+    target_include_directories(Porytiles2Lib PRIVATE ${pngpp_SOURCE_DIR}/include)
+else ()
+    message(FATAL_ERROR "pngpp_SOURCE_DIR was empty")
 endif ()
 
 

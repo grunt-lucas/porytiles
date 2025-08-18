@@ -120,7 +120,7 @@ class Image {
         return pixels_.size();
     }
 
-    [[nodiscard]] std::optional<std::vector<Rgba32>> palette() const {
+    [[nodiscard]] const std::optional<std::vector<Rgba32>> &palette() const {
         return palette_;
     }
 

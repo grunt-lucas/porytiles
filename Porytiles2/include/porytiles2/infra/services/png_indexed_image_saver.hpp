@@ -5,6 +5,8 @@
 #include <memory>
 
 #include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/index_pixel.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -19,7 +21,8 @@ class PngIndexedImageSaver final {
   public:
     PngIndexedImageSaver() = default;
 
-    [[nodiscard]] Result<void> save_to_file(const Image<std::uint8_t> &image, const std::filesystem::path &path) const;
+    [[nodiscard]] Result<void>
+    save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const;
 };
 
 } // namespace porytiles2

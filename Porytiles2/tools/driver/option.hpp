@@ -2,7 +2,7 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/domain/config/tiles_pal_mode.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 #include "validators.hpp"
 

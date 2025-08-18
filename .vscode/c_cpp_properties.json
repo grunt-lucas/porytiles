@@ -15,6 +15,7 @@
                 "${workspaceFolder}/build/_deps/gsl-src/include/**",
                 "${workspaceFolder}/build/_deps/cimg-src/**",
                 "${workspaceFolder}/build/_deps/googletest-src/googletest/include/**",
+                "${workspaceFolder}/build/_deps/pngpp-src/include/**",
                 "/opt/homebrew/opt/libpng/include/**"
             ],
             "defines": [
