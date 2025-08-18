@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -19,7 +20,7 @@ class PngIndexedImageLoader final {
   public:
     PngIndexedImageLoader() = default;
 
-    [[nodiscard]] Result<std::unique_ptr<Image<std::uint8_t>>> load_from_file(const std::filesystem::path &path) const;
+    [[nodiscard]] Result<std::unique_ptr<Image<IndexPixel>>> load_from_file(const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2

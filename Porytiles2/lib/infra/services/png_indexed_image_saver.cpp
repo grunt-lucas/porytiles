@@ -41,7 +41,7 @@ Result<void> PngIndexedImageSaver::save_to_file(
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
-        return std::unexpected{fmt::format("'{}' exists but is not a file", path.string())};
+        return std::unexpected{fmt::format("exists but is not a file: {}", path.string())};
     }
 
     // Determine which palette to use
