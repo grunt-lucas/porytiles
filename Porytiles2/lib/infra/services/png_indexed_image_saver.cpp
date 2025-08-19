@@ -66,8 +66,12 @@ Result<void> PngIndexedImageSaver::save_to_file(
         out[row][col] = image.at(pixel_index).index();
     }
 
-    // Write PNG to file system
-    out.write(path);
+    // Write PNG to filesystem
+    try {
+        out.write(path);
+    } catch (const std::exception &e) {
+        return std::unexpected{fmt::format("failed to save indexed PNG to {}: {}", path.string(), e.what())};
+    }
 
     return {};
 }

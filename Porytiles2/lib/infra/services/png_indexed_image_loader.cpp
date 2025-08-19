@@ -30,7 +30,7 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const {
     auto image = std::make_unique<Image<IndexPixel>>(tilesheet_width, tilesheet_height);
     for (unsigned int pixel_index = 0; pixel_index < tilesheet_size; pixel_index++) {
         const auto row = pixel_index / tilesheet_width;
-        const auto col = pixel_index % tilesheet_height;
+        const auto col = pixel_index % tilesheet_width;
         image->set(pixel_index, IndexPixel{tilesheet_png[row][col]});
     }
 
