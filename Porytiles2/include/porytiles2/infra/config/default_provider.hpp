@@ -20,10 +20,6 @@ class DefaultProvider final : public ConfigProvider {
      */
     [[nodiscard]] std::string name() const override;
 
-    /*
-     * Fieldmap Settings
-     */
-
     [[nodiscard]] LayerValue<std::size_t> num_tiles_primary() const override;
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_total() const override;
@@ -40,12 +36,10 @@ class DefaultProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile() const override;
 
-    /*
-     * Build Settings
-     */
-
     [[nodiscard]] LayerValue<IncrementalBuildMode>
     incremental_build_mode(const std::string &tileset_name) const override;
+
+    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const override;
 };
 
 } // namespace porytiles2

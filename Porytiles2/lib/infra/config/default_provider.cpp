@@ -42,4 +42,8 @@ LayerValue<IncrementalBuildMode> DefaultProvider::incremental_build_mode(const s
     return {IncrementalBuildMode::off, "default value"};
 }
 
+LayerValue<TilesPalMode> DefaultProvider::tiles_pal_mode(const std::string &tileset_name) const {
+    return {TilesPalMode::true_color, "default value"};
+}
+
 } // namespace porytiles2

@@ -7,7 +7,8 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/config/incremental_build_mode.hpp"
+#include "../../../include/porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -35,7 +36,7 @@ T LazyLayeredConfig::resolve_config_value(
         if (LayerValue<T> layer_value = provider_call(*provider); layer_value.value.has_value()) {
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
-            cache_values_[cache_key] = to_string(resolved_value);
+            cache_value_strings_[cache_key] = to_string(resolved_value);
             provenance_[cache_key] = fmt::format("{}: {}", provider->name(), layer_value.metadata);
             return resolved_value;
         }
@@ -94,6 +95,12 @@ IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string
         [&tileset_name](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset_name); });
 }
 
+TilesPalMode LazyLayeredConfig::tiles_pal_mode(const std::string &tileset_name) const {
+    return resolve_config_value<TilesPalMode>(
+        fmt::format("tiles_pal_mode:{}", tileset_name),
+        [&tileset_name](const ConfigProvider &provider) { return provider.tiles_pal_mode(tileset_name); });
+}
+
 std::string LazyLayeredConfig::dump() const {
     if (cache_.empty()) {
         return "LazyLayeredConfig {}";
@@ -105,8 +112,8 @@ std::string LazyLayeredConfig::dump() const {
         const std::string provenance_info =
             (provenance_it != provenance_.end()) ? provenance_it->second : "<unknown source>";
 
-        const auto value_it = cache_values_.find(key);
-        const std::string value_str = (value_it != cache_values_.end()) ? value_it->second : "<unknown value>";
+        const auto value_it = cache_value_strings_.find(key);
+        const std::string value_str = (value_it != cache_value_strings_.end()) ? value_it->second : "<unknown value>";
 
         result += fmt::format("  {} = {} [{}]\n", key, value_str, provenance_info);
     }
@@ -119,6 +126,7 @@ void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_nam
     // Cache tileset-specific values for each provided tileset
     for (const auto &tileset_name : tileset_names) {
         std::ignore = incremental_build_mode(tileset_name);
+        std::ignore = tiles_pal_mode(tileset_name);
     }
 
     // Cache global (non-tileset-specific) values

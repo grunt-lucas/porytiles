@@ -3,7 +3,8 @@
 #include <optional>
 #include <string>
 
-#include "porytiles2/domain/config/incremental_build_mode.hpp"
+#include "../../app/config/incremental_build_mode.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 namespace porytiles2 {
 
@@ -19,12 +20,12 @@ struct LayerValue {
 };
 
 /**
- * @brief An interface which Config implementations can use to load config values.
+ * @brief An interface which config implementations can use to load config values.
  *
  * @details
- * ConfigProvider is basically just a copy of Config but with LayerValue return types. It's technically a DRY
- * violation; a better solution would be to use some kind of code-gen, wherein the config params are defined in a common
- * spec and both Config and ConfigProvider are generated from the spec.
+ * ConfigProvider is basically just a copy of all three layer configs (domain, app, infra) but with LayerValue return
+ * types. It's technically a DRY violation; a better solution would be to use some kind of code-gen, wherein the config
+ * params are defined in a common spec and both the layer configs and ConfigProvider are generated from the spec.
  *
  * ConfigProvider provides a default implementation for each method which returns an empty LayerValue. This is helpful
  * for ConfigProvider implementations, since often the implementations may not want to provide a value for every config
@@ -35,14 +36,14 @@ class ConfigProvider {
     virtual ~ConfigProvider() = default;
 
     /**
-     * @brief Gets the name of this config layer, useful for debugging/diagnostic purposes.
+     * @brief Gets the name of this ConfigProvider, useful for diagnostic purposes.
      *
-     * @return The name of this config layer
+     * @return The name of this ConfigProvider
      */
     [[nodiscard]] virtual std::string name() const = 0;
 
     /*
-     * Fieldmap Settings
+     * Domain Config
      */
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary() const;
@@ -62,11 +63,16 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile() const;
 
     /*
-     * Build Settings
+     * App Config
      */
 
     [[nodiscard]] virtual LayerValue<IncrementalBuildMode>
     incremental_build_mode(const std::string &tileset_name) const;
+
+    /*
+     * Infra Config
+     */
+    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const;
 };
 
 } // namespace porytiles2

@@ -7,8 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/infra/config/infra_config.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 namespace porytiles2 {
 
@@ -23,18 +26,19 @@ namespace porytiles2 {
  * - hard panics if no value exists, this is a programmer error (programmer should at least provide a default layer)
  * - provides a way to dump itself for debugging purposes
  */
-class LazyLayeredConfig final : public DomainConfig {
+class LazyLayeredConfig final : public DomainConfig, public AppConfig, public InfraConfig {
   public:
     /**
-     * @brief Constructs a LazyLayeredConfig with a list of ConfigProvider in priority order, highest to lowest.
+     * @brief Constructs a LazyLayeredConfig with a list of \link ConfigProvider ConfigProviders \endlink in priority
+     * order, highest to lowest.
      *
      * @details
      * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
-     * ConfigProvider ConfigProviders \endlink in order. That is, it will consult the first provider in the list
-     * first, and the next provider only if the first does not supply the config value. And so on. It is the
-     * programmer's responsibility to provide a default layer as the final provider in the list. If any config value
-     * resolution call chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will
-     * terminate with a panic.
+     * ConfigProvider ConfigProviders \endlink in order. That is, it will consult the first provider in the list first,
+     * and the next provider only if the first does not supply the config value. And so on. It is the programmer's
+     * responsibility to provide a default layer as the final provider in the list. If any config value resolution call
+     * chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
+     * panic.
      *
      * @param providers The list of providers in priority order
      */
@@ -42,7 +46,7 @@ class LazyLayeredConfig final : public DomainConfig {
         : providers_{std::move(providers)} {}
 
     /*
-     * Fieldmap Settings
+     * Domain Config
      */
 
     [[nodiscard]] std::size_t num_tiles_primary() const override;
@@ -62,10 +66,15 @@ class LazyLayeredConfig final : public DomainConfig {
     [[nodiscard]] std::size_t num_tiles_per_metatile() const override;
 
     /*
-     * Build Settings
+     * App Config
      */
 
     [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const override;
+
+    /*
+     * Infra Config
+     */
+    [[nodiscard]] TilesPalMode tiles_pal_mode(const std::string &tileset_name) const override;
 
     /*
      * LazyLayeredConfig Specific Functionality
@@ -100,7 +109,7 @@ class LazyLayeredConfig final : public DomainConfig {
 
     mutable std::unordered_map<std::string, std::string> provenance_;
     mutable std::map<std::string, std::any> cache_;
-    mutable std::unordered_map<std::string, std::string> cache_values_;
+    mutable std::unordered_map<std::string, std::string> cache_value_strings_;
 
     /**
      * @brief Resolves config values using the common caching and provider iteration pattern.

@@ -4,6 +4,10 @@
 
 using namespace porytiles2;
 
+/*
+ * TODO: it's annoying that we have to provide two different provider implementations here. Could we perhaps just use
+ * the actual DefaultProvider here instead of a mock one, which effectively just duplicates everything?
+ */
 class MockDefaultProvider final : public ConfigProvider {
   public:
     explicit MockDefaultProvider() : name_{"MockDefaultProvider"}, metadata_{"defaulted"} {}
@@ -49,6 +53,10 @@ class MockDefaultProvider final : public ConfigProvider {
         return LayerValue<IncrementalBuildMode>{IncrementalBuildMode::off, metadata_};
     }
 
+    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const override {
+        return LayerValue<TilesPalMode>{TilesPalMode::true_color, metadata_};
+    }
+
   private:
     std::string name_;
     std::string metadata_;
@@ -79,30 +87,6 @@ class MockConfigurableProvider final : public ConfigProvider {
         if (num_tiles_total_.has_value()) {
             return LayerValue<std::size_t>{num_tiles_total_.value(), metadata_};
         }
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary() const override {
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total() const override {
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> num_pals_primary() const override {
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total() const override {
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> max_map_data_size() const override {
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
-    }
-
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile() const override {
         return LayerValue<std::size_t>{std::nullopt, metadata_};
     }
 
