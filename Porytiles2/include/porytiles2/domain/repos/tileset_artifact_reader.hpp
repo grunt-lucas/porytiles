@@ -29,15 +29,14 @@ class TilesetArtifactReader {
      *
      * @details
      * This method reads the specified artifact from the backing store location identified by the src_key and updates
-     * the appropriate fields or components within the destination Tileset object. The artifact parameter specifies the
-     * type and metadata needed to determine how to read and where to store the data.
-     *
-     * The implementation should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.)
-     * and updating the correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
+     * the appropriate fields or components within the destination Tileset object. The TilesetArtifact parameter
+     * specifies the type and metadata needed to determine how to read and where to store the data. The implementation
+     * should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.) and updating the
+     * correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
      *
      * @param dest The Tileset object to be updated with the read artifact data
-     * @param src_key The key identifying the artifact location in the backing store
-     * @param artifact The artifact specification including type and optional metadata
+     * @param src_key The ArtifactKey identifying the artifact location in the backing store
+     * @param artifact The TilesetArtifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
     virtual Result<void> read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) = 0;

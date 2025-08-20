@@ -19,7 +19,7 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
     if (std::filesystem::exists(project_root / kSecondaryTilesetsRelativePath / tileset_name)) {
         return project_root / kSecondaryTilesetsRelativePath / tileset_name;
     }
-    porytiles2::panic(fmt::format("tileset {} does not exist", tileset_name));
+    porytiles2::panic(fmt::format("tileset '{}' does not exist", tileset_name));
 }
 
 } // namespace
@@ -103,6 +103,21 @@ ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, 
     }
 }
 
+bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const {
+    const std::filesystem::path artifact{key.key()};
+    return std::filesystem::exists(artifact);
+}
+
+bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const {
+    if (std::filesystem::exists(project_root_ / kPrimaryTilesetsRelativePath / tileset_name)) {
+        return true;
+    }
+    if (std::filesystem::exists(project_root_ / kSecondaryTilesetsRelativePath / tileset_name)) {
+        return true;
+    }
+    return false;
+}
+
 std::set<std::string> ProjectTilesetKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const {
     panic("TODO: unimplemented");
 }
@@ -119,20 +134,6 @@ std::set<std::string> ProjectTilesetKeyProvider::discover_porymap_anims(const st
 std::set<int> ProjectTilesetKeyProvider::discover_porymap_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const {
     panic("TODO: unimplemented");
-}
-
-bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const {
-    panic("TODO: unimplemented");
-}
-
-bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const {
-    if (std::filesystem::exists(project_root_ / kPrimaryTilesetsRelativePath / tileset_name)) {
-        return true;
-    }
-    if (std::filesystem::exists(project_root_ / kSecondaryTilesetsRelativePath / tileset_name)) {
-        return true;
-    }
-    return false;
 }
 
 } // namespace porytiles2

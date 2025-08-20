@@ -65,8 +65,8 @@ class TilesetArtifactWriter {
      *
      * @details
      * This method extracts the appropriate data from the source Tileset object and writes the specified artifact to the
-     * backing store location identified by the dest_key. The artifact parameter specifies the type and metadata needed
-     * to determine what data to extract and how to format it.
+     * backing store location identified by the dest_key. The TilesetArtifact parameter specifies the type and metadata
+     * needed to determine what data to extract and how to format it.
      *
      * The implementation should handle formatting the specific artifact type (PNG images, binary data, etc.) and
      * extracting the correct data from the Tileset components (Porymap or Porytiles components, palettes, animations,
@@ -75,8 +75,8 @@ class TilesetArtifactWriter {
      * If a transaction is active (via begin_transaction()), the write should buffer until a commit() call. If no
      * transaction is active, the behavior is implementation-defined (immediate write or error).
      *
-     * @param dest_key The key identifying the destination location in the backing store
-     * @param artifact The artifact specification including type and optional metadata
+     * @param dest_key The ArtifactKey identifying the destination location in the backing store
+     * @param artifact The TilesetArtifact specification including type and optional metadata
      * @param src The Tileset object containing the data to be written
      * @return Empty Result on success, otherwise an error description
      */

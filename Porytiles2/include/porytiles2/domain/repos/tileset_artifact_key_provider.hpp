@@ -141,6 +141,7 @@ class TilesetArtifactKeyProvider {
         result.push_back(attr_csv_key);
 
         // TODO: don't hardcode this num_pals value
+        // TODO: warn user if we found overrides like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (int i = 0; i < num_pals; i++) {
             const auto override_key = key_for(tileset_name, TilesetArtifact{pal_override_n, i});
@@ -175,6 +176,7 @@ class TilesetArtifactKeyProvider {
         result.push_back(tiles_png_key);
 
         // TODO: don't hardcode this num_pals value
+        // TODO: warn user if we found pals like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (int i = 0; i < num_pals; i++) {
             const auto pal_key = key_for(tileset_name, TilesetArtifact{pal_n, i});
