@@ -32,11 +32,17 @@ static const std::filesystem::path middle_png{"middle.png"};
 static const std::filesystem::path top_png{"top.png"};
 static const std::filesystem::path attributes_csv{"attributes.csv"};
 static const std::filesystem::path anim{"anim"};
+static const std::filesystem::path pal_overrides{"palette-overrides"};
+static const std::filesystem::path metatiles_bin{"metatiles.bin"};
+static const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
+static const std::filesystem::path tiles_png{"tiles.png"};
+static const std::filesystem::path palettes{"palettes"};
 
 ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
 
     switch (artifact.type()) {
+    // Porytiles artifacts
     case TilesetArtifact::Type::bottom_png:
         return ArtifactKey{tileset_path / porytiles_directory / bottom_png};
     case TilesetArtifact::Type::middle_png:
@@ -54,8 +60,44 @@ ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, 
         }
         const auto anim_name = artifact.name().value();
         const auto frame_num = artifact.index().value();
-        return ArtifactKey{tileset_path / porytiles_directory / anim / anim_name / fmt::format("{}.png", frame_num)};
+        return ArtifactKey{tileset_path / porytiles_directory / anim / anim_name / fmt::format("{:02}.png", frame_num)};
     }
+    case TilesetArtifact::Type::pal_override_n: {
+        if (!artifact.index().has_value()) {
+            panic("missing pal override index");
+        }
+        const auto override_index = artifact.index().value();
+        return ArtifactKey{
+            tileset_path / porytiles_directory / pal_overrides / fmt::format("{:02}.pal", override_index)};
+    }
+
+    // Porymap artifacts
+    case TilesetArtifact::Type::metatiles_bin:
+        return ArtifactKey{tileset_path / metatiles_bin};
+    case TilesetArtifact::Type::metatile_attributes_bin:
+        return ArtifactKey{tileset_path / metatile_attributes_bin};
+    case TilesetArtifact::Type::tiles_png:
+        return ArtifactKey{tileset_path / tiles_png};
+    case TilesetArtifact::Type::porymap_anim_frame: {
+        if (!artifact.name().has_value()) {
+            panic("missing porymap anim frame name");
+        }
+        if (!artifact.index().has_value()) {
+            panic("missing porymap anim frame index");
+        }
+        const auto anim_name = artifact.name().value();
+        const auto frame_num = artifact.index().value();
+        return ArtifactKey{tileset_path / anim / anim_name / fmt::format("{:02}.png", frame_num)};
+    }
+    case TilesetArtifact::Type::pal_n: {
+        if (!artifact.index().has_value()) {
+            panic("missing pal index");
+        }
+        const auto pal_index = artifact.index().value();
+        return ArtifactKey{tileset_path / palettes / fmt::format("{:02}.pal", pal_index)};
+    }
+
+    // Default case
     default:
         panic("unhandled TilesetArtifact::Type");
     }

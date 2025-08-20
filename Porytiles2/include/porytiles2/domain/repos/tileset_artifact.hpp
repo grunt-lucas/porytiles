@@ -120,6 +120,11 @@ class TilesetArtifact {
 
   private:
     Type type_;
+    /*
+     * TODO: this isn't the best design, compiler can no longer catch programmer errors. If programmer forgets to
+     * provide a name/index, Porytiles has to panic which is not great. Ideally we'd like the compiler to help the
+     * programmer here.
+     */
     std::optional<std::string> name_;
     std::optional<int> index_;
 };
