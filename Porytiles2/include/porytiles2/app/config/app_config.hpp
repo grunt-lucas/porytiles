@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "fmt/format.h"
-
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 
 namespace porytiles2 {

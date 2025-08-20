@@ -4,7 +4,6 @@
 
 #include "fmt/format.h"
 
-#include "../../app/config/incremental_build_mode.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -19,10 +18,6 @@ namespace porytiles2 {
 class DomainConfig {
   public:
     virtual ~DomainConfig() = default;
-
-    /*
-     * Fieldmap Settings
-     */
 
     [[nodiscard]] virtual std::size_t num_tiles_primary() const = 0;
 

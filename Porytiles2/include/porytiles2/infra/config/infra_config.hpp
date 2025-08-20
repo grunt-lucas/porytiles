@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "fmt/format.h"
-
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 namespace porytiles2 {
