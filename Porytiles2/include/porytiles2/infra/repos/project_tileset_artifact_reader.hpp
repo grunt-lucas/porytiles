@@ -11,10 +11,10 @@ namespace porytiles2 {
  * @brief Provides a filesystem-based implementation for TilesetArtifactReader
  *
  * @details
- * This class implements the TilesetArtifactReader interface to provide reading fucntionality for tileset artifacts. It
+ * This class implements the TilesetArtifactReader interface to provide reading functionality for tileset artifacts. It
  * operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
  */
-class ProjectTilesetArtifactReader : public TilesetArtifactReader {
+class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader() = default;
 
