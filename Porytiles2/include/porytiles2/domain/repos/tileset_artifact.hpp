@@ -28,24 +28,22 @@ class TilesetArtifact {
      * fall into several categories:
      * - Input images: bottom_png, middle_png, top_png (Porytiles source layers)
      * - Configuration: attributes_csv (metatile attribute overrides)
-     * - Animations: porytiles_anim_key_frame, porytiles_anim_frame, porymap_anim_frame
+     * - Animations: porytiles_anim_frame, porymap_anim_frame
      * - Palette data: override_n, pal_n
      * - Output binaries: metatiles_bin, metatile_attributes_bin, tiles_png (Porymap-compatible formats)
      */
     enum class Type {
-        bottom_png,               ///< Bottom layer PNG input image
-        middle_png,               ///< Middle layer PNG input image
-        top_png,                  ///< Top layer PNG input image
-        attributes_csv,           ///< CSV file containing metatile attribute overrides
-        porytiles_anim_key_frame, ///< Key frame PNG for Porytiles-format animation
-        porytiles_anim_frame,     ///< Animation frame PNG for Porytiles-format animation
-        pal_override_n,           ///< JASC palette override file
-        metatiles_bin,            ///< Metatile data output for Porymap
-        metatile_attributes_bin,  ///< Metatile attributes output for Porymap
-        tiles_png,                ///< Combined tile sheet PNG output for Porymap
-        porymap_anim_key_frame,   ///< Key frame PNG for Porymap-format animation
-        porymap_anim_frame,       ///< Animation frame PNG for Porymap-format animation
-        pal_n                     ///< JASC palette data file
+        bottom_png,              ///< Bottom layer PNG input image
+        middle_png,              ///< Middle layer PNG input image
+        top_png,                 ///< Top layer PNG input image
+        attributes_csv,          ///< CSV file containing metatile attribute overrides
+        porytiles_anim_frame,    ///< Animation frame PNG for Porytiles-format animation
+        pal_override_n,          ///< JASC palette override file
+        metatiles_bin,           ///< Metatile data output for Porymap
+        metatile_attributes_bin, ///< Metatile attributes output for Porymap
+        tiles_png,               ///< Combined tile sheet PNG output for Porymap
+        porymap_anim_frame,      ///< Animation frame PNG for Porymap-format animation
+        pal_n                    ///< JASC palette data file
         // pal_hint_n,            // TODO: pal hints could be like Porytiles1's palette primers?
     };
 

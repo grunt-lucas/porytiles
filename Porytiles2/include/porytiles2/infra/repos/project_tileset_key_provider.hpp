@@ -29,6 +29,10 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
 
     [[nodiscard]] ArtifactKey key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
 
+    [[nodiscard]] bool exists(const ArtifactKey &key) const override;
+
+    [[nodiscard]] bool tileset_exists(const std::string &tileset_name) const override;
+
     [[nodiscard]] std::set<std::string> discover_porytiles_anims(const std::string &tileset_name) const override;
 
     [[nodiscard]] std::set<int>
@@ -39,11 +43,8 @@ class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
     [[nodiscard]] std::set<int>
     discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
-    [[nodiscard]] bool exists(const ArtifactKey &key) const override;
-
   private:
     std::filesystem::path project_root_;
-    std::unordered_map<std::string, std::filesystem::path> subfolder_cache_;
 
     // TODO: implement configurable override paths for users who have changed the pokeemerald project structure
     // std::optional<std::filesystem::path> behaviors_header_override_path_;

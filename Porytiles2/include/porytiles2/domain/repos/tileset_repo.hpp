@@ -70,14 +70,14 @@ class TilesetRepo {
      * @param name The name of the Tileset to check.
      * @return True if the named tileset exists, false otherwise.
      */
-    [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
+    [[nodiscard]] bool exists(const std::string &name) const;
 
     /**
      * @brief Gets a reference to the ArtifactChecksumProvider for this repo.
      *
      * @return Reference to the provider
      */
-    [[nodiscard]] ArtifactChecksumProvider &checksum_provider() const {
+    [[nodiscard]] const ArtifactChecksumProvider &checksum_provider() const {
         return *checksum_provider_;
     }
 
@@ -86,7 +86,7 @@ class TilesetRepo {
      *
      * @return Reference to the provider
      */
-    [[nodiscard]] TilesetArtifactKeyProvider &key_provider() const {
+    [[nodiscard]] const TilesetArtifactKeyProvider &key_provider() const {
         return *key_provider_;
     }
 

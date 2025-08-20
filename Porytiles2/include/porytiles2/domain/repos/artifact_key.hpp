@@ -48,9 +48,7 @@ class ArtifactKey {
      * @param other The other ArtifactKey to compare with
      * @return The comparison result (strong ordering)
      */
-    [[nodiscard]] std::strong_ordering operator<=>(const ArtifactKey &other) const {
-        return key_ <=> other.key_;
-    }
+    [[nodiscard]] auto operator<=>(const ArtifactKey &other) const = default;
 
   private:
     std::string key_;

@@ -57,6 +57,14 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual bool exists(const ArtifactKey &key) const = 0;
 
     /**
+     * @brief Checks whether a tileset exists in the backing store for the given tileset name.
+     *
+     * @param tileset_name The name of the tileset to check
+     * @return True if the tileset exists in the backing store, false otherwise
+     */
+    [[nodiscard]] virtual bool tileset_exists(const std::string &tileset_name) const = 0;
+
+    /**
      * @brief Discovers the names of all Porytiles animations available for a tileset.
      *
      * @details
