@@ -34,12 +34,16 @@ class TilesetArtifactReader {
      * should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.) and updating the
      * correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
      *
+     * Precondition: the TilesetRepo checks that src_key actually exists before performing a read. Thus, the
+     * TilesetArtifactReader's read method can assume the specified artifact really does exist. If the artifact does not
+     * exist, the result is implementation-defined but will probably panic.
+     *
      * @param dest The Tileset object to be updated with the read artifact data
      * @param src_key The ArtifactKey identifying the artifact location in the backing store
      * @param artifact The TilesetArtifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) = 0;
+    virtual Result<void> read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
 };
 
 } // namespace porytiles2

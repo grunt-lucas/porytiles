@@ -105,10 +105,9 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
         return std::unexpected{"does not exist"};
     }
 
-    auto tileset = std::make_unique<Tileset>();
-    tileset->name(name);
-    tileset->porytiles_component(std::make_unique<PorytilesTilesetComponent>());
-    tileset->porymap_component(std::make_unique<PorymapTilesetComponent>());
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    auto tileset = std::make_unique<Tileset>(name, std::move(porytiles_component), std::move(porymap_component));
 
     // Porytiles assets
 

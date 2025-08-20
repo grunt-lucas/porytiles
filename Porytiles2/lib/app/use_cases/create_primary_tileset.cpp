@@ -28,7 +28,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     auto porymap_component = std::move(maybe_porymap_component.value());
 
     // 4. Initialize a new `Tileset` aggregate with the components.
-    Tileset tileset{std::move(porytiles_component), std::move(porymap_component)};
+    Tileset tileset{tileset_name, std::move(porytiles_component), std::move(porymap_component)};
 
     // 5. Update the source and header files.
     // TODO: this should use some kind of capable C source modification utility
