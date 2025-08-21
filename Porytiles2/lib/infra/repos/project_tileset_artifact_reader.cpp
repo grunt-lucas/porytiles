@@ -6,6 +6,7 @@
 #include <iterator>
 #include <ostream>
 
+#include "porytiles2/domain/model/tilemap_entry.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
@@ -13,36 +14,72 @@
 
 namespace {
 
-porytiles2::Result<void> import_layer_png(
-    const porytiles2::Tileset &dest,
-    const porytiles2::ArtifactKey &src_key,
-    const porytiles2::PngRgbaImageLoader &loader,
-    const std::function<
-        void(porytiles2::PorytilesTilesetComponent *, std::unique_ptr<porytiles2::Image<porytiles2::Rgba32>>)> &setter)
+using namespace porytiles2;
+
+Result<void> import_layer_png(
+    const Tileset &dest,
+    const ArtifactKey &src_key,
+    const PngRgbaImageLoader &loader,
+    const std::function<void(PorytilesTilesetComponent &, std::unique_ptr<Image<Rgba32>>)> &setter)
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         switch (image_result.error().type) {
-        case porytiles2::ImageLoadError::Type::file_not_found:
-            setter(dest.porytiles_component(), std::make_unique<porytiles2::Image<porytiles2::Rgba32>>());
+        case ImageLoadError::Type::file_not_found:
+            setter(*dest.porytiles_component(), std::make_unique<Image<Rgba32>>());
             return {};
-        case porytiles2::ImageLoadError::Type::unsupported_channel_count:
-        case porytiles2::ImageLoadError::Type::other_load_error:
+        case ImageLoadError::Type::unsupported_channel_count:
+        case ImageLoadError::Type::other_load_error:
             // TODO: need a more descriptive ProjectTilesetArtifactReader::read result type
             return std::unexpected{fmt::format("failed to load bottom.png: {}", image_result.error().metadata)};
         default:
-            porytiles2::panic("unhandled error type");
+            panic("unhandled error type");
         }
     }
-    setter(dest.porytiles_component(), std::move(image_result).value());
+    setter(*dest.porytiles_component(), std::move(image_result).value());
     return {};
 }
 
-porytiles2::Result<void> import_metatiles_bin(porytiles2::Tileset &dest, const porytiles2::ArtifactKey &src_key)
+Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatiles_bin(src_key.key(), std::ios::binary);
-    std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator(metatiles_bin), {}};
-    porytiles2::panic("TODO: implement");
+    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
+
+    if (data_buf.size() % 2 != 0) {
+        return std::unexpected{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
+    }
+
+    for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
+        TilemapEntry entry{};
+        const std::uint16_t lower_byte = data_buf.at(byte_index);
+        const std::uint16_t upper_byte = data_buf.at(byte_index + 1);
+        const std::uint16_t entry_bits = (upper_byte << 8) | lower_byte;
+
+        // -------- Metatile BIN Structure --------
+        // The metatiles.bin file contains a sequence of tilemap entries, which are each two bytes with the following
+        // structure:
+        //
+        // 0000 00XX XXXX XXXX
+        // least significant 10 bits are the tile index
+        //
+        // 0000 0X00 0000 0000
+        // 11th bit is the hflip bit
+        //
+        // 0000 X000 0000 0000
+        // 12th bit is the vflip bit
+        //
+        // XXXX 0000 0000 0000
+        // top 4 bits are pal index
+
+        entry.tile_index(entry_bits & 0x03FF);
+        entry.hflip((entry_bits >> 10) & 0x0001);
+        entry.vflip((entry_bits >> 11) & 0x0001);
+        entry.pal_index((entry_bits >> 12) & 0x000F);
+
+        dest.porymap_component()->push_back_tilemap_entry(entry);
+    }
+
+    return {};
 }
 
 } // namespace
@@ -56,18 +93,18 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     // Porytiles artifacts
     case TilesetArtifact::Type::bottom_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent *comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp->bottom(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
+                comp.bottom(std::move(img));
             });
     case TilesetArtifact::Type::middle_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent *comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp->middle(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
+                comp.middle(std::move(img));
             });
     case TilesetArtifact::Type::top_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent *comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp->top(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
+                comp.top(std::move(img));
             });
     case TilesetArtifact::Type::attributes_csv:
         panic("TODO: implement");

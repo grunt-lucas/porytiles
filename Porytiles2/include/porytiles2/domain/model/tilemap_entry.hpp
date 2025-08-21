@@ -33,9 +33,19 @@ class TilemapEntry {
         return tile_index_;
     }
 
+    void tile_index(unsigned int tile_index)
+    {
+        tile_index_ = tile_index;
+    }
+
     [[nodiscard]] unsigned int pal_index() const
     {
         return pal_index_;
+    }
+
+    void pal_index(unsigned int pal_index)
+    {
+        pal_index_ = pal_index;
     }
 
     [[nodiscard]] bool hflip() const
@@ -43,9 +53,19 @@ class TilemapEntry {
         return hflip_;
     }
 
+    void hflip(bool hflip)
+    {
+        hflip_ = hflip;
+    }
+
     [[nodiscard]] bool vflip() const
     {
         return vflip_;
+    }
+
+    void vflip(bool vflip)
+    {
+        vflip_ = vflip;
     }
 
   private:
