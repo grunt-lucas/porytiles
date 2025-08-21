@@ -92,7 +92,6 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     default:
         panic("unhandled TilesetArtifact::Type");
     }
-    panic("TODO: implement");
 }
 
 } // namespace porytiles2
