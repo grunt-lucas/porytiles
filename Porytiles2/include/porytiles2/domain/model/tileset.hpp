@@ -34,11 +34,11 @@ class Tileset {
         return name_;
     }
 
-    [[nodiscard]] const PorytilesTilesetComponent *porytiles_component() const {
+    [[nodiscard]] PorytilesTilesetComponent *porytiles_component() const {
         return porytiles_component_.get();
     }
 
-    [[nodiscard]] const PorymapTilesetComponent *porymap_component() const {
+    [[nodiscard]] PorymapTilesetComponent *porymap_component() const {
         return porymap_component_.get();
     }
 

@@ -1,9 +1,13 @@
 #pragma once
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
+#include "porytiles2/infra/services/png_indexed_image_loader.hpp"
+#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 
 namespace porytiles2 {
 
@@ -16,10 +20,16 @@ namespace porytiles2 {
  */
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
-    ProjectTilesetArtifactReader() = default;
+    ProjectTilesetArtifactReader(
+        gsl::not_null<PngRgbaImageLoader *> png_rgba_loader, gsl::not_null<PngIndexedImageLoader *> png_indexed_loader)
+        : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader} {}
 
     [[nodiscard]] Result<void>
     read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;
+
+  private:
+    PngRgbaImageLoader *png_rgba_loader_;
+    PngIndexedImageLoader *png_indexed_loader_;
 };
 
 } // namespace porytiles2

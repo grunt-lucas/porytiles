@@ -6,8 +6,12 @@
 
 namespace porytiles2 {
 
-void PorymapTilesetComponent::push_back(TilemapEntry entry) {
-    metatiles_bin_.push_back(entry);
+void PorymapTilesetComponent::push_back_tilemap_entry(TilemapEntry entry) {
+    metatiles_bin_.push_back(std::move(entry));
+}
+
+void PorymapTilesetComponent::push_back_pal(RgbaPal pal) {
+    pals_.push_back(std::move(pal));
 }
 
 bool PorymapTilesetComponent::is_empty() const {
