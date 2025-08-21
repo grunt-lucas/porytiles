@@ -113,24 +113,21 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
 
     const auto bottom_png_artifact = TilesetArtifact{bottom_png};
     const auto bottom_png_key = key_provider_->key_for(tileset->name(), bottom_png_artifact);
-    if (!key_provider_->exists(bottom_png_key)) {
-        return std::unexpected{"missing required porytiles artifact bottom.png"};
+    if (key_provider_->exists(bottom_png_key)) {
+        reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
     }
-    reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
 
     const auto middle_png_artifact = TilesetArtifact{middle_png};
     const auto middle_png_key = key_provider_->key_for(tileset->name(), middle_png_artifact);
-    if (!key_provider_->exists(middle_png_key)) {
-        return std::unexpected{"missing required porytiles artifact middle.png"};
+    if (key_provider_->exists(middle_png_key)) {
+        reader_->read(*tileset, middle_png_key, middle_png_artifact);
     }
-    reader_->read(*tileset, middle_png_key, middle_png_artifact);
 
     const auto top_png_artifact = TilesetArtifact{top_png};
     const auto top_png_key = key_provider_->key_for(tileset->name(), top_png_artifact);
-    if (!key_provider_->exists(top_png_key)) {
-        return std::unexpected{"missing required porytiles artifact top.png"};
+    if (key_provider_->exists(top_png_key)) {
+        reader_->read(*tileset, top_png_key, top_png_artifact);
     }
-    reader_->read(*tileset, top_png_key, top_png_artifact);
 
     const auto attr_csv_artifact = TilesetArtifact{attributes_csv};
     const auto attr_csv_key = key_provider_->key_for(tileset->name(), attr_csv_artifact);
@@ -202,9 +199,10 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
-        if (key_provider_->exists(pal_key)) {
-            reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
+        if (!key_provider_->exists(pal_key)) {
+            return std::unexpected{fmt::format("missing required artifact {:02}.pal", i)};
         }
+        reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
     }
 
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());

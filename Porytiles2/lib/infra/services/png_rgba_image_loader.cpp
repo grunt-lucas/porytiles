@@ -17,17 +17,23 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<std::unique_ptr<Image<Rgba32>>> PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
+Result<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
+PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
+    if (!exists(path)) {
+        return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::file_not_found}};
+    }
+
     CImg<std::uint8_t> cimg_png{};
     const auto path_c_str = path.c_str();
     try {
         cimg_png.assign(path_c_str);
     } catch (const CImgException &e) {
-        return std::unexpected{e.what()};
+        return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::other_load_error, .metadata = e.what()}};
     }
 
     if (cimg_png.spectrum() != 3 && cimg_png.spectrum() != 4) {
-        return std::unexpected{fmt::format("{}: CImg PNG loader only supports 3 or 4 channel images", path_c_str)};
+        return std::unexpected{
+            ImageLoadError{.type = ImageLoadError::Type::unsupported_channel_count, .metadata = path}};
     }
 
     const auto width = static_cast<std::size_t>(cimg_png.width());

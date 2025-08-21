@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/infra/services/image_load_error.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
@@ -17,12 +18,11 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(
-        result.error().contains("Failed to open file 'Resources/Tests/integration/image_io/non_existent_file.png'"));
+    EXPECT_TRUE(result.error().type == ImageLoadError::Type::file_not_found);
 
     auto result2 = loader->load_from_file("Resources/Tests/integration/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
-    EXPECT_TRUE(result2.error().contains(
+    EXPECT_TRUE(result2.error().metadata.contains(
         "Failed to recognize format of file "
         "'Resources/Tests/integration/metatile_behaviors.h'"));
 }

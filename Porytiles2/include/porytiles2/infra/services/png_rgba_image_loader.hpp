@@ -5,6 +5,7 @@
 
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/infra/services/image_load_error.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -21,7 +22,8 @@ class PngRgbaImageLoader final {
   public:
     PngRgbaImageLoader() = default;
 
-    [[nodiscard]] Result<std::unique_ptr<Image<Rgba32>>> load_from_file(const std::filesystem::path &path) const;
+    [[nodiscard]] Result<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
+    load_from_file(const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2
