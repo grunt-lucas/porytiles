@@ -30,7 +30,8 @@ class ArtifactKey {
      *
      * @return The wrapped string value
      */
-    [[nodiscard]] const std::string &key() const {
+    [[nodiscard]] const std::string &key() const
+    {
         return key_;
     }
 
@@ -65,7 +66,8 @@ struct std::hash<porytiles2::ArtifactKey> {
      * @param key The ArtifactKey to hash
      * @return Hash value for the key
      */
-    std::size_t operator()(const porytiles2::ArtifactKey &key) const noexcept {
+    std::size_t operator()(const porytiles2::ArtifactKey &key) const noexcept
+    {
         return std::hash<std::string>{}(key.key());
     }
 };

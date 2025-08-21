@@ -4,6 +4,7 @@
 
 using namespace porytiles2;
 
-TEST(ProjectTilesetKeyProviderTests, Foo) {
+TEST(ProjectTilesetKeyProviderTests, Foo)
+{
     EXPECT_EQ(0, 0);
 }

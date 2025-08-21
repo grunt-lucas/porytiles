@@ -4,7 +4,8 @@
 
 using namespace porytiles2;
 
-TEST(WarningTests, WallShouldEnableAllWarnings) {
+TEST(WarningTests, WallShouldEnableAllWarnings)
+{
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
 
     EXPECT_EQ(engine.enabled_at(warn_color_precision_loss), DiagLevel::ignored);
@@ -48,7 +49,8 @@ TEST(WarningTests, WallShouldEnableAllWarnings) {
     // ASSERT_EQ(engine.InFlightCountFor(kWarnUnusedAttribute), 1);
 }
 
-TEST(WarningTests, IndividualWarningsShouldExplicitlyEnable) {
+TEST(WarningTests, IndividualWarningsShouldExplicitlyEnable)
+{
     DiagEngine engine{std::make_unique<IgnoreConsumer>()};
     EXPECT_EQ(engine.enabled_at(warn_color_precision_loss), DiagLevel::ignored);
 

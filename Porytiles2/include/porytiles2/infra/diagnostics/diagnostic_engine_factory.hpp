@@ -23,7 +23,8 @@ class DiagEngineFactory {
      *
      * @return A reference to the singleton DiagEngine.
      */
-    static DiagEngine &engine() {
+    static DiagEngine &engine()
+    {
         if (override_) {
             return *override_;
         }
@@ -33,7 +34,8 @@ class DiagEngineFactory {
         return engine;
     }
 
-    static void override_engine(DiagEngine *engine) {
+    static void override_engine(DiagEngine *engine)
+    {
         override_ = engine;
     }
 

@@ -10,11 +10,13 @@ class RgbaPal final {
   public:
     RgbaPal() = default;
 
-    [[nodiscard]] std::size_t size() const {
+    [[nodiscard]] std::size_t size() const
+    {
         return colors_.size();
     }
 
-    [[nodiscard]] const std::vector<Rgba32> &colors() const {
+    [[nodiscard]] const std::vector<Rgba32> &colors() const
+    {
         return colors_;
     }
 

@@ -26,7 +26,9 @@ class ImportPrimaryTileset {
         std::unique_ptr<TilesetRepo> tileset_repo,
         std::unique_ptr<PrimaryTilesetCompiler> compiler,
         std::unique_ptr<DomainConfig> config)
-        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)} {}
+        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)}
+    {
+    }
 
     /**
      * @brief Imports the primary Tileset with the given tileset name.

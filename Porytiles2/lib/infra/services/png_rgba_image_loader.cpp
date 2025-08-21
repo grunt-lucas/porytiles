@@ -18,7 +18,8 @@ using cimg_library::CImg;
 using cimg_library::CImgException;
 
 Result<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
-PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
+PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const
+{
     if (!exists(path)) {
         return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::file_not_found}};
     }
@@ -27,7 +28,8 @@ PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const {
     const auto path_c_str = path.c_str();
     try {
         cimg_png.assign(path_c_str);
-    } catch (const CImgException &e) {
+    }
+    catch (const CImgException &e) {
         return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::other_load_error, .metadata = e.what()}};
     }
 

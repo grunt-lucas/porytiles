@@ -11,7 +11,8 @@
 namespace porytiles2 {
 
 Result<std::unique_ptr<Image<IndexPixel>>>
-PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const {
+PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
+{
     if (!exists(path)) {
         return std::unexpected{fmt::format("does not exist: {}", path.string())};
     }
@@ -19,7 +20,8 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const {
     try {
         // Do this here so if the source is not a PNG, we can catch and give a better error
         png::image<png::index_pixel> test{path};
-    } catch (std::exception &) {
+    }
+    catch (std::exception &) {
         return std::unexpected{fmt::format("not a valid indexed PNG file: {}", path.string())};
     }
 

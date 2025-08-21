@@ -17,8 +17,9 @@ porytiles2::Result<void> import_layer_png(
     const porytiles2::Tileset &dest,
     const porytiles2::ArtifactKey &src_key,
     const porytiles2::PngRgbaImageLoader &loader,
-    const std::function<void(
-        porytiles2::PorytilesTilesetComponent *, std::unique_ptr<porytiles2::Image<porytiles2::Rgba32>>)> &setter) {
+    const std::function<
+        void(porytiles2::PorytilesTilesetComponent *, std::unique_ptr<porytiles2::Image<porytiles2::Rgba32>>)> &setter)
+{
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         switch (image_result.error().type) {
@@ -37,7 +38,8 @@ porytiles2::Result<void> import_layer_png(
     return {};
 }
 
-porytiles2::Result<void> import_metatiles_bin(porytiles2::Tileset &dest, const porytiles2::ArtifactKey &src_key) {
+porytiles2::Result<void> import_metatiles_bin(porytiles2::Tileset &dest, const porytiles2::ArtifactKey &src_key)
+{
     std::ifstream metatiles_bin(src_key.key(), std::ios::binary);
     std::vector<unsigned char> metatileDataBuf{std::istreambuf_iterator(metatiles_bin), {}};
     porytiles2::panic("TODO: implement");
@@ -48,7 +50,8 @@ porytiles2::Result<void> import_metatiles_bin(porytiles2::Tileset &dest, const p
 namespace porytiles2 {
 
 Result<void>
-ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const {
+ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const
+{
     switch (artifact.type()) {
     // Porytiles artifacts
     case TilesetArtifact::Type::bottom_png:

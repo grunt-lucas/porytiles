@@ -42,7 +42,9 @@ class TilesetRepo {
         gsl::not_null<TilesetArtifactKeyProvider *> key_provider,
         gsl::not_null<TilesetArtifactReader *> reader,
         gsl::not_null<TilesetArtifactWriter *> writer)
-        : checksum_provider_{checksum_provider}, key_provider_{key_provider}, reader_{reader}, writer_{writer} {}
+        : checksum_provider_{checksum_provider}, key_provider_{key_provider}, reader_{reader}, writer_{writer}
+    {
+    }
 
     /**
      * @brief Persists a given Tileset and caches new artifact checksums.
@@ -77,7 +79,8 @@ class TilesetRepo {
      *
      * @return Reference to the provider
      */
-    [[nodiscard]] const ArtifactChecksumProvider &checksum_provider() const {
+    [[nodiscard]] const ArtifactChecksumProvider &checksum_provider() const
+    {
         return *checksum_provider_;
     }
 
@@ -86,7 +89,8 @@ class TilesetRepo {
      *
      * @return Reference to the provider
      */
-    [[nodiscard]] const TilesetArtifactKeyProvider &key_provider() const {
+    [[nodiscard]] const TilesetArtifactKeyProvider &key_provider() const
+    {
         return *key_provider_;
     }
 

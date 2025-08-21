@@ -38,7 +38,8 @@ class ArtifactChecksumProviderTest : public ::testing::Test {
 
 // Tests for find_unsynced_artifacts method
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_ReturnsEmpty) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_ReturnsEmpty)
+{
     // Setup: All checksums match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -56,7 +57,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_Ret
     EXPECT_TRUE(result.empty());
 }
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMatch_ReturnsUnsyncedKeys) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMatch_ReturnsUnsyncedKeys)
+{
     // Setup: Some checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -77,7 +79,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMat
     EXPECT_EQ(result[0], ArtifactKey{"key2"});
 }
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatch_ReturnsAllKeys) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatch_ReturnsAllKeys)
+{
     // Setup: All checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -98,7 +101,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatc
     EXPECT_THAT(result, UnorderedElementsAre(ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}));
 }
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksum_ReturnsUnsyncedKey) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksum_ReturnsUnsyncedKey)
+{
     // Setup: Key is missing from current checksums but present in cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -117,7 +121,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksu
     EXPECT_EQ(result[0], ArtifactKey{"key2"});
 }
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum_ReturnsUnsyncedKey) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum_ReturnsUnsyncedKey)
+{
     // Setup: Key is missing from cached checksums but present in current
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -136,7 +141,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum
     EXPECT_EQ(result[0], ArtifactKey{"key2"});
 }
 
-TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_EmptyArtifactKeysList_ReturnsEmpty) {
+TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_EmptyArtifactKeysList_ReturnsEmpty)
+{
     // Setup: Empty artifact keys list
     std::vector<ArtifactKey> artifact_keys = {};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"}};
@@ -154,7 +160,8 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_EmptyArtifactKeysList
 
 // Tests for all_checksums_match method
 
-TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue) {
+TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue)
+{
     // Setup: All checksums match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -172,7 +179,8 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue) {
     EXPECT_TRUE(result);
 }
 
-TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFalse) {
+TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFalse)
+{
     // Setup: Some checksums don't match between current and cached
     std::vector<ArtifactKey> artifact_keys = {ArtifactKey{"key1"}, ArtifactKey{"key2"}, ArtifactKey{"key3"}};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {
@@ -192,7 +200,8 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFal
     EXPECT_FALSE(result);
 }
 
-TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_EmptyArtifactKeysList_ReturnsTrue) {
+TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_EmptyArtifactKeysList_ReturnsTrue)
+{
     // Setup: Empty artifact keys list - vacuous truth, all of nothing match
     std::vector<ArtifactKey> artifact_keys = {};
     std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"}};

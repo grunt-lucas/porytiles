@@ -7,7 +7,8 @@
 namespace porytiles2 {
 
 std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_artifacts(
-    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const {
+    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const
+{
     const auto checksums = compute_artifact_checksums(tileset_name);
     const auto cached_checksums = load_cached_checksums(tileset_name);
 
@@ -24,7 +25,8 @@ std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_artifacts(
 }
 
 bool ArtifactChecksumProvider::all_checksums_match(
-    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const {
+    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const
+{
     return find_unsynced_artifacts(tileset_name, artifact_keys).empty();
 }
 

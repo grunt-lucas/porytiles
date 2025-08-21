@@ -9,7 +9,8 @@ namespace porytiles2 {
 
 enum class TilesPalMode { true_color, greyscale };
 
-[[nodiscard]] inline std::optional<TilesPalMode> tiles_pal_mode_from_str(const std::string &str) {
+[[nodiscard]] inline std::optional<TilesPalMode> tiles_pal_mode_from_str(const std::string &str)
+{
     if (str == "true-color") {
         return std::optional{TilesPalMode::true_color};
     }
@@ -19,7 +20,8 @@ enum class TilesPalMode { true_color, greyscale };
     return std::nullopt;
 }
 
-[[nodiscard]] inline std::string to_string(const TilesPalMode m) {
+[[nodiscard]] inline std::string to_string(const TilesPalMode m)
+{
     switch (m) {
     case TilesPalMode::true_color:
         return "true-color";
@@ -29,7 +31,8 @@ enum class TilesPalMode { true_color, greyscale };
     panic("unhandled TilesPalMode value");
 }
 
-inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m) {
+inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m)
+{
     return os << to_string(m);
 }
 

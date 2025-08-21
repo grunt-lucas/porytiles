@@ -15,7 +15,8 @@
 namespace porytiles2 {
 
 Result<void> PngIndexedImageSaver::save_to_file(
-    const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const {
+    const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const
+{
     using enum TilesPalMode;
 
     const std::vector greyscale_pal = {
@@ -48,7 +49,8 @@ Result<void> PngIndexedImageSaver::save_to_file(
     std::vector<Rgba32> palette_to_use;
     if (mode == true_color && image.palette().has_value()) {
         palette_to_use = image.palette().value();
-    } else {
+    }
+    else {
         // Use greyscale palette for greyscale mode OR when true_color mode but no image palette exists
         palette_to_use = greyscale_pal;
     }
@@ -69,7 +71,8 @@ Result<void> PngIndexedImageSaver::save_to_file(
     // Write PNG to filesystem
     try {
         out.write(path);
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e) {
         return std::unexpected{fmt::format("failed to save indexed PNG to {}: {}", path.string(), e.what())};
     }
 

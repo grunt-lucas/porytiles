@@ -21,7 +21,9 @@ class CompilePrimaryTileset {
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
      */
     CompilePrimaryTileset(std::unique_ptr<TilesetRepo> tileset_repo, std::unique_ptr<PrimaryTilesetCompiler> compiler)
-        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)} {}
+        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}
+    {
+    }
 
     /**
      * @brief Compiles the primary Tileset with the given tileset name.

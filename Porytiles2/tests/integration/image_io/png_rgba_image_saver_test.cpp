@@ -14,7 +14,8 @@ using namespace porytiles2;
 
 class PngRgbaImageSaverTests : public ::testing::Test {
   protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         saver_ = std::make_unique<PngRgbaImageSaver>();
         loader_ = std::make_unique<PngRgbaImageLoader>();
 
@@ -23,18 +24,21 @@ class PngRgbaImageSaverTests : public ::testing::Test {
         std::filesystem::create_directories(temp_dir_);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         // Clean up temporary files
         if (std::filesystem::exists(temp_dir_)) {
             std::filesystem::remove_all(temp_dir_);
         }
     }
 
-    [[nodiscard]] std::filesystem::path get_tmp_path(const std::string &filename) const {
+    [[nodiscard]] std::filesystem::path get_tmp_path(const std::string &filename) const
+    {
         return temp_dir_ / filename;
     }
 
-    static Image<Rgba32> create_test_image(std::size_t width, std::size_t height) {
+    static Image<Rgba32> create_test_image(std::size_t width, std::size_t height)
+    {
         Image<Rgba32> image{width, height};
 
         // Fill with a simple pattern for testing
@@ -57,7 +61,8 @@ class PngRgbaImageSaverTests : public ::testing::Test {
     std::filesystem::path temp_dir_;
 };
 
-TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath) {
+TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
+{
     const auto image = create_test_image(2, 2);
 
     // Try to save to a non-existent directory without creating it
@@ -68,7 +73,8 @@ TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath) {
     EXPECT_TRUE(result.error().contains("Failed to save PNG"));
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile) {
+TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile)
+{
     const auto image = create_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save.png");
 
@@ -80,7 +86,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile) {
     EXPECT_GT(std::filesystem::file_size(file_path), 0);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip) {
+TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip)
+{
     const auto original_image = create_test_image(8, 6);
     const auto file_path = get_tmp_path("roundtrip_test.png");
 
@@ -115,7 +122,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip) {
     }
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages) {
+TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages)
+{
     const auto image = create_test_image(1, 1);
     const auto file_path = get_tmp_path("small_image.png");
 
@@ -136,7 +144,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages) {
     EXPECT_EQ(loaded_image.height(), 1);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages) {
+TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages)
+{
     const auto width = 128;
     const auto height = 320;
     const auto image = create_test_image(width, height);
@@ -160,7 +169,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages) {
     EXPECT_EQ(loaded_image.height(), height);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
+TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly)
+{
     Image<Rgba32> image{4, 4};
 
     // Create a pattern with varying transparency
@@ -194,7 +204,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly) {
     }
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile) {
+TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile)
+{
     const auto image1 = create_test_image(2, 2);
     const auto image2 = create_test_image(3, 3);
     const auto file_path = get_tmp_path("overwrite_test.png");
@@ -224,7 +235,8 @@ TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile) {
     EXPECT_EQ(loaded_image.height(), 3);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages) {
+TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages)
+{
     Image<Rgba32> image{3, 3};
 
     // Create a fully opaque image

@@ -7,7 +7,8 @@
 
 namespace porytiles2 {
 
-Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const {
+Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
+{
     // 1. Check if the primary tileset already exists. If so, abort with an error message.
     if (tileset_repo_->exists(tileset_name)) {
         return std::unexpected{"tileset already exists"};

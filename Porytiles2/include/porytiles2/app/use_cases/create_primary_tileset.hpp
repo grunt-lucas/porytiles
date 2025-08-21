@@ -27,7 +27,9 @@ class CreatePrimaryTileset {
         std::unique_ptr<PrimaryTilesetCompiler> compiler,
         std::unique_ptr<AssetGenerator> asset_generator)
         : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)},
-          asset_generator_{std::move(asset_generator)} {}
+          asset_generator_{std::move(asset_generator)}
+    {
+    }
 
     /**
      * @brief Creates the primary Tileset with the given tileset name.

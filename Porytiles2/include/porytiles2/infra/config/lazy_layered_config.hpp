@@ -43,7 +43,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @param providers The list of providers in priority order
      */
     explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigProvider>> &&providers)
-        : providers_{std::move(providers)} {}
+        : providers_{std::move(providers)}
+    {
+    }
 
     /*
      * Domain Config

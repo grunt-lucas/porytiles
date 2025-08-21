@@ -8,7 +8,8 @@
 
 namespace porytiles2 {
 
-Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) const {
+Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) const
+{
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
         return std::unexpected{fmt::format("tileset {} does not exist", tileset_name)};

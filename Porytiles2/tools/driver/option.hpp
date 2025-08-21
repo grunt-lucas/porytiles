@@ -16,11 +16,13 @@ class Opt {
 
     virtual void RegisterOpt(CLI::App &app) = 0;
 
-    void SetGroup(const std::string &group, CLI::App &app) const {
+    void SetGroup(const std::string &group, CLI::App &app) const
+    {
         app.get_option(NameLong())->group(group);
     }
 
-    [[nodiscard]] std::string NameCombined() const {
+    [[nodiscard]] std::string NameCombined() const
+    {
         return NameShort() + "," + NameLong();
     }
 };
@@ -31,15 +33,18 @@ class OptOutput final : public Opt {
   public:
     OptOutput() : output_path_{"."} {}
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "-o";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--output";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_option(
                NameCombined(),
                output_path_,
@@ -50,7 +55,8 @@ class OptOutput final : public Opt {
             ->capture_default_str();
     }
 
-    [[nodiscard]] std::string output_path() const {
+    [[nodiscard]] std::string output_path() const
+    {
         return output_path_;
     }
 };
@@ -61,15 +67,18 @@ class OptTilesPalMode final : public Opt {
   public:
     OptTilesPalMode() : pal_format_{to_string(porytiles2::TilesPalMode::true_color)} {}
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--tiles-pal-mode";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_option(
                NameLong(),
                pal_format_,
@@ -81,7 +90,8 @@ class OptTilesPalMode final : public Opt {
             ->capture_default_str();
     }
 
-    [[nodiscard]] std::string pal_format() const {
+    [[nodiscard]] std::string pal_format() const
+    {
         return pal_format_;
     }
 };
@@ -92,15 +102,18 @@ class OptDisableMetatileGeneration final : public Opt {
   public:
     OptDisableMetatileGeneration() = default;
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--disable-metatile-generation";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_flag(
             NameLong(),
             disabled_,
@@ -109,7 +122,8 @@ class OptDisableMetatileGeneration final : public Opt {
             "via Porymap.");
     }
 
-    [[nodiscard]] bool disabled() const {
+    [[nodiscard]] bool disabled() const
+    {
         return disabled_;
     }
 };
@@ -120,15 +134,18 @@ class OptDisableAttributeGeneration final : public Opt {
   public:
     OptDisableAttributeGeneration() = default;
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--disable-attribute-generation";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_flag(
             NameLong(),
             disabled_,
@@ -137,7 +154,8 @@ class OptDisableAttributeGeneration final : public Opt {
             "attributes manually via Porymap.");
     }
 
-    [[nodiscard]] bool disabled() const {
+    [[nodiscard]] bool disabled() const
+    {
         return disabled_;
     }
 };
@@ -148,15 +166,18 @@ class OptTripleLayer final : public Opt {
   public:
     OptTripleLayer() = default;
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--triple-layer";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_flag(
             NameLong(),
             triple_layer_,
@@ -168,7 +189,8 @@ class OptTripleLayer final : public Opt {
             "content on all three layers.");
     }
 
-    [[nodiscard]] bool dual_layer() const {
+    [[nodiscard]] bool dual_layer() const
+    {
         return triple_layer_;
     }
 };
@@ -179,15 +201,18 @@ class OptTransparencyColor final : public Opt {
   public:
     OptTransparencyColor() : rgb_{"255,0,255"} {}
 
-    [[nodiscard]] std::string NameShort() const override {
+    [[nodiscard]] std::string NameShort() const override
+    {
         return "";
     }
 
-    [[nodiscard]] std::string NameLong() const override {
+    [[nodiscard]] std::string NameLong() const override
+    {
         return "--transparency-color";
     }
 
-    void RegisterOpt(CLI::App &app) override {
+    void RegisterOpt(CLI::App &app) override
+    {
         app.add_option(
                NameLong(),
                rgb_,
@@ -197,7 +222,8 @@ class OptTransparencyColor final : public Opt {
             ->capture_default_str();
     }
 
-    [[nodiscard]] const std::string &rgb() const {
+    [[nodiscard]] const std::string &rgb() const
+    {
         return rgb_;
     }
 };

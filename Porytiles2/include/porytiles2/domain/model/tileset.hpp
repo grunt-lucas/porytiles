@@ -20,7 +20,8 @@ class Tileset {
         std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
         std::unique_ptr<PorymapTilesetComponent> porymap_component)
         : name_{std::move(name)}, porytiles_component_{std::move(porytiles_component)},
-          porymap_component_{std::move(porymap_component)} {
+          porymap_component_{std::move(porymap_component)}
+    {
 
         if (porytiles_component_ == nullptr) {
             panic("porytiles_component was null");
@@ -30,26 +31,31 @@ class Tileset {
         }
     }
 
-    [[nodiscard]] const std::string &name() const {
+    [[nodiscard]] const std::string &name() const
+    {
         return name_;
     }
 
-    [[nodiscard]] PorytilesTilesetComponent *porytiles_component() const {
+    [[nodiscard]] PorytilesTilesetComponent *porytiles_component() const
+    {
         return porytiles_component_.get();
     }
 
-    [[nodiscard]] PorymapTilesetComponent *porymap_component() const {
+    [[nodiscard]] PorymapTilesetComponent *porymap_component() const
+    {
         return porymap_component_.get();
     }
 
-    void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component) {
+    void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component)
+    {
         if (porytiles_component == nullptr) {
             panic("porytiles_component was null");
         }
         porytiles_component_ = std::move(porytiles_component);
     }
 
-    void porymap_component(std::unique_ptr<PorymapTilesetComponent> porymap_component) {
+    void porymap_component(std::unique_ptr<PorymapTilesetComponent> porymap_component)
+    {
         if (porymap_component == nullptr) {
             panic("porymap_component was null");
         }

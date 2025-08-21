@@ -9,7 +9,8 @@
 namespace {
 
 std::optional<std::string>
-construct_flag(const porytiles2::DiagLevel in_flight_level, const porytiles2::DiagTempl &templ) {
+construct_flag(const porytiles2::DiagLevel in_flight_level, const porytiles2::DiagTempl &templ)
+{
     if (in_flight_level == porytiles2::DiagLevel::warning) {
         return std::optional{fmt::format("-W{}", templ.name())};
     }
@@ -23,7 +24,8 @@ construct_flag(const porytiles2::DiagLevel in_flight_level, const porytiles2::Di
 
 namespace porytiles2 {
 
-void DiagEngine::enable_all_warnings() {
+void DiagEngine::enable_all_warnings()
+{
     for (const auto &diag : all_diag_names()) {
         // Only apply enablement to diagnostics that are default-warnings
         if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::warning) {
@@ -32,11 +34,13 @@ void DiagEngine::enable_all_warnings() {
     }
 }
 
-void DiagEngine::disable_all_warnings() {
+void DiagEngine::disable_all_warnings()
+{
     all_warnings_disabled_ = true;
 }
 
-void DiagEngine::upgrade_enabled_warnings_to_err() {
+void DiagEngine::upgrade_enabled_warnings_to_err()
+{
     for (const auto &diag : all_diag_names()) {
         // Only apply enablement to diagnostics that are default-warnings
         if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::warning) {
@@ -48,7 +52,8 @@ void DiagEngine::upgrade_enabled_warnings_to_err() {
     }
 }
 
-void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
+void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override)
+{
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
         panic(
@@ -64,12 +69,14 @@ void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
     if (enabled_at_level_.contains(diag.data())) {
         auto &set = enabled_at_level_.at(diag.data());
         set.insert(override);
-    } else {
+    }
+    else {
         enabled_at_level_.insert({std::string{diag}, std::set{override}});
     }
 }
 
-void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override) {
+void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override)
+{
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
         panic(
@@ -91,7 +98,8 @@ void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override) {
     }
 }
 
-DiagLevel DiagEngine::enabled_at(std::string_view diag) const {
+DiagLevel DiagEngine::enabled_at(std::string_view diag) const
+{
     if (!enabled_at_level_.contains(diag.data())) {
         return DiagLevel::ignored;
     }
@@ -101,11 +109,13 @@ DiagLevel DiagEngine::enabled_at(std::string_view diag) const {
     return *enabled_at_level_.at(diag.data()).rbegin();
 }
 
-std::uint64_t DiagEngine::in_flight_count_for_level(DiagLevel level) const {
+std::uint64_t DiagEngine::in_flight_count_for_level(DiagLevel level) const
+{
     return std::ranges::count(in_flight_diags_, level, &InFlightDiag::level);
 }
 
-std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const {
+std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const
+{
     const auto diag_str = std::string{diag};
     if (!diag_counts_.contains(diag_str)) {
         return 0;
@@ -113,12 +123,14 @@ std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const {
     return diag_counts_.at(diag_str);
 }
 
-const DiagConsumer &DiagEngine::consumer() const {
+const DiagConsumer &DiagEngine::consumer() const
+{
     return *consumer_;
 }
 
 // ReSharper disable once CppParameterMayBeConst
-DiagLevel DiagEngine::compute_level(std::string_view diag) const {
+DiagLevel DiagEngine::compute_level(std::string_view diag) const
+{
     const auto &templ = diag_for(diag);
 
     // Only warnings can "change" levels, so short circuit on anything else
@@ -138,7 +150,8 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
     return templ.level();
 }
 
-[[nodiscard]] bool DiagEngine::is_enabled(std::string_view diag) const {
+[[nodiscard]] bool DiagEngine::is_enabled(std::string_view diag) const
+{
 
     // If this diagnostic is a note, remark, error, or fatal by default, it is
     // always enabled.
@@ -170,7 +183,8 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
 }
 
 std::string DiagEngine::construct_msg_str(
-    const DiagLevel in_flight_level, const DiagTempl &templ, const std::vector<std::string> &msg) const {
+    const DiagLevel in_flight_level, const DiagTempl &templ, const std::vector<std::string> &msg) const
+{
     std::stringstream ss{};
 
     auto level_prefix = fmt::format("{}: ", level_to_str(in_flight_level));

@@ -4,7 +4,8 @@
 
 namespace porytiles2 {
 
-bool RgbaMetatile::equals_as_bgr(const RgbaMetatile &other) const {
+bool RgbaMetatile::equals_as_bgr(const RgbaMetatile &other) const
+{
     panic("TODO: unimplemented");
 }
 

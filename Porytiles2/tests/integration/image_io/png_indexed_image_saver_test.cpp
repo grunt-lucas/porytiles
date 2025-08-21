@@ -15,7 +15,8 @@ using namespace porytiles2;
 
 class PngIndexedImageSaverTests : public ::testing::Test {
   protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         saver_ = std::make_unique<PngIndexedImageSaver>();
         loader_ = std::make_unique<PngIndexedImageLoader>();
 
@@ -24,18 +25,21 @@ class PngIndexedImageSaverTests : public ::testing::Test {
         std::filesystem::create_directories(temp_dir_);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         // Clean up temporary files
         if (std::filesystem::exists(temp_dir_)) {
             std::filesystem::remove_all(temp_dir_);
         }
     }
 
-    [[nodiscard]] std::filesystem::path get_tmp_path(const std::string &filename) const {
+    [[nodiscard]] std::filesystem::path get_tmp_path(const std::string &filename) const
+    {
         return temp_dir_ / filename;
     }
 
-    static Image<IndexPixel> create_test_image(std::size_t width, std::size_t height) {
+    static Image<IndexPixel> create_test_image(std::size_t width, std::size_t height)
+    {
         // Create a palette with 16 colors
         std::vector<Rgba32> palette;
         palette.reserve(16);
@@ -60,7 +64,8 @@ class PngIndexedImageSaverTests : public ::testing::Test {
         return image;
     }
 
-    static Image<IndexPixel> create_greyscale_test_image(std::size_t width, std::size_t height) {
+    static Image<IndexPixel> create_greyscale_test_image(std::size_t width, std::size_t height)
+    {
         // Create a greyscale palette with 16 levels (matching the implementation)
         std::vector<Rgba32> palette;
         palette.reserve(16);
@@ -87,7 +92,8 @@ class PngIndexedImageSaverTests : public ::testing::Test {
     std::filesystem::path temp_dir_;
 };
 
-TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath) {
+TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
+{
     const auto image = create_test_image(2, 2);
 
     // Try to save to a non-existent directory without creating it
@@ -98,7 +104,8 @@ TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath) {
     EXPECT_TRUE(result.error().contains("failed to save indexed PNG"));
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode) {
+TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode)
+{
     const auto image = create_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save_true_color.png");
 
@@ -110,7 +117,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode) {
     EXPECT_GT(std::filesystem::file_size(file_path), 0);
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInGreyscaleMode) {
+TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInGreyscaleMode)
+{
     const auto image = create_greyscale_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save_greyscale.png");
 
@@ -122,7 +130,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInGreyscaleMode) {
     EXPECT_GT(std::filesystem::file_size(file_path), 0);
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripTrueColor) {
+TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripTrueColor)
+{
     const auto original_image = create_test_image(8, 6);
     const auto file_path = get_tmp_path("roundtrip_test_true_color.png");
 
@@ -153,7 +162,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripTrueColor) {
     }
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripGreyscale) {
+TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripGreyscale)
+{
     const auto original_image = create_greyscale_test_image(8, 6);
     const auto file_path = get_tmp_path("roundtrip_test_greyscale.png");
 
@@ -184,7 +194,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripGreyscale) {
     }
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldHandleSmallImages) {
+TEST_F(PngIndexedImageSaverTests, ShouldHandleSmallImages)
+{
     const auto image = create_test_image(1, 1);
     const auto file_path = get_tmp_path("small_image.png");
 
@@ -205,7 +216,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleSmallImages) {
     EXPECT_EQ(loaded_image.height(), 1);
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldHandleLargeImages) {
+TEST_F(PngIndexedImageSaverTests, ShouldHandleLargeImages)
+{
     constexpr auto width = 128;
     constexpr auto height = 320;
     const auto image = create_test_image(width, height);
@@ -229,7 +241,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleLargeImages) {
     EXPECT_EQ(loaded_image.height(), static_cast<std::size_t>(height));
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly) {
+TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly)
+{
     // Create an image with transparent pixels (index 0)
     std::vector<Rgba32> palette;
     palette.emplace_back(0, 0, 0, 0);     // Index 0: transparent
@@ -277,7 +290,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly) {
     }
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldOverwriteExistingFile) {
+TEST_F(PngIndexedImageSaverTests, ShouldOverwriteExistingFile)
+{
     const auto image1 = create_test_image(2, 2);
     const auto image2 = create_test_image(3, 3);
     const auto file_path = get_tmp_path("overwrite_test.png");
@@ -307,7 +321,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldOverwriteExistingFile) {
     EXPECT_EQ(loaded_image.height(), 3);
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldHandleMaxPaletteSize) {
+TEST_F(PngIndexedImageSaverTests, ShouldHandleMaxPaletteSize)
+{
     // Create an image with the maximum palette size (256 colors)
     std::vector<Rgba32> palette;
     palette.reserve(256);
@@ -351,7 +366,8 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleMaxPaletteSize) {
     }
 }
 
-TEST_F(PngIndexedImageSaverTests, ShouldHandleImageWithoutPalette) {
+TEST_F(PngIndexedImageSaverTests, ShouldHandleImageWithoutPalette)
+{
     // Create an image without providing a palette
     Image<IndexPixel> image{4, 4};
 

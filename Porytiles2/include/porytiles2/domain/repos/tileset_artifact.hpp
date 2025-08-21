@@ -64,7 +64,9 @@ class TilesetArtifact {
      * @param name The name associated with the artifact
      */
     explicit TilesetArtifact(const Type type, std::string name)
-        : type_{type}, name_{std::move(name)}, index_{std::nullopt} {}
+        : type_{type}, name_{std::move(name)}, index_{std::nullopt}
+    {
+    }
 
     /**
      * @brief Constructs a tileset artifact with a type and index.
@@ -89,14 +91,17 @@ class TilesetArtifact {
      * @param index The index associated with the artifact
      */
     explicit TilesetArtifact(const Type type, std::string name, int index)
-        : type_{type}, name_{std::move(name)}, index_{index} {}
+        : type_{type}, name_{std::move(name)}, index_{index}
+    {
+    }
 
     /**
      * @brief Gets the artifact type.
      *
      * @return The type of this artifact
      */
-    [[nodiscard]] Type type() const {
+    [[nodiscard]] Type type() const
+    {
         return type_;
     }
 
@@ -105,7 +110,8 @@ class TilesetArtifact {
      *
      * @return Optional name string, or nullopt if the artifact has no associated name
      */
-    [[nodiscard]] std::optional<std::string> name() const {
+    [[nodiscard]] std::optional<std::string> name() const
+    {
         return name_;
     }
 
@@ -114,7 +120,8 @@ class TilesetArtifact {
      *
      * @return Optional index value, or nullopt if the artifact has no associated index
      */
-    [[nodiscard]] std::optional<int> index() const {
+    [[nodiscard]] std::optional<int> index() const
+    {
         return index_;
     }
 

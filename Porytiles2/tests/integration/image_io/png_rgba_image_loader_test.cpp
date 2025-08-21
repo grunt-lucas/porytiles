@@ -13,7 +13,8 @@ using namespace porytiles2;
 
 // TODO: reorganize test assets
 
-TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
+TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/non_existent_file.png");
@@ -27,7 +28,8 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile) {
         "'Resources/Tests/integration/metatile_behaviors.h'"));
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile) {
+TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     const auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
@@ -39,7 +41,8 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile) {
     EXPECT_GT(image.height(), 0);
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha) {
+TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Use one of the available PNG files that should be RGB (3-channel)
@@ -67,7 +70,8 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha) {
     EXPECT_TRUE(has_opaque_pixels);
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly) {
+TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
@@ -84,7 +88,8 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly) {
     EXPECT_NO_THROW(std::ignore = image.at(image.height() - 1, image.width() - 1));
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly) {
+TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
@@ -116,7 +121,8 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly) {
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats) {
+TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Test reading different PNG files to ensure the reader works with various formats
@@ -137,7 +143,8 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats) {
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
+TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Test with a key.png file which likely has transparency
@@ -168,7 +175,8 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels) {
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages) {
+TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Test with pattern.png which should be a small test image
@@ -190,7 +198,8 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages) {
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile) {
+TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile)
+{
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Read the same file multiple times to ensure consistent results

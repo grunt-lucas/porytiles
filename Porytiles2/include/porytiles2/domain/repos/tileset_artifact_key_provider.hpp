@@ -127,7 +127,8 @@ class TilesetArtifactKeyProvider {
      *
      * @return A vector of Porytiles artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<ArtifactKey> get_porytiles_artifact_keys(const std::string &tileset_name) const {
+    [[nodiscard]] virtual std::vector<ArtifactKey> get_porytiles_artifact_keys(const std::string &tileset_name) const
+    {
         using enum TilesetArtifact::Type;
         std::vector<ArtifactKey> result;
 
@@ -164,7 +165,8 @@ class TilesetArtifactKeyProvider {
      *
      * @return A vector of Porymap artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<ArtifactKey> get_porymap_artifact_keys(const std::string &tileset_name) const {
+    [[nodiscard]] virtual std::vector<ArtifactKey> get_porymap_artifact_keys(const std::string &tileset_name) const
+    {
         using enum TilesetArtifact::Type;
         std::vector<ArtifactKey> result;
 
@@ -198,7 +200,8 @@ class TilesetArtifactKeyProvider {
      * @param tileset_name The name of the Tileset for which to get all artifact keys
      * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual std::vector<ArtifactKey> get_all_artifact_keys(const std::string &tileset_name) const {
+    [[nodiscard]] virtual std::vector<ArtifactKey> get_all_artifact_keys(const std::string &tileset_name) const
+    {
         const auto porytiles_keys = get_porytiles_artifact_keys(tileset_name);
         const auto porymap_keys = get_porymap_artifact_keys(tileset_name);
 

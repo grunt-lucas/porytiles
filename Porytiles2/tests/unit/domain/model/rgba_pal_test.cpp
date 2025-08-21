@@ -4,6 +4,7 @@
 
 using namespace porytiles2;
 
-TEST(RgbaPalTests, FooShouldBeZero) {
+TEST(RgbaPalTests, FooShouldBeZero)
+{
     RgbaPal foo{};
 }

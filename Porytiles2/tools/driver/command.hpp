@@ -23,7 +23,8 @@ class Command {
     virtual ~Command() = default;
 
     Command(CLI::App &parent_app, const std::string &name, const std::string &desc, const std::string &group)
-        : app_(nullptr) {
+        : app_(nullptr)
+    {
         if (name.empty()) {
             porytiles2::panic("Command name cannot be empty.");
         }
@@ -44,7 +45,8 @@ class Command {
     Command(Command &&) = delete;
     Command &operator=(Command &&) = delete;
 
-    [[nodiscard]] CLI::App &get_app() const {
+    [[nodiscard]] CLI::App &get_app() const
+    {
         if (app_ == nullptr) {
             porytiles2::panic("app_ should have been initialized by the constructor");
         }
@@ -61,13 +63,15 @@ class Command {
 class CompileTilesetCommand final : public Command {
   public:
     explicit CompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
     }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Compile tileset command called." << std::endl;
     }
 
@@ -82,14 +86,15 @@ class CompileTilesetCommand final : public Command {
 
 class CompileLayoutCommand final : public Command {
   public:
-    explicit CompileLayoutCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
+    explicit CompileLayoutCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
     }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Compile layout command called." << std::endl;
     }
 
@@ -105,13 +110,15 @@ class CompileLayoutCommand final : public Command {
 class CompileSpritesheetCommand final : public Command {
   public:
     explicit CompileSpritesheetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
     }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Compile spritesheet command called." << std::endl;
     }
 
@@ -127,13 +134,15 @@ class CompileSpritesheetCommand final : public Command {
 class DecompileTilesetCommand final : public Command {
   public:
     explicit DecompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
     }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Decompile tileset command called." << std::endl;
     }
 
@@ -149,13 +158,15 @@ class DecompileTilesetCommand final : public Command {
 class DecompileLayoutCommand final : public Command {
   public:
     explicit DecompileLayoutCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
         diagnostics_opts_.RegisterGroup(cmd);
     }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Decompile layout command called." << std::endl;
     }
 
@@ -171,9 +182,12 @@ class DecompileLayoutCommand final : public Command {
 class ReduceBitDepthCommand final : public Command {
   public:
     explicit ReduceBitDepthCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {}
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+    }
 
-    void Run() override {
+    void Run() override
+    {
         std::cout << "Reduce bit depth command called." << std::endl;
     }
 

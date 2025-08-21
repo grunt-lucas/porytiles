@@ -6,7 +6,8 @@ namespace porytiles2 {
 
 enum class IncrementalBuildMode { off, keep_unused, remove_unused };
 
-[[nodiscard]] inline std::string to_string(const IncrementalBuildMode &value) {
+[[nodiscard]] inline std::string to_string(const IncrementalBuildMode &value)
+{
     switch (value) {
     case IncrementalBuildMode::off:
         return "off";

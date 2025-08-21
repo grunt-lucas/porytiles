@@ -12,7 +12,8 @@ namespace {
 const std::filesystem::path kPrimaryTilesetsRelativePath = std::filesystem::path{"data"} / "tilesets" / "primary";
 const std::filesystem::path kSecondaryTilesetsRelativePath = std::filesystem::path{"data"} / "tilesets" / "secondary";
 
-std::filesystem::path get_tileset_path(const std::string &tileset_name, const std::filesystem::path &project_root) {
+std::filesystem::path get_tileset_path(const std::string &tileset_name, const std::filesystem::path &project_root)
+{
     if (std::filesystem::exists(project_root / kPrimaryTilesetsRelativePath / tileset_name)) {
         return project_root / kPrimaryTilesetsRelativePath / tileset_name;
     }
@@ -38,7 +39,8 @@ static const std::filesystem::path metatile_attributes_bin{"metatile_attributes.
 static const std::filesystem::path tiles_png{"tiles.png"};
 static const std::filesystem::path palettes{"palettes"};
 
-ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const {
+ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
+{
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
 
     switch (artifact.type()) {
@@ -103,12 +105,14 @@ ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, 
     }
 }
 
-bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const {
+bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const
+{
     const std::filesystem::path artifact{key.key()};
     return std::filesystem::exists(artifact);
 }
 
-bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const {
+bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const
+{
     if (std::filesystem::exists(project_root_ / kPrimaryTilesetsRelativePath / tileset_name)) {
         return true;
     }
@@ -118,21 +122,25 @@ bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) 
     return false;
 }
 
-std::set<std::string> ProjectTilesetKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const {
+std::set<std::string> ProjectTilesetKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
+{
     panic("TODO: unimplemented");
 }
 
 std::set<int> ProjectTilesetKeyProvider::discover_porytiles_anim_frames(
-    const std::string &tileset_name, const std::string &anim_name) const {
+    const std::string &tileset_name, const std::string &anim_name) const
+{
     panic("TODO: unimplemented");
 }
 
-std::set<std::string> ProjectTilesetKeyProvider::discover_porymap_anims(const std::string &tileset_name) const {
+std::set<std::string> ProjectTilesetKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
+{
     panic("TODO: unimplemented");
 }
 
 std::set<int> ProjectTilesetKeyProvider::discover_porymap_anim_frames(
-    const std::string &tileset_name, const std::string &anim_name) const {
+    const std::string &tileset_name, const std::string &anim_name) const
+{
     panic("TODO: unimplemented");
 }
 

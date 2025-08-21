@@ -14,7 +14,9 @@ class Rgba32 {
     constexpr Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
 
     constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = alpha_opaque)
-        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
+        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha}
+    {
+    }
 
     auto operator<=>(const Rgba32 &rgba) const = default;
 
@@ -36,19 +38,23 @@ class Rgba32 {
 
     // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
 
-    [[nodiscard]] std::uint8_t red() const {
+    [[nodiscard]] std::uint8_t red() const
+    {
         return red_;
     }
 
-    [[nodiscard]] std::uint8_t green() const {
+    [[nodiscard]] std::uint8_t green() const
+    {
         return green_;
     }
 
-    [[nodiscard]] std::uint8_t blue() const {
+    [[nodiscard]] std::uint8_t blue() const
+    {
         return blue_;
     }
 
-    [[nodiscard]] std::uint8_t alpha() const {
+    [[nodiscard]] std::uint8_t alpha() const
+    {
         return alpha_;
     }
 
@@ -65,7 +71,8 @@ class Rgba32 {
  * @details
  * https://fmt.dev/11.1/api/#formatting-user-defined-types
  */
-inline auto format_as(const Rgba32 &rgba) {
+inline auto format_as(const Rgba32 &rgba)
+{
     return rgba.to_jasc_str();
 }
 
@@ -95,7 +102,8 @@ constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::alpha_opaque};
 
 template <>
 struct std::hash<porytiles2::Rgba32> {
-    std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept {
+    std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept
+    {
         const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
         const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());

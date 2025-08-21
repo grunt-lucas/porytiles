@@ -14,23 +14,27 @@ using namespace porytiles2;
 
 constexpr std::size_t diag_margin_size = 7;
 
-void assert_arg_size(std::size_t expected, std::size_t actual, const char *func_name) {
+void assert_arg_size(std::size_t expected, std::size_t actual, const char *func_name)
+{
     if (actual != expected) {
         panic(fmt::format("{}: found {} args but expected {}", func_name, actual, expected));
     }
 }
 
 template <typename T>
-T any_cast_or_panic(const std::any &a, const std::source_location &loc) {
+T any_cast_or_panic(const std::any &a, const std::source_location &loc)
+{
     try {
         return std::any_cast<T>(a);
-    } catch (std::bad_any_cast &) {
+    }
+    catch (std::bad_any_cast &) {
         panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
     }
 }
 
 template <typename T>
-const T &any_cast_or_panic(const std::any *a, const std::source_location &loc) {
+const T &any_cast_or_panic(const std::any *a, const std::source_location &loc)
+{
     auto any_unwrapped = any_cast<T>(a);
     if (any_unwrapped == nullptr) {
         panic(fmt::format("bad any cast: {}:{}", loc.file_name(), loc.line()));
@@ -38,13 +42,15 @@ const T &any_cast_or_panic(const std::any *a, const std::source_location &loc) {
     return *any_unwrapped;
 }
 
-void push_to_stream(std::stringstream &ss, const std::string_view s, const std::size_t n) {
+void push_to_stream(std::stringstream &ss, const std::string_view s, const std::size_t n)
+{
     for (std::size_t i = 0; i < n; i++) {
         ss << s;
     }
 }
 
-void reset_stream(std::stringstream &ss) {
+void reset_stream(std::stringstream &ss)
+{
     ss.clear();
     ss.str(std::string{});
 }
@@ -139,7 +145,8 @@ void reset_stream(std::stringstream &ss) {
 } // namespace
 
 namespace porytiles2 {
-std::string level_to_str(DiagLevel level) {
+std::string level_to_str(DiagLevel level)
+{
     switch (level) {
     case DiagLevel::ignored:
         return "ignored";
@@ -158,7 +165,8 @@ std::string level_to_str(DiagLevel level) {
     }
 }
 
-fmt::terminal_color color_for_level(DiagLevel level) {
+fmt::terminal_color color_for_level(DiagLevel level)
+{
     switch (level) {
     case DiagLevel::ignored:
         return fmt::terminal_color::white;
@@ -176,7 +184,8 @@ fmt::terminal_color color_for_level(DiagLevel level) {
     }
 }
 
-int level_priority(DiagLevel level) {
+int level_priority(DiagLevel level)
+{
     switch (level) {
     case DiagLevel::ignored:
         return 0;
@@ -194,57 +203,70 @@ int level_priority(DiagLevel level) {
     return -1;
 }
 
-void IgnoreConsumer::consume(const InFlightDiag &diag) {
+void IgnoreConsumer::consume(const InFlightDiag &diag)
+{
     consumed_count_++;
 }
 
-bool IgnoreConsumer::is_a_tty() const {
+bool IgnoreConsumer::is_a_tty() const
+{
     return false;
 }
 
-InFlightDiag IgnoreConsumer::consumed_at(std::size_t i) const {
+InFlightDiag IgnoreConsumer::consumed_at(std::size_t i) const
+{
     panic("ignore_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t IgnoreConsumer::consumed_count() const {
+std::uint64_t IgnoreConsumer::consumed_count() const
+{
     return consumed_count_;
 }
 
-void StderrConsumer::consume(const InFlightDiag &diag) {
+void StderrConsumer::consume(const InFlightDiag &diag)
+{
     consumed_count_++;
     const auto msg = diag.msg();
     std::fputs(msg.c_str(), stderr);
 }
 
-bool StderrConsumer::is_a_tty() const {
+bool StderrConsumer::is_a_tty() const
+{
     return isatty(fileno(stderr));
 }
 
-InFlightDiag StderrConsumer::consumed_at(std::size_t i) const {
+InFlightDiag StderrConsumer::consumed_at(std::size_t i) const
+{
     panic("stderr_consumer::consumed_at: not implemented");
 }
 
-std::uint64_t StderrConsumer::consumed_count() const {
+std::uint64_t StderrConsumer::consumed_count() const
+{
     return consumed_count_;
 }
 
-void VectorConsumer::consume(const InFlightDiag &diag) {
+void VectorConsumer::consume(const InFlightDiag &diag)
+{
     diags_.emplace_back(diag);
 }
 
-bool VectorConsumer::is_a_tty() const {
+bool VectorConsumer::is_a_tty() const
+{
     return false;
 }
 
-InFlightDiag VectorConsumer::consumed_at(std::size_t i) const {
+InFlightDiag VectorConsumer::consumed_at(std::size_t i) const
+{
     try {
         return diags_.at(i);
-    } catch (const std::out_of_range &) {
+    }
+    catch (const std::out_of_range &) {
         panic(fmt::format("vector_consumer::at: index {} out of range for size {}", i, diags_.size()));
     }
 }
 
-std::uint64_t VectorConsumer::consumed_count() const {
+std::uint64_t VectorConsumer::consumed_count() const
+{
     return diags_.size();
 }
 
@@ -444,12 +466,14 @@ static const std::unordered_map<const char *, DiagTempl> diag_templs{
     {err_generic, e_generic_templ},
     {fatal_generic, e_fatal_generic_templ}};
 
-DiagTempl diag_for(const std::string_view name) {
+DiagTempl diag_for(const std::string_view name)
+{
     assert_or_panic(diag_templs.contains(name.data()), fmt::format("diag_template_for: unknown diagnostic: {}", name));
     return diag_templs.at(name.data());
 }
 
-std::vector<const char *> all_diag_names() {
+std::vector<const char *> all_diag_names()
+{
     std::vector<const char *> keys{};
     keys.reserve(diag_templs.size());
     for (const auto &key : diag_templs | std::views::keys) {
@@ -458,7 +482,8 @@ std::vector<const char *> all_diag_names() {
     return keys;
 }
 
-std::vector<const char *> all_diag_names(const DiagLevel level) {
+std::vector<const char *> all_diag_names(const DiagLevel level)
+{
     std::vector<const char *> keys{};
     keys.reserve(diag_templs.size());
     for (const auto &[name, templ] : diag_templs) {

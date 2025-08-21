@@ -35,19 +35,23 @@ class PorymapTilesetComponent {
 
     [[nodiscard]] bool is_empty() const;
 
-    [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const {
+    [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
+    {
         return metatiles_bin_;
     }
 
-    [[nodiscard]] const Image<IndexPixel> &tiles_png() const {
+    [[nodiscard]] const Image<IndexPixel> &tiles_png() const
+    {
         return *tiles_png_;
     }
 
-    void tiles_png(std::unique_ptr<Image<IndexPixel>> tiles_png) {
+    void tiles_png(std::unique_ptr<Image<IndexPixel>> tiles_png)
+    {
         tiles_png_ = std::move(tiles_png);
     }
 
-    [[nodiscard]] const std::vector<RgbaPal> &pals() const {
+    [[nodiscard]] const std::vector<RgbaPal> &pals() const
+    {
         return pals_;
     }
 

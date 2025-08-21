@@ -9,7 +9,8 @@ class IndexPixel {
     // NOLINTNEXTLINE(google-explicit-constructor)
     IndexPixel(unsigned int index) : index_{index} {}
 
-    [[nodiscard]] unsigned int index() const {
+    [[nodiscard]] unsigned int index() const
+    {
         return index_;
     }
 
@@ -22,7 +23,8 @@ class IndexPixel {
      * @param unused The extrinsic transparency value (unused for indexed pixels)
      * @return True if the palette index is 0, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const IndexPixel &unused) const {
+    [[nodiscard]] bool is_transparent(const IndexPixel &unused) const
+    {
         return index_ == 0;
     }
 

@@ -7,7 +7,8 @@
 
 namespace porytiles2 {
 
-Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
+Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops)
+{
     // 1) Map each operand key to the producer op that generates it
     for (auto &op : ops) {
         for (const auto &output_operand : op->declare_outputs()) {
@@ -31,7 +32,8 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
                 auto *producer_op = producers_.at(in_key);
                 adj_.at(producer_op).push_back(op.get());
                 deps++;
-            } else {
+            }
+            else {
                 panic(fmt::format("operation '{}' depends on non-existent operand: '{}'", op->name(), in_key));
             }
         }
@@ -60,7 +62,8 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops) {
     }
 }
 
-Result<void> Pipeline::run() const {
+Result<void> Pipeline::run() const
+{
     OperandBundle operand_pool{};
     for (auto *op : sorted_) {
         // Gather inputs for the operation

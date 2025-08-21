@@ -31,7 +31,9 @@ class DiagEngine {
     DiagEngine() : consumer_{std::make_unique<IgnoreConsumer>()}, all_warnings_disabled_{false} {}
 
     explicit DiagEngine(std::unique_ptr<DiagConsumer> consumer)
-        : consumer_{std::move(consumer)}, all_warnings_disabled_{false} {}
+        : consumer_{std::move(consumer)}, all_warnings_disabled_{false}
+    {
+    }
 
     void enable_all_warnings();
 
@@ -51,7 +53,8 @@ class DiagEngine {
 
     // ReSharper disable once CppParameterMayBeConst
     template <typename... T>
-    void report(std::string_view diag, T &&...args) {
+    void report(std::string_view diag, T &&...args)
+    {
         // If this diagnostic is not enabled, exit now
         if (!is_enabled(diag)) {
             return;
@@ -72,7 +75,8 @@ class DiagEngine {
     }
 
     template <typename... T>
-    void report_partner(std::string_view diag, std::size_t partner_index, T &&...args) {
+    void report_partner(std::string_view diag, std::size_t partner_index, T &&...args)
+    {
         const auto &parent_templ = diag_for(diag);
 
         if (partner_index >= parent_templ.partner_diags().size()) {
@@ -91,12 +95,14 @@ class DiagEngine {
     }
 
     template <typename T>
-    auto style(const T &t, fmt::text_style ts) const {
+    auto style(const T &t, fmt::text_style ts) const
+    {
         return fmt::styled(t, consumer_->is_a_tty() ? ts : fmt::text_style{});
     }
 
     template <typename T>
-    auto Bold(const T &t) const {
+    auto Bold(const T &t) const
+    {
         return style(t, fmt::emphasis::bold);
     }
 
@@ -110,12 +116,14 @@ class DiagEngine {
     std::vector<InFlightDiag> in_flight_diags_;
 
     template <typename... T>
-    void report_helper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args) {
+    void report_helper(const DiagTempl &templ, DiagLevel in_flight_level, T &&...args)
+    {
         // Fill in message template
         std::vector<std::string> raw_msg;
         try {
             raw_msg = templ.BuildDynamicMsg(*this, in_flight_level, std::forward<T>(args)...);
-        } catch (const std::exception &e) {
+        }
+        catch (const std::exception &e) {
             panic(fmt::format("{} build_message failed: {}:", templ.name(), e.what()));
         }
 

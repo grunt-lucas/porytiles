@@ -23,7 +23,8 @@ class DomainConfig {
 
     [[nodiscard]] virtual std::size_t num_tiles_total() const = 0;
 
-    [[nodiscard]] std::size_t num_tiles_secondary() const {
+    [[nodiscard]] std::size_t num_tiles_secondary() const
+    {
         if (num_tiles_total() < num_tiles_primary()) {
             panic(fmt::format("num_tiles_total({}) < num_tiles_primary({})", num_tiles_total(), num_tiles_primary()));
         }
@@ -34,7 +35,8 @@ class DomainConfig {
 
     [[nodiscard]] virtual std::size_t num_metatiles_total() const = 0;
 
-    [[nodiscard]] std::size_t num_metatiles_secondary() const {
+    [[nodiscard]] std::size_t num_metatiles_secondary() const
+    {
         if (num_tiles_total() < num_tiles_primary()) {
             panic(
                 fmt::format(
@@ -49,7 +51,8 @@ class DomainConfig {
 
     [[nodiscard]] virtual std::size_t num_pals_total() const = 0;
 
-    [[nodiscard]] std::size_t num_pals_secondary() const {
+    [[nodiscard]] std::size_t num_pals_secondary() const
+    {
         if (num_tiles_total() < num_tiles_primary()) {
             panic(fmt::format("num_pals_total({}) < num_pals_primary({})", num_pals_total(), num_pals_primary()));
         }

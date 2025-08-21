@@ -22,7 +22,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
         gsl::not_null<PngRgbaImageLoader *> png_rgba_loader, gsl::not_null<PngIndexedImageLoader *> png_indexed_loader)
-        : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader} {}
+        : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}
+    {
+    }
 
     [[nodiscard]] Result<void>
     read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;

@@ -10,7 +10,9 @@ class TilemapEntry {
     TilemapEntry() = default;
 
     TilemapEntry(unsigned int tile_index, unsigned int pal_index, bool hflip, bool vflip)
-        : tile_index_{tile_index}, pal_index_{pal_index}, hflip_{hflip}, vflip_{vflip} {}
+        : tile_index_{tile_index}, pal_index_{pal_index}, hflip_{hflip}, vflip_{vflip}
+    {
+    }
 
     /**
      * @brief Checks if this TilemapEntry refers to the canonically transparent tile.
@@ -26,19 +28,23 @@ class TilemapEntry {
      */
     [[nodiscard]] bool is_transparent(const TilemapEntry &unused) const;
 
-    [[nodiscard]] unsigned int tile_index() const {
+    [[nodiscard]] unsigned int tile_index() const
+    {
         return tile_index_;
     }
 
-    [[nodiscard]] unsigned int pal_index() const {
+    [[nodiscard]] unsigned int pal_index() const
+    {
         return pal_index_;
     }
 
-    [[nodiscard]] bool hflip() const {
+    [[nodiscard]] bool hflip() const
+    {
         return hflip_;
     }
 
-    [[nodiscard]] bool vflip() const {
+    [[nodiscard]] bool vflip() const
+    {
         return vflip_;
     }
 

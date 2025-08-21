@@ -5,7 +5,8 @@
 
 #include "command.hpp"
 
-int main(const int argc, char **argv) {
+int main(const int argc, char **argv)
+{
     CLI::App porytiles_app{"Porytiles"};
 
     porytiles_app.description(

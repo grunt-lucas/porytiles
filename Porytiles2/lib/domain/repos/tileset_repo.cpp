@@ -9,7 +9,8 @@ namespace porytiles2 {
  * TODO: we need better error handling, specifically the std::unexpected returns should be more descriptive
  */
 
-Result<void> TilesetRepo::save(const Tileset &tileset) const {
+Result<void> TilesetRepo::save(const Tileset &tileset) const
+{
     using enum TilesetArtifact::Type;
 
     // Begin transaction for atomic writes
@@ -94,7 +95,8 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const {
     return checksum_provider_->cache_checksums(tileset.name(), current_checksums);
 }
 
-Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const {
+Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const
+{
     using enum TilesetArtifact::Type;
 
     // Fail as late as possible
@@ -133,7 +135,8 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     const auto attr_csv_key = key_provider_->key_for(tileset->name(), attr_csv_artifact);
     if (key_provider_->exists(attr_csv_key)) {
         reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
-    } else {
+    }
+    else {
         // TODO: emit warning to user about missing attr csv
     }
 
@@ -238,7 +241,8 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     return tileset;
 }
 
-bool TilesetRepo::exists(const std::string &name) const {
+bool TilesetRepo::exists(const std::string &name) const
+{
     return key_provider_->tileset_exists(name);
 }
 

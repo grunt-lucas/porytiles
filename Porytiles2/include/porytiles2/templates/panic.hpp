@@ -21,19 +21,23 @@ struct StringViewSourceLoc {
         requires std::constructible_from<std::string_view, T>
     // NOLINTNEXTLINE
     StringViewSourceLoc(const T &msg, const std::source_location loc = std::source_location::current()) noexcept
-        : msg_{msg}, loc_{loc} {}
+        : msg_{msg}, loc_{loc}
+    {
+    }
 
     std::string_view msg_;
     std::source_location loc_;
 };
 
-[[noreturn]] inline void panic(const StringViewSourceLoc &s) {
+[[noreturn]] inline void panic(const StringViewSourceLoc &s)
+{
     const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
     std::fputs(msg.c_str(), stderr);
     std::abort();
 }
 
-inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s) {
+inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s)
+{
     if (!condition) {
         const auto msg = fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_);
         std::fputs(msg.c_str(), stderr);
