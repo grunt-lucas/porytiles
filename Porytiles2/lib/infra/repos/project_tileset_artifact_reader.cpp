@@ -98,7 +98,16 @@ Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey
         return std::unexpected{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
     }
+
     std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
+        std::uint16_t byte0 = data_buf.at((metatile_index * bytes_per_attr_emerald));
+        std::uint16_t byte1 = data_buf.at((metatile_index * bytes_per_attr_emerald) + 1);
+        std::uint16_t attribute = (byte1 << 8) | byte0;
+        // attributes.metatileBehavior = attribute & 0x00FF;
+        // attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
+        // TODO: init an attr here and insert into 'dest'
+    }
 
     return {};
 }
@@ -107,6 +116,25 @@ Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey
 {
     std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
+
+    if (data_buf.size() % bytes_per_attr_firered != 0) {
+        return std::unexpected{fmt::format(
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
+    }
+
+    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
+        std::uint32_t byte0 = data_buf.at((metatile_count * bytes_per_attr_firered));
+        std::uint32_t byte1 = data_buf.at((metatile_count * bytes_per_attr_firered) + 1);
+        std::uint32_t byte2 = data_buf.at((metatile_count * bytes_per_attr_firered) + 2);
+        std::uint32_t byte3 = data_buf.at((metatile_count * bytes_per_attr_firered) + 3);
+        std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
+        // attributes.metatileBehavior = attribute & 0x000001FF;
+        // attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
+        // attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
+        // attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
+        // TODO: init an attr here and insert into 'dest'
+    }
 
     return {};
 }
@@ -146,7 +174,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     case TilesetArtifact::Type::metatiles_bin:
         return import_metatiles_bin(dest, src_key);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        // TODO: branch here based on target base game
+        // TODO: branch here based on target base game?
         return import_emerald_metatile_attributes(dest, src_key);
     case TilesetArtifact::Type::tiles_png:
         panic("TODO: implement");
