@@ -11,7 +11,7 @@ namespace porytiles2 {
 
 class PorymapTilesetComponent {
   public:
-    PorymapTilesetComponent() : tiles_png_{std::make_unique<Image<IndexPixel>>()} {}
+    PorymapTilesetComponent() = default;
 
     /**
      * @brief Add a tilemap entry to the end of the entries vector.
@@ -42,12 +42,12 @@ class PorymapTilesetComponent {
 
     [[nodiscard]] const Image<IndexPixel> &tiles_png() const
     {
-        return *tiles_png_;
+        return tiles_png_;
     }
 
-    void tiles_png(std::unique_ptr<Image<IndexPixel>> tiles_png)
+    void tiles_png(const Image<IndexPixel> &tiles_png)
     {
-        tiles_png_ = std::move(tiles_png);
+        tiles_png_ = tiles_png;
     }
 
     [[nodiscard]] const std::vector<RgbaPal> &pals() const
@@ -57,7 +57,7 @@ class PorymapTilesetComponent {
 
   private:
     std::vector<TilemapEntry> metatiles_bin_;
-    std::unique_ptr<Image<IndexPixel>> tiles_png_;
+    Image<IndexPixel> tiles_png_;
     std::vector<RgbaPal> pals_;
 };
 

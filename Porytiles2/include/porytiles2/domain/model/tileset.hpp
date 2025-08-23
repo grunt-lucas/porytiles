@@ -36,14 +36,24 @@ class Tileset {
         return name_;
     }
 
-    [[nodiscard]] PorytilesTilesetComponent *porytiles_component() const
+    [[nodiscard]] const PorytilesTilesetComponent &porytiles_component() const
     {
-        return porytiles_component_.get();
+        return *porytiles_component_;
     }
 
-    [[nodiscard]] PorymapTilesetComponent *porymap_component() const
+    [[nodiscard]] PorytilesTilesetComponent &porytiles_component()
     {
-        return porymap_component_.get();
+        return *porytiles_component_;
+    }
+
+    [[nodiscard]] const PorymapTilesetComponent &porymap_component() const
+    {
+        return *porymap_component_;
+    }
+
+    [[nodiscard]] PorymapTilesetComponent &porymap_component()
+    {
+        return *porymap_component_;
     }
 
     void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component)

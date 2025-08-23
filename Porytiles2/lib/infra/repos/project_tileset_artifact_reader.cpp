@@ -16,30 +16,34 @@ namespace {
 
 using namespace porytiles2;
 
+/*
+ * TODO: remove these hardcoded constants. fieldmap.c and global.fieldmap.h contain definitions for attribute shifts and
+ * masks that could be used to infer these values
+ */
 constexpr std::size_t bytes_per_attr_emerald = 2;
 constexpr std::size_t bytes_per_attr_firered = 4;
 
 Result<void> import_layer_png(
-    const Tileset &dest,
+    Tileset &dest,
     const ArtifactKey &src_key,
     const PngRgbaImageLoader &loader,
-    const std::function<void(PorytilesTilesetComponent &, std::unique_ptr<Image<Rgba32>>)> &setter)
+    const std::function<void(PorytilesTilesetComponent &, const Image<Rgba32> &)> &layer_img_setter)
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         switch (image_result.error().type) {
         case ImageLoadError::Type::file_not_found:
-            setter(*dest.porytiles_component(), std::make_unique<Image<Rgba32>>());
+            layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error:
             // TODO: need a more descriptive ProjectTilesetArtifactReader::read result type
             return std::unexpected{fmt::format("failed to load bottom.png: {}", image_result.error().metadata)};
         default:
-            panic("unhandled error type");
+            panic("unhandled ImageLoadError type");
         }
     }
-    setter(*dest.porytiles_component(), std::move(image_result).value());
+    layer_img_setter(dest.porytiles_component(), *image_result.value());
     return {};
 }
 
@@ -79,7 +83,7 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
         entry.vflip((entry_bits >> 11) & 0x0001);
         entry.pal_index((entry_bits >> 12) & 0x000F);
 
-        dest.porymap_component()->push_back_tilemap_entry(entry);
+        dest.porymap_component().push_back_tilemap_entry(entry);
     }
 
     return {};
@@ -118,18 +122,18 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     // Porytiles artifacts
     case TilesetArtifact::Type::bottom_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp.bottom(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
+                comp.bottom(img);
             });
     case TilesetArtifact::Type::middle_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp.middle(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
+                comp.middle(img);
             });
     case TilesetArtifact::Type::top_png:
         return import_layer_png(
-            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, std::unique_ptr<Image<Rgba32>> img) {
-                comp.top(std::move(img));
+            dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
+                comp.top(img);
             });
     case TilesetArtifact::Type::attributes_csv:
         panic("TODO: implement");
