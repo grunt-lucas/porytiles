@@ -16,6 +16,9 @@ namespace {
 
 using namespace porytiles2;
 
+constexpr std::size_t bytes_per_attr_emerald = 2;
+constexpr std::size_t bytes_per_attr_firered = 4;
+
 Result<void> import_layer_png(
     const Tileset &dest,
     const ArtifactKey &src_key,
@@ -82,6 +85,28 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
     return {};
 }
 
+Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+{
+    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
+
+    if (data_buf.size() % bytes_per_attr_emerald != 0) {
+        return std::unexpected{fmt::format(
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
+    }
+    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+
+    return {};
+}
+
+Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+{
+    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
+
+    return {};
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -117,7 +142,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     case TilesetArtifact::Type::metatiles_bin:
         return import_metatiles_bin(dest, src_key);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        panic("TODO: implement");
+        // TODO: branch here based on target base game
+        return import_emerald_metatile_attributes(dest, src_key);
     case TilesetArtifact::Type::tiles_png:
         panic("TODO: implement");
     case TilesetArtifact::Type::porymap_anim_frame:

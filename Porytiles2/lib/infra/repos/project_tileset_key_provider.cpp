@@ -9,16 +9,16 @@
 
 namespace {
 
-const std::filesystem::path kPrimaryTilesetsRelativePath = std::filesystem::path{"data"} / "tilesets" / "primary";
-const std::filesystem::path kSecondaryTilesetsRelativePath = std::filesystem::path{"data"} / "tilesets" / "secondary";
+const std::filesystem::path primary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "primary";
+const std::filesystem::path secondary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "secondary";
 
 std::filesystem::path get_tileset_path(const std::string &tileset_name, const std::filesystem::path &project_root)
 {
-    if (std::filesystem::exists(project_root / kPrimaryTilesetsRelativePath / tileset_name)) {
-        return project_root / kPrimaryTilesetsRelativePath / tileset_name;
+    if (std::filesystem::exists(project_root / primary_tileset_rel_path / tileset_name)) {
+        return project_root / primary_tileset_rel_path / tileset_name;
     }
-    if (std::filesystem::exists(project_root / kSecondaryTilesetsRelativePath / tileset_name)) {
-        return project_root / kSecondaryTilesetsRelativePath / tileset_name;
+    if (std::filesystem::exists(project_root / secondary_tileset_rel_path / tileset_name)) {
+        return project_root / secondary_tileset_rel_path / tileset_name;
     }
     porytiles2::panic(fmt::format("tileset '{}' does not exist", tileset_name));
 }
@@ -113,10 +113,10 @@ bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const
 
 bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const
 {
-    if (std::filesystem::exists(project_root_ / kPrimaryTilesetsRelativePath / tileset_name)) {
+    if (std::filesystem::exists(project_root_ / primary_tileset_rel_path / tileset_name)) {
         return true;
     }
-    if (std::filesystem::exists(project_root_ / kSecondaryTilesetsRelativePath / tileset_name)) {
+    if (std::filesystem::exists(project_root_ / secondary_tileset_rel_path / tileset_name)) {
         return true;
     }
     return false;
