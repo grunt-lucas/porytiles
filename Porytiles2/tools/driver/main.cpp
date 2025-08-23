@@ -46,14 +46,17 @@ https://github.com/huderlem/porymap)");
         "Print version info and exit.");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
+    CreateTilesetCommand create_tileset{porytiles_app};
+    CreateLayoutCommand create_layout{porytiles_app};
+
     CompileTilesetCommand compile_tileset{porytiles_app};
     CompileLayoutCommand compile_layout{porytiles_app};
-    CompileSpritesheetCommand compile_spritesheet{porytiles_app};
 
-    DecompileTilesetCommand decompile_tileset{porytiles_app};
-    DecompileLayoutCommand decompile_layout{porytiles_app};
+    ImportTilesetCommand decompile_tileset{porytiles_app};
+    ImportLayoutCommand decompile_layout{porytiles_app};
 
     ReduceBitDepthCommand reduce_bit_depth{porytiles_app};
+    DebugCommand debug{porytiles_app};
 
     porytiles_app.require_subcommand();
 

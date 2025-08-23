@@ -5,6 +5,11 @@
 
 #include "CLI/CLI.hpp"
 
+#include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
+#include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/services/png_indexed_image_loader.hpp"
+#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 #include "option.hpp"
@@ -60,6 +65,52 @@ class Command {
     CLI::App *app_;
 };
 
+class CreateTilesetCommand final : public Command {
+  public:
+    explicit CreateTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
+    }
+
+    void Run() override
+    {
+        std::cout << "Create tileset command called." << std::endl;
+    }
+
+  private:
+    static constexpr auto kCommandName = "create-tileset";
+    static constexpr auto kCommandDesc = "Create a new tileset.";
+    static constexpr auto kCommandGroup = "COMMANDS";
+
+    OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
+};
+
+class CreateLayoutCommand final : public Command {
+  public:
+    explicit CreateLayoutCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+        CLI::App &cmd = get_app();
+        fieldmap_opts_.RegisterGroup(cmd);
+        diagnostics_opts_.RegisterGroup(cmd);
+    }
+
+    void Run() override
+    {
+        std::cout << "Create layout command called." << std::endl;
+    }
+
+  private:
+    static constexpr auto kCommandName = "create-layout";
+    static constexpr auto kCommandDesc = "Create a new layout.";
+    static constexpr auto kCommandGroup = "COMMANDS";
+
+    OptGroupFieldmap fieldmap_opts_;
+    OptGroupDiagnostics diagnostics_opts_;
+};
+
 class CompileTilesetCommand final : public Command {
   public:
     explicit CompileTilesetCommand(CLI::App &parent_app)
@@ -77,7 +128,7 @@ class CompileTilesetCommand final : public Command {
 
   private:
     static constexpr auto kCommandName = "compile-tileset";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format tileset to a Porymap-format tileset.";
+    static constexpr auto kCommandDesc = "Compile a tileset's Porytiles component.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -100,17 +151,16 @@ class CompileLayoutCommand final : public Command {
 
   private:
     static constexpr auto kCommandName = "compile-layout";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format layout to a Porymap-format layout.";
+    static constexpr auto kCommandDesc = "Compile a layout's Porytiles component.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 };
 
-class CompileSpritesheetCommand final : public Command {
+class ImportTilesetCommand final : public Command {
   public:
-    explicit CompileSpritesheetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
@@ -119,22 +169,21 @@ class CompileSpritesheetCommand final : public Command {
 
     void Run() override
     {
-        std::cout << "Compile spritesheet command called." << std::endl;
+        std::cout << "Import tileset command called." << std::endl;
     }
 
   private:
-    static constexpr auto kCommandName = "compile-spritesheet";
-    static constexpr auto kCommandDesc = "Compile a Porytiles-format spritesheet to a Porymap-format spritesheet.";
+    static constexpr auto kCommandName = "import-tileset";
+    static constexpr auto kCommandDesc = "Import a tileset's Porymap component.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
     OptGroupDiagnostics diagnostics_opts_;
 };
 
-class DecompileTilesetCommand final : public Command {
+class ImportLayoutCommand final : public Command {
   public:
-    explicit DecompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ImportLayoutCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
         fieldmap_opts_.RegisterGroup(cmd);
@@ -143,36 +192,12 @@ class DecompileTilesetCommand final : public Command {
 
     void Run() override
     {
-        std::cout << "Decompile tileset command called." << std::endl;
+        std::cout << "Import layout command called." << std::endl;
     }
 
   private:
-    static constexpr auto kCommandName = "decompile-tileset";
-    static constexpr auto kCommandDesc = "Decompile a Porymap-format tileset back to a Porytiles-format tileset.";
-    static constexpr auto kCommandGroup = "COMMANDS";
-
-    OptGroupFieldmap fieldmap_opts_;
-    OptGroupDiagnostics diagnostics_opts_;
-};
-
-class DecompileLayoutCommand final : public Command {
-  public:
-    explicit DecompileLayoutCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
-    {
-        CLI::App &cmd = get_app();
-        fieldmap_opts_.RegisterGroup(cmd);
-        diagnostics_opts_.RegisterGroup(cmd);
-    }
-
-    void Run() override
-    {
-        std::cout << "Decompile layout command called." << std::endl;
-    }
-
-  private:
-    static constexpr auto kCommandName = "decompile-layout";
-    static constexpr auto kCommandDesc = "Decompile a Porymap-format layout back to a Porytiles-format layout.";
+    static constexpr auto kCommandName = "import-layout";
+    static constexpr auto kCommandDesc = "Import a layout's Porymap component.";
     static constexpr auto kCommandGroup = "COMMANDS";
 
     OptGroupFieldmap fieldmap_opts_;
@@ -194,5 +219,25 @@ class ReduceBitDepthCommand final : public Command {
   private:
     static constexpr auto kCommandName = "reduce-bit-depth";
     static constexpr auto kCommandDesc = "Reduce bit depth for given input assets.";
+    static constexpr auto kCommandGroup = "COMMANDS";
+};
+
+class DebugCommand final : public Command {
+  public:
+    explicit DebugCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {}
+
+    void Run() override
+    {
+        using namespace porytiles2;
+
+        PngRgbaImageLoader png_rgba_loader{};
+        PngIndexedImageLoader png_indexed_loader{};
+        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader};
+        ProjectTilesetKeyProvider key_provider{"."};
+    }
+
+  private:
+    static constexpr auto kCommandName = "debug";
+    static constexpr auto kCommandDesc = "Stub command for development testing of Porytiles2 components.";
     static constexpr auto kCommandGroup = "COMMANDS";
 };
