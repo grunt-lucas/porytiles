@@ -43,7 +43,8 @@ class TilesetArtifactReader {
      * @param artifact The TilesetArtifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
+    [[nodiscard]] virtual Result<void>
+    read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
 };
 
 } // namespace porytiles2
