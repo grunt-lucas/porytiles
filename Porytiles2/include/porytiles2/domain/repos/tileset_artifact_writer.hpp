@@ -34,7 +34,7 @@ class TilesetArtifactWriter {
      *
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> begin_transaction() = 0;
+    [[nodiscard]] virtual Result<void> begin_transaction() = 0;
 
     /**
      * @brief Commits all buffered write operations in the current transaction.
@@ -46,7 +46,7 @@ class TilesetArtifactWriter {
      *
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> commit() = 0;
+    [[nodiscard]] virtual Result<void> commit() = 0;
 
     /**
      * @brief Rolls back all buffered write operations in the current transaction.
@@ -58,7 +58,7 @@ class TilesetArtifactWriter {
      *
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> rollback() = 0;
+    [[nodiscard]] virtual Result<void> rollback() = 0;
 
     /**
      * @brief Writes an artifact from a Tileset to the backing store.
@@ -80,7 +80,8 @@ class TilesetArtifactWriter {
      * @param src The Tileset object containing the data to be written
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
+    [[nodiscard]] virtual Result<void>
+    write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2
