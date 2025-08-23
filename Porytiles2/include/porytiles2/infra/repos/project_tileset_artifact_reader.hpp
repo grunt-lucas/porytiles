@@ -12,7 +12,7 @@
 namespace porytiles2 {
 
 /**
- * @brief Provides a filesystem-based implementation for TilesetArtifactReader
+ * @brief Provides a filesystem-based implementation for TilesetArtifactReader.
  *
  * @details
  * This class implements the TilesetArtifactReader interface to provide reading functionality for tileset artifacts. It
