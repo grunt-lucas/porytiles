@@ -806,6 +806,9 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         {WPALETTE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WPALETTE_INDEX_OUT_OF_RANGE_VAL},
         {WNO_PALETTE_INDEX_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL},
 
+        {WATTRIBUTE_OUT_OF_RANGE.c_str(), no_argument, nullptr, WATTRIBUTE_OUT_OF_RANGE_VAL},
+        {WNO_ATTRIBUTE_OUT_OF_RANGE.c_str(), no_argument, nullptr, WNO_ATTRIBUTE_OUT_OF_RANGE_VAL},
+
         // Help
         {HELP.c_str(), no_argument, nullptr, HELP_VAL},
         {HELP_SHORT.c_str(), no_argument, nullptr, HELP_VAL},
@@ -1072,6 +1075,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                     ctx.diag->EnableAtLevel(WarnTileIndexOutOfRange, DiagLevel::Error);
                 } else if (strcmp(optarg, WarnPaletteIndexOutOfRange) == 0) {
                     ctx.diag->EnableAtLevel(WarnPaletteIndexOutOfRange, DiagLevel::Error);
+                } else if (strcmp(optarg, WarnAttributeOutOfRange) == 0) {
+                    ctx.diag->EnableAtLevel(WarnAttributeOutOfRange, DiagLevel::Error);
                 } else {
                     const auto msg = fmt::format("invalid argument '{}' for option '{}'",
                                                  ctx.diag->Bold(std::string{optarg}), ctx.diag->Bold(WERROR));
@@ -1105,6 +1110,8 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
                 ctx.diag->DisableAtLevel(WarnTileIndexOutOfRange, DiagLevel::Error);
             } else if (strcmp(optarg, WarnPaletteIndexOutOfRange) == 0) {
                 ctx.diag->DisableAtLevel(WarnPaletteIndexOutOfRange, DiagLevel::Error);
+            } else if (strcmp(optarg, WarnAttributeOutOfRange) == 0) {
+                ctx.diag->DisableAtLevel(WarnAttributeOutOfRange, DiagLevel::Error);
             } else {
                 const auto msg = fmt::format("invalid argument '{}' for option '{}'",
                                              ctx.diag->Bold(std::string{optarg}), ctx.diag->Bold(WERROR));
@@ -1194,6 +1201,14 @@ static void parseSubcommandOptions(PorytilesContext &ctx, int argc, char *const 
         case WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL:
             validateSubcommandContext(ctx, WNO_PALETTE_INDEX_OUT_OF_RANGE);
             ctx.diag->DisableAtLevel(WarnPaletteIndexOutOfRange, DiagLevel::Warning);
+            break;
+        case WATTRIBUTE_OUT_OF_RANGE_VAL:
+            validateSubcommandContext(ctx, WATTRIBUTE_OUT_OF_RANGE);
+            ctx.diag->EnableAtLevel(WarnAttributeOutOfRange, DiagLevel::Warning);
+            break;
+        case WNO_ATTRIBUTE_OUT_OF_RANGE_VAL:
+            validateSubcommandContext(ctx, WNO_ATTRIBUTE_OUT_OF_RANGE);
+            ctx.diag->DisableAtLevel(WarnAttributeOutOfRange, DiagLevel::Warning);
             break;
 
         // Help message upon '-h/--help' goes to stdout

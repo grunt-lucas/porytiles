@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fmt/format.h>
+#include <optional>
 #include <png.hpp>
 #include <string>
 #include <tuple>
@@ -165,18 +166,21 @@ enum class LayerType { NORMAL, COVERED, SPLIT, TRIPLE };
 std::string layerTypeString(LayerType layerType);
 std::uint8_t layerTypeValue(LayerType layerType);
 LayerType layerTypeFromInt(std::uint8_t layerInt);
+std::optional<LayerType> layerTypeFromIntNoPanic(std::uint8_t layerInt);
 
 enum class EncounterType { NONE, LAND, WATER };
 std::uint8_t encounterTypeValue(EncounterType encounterType);
 std::string encounterTypeString(EncounterType encounterType);
 EncounterType stringToEncounterType(const std::string &string);
 EncounterType encounterTypeFromInt(std::uint8_t encounterInt);
+std::optional<EncounterType> encounterTypeFromIntNoPanic(std::uint8_t encounterInt);
 
 enum class TerrainType { NORMAL, GRASS, WATER, WATERFALL };
 std::uint8_t terrainTypeValue(TerrainType terrainType);
 std::string terrainTypeString(TerrainType terrainType);
 TerrainType stringToTerrainType(const std::string &string);
 TerrainType terrainTypeFromInt(std::uint8_t terrainInt);
+std::optional<TerrainType> terrainTypeFromIntNoPanic(std::uint8_t terrainInt);
 
 enum class TargetBaseGame { EMERALD, FIRERED, RUBY };
 std::string targetBaseGameString(TargetBaseGame game);

@@ -217,6 +217,7 @@ constexpr auto WarnTransparencyCollapse = "transparency-collapse";
 constexpr auto WarnUnusedManualPalColor = "unused-manual-pal-color";
 constexpr auto WarnTileIndexOutOfRange = "tile-index-out-of-range";
 constexpr auto WarnPaletteIndexOutOfRange = "palette-index-out-of-range";
+constexpr auto WarnAttributeOutOfRange = "attribute-out-of-range";
 
 
 ////////////////////////////////////////////////////////////////////////////////
