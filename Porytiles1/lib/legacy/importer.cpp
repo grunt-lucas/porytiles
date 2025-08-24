@@ -1018,15 +1018,59 @@ importCompiledMetatileAttributes(PorytilesContext &ctx, DecompilerMode mode, std
             std::uint32_t byte3 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_FIRERED) + 3);
             std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
             attributes.metatileBehavior = attribute & 0x000001FF;
-            attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
-            attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
-            attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
+
+            // Parse terrain type and emit warning if out of range
+            std::uint8_t terrainTypeInt = (attribute >> 9) & 0x0000001F;
+            auto maybe_terrain_type = terrainTypeFromIntNoPanic(terrainTypeInt);
+            if (!maybe_terrain_type.has_value()) {
+                ctx.diag->Report(WarnAttributeOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+                                 ctx.diag->Bold(metatileIndex), ctx.diag->Bold(terrainTypeInt),
+                                 ctx.diag->Bold("TerrainType"));
+                attributes.terrainType = TerrainType::NORMAL;
+            } else {
+                attributes.terrainType = maybe_terrain_type.value();
+            }
+
+            // Parse encounter type and emit warning if out of range
+            std::uint8_t encounterTypeInt = (attribute >> 24) & 0x00000007;
+            auto maybe_encounter_type = encounterTypeFromIntNoPanic(encounterTypeInt);
+            if (!maybe_encounter_type.has_value()) {
+                ctx.diag->Report(WarnAttributeOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+                                 ctx.diag->Bold(metatileIndex), ctx.diag->Bold(encounterTypeInt),
+                                 ctx.diag->Bold("EncounterType"));
+                attributes.encounterType = EncounterType::NONE;
+            } else {
+                attributes.encounterType = maybe_encounter_type.value();
+            }
+
+            // Parse layer type and emit warning if out of range
+            std::uint8_t layerTypeInt = (attribute >> 29) & 0x00000003;
+            auto maybe_layer_type = layerTypeFromIntNoPanic(layerTypeInt);
+            if (!maybe_layer_type.has_value()) {
+                ctx.diag->Report(WarnAttributeOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+                                 ctx.diag->Bold(metatileIndex), ctx.diag->Bold(layerTypeInt),
+                                 ctx.diag->Bold("LayerType"));
+                attributes.layerType = LayerType::NORMAL;
+            } else {
+                attributes.layerType = maybe_layer_type.value();
+            }
         } else {
             std::uint16_t byte0 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD));
             std::uint16_t byte1 = attributesDataBuf.at((metatileIndex * BYTES_PER_ATTRIBUTE_EMERALD) + 1);
             std::uint16_t attribute = (byte1 << 8) | byte0;
             attributes.metatileBehavior = attribute & 0x00FF;
-            attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
+
+            // Parse layer type and emit warning if out of range
+            std::uint8_t layerTypeVal = (attribute >> 12) & 0x000F;
+            auto maybe_layer_type = layerTypeFromIntNoPanic(layerTypeVal);
+            if (!maybe_layer_type.has_value()) {
+                ctx.diag->Report(WarnAttributeOutOfRange, ctx.diag->Bold(decompilerModeString(mode)),
+                                 ctx.diag->Bold(metatileIndex), ctx.diag->Bold(layerTypeVal),
+                                 ctx.diag->Bold("LayerType"));
+                attributes.layerType = LayerType::NORMAL;
+            } else {
+                attributes.layerType = maybe_layer_type.value();
+            }
         }
         attributesMap.insert(std::pair{metatileIndex, attributes});
     }

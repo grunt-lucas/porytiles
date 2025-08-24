@@ -428,6 +428,13 @@ static const DiagTempl W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL{
     }
 };
 
+static const DiagTempl W_ATTRIBUTE_OUT_OF_RANGE_TEMPL{
+    WarnAttributeOutOfRange,
+    DiagLevel::Warning,
+    "{} metatile id '{}': attribute value '{}' out of range for attribute {}",
+    {DiagTempl{"attribute-out-of-range-note", DiagLevel::Note,
+               "substituting 0 so decompilation can continue"}}};
+
 static const DiagTempl E_GENERIC_TEMPL{ErrGeneric, DiagLevel::Error, "{}", {}};
 
 static const DiagTempl E_FATAL_GENERIC_TEMPL{FatalGeneric, DiagLevel::Fatal, "{}", {}};
@@ -449,6 +456,7 @@ static const std::unordered_map<const char *, DiagTempl> DIAG_TEMPLS{
     // Tileset decompilation warnings
     {WarnTileIndexOutOfRange, W_TILE_INDEX_OUT_OF_RANGE_TEMPL},
     {WarnPaletteIndexOutOfRange, W_PALETTE_INDEX_OUT_OF_RANGE_TEMPL},
+    {WarnAttributeOutOfRange, W_ATTRIBUTE_OUT_OF_RANGE_TEMPL},
 
     // Generic errors
     {ErrGeneric, E_GENERIC_TEMPL},

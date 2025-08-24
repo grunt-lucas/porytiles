@@ -469,6 +469,11 @@ const std::string WNO_PALETTE_INDEX_OUT_OF_RANGE = W_GENERAL + "no-" + WarnPalet
 constexpr int WPALETTE_INDEX_OUT_OF_RANGE_VAL = 70120;
 constexpr int WNO_PALETTE_INDEX_OUT_OF_RANGE_VAL = 80120;
 
+const std::string WATTRIBUTE_OUT_OF_RANGE = W_GENERAL + WarnAttributeOutOfRange;
+const std::string WNO_ATTRIBUTE_OUT_OF_RANGE = W_GENERAL + "no-" + WarnAttributeOutOfRange;
+constexpr int WATTRIBUTE_OUT_OF_RANGE_VAL = 70130;
+constexpr int WNO_ATTRIBUTE_OUT_OF_RANGE_VAL = 80130;
+
 // @formatter:on
 // clang-format on
 

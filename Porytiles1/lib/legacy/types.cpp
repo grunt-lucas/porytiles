@@ -186,6 +186,21 @@ LayerType layerTypeFromInt(std::uint8_t layerInt) {
     throw std::runtime_error("types::layerTypeFromInt reached unreachable code path");
 }
 
+std::optional<LayerType> layerTypeFromIntNoPanic(std::uint8_t layerInt) {
+    switch (layerInt) {
+    case 0:
+        return LayerType::NORMAL;
+    case 1:
+        return LayerType::COVERED;
+    case 2:
+        return LayerType::SPLIT;
+    default:
+        return std::nullopt;
+    }
+    // unreachable, here for compiler
+    throw std::runtime_error("types::layerTypeFromInt reached unreachable code path");
+}
+
 std::uint8_t encounterTypeValue(EncounterType encounterType) {
     switch (encounterType) {
     case EncounterType::NONE:
@@ -239,6 +254,21 @@ EncounterType encounterTypeFromInt(std::uint8_t encounterInt) {
         return EncounterType::WATER;
     default:
         Panic("types::encounterTypeFromInt unknown EncounterType int " + std::to_string(encounterInt));
+    }
+    // unreachable, here for compiler
+    throw std::runtime_error("types::encounterTypeFromInt reached unreachable code path");
+}
+
+std::optional<EncounterType> encounterTypeFromIntNoPanic(std::uint8_t encounterInt) {
+    switch (encounterInt) {
+    case 0:
+        return EncounterType::NONE;
+    case 1:
+        return EncounterType::LAND;
+    case 2:
+        return EncounterType::WATER;
+    default:
+        return std::nullopt;
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::encounterTypeFromInt reached unreachable code path");
@@ -304,6 +334,23 @@ TerrainType terrainTypeFromInt(std::uint8_t terrainInt) {
         return TerrainType::WATERFALL;
     default:
         Panic("types::terrainTypeFromInt unknown TerrainType int " + std::to_string(terrainInt));
+    }
+    // unreachable, here for compiler
+    throw std::runtime_error("types::terrainTypeFromInt reached unreachable code path");
+}
+
+std::optional<TerrainType> terrainTypeFromIntNoPanic(std::uint8_t terrainInt) {
+    switch (terrainInt) {
+    case 0:
+        return TerrainType::NORMAL;
+    case 1:
+        return TerrainType::GRASS;
+    case 2:
+        return TerrainType::WATER;
+    case 3:
+        return TerrainType::WATERFALL;
+    default:
+        return std::nullopt;
     }
     // unreachable, here for compiler
     throw std::runtime_error("types::terrainTypeFromInt reached unreachable code path");
