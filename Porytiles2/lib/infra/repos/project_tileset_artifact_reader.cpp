@@ -139,6 +139,22 @@ Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey
     return {};
 }
 
+Result<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
+{
+    auto image_result = loader.load_from_file(src_key.key());
+    if (!image_result.has_value()) {
+        return std::unexpected{fmt::format("failed to load tiles.png: {}", image_result.error())};
+    }
+    dest.porymap_component().tiles_png(*image_result.value());
+    return {};
+}
+
+Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index)
+{
+    // TODO: implement palette import
+    return {};
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -177,11 +193,11 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: branch here based on target base game?
         return import_emerald_metatile_attributes(dest, src_key);
     case TilesetArtifact::Type::tiles_png:
-        panic("TODO: implement");
+        return import_tiles_png(dest, src_key, *png_indexed_loader_);
     case TilesetArtifact::Type::porymap_anim_frame:
         panic("TODO: implement");
     case TilesetArtifact::Type::pal_n:
-        panic("TODO: implement");
+        return import_palette(dest, src_key, artifact.index().value());
 
     // Default case
     default:

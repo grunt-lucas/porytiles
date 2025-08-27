@@ -6,14 +6,18 @@
 #include "CLI/CLI.hpp"
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/infra/config/default_provider.hpp"
+#include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/services/noop_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 #include "option.hpp"
 #include "option_group.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 
 /**
  * @brief Command is an abstract class that provides basic command functionality for the Porytiles
@@ -230,10 +234,27 @@ class DebugCommand final : public Command {
     {
         using namespace porytiles2;
 
+        const std::shared_ptr<ConfigProvider> default_provider = std::make_shared<DefaultProvider>();
+        LazyLayeredConfig config{std::vector{default_provider}};
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
+        PngRgbaImageSaver png_rgba_saver{};
+        PngIndexedImageSaver png_indexed_saver{};
+        NoopArtifactChecksumProvider checksum_provider{};
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader};
+        ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver};
         ProjectTilesetKeyProvider key_provider{"."};
+        TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+        const auto load_result = repo.load("porytiles2_test");
+        if (!load_result.has_value()) {
+            std::cout << "load error: " << load_result.error() << std::endl;
+        }
+        else {
+            const auto save_result = repo.save(*load_result.value());
+            if (!save_result.has_value()) {
+                std::cout << "save error: " << save_result.error() << std::endl;
+            }
+        }
     }
 
   private:

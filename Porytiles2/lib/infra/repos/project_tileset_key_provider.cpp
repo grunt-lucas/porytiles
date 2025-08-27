@@ -124,24 +124,28 @@ bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) 
 
 std::set<std::string> ProjectTilesetKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
 {
-    panic("TODO: unimplemented");
+    // TODO: implement
+    return {};
 }
 
 std::set<int> ProjectTilesetKeyProvider::discover_porytiles_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    panic("TODO: unimplemented");
+    // TODO: implement
+    return {};
 }
 
 std::set<std::string> ProjectTilesetKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
 {
-    panic("TODO: unimplemented");
+    // TODO: implement
+    return {};
 }
 
 std::set<int> ProjectTilesetKeyProvider::discover_porymap_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    panic("TODO: unimplemented");
+    // TODO: implement
+    return {};
 }
 
 } // namespace porytiles2

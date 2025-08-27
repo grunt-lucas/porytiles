@@ -42,7 +42,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      *
      * @param providers The list of providers in priority order
      */
-    explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigProvider>> &&providers)
+    explicit LazyLayeredConfig(std::vector<std::shared_ptr<ConfigProvider>> &&providers)
         : providers_{std::move(providers)}
     {
     }
@@ -107,7 +107,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
   private:
     // Providers in priority order (highest first)
-    std::vector<std::unique_ptr<ConfigProvider>> providers_;
+    std::vector<std::shared_ptr<ConfigProvider>> providers_;
 
     mutable std::unordered_map<std::string, std::string> provenance_;
     mutable std::map<std::string, std::any> cache_;

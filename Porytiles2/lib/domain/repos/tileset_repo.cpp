@@ -3,6 +3,8 @@
 #include <set>
 #include <string>
 
+#include "fmt/format.h"
+
 namespace porytiles2 {
 
 /*
@@ -84,11 +86,12 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
 
     // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
     // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem. Perhaps
-    // this can be part of the tileset commit logic? E.g. if we implement the ProjectArtifactWriter using simple
-    // filesystem directory move operations, this will be handled automatically since the new directory won't contain
-    // any of the stale artifacts. We'll just need to make sure we don't clobber anything that is present in one of the
-    // tileset components but isn't an explicit result of a de/compilation operation, e.g. pal overrides, pal hints, PLA
-    // files, etc.
+    // this can be part of the tileset commit logic? We'll need some functionality in the writer implementation like
+    // "clear_stale_contents" or something. This applies both ways, e.g. if we delete the anim on the porymap side,
+    // then run an import, it should clear the anim from the porytiles side. I.e. if there is a Porymap anim on disk
+    // that does not exist in the Porytiles component, clear it. If there is a Porytiles anim on disk that does not
+    // exist in the Porymap component, clear it. Perhaps instead of auto-clearing, we can emit a diagnostic warning the
+    // user that stale assets exist on disk?
 
     // Cache checksums after successful save
     const auto current_checksums = checksum_provider_->compute_artifact_checksums(tileset.name());
@@ -104,7 +107,7 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return std::unexpected{"does not exist"};
+        return std::unexpected{fmt::format("tileset {} does not exist", name)};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -196,14 +199,16 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     if (!key_provider_->exists(tiles_png_key)) {
         return std::unexpected{"missing required porymap artifact tiles.png"};
     }
-    reader_->read(*tileset, attr_key, tiles_png_artifact);
+    reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
 
     // TODO: don't hardcode this num_pals value
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
         if (!key_provider_->exists(pal_key)) {
-            return std::unexpected{fmt::format("missing required artifact {:02}.pal", i)};
+            // TODO: emit validation error: missing required artifact {:02}.pal
+            fail_at_exit = true;
+            continue;
         }
         reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
     }
