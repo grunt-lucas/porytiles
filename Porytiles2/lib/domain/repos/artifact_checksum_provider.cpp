@@ -1,4 +1,4 @@
-#include "../../../include/porytiles2/domain/services/artifact_checksum_provider.hpp"
+#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 
 #include <string>
 #include <unordered_map>

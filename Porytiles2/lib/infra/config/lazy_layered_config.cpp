@@ -7,7 +7,7 @@
 
 #include "fmt/format.h"
 
-#include "../../../include/porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/templates/panic.hpp"
 
