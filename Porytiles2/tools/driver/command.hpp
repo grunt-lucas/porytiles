@@ -9,6 +9,7 @@
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
 #include "porytiles2/infra/services/noop_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -17,7 +18,6 @@
 
 #include "option.hpp"
 #include "option_group.hpp"
-#include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 
 /**
  * @brief Command is an abstract class that provides basic command functionality for the Porytiles
