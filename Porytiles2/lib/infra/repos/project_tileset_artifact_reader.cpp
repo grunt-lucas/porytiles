@@ -197,6 +197,9 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     case TilesetArtifact::Type::porymap_anim_frame:
         panic("TODO: implement");
     case TilesetArtifact::Type::pal_n:
+        if (!artifact.index().has_value()) {
+            panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
+        }
         return import_palette(dest, src_key, artifact.index().value());
 
     // Default case

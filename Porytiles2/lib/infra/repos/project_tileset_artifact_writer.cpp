@@ -67,6 +67,12 @@ Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entri
     return {};
 }
 
+Result<void> save_palette(const std::filesystem::path &path)
+{
+    // TODO: implement
+    return {};
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -243,8 +249,7 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
         // TODO: implement
         return {};
     case TilesetArtifact::Type::pal_n:
-        // TODO: implement
-        return {};
+        return save_palette(transaction_dest_path);
 
     // Default case
     default:
