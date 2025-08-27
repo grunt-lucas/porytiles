@@ -7,7 +7,7 @@
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
 
-#include "porytiles2/domain/config/tiles_pal_mode.hpp"
+#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/diagnostics/diagnostics.hpp"
 #include "porytiles2/infra/utilities/utilities.hpp"
 #include "porytiles2/templates/parsing.hpp"
@@ -16,7 +16,8 @@ class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";
 
   public:
-    explicit TilesPalModeValidator() : Validator{kHint} {
+    explicit TilesPalModeValidator() : Validator{kHint}
+    {
         name_ = "TILES_OUTPUT_PAL";
         func_ = [](const std::string &str) {
             if (!porytiles2::tiles_pal_mode_from_str(str).has_value()) {
@@ -31,7 +32,8 @@ class NotAlreadyAFileValidator final : public CLI::Validator {
     static constexpr auto kHint = "PATH";
 
   public:
-    explicit NotAlreadyAFileValidator() : Validator{kHint} {
+    explicit NotAlreadyAFileValidator() : Validator{kHint}
+    {
         name_ = "NOT_ALREADY_A_FILE";
         func_ = [](const std::string &str) {
             if (std::filesystem::exists(str) && std::filesystem::is_regular_file(str)) {
@@ -46,7 +48,8 @@ class RgbStringValidator final : public CLI::Validator {
     static constexpr auto kHint = "R,G,B";
 
   public:
-    explicit RgbStringValidator() : Validator{kHint} {
+    explicit RgbStringValidator() : Validator{kHint}
+    {
         name_ = "RGB_STRING";
         func_ = [](const std::string &str) {
             const std::vector<std::string> color_components = porytiles2::split(str, ",");
@@ -91,7 +94,8 @@ class DiagnosticIsWarningValidator final : public CLI::Validator {
     static constexpr auto kHint = "DIAG";
 
   public:
-    explicit DiagnosticIsWarningValidator() : Validator{kHint} {
+    explicit DiagnosticIsWarningValidator() : Validator{kHint}
+    {
         name_ = "DIAGNOSTIC_IS_WARNING";
         std::unordered_set<std::string> warning_diags;
         for (const auto name : porytiles2::all_diag_names(porytiles2::DiagLevel::warning)) {

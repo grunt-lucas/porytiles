@@ -51,8 +51,8 @@ class DiagEngine;
  * representing the final diagnostic message. Each element in the `vector`
  * represents a single line of output for a DiagConsumer to consume.
  */
-using DynamicMsgBuilder = std::function<std::vector<std::string>(const DiagEngine &eng, DiagLevel in_flight_level,
-                                                                 const std::vector<std::any> &args)>;
+using DynamicMsgBuilder = std::function<std::vector<std::string>(
+    const DiagEngine &eng, DiagLevel in_flight_level, const std::vector<std::any> &args)>;
 
 /**
  * @brief Defines a reusable template for standardized diagnostic reporting.
@@ -68,23 +68,37 @@ using DynamicMsgBuilder = std::function<std::vector<std::string>(const DiagEngin
 class DiagTempl {
   public:
     explicit DiagTempl(std::string_view name, DiagLevel default_level, DynamicMsgBuilder dynamic_msg_builder) noexcept
-        : name_{name}, default_level_{default_level}, dynamic_msg_builder_{std::move(dynamic_msg_builder)} {}
+        : name_{name}, default_level_{default_level}, dynamic_msg_builder_{std::move(dynamic_msg_builder)}
+    {
+    }
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level, DynamicMsgBuilder dynamic_msg_builder,
-                       const std::vector<DiagTempl> &partner_diags) noexcept
+    explicit DiagTempl(
+        std::string_view name,
+        DiagLevel default_level,
+        DynamicMsgBuilder dynamic_msg_builder,
+        const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name}, default_level_{default_level}, dynamic_msg_builder_{std::move(dynamic_msg_builder)},
-          partner_diags_{partner_diags} {}
+          partner_diags_{partner_diags}
+    {
+    }
 
     explicit DiagTempl(std::string_view name, DiagLevel default_level, std::string_view static_msg_templ) noexcept
-        : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
-          dynamic_msg_builder_{nullptr} {}
+        : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ}, dynamic_msg_builder_{nullptr}
+    {
+    }
 
-    explicit DiagTempl(std::string_view name, DiagLevel default_level, std::string_view static_msg_templ,
-                       const std::vector<DiagTempl> &partner_diags) noexcept
+    explicit DiagTempl(
+        std::string_view name,
+        DiagLevel default_level,
+        std::string_view static_msg_templ,
+        const std::vector<DiagTempl> &partner_diags) noexcept
         : name_{name}, default_level_{default_level}, static_msg_templ_{static_msg_templ},
-          dynamic_msg_builder_{nullptr}, partner_diags_{partner_diags} {}
+          dynamic_msg_builder_{nullptr}, partner_diags_{partner_diags}
+    {
+    }
 
-    [[nodiscard]] std::string_view name() const {
+    [[nodiscard]] std::string_view name() const
+    {
         return name_;
     }
 
@@ -92,7 +106,8 @@ class DiagTempl {
      * @brief Gets the default diagnostic level of the template.
      * @return The default DiagLevel.
      */
-    [[nodiscard]] DiagLevel level() const {
+    [[nodiscard]] DiagLevel level() const
+    {
         return default_level_;
     }
 
@@ -105,7 +120,8 @@ class DiagTempl {
      *
      * @return A `std::string_view` of the static message template.
      */
-    [[nodiscard]] std::string_view static_msg_templ() const {
+    [[nodiscard]] std::string_view static_msg_templ() const
+    {
         return static_msg_templ_;
     }
 
@@ -120,8 +136,9 @@ class DiagTempl {
      * diagnostic message.
      */
     template <typename... Args>
-    std::vector<std::string> BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level,
-                                             Args &&...args) const {
+    std::vector<std::string>
+    BuildDynamicMsg(const DiagEngine &eng, const DiagLevel in_flight_level, Args &&...args) const
+    {
         if (dynamic_msg_builder_ == nullptr) {
             std::vector<std::string> v{};
             v.push_back(fmt::format(fmt::runtime(static_msg_templ_), std::forward<Args>(args)...));
@@ -141,7 +158,8 @@ class DiagTempl {
      *
      * @return A const reference to the vector of partner DiagTempl.
      */
-    [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const {
+    [[nodiscard]] const std::vector<DiagTempl> &partner_diags() const
+    {
         return partner_diags_;
     }
 
@@ -164,17 +182,22 @@ class DiagTempl {
 class InFlightDiag {
   public:
     explicit InFlightDiag(const DiagLevel level, std::string msg, DiagTempl templ) noexcept
-        : level_{level}, msg_{std::move(msg)}, templ_{std::move(templ)} {}
+        : level_{level}, msg_{std::move(msg)}, templ_{std::move(templ)}
+    {
+    }
 
-    [[nodiscard]] DiagLevel level() const noexcept {
+    [[nodiscard]] DiagLevel level() const noexcept
+    {
         return level_;
     }
 
-    [[nodiscard]] std::string msg() const noexcept {
+    [[nodiscard]] std::string msg() const noexcept
+    {
         return msg_;
     }
 
-    [[nodiscard]] const DiagTempl &templ() const noexcept {
+    [[nodiscard]] const DiagTempl &templ() const noexcept
+    {
         return templ_;
     }
 
@@ -335,7 +358,8 @@ std::vector<const char *> all_diag_names(DiagLevel level);
  */
 template <>
 struct std::hash<porytiles2::DiagTempl> {
-    std::size_t operator()(const porytiles2::DiagTempl &templ) const noexcept {
+    std::size_t operator()(const porytiles2::DiagTempl &templ) const noexcept
+    {
         std::size_t seed = 0x39A9C07E;
         seed ^= (seed << 6) + (seed >> 2) + 0x6EFC4121 + std::hash<std::string>{}(std::string{templ.name()});
         seed ^= (seed << 6) + (seed >> 2) + 0x14AA7601 + static_cast<std::size_t>(templ.level());

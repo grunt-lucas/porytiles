@@ -8,8 +8,9 @@
 
 namespace {
 
-std::optional<std::string> construct_flag(const porytiles2::DiagLevel in_flight_level,
-                                          const porytiles2::DiagTempl &templ) {
+std::optional<std::string>
+construct_flag(const porytiles2::DiagLevel in_flight_level, const porytiles2::DiagTempl &templ)
+{
     if (in_flight_level == porytiles2::DiagLevel::warning) {
         return std::optional{fmt::format("-W{}", templ.name())};
     }
@@ -23,7 +24,8 @@ std::optional<std::string> construct_flag(const porytiles2::DiagLevel in_flight_
 
 namespace porytiles2 {
 
-void DiagEngine::enable_all_warnings() {
+void DiagEngine::enable_all_warnings()
+{
     for (const auto &diag : all_diag_names()) {
         // Only apply enablement to diagnostics that are default-warnings
         if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::warning) {
@@ -32,11 +34,13 @@ void DiagEngine::enable_all_warnings() {
     }
 }
 
-void DiagEngine::disable_all_warnings() {
+void DiagEngine::disable_all_warnings()
+{
     all_warnings_disabled_ = true;
 }
 
-void DiagEngine::upgrade_enabled_warnings_to_err() {
+void DiagEngine::upgrade_enabled_warnings_to_err()
+{
     for (const auto &diag : all_diag_names()) {
         // Only apply enablement to diagnostics that are default-warnings
         if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::warning) {
@@ -48,11 +52,13 @@ void DiagEngine::upgrade_enabled_warnings_to_err() {
     }
 }
 
-void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
+void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override)
+{
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
-        panic("cannot change diagnostic enablement level for non-warning "
-              "diagnostics");
+        panic(
+            "cannot change diagnostic enablement level for non-warning "
+            "diagnostics");
     }
 
     // Only allow warnings to be upgraded to err or downgraded to warn
@@ -63,16 +69,19 @@ void DiagEngine::enable_at_level(std::string_view diag, DiagLevel override) {
     if (enabled_at_level_.contains(diag.data())) {
         auto &set = enabled_at_level_.at(diag.data());
         set.insert(override);
-    } else {
+    }
+    else {
         enabled_at_level_.insert({std::string{diag}, std::set{override}});
     }
 }
 
-void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override) {
+void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override)
+{
     // Only allow warns to be overridden for the warning-as-error case
     if (const auto &templ = diag_for(diag); templ.level() != DiagLevel::warning) {
-        panic("cannot change diagnostic enablement level for non-warning "
-              "diagnostics");
+        panic(
+            "cannot change diagnostic enablement level for non-warning "
+            "diagnostics");
     }
 
     // Only allow warnings to be upgraded to err or downgraded to warn
@@ -89,21 +98,24 @@ void DiagEngine::disable_at_level(std::string_view diag, DiagLevel override) {
     }
 }
 
-DiagLevel DiagEngine::enabled_at(std::string_view diag) const {
+DiagLevel DiagEngine::enabled_at(std::string_view diag) const
+{
     if (!enabled_at_level_.contains(diag.data())) {
         return DiagLevel::ignored;
     }
-    assert_or_panic(!enabled_at_level_.at(diag.data()).empty(),
-                    fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
+    assert_or_panic(
+        !enabled_at_level_.at(diag.data()).empty(), fmt::format("enabled_at_level_[{}] - set was empty!", diag.data()));
     // Return the highest level present
     return *enabled_at_level_.at(diag.data()).rbegin();
 }
 
-std::uint64_t DiagEngine::in_flight_count_for_level(DiagLevel level) const {
+std::uint64_t DiagEngine::in_flight_count_for_level(DiagLevel level) const
+{
     return std::ranges::count(in_flight_diags_, level, &InFlightDiag::level);
 }
 
-std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const {
+std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const
+{
     const auto diag_str = std::string{diag};
     if (!diag_counts_.contains(diag_str)) {
         return 0;
@@ -111,12 +123,14 @@ std::uint64_t DiagEngine::in_flight_count_for(std::string_view diag) const {
     return diag_counts_.at(diag_str);
 }
 
-const DiagConsumer &DiagEngine::consumer() const {
+const DiagConsumer &DiagEngine::consumer() const
+{
     return *consumer_;
 }
 
 // ReSharper disable once CppParameterMayBeConst
-DiagLevel DiagEngine::compute_level(std::string_view diag) const {
+DiagLevel DiagEngine::compute_level(std::string_view diag) const
+{
     const auto &templ = diag_for(diag);
 
     // Only warnings can "change" levels, so short circuit on anything else
@@ -126,8 +140,8 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
 
     // Return level override if present
     if (auto diag_str = std::string{diag}; enabled_at_level_.contains(diag_str)) {
-        assert_or_panic(!enabled_at_level_.at(diag_str).empty(),
-                        fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
+        assert_or_panic(
+            !enabled_at_level_.at(diag_str).empty(), fmt::format("enabled_at_level_[{}] - set was empty!", diag_str));
         // Return the highest level present
         return *enabled_at_level_.at(diag_str).rbegin();
     }
@@ -136,12 +150,13 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
     return templ.level();
 }
 
-[[nodiscard]] bool DiagEngine::is_enabled(std::string_view diag) const {
+[[nodiscard]] bool DiagEngine::is_enabled(std::string_view diag) const
+{
 
     // If this diagnostic is a note, remark, error, or fatal by default, it is
     // always enabled.
     //
-    // TODO : should we have note always enabled? Or should we have the generic
+    // TODO: should we have note always enabled? Or should we have the generic
     // error and fatal diagnostics contain a blank note partner? The downside
     // to that approach is we're locked in to having only a single note partner
     if (const auto &templ = diag_for(diag); templ.level() == DiagLevel::note || templ.level() == DiagLevel::remark ||
@@ -167,8 +182,9 @@ DiagLevel DiagEngine::compute_level(std::string_view diag) const {
     return false;
 }
 
-std::string DiagEngine::construct_msg_str(const DiagLevel in_flight_level, const DiagTempl &templ,
-                                          const std::vector<std::string> &msg) const {
+std::string DiagEngine::construct_msg_str(
+    const DiagLevel in_flight_level, const DiagTempl &templ, const std::vector<std::string> &msg) const
+{
     std::stringstream ss{};
 
     auto level_prefix = fmt::format("{}: ", level_to_str(in_flight_level));

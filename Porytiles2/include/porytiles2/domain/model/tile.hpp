@@ -30,24 +30,27 @@ class Tile {
      * @brief Checks if this entire tile is transparent.
      *
      * @details
-     * A tile is considered transparent if all of its pixels are either intrinsically transparent or are extrinsically
-     * transparent, according to the provided extrinsic transparency value.
+     * A tile is transparent if all of its pixels are either intrinsically transparent or are extrinsically transparent,
+     * according to the provided extrinsic transparency value.
      *
      * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return True if all pixels in the tile are transparent, false otherwise
      */
-    [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const {
+    [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const
+    {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
-    [[nodiscard]] PixelType at(std::size_t i) const {
+    [[nodiscard]] PixelType at(std::size_t i) const
+    {
         if (i >= tile_size) {
             panic(fmt::format("index {} out of bounds", i));
         }
         return pix_[i];
     }
 
-    [[nodiscard]] PixelType at(std::size_t row, std::size_t col) const {
+    [[nodiscard]] PixelType at(std::size_t row, std::size_t col) const
+    {
         if (row >= tile_side_length) {
             panic(fmt::format("row index {} out of bounds", row));
         }
@@ -57,14 +60,16 @@ class Tile {
         return pix_[row * tile_side_length + col];
     }
 
-    void set(std::size_t i, const PixelType &p) {
+    void set(std::size_t i, const PixelType &p)
+    {
         if (i >= tile_size) {
             panic(fmt::format("index {} out of bounds", i));
         }
         pix_[i] = p;
     }
 
-    void set(std::size_t row, std::size_t col, const PixelType &p) {
+    void set(std::size_t row, std::size_t col, const PixelType &p)
+    {
         if (row >= tile_side_length) {
             panic(fmt::format("row index {} out of bounds", row));
         }
@@ -75,7 +80,8 @@ class Tile {
     }
 
   protected:
-    [[nodiscard]] const std::array<PixelType, tile_size> &pix() const {
+    [[nodiscard]] const std::array<PixelType, tile_size> &pix() const
+    {
         return pix_;
     }
 

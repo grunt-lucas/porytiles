@@ -7,7 +7,8 @@ using namespace porytiles2;
 
 using RgbaImage = Image<Rgba32>;
 
-TEST(ImageTest, DimensionsMethodsShouldWork) {
+TEST(ImageTest, DimensionsMethodsShouldWork)
+{
     constexpr std::size_t width = 10;
     constexpr std::size_t height = 20;
     RgbaImage image{width, height};
@@ -16,7 +17,8 @@ TEST(ImageTest, DimensionsMethodsShouldWork) {
     EXPECT_EQ(image.height(), height);
 }
 
-TEST(ImageTest, AtByIndexShouldWork) {
+TEST(ImageTest, AtByIndexShouldWork)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -34,7 +36,8 @@ TEST(ImageTest, AtByIndexShouldWork) {
     EXPECT_EQ(image.at(5), blue_pixel);
 }
 
-TEST(ImageTest, AtByRowColShouldWork) {
+TEST(ImageTest, AtByRowColShouldWork)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -52,7 +55,8 @@ TEST(ImageTest, AtByRowColShouldWork) {
     EXPECT_EQ(image.at(1, 2), blue_pixel);
 }
 
-TEST(ImageTest, SetByIndexShouldWork) {
+TEST(ImageTest, SetByIndexShouldWork)
+{
     constexpr std::size_t width = 4;
     constexpr std::size_t height = 3;
     RgbaImage image{width, height};
@@ -67,7 +71,8 @@ TEST(ImageTest, SetByIndexShouldWork) {
     EXPECT_EQ(image.at(11), magenta_pixel);
 }
 
-TEST(ImageTest, SetByRowColShouldWork) {
+TEST(ImageTest, SetByRowColShouldWork)
+{
     constexpr std::size_t width = 4;
     constexpr std::size_t height = 3;
     RgbaImage image{width, height};
@@ -82,7 +87,8 @@ TEST(ImageTest, SetByRowColShouldWork) {
     EXPECT_EQ(image.at(2, 3), purple_pixel);
 }
 
-TEST(ImageTest, IndexAndRowColCorrespondence) {
+TEST(ImageTest, IndexAndRowColCorrespondence)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -99,7 +105,8 @@ TEST(ImageTest, IndexAndRowColCorrespondence) {
     EXPECT_EQ(image.at(0, 1), another_pixel);
 }
 
-TEST(ImageTest, DefaultPixelValues) {
+TEST(ImageTest, DefaultPixelValues)
+{
     constexpr std::size_t width = 2;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -112,7 +119,8 @@ TEST(ImageTest, DefaultPixelValues) {
     EXPECT_EQ(image.at(1, 1), default_pixel);
 }
 
-TEST(ImageTest, SinglePixelImage) {
+TEST(ImageTest, SinglePixelImage)
+{
     constexpr std::size_t width = 1;
     constexpr std::size_t height = 1;
     RgbaImage image{width, height};
@@ -126,7 +134,8 @@ TEST(ImageTest, SinglePixelImage) {
     EXPECT_EQ(image.at(0), single_pixel);
 }
 
-TEST(ImageTest, AtByIndexOutOfBoundsPanic) {
+TEST(ImageTest, AtByIndexOutOfBoundsPanic)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
@@ -135,7 +144,8 @@ TEST(ImageTest, AtByIndexOutOfBoundsPanic) {
     EXPECT_DEATH(std::ignore = image.at(100), "index 100 out of bounds for image size 6");
 }
 
-TEST(ImageTest, AtByRowColColumnOutOfBoundsPanic) {
+TEST(ImageTest, AtByRowColColumnOutOfBoundsPanic)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
@@ -144,7 +154,8 @@ TEST(ImageTest, AtByRowColColumnOutOfBoundsPanic) {
     EXPECT_DEATH(std::ignore = image.at(1, 10), "col 10 out of bounds for image width 3");
 }
 
-TEST(ImageTest, AtByRowColRowOutOfBoundsPanic) {
+TEST(ImageTest, AtByRowColRowOutOfBoundsPanic)
+{
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
     const RgbaImage image{width, height};
@@ -153,7 +164,8 @@ TEST(ImageTest, AtByRowColRowOutOfBoundsPanic) {
     EXPECT_DEATH(std::ignore = image.at(5, 1), "row 5 out of bounds for image height 2");
 }
 
-TEST(ImageTest, SetByIndexOutOfBoundsPanic) {
+TEST(ImageTest, SetByIndexOutOfBoundsPanic)
+{
     constexpr std::size_t width = 2;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -163,7 +175,8 @@ TEST(ImageTest, SetByIndexOutOfBoundsPanic) {
     EXPECT_DEATH(image.set(50, test_pixel), "index 50 out of bounds for image size 4");
 }
 
-TEST(ImageTest, SetByRowColColumnOutOfBoundsPanic) {
+TEST(ImageTest, SetByRowColColumnOutOfBoundsPanic)
+{
     constexpr std::size_t width = 2;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};
@@ -173,7 +186,8 @@ TEST(ImageTest, SetByRowColColumnOutOfBoundsPanic) {
     EXPECT_DEATH(image.set(1, 5, test_pixel), "col 5 out of bounds for image width 2");
 }
 
-TEST(ImageTest, SetByRowColRowOutOfBoundsPanic) {
+TEST(ImageTest, SetByRowColRowOutOfBoundsPanic)
+{
     constexpr std::size_t width = 2;
     constexpr std::size_t height = 2;
     RgbaImage image{width, height};

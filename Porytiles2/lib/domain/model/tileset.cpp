@@ -1,3 +1,4 @@
 #include "porytiles2/domain/model/tileset.hpp"
 
-namespace porytiles2 {}
+namespace porytiles2 {
+}

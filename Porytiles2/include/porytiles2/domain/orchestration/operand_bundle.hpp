@@ -26,22 +26,28 @@ class OperandBundle {
     // -- Range-for support --
     using iterator = std::unordered_map<std::string, std::any>::iterator;
     using const_iterator = std::unordered_map<std::string, std::any>::const_iterator;
-    iterator begin() noexcept {
+    iterator begin() noexcept
+    {
         return config_.begin();
     }
-    iterator end() noexcept {
+    iterator end() noexcept
+    {
         return config_.end();
     }
-    [[nodiscard]] const_iterator begin() const noexcept {
+    [[nodiscard]] const_iterator begin() const noexcept
+    {
         return config_.begin();
     }
-    [[nodiscard]] const_iterator end() const noexcept {
+    [[nodiscard]] const_iterator end() const noexcept
+    {
         return config_.end();
     }
-    [[nodiscard]] const_iterator cbegin() const noexcept {
+    [[nodiscard]] const_iterator cbegin() const noexcept
+    {
         return config_.cbegin();
     }
-    [[nodiscard]] const_iterator cend() const noexcept {
+    [[nodiscard]] const_iterator cend() const noexcept
+    {
         return config_.cend();
     }
     // -- Range-for support --
@@ -56,7 +62,8 @@ class OperandBundle {
      * @param key The string key identifying the operand
      * @return std::optional<std::any> containing the value if found, std::nullopt otherwise
      */
-    [[nodiscard]] std::optional<std::any> get(const std::string &key) const {
+    [[nodiscard]] std::optional<std::any> get(const std::string &key) const
+    {
         if (!contains(key)) {
             return std::nullopt;
         }
@@ -77,13 +84,15 @@ class OperandBundle {
      * @throws panic if key exists but type T does not match the stored type
      */
     template <typename T>
-    [[nodiscard]] std::optional<T> get_unwrapped(const std::string &key) const {
+    [[nodiscard]] std::optional<T> get_unwrapped(const std::string &key) const
+    {
         if (!contains(key)) {
             return std::nullopt;
         }
         try {
             return std::optional{std::any_cast<T>(config_.at(key))};
-        } catch (const std::bad_any_cast &) {
+        }
+        catch (const std::bad_any_cast &) {
             panic("invalid type requested for key: " + key);
         }
     }
@@ -98,7 +107,8 @@ class OperandBundle {
      * @param key The string key to associate with the value
      * @param value The operand value to store (type-erased as std::any)
      */
-    void put(const std::string &key, const std::any &value) {
+    void put(const std::string &key, const std::any &value)
+    {
         config_.insert_or_assign(key, value);
     }
 
@@ -108,7 +118,8 @@ class OperandBundle {
      * @param key The string key to check for existence
      * @return true if the key exists in the bundle, false otherwise
      */
-    [[nodiscard]] bool contains(const std::string &key) const {
+    [[nodiscard]] bool contains(const std::string &key) const
+    {
         return config_.contains(key);
     }
 
@@ -122,7 +133,8 @@ class OperandBundle {
      * @param key The string key identifying the operand
      * @return std::optional<std::type_index> containing the type if key exists, std::nullopt otherwise
      */
-    [[nodiscard]] std::optional<std::type_index> type_index_of(const std::string &key) const {
+    [[nodiscard]] std::optional<std::type_index> type_index_of(const std::string &key) const
+    {
         if (!contains(key)) {
             return std::nullopt;
         }
@@ -140,7 +152,8 @@ class OperandBundle {
      * @param declarations Vector of OperandDeclaration objects specifying required operands
      * @return true if all declarations are satisfied, false otherwise
      */
-    [[nodiscard]] bool satisfies_declarations(const std::vector<OperandDeclaration> &declarations) const {
+    [[nodiscard]] bool satisfies_declarations(const std::vector<OperandDeclaration> &declarations) const
+    {
         for (const auto &decl : declarations) {
             if (!contains(decl.key())) {
                 return false;

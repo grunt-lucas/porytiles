@@ -17,8 +17,8 @@ namespace porytiles2 {
  * abstracts the reading logic from the specific storage format and location.
  *
  * Implementations handle the details of parsing different artifact types and updating the correct components within the
- * target Tileset. The interface uses type-erased keys (std::any) to support different backing store implementations
- * (filesystem paths, database keys, URLs, etc.).
+ * target Tileset. The interface uses ArtifactKey to support different backing store implementations (filesystem paths,
+ * database keys, URLs, etc.), as long as the key is string-representable.
  */
 class TilesetArtifactReader {
   public:
@@ -29,18 +29,22 @@ class TilesetArtifactReader {
      *
      * @details
      * This method reads the specified artifact from the backing store location identified by the src_key and updates
-     * the appropriate fields or components within the destination Tileset object. The artifact parameter specifies the
-     * type and metadata needed to determine how to read and where to store the data.
+     * the appropriate fields or components within the destination Tileset object. The TilesetArtifact parameter
+     * specifies the type and metadata needed to determine how to read and where to store the data. The implementation
+     * should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.) and updating the
+     * correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
      *
-     * The implementation should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.)
-     * and updating the correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
+     * Precondition: the TilesetRepo checks that src_key actually exists before performing a read. Thus, the
+     * TilesetArtifactReader's read method can assume the specified artifact really does exist. If the artifact does not
+     * exist, the result is implementation-defined but will probably panic.
      *
      * @param dest The Tileset object to be updated with the read artifact data
-     * @param src_key The key identifying the artifact location in the backing store
-     * @param artifact The artifact specification including type and optional metadata
+     * @param src_key The ArtifactKey identifying the artifact location in the backing store
+     * @param artifact The TilesetArtifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
-    virtual Result<void> read(Tileset &dest, const std::any &src_key, const TilesetArtifact &artifact) = 0;
+    [[nodiscard]] virtual Result<void>
+    read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
 };
 
 } // namespace porytiles2

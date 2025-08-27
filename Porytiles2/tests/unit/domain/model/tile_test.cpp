@@ -9,7 +9,8 @@
 
 using namespace porytiles2;
 
-TEST(TileTests, AtAndSetShouldWork) {
+TEST(TileTests, AtAndSetShouldWork)
+{
     Tile<IndexPixel> tile{};
 
     EXPECT_EQ(0, tile.at(0).index());

@@ -7,7 +7,8 @@
 
 namespace porytiles2 {
 
-Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const {
+Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
+{
     // 1. Check if the primary tileset already exists. If so, abort with an error message.
     if (tileset_repo_->exists(tileset_name)) {
         return std::unexpected{"tileset already exists"};
@@ -28,14 +29,14 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     auto porymap_component = std::move(maybe_porymap_component.value());
 
     // 4. Initialize a new `Tileset` aggregate with the components.
-    Tileset tileset{std::move(porytiles_component), std::move(porymap_component)};
+    Tileset tileset{tileset_name, std::move(porytiles_component), std::move(porymap_component)};
 
     // 5. Update the source and header files.
-    // TODO : this should use HeaderFileParser for more sophisticated error handling
-    if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
-        !header_update_result.has_value()) {
-        return std::unexpected{header_update_result.error()};
-    }
+    // TODO: this should use some kind of capable C source modification utility
+    // if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
+    //     !header_update_result.has_value()) {
+    //     return std::unexpected{header_update_result.error()};
+    // }
 
     // 6. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(tileset); !save_result.has_value()) {

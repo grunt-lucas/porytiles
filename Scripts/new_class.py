@@ -2,12 +2,13 @@
 
 """
 Script to create a new C++ class header file.
-Usage: python new_class.py <CamelCaseClassName> <parent/path>
+Usage: python new_class.py <CamelCaseClassName> <parent/path> [--header-only] [--no-test]
 """
 
 import sys
 import os
 import re
+import argparse
 
 
 def camel_to_snake(name):
@@ -144,13 +145,21 @@ def main():
         print("Error: Script must be run from the main Porytiles project root")
         sys.exit(1)
     
-    # Check command line arguments
-    if len(sys.argv) != 3:
-        print("Usage: ./new_class.py <CamelCaseClassName> <layer/path>")
-        sys.exit(1)
+    # Set up argument parser
+    parser = argparse.ArgumentParser(
+        description="Create a new C++ class header file and optionally cpp/test files"
+    )
+    parser.add_argument("class_name", help="CamelCase class name")
+    parser.add_argument("layer_path", help="Layer path (e.g., domain/model)")
+    parser.add_argument("--header-only", action="store_true",
+                        help="Create only the header file, skip cpp and test files")
+    parser.add_argument("--no-test", action="store_true",
+                        help="Skip creating the test file")
     
-    class_name = sys.argv[1]
-    layer_path = sys.argv[2]
+    args = parser.parse_args()
+    
+    class_name = args.class_name
+    layer_path = args.layer_path
     header_path = "Porytiles2/include/porytiles2/" + layer_path
     impl_path = "Porytiles2/lib/" + layer_path
     test_path = "Porytiles2/tests/unit/" + layer_path
@@ -167,19 +176,21 @@ def main():
         print(f"Error creating header file: {e}")
         sys.exit(1)
 
-    # Create the cpp file
-    try:
-        create_class_impl(class_name, impl_path, layer_path)
-    except Exception as e:
-        print(f"Error creating cpp file: {e}")
-        sys.exit(1)
+    # Create the cpp file (unless --header-only is specified)
+    if not args.header_only:
+        try:
+            create_class_impl(class_name, impl_path, layer_path)
+        except Exception as e:
+            print(f"Error creating cpp file: {e}")
+            sys.exit(1)
 
-    # Create the test file
-    try:
-        create_class_test(class_name, test_path, layer_path)
-    except Exception as e:
-        print(f"Error creating test file: {e}")
-        sys.exit(1)
+    # Create the test file (unless --header-only or --no-test is specified)
+    if not args.header_only and not args.no_test:
+        try:
+            create_class_test(class_name, test_path, layer_path)
+        except Exception as e:
+            print(f"Error creating test file: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

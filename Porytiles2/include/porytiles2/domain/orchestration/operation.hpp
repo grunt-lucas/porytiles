@@ -46,7 +46,8 @@ class Operation {
      * @param inputs Bundle of input operands to process
      * @return Result containing the output operand bundle or an error
      */
-    [[nodiscard]] virtual Result<OperandBundle> apply(const OperandBundle &inputs) {
+    [[nodiscard]] virtual Result<OperandBundle> apply(const OperandBundle &inputs)
+    {
         const auto declared_inputs = declare_inputs();
         if (!inputs.satisfies_declarations(declared_inputs)) {
             panic(fmt::format("op '{}' declared inputs were not satisfied", name()));
@@ -59,7 +60,8 @@ class Operation {
      *
      * @return Const reference to the operation name
      */
-    [[nodiscard]] const std::string &name() const {
+    [[nodiscard]] const std::string &name() const
+    {
         return name_;
     }
 
@@ -68,7 +70,8 @@ class Operation {
      *
      * @param name The new name for this operation
      */
-    void set_name(const std::string &name) {
+    void set_name(const std::string &name)
+    {
         name_ = name;
     }
 

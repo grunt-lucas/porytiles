@@ -144,34 +144,12 @@ private:
 
 #### Implementation Details
 
-```cpp
-class CreatePrimaryTileset {
-public:
-    CreatePrimaryTileset(
-        std::unique_ptr<TilesetRepo> tileset_repo,
-        std::unique_ptr<DefaultAssetGenerator> asset_generator,
-        std::unique_ptr<TilesetCompiler> compiler,
-        std::unique_ptr<CSrcFileModifier> src_modifier,
-        std::unique_ptr<ArtifactMetadataProvider> metadata_provider
-    );
-    
-    Result<void> Execute(const std::string& tileset_name);
-    
-private:
-    std::unique_ptr<TilesetRepo> tileset_repo_;
-    std::unique_ptr<DefaultAssetGenerator> asset_generator_;
-    std::unique_ptr<TilesetCompiler> compiler_;
-    std::unique_ptr<CSrcFileModifier> src_modifier_;
-    std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
-};
-```
-
 **Workflow Implementation:**
 1. **Existence Check**: Use `TilesetRepo::Exists()` to verify tileset doesn't exist
 2. **Generate Defaults**: Use `DefaultAssetGenerator` to create `PorytilesTilesetComponent`
 3. **Compile**: Use `TilesetCompiler::CompilePrimary()` to generate `PorymapTilesetComponent`
 4. **Create Aggregate**: Initialize `Tileset` with both components
-5. **Generate Checksums**: Use `ArtifactMetadataProvider` for initial checksums
+5. **Generate Checksums**: Use `ArtifactChecksumProvider` for initial checksums
 6. **Persist Assets**: Use `TilesetRepo::Save()` to write tileset files
 7. **Update C Files**: Use `CSrcFileModifier` to update pokeemerald source files
 

@@ -9,7 +9,8 @@
 
 using namespace porytiles2;
 
-TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly) {
+TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly)
+{
     RgbaTile tile{};
 
     for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {
@@ -20,13 +21,15 @@ TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly) {
     EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
 }
 
-TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly) {
+TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly)
+{
     // Default-constructed RgbaTile is zeroed, i.e. black and transparent
     const RgbaTile tile{};
     EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
 }
 
-TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly) {
+TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
+{
     RgbaTile tile{};
 
     for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {

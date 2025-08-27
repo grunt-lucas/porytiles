@@ -6,7 +6,8 @@
 
 using namespace porytiles2;
 
-TEST(Bgr15Tests, ClassInvariantShouldHold) {
+TEST(Bgr15Tests, ClassInvariantShouldHold)
+{
     constexpr Bgr15 bgr_red{253, 0, 0};
     EXPECT_EQ(bgr_red.red(), 248);
 
@@ -17,7 +18,8 @@ TEST(Bgr15Tests, ClassInvariantShouldHold) {
     EXPECT_EQ(bgr_blue.blue(), 248);
 }
 
-TEST(Bgr15Tests, PackAndUnpackShouldWork) {
+TEST(Bgr15Tests, PackAndUnpackShouldWork)
+{
     constexpr Bgr15 bgr_red{253, 0, 0};
     const auto bgr_red_packed = bgr_red.pack();
     const auto bgr_red_unpacked = Bgr15::unpack(bgr_red_packed);
@@ -37,7 +39,8 @@ TEST(Bgr15Tests, PackAndUnpackShouldWork) {
     EXPECT_EQ(bgr_blue_unpacked, bgr_blue);
 }
 
-TEST(Bgr15Tests, FmtlibFormattingShouldUseJasc) {
+TEST(Bgr15Tests, FmtlibFormattingShouldUseJasc)
+{
     constexpr Bgr15 bgr1{127, 12, 222};
     const auto formatted = fmt::format("{}", bgr1);
     EXPECT_EQ(formatted, "120 8 216");

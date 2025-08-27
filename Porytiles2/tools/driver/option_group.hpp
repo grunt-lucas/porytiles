@@ -24,42 +24,55 @@ class OptGroupFieldmap final : public OptGroup {
 
   public:
     OptGroupFieldmap()
-        // TODO : 'pokeemerald' base game string should be defined by an enum,
+        // TODO: 'pokeemerald' base game string should be defined by an enum,
         // like TilesPalMode
         : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0}, tiles_total_override_{0},
           metatiles_primary_override_{0}, metatiles_total_override_{0}, pals_primary_override_{0},
-          pals_total_override_{0} {}
+          pals_total_override_{0}
+    {
+    }
 
-    [[nodiscard]] std::string GroupName() override {
+    [[nodiscard]] std::string GroupName() override
+    {
         return "FIELDMAP OVERRIDE OPTIONS";
     }
 
-    void RegisterGroup(CLI::App &app) override {
-        // TODO : create a base game validator
+    void RegisterGroup(CLI::App &app) override
+    {
+        // TODO: create a base game validator
         app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
             ->group(GroupName())
             ->capture_default_str();
-        app.add_option("--tiles-primary-override", tiles_primary_override_,
-                       "Override the number of tiles in the primary tileset.")
+        app.add_option(
+               "--tiles-primary-override",
+               tiles_primary_override_,
+               "Override the number of tiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--tiles-total-override", tiles_total_override_,
-                       "Override the total number of tiles in the tileset.")
+        app.add_option(
+               "--tiles-total-override", tiles_total_override_, "Override the total number of tiles in the tileset.")
             ->group(GroupName());
-        app.add_option("--metatiles-primary-override", metatiles_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+        app.add_option(
+               "--metatiles-primary-override",
+               metatiles_primary_override_,
+               "Override the number of metatiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--metatiles-total-override", metatiles_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+        app.add_option(
+               "--metatiles-total-override",
+               metatiles_total_override_,
+               "Override the total number of metatiles in the tileset.")
             ->group(GroupName());
-        app.add_option("--pals-primary-override", pals_primary_override_,
-                       "Override the number of metatiles in the primary tileset.")
+        app.add_option(
+               "--pals-primary-override",
+               pals_primary_override_,
+               "Override the number of metatiles in the primary tileset.")
             ->group(GroupName());
-        app.add_option("--pals-total-override", pals_total_override_,
-                       "Override the total number of metatiles in the tileset.")
+        app.add_option(
+               "--pals-total-override", pals_total_override_, "Override the total number of metatiles in the tileset.")
             ->group(GroupName());
     }
 
-    [[nodiscard]] const std::string &base_game_preset() const {
+    [[nodiscard]] const std::string &base_game_preset() const
+    {
         return base_game_preset_;
     }
 };
@@ -70,11 +83,13 @@ class OptGroupDiagnostics final : public OptGroup {
   public:
     OptGroupDiagnostics() = default;
 
-    [[nodiscard]] std::string GroupName() override {
+    [[nodiscard]] std::string GroupName() override
+    {
         return "DIAGNOSTIC OPTIONS";
     }
 
-    void RegisterGroup(CLI::App &app) override {
+    void RegisterGroup(CLI::App &app) override
+    {
         app.add_option("--warning", diagnostics_, "Enable given warning diagnostics.")
             ->check(DiagnosticIsWarningValidator{})
             ->group(GroupName());
@@ -89,7 +104,8 @@ class OptGroupDiagnostics final : public OptGroup {
             ->group(GroupName());
     }
 
-    [[nodiscard]] const std::vector<std::string> &diagnostics() const {
+    [[nodiscard]] const std::vector<std::string> &diagnostics() const
+    {
         return diagnostics_;
     }
 };
@@ -103,11 +119,13 @@ class OptGroupArtifacts final : public OptGroup {
   public:
     OptGroupArtifacts() = default;
 
-    [[nodiscard]] std::string GroupName() override {
+    [[nodiscard]] std::string GroupName() override
+    {
         return "ARTIFACT OPTIONS";
     }
 
-    void RegisterGroup(CLI::App &app) override {
+    void RegisterGroup(CLI::App &app) override
+    {
         output_opt_.RegisterOpt(app);
         output_opt_.SetGroup(GroupName(), app);
         tiles_pal_mode_opt_.RegisterOpt(app);
@@ -118,19 +136,23 @@ class OptGroupArtifacts final : public OptGroup {
         disable_attribute_generation_opt_.SetGroup(GroupName(), app);
     }
 
-    [[nodiscard]] const OptOutput &output_opt() const {
+    [[nodiscard]] const OptOutput &output_opt() const
+    {
         return output_opt_;
     }
 
-    [[nodiscard]] const OptTilesPalMode &tiles_pal_mode() const {
+    [[nodiscard]] const OptTilesPalMode &tiles_pal_mode() const
+    {
         return tiles_pal_mode_opt_;
     }
 
-    [[nodiscard]] bool metatiles_disabled() const {
+    [[nodiscard]] bool metatiles_disabled() const
+    {
         return disable_metatile_generation_opt_.disabled();
     }
 
-    [[nodiscard]] bool attributes_disabled() const {
+    [[nodiscard]] bool attributes_disabled() const
+    {
         return disable_attribute_generation_opt_.disabled();
     }
 };
@@ -139,7 +161,8 @@ class OptGroupPalAssignmentConfig final : public OptGroup {
   public:
     OptGroupPalAssignmentConfig() = default;
 
-    [[nodiscard]] std::string GroupName() override {
+    [[nodiscard]] std::string GroupName() override
+    {
         return "PAL ASSIGNMENT CONFIG OPTIONS";
     }
 

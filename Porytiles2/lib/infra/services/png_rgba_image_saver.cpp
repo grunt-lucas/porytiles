@@ -16,7 +16,8 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const {
+Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const
+{
     const auto width = static_cast<int>(image.width());
     const auto height = static_cast<int>(image.height());
     constexpr auto spectrum = 4; // RGBA
@@ -38,7 +39,8 @@ Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const s
     const auto path_c_str = path.c_str();
     try {
         std::ignore = cimg_png.save_png(path_c_str);
-    } catch (const CImgException &e) {
+    }
+    catch (const CImgException &e) {
         return std::unexpected{fmt::format("Failed to save PNG to {}: {}", path_c_str, e.what())};
     }
 

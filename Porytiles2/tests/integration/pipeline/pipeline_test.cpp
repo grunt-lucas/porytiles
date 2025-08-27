@@ -18,16 +18,19 @@ class NumSupplierOperation final : public Operation {
   public:
     explicit NumSupplierOperation(std::string key, const int value) : key_{std::move(key)}, value_{value} {}
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override
+    {
         return {};
     }
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override
+    {
         return {OperandDeclaration{key_, typeid(int)}};
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    {
         OperandBundle result{};
         result.put(key_, value_);
         return result;
@@ -41,9 +44,12 @@ class NumSupplierOperation final : public Operation {
 class SumOperation final : public Operation {
   public:
     explicit SumOperation(std::vector<std::string> in_keys, std::string out_key = "sum")
-        : in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)} {}
+        : in_keys_{std::move(in_keys)}, out_key_{std::move(out_key)}
+    {
+    }
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override
+    {
         std::vector<OperandDeclaration> inputs{};
         inputs.reserve(in_keys_.size());
         for (const auto &key : in_keys_) {
@@ -52,12 +58,14 @@ class SumOperation final : public Operation {
         return inputs;
     }
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override
+    {
         return {OperandDeclaration{out_key_, typeid(int)}};
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    {
         int sum = 0;
         for (const auto &key : in_keys_) {
             sum += inputs.get_unwrapped<int>(key).value();
@@ -76,20 +84,24 @@ class NumConsumerOperation final : public Operation {
   public:
     explicit NumConsumerOperation(std::string key) : key_{std::move(key)}, consumed_{0} {}
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override
+    {
         return {OperandDeclaration{key_, typeid(int)}};
     }
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override
+    {
         return {};
     }
 
-    [[nodiscard]] int consumed() const {
+    [[nodiscard]] int consumed() const
+    {
         return consumed_;
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    {
         consumed_ = inputs.get_unwrapped<int>(key_).value();
         return {};
     }
@@ -99,7 +111,8 @@ class NumConsumerOperation final : public Operation {
     int consumed_;
 };
 
-TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder) {
+TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder)
+{
     std::vector<std::shared_ptr<Operation>> ops{};
     ops.push_back(std::make_shared<NumSupplierOperation>("num0", 10));
     ops.push_back(std::make_shared<NumSupplierOperation>("num1", 20));

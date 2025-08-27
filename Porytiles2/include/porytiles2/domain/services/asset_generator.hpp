@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "porytiles2/domain/model/porytiles_tileset_component.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {

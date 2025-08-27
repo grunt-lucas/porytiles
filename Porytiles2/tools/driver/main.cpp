@@ -5,10 +5,13 @@
 
 #include "command.hpp"
 
-int main(const int argc, char **argv) {
+int main(const int argc, char **argv)
+{
     CLI::App porytiles_app{"Porytiles"};
 
-    porytiles_app.description(fmt::format(R"(porytiles {} {}
+    porytiles_app.description(
+        fmt::format(
+            R"(porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 
 Overworld tileset compiler for use with the pokeruby, pokefirered, and
@@ -17,7 +20,8 @@ compatible with pokeemerald-expansion from rh-hideout. Builds Porymap-ready
 assets from RGBA (or indexed) input assets.
 
 Home Page: https://github.com/grunt-lucas/porytiles)",
-                                          std::string{PORYTILES_BUILD_VERSION}, std::string{PORYTILES_BUILD_DATE}));
+            std::string{PORYTILES_BUILD_VERSION},
+            std::string{PORYTILES_BUILD_DATE}));
 
     porytiles_app.footer(
         R"(To get more help with Porytiles, check out the guides at:
@@ -42,14 +46,17 @@ https://github.com/huderlem/porymap)");
         "Print version info and exit.");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
+    CreateTilesetCommand create_tileset{porytiles_app};
+    CreateLayoutCommand create_layout{porytiles_app};
+
     CompileTilesetCommand compile_tileset{porytiles_app};
     CompileLayoutCommand compile_layout{porytiles_app};
-    CompileSpritesheetCommand compile_spritesheet{porytiles_app};
 
-    DecompileTilesetCommand decompile_tileset{porytiles_app};
-    DecompileLayoutCommand decompile_layout{porytiles_app};
+    ImportTilesetCommand decompile_tileset{porytiles_app};
+    ImportLayoutCommand decompile_layout{porytiles_app};
 
     ReduceBitDepthCommand reduce_bit_depth{porytiles_app};
+    DebugCommand debug{porytiles_app};
 
     porytiles_app.require_subcommand();
 

@@ -27,13 +27,14 @@ class Metatile {
      * @brief Checks if this entire metatile is transparent.
      *
      * @details
-     * A metatile is considered transparent if all tiles in all three layers (bottom, middle,
-     * and top) are transparent, according to the provided transparency value.
+     * A metatile is transparent if all tiles in all three layers (bottom, middle, and top) are transparent, according
+     * to the provided transparency value.
      *
      * @param transparency The transparency value to check each tile against
      * @return True if all tiles in all layers are transparent, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const PixelType &transparency) const {
+    [[nodiscard]] bool is_transparent(const PixelType &transparency) const
+    {
         const bool bottom_transparent =
             std::ranges::all_of(bottom(), [=](const auto &tile) { return tile.is_transparent(transparency); });
         const bool middle_transparent =
@@ -52,7 +53,8 @@ class Metatile {
      * @param i The index into the bottom layer array (must be 0-3).
      * @return Constant reference to the Tile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &bottom(std::size_t i) const {
+    [[nodiscard]] const Tile<PixelType> &bottom(std::size_t i) const
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
@@ -68,7 +70,8 @@ class Metatile {
      * @param i The index into the bottom layer array (must be 0-3).
      * @param tile The Tile to move into the array.
      */
-    void set_bottom(std::size_t i, Tile<PixelType> tile) {
+    void set_bottom(std::size_t i, Tile<PixelType> tile)
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
@@ -84,7 +87,8 @@ class Metatile {
      * @param i The index into the middle layer array (must be 0-3).
      * @return Constant reference to the Tile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &middle(std::size_t i) const {
+    [[nodiscard]] const Tile<PixelType> &middle(std::size_t i) const
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
@@ -100,7 +104,8 @@ class Metatile {
      * @param i The index into the middle layer array (must be 0-3).
      * @param tile The Tile to move into the array.
      */
-    void set_middle(std::size_t i, Tile<PixelType> tile) {
+    void set_middle(std::size_t i, Tile<PixelType> tile)
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
@@ -116,7 +121,8 @@ class Metatile {
      * @param i The index into the top layer array (must be 0-3).
      * @return Constant reference to the Tile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &top(std::size_t i) const {
+    [[nodiscard]] const Tile<PixelType> &top(std::size_t i) const
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
@@ -132,7 +138,8 @@ class Metatile {
      * @param i The index into the top layer array (must be 0-3).
      * @param tile The Tile to move into the array.
      */
-    void set_top(std::size_t i, Tile<PixelType> tile) {
+    void set_top(std::size_t i, Tile<PixelType> tile)
+    {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }

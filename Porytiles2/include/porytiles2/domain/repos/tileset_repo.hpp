@@ -3,11 +3,13 @@
 #include <memory>
 #include <string>
 
+#include "gsl/pointers"
+
+#include "../services/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles2/domain/services/artifact_metadata_provider.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -30,16 +32,19 @@ class TilesetRepo {
      * Initializes the repository with all necessary components for tileset persistence operations. These dependencies
      * provide the concrete implementations for metadata management, key generation, and artifact I/O operations.
      *
-     * @param metadata_provider Provider for computing and caching artifact checksums
+     * @param checksum_provider Provider for computing and caching artifact checksums
      * @param key_provider Provider for generating keys and discovering artifacts in the backing store
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
      */
-    explicit TilesetRepo(std::unique_ptr<ArtifactMetadataProvider> metadata_provider,
-                         std::unique_ptr<TilesetArtifactKeyProvider> key_provider,
-                         std::unique_ptr<TilesetArtifactReader> reader, std::unique_ptr<TilesetArtifactWriter> writer)
-        : metadata_provider_{std::move(metadata_provider)}, key_provider_{std::move(key_provider)},
-          reader_{std::move(reader)}, writer_{std::move(writer)} {}
+    explicit TilesetRepo(
+        gsl::not_null<ArtifactChecksumProvider *> checksum_provider,
+        gsl::not_null<TilesetArtifactKeyProvider *> key_provider,
+        gsl::not_null<TilesetArtifactReader *> reader,
+        gsl::not_null<TilesetArtifactWriter *> writer)
+        : checksum_provider_{checksum_provider}, key_provider_{key_provider}, reader_{reader}, writer_{writer}
+    {
+    }
 
     /**
      * @brief Persists a given Tileset and caches new artifact checksums.
@@ -67,38 +72,33 @@ class TilesetRepo {
      * @param name The name of the Tileset to check.
      * @return True if the named tileset exists, false otherwise.
      */
-    [[nodiscard]] virtual bool exists(const std::string &name) const = 0;
+    [[nodiscard]] bool exists(const std::string &name) const;
 
     /**
-     * @brief Gets a reference to the metadata provider.
+     * @brief Gets a reference to the ArtifactChecksumProvider for this repo.
      *
-     * @details
-     * Provides access to the metadata provider for computing artifact checksums and managing artifact caches. This is
-     * primarily used by derived implementations for checksum validation and caching operations.
-     *
-     * @return Reference to the artifact metadata provider
+     * @return Reference to the provider
      */
-    [[nodiscard]] ArtifactMetadataProvider &metadata_provider() const {
-        return *metadata_provider_;
+    [[nodiscard]] const ArtifactChecksumProvider &checksum_provider() const
+    {
+        return *checksum_provider_;
     }
 
-  protected:
     /**
-     * @brief Creates an empty tileset instance for loading.
+     * @brief Gets a reference to the TilesetArtifactKeyProvider for this repo.
      *
-     * @details
-     * Load calls this factory method to create the appropriate tileset type.
-     * Derived classes should override this to create their specific tileset implementation.
-     *
-     * @return A unique pointer to a new empty Tileset instance.
+     * @return Reference to the provider
      */
-    [[nodiscard]] virtual std::unique_ptr<Tileset> create_empty_tileset() const = 0;
+    [[nodiscard]] const TilesetArtifactKeyProvider &key_provider() const
+    {
+        return *key_provider_;
+    }
 
   private:
-    std::unique_ptr<ArtifactMetadataProvider> metadata_provider_;
-    std::unique_ptr<TilesetArtifactKeyProvider> key_provider_;
-    std::unique_ptr<TilesetArtifactReader> reader_;
-    std::unique_ptr<TilesetArtifactWriter> writer_;
+    ArtifactChecksumProvider *checksum_provider_;
+    TilesetArtifactKeyProvider *key_provider_;
+    TilesetArtifactReader *reader_;
+    TilesetArtifactWriter *writer_;
 };
 
 } // namespace porytiles2

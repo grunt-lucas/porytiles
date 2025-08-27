@@ -18,7 +18,8 @@ class TestOperation final : public Operation {
   public:
     explicit TestOperation() : multiplier_{1} {}
 
-    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_inputs() const override
+    {
         std::vector inputs = {
             OperandDeclaration{"num1", typeid(int)},
             OperandDeclaration{"num2", typeid(int)},
@@ -27,17 +28,20 @@ class TestOperation final : public Operation {
     }
 
     /// @brief Declares the operands this operation will produce.
-    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override {
+    [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override
+    {
         std::vector outputs = {OperandDeclaration{"sum", typeid(int)}};
         return outputs;
     }
 
-    void set_multiplier(const int value) {
+    void set_multiplier(const int value)
+    {
         multiplier_ = value;
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override {
+    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    {
         const auto num1 = inputs.get_unwrapped<int>("num1").value();
         const auto num2 = inputs.get_unwrapped<int>("num2").value();
         int sum = (num1 + num2) * multiplier_;
@@ -50,7 +54,8 @@ class TestOperation final : public Operation {
     int multiplier_;
 };
 
-TEST(OperationTests, BasicOperationFunctionsShouldWork) {
+TEST(OperationTests, BasicOperationFunctionsShouldWork)
+{
     OperandBundle inputs{};
     inputs.put("num1", 10);
     inputs.put("num2", 5);

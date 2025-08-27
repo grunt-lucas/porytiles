@@ -4,5 +4,9 @@ BasedOnStyle: LLVM
 ReflowComments: Always
 ColumnLimit: 120
 IndentWidth: 4
+BreakBeforeBraces: Stroustrup
 AllowShortFunctionsOnASingleLine: Empty
 BreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+BinPackParameters: false

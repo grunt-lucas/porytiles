@@ -1,6 +1,6 @@
 #pragma once
 
-#include "porytiles2/infra/config/config_layer_provider.hpp"
+#include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
@@ -11,7 +11,7 @@ namespace porytiles2 {
  * This provider returns default values for all configuration parameters. It's useful as a base layer in a configuration
  * system where other providers can override specific values.
  */
-class DefaultProvider : public ConfigProvider {
+class DefaultProvider final : public ConfigProvider {
   public:
     /**
      * @brief Gets the name of this config layer.
@@ -19,10 +19,6 @@ class DefaultProvider : public ConfigProvider {
      * @return The name "DefaultProvider"
      */
     [[nodiscard]] std::string name() const override;
-
-    /*
-     * Fieldmap Settings
-     */
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_primary() const override;
 
@@ -40,12 +36,10 @@ class DefaultProvider : public ConfigProvider {
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile() const override;
 
-    /*
-     * Build Settings
-     */
-
     [[nodiscard]] LayerValue<IncrementalBuildMode>
     incremental_build_mode(const std::string &tileset_name) const override;
+
+    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const override;
 };
 
 } // namespace porytiles2

@@ -15,47 +15,65 @@ namespace porytiles2 {
  */
 class Tileset {
   public:
-    Tileset() = default;
+    Tileset(
+        std::string name,
+        std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
+        std::unique_ptr<PorymapTilesetComponent> porymap_component)
+        : name_{std::move(name)}, porytiles_component_{std::move(porytiles_component)},
+          porymap_component_{std::move(porymap_component)}
+    {
 
-    Tileset(std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
-            std::unique_ptr<PorymapTilesetComponent> porymap_component)
-        : porytiles_component_{std::move(porytiles_component)}, porymap_component_{std::move(porymap_component)} {}
+        if (porytiles_component_ == nullptr) {
+            panic("porytiles_component was null");
+        }
+        if (porymap_component_ == nullptr) {
+            panic("porymap_component was null");
+        }
+    }
 
-    [[nodiscard]] const std::string &name() const {
+    [[nodiscard]] const std::string &name() const
+    {
         return name_;
     }
 
-    void name(std::string name) {
-        name_ = std::move(name);
+    [[nodiscard]] const PorytilesTilesetComponent &porytiles_component() const
+    {
+        return *porytiles_component_;
     }
 
-    [[nodiscard]] const std::vector<std::string> &partner_names() const {
-        return partner_names_;
+    [[nodiscard]] PorytilesTilesetComponent &porytiles_component()
+    {
+        return *porytiles_component_;
     }
 
-    void partner_names(std::vector<std::string> partner_names) {
-        partner_names_ = std::move(partner_names);
+    [[nodiscard]] const PorymapTilesetComponent &porymap_component() const
+    {
+        return *porymap_component_;
     }
 
-    [[nodiscard]] const PorytilesTilesetComponent *porytiles_component() const {
-        return porytiles_component_.get();
+    [[nodiscard]] PorymapTilesetComponent &porymap_component()
+    {
+        return *porymap_component_;
     }
 
-    [[nodiscard]] const PorymapTilesetComponent *porymap_component() const {
-        return porymap_component_.get();
-    }
-
-    void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component) {
+    void porytiles_component(std::unique_ptr<PorytilesTilesetComponent> porytiles_component)
+    {
+        if (porytiles_component == nullptr) {
+            panic("porytiles_component was null");
+        }
         porytiles_component_ = std::move(porytiles_component);
     }
 
-    void porymap_component(std::unique_ptr<PorymapTilesetComponent> porymap_component) {
+    void porymap_component(std::unique_ptr<PorymapTilesetComponent> porymap_component)
+    {
+        if (porymap_component == nullptr) {
+            panic("porymap_component was null");
+        }
         porymap_component_ = std::move(porymap_component);
     }
 
   private:
     std::string name_;
-    std::vector<std::string> partner_names_;
     std::unique_ptr<PorytilesTilesetComponent> porytiles_component_;
     std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };

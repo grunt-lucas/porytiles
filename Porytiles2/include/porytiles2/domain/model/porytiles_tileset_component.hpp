@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 
-#include "porytiles2/domain/model/rgba_metatile.hpp"
+#include "porytiles2/domain/model/image.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
 
 namespace porytiles2 {
 
@@ -10,24 +11,42 @@ class PorytilesTilesetComponent {
   public:
     PorytilesTilesetComponent() = default;
 
-    /**
-     * @brief Add a metatile to the end of the metatiles vector.
-     *
-     * @details
-     * Moves the provided RgbaMetatile into the metatiles vector.
-     *
-     * @param metatile The RgbaMetatile to move into the vector.
-     */
-    void push_back(RgbaMetatile metatile);
-
-    [[nodiscard]] const std::vector<RgbaMetatile> &metatiles() const {
-        return metatiles_;
-    }
-
     [[nodiscard]] bool is_empty() const;
 
+    [[nodiscard]] const Image<Rgba32> &bottom() const
+    {
+        return bottom_;
+    }
+
+    void bottom(const Image<Rgba32> &bottom)
+    {
+        bottom_ = bottom;
+    }
+
+    [[nodiscard]] const Image<Rgba32> &middle() const
+    {
+        return middle_;
+    }
+
+    void middle(const Image<Rgba32> &middle)
+    {
+        middle_ = middle;
+    }
+
+    [[nodiscard]] const Image<Rgba32> &top() const
+    {
+        return top_;
+    }
+
+    void top(const Image<Rgba32> &top)
+    {
+        top_ = top;
+    }
+
   private:
-    std::vector<RgbaMetatile> metatiles_;
+    Image<Rgba32> bottom_;
+    Image<Rgba32> middle_;
+    Image<Rgba32> top_;
 };
 
 } // namespace porytiles2

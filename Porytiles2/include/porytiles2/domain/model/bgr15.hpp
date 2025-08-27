@@ -11,7 +11,8 @@ class Bgr15 {
   public:
     constexpr Bgr15() : red_{0}, green_{0}, blue_{0}, alpha_{Rgba32::alpha_opaque} {}
 
-    constexpr Bgr15(const std::uint8_t red, const std::uint8_t green, const std::uint8_t blue) {
+    constexpr Bgr15(const std::uint8_t red, const std::uint8_t green, const std::uint8_t blue)
+    {
         // Class invariant: color channels always have the 3 LSBs unset
         red_ = (red >> 3) << 3;
         green_ = (green >> 3) << 3;
@@ -21,19 +22,23 @@ class Bgr15 {
 
     auto operator<=>(const Bgr15 &) const = default;
 
-    [[nodiscard]] std::uint8_t red() const {
+    [[nodiscard]] std::uint8_t red() const
+    {
         return red_;
     }
 
-    [[nodiscard]] std::uint8_t green() const {
+    [[nodiscard]] std::uint8_t green() const
+    {
         return green_;
     }
 
-    [[nodiscard]] std::uint8_t blue() const {
+    [[nodiscard]] std::uint8_t blue() const
+    {
         return blue_;
     }
 
-    [[nodiscard]] std::uint8_t alpha() const {
+    [[nodiscard]] std::uint8_t alpha() const
+    {
         return alpha_;
     }
 
@@ -75,7 +80,8 @@ class Bgr15 {
 
 /// Provide a simple way for fmtlib to format Bgr15:
 /// https://fmt.dev/11.1/api/#formatting-user-defined-types
-inline auto format_as(const Bgr15 &bgr) {
+inline auto format_as(const Bgr15 &bgr)
+{
     return bgr.to_jasc_str();
 }
 
@@ -83,7 +89,8 @@ inline auto format_as(const Bgr15 &bgr) {
 
 template <>
 struct std::hash<porytiles2::Bgr15> {
-    std::size_t operator()(const porytiles2::Bgr15 &bgr) const noexcept {
+    std::size_t operator()(const porytiles2::Bgr15 &bgr) const noexcept
+    {
         const std::size_t h1 = std::hash<std::uint8_t>{}(bgr.red());
         const std::size_t h2 = std::hash<std::uint8_t>{}(bgr.green());
         const std::size_t h3 = std::hash<std::uint8_t>{}(bgr.blue());

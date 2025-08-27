@@ -28,23 +28,23 @@ class TilesetArtifact {
      * fall into several categories:
      * - Input images: bottom_png, middle_png, top_png (Porytiles source layers)
      * - Configuration: attributes_csv (metatile attribute overrides)
-     * - Animations: porytiles_anim_key_frame, porytiles_anim_frame, porymap_anim_frame
+     * - Animations: porytiles_anim_frame, porymap_anim_frame
      * - Palette data: override_n, pal_n
      * - Output binaries: metatiles_bin, metatile_attributes_bin, tiles_png (Porymap-compatible formats)
      */
     enum class Type {
-        bottom_png,               ///< Bottom layer PNG input image
-        middle_png,               ///< Middle layer PNG input image
-        top_png,                  ///< Top layer PNG input image
-        attributes_csv,           ///< CSV file containing metatile attribute overrides
-        porytiles_anim_key_frame, ///< Key frame PNG for Porytiles animation
-        porytiles_anim_frame,     ///< Animation frame PNG for Porytiles animation
-        override_n,               ///< JASC palette override file
-        metatiles_bin,            ///< Metatile data output for Porymap
-        metatile_attributes_bin,  ///< Metatile attributes output for Porymap
-        tiles_png,                ///< Combined tile sheet PNG output for Porymap
-        porymap_anim_frame,       ///< Animation frame for Porymap format
-        pal_n                     ///< JASC palette data file
+        bottom_png,              ///< Bottom layer PNG input image
+        middle_png,              ///< Middle layer PNG input image
+        top_png,                 ///< Top layer PNG input image
+        attributes_csv,          ///< CSV file containing metatile attribute overrides
+        porytiles_anim_frame,    ///< Animation frame PNG for Porytiles-format animation
+        pal_override_n,          ///< JASC palette override file
+        metatiles_bin,           ///< Metatile data output for Porymap
+        metatile_attributes_bin, ///< Metatile attributes output for Porymap
+        tiles_png,               ///< Combined tile sheet PNG output for Porymap
+        porymap_anim_frame,      ///< Animation frame PNG for Porymap-format animation
+        pal_n                    ///< JASC palette data file
+        // pal_hint_n,            // TODO: pal hints could be like Porytiles1's palette primers?
     };
 
     /**
@@ -64,7 +64,9 @@ class TilesetArtifact {
      * @param name The name associated with the artifact
      */
     explicit TilesetArtifact(const Type type, std::string name)
-        : type_{type}, name_{std::move(name)}, index_{std::nullopt} {}
+        : type_{type}, name_{std::move(name)}, index_{std::nullopt}
+    {
+    }
 
     /**
      * @brief Constructs a tileset artifact with a type and index.
@@ -89,37 +91,47 @@ class TilesetArtifact {
      * @param index The index associated with the artifact
      */
     explicit TilesetArtifact(const Type type, std::string name, int index)
-        : type_{type}, name_{std::move(name)}, index_{index} {}
+        : type_{type}, name_{std::move(name)}, index_{index}
+    {
+    }
 
     /**
      * @brief Gets the artifact type.
      *
      * @return The type of this artifact
      */
-    [[nodiscard]] Type type() const {
+    [[nodiscard]] Type type() const
+    {
         return type_;
     }
 
     /**
      * @brief Gets the artifact name if present.
      *
-     * @return Optional name string, or nullopt if no name is associated with this artifact
+     * @return Optional name string, or nullopt if the artifact has no associated name
      */
-    [[nodiscard]] std::optional<std::string> name() const {
+    [[nodiscard]] std::optional<std::string> name() const
+    {
         return name_;
     }
 
     /**
      * @brief Gets the artifact index if present.
      *
-     * @return Optional index value, or nullopt if no index is associated with this artifact
+     * @return Optional index value, or nullopt if the artifact has no associated index
      */
-    [[nodiscard]] std::optional<int> index() const {
+    [[nodiscard]] std::optional<int> index() const
+    {
         return index_;
     }
 
   private:
     Type type_;
+    /*
+     * TODO: this isn't the best design, compiler can no longer catch programmer errors. If programmer forgets to
+     * provide a name/index, Porytiles has to panic which is not great. Ideally we'd like the compiler to help the
+     * programmer here.
+     */
     std::optional<std::string> name_;
     std::optional<int> index_;
 };

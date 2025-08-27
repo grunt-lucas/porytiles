@@ -7,11 +7,6 @@
 namespace porytiles2 {
 
 class Rgba32 {
-    std::uint8_t red_;
-    std::uint8_t green_;
-    std::uint8_t blue_;
-    std::uint8_t alpha_;
-
   public:
     static constexpr std::uint8_t alpha_transparent = 0;
     static constexpr std::uint8_t alpha_opaque = 255;
@@ -19,34 +14,18 @@ class Rgba32 {
     constexpr Rgba32() : red_{0}, green_{0}, blue_{0}, alpha_{0} {}
 
     constexpr Rgba32(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = alpha_opaque)
-        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha} {}
+        : red_{red}, green_{green}, blue_{blue}, alpha_{alpha}
+    {
+    }
 
-    bool operator==(const Rgba32 &rgba) const = default;
     auto operator<=>(const Rgba32 &rgba) const = default;
-
-    [[nodiscard]] std::uint8_t red() const {
-        return red_;
-    }
-
-    [[nodiscard]] std::uint8_t green() const {
-        return green_;
-    }
-
-    [[nodiscard]] std::uint8_t blue() const {
-        return blue_;
-    }
-
-    [[nodiscard]] std::uint8_t alpha() const {
-        return alpha_;
-    }
 
     /**
      * @brief Checks if this color should be treated as transparent.
      *
      * @details
-     * An RGBA32 color is considered transparent if either the color matches the extrinsic
-     * transparency color (ignoring alpha values) or if this color's intrinsic alpha value
-     * indicates transparency (alpha == 0).
+     * An RGBA32 color is considered transparent if either the color matches the extrinsic transparency color (ignoring
+     * alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
      *
      * @param extrinsic The extrinsic transparency color to check against
      * @return True if this color should be treated as transparent, false otherwise
@@ -58,11 +37,42 @@ class Rgba32 {
     [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
 
     // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
+
+    [[nodiscard]] std::uint8_t red() const
+    {
+        return red_;
+    }
+
+    [[nodiscard]] std::uint8_t green() const
+    {
+        return green_;
+    }
+
+    [[nodiscard]] std::uint8_t blue() const
+    {
+        return blue_;
+    }
+
+    [[nodiscard]] std::uint8_t alpha() const
+    {
+        return alpha_;
+    }
+
+  private:
+    std::uint8_t red_;
+    std::uint8_t green_;
+    std::uint8_t blue_;
+    std::uint8_t alpha_;
 };
 
-/// Provide a simple way for fmtlib to format Rgba32:
-/// https://fmt.dev/11.1/api/#formatting-user-defined-types
-inline auto format_as(const Rgba32 &rgba) {
+/**
+ * @brief Provides a simple way for fmtlib to format an Rgba32.
+ *
+ * @details
+ * https://fmt.dev/11.1/api/#formatting-user-defined-types
+ */
+inline auto format_as(const Rgba32 &rgba)
+{
     return rgba.to_jasc_str();
 }
 
@@ -92,7 +102,8 @@ constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::alpha_opaque};
 
 template <>
 struct std::hash<porytiles2::Rgba32> {
-    std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept {
+    std::size_t operator()(const porytiles2::Rgba32 &rgba) const noexcept
+    {
         const std::size_t h1 = std::hash<std::uint8_t>{}(rgba.red());
         const std::size_t h2 = std::hash<std::uint8_t>{}(rgba.green());
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());

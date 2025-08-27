@@ -25,14 +25,20 @@ enum class FooBar {
     foo_value_2
 };
 
+// snake_case for global constants
+const std::string foo_bar_value_1 = "foo_value_1";
+
 // PascalCase for class names
 class MyClass {
-  public:
+  public:  
     MyClass() = default;
     
     // ctor initializer lists always use braced initialization where possible
     // simple ctors can be implemented in the header file
     MyClass(int my_val) : my_val_{my_val} {}
+  
+    // class constants use snake_case
+    const std::string my_class_constant = "my_class_constant";
   
     // Method names are snake_case, parameter names are snake_case
     // Use [[nodiscard]] for methods/functions that return a value
