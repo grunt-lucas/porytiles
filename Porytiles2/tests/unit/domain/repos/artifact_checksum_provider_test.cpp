@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 
 using namespace porytiles2;
 using namespace ::testing;

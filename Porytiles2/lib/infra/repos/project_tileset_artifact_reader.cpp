@@ -49,7 +49,7 @@ Result<void> import_layer_png(
 
 Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatiles_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatiles_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
@@ -91,7 +91,7 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 
 Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_emerald != 0) {
@@ -114,7 +114,7 @@ Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey
 
 Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_firered != 0) {

@@ -15,9 +15,10 @@ std::expected<T, std::string> parse_int(std::string_view int_string, const int b
     try {
         arg = std::stoi(int_string.data(), &pos, base);
     }
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         return std::unexpected{"invalid integral string: " + std::string{int_string}};
     }
+
     if (std::string{int_string}.size() != pos) {
         return std::unexpected{"invalid integral string: " + std::string{int_string}};
     }

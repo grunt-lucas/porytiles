@@ -32,8 +32,6 @@ T parse_integer(const char *integerString)
     return parse_integer<T>(integerString, 0);
 }
 
-std::vector<std::string> split(std::string input, const std::string &delimiter);
-
 bool check_full_string_match(const std::string &str, const std::string &pattern);
 
 void trim(std::string &string);

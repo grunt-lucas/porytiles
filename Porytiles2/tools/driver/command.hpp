@@ -234,8 +234,9 @@ class DebugCommand final : public Command {
     {
         using namespace porytiles2;
 
-        const std::shared_ptr<ConfigProvider> default_provider = std::make_shared<DefaultProvider>();
-        LazyLayeredConfig config{std::vector{default_provider}};
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{std::move(providers)};
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
         PngRgbaImageSaver png_rgba_saver{};

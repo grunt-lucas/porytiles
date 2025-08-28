@@ -201,7 +201,7 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     }
     reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
 
-    // TODO: don't hardcode this num_pals value
+    // TODO: don't hardcode 16 here
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
