@@ -17,10 +17,18 @@ or by setting `incremental = keep-unused` in the tileset TOML config.
 
 When `incremental=keep-unused` is set,
 compilation will not disturb currently existing Porymap assets.
-That is, existing palettes will be treated as "overrides" in the compilation,
+That is, existing palettes will be fixed,
 and existing tiles will be left undisturbed (but reused if possible).
-Incremental builds assume any transparent tile is available,
-and any `0 0 0` in a palette can be assumed as a wildcard.
+We can throw very specific, helpful error messages if users add tiles/colors
+that aren't covered by existing assets.
+The compilation pipeline for this type of incremental build
+can be a simplified version of the full compilation pipeline,
+but with the palette assignment step completely removed. 
+
+Optionally, users can specify additional flags or configurations
+if they would like incremental builds to attempt to use available transparent tiles
+or "open" palette slots, where "open" is user-defined
+(e.g. user could specify that any palette with color '0 0 0' should be considered wildcarded).
 
 It should be noted:
 since incremental builds don't disturb existing assets,
@@ -30,10 +38,11 @@ an incremental build will still leave that tile in `tiles.png`.
 This is so that incremental builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
 
-We provide `incremental=remove-unused` to modify this behavior.
+We could provide `incremental=remove-unused` to modify this behavior.
 When `incremental=remove-unused` is set, we leave existing tiles undisturbed like before.
-But we sweep the tiles/pals at the end and remove any that are no longer in use.
+But we sweep the tiles/pals at the end and remove any that are no longer in use by the Porytiles assets.
 That means we'll need some kind of usage counter mechanism.
+Users should be aware that this may result in the breakage of any dependent tilesets.
 
 One problem we need to solve:
 if we pre-populate the final `tiles.png` representation,
