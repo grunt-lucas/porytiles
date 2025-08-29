@@ -135,12 +135,12 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
             Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
-            const auto msg = fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName);
+            const auto msg = fmt::format("{}: invalid green component: range must be 0 <= green <= 255", fileName);
             ctx.diag->Report(FatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
-            const auto msg = fmt::format("{}: invalid green component: range must be 0 <= red <= 255", fileName);
+            const auto msg = fmt::format("{}: invalid green component: range must be 0 <= green <= 255", fileName);
             ctx.diag->Report(FatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }
@@ -151,12 +151,12 @@ static RGBA32 parseJascLine(PorytilesContext &ctx, const CompilerMode *compilerM
             Panic("utilities::parseJascLine both mode parameters were non-null");
         }
         if (compilerMode != nullptr) {
-            const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName);
+            const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= blue <= 255", fileName);
             ctx.diag->Report(FatalGeneric, msg);
             die_compilationTerminated(ctx, ctx.compilerSrcPaths.modeBasedSrcPath(*compilerMode), msg);
         }
         if (decompilerMode != nullptr) {
-            const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= red <= 255", fileName);
+            const auto msg = fmt::format("{}: invalid blue component: range must be 0 <= blue <= 255", fileName);
             ctx.diag->Report(FatalGeneric, msg);
             die_decompilationTerminated(ctx, ctx.decompilerSrcPaths.modeBasedSrcPath(*decompilerMode), msg);
         }

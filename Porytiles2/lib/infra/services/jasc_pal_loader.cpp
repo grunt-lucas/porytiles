@@ -40,7 +40,23 @@ Result<Rgba32> parse_jasc_line(std::string_view line)
     const auto green = green_result.value();
     const auto blue = blue_result.value();
 
-    return std::unexpected{"TODO: implement"};
+    if (red < 0 || red > 255) {
+        return std::unexpected{fmt::format("invalid rgb red component '{}': range must be 0 <= red <= 255", red)};
+    }
+
+    if (green < 0 || green > 255) {
+        return std::unexpected{fmt::format("invalid rgb green component '{}': range must be 0 <= green <= 255", green)};
+    }
+
+    if (blue < 0 || blue > 255) {
+        return std::unexpected{fmt::format("invalid rgb blue component '{}': range must be 0 <= blue <= 255", blue)};
+    }
+
+    return Rgba32{
+        static_cast<std::uint8_t>(red),
+        static_cast<std::uint8_t>(green),
+        static_cast<std::uint8_t>(blue),
+        Rgba32::alpha_opaque};
 }
 
 } // namespace
