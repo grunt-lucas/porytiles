@@ -11,6 +11,7 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/noop_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
@@ -234,18 +235,26 @@ class DebugCommand final : public Command {
     {
         using namespace porytiles2;
 
-        std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<DefaultProvider>());
-        LazyLayeredConfig config{std::move(providers)};
+        // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
         PngRgbaImageSaver png_rgba_saver{};
         PngIndexedImageSaver png_indexed_saver{};
+        JascPalLoader jasc_loader{};
         NoopArtifactChecksumProvider checksum_provider{};
-        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader};
+
+        // Setup layered configuration
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{std::move(providers)};
+
+        // Setup the tileset repository
+        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver};
         ProjectTilesetKeyProvider key_provider{"."};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+
+        // Command logic
         const auto load_result = repo.load("porytiles2_test");
         if (!load_result.has_value()) {
             std::cout << "load error: " << load_result.error() << std::endl;
