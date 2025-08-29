@@ -16,7 +16,31 @@ using namespace porytiles2;
 
 Result<Rgba32> parse_jasc_line(std::string_view line)
 {
-    // TODO: implement
+    std::vector<std::string> color_components = split(std::string{line}, " ");
+
+    if (color_components.size() != 3) {
+        return std::unexpected{fmt::format("invalid JASC color format, expected line in format 'R G B'")};
+    }
+
+    auto red_result = parse_int<int>(color_components[0]);
+    auto green_result = parse_int<int>(color_components[1]);
+    auto blue_result = parse_int<int>(color_components[2]);
+
+    if (!red_result.has_value()) {
+        return std::unexpected{fmt::format("invalid rgb red component: {}", red_result.error())};
+    }
+    if (!green_result.has_value()) {
+
+        return std::unexpected{fmt::format("invalid rgb green component: {}", green_result.error())};
+    }
+    if (!blue_result.has_value()) {
+        return std::unexpected{fmt::format("invalid rgb blue component: {}", blue_result.error())};
+    }
+
+    const auto red = red_result.value();
+    const auto green = green_result.value();
+    const auto blue = blue_result.value();
+
     return std::unexpected{"TODO: implement"};
 }
 
@@ -63,7 +87,7 @@ Result<RgbaPal> JascPalLoader::load(std::filesystem::path &path) const
     // Rest of file lines are the colors
     unsigned int color_index = 0;
     while (std::getline(stream, line_buf)) {
-        const auto color_result = parse_jasc_line(line_buf);
+        const auto color_result = parse_jasc_line(trim_line_ending(line_buf));
         if (!color_result.has_value()) {
             return std::unexpected{fmt::format(
                 "{}: error parsing color on line {}: {}", path.c_str(), color_index + 4, color_result.error())};
