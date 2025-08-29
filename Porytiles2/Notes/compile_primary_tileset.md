@@ -7,6 +7,12 @@ since vanilla tilesets use 8-bit colors in their pals.
 
 ## Normalization
 Implement normalization solution outlined here: https://github.com/grunt-lucas/porytiles/issues/118
+This normalization that includes the palette will be called full normalization.
+Alternatively, we can provide the normalization of Porytiles1 called "partial normalization".
+We'll want both, because for incremental compilation,
+we need to be able to detect when a sibling is in use.
+And for that, we'll need partial normalization as well.
+Let's think about this more.
 
 ## Tile Workspace
 `tiles.png` can be represented by a TileWorkspace,
