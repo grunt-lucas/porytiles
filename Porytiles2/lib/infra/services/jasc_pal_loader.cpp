@@ -30,7 +30,6 @@ Result<Rgba32> parse_jasc_line(std::string_view line)
         return std::unexpected{fmt::format("invalid rgb red component: {}", red_result.error())};
     }
     if (!green_result.has_value()) {
-
         return std::unexpected{fmt::format("invalid rgb green component: {}", green_result.error())};
     }
     if (!blue_result.has_value()) {
