@@ -77,6 +77,16 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
         return result;
     }
 
+    // TODO: don't hardcode 16 here
+    constexpr int num_pals = 16;
+    for (int i = 0; i < num_pals; i++) {
+        const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
+        if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result) {
+            std::ignore = writer_->rollback();
+            return result;
+        }
+    }
+
     // Commit all writes atomically
     if (auto result = writer_->commit(); !result) {
         // Commit failed, attempt rollback (though it may not be necessary after failed commit)
