@@ -141,7 +141,7 @@ class TilesetArtifactKeyProvider {
         const auto attr_csv_key = key_for(tileset_name, TilesetArtifact{attributes_csv});
         result.push_back(attr_csv_key);
 
-        // TODO: don't hardcode this num_pals value
+        // TODO: don't hardcode 16 here
         // TODO: warn user if we found overrides like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (int i = 0; i < num_pals; i++) {

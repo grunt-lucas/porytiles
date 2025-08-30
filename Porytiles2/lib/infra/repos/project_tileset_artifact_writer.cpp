@@ -1,7 +1,10 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 
 #include <filesystem>
+#include <fstream>
 #include <ranges>
+
+#include "fmt/format.h"
 
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -34,8 +37,44 @@ Result<void> save_tiles_png(
     return {};
 }
 
-Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries)
+Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
+    std::ofstream out{path};
+    for (const auto &entry : entries) {
+        // TODO: does this code work as expected on a big-endian machine?
+        const auto tile_value = static_cast<uint16_t>(
+            (entry.tile_index() & 0x3FF) | ((entry.hflip() & 1) << 10) | ((entry.vflip() & 1) << 11) |
+            ((entry.pal_index() & 0xF) << 12));
+        out << static_cast<std::uint8_t>(tile_value);
+        out << static_cast<std::uint8_t>(tile_value >> 8);
+    }
+    out.flush();
+    return {};
+}
+
+Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+{
+    // TODO: actually implement attribute handling
+    // TODO: firered attributes will need to use std::uint32_t
+    std::ofstream out{path};
+    std::size_t num_entries = entries.size();
+    // TODO: this assumes dual layer
+    const std::size_t num_attributes = num_entries / 8;
+    for (int i = 0; i < num_attributes; i++) {
+        constexpr std::uint16_t attribute_value = 0;
+        out << static_cast<char>(attribute_value);
+        out << static_cast<char>(attribute_value >> 8);
+    }
+    out.flush();
+    return {};
+}
+
+Result<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+{
+    const auto save_result = saver.save(pal, path);
+    if (!save_result.has_value()) {
+        return std::unexpected{fmt::format("failed to save: {}", path.c_str())};
+    }
     return {};
 }
 
@@ -191,17 +230,20 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
     case TilesetArtifact::Type::top_png:
         return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
     case TilesetArtifact::Type::attributes_csv:
-        panic("TODO: implement attributes_csv export");
+        // TODO: implement
+        return {};
     case TilesetArtifact::Type::porytiles_anim_frame:
-        panic("TODO: implement porytiles_anim_frame export");
+        // TODO: implement
+        return {};
     case TilesetArtifact::Type::pal_override_n:
-        panic("TODO: implement pal_override_n export");
+        // TODO: implement
+        return {};
 
     // Porymap artifacts
     case TilesetArtifact::Type::metatiles_bin:
-        return save_metatiles_bin(src.porymap_component().metatiles_bin());
+        return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        panic("TODO: implement metatile_attributes_bin export");
+        return save_metatile_attributes_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::tiles_png:
         return save_tiles_png(
             *png_indexed_saver_,
@@ -209,9 +251,15 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
             transaction_dest_path,
             config_->tiles_pal_mode(src.name()));
     case TilesetArtifact::Type::porymap_anim_frame:
-        panic("TODO: implement porymap_anim_frame export");
-    case TilesetArtifact::Type::pal_n:
-        panic("TODO: implement pal_n export");
+        // TODO: implement
+        return {};
+    case TilesetArtifact::Type::pal_n: {
+        if (!artifact.index().has_value()) {
+            panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
+        }
+        const auto index = artifact.index().value();
+        return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
+    }
 
     // Default case
     default:

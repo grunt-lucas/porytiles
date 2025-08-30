@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
+#include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 
@@ -22,9 +23,10 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<InfraConfig *> config,
         std::filesystem::path project_root,
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
-        gsl::not_null<PngIndexedImageSaver *> png_indexed_saver)
+        gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
+        gsl::not_null<FilePalSaver *> pal_saver)
         : config_{config}, project_root_{std::move(project_root)}, png_rgba_saver_{png_rgba_saver},
-          png_indexed_saver_{png_indexed_saver}
+          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}
     {
     }
 
@@ -43,6 +45,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     std::filesystem::path transaction_root_;
     PngRgbaImageSaver *png_rgba_saver_;
     PngIndexedImageSaver *png_indexed_saver_;
+    FilePalSaver *pal_saver_;
 };
 
 } // namespace porytiles2

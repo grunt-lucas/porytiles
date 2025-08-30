@@ -9,6 +9,9 @@ runs:
         brew update
         brew install zlib
         brew install libpng
+        # Uninstall cmake first to avoid conflicts with pinned/local tap installations
+        # GitHub Actions runners may have cmake pre-installed from a different tap
+        brew uninstall cmake || true
         brew install cmake
         brew install doxygen
         brew install graphviz

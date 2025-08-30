@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include "porytiles2/domain/model/image.hpp"
@@ -23,15 +24,9 @@ class PorymapTilesetComponent {
      */
     void push_back_tilemap_entry(TilemapEntry entry);
 
-    /**
-     * @brief Add a palette to the end of the palettes vector.
-     *
-     * @details
-     * Moves the provided RgbaPal into the palettes vector.
-     *
-     * @param pal The RgbaPal to move into the vector.
-     */
-    void push_back_pal(RgbaPal pal);
+    void set_pal(RgbaPal pal, int pal_index);
+
+    [[nodiscard]] const RgbaPal &pal_at(int pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
@@ -50,7 +45,7 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::vector<RgbaPal> &pals() const
+    [[nodiscard]] const std::array<RgbaPal, 16> &pals() const
     {
         return pals_;
     }
@@ -58,7 +53,8 @@ class PorymapTilesetComponent {
   private:
     std::vector<TilemapEntry> metatiles_bin_;
     Image<IndexPixel> tiles_png_;
-    std::vector<RgbaPal> pals_;
+    // TODO: don't hardcode 16 here
+    std::array<RgbaPal, 16> pals_;
 };
 
 } // namespace porytiles2

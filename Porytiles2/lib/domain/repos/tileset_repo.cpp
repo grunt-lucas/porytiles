@@ -3,6 +3,8 @@
 #include <set>
 #include <string>
 
+#include "fmt/format.h"
+
 namespace porytiles2 {
 
 /*
@@ -75,6 +77,16 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
         return result;
     }
 
+    // TODO: don't hardcode 16 here
+    constexpr int num_pals = 16;
+    for (int i = 0; i < num_pals; i++) {
+        const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
+        if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result) {
+            std::ignore = writer_->rollback();
+            return result;
+        }
+    }
+
     // Commit all writes atomically
     if (auto result = writer_->commit(); !result) {
         // Commit failed, attempt rollback (though it may not be necessary after failed commit)
@@ -84,11 +96,12 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
 
     // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
     // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem. Perhaps
-    // this can be part of the tileset commit logic? E.g. if we implement the ProjectArtifactWriter using simple
-    // filesystem directory move operations, this will be handled automatically since the new directory won't contain
-    // any of the stale artifacts. We'll just need to make sure we don't clobber anything that is present in one of the
-    // tileset components but isn't an explicit result of a de/compilation operation, e.g. pal overrides, pal hints, PLA
-    // files, etc.
+    // this can be part of the tileset commit logic? We'll need some functionality in the writer implementation like
+    // "clear_stale_contents" or something. This applies both ways, e.g. if we delete the anim on the porymap side,
+    // then run an import, it should clear the anim from the porytiles side. I.e. if there is a Porymap anim on disk
+    // that does not exist in the Porytiles component, clear it. If there is a Porytiles anim on disk that does not
+    // exist in the Porymap component, clear it. Perhaps instead of auto-clearing, we can emit a diagnostic warning the
+    // user that stale assets exist on disk?
 
     // Cache checksums after successful save
     const auto current_checksums = checksum_provider_->compute_artifact_checksums(tileset.name());
@@ -104,7 +117,7 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return std::unexpected{"does not exist"};
+        return std::unexpected{fmt::format("tileset {} does not exist", name)};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -116,36 +129,51 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     const auto bottom_png_artifact = TilesetArtifact{bottom_png};
     const auto bottom_png_key = key_provider_->key_for(tileset->name(), bottom_png_artifact);
     if (key_provider_->exists(bottom_png_key)) {
-        reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
+        const auto result = reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read bottom.png: {}", result.error())};
+        }
     }
 
     const auto middle_png_artifact = TilesetArtifact{middle_png};
     const auto middle_png_key = key_provider_->key_for(tileset->name(), middle_png_artifact);
     if (key_provider_->exists(middle_png_key)) {
-        reader_->read(*tileset, middle_png_key, middle_png_artifact);
+        const auto result = reader_->read(*tileset, middle_png_key, middle_png_artifact);
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read middle.png: {}", result.error())};
+        }
     }
 
     const auto top_png_artifact = TilesetArtifact{top_png};
     const auto top_png_key = key_provider_->key_for(tileset->name(), top_png_artifact);
     if (key_provider_->exists(top_png_key)) {
-        reader_->read(*tileset, top_png_key, top_png_artifact);
+        const auto result = reader_->read(*tileset, top_png_key, top_png_artifact);
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read top.png: {}", result.error())};
+        }
     }
 
     const auto attr_csv_artifact = TilesetArtifact{attributes_csv};
     const auto attr_csv_key = key_provider_->key_for(tileset->name(), attr_csv_artifact);
     if (key_provider_->exists(attr_csv_key)) {
-        reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
+        const auto result = reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read attributes.csv: {}", result.error())};
+        }
     }
     else {
         // TODO: emit warning to user about missing attr csv
     }
 
-    // TODO: don't hardcode this num_pal_overrides value
+    // TODO: don't hardcode 16 here
     constexpr int num_pal_overrides = 16;
     for (int i = 0; i < num_pal_overrides; i++) {
         const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
         if (key_provider_->exists(override_key)) {
-            reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
+            const auto result = reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
+            if (!result.has_value()) {
+                return std::unexpected{fmt::format("failed to read {}: {}", override_key.key(), result.error())};
+            }
         }
     }
 
@@ -158,7 +186,11 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
             fail_at_exit = true;
             continue;
         }
-        reader_->read(*tileset, frame_00_key, TilesetArtifact{porytiles_anim_frame, anim, 0});
+        const auto frame_0_result =
+            reader_->read(*tileset, frame_00_key, TilesetArtifact{porytiles_anim_frame, anim, 0});
+        if (!frame_0_result.has_value()) {
+            return std::unexpected{fmt::format("failed to read {}: {}", frame_00_key.key(), frame_0_result.error())};
+        }
 
         // Read the rest of the (optional) frames
         std::set<int> frames = key_provider_->discover_porytiles_anim_frames(tileset->name(), anim);
@@ -170,7 +202,11 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
             }
             auto frame_n_key =
                 key_provider_->key_for(tileset->name(), TilesetArtifact{porytiles_anim_frame, anim, frame});
-            reader_->read(*tileset, frame_n_key, TilesetArtifact{porytiles_anim_frame, anim, frame});
+            const auto frame_n_result =
+                reader_->read(*tileset, frame_n_key, TilesetArtifact{porytiles_anim_frame, anim, frame});
+            if (!frame_n_result.has_value()) {
+                return std::unexpected{fmt::format("failed to read {}: {}", frame_n_key.key(), frame_n_result.error())};
+            }
             expected_frame++;
         }
     }
@@ -182,30 +218,44 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
     if (!key_provider_->exists(metatiles_key)) {
         return std::unexpected{"missing required porymap artifact metatiles.bin"};
     }
-    reader_->read(*tileset, metatiles_key, metatiles_artifact);
+    const auto metatiles_result = reader_->read(*tileset, metatiles_key, metatiles_artifact);
+    if (!metatiles_result.has_value()) {
+        return std::unexpected{fmt::format("failed to read metatiles.bin: {}", metatiles_result.error())};
+    }
 
     const auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
     const auto attr_key = key_provider_->key_for(tileset->name(), attr_artifact);
     if (!key_provider_->exists(attr_key)) {
         return std::unexpected{"missing required porymap artifact metatile_attributes.bin"};
     }
-    reader_->read(*tileset, attr_key, attr_artifact);
+    const auto attr_result = reader_->read(*tileset, attr_key, attr_artifact);
+    if (!attr_result.has_value()) {
+        return std::unexpected{fmt::format("failed to read metatile_attributes.bin: {}", attr_result.error())};
+    }
 
     const auto tiles_png_artifact = TilesetArtifact{tiles_png};
     const auto tiles_png_key = key_provider_->key_for(tileset->name(), tiles_png_artifact);
     if (!key_provider_->exists(tiles_png_key)) {
         return std::unexpected{"missing required porymap artifact tiles.png"};
     }
-    reader_->read(*tileset, attr_key, tiles_png_artifact);
+    const auto tiles_png_result = reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
+    if (!tiles_png_result.has_value()) {
+        return std::unexpected{fmt::format("failed to read tiles.png: {}", tiles_png_result.error())};
+    }
 
-    // TODO: don't hardcode this num_pals value
+    // TODO: don't hardcode 16 here
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
         if (!key_provider_->exists(pal_key)) {
-            return std::unexpected{fmt::format("missing required artifact {:02}.pal", i)};
+            // TODO: emit validation error: missing required artifact {:02}.pal
+            fail_at_exit = true;
+            continue;
         }
-        reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
+        const auto pal_result = reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
+        if (!pal_result.has_value()) {
+            return std::unexpected{fmt::format("failed to read {}: {}", pal_key.key(), pal_result.error())};
+        }
     }
 
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
@@ -217,7 +267,10 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
             fail_at_exit = true;
             continue;
         }
-        reader_->read(*tileset, frame_00_key, TilesetArtifact{porymap_anim_frame, anim, 0});
+        const auto frame_0_result = reader_->read(*tileset, frame_00_key, TilesetArtifact{porymap_anim_frame, anim, 0});
+        if (!frame_0_result.has_value()) {
+            return std::unexpected{fmt::format("failed to read {}: {}", frame_00_key.key(), frame_0_result.error())};
+        }
 
         // Read the rest of the (optional) frames
         std::set<int> frames = key_provider_->discover_porymap_anim_frames(tileset->name(), anim);
@@ -229,7 +282,11 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
             }
             auto frame_n_key =
                 key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_frame, anim, frame});
-            reader_->read(*tileset, frame_n_key, TilesetArtifact{porymap_anim_frame, anim, frame});
+            const auto frame_n_result =
+                reader_->read(*tileset, frame_n_key, TilesetArtifact{porymap_anim_frame, anim, frame});
+            if (!frame_n_result.has_value()) {
+                return std::unexpected{fmt::format("failed to read {}: {}", frame_n_key.key(), frame_n_result.error())};
+            }
             expected_frame++;
         }
     }

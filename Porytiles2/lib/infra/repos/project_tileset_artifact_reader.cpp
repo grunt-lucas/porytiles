@@ -6,6 +6,8 @@
 #include <iterator>
 #include <ostream>
 
+#include "fmt/format.h"
+
 #include "porytiles2/domain/model/tilemap_entry.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -49,7 +51,7 @@ Result<void> import_layer_png(
 
 Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatiles_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatiles_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
@@ -91,7 +93,7 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 
 Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_emerald != 0) {
@@ -114,7 +116,7 @@ Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey
 
 Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
-    std::ifstream metatile_attr_bin(src_key.key(), std::ios::binary);
+    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_firered != 0) {
@@ -135,6 +137,32 @@ Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey
         // attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
         // TODO: init an attr here and insert into 'dest'
     }
+
+    return {};
+}
+
+Result<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
+{
+    auto image_result = loader.load_from_file(src_key.key());
+    if (!image_result.has_value()) {
+        return std::unexpected{fmt::format("failed to load tiles.png: {}", image_result.error())};
+    }
+    dest.porymap_component().tiles_png(*image_result.value());
+    return {};
+}
+
+Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
+{
+    // TODO: don't hardcode 16 here
+    if (index < 0 || index >= 16) {
+        panic(fmt::format("invalid pal index {}: out of range", index));
+    }
+
+    const auto pal_result = loader.load(src_key.key());
+    if (!pal_result.has_value()) {
+        return std::unexpected{fmt::format("{}: failed to load: {}", src_key.key(), pal_result.error())};
+    }
+    dest.porymap_component().set_pal(pal_result.value(), index);
 
     return {};
 }
@@ -177,11 +205,14 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: branch here based on target base game?
         return import_emerald_metatile_attributes(dest, src_key);
     case TilesetArtifact::Type::tiles_png:
-        panic("TODO: implement");
+        return import_tiles_png(dest, src_key, *png_indexed_loader_);
     case TilesetArtifact::Type::porymap_anim_frame:
         panic("TODO: implement");
     case TilesetArtifact::Type::pal_n:
-        panic("TODO: implement");
+        if (!artifact.index().has_value()) {
+            panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
+        }
+        return import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
 
     // Default case
     default:

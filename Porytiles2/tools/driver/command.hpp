@@ -6,8 +6,14 @@
 #include "CLI/CLI.hpp"
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/infra/config/default_provider.hpp"
+#include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/services/jasc_pal_loader.hpp"
+#include "porytiles2/infra/services/jasc_pal_saver.hpp"
+#include "porytiles2/infra/services/noop_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/templates/panic.hpp"
@@ -224,20 +230,52 @@ class ReduceBitDepthCommand final : public Command {
 
 class DebugCommand final : public Command {
   public:
-    explicit DebugCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {}
+    explicit DebugCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+        CLI::App &cmd = get_app();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to load")->required();
+    }
 
     void Run() override
     {
         using namespace porytiles2;
 
+        // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
-        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader};
+        PngRgbaImageSaver png_rgba_saver{};
+        PngIndexedImageSaver png_indexed_saver{};
+        JascPalLoader jasc_loader{};
+        JascPalSaver jasc_saver{};
+        NoopArtifactChecksumProvider checksum_provider{};
+
+        // Setup layered configuration
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{std::move(providers)};
+
+        // Setup the tileset repository
+        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
+        ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
         ProjectTilesetKeyProvider key_provider{"."};
+        TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+
+        // Command logic
+        const auto load_result = repo.load(tileset_name_);
+        if (!load_result.has_value()) {
+            std::cout << "load error: " << load_result.error() << std::endl;
+        }
+        else {
+            const auto save_result = repo.save(*load_result.value());
+            if (!save_result.has_value()) {
+                std::cout << "save error: " << save_result.error() << std::endl;
+            }
+        }
     }
 
   private:
     static constexpr auto kCommandName = "debug";
     static constexpr auto kCommandDesc = "Stub command for development testing of Porytiles2 components.";
     static constexpr auto kCommandGroup = "COMMANDS";
+    std::string tileset_name_;
 };
