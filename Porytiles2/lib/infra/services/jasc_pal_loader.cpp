@@ -89,6 +89,7 @@ Result<RgbaPal> JascPalLoader::load(const std::filesystem::path &path) const
 
     // Next line of file *must* be the declared size of the palette
     std::getline(stream, line_buf);
+    trim_line_ending(line_buf);
     const auto declared_size_result = parse_int<int>(line_buf);
     if (!declared_size_result.has_value()) {
         return std::unexpected{fmt::format(
