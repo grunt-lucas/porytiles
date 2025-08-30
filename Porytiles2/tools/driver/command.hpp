@@ -261,7 +261,7 @@ class DebugCommand final : public Command {
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
         // Command logic
-        const auto load_result = repo.load("porytiles2_test");
+        const auto load_result = repo.load(tileset_name_);
         if (!load_result.has_value()) {
             std::cout << "load error: " << load_result.error() << std::endl;
         }
