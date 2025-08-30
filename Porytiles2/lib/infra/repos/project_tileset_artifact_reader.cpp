@@ -6,6 +6,8 @@
 #include <iterator>
 #include <ostream>
 
+#include "fmt/format.h"
+
 #include "porytiles2/domain/model/tilemap_entry.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -149,9 +151,19 @@ Result<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const P
     return {};
 }
 
-Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index)
+Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
 {
-    // TODO: implement palette import
+    // TODO: don't hardcode 16 here
+    if (index < 0 || index >= 16) {
+        panic(fmt::format("invalid pal index {}: out of range", index));
+    }
+
+    const auto pal_result = loader.load(src_key.key());
+    if (!pal_result.has_value()) {
+        return std::unexpected{fmt::format("{}: failed to load: {}", src_key.key(), pal_result.error())};
+    }
+    dest.porymap_component().set_pal(pal_result.value(), index);
+
     return {};
 }
 
@@ -200,7 +212,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         if (!artifact.index().has_value()) {
             panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
         }
-        return import_palette(dest, src_key, artifact.index().value());
+        return import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
 
     // Default case
     default:

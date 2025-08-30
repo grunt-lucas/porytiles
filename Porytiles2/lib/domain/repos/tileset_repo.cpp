@@ -143,7 +143,7 @@ Result<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) cons
         // TODO: emit warning to user about missing attr csv
     }
 
-    // TODO: don't hardcode this num_pal_overrides value
+    // TODO: don't hardcode 16 here
     constexpr int num_pal_overrides = 16;
     for (int i = 0; i < num_pal_overrides; i++) {
         const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});

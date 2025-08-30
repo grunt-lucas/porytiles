@@ -63,7 +63,7 @@ Result<Rgba32> parse_jasc_line(std::string_view line)
 
 namespace porytiles2 {
 
-Result<RgbaPal> JascPalLoader::load(std::filesystem::path &path) const
+Result<RgbaPal> JascPalLoader::load(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
         return std::unexpected{fmt::format("does not exist: {}", path.string())};

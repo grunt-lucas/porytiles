@@ -18,7 +18,7 @@ class FilePalLoader {
   public:
     virtual ~FilePalLoader() = default;
 
-    [[nodiscard]] virtual Result<RgbaPal> load(std::filesystem::path &path) const = 0;
+    [[nodiscard]] virtual Result<RgbaPal> load(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

@@ -23,6 +23,8 @@ class PorymapTilesetComponent {
      */
     void push_back_tilemap_entry(TilemapEntry entry);
 
+    void set_pal(RgbaPal pal, int index);
+
     [[nodiscard]] bool is_empty() const;
 
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
