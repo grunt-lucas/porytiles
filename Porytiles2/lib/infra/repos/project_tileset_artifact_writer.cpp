@@ -4,6 +4,8 @@
 #include <fstream>
 #include <ranges>
 
+#include "fmt/format.h"
+
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/utilities/utilities.hpp"
@@ -67,9 +69,12 @@ Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entri
     return {};
 }
 
-Result<void> save_palette(const std::filesystem::path &path)
+Result<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
-    // TODO: implement
+    const auto save_result = saver.save(pal, path);
+    if (!save_result.has_value()) {
+        return std::unexpected{fmt::format("failed to save: {}", path.c_str())};
+    }
     return {};
 }
 
@@ -248,8 +253,13 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
     case TilesetArtifact::Type::porymap_anim_frame:
         // TODO: implement
         return {};
-    case TilesetArtifact::Type::pal_n:
-        return save_palette(transaction_dest_path);
+    case TilesetArtifact::Type::pal_n: {
+        if (!artifact.index().has_value()) {
+            panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
+        }
+        const auto index = artifact.index().value();
+        return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
+    }
 
     // Default case
     default:

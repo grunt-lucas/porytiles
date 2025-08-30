@@ -23,7 +23,9 @@ class PorymapTilesetComponent {
      */
     void push_back_tilemap_entry(TilemapEntry entry);
 
-    void set_pal(RgbaPal pal, int index);
+    void set_pal(RgbaPal pal, int pal_index);
+
+    [[nodiscard]] const RgbaPal &pal_at(int pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 

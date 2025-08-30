@@ -12,16 +12,26 @@ namespace porytiles2 {
 
 void PorymapTilesetComponent::push_back_tilemap_entry(TilemapEntry entry)
 {
+    // std::move here even though TilemapEntry is trivially-copyable, in case it changes later
     metatiles_bin_.push_back(std::move(entry));
 }
 
-void PorymapTilesetComponent::set_pal(RgbaPal pal, int index)
+void PorymapTilesetComponent::set_pal(RgbaPal pal, int pal_index)
 {
     // TODO: don't hardcode 16 here
-    if (index < 0 || index >= 16) {
-        panic(fmt::format("invalid pal index {}: out of range", index));
+    if (pal_index < 0 || pal_index >= 16) {
+        panic(fmt::format("invalid pal index {}: out of range", pal_index));
     }
-    pals_[index] = std::move(pal);
+    pals_[pal_index] = std::move(pal);
+}
+
+const RgbaPal &PorymapTilesetComponent::pal_at(int pal_index) const
+{
+    // TODO: don't hardcode 16 here
+    if (pal_index < 0 || pal_index >= 16) {
+        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+    }
+    return pals_[pal_index];
 }
 
 bool PorymapTilesetComponent::is_empty() const
