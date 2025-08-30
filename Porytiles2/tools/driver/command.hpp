@@ -230,7 +230,11 @@ class ReduceBitDepthCommand final : public Command {
 
 class DebugCommand final : public Command {
   public:
-    explicit DebugCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup} {}
+    explicit DebugCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+        CLI::App &cmd = get_app();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to load")->required();
+    }
 
     void Run() override
     {
@@ -273,4 +277,5 @@ class DebugCommand final : public Command {
     static constexpr auto kCommandName = "debug";
     static constexpr auto kCommandDesc = "Stub command for development testing of Porytiles2 components.";
     static constexpr auto kCommandGroup = "COMMANDS";
+    std::string tileset_name_;
 };
