@@ -26,76 +26,76 @@ template <typename T, typename E = std::string>
 using Result = std::expected<T, E>;
 
 /**
- * @brief A result type that maintains a traceable chain of errors for debugging and error reporting.
+ * @brief A result type that maintains a chainable sequence of errors for debugging and error reporting.
  *
  * @details
- * TraceableResult extends the concept of std::expected by maintaining a trace of error propagation through
- * multiple layers of the application. Unlike a simple Result that only stores the immediate error,
- * TraceableResult maintains a full chain of errors from the originating cause up through each layer that
- * adds context. This is particularly useful for debugging complex failures where understanding the root
- * cause requires knowing the full context of how an error propagated through the system.
+ * ChainableResult extends the concept of std::expected by maintaining a chain of error propagation through multiple
+ * layers of the application. Unlike a simple Result that only stores the immediate error, ChainableResult maintains a
+ * full chain of errors from the originating cause up through each layer that adds context. This is particularly useful
+ * for debugging complex failures where understanding the root cause requires knowing the full context of how an error
+ * propagated through the system.
  *
- * The class enforces that error type E must derive from the Error interface, ensuring all errors in the
- * trace can be properly cloned and formatted. The error trace is stored as a vector of unique_ptr<Error>
- * objects, allowing polymorphic error types while maintaining proper ownership semantics.
+ * The class enforces that error type E must derive from the Error interface, ensuring all errors in the chain can be
+ * properly cloned and formatted. The error chain is stored as a vector of unique_ptr<Error> objects, allowing
+ * polymorphic error types while maintaining proper ownership semantics.
  *
- * TraceableResult implements move-only semantics to ensure efficient transfer of the error trace without
- * unnecessary copying of potentially large error chains.
+ * ChainableResult implements move-only semantics to ensure efficient transfer of the error chain without unnecessary
+ * copying of potentially large error chains.
  *
  * @tparam T The type of the expected success value
  * @tparam E The error type, must be derived from Error interface
  */
 template <typename T, typename E>
-class TraceableResult {
+class ChainableResult {
   public:
     /**
-     * @brief Constructs a TraceableResult from a success value.
+     * @brief Constructs a ChainableResult from a success value.
      *
      * @details
-     * This constructor allows implicit conversion from a success value of type T to a TraceableResult. The result is
-     * stored as a successful value with no error trace. This provides ergonomic construction for success cases, similar
+     * This constructor allows implicit conversion from a success value of type T to a ChainableResult. The result is
+     * stored as a successful value with no error chain. This provides ergonomic construction for success cases, similar
      * to std::expected's implicit construction from T.
      *
      * @param value The success value to store
      */
-    TraceableResult(T value) : result_{std::move(value)} {}
+    ChainableResult(T value) : result_{std::move(value)} {}
 
     /**
-     * @brief Constructs a TraceableResult from an error value.
+     * @brief Constructs a ChainableResult from an error value.
      *
      * @details
-     * This constructor allows implicit conversion from an error value of type E to a TraceableResult. The error is
-     * stored as the initial error in the trace. This provides ergonomic construction for error cases at the bottom
-     * level of an error trace, similar to std::expected's construction from std::unexpected.
+     * This constructor allows implicit conversion from an error value of type E to a ChainableResult. The error is
+     * stored as the initial error in the chain. This provides ergonomic construction for error cases at the bottom
+     * level of an error chain, similar to std::expected's construction from std::unexpected.
      *
      * @param error The error value to store
      */
-    TraceableResult(const E &error) : result_{std::unexpected{error}}
+    ChainableResult(const E &error) : result_{std::unexpected{error}}
     {
-        static_assert(std::is_base_of_v<Error, E>, "TraceableResult error type E must be derived from Error");
-        error_trace_.push_back(std::make_unique<E>(error));
+        static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
+        error_chain_.push_back(std::make_unique<E>(error));
     }
 
     /**
-     * @brief Constructs a TraceableResult by chaining a new error with an existing error trace.
+     * @brief Constructs a ChainableResult by chaining a new error with an existing error chain.
      *
      * @details
-     * This constructor creates a new error result that includes both a new error message and the complete error trace
+     * This constructor creates a new error result that includes both a new error message and the complete error chain
      * from a cause result. This is the primary mechanism for building error context as errors propagate up through
-     * application layers. The new error is added to the beginning of the trace, followed by all errors from the cause
-     * result's trace.
+     * application layers. The new error is added to the beginning of the chain, followed by all errors from the cause
+     * result's chain.
      *
      * @tparam CauseT The success type of the cause result (unused but required for template matching)
      * @tparam CauseE The error type of the cause result, must be derived from Error
      * @param error The new error to add at this level
-     * @param cause_result The TraceableResult containing the error trace to chain
+     * @param cause_result The ChainableResult containing the error chain to chain
      */
     template <typename CauseT, typename CauseE>
-    explicit TraceableResult(const E &error, const TraceableResult<CauseT, CauseE> &cause_result)
+    explicit ChainableResult(const E &error, const ChainableResult<CauseT, CauseE> &cause_result)
         : result_{std::unexpected{error}}
     {
-        static_assert(std::is_base_of_v<Error, E>, "TraceableResult error type E must be derived from Error");
-        error_trace_.push_back(std::make_unique<E>(result_.error()));
+        static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
+        error_chain_.push_back(std::make_unique<E>(result_.error()));
         add_cause(cause_result);
     }
 
@@ -104,49 +104,49 @@ class TraceableResult {
      *
      * @details
      * Provides a more readable way to chain errors compared to direct constructor usage. This method creates a new
-     * TraceableResult that combines a new error with an existing error trace from a cause result.
+     * ChainableResult that combines a new error with an existing error chain from a cause result.
      *
      * @tparam CauseT The success type of the cause result
      * @tparam CauseE The error type of the cause result
      * @param error The new error to add at this level
-     * @param cause The TraceableResult containing the error trace to chain
-     * @return A new TraceableResult containing the combined error trace
+     * @param cause The ChainableResult containing the error chain to chain
+     * @return A new ChainableResult containing the combined error chain
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static TraceableResult chain(const E &error, const TraceableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static ChainableResult chain(const E &error, const ChainableResult<CauseT, CauseE> &cause)
     {
-        return TraceableResult{error, cause};
+        return ChainableResult{error, cause};
     }
 
     /*
      * Move-only semantics
      */
-    TraceableResult(TraceableResult &&) = default;
-    TraceableResult &operator=(TraceableResult &&) = default;
-    TraceableResult(const TraceableResult &) = delete;
-    TraceableResult &operator=(const TraceableResult &) = delete;
+    ChainableResult(ChainableResult &&) = default;
+    ChainableResult &operator=(ChainableResult &&) = default;
+    ChainableResult(const ChainableResult &) = delete;
+    ChainableResult &operator=(const ChainableResult &) = delete;
 
     /**
-     * @brief Adds all errors from another TraceableResult's trace to this result's trace.
+     * @brief Adds all errors from another ChainableResult's chain to this result's chain.
      *
      * @details
-     * This method appends the complete error trace from a cause result to the current error trace. Each error in the
-     * cause's trace is cloned to maintain proper ownership semantics. The method will panic if the cause_result
+     * This method appends the complete error chain from a cause result to the current error chain. Each error in the
+     * cause's chain is cloned to maintain proper ownership semantics. The method will panic if the cause_result
      * contains a success value rather than an error, as this would indicate a programming error.
      *
      * @tparam OtherT The success type of the cause result
      * @tparam OtherE The error type of the cause result
-     * @param cause_result The TraceableResult whose error trace should be appended
+     * @param cause_result The ChainableResult whose error chain should be appended
      */
     template <typename OtherT, typename OtherE>
-    void add_cause(const TraceableResult<OtherT, OtherE> &cause_result)
+    void add_cause(const ChainableResult<OtherT, OtherE> &cause_result)
     {
         if (cause_result.has_value()) {
             panic("cause_result has a value, but should have an error");
         }
-        // Clone errors from cause_result's trace since we can't move from const
-        for (const std::unique_ptr<Error> &err : cause_result.trace()) {
-            error_trace_.push_back(err->clone());
+        // Clone errors from cause_result's chain since we can't move from const
+        for (const std::unique_ptr<Error> &err : cause_result.chain()) {
+            error_chain_.push_back(err->clone());
         }
     }
 
@@ -178,8 +178,8 @@ class TraceableResult {
      * @brief Returns a const reference to the contained success value.
      *
      * @details
-     * This method provides immutable access to the success value. It will throw std::bad_expected_access
-     * if called when the result contains an error rather than a success value.
+     * This method provides immutable access to the success value. It will throw std::bad_expected_access if called when
+     * the result contains an error rather than a success value.
      *
      * @return A const reference to the success value
      */
@@ -192,8 +192,8 @@ class TraceableResult {
      * @brief Returns a const reference to the immediate error.
      *
      * @details
-     * This returns only the immediate error at this level, not the full error trace. To access
-     * the complete error history, use the trace() method instead.
+     * This returns only the immediate error at this level, not the full error chain. To access the complete error
+     * history, use the chain() method instead.
      *
      * @return A const reference to the error value
      */
@@ -203,23 +203,23 @@ class TraceableResult {
     }
 
     /**
-     * @brief Returns the complete error trace.
+     * @brief Returns the complete error chain.
      *
      * @details
-     * The error trace contains all errors in the chain, starting with the most recent error
-     * (added at this level) and proceeding through to the original root cause. Each error
-     * in the trace is owned by this TraceableResult through unique_ptr.
+     * The error chain contains all errors in the chain, starting with the most recent error (added at this level) and
+     * proceeding through to the original root cause. Each error in the chain is owned by this ChainableResult through
+     * unique_ptr.
      *
-     * @return A const reference to the vector of error pointers representing the full error trace
+     * @return A const reference to the vector of error pointers representing the full error chain
      */
-    [[nodiscard]] const std::vector<std::unique_ptr<Error>> &trace() const
+    [[nodiscard]] const std::vector<std::unique_ptr<Error>> &chain() const
     {
-        return error_trace_;
+        return error_chain_;
     }
 
   private:
     std::expected<T, E> result_;
-    std::vector<std::unique_ptr<Error>> error_trace_;
+    std::vector<std::unique_ptr<Error>> error_chain_;
 };
 
 } // namespace porytiles2

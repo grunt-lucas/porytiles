@@ -8,20 +8,20 @@
 namespace porytiles2 {
 
 /**
- * @brief Abstract interface for all error types used in TraceableResult error chains.
+ * @brief Abstract interface for all error types used in ChainableResult error chains.
  *
  * @details
  * The Error interface defines the contract that all error types must implement to participate
- * in TraceableResult error traces. This interface enables polymorphic error handling while
+ * in ChainableResult error chains. This interface enables polymorphic error handling while
  * maintaining type safety and proper ownership semantics through the clone pattern.
  *
  * Error implementations should be immutable value types that capture all relevant context
  * about a failure at a specific point in the application. The details() method allows errors
  * to format their messages based on the output context (TTY vs non-TTY), while the clone()
- * method enables proper copying of errors when building error traces.
+ * method enables proper copying of errors when building error chains.
  *
- * All concrete error types used with TraceableResult must derive from this interface. This
- * requirement is enforced at compile time through static_assert in TraceableResult's constructors.
+ * All concrete error types used with ChainableResult must derive from this interface. This
+ * requirement is enforced at compile time through static_assert in ChainableResult's constructors.
  */
 class Error {
   public:
@@ -45,8 +45,8 @@ class Error {
      * @brief Creates a polymorphic copy of this error.
      *
      * @details
-     * The clone pattern is necessary because TraceableResult stores errors as unique_ptr<Error>,
-     * and errors need to be copied when building error traces from const references. Each concrete
+     * The clone pattern is necessary because ChainableResult stores errors as unique_ptr<Error>,
+     * and errors need to be copied when building error chains from const references. Each concrete
      * error type must implement this method to return a new instance with the same state.
      *
      * @return A unique_ptr to a newly allocated copy of this error

@@ -17,7 +17,7 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-TraceableResult<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
+ChainableResult<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
 PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const
 {
     using enum ImageLoadError::Type;
