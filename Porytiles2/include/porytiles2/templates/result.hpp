@@ -79,7 +79,7 @@ class TraceableResult {
      * @tparam CauseT The success type of the cause result (unused but required for template matching)
      * @tparam CauseE The error type of the cause result, must be derived from Error
      * @param error The new error to add at this level
-     * @param cause_result The TraceableResult containing the error trace to append
+     * @param cause_result The TraceableResult containing the error trace to chain
      */
     template <typename CauseT, typename CauseE>
     explicit TraceableResult(const E &error, const TraceableResult<CauseT, CauseE> &cause_result)
@@ -100,12 +100,12 @@ class TraceableResult {
      *
      * @tparam CauseT The success type of the cause result
      * @tparam CauseE The error type of the cause result
-     * @param error The new error message to add
+     * @param error The new error to add at this level
      * @param cause The TraceableResult containing the error trace to chain
      * @return A new TraceableResult containing the combined error trace
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static TraceableResult chain(E error, const TraceableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static TraceableResult chain(const E &error, const TraceableResult<CauseT, CauseE> &cause)
     {
         return TraceableResult{error, cause};
     }
@@ -146,7 +146,7 @@ class TraceableResult {
     /**
      * @brief Checks whether the result contains a success value.
      *
-     * @return true if the result contains a success value, false if it contains an error
+     * @return True if the result contains a success value, false if it contains an error
      */
     [[nodiscard]] bool has_value() const
     {
