@@ -49,31 +49,12 @@ template <typename T, typename E>
 class TraceableResult {
   public:
     /**
-     * @brief Constructs a TraceableResult from a std::expected value.
-     *
-     * @details
-     * This constructor handles both success and error cases. For success values, the result is stored
-     * and no error trace is created. For error values, the error is added as the first entry in the
-     * error trace. To create an originating error, callers must use std::unexpected to wrap the error
-     * value, which disambiguates between success and error construction.
-     *
-     * @param result The std::expected value containing either a success value of type T or an error of type E
-     */
-    TraceableResult(std::expected<T, E> result) : result_{std::move(result)}
-    {
-        static_assert(std::is_base_of_v<Error, E>, "TraceableResult error type E must be derived from Error");
-        if (!result_.has_value()) {
-            error_trace_.push_back(std::make_unique<E>(result_.error()));
-        }
-    }
-
-    /**
      * @brief Constructs a TraceableResult from a success value.
      *
      * @details
-     * This constructor allows implicit conversion from a success value of type T to a TraceableResult.
-     * The result is stored as a successful value with no error trace. This provides ergonomic
-     * construction for success cases, similar to std::expected's implicit construction from T.
+     * This constructor allows implicit conversion from a success value of type T to a TraceableResult. The result is
+     * stored as a successful value with no error trace. This provides ergonomic construction for success cases, similar
+     * to std::expected's implicit construction from T.
      *
      * @param value The success value to store
      */
@@ -83,10 +64,9 @@ class TraceableResult {
      * @brief Constructs a TraceableResult from an error value.
      *
      * @details
-     * This constructor allows implicit conversion from an error value of type E to a TraceableResult.
-     * The error is stored as the initial error in the trace. This provides ergonomic construction
-     * for error cases at the bottom level of an error trace, similar to std::expected's construction
-     * from std::unexpected.
+     * This constructor allows implicit conversion from an error value of type E to a TraceableResult. The error is
+     * stored as the initial error in the trace. This provides ergonomic construction for error cases at the bottom
+     * level of an error trace, similar to std::expected's construction from std::unexpected.
      *
      * @param error The error value to store
      */
@@ -100,10 +80,10 @@ class TraceableResult {
      * @brief Constructs a TraceableResult by chaining a new error with an existing error trace.
      *
      * @details
-     * This constructor creates a new error result that includes both a new error message and the
-     * complete error trace from a cause result. This is the primary mechanism for building error
-     * context as errors propagate up through application layers. The new error is added to the
-     * beginning of the trace, followed by all errors from the cause result's trace.
+     * This constructor creates a new error result that includes both a new error message and the complete error trace
+     * from a cause result. This is the primary mechanism for building error context as errors propagate up through
+     * application layers. The new error is added to the beginning of the trace, followed by all errors from the cause
+     * result's trace.
      *
      * @tparam CauseT The success type of the cause result (unused but required for template matching)
      * @tparam CauseE The error type of the cause result, must be derived from Error
@@ -123,9 +103,8 @@ class TraceableResult {
      * @brief Static factory method for chaining errors.
      *
      * @details
-     * Provides a more readable way to chain errors compared to direct constructor usage.
-     * This method creates a new TraceableResult that combines a new error with an existing
-     * error trace from a cause result.
+     * Provides a more readable way to chain errors compared to direct constructor usage. This method creates a new
+     * TraceableResult that combines a new error with an existing error trace from a cause result.
      *
      * @tparam CauseT The success type of the cause result
      * @tparam CauseE The error type of the cause result
@@ -151,10 +130,9 @@ class TraceableResult {
      * @brief Adds all errors from another TraceableResult's trace to this result's trace.
      *
      * @details
-     * This method appends the complete error trace from a cause result to the current error trace.
-     * Each error in the cause's trace is cloned to maintain proper ownership semantics. The method
-     * will panic if the cause_result contains a success value rather than an error, as this would
-     * indicate a programming error.
+     * This method appends the complete error trace from a cause result to the current error trace. Each error in the
+     * cause's trace is cloned to maintain proper ownership semantics. The method will panic if the cause_result
+     * contains a success value rather than an error, as this would indicate a programming error.
      *
      * @tparam OtherT The success type of the cause result
      * @tparam OtherE The error type of the cause result
@@ -186,8 +164,8 @@ class TraceableResult {
      * @brief Returns a reference to the contained success value.
      *
      * @details
-     * This method provides mutable access to the success value. It will throw std::bad_expected_access
-     * if called when the result contains an error rather than a success value.
+     * This method provides mutable access to the success value. It will throw std::bad_expected_access if called when
+     * the result contains an error rather than a success value.
      *
      * @return A mutable reference to the success value
      */
