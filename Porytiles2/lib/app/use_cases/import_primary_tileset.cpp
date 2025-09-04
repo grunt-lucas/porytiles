@@ -52,8 +52,12 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     // persisting.
 
     // 7. Perform an incremental compilation.
+    // TODO: add this
 
     // 8. Persist the `Tileset` (which also caches the checksums).
+    if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
+        return std::unexpected{save_result.error()};
+    }
 
     return {};
 }
