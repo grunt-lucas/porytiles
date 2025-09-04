@@ -59,12 +59,41 @@ class TraceableResult {
      *
      * @param result The std::expected value containing either a success value of type T or an error of type E
      */
-    explicit TraceableResult(std::expected<T, E> result) : result_{std::move(result)}
+    TraceableResult(std::expected<T, E> result) : result_{std::move(result)}
     {
         static_assert(std::is_base_of_v<Error, E>, "TraceableResult error type E must be derived from Error");
         if (!result_.has_value()) {
             error_trace_.push_back(std::make_unique<E>(result_.error()));
         }
+    }
+
+    /**
+     * @brief Constructs a TraceableResult from a success value.
+     *
+     * @details
+     * This constructor allows implicit conversion from a success value of type T to a TraceableResult.
+     * The result is stored as a successful value with no error trace. This provides ergonomic
+     * construction for success cases, similar to std::expected's implicit construction from T.
+     *
+     * @param value The success value to store
+     */
+    TraceableResult(T value) : result_{std::move(value)} {}
+
+    /**
+     * @brief Constructs a TraceableResult from an error value.
+     *
+     * @details
+     * This constructor allows implicit conversion from an error value of type E to a TraceableResult.
+     * The error is stored as the initial error in the trace. This provides ergonomic construction
+     * for error cases at the bottom level of an error trace, similar to std::expected's construction
+     * from std::unexpected.
+     *
+     * @param error The error value to store
+     */
+    TraceableResult(const E &error) : result_{std::unexpected{error}}
+    {
+        static_assert(std::is_base_of_v<Error, E>, "TraceableResult error type E must be derived from Error");
+        error_trace_.push_back(std::make_unique<E>(error));
     }
 
     /**

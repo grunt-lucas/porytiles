@@ -33,14 +33,14 @@ Result<void> import_layer_png(
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        switch (image_result.error().type) {
+        switch (image_result.error().type()) {
         case ImageLoadError::Type::file_not_found:
             layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error:
             // TODO: need a more descriptive ProjectTilesetArtifactReader::read result type
-            return std::unexpected{fmt::format("failed to load bottom.png: {}", image_result.error().metadata)};
+            return std::unexpected{fmt::format("failed to load bottom.png")};
         default:
             panic("unhandled ImageLoadError type");
         }

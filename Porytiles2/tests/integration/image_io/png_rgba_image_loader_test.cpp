@@ -8,6 +8,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/templates/text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -16,14 +17,15 @@ using namespace porytiles2;
 TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
+    TextFormatter formatter{true};
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().type == ImageLoadError::Type::file_not_found);
+    EXPECT_TRUE(result.error().type() == ImageLoadError::Type::file_not_found);
 
     auto result2 = loader->load_from_file("Resources/Tests/integration/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
-    EXPECT_TRUE(result2.error().metadata.contains(
+    EXPECT_TRUE(result2.error().details(formatter).contains(
         "Failed to recognize format of file "
         "'Resources/Tests/integration/metatile_behaviors.h'"));
 }

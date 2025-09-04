@@ -17,11 +17,13 @@ namespace porytiles2 {
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
+TraceableResult<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
 PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const
 {
+    using enum ImageLoadError::Type;
+
     if (!exists(path)) {
-        return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::file_not_found}};
+        return ImageLoadError::file_not_found(path.string());
     }
 
     CImg<std::uint8_t> cimg_png{};
@@ -30,12 +32,11 @@ PngRgbaImageLoader::load_from_file(const std::filesystem::path &path) const
         cimg_png.assign(path_c_str);
     }
     catch (const CImgException &e) {
-        return std::unexpected{ImageLoadError{.type = ImageLoadError::Type::other_load_error, .metadata = e.what()}};
+        return ImageLoadError::other_load_error(path.string(), e.what());
     }
 
     if (cimg_png.spectrum() != 3 && cimg_png.spectrum() != 4) {
-        return std::unexpected{
-            ImageLoadError{.type = ImageLoadError::Type::unsupported_channel_count, .metadata = path}};
+        return ImageLoadError::unsupported_channel_count(path.string(), cimg_png.spectrum());
     }
 
     const auto width = static_cast<std::size_t>(cimg_png.width());
