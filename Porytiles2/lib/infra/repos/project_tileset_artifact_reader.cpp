@@ -41,7 +41,7 @@ ChainableResult<void> import_layer_png(
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
             const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>::chain(BasicError{error_msg}, image_result);
+            return ChainableResult<void>::chain_to(BasicError{error_msg}, image_result);
         }
         default:
             panic("unhandled ImageLoadError type");
@@ -184,7 +184,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.bottom(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read bottom.png")}, result);
+            return ChainableResult<void>::chain_to(BasicError{fmt::format("failed to read bottom.png")}, result);
         }
         return {};
     }
@@ -194,7 +194,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.middle(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read middle.png")}, result);
+            return ChainableResult<void>::chain_to(BasicError{fmt::format("failed to read middle.png")}, result);
         }
         return {};
     }
@@ -204,7 +204,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.top(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read top.png")}, result);
+            return ChainableResult<void>::chain_to(BasicError{fmt::format("failed to read top.png")}, result);
         }
         return {};
     }
@@ -216,20 +216,34 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         panic("TODO: implement");
 
     // Porymap artifacts
-    case TilesetArtifact::Type::metatiles_bin:
-        return import_metatiles_bin(dest, src_key);
-    case TilesetArtifact::Type::metatile_attributes_bin:
+    case TilesetArtifact::Type::metatiles_bin: {
+        // TODO: make this a ChainableResult
+        const auto result = import_metatiles_bin(dest, src_key);
+        return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin: {}", result.error())}};
+    }
+    case TilesetArtifact::Type::metatile_attributes_bin: {
         // TODO: branch here based on target base game?
-        return import_emerald_metatile_attributes(dest, src_key);
-    case TilesetArtifact::Type::tiles_png:
-        return import_tiles_png(dest, src_key, *png_indexed_loader_);
+        // TODO: make this a ChainableResult
+        const auto result = import_emerald_metatile_attributes(dest, src_key);
+        return ChainableResult<void>{
+            BasicError{fmt::format("could not import metatile_attributes.bin: {}", result.error())}};
+    }
+    case TilesetArtifact::Type::tiles_png: {
+        // TODO: make this a ChainableResult
+        const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
+        return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png: {}", result.error())}};
+    }
     case TilesetArtifact::Type::porymap_anim_frame:
         panic("TODO: implement");
-    case TilesetArtifact::Type::pal_n:
+    case TilesetArtifact::Type::pal_n: {
         if (!artifact.index().has_value()) {
             panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
         }
-        return import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
+        // TODO: make this a ChainableResult
+        const auto result = import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
+        return ChainableResult<void>{
+            BasicError{fmt::format("could not import pal {}: {}", artifact.index().value(), result.error())}};
+    }
 
     // Default case
     default:

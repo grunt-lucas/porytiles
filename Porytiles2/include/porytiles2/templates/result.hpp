@@ -99,6 +99,22 @@ class ChainableResult {
         add_cause(cause_result);
     }
 
+    // WHY THIS METHOD MUST BE CALLED chain_to AND CANNOT BE CALLED chain
+    //
+    // This is due to C++'s name hiding rules. When the void specialization declares its own static chain() method
+    // (lines 306-310), it hides all methods named chain from the base class - including the non-static chain() const
+    // method that returns the error chain.
+    //
+    // In C++, when a derived class declares any member with a given name, it hides all base class members with that
+    // same name, regardless of their signatures (static vs non-static, different parameters, etc.).
+    // The base class's add_cause() method (line 148) needs to call cause_result.chain() to access the error chain, but
+    // this non-static method is hidden by the derived class's static chain() method. Without the explicit forwarding
+    // function, you get a compiler error because the name lookup stops at the derived class and only finds the static
+    // version, which doesn't match the required signature.
+    //
+    // Methods like has_value() work fine because the void specialization doesn't declare its own version of
+    // has_value(), so there's no name hiding occurring.
+
     /**
      * @brief Static factory method for chaining errors.
      *
@@ -113,7 +129,7 @@ class ChainableResult {
      * @return A new ChainableResult containing the combined error chain
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain(const E &error, const ChainableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static ChainableResult chain_to(const E &error, const ChainableResult<CauseT, CauseE> &cause)
     {
         return ChainableResult{error, cause};
     }
@@ -304,7 +320,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
      * @return A new ChainableResult containing the combined error chain
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain(const E &error, const ChainableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static ChainableResult chain_to(const E &error, const ChainableResult<CauseT, CauseE> &cause)
     {
         return ChainableResult{error, cause};
     }
@@ -333,21 +349,6 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     void value() const
     {
         Base::value();
-    }
-
-    /**
-     * @brief Returns the complete error chain.
-     *
-     * @details
-     * Exposes the base class's chain() method for the void specialization.
-     * The error chain contains all errors in the chain, starting with the most recent error
-     * (added at this level) and proceeding through to the original root cause.
-     *
-     * @return A const reference to the vector of error pointers representing the full error chain
-     */
-    [[nodiscard]] const std::vector<std::unique_ptr<Error>> &chain() const
-    {
-        return Base::chain();
     }
 };
 
