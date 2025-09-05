@@ -19,17 +19,17 @@ class TextFormatter {
 
     // TODO: these functions return fmtlib types, which violates good design principles
     // We shouldn't be exposing infra concerns in our template library
-    fmt::text_style style(const fmt::text_style &ts) const
+    [[nodiscard]] fmt::text_style style(const fmt::text_style &ts) const
     {
         return is_a_tty_ ? ts : fmt::text_style{};
     }
 
-    fmt::text_style bold() const
+    [[nodiscard]] fmt::text_style bold() const
     {
         return style(fmt::emphasis::bold);
     }
 
-    fmt::text_style red() const
+    [[nodiscard]] fmt::text_style red() const
     {
         return style(fmt::fg(fmt::terminal_color::red));
     }

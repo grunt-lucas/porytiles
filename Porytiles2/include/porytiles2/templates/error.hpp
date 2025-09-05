@@ -58,32 +58,32 @@ class Error {
  * @brief A basic Error implementation that stores a plain string message.
  *
  * @details
- * SimpleError provides the simplest possible Error implementation, storing a single string
+ * BasicError provides the simplest possible Error implementation, storing a single string
  * message without any special formatting or structure. This class is useful for quick error
  * creation, wrapping existing string error messages, or when no special formatting is required.
  *
  * The details() method returns the stored string unchanged, ignoring the TextFormatter parameter
- * since no conditional formatting is applied. This makes SimpleError suitable for plain text
+ * since no conditional formatting is applied. This makes BasicError suitable for plain text
  * error messages that should appear the same regardless of output context.
  *
- * SimpleError is marked final to prevent inheritance, as it's designed to be a leaf class
+ * BasicError is marked final to prevent inheritance, as it's designed to be a leaf class
  * in the error hierarchy. For errors requiring custom formatting or additional context,
- * create a new Error subclass rather than extending SimpleError.
+ * create a new Error subclass rather than extending BasicError.
  */
-class SimpleError final : public Error {
+class BasicError final : public Error {
   public:
     /**
-     * @brief Constructs a SimpleError with the given message.
+     * @brief Constructs a BasicError with the given message.
      *
      * @param details The error message to store
      */
-    explicit SimpleError(std::string details) : details_(std::move(details)) {}
+    explicit BasicError(std::string details) : details_(std::move(details)) {}
 
     /**
      * @brief Returns the stored error message unchanged.
      *
      * @details
-     * Unlike more sophisticated Error implementations, SimpleError ignores the formatter
+     * Unlike more sophisticated Error implementations, BasicError ignores the formatter
      * parameter and always returns the plain string message without any formatting.
      *
      * @param formatter Unused parameter, maintained for interface compatibility
@@ -95,13 +95,13 @@ class SimpleError final : public Error {
     }
 
     /**
-     * @brief Creates a copy of this SimpleError.
+     * @brief Creates a copy of this BasicError.
      *
-     * @return A unique_ptr to a new SimpleError with the same message
+     * @return A unique_ptr to a new BasicError with the same message
      */
     [[nodiscard]] std::unique_ptr<Error> clone() const override
     {
-        return std::make_unique<SimpleError>(details_);
+        return std::make_unique<BasicError>(details_);
     }
 
   private:

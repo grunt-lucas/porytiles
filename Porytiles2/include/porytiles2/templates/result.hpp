@@ -45,7 +45,7 @@ using Result = std::expected<T, E>;
  * @tparam T The type of the expected success value
  * @tparam E The error type, must be derived from Error interface
  */
-template <typename T, typename E>
+template <typename T, typename E = BasicError>
 class ChainableResult {
   public:
     /**

@@ -18,7 +18,8 @@ Result<void> CompilePrimaryTileset::compile(const std::string &tileset_name) con
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
-        return std::unexpected{maybe_tileset.error()};
+        // TODO: hook up ChainableError here
+        return std::unexpected{"failed to load tileset"};
     }
     const auto tileset = std::move(maybe_tileset.value());
 

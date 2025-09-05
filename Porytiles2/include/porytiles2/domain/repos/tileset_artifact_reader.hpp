@@ -43,7 +43,7 @@ class TilesetArtifactReader {
      * @param artifact The TilesetArtifact specification including type and optional metadata
      * @return Empty Result on success, otherwise an error description
      */
-    [[nodiscard]] virtual Result<void>
+    [[nodiscard]] virtual ChainableResult<void>
     read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
 };
 

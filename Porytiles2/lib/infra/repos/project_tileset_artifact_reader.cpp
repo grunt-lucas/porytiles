@@ -14,7 +14,6 @@
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
-#include "porytiles2/templates/text_formatter.hpp"
 
 namespace {
 
@@ -27,7 +26,7 @@ using namespace porytiles2;
 constexpr std::size_t bytes_per_attr_emerald = 2;
 constexpr std::size_t bytes_per_attr_firered = 4;
 
-ChainableResult<void, SimpleError> import_layer_png(
+ChainableResult<void> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
     const PngRgbaImageLoader &loader,
@@ -41,8 +40,8 @@ ChainableResult<void, SimpleError> import_layer_png(
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
-            const auto error_msg = fmt::format("{}: failed to load layer image from", src_key.key());
-            return ChainableResult<void, SimpleError>{SimpleError{error_msg}, image_result};
+            const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
+            return ChainableResult<void>::chain(BasicError{error_msg}, image_result);
         }
         default:
             panic("unhandled ImageLoadError type");
@@ -174,7 +173,7 @@ Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index
 
 namespace porytiles2 {
 
-Result<void>
+ChainableResult<void>
 ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const
 {
     switch (artifact.type()) {
@@ -185,7 +184,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.bottom(img);
             });
         if (!result.has_value()) {
-            return std::unexpected{fmt::format("failed to read bottom.png")};
+            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read bottom.png")}, result);
         }
         return {};
     }
@@ -195,7 +194,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.middle(img);
             });
         if (!result.has_value()) {
-            return std::unexpected{fmt::format("failed to read middle.png")};
+            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read middle.png")}, result);
         }
         return {};
     }
@@ -205,7 +204,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.top(img);
             });
         if (!result.has_value()) {
-            return std::unexpected{fmt::format("failed to read top.png")};
+            return ChainableResult<void>::chain(BasicError{fmt::format("failed to read top.png")}, result);
         }
         return {};
     }

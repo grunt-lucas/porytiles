@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <variant>
 
 #include "fmt/format.h"
@@ -11,7 +12,8 @@
 
 namespace porytiles2 {
 
-struct ImageLoadError final : public Error {
+class ImageLoadError final : public Error {
+  public:
     enum class Type { file_not_found, unsupported_channel_count, other_load_error };
 
     struct ChannelCount {
@@ -22,9 +24,8 @@ struct ImageLoadError final : public Error {
         std::string load_error_;
     };
 
-    ImageLoadError(
-        Type type, const std::string &filename, std::variant<std::monostate, ChannelCount, OtherLoadError> params)
-        : type_{type}, filename_{filename}, params_{params}
+    ImageLoadError(Type type, std::string filename, std::variant<std::monostate, ChannelCount, OtherLoadError> params)
+        : type_{type}, filename_{std::move(filename)}, params_{std::move(params)}
     {
     }
 
@@ -63,17 +64,19 @@ struct ImageLoadError final : public Error {
         case Type::file_not_found:
             return fmt::format("{} file not found", fmt::styled(filename_ + ":", formatter.bold()));
         case Type::unsupported_channel_count: {
-            auto channel_count = std::get<ImageLoadError::ChannelCount>(params_).channel_count_;
+            auto channel_count = std::get<ChannelCount>(params_).channel_count_;
             return fmt::format(
                 "{} unsupported channel count: {}",
                 fmt::styled(filename_ + ":", formatter.bold()),
                 fmt::styled(channel_count, formatter.bold()));
         }
         case Type::other_load_error: {
-            auto load_error = std::get<ImageLoadError::OtherLoadError>(params_).load_error_;
+            auto load_error = std::get<OtherLoadError>(params_).load_error_;
             return fmt::format(
                 "{} could not be loaded: '{}'", fmt::styled(filename_ + ":", formatter.bold()), load_error);
         }
+        default:
+            panic("unhandled ImageLoadError type");
         }
     }
 
