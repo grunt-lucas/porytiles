@@ -51,13 +51,13 @@ ChainableResult<void> import_layer_png(
     return {};
 }
 
-Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatiles_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
-        return std::unexpected{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
+        return BasicError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
     }
 
     for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
@@ -93,13 +93,13 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
     return {};
 }
 
-Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_emerald != 0) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
     }
 
@@ -116,13 +116,13 @@ Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey
     return {};
 }
 
-Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_firered != 0) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
     }
 
@@ -143,17 +143,17 @@ Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey
     return {};
 }
 
-Result<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
+ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        return std::unexpected{fmt::format("failed to load tiles.png: {}", image_result.error())};
+        return BasicError{fmt::format("failed to load tiles.png: {}", image_result.error())};
     }
     dest.porymap_component().tiles_png(*image_result.value());
     return {};
 }
 
-Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
+ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
 {
     // TODO: don't hardcode 16 here
     if (index < 0 || index >= 16) {
@@ -162,7 +162,7 @@ Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return std::unexpected{fmt::format("{}: failed to load: {}", src_key.key(), pal_result.error())};
+        return BasicError{fmt::format("{}: failed to load: {}", src_key.key(), pal_result.error())};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
@@ -217,20 +217,17 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
 
     // Porymap artifacts
     case TilesetArtifact::Type::metatiles_bin: {
-        // TODO: make this a ChainableResult
         const auto result = import_metatiles_bin(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin: {}", result.error())}};
+            return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin")}, result};
         }
         return {};
     }
     case TilesetArtifact::Type::metatile_attributes_bin: {
         // TODO: branch here based on target base game?
-        // TODO: make this a ChainableResult
         const auto result = import_emerald_metatile_attributes(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{
-                BasicError{fmt::format("could not import metatile_attributes.bin: {}", result.error())}};
+            return ChainableResult<void>{BasicError{fmt::format("could not import metatile_attributes.bin")}, result};
         }
         return {};
     }
@@ -238,7 +235,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: make this a ChainableResult
         const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png: {}", result.error())}};
+            return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png")}, result};
         }
         return {};
     }
@@ -248,11 +245,10 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         if (!artifact.index().has_value()) {
             panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
         }
-        // TODO: make this a ChainableResult
         const auto result = import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
         if (!result.has_value()) {
             return ChainableResult<void>{
-                BasicError{fmt::format("could not import pal {}: {}", artifact.index().value(), result.error())}};
+                BasicError{fmt::format("could not import pal {}", artifact.index().value())}, result};
         }
         return {};
     }
