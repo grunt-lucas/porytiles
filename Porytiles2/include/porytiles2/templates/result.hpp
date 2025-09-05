@@ -49,6 +49,20 @@ template <typename T, typename E>
 class ChainableResult {
   public:
     /**
+     * @brief Default constructor for void specialization.
+     *
+     * @details
+     * This constructor is only enabled when T is void, allowing construction of a successful result with no value using
+     * the syntax `return {}`. This matches the behavior of std::expected<void, E> and provides ergonomic success
+     * construction for void results.
+     */
+    ChainableResult()
+        requires std::is_void_v<T>
+        : result_{}
+    {
+    }
+
+    /**
      * @brief Constructs a ChainableResult from a success value.
      *
      * @details

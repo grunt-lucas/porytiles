@@ -13,6 +13,8 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/panic.hpp"
+#include "porytiles2/templates/result.hpp"
+#include "porytiles2/templates/text_formatter.hpp"
 
 namespace {
 
@@ -25,7 +27,7 @@ using namespace porytiles2;
 constexpr std::size_t bytes_per_attr_emerald = 2;
 constexpr std::size_t bytes_per_attr_firered = 4;
 
-Result<void> import_layer_png(
+ChainableResult<void, SimpleError> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
     const PngRgbaImageLoader &loader,
@@ -38,9 +40,10 @@ Result<void> import_layer_png(
             layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
-        case ImageLoadError::Type::other_load_error:
-            // TODO: need a more descriptive ProjectTilesetArtifactReader::read result type
-            return std::unexpected{fmt::format("failed to load bottom.png")};
+        case ImageLoadError::Type::other_load_error: {
+            const auto error_msg = fmt::format("{}: failed to load layer image from", src_key.key());
+            return ChainableResult<void, SimpleError>{SimpleError{error_msg}, image_result};
+        }
         default:
             panic("unhandled ImageLoadError type");
         }
@@ -176,21 +179,36 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
 {
     switch (artifact.type()) {
     // Porytiles artifacts
-    case TilesetArtifact::Type::bottom_png:
-        return import_layer_png(
+    case TilesetArtifact::Type::bottom_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.bottom(img);
             });
-    case TilesetArtifact::Type::middle_png:
-        return import_layer_png(
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read bottom.png")};
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::middle_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.middle(img);
             });
-    case TilesetArtifact::Type::top_png:
-        return import_layer_png(
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read middle.png")};
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::top_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.top(img);
             });
+        if (!result.has_value()) {
+            return std::unexpected{fmt::format("failed to read top.png")};
+        }
+        return {};
+    }
     case TilesetArtifact::Type::attributes_csv:
         panic("TODO: implement");
     case TilesetArtifact::Type::porytiles_anim_frame:
