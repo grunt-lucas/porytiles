@@ -334,6 +334,21 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     {
         Base::value();
     }
+
+    /**
+     * @brief Returns the complete error chain.
+     *
+     * @details
+     * Exposes the base class's chain() method for the void specialization.
+     * The error chain contains all errors in the chain, starting with the most recent error
+     * (added at this level) and proceeding through to the original root cause.
+     *
+     * @return A const reference to the vector of error pointers representing the full error chain
+     */
+    [[nodiscard]] const std::vector<std::unique_ptr<Error>> &chain() const
+    {
+        return Base::chain();
+    }
 };
 
 } // namespace porytiles2

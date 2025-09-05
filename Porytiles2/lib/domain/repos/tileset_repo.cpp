@@ -138,7 +138,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     if (key_provider_->exists(bottom_png_key)) {
         const auto result = reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
         if (!result.has_value()) {
-            return ChainableResult<void>::chain(BasicError{"failed to read bottom.png"}, result);
+            return ChainableResult<std::unique_ptr<Tileset>>::chain(BasicError{"failed to read bottom.png"}, result);
         }
     }
 
