@@ -217,30 +217,35 @@ class ChainableResult {
         return error_chain_;
     }
 
+  protected:
+    // Protected default constructor for use by the void specialization
+    ChainableResult() = default;
+
   private:
     std::expected<T, E> result_;
     std::vector<std::unique_ptr<Error>> error_chain_;
 };
+
+namespace detail {
+// An empty struct to use as a placeholder for `void` in the ChainableResult specialization.
+struct Empty {};
+} // namespace detail
 
 /**
  * @brief Template specialization of ChainableResult for void success type.
  *
  * @details
  * This specialization handles the case where no value needs to be returned on success, similar to
- * std::expected<void, E>. The specialization maintains all the error chaining functionality of the
- * primary template while adapting the interface to work without a success value.
- *
- * Key differences from the primary template:
- * - No constructor taking a success value (since void has no value)
- * - value() methods return void instead of references
- * - Default constructor creates a successful void result
- *
- * The error chaining behavior and move-only semantics are identical to the primary template.
+ * std::expected<void, E>. It is implemented as a thin wrapper around the primary template, using a
+ * private `detail::Empty` struct as a placeholder for the `void` type. This approach avoids code
+ * duplication while providing a `void`-like interface.
  *
  * @tparam E The error type, must be derived from Error interface
  */
 template <typename E>
-class ChainableResult<void, E> {
+class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
+    using Base = ChainableResult<detail::Empty, E>;
+
   public:
     /**
      * @brief Default constructor creating a successful void result.
@@ -250,7 +255,7 @@ class ChainableResult<void, E> {
      * returning ChainableResult<void, E> to use the syntax `return {}` for successful
      * completion.
      */
-    ChainableResult() : result_{} {}
+    ChainableResult() : Base{detail::Empty{}} {}
 
     /**
      * @brief Constructs a ChainableResult from an error value.
@@ -262,11 +267,7 @@ class ChainableResult<void, E> {
      *
      * @param error The error value to store
      */
-    ChainableResult(const E &error) : result_{std::unexpected{error}}
-    {
-        static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
-        error_chain_.push_back(std::make_unique<E>(error));
-    }
+    ChainableResult(const E &error) : Base{error} {}
 
     /**
      * @brief Constructs a ChainableResult by chaining a new error with an existing error chain.
@@ -284,11 +285,8 @@ class ChainableResult<void, E> {
      */
     template <typename CauseT, typename CauseE>
     explicit ChainableResult(const E &error, const ChainableResult<CauseT, CauseE> &cause_result)
-        : result_{std::unexpected{error}}
+        : Base{error, cause_result}
     {
-        static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
-        error_chain_.push_back(std::make_unique<E>(result_.error()));
-        add_cause(cause_result);
     }
 
     /**
@@ -311,49 +309,6 @@ class ChainableResult<void, E> {
         return ChainableResult{error, cause};
     }
 
-    /*
-     * Move-only semantics
-     */
-    ChainableResult(ChainableResult &&) = default;
-    ChainableResult &operator=(ChainableResult &&) = default;
-    ChainableResult(const ChainableResult &) = delete;
-    ChainableResult &operator=(const ChainableResult &) = delete;
-
-    /**
-     * @brief Adds all errors from another ChainableResult's chain to this result's chain.
-     *
-     * @details
-     * This method appends the complete error chain from a cause result to the current error
-     * chain. Each error in the cause's chain is cloned to maintain proper ownership semantics.
-     * The method will panic if the cause_result contains a success value rather than an error,
-     * as this would indicate a programming error.
-     *
-     * @tparam OtherT The success type of the cause result
-     * @tparam OtherE The error type of the cause result
-     * @param cause_result The ChainableResult whose error chain should be appended
-     */
-    template <typename OtherT, typename OtherE>
-    void add_cause(const ChainableResult<OtherT, OtherE> &cause_result)
-    {
-        if (cause_result.has_value()) {
-            panic("cause_result has a value, but should have an error");
-        }
-        // Clone errors from cause_result's chain since we can't move from const
-        for (const std::unique_ptr<Error> &err : cause_result.chain()) {
-            error_chain_.push_back(err->clone());
-        }
-    }
-
-    /**
-     * @brief Checks whether the result contains a success value.
-     *
-     * @return True if the result represents success, false if it contains an error
-     */
-    [[nodiscard]] bool has_value() const
-    {
-        return result_.has_value();
-    }
-
     /**
      * @brief Accesses the void success value.
      *
@@ -364,7 +319,7 @@ class ChainableResult<void, E> {
      */
     void value()
     {
-        result_.value();
+        Base::value();
     }
 
     /**
@@ -377,41 +332,8 @@ class ChainableResult<void, E> {
      */
     void value() const
     {
-        result_.value();
+        Base::value();
     }
-
-    /**
-     * @brief Returns a const reference to the immediate error.
-     *
-     * @details
-     * This returns only the immediate error at this level, not the full error chain. To
-     * access the complete error history, use the chain() method instead.
-     *
-     * @return A const reference to the error value
-     */
-    [[nodiscard]] const E &error() const
-    {
-        return result_.error();
-    }
-
-    /**
-     * @brief Returns the complete error chain.
-     *
-     * @details
-     * The error chain contains all errors in the chain, starting with the most recent error
-     * (added at this level) and proceeding through to the original root cause. Each error
-     * in the chain is owned by this ChainableResult through unique_ptr.
-     *
-     * @return A const reference to the vector of error pointers representing the full error chain
-     */
-    [[nodiscard]] const std::vector<std::unique_ptr<Error>> &chain() const
-    {
-        return error_chain_;
-    }
-
-  private:
-    std::expected<void, E> result_;
-    std::vector<std::unique_ptr<Error>> error_chain_;
 };
 
 } // namespace porytiles2
