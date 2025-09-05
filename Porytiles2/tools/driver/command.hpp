@@ -17,6 +17,8 @@
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/templates/panic.hpp"
+#include "porytiles2/templates/result.hpp"
+#include "porytiles2/templates/text_formatter.hpp"
 
 #include "option.hpp"
 #include "option_group.hpp"
@@ -248,6 +250,7 @@ class DebugCommand final : public Command {
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
         NoopArtifactChecksumProvider checksum_provider{};
+        TextFormatter formatter{true};
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -263,7 +266,10 @@ class DebugCommand final : public Command {
         // Command logic
         const auto load_result = repo.load(tileset_name_);
         if (!load_result.has_value()) {
-            std::cout << "load error: " << load_result.error() << std::endl;
+            for (const auto &err : load_result.chain()) {
+                std::cerr << err->details(formatter) << std::endl;
+                std::cerr << "caused by:" << std::endl;
+            }
         }
         else {
             const auto save_result = repo.save(*load_result.value());
