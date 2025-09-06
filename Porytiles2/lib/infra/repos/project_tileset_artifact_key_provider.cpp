@@ -1,4 +1,4 @@
-#include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 
 #include <filesystem>
 #include <string>
@@ -39,7 +39,7 @@ static const std::filesystem::path metatile_attributes_bin{"metatile_attributes.
 static const std::filesystem::path tiles_png{"tiles.png"};
 static const std::filesystem::path palettes{"palettes"};
 
-ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
 
@@ -105,13 +105,13 @@ ArtifactKey ProjectTilesetKeyProvider::key_for(const std::string &tileset_name, 
     }
 }
 
-bool ProjectTilesetKeyProvider::exists(const ArtifactKey &key) const
+bool ProjectTilesetArtifactKeyProvider::exists(const ArtifactKey &key) const
 {
     const std::filesystem::path artifact{key.key()};
     return std::filesystem::exists(artifact);
 }
 
-bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) const
+bool ProjectTilesetArtifactKeyProvider::tileset_exists(const std::string &tileset_name) const
 {
     if (std::filesystem::exists(project_root_ / primary_tileset_rel_path / tileset_name)) {
         return true;
@@ -122,26 +122,26 @@ bool ProjectTilesetKeyProvider::tileset_exists(const std::string &tileset_name) 
     return false;
 }
 
-std::set<std::string> ProjectTilesetKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
+std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
 {
     // TODO: implement
     return {};
 }
 
-std::set<int> ProjectTilesetKeyProvider::discover_porytiles_anim_frames(
+std::set<int> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
     // TODO: implement
     return {};
 }
 
-std::set<std::string> ProjectTilesetKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
+std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
 {
     // TODO: implement
     return {};
 }
 
-std::set<int> ProjectTilesetKeyProvider::discover_porymap_anim_frames(
+std::set<int> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
     // TODO: implement

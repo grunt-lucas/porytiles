@@ -8,8 +8,6 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 
-#include <unordered_map>
-
 namespace porytiles2 {
 
 /**
@@ -23,9 +21,12 @@ namespace porytiles2 {
  * Class precondition: the tileset_name parameter in each method below must refer to an existing tileset on-disk. If no
  * tileset corresponds to the given tileset_name, ProjectTilesetKeyProvider will panic.
  */
-class ProjectTilesetKeyProvider final : public TilesetArtifactKeyProvider {
+class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvider {
   public:
-    explicit ProjectTilesetKeyProvider(std::filesystem::path project_root) : project_root_{std::move(project_root)} {}
+    explicit ProjectTilesetArtifactKeyProvider(std::filesystem::path project_root)
+        : project_root_{std::move(project_root)}
+    {
+    }
 
     [[nodiscard]] ArtifactKey key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
 

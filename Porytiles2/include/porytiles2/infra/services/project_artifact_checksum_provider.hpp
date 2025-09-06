@@ -5,7 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
-#include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 
 namespace porytiles2 {
 
@@ -17,7 +17,7 @@ namespace porytiles2 {
 class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
   public:
     explicit ProjectArtifactChecksumProvider(
-        std::filesystem::path project_root, gsl::not_null<ProjectTilesetKeyProvider *> key_provider)
+        std::filesystem::path project_root, gsl::not_null<ProjectTilesetArtifactKeyProvider *> key_provider)
         : project_root_{std::move(project_root)}, key_provider_{key_provider}
     {
     }
@@ -33,7 +33,7 @@ class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
 
   private:
     std::filesystem::path project_root_;
-    ProjectTilesetKeyProvider *key_provider_;
+    ProjectTilesetArtifactKeyProvider *key_provider_;
 };
 
 } // namespace porytiles2

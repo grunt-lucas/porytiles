@@ -8,9 +8,9 @@
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
-#include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -259,7 +259,7 @@ class DebugCommand final : public Command {
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
-        ProjectTilesetKeyProvider key_provider{"."};
+        ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{".", &key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
