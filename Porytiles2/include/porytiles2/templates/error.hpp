@@ -2,6 +2,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+
+#include "fmt/args.h"
+#include "fmt/format.h"
 
 #include "porytiles2/templates/text_formatter.hpp"
 
@@ -11,17 +15,16 @@ namespace porytiles2 {
  * @brief Abstract interface for all error types used in ChainableResult error chains.
  *
  * @details
- * The Error interface defines the contract that all error types must implement to participate
- * in ChainableResult error chains. This interface enables polymorphic error handling while
- * maintaining type safety and proper ownership semantics through the clone pattern.
+ * The Error interface defines the contract that all error types must implement to participate in ChainableResult error
+ * chains. This interface enables polymorphic error handling while maintaining type safety and proper ownership
+ * semantics through the clone pattern.
  *
- * Error implementations should be immutable value types that capture all relevant context
- * about a failure at a specific point in the application. The details() method allows errors
- * to format their messages based on the output context (TTY vs non-TTY), while the clone()
- * method enables proper copying of errors when building error chains.
+ * Error implementations should be immutable value types that capture all relevant context about a failure at a specific
+ * point in the application. The details() method allows errors to format their messages based on the output context
+ * (TTY vs non-TTY), while the clone() method enables proper copying of errors when building error chains.
  *
- * All concrete error types used with ChainableResult must derive from this interface. This
- * requirement is enforced at compile time through static_assert in ChainableResult's constructors.
+ * All concrete error types used with ChainableResult must derive from this interface. This requirement is enforced at
+ * compile time through static_assert in ChainableResult's constructors.
  */
 class Error {
   public:
@@ -31,10 +34,9 @@ class Error {
      * @brief Returns a formatted string representation of the error.
      *
      * @details
-     * This method generates a human-readable description of the error, potentially including
-     * ANSI formatting codes if the provided TextFormatter indicates TTY output is enabled.
-     * Implementations should provide clear, actionable error messages that help users
-     * understand what went wrong and potentially how to fix it.
+     * This method generates a human-readable description of the error, potentially including ANSI formatting codes if
+     * the provided TextFormatter indicates TTY output is enabled. Implementations should provide clear, actionable
+     * error messages that help users understand what went wrong and potentially how to fix it.
      *
      * @param formatter The TextFormatter to use for conditional formatting based on TTY status
      * @return A formatted string describing the error
@@ -45,9 +47,9 @@ class Error {
      * @brief Creates a polymorphic copy of this error.
      *
      * @details
-     * The clone pattern is necessary because ChainableResult stores errors as unique_ptr<Error>,
-     * and errors need to be copied when building error chains from const references. Each concrete
-     * error type must implement this method to return a new instance with the same state.
+     * The clone pattern is necessary because ChainableResult stores errors as unique_ptr<Error>, and errors need to be
+     * copied when building error chains from const references. Each concrete error type must implement this method to
+     * return a new instance with the same state.
      *
      * @return A unique_ptr to a newly allocated copy of this error
      */
@@ -58,17 +60,17 @@ class Error {
  * @brief A basic Error implementation that stores a plain string message.
  *
  * @details
- * BasicError provides the simplest possible Error implementation, storing a single string
- * message without any special formatting or structure. This class is useful for quick error
- * creation, wrapping existing string error messages, or when no special formatting is required.
+ * BasicError provides the simplest possible Error implementation, storing a single string message without any special
+ * formatting or structure. This class is useful for quick error creation, wrapping existing string error messages, or
+ * when no special formatting is required.
  *
- * The details() method returns the stored string unchanged, ignoring the TextFormatter parameter
- * since no conditional formatting is applied. This makes BasicError suitable for plain text
- * error messages that should appear the same regardless of output context.
+ * The details() method returns the stored string unchanged, ignoring the TextFormatter parameter since no conditional
+ * formatting is applied. This makes BasicError suitable for plain text error messages that should appear the same
+ * regardless of output context.
  *
- * BasicError is marked final to prevent inheritance, as it's designed to be a leaf class
- * in the error hierarchy. For errors requiring custom formatting or additional context,
- * create a new Error subclass rather than extending BasicError.
+ * BasicError is marked final to prevent inheritance, as it's designed to be a leaf class in the error hierarchy. For
+ * errors requiring custom formatting or additional context, create a new Error subclass rather than extending
+ * BasicError.
  */
 class BasicError final : public Error {
   public:
@@ -83,8 +85,8 @@ class BasicError final : public Error {
      * @brief Returns the stored error message unchanged.
      *
      * @details
-     * Unlike more sophisticated Error implementations, BasicError ignores the formatter
-     * parameter and always returns the plain string message without any formatting.
+     * Unlike more sophisticated Error implementations, BasicError ignores the formatter parameter and always returns
+     * the plain string message without any formatting.
      *
      * @param formatter Unused parameter, maintained for interface compatibility
      * @return The stored error message string
@@ -106,6 +108,40 @@ class BasicError final : public Error {
 
   private:
     std::string details_;
+};
+
+class BoldedBasicError final : public Error {
+  public:
+    explicit BoldedBasicError(std::string text, std::vector<std::string> params)
+        : text_(std::move(text)), params_(std::move(params))
+    {
+    }
+
+    [[nodiscard]] std::string details(const TextFormatter &formatter) const override
+    {
+        // Create a dynamic format argument store
+        fmt::dynamic_format_arg_store<fmt::format_context> store;
+
+        // Add each parameter as a bolded string to the store
+        for (const auto &param : params_) {
+            store.push_back(fmt::format(formatter.bold(), "{}", param));
+        }
+        return fmt::vformat(text_, store);
+    }
+
+    /**
+     * @brief Creates a copy of this BoldedBasicError.
+     *
+     * @return A unique_ptr to a new BoldedBasicError with the same message
+     */
+    [[nodiscard]] std::unique_ptr<Error> clone() const override
+    {
+        return std::make_unique<BoldedBasicError>(text_, params_);
+    }
+
+  private:
+    std::string text_;
+    std::vector<std::string> params_;
 };
 
 } // namespace porytiles2
