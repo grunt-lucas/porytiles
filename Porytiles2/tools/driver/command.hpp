@@ -13,9 +13,9 @@
 #include "porytiles2/infra/repos/project_tileset_key_provider.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
-#include "porytiles2/infra/services/noop_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 #include "porytiles2/templates/text_formatter.hpp"
@@ -249,7 +249,6 @@ class DebugCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        NoopArtifactChecksumProvider checksum_provider{};
         TextFormatter formatter{true};
 
         // Setup layered configuration
@@ -261,7 +260,10 @@ class DebugCommand final : public Command {
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
         ProjectTilesetKeyProvider key_provider{"."};
+        ProjectArtifactChecksumProvider checksum_provider{".", &key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+
+        const auto foo = checksum_provider.load_cached_checksums(tileset_name_);
 
         // Command logic
         const auto load_result = repo.load(tileset_name_);
