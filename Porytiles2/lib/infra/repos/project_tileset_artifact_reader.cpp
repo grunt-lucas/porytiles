@@ -153,8 +153,7 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
     return {};
 }
 
-ChainableResult<void, BoldedBasicError>
-import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
+ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
 {
     // TODO: don't hardcode 16 here
     if (index < 0 || index >= 16) {
@@ -163,7 +162,7 @@ import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FileP
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return BoldedBasicError{"{}: failed to load: {}", std::vector{src_key.key(), pal_result.error()}};
+        return BasicError{"{}: failed to load: {}", std::vector{src_key.key(), pal_result.error()}};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
