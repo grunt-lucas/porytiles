@@ -44,6 +44,19 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] std::set<int>
     discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
+    /**
+     * @brief Returns the filesystem path to the root directory of a tileset.
+     *
+     * @details
+     * This method provides the base directory path where all artifacts for a specific tileset are stored within the
+     * project's filesystem structure. This is specific to the filesystem-based implementation, as other backing stores
+     * may not have a concept of a single root directory for tileset artifacts.
+     *
+     * @param tileset_name The name of the tileset
+     * @return The filesystem path to the tileset's root directory
+     */
+    [[nodiscard]] std::filesystem::path tileset_root(const std::string &tileset_name) const;
+
   private:
     std::filesystem::path project_root_;
 

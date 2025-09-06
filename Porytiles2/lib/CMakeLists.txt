@@ -43,6 +43,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pngpp)
 
+# nlohmann's json
+FetchContent_Declare(
+        json
+        GIT_REPOSITORY "https://github.com/nlohmann/json"
+        GIT_TAG "v3.12.0"
+)
+FetchContent_MakeAvailable(json)
+
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
 find_library(PNG_STATIC
@@ -84,7 +92,7 @@ target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
 # Find the libpng include dirs located via find_package
 target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
 
-# CImg and png++ are header-only, so we pull the sources and add headers to include path
+# For header-only libs, we pull the sources and add headers to include path
 if (cimg_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})
 else ()
@@ -95,6 +103,12 @@ if (pngpp_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${pngpp_SOURCE_DIR}/include)
 else ()
     message(FATAL_ERROR "pngpp_SOURCE_DIR was empty")
+endif ()
+
+if (json_SOURCE_DIR)
+    target_include_directories(Porytiles2Lib PRIVATE ${json_SOURCE_DIR}/include)
+else ()
+    message(FATAL_ERROR "json_SOURCE_DIR was empty")
 endif ()
 
 

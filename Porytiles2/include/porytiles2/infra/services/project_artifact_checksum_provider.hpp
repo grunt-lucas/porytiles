@@ -4,6 +4,7 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 

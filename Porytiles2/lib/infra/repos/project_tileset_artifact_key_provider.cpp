@@ -9,6 +9,8 @@
 
 namespace {
 
+using namespace porytiles2;
+
 const std::filesystem::path primary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "primary";
 const std::filesystem::path secondary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "secondary";
 
@@ -20,7 +22,7 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
     if (std::filesystem::exists(project_root / secondary_tileset_rel_path / tileset_name)) {
         return project_root / secondary_tileset_rel_path / tileset_name;
     }
-    porytiles2::panic(fmt::format("tileset '{}' does not exist", tileset_name));
+    panic(fmt::format("tileset '{}' does not exist", tileset_name));
 }
 
 } // namespace
@@ -147,6 +149,12 @@ std::set<int> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
 {
     // TODO: implement
     return {};
+}
+
+[[nodiscard]] std::filesystem::path
+ProjectTilesetArtifactKeyProvider::tileset_root(const std::string &tileset_name) const
+{
+    return get_tileset_path(tileset_name, project_root_);
 }
 
 } // namespace porytiles2
