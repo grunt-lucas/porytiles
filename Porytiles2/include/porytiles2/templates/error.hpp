@@ -57,68 +57,54 @@ class Error {
 };
 
 /**
- * @brief A basic Error implementation that stores a plain string message.
+ * @brief A simple, concrete error implementation for basic error messages.
  *
  * @details
- * BasicError provides the simplest possible Error implementation, storing a single string message without any special
- * formatting or structure. This class is useful for quick error creation, wrapping existing string error messages, or
- * when no special formatting is required.
- *
- * The details() method returns the stored string unchanged, ignoring the TextFormatter parameter since no conditional
- * formatting is applied. This makes BasicError suitable for plain text error messages that should appear the same
- * regardless of output context.
- *
- * BasicError is marked final to prevent inheritance, as it's designed to be a leaf class in the error hierarchy. For
- * errors requiring custom formatting or additional context, create a new Error subclass rather than extending
- * BasicError.
+ * BasicError provides a straightforward implementation of the Error interface for representing simple error messages
+ * with optional parameterized formatting. It supports both plain text errors and formatted errors where parameters
+ * can be substituted into placeholders in the error message using fmt-style formatting (e.g., "{}" placeholders).
+ * When formatted for TTY output, parameters are automatically bolded for emphasis.
  */
 class BasicError final : public Error {
   public:
     /**
-     * @brief Constructs a BasicError with the given message.
+     * @brief Constructs a BasicError with a plain text message.
      *
-     * @param details The error message to store
+     * @param text The error message text
      */
-    explicit BasicError(std::string details) : details_(std::move(details)) {}
+    explicit BasicError(std::string text) : text_{std::move(text)} {}
 
     /**
-     * @brief Returns the stored error message unchanged.
+     * @brief Constructs a BasicError with a parameterized message.
      *
      * @details
-     * Unlike more sophisticated Error implementations, BasicError ignores the formatter parameter and always returns
-     * the plain string message without any formatting.
+     * Creates an error with a format string and parameters. The text should contain "{}" placeholders that will be
+     * replaced with the corresponding parameters when details() is called.
      *
-     * @param formatter Unused parameter, maintained for interface compatibility
-     * @return The stored error message string
+     * @param text The error message format string with "{}" placeholders
+     * @param params Vector of parameter values to substitute into the format string
      */
-    [[nodiscard]] std::string details(const TextFormatter &formatter) const override
+    explicit BasicError(std::string text, std::vector<std::string> params)
+        : text_{std::move(text)}, params_{std::move(params)}
     {
-        return details_;
     }
 
     /**
-     * @brief Creates a copy of this BasicError.
+     * @brief Returns the formatted error message.
      *
-     * @return A unique_ptr to a new BasicError with the same message
+     * @details
+     * If the error has no parameters, returns the plain text message. If parameters are present, substitutes them into
+     * the format string's placeholders. When TTY formatting is enabled, parameters are rendered in bold for emphasis.
+     *
+     * @param formatter The TextFormatter for conditional TTY formatting
+     * @return The formatted error message with parameters substituted and optionally bolded
      */
-    [[nodiscard]] std::unique_ptr<Error> clone() const override
-    {
-        return std::make_unique<BasicError>(details_);
-    }
-
-  private:
-    std::string details_;
-};
-
-class BoldedBasicError final : public Error {
-  public:
-    explicit BoldedBasicError(std::string text, std::vector<std::string> params)
-        : text_(std::move(text)), params_(std::move(params))
-    {
-    }
-
     [[nodiscard]] std::string details(const TextFormatter &formatter) const override
     {
+        if (params_.empty()) {
+            return text_;
+        }
+
         // Create a dynamic format argument store
         fmt::dynamic_format_arg_store<fmt::format_context> store;
 
@@ -130,13 +116,13 @@ class BoldedBasicError final : public Error {
     }
 
     /**
-     * @brief Creates a copy of this BoldedBasicError.
+     * @brief Creates a copy of this BasicError.
      *
-     * @return A unique_ptr to a new BoldedBasicError with the same message
+     * @return A unique_ptr to a new BasicError with the same message
      */
     [[nodiscard]] std::unique_ptr<Error> clone() const override
     {
-        return std::make_unique<BoldedBasicError>(text_, params_);
+        return std::make_unique<BasicError>(text_, params_);
     }
 
   private:
