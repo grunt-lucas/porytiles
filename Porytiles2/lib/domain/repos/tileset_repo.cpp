@@ -135,7 +135,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto bottom_png_artifact = TilesetArtifact{bottom_png};
     const auto bottom_png_key = key_provider_->key_for(tileset->name(), bottom_png_artifact);
-    if (key_provider_->exists(bottom_png_key)) {
+    if (key_provider_->artifact_exists(bottom_png_key)) {
         const auto result = reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read bottom.png"}, result);
@@ -144,7 +144,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto middle_png_artifact = TilesetArtifact{middle_png};
     const auto middle_png_key = key_provider_->key_for(tileset->name(), middle_png_artifact);
-    if (key_provider_->exists(middle_png_key)) {
+    if (key_provider_->artifact_exists(middle_png_key)) {
         const auto result = reader_->read(*tileset, middle_png_key, middle_png_artifact);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read middle.png"}, result);
@@ -153,7 +153,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto top_png_artifact = TilesetArtifact{top_png};
     const auto top_png_key = key_provider_->key_for(tileset->name(), top_png_artifact);
-    if (key_provider_->exists(top_png_key)) {
+    if (key_provider_->artifact_exists(top_png_key)) {
         const auto result = reader_->read(*tileset, top_png_key, top_png_artifact);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read top.png"}, result);
@@ -162,7 +162,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto attr_csv_artifact = TilesetArtifact{attributes_csv};
     const auto attr_csv_key = key_provider_->key_for(tileset->name(), attr_csv_artifact);
-    if (key_provider_->exists(attr_csv_key)) {
+    if (key_provider_->artifact_exists(attr_csv_key)) {
         const auto result = reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
@@ -177,7 +177,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     constexpr int num_pal_overrides = 16;
     for (int i = 0; i < num_pal_overrides; i++) {
         const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
-        if (key_provider_->exists(override_key)) {
+        if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
             if (!result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
@@ -190,7 +190,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     for (const auto &anim : porytiles_anims) {
         // Read frame 00.png
         auto frame_00_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porytiles_anim_frame, anim, 0});
-        if (!key_provider_->exists(frame_00_key)) {
+        if (!key_provider_->artifact_exists(frame_00_key)) {
             // TODO: emit validation error: missing required 00.png
             fail_at_exit = true;
             continue;
@@ -226,7 +226,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto metatiles_artifact = TilesetArtifact{metatiles_bin};
     const auto metatiles_key = key_provider_->key_for(tileset->name(), metatiles_artifact);
-    if (!key_provider_->exists(metatiles_key)) {
+    if (!key_provider_->artifact_exists(metatiles_key)) {
         return BasicError{"missing required porymap artifact metatiles.bin"};
     }
     const auto metatiles_result = reader_->read(*tileset, metatiles_key, metatiles_artifact);
@@ -237,7 +237,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
     const auto attr_key = key_provider_->key_for(tileset->name(), attr_artifact);
-    if (!key_provider_->exists(attr_key)) {
+    if (!key_provider_->artifact_exists(attr_key)) {
         return BasicError{"missing required porymap artifact metatile_attributes.bin"};
     }
     const auto attr_result = reader_->read(*tileset, attr_key, attr_artifact);
@@ -248,7 +248,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto tiles_png_artifact = TilesetArtifact{tiles_png};
     const auto tiles_png_key = key_provider_->key_for(tileset->name(), tiles_png_artifact);
-    if (!key_provider_->exists(tiles_png_key)) {
+    if (!key_provider_->artifact_exists(tiles_png_key)) {
         return BasicError{"missing required porymap artifact tiles.png"};
     }
     const auto tiles_png_result = reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
@@ -261,7 +261,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
-        if (!key_provider_->exists(pal_key)) {
+        if (!key_provider_->artifact_exists(pal_key)) {
             // TODO: emit validation error: missing required artifact {:02}.pal
             fail_at_exit = true;
             continue;
@@ -277,7 +277,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
          const auto &anim : porymap_anims) {
         // Read frame 00.png
         auto frame_00_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_frame, anim, 0});
-        if (!key_provider_->exists(frame_00_key)) {
+        if (!key_provider_->artifact_exists(frame_00_key)) {
             // TODO: emit validation error: missing required 00.png
             fail_at_exit = true;
             continue;

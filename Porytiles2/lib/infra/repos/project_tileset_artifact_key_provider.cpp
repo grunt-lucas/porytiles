@@ -39,7 +39,8 @@ static const std::filesystem::path metatile_attributes_bin{"metatile_attributes.
 static const std::filesystem::path tiles_png{"tiles.png"};
 static const std::filesystem::path palettes{"palettes"};
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
+ArtifactKey
+ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
 
@@ -105,7 +106,7 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for(const std::string &tilese
     }
 }
 
-bool ProjectTilesetArtifactKeyProvider::exists(const ArtifactKey &key) const
+bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) const
 {
     const std::filesystem::path artifact{key.key()};
     return std::filesystem::exists(artifact);

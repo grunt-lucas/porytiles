@@ -11,15 +11,15 @@
 namespace porytiles2 {
 
 /**
- * @brief Provides a filesystem-based implementation for TilesetArtifactKeyProvider.
+ * @brief Provides a pokeemerald project filesystem-based implementation for TilesetArtifactKeyProvider.
  *
  * @details
  * This class implements the TilesetArtifactKeyProvider interface to provide filesystem paths as keys for various
  * tileset artifacts. It operates within the context of a Pokémon Gen III decompilation project, discovering and
  * managing paths for animations, tiles, and other tileset components based on the project's directory structure.
  *
- * Class precondition: the tileset_name parameter in each method below must refer to an existing tileset on-disk. If no
- * tileset corresponds to the given tileset_name, ProjectTilesetKeyProvider will panic.
+ * Class precondition: the tileset_name parameter in each method below (except tileset_exists) must refer to an existing
+ * tileset on-disk. If no tileset corresponds to the given tileset_name, ProjectTilesetKeyProvider will panic.
  */
 class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvider {
   public:
@@ -30,7 +30,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
 
     [[nodiscard]] ArtifactKey key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const override;
 
-    [[nodiscard]] bool exists(const ArtifactKey &key) const override;
+    [[nodiscard]] bool artifact_exists(const ArtifactKey &key) const override;
 
     [[nodiscard]] bool tileset_exists(const std::string &tileset_name) const override;
 
