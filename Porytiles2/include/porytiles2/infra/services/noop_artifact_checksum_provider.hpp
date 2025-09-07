@@ -18,12 +18,12 @@ class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
     NoopArtifactChecksumProvider() = default;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    compute_artifact_checksums(const std::string &tileset_name) const override;
+    compute_tileset_artifact_checksums(const std::string &tileset_name) const override;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    load_cached_checksums(const std::string &tileset_name) const override;
+    load_cached_tileset_checksums(const std::string &tileset_name) const override;
 
-    [[nodiscard]] Result<void> cache_checksums(
+    [[nodiscard]] Result<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
 };
 

@@ -260,10 +260,10 @@ class DebugCommand final : public Command {
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
         ProjectTilesetArtifactKeyProvider key_provider{"."};
-        ProjectArtifactChecksumProvider checksum_provider{".", &key_provider};
+        ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        const auto foo = checksum_provider.load_cached_checksums(tileset_name_);
+        const auto foo = checksum_provider.load_cached_tileset_checksums(tileset_name_);
 
         // Command logic
         const auto load_result = repo.load(tileset_name_);

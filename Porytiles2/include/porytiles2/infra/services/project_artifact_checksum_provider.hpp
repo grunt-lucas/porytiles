@@ -1,7 +1,5 @@
 #pragma once
 
-#include <filesystem>
-
 #include "gsl/pointers"
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -17,23 +15,21 @@ namespace porytiles2 {
  */
 class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
   public:
-    explicit ProjectArtifactChecksumProvider(
-        std::filesystem::path project_root, gsl::not_null<ProjectTilesetArtifactKeyProvider *> key_provider)
-        : project_root_{std::move(project_root)}, key_provider_{key_provider}
+    explicit ProjectArtifactChecksumProvider(gsl::not_null<ProjectTilesetArtifactKeyProvider *> key_provider)
+        : key_provider_{key_provider}
     {
     }
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    compute_artifact_checksums(const std::string &tileset_name) const override;
+    compute_tileset_artifact_checksums(const std::string &tileset_name) const override;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    load_cached_checksums(const std::string &tileset_name) const override;
+    load_cached_tileset_checksums(const std::string &tileset_name) const override;
 
-    [[nodiscard]] Result<void> cache_checksums(
+    [[nodiscard]] Result<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
 
   private:
-    std::filesystem::path project_root_;
     ProjectTilesetArtifactKeyProvider *key_provider_;
 };
 

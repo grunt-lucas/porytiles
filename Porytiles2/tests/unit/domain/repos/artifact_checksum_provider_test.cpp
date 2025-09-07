@@ -51,7 +51,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_Ret
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     EXPECT_TRUE(result.empty());
@@ -72,7 +72,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMat
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     ASSERT_EQ(result.size(), 1);
@@ -94,7 +94,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatc
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     ASSERT_EQ(result.size(), 3);
@@ -114,7 +114,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksu
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     ASSERT_EQ(result.size(), 1);
@@ -134,7 +134,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     ASSERT_EQ(result.size(), 1);
@@ -152,7 +152,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_EmptyArtifactKeysList
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    auto result = provider_.find_unsynced_artifacts(test_tileset_name_, artifact_keys);
+    auto result = provider_.find_unsynced_tileset_artifacts(test_tileset_name_, artifact_keys);
 
     // Assert
     EXPECT_TRUE(result.empty());
@@ -173,7 +173,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue)
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    bool result = provider_.all_checksums_match(test_tileset_name_, artifact_keys);
+    bool result = provider_.all_checksums_tileset_match(test_tileset_name_, artifact_keys);
 
     // Assert
     EXPECT_TRUE(result);
@@ -194,7 +194,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFal
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    bool result = provider_.all_checksums_match(test_tileset_name_, artifact_keys);
+    bool result = provider_.all_checksums_tileset_match(test_tileset_name_, artifact_keys);
 
     // Assert
     EXPECT_FALSE(result);
@@ -211,7 +211,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_EmptyArtifactKeysList_Ret
     EXPECT_CALL(provider_, load_cached_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
-    bool result = provider_.all_checksums_match(test_tileset_name_, artifact_keys);
+    bool result = provider_.all_checksums_tileset_match(test_tileset_name_, artifact_keys);
 
     // Assert
     EXPECT_TRUE(result); // Empty list means all (none) match

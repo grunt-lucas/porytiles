@@ -12,14 +12,14 @@
 namespace porytiles2 {
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::compute_artifact_checksums(const std::string &tileset_name) const
+ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &tileset_name) const
 {
     // TODO: implement
     return {};
 }
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::load_cached_checksums(const std::string &tileset_name) const
+ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &tileset_name) const
 {
     // TODO: tileset checksum file location should be configurable?
     const auto artifact_checksum_file = key_provider_->tileset_root(tileset_name) / "artifact_checksums.json";
@@ -34,16 +34,18 @@ ProjectArtifactChecksumProvider::load_cached_checksums(const std::string &tilese
 
     std::unordered_map<ArtifactKey, std::string> checksums;
     for (const auto &[key, value] : json_data.items()) {
+        // TODO: compute full key by preprending the tileset_root
         checksums.emplace(ArtifactKey{key}, value.get<std::string>());
     }
 
     return checksums;
 }
 
-Result<void> ProjectArtifactChecksumProvider::cache_checksums(
+Result<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
     const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
 {
     // TODO: implement
+    // TODO: don't save the full path, subtract the tileset_root from the saved key
     return {};
 }
 
