@@ -270,7 +270,6 @@ class DebugCommand final : public Command {
         if (!load_result.has_value()) {
             for (const auto &err : load_result.chain()) {
                 std::cerr << err->details(formatter) << std::endl;
-                std::cerr << "caused by:" << std::endl;
             }
         }
         else {
