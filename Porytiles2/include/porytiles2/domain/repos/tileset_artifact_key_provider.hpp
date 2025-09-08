@@ -133,13 +133,27 @@ class TilesetArtifactKeyProvider {
         std::vector<ArtifactKey> result;
 
         const auto bottom_png_key = key_for(tileset_name, TilesetArtifact{bottom_png});
-        result.push_back(bottom_png_key);
+        if (artifact_exists(bottom_png_key)) {
+            result.push_back(bottom_png_key);
+        }
+
         const auto middle_png_key = key_for(tileset_name, TilesetArtifact{middle_png});
         result.push_back(middle_png_key);
+        if (artifact_exists(middle_png_key)) {
+            result.push_back(middle_png_key);
+        }
+
         const auto top_png_key = key_for(tileset_name, TilesetArtifact{top_png});
         result.push_back(top_png_key);
+        if (artifact_exists(top_png_key)) {
+            result.push_back(top_png_key);
+        }
+
         const auto attr_csv_key = key_for(tileset_name, TilesetArtifact{attributes_csv});
         result.push_back(attr_csv_key);
+        if (artifact_exists(attr_csv_key)) {
+            result.push_back(attr_csv_key);
+        }
 
         // TODO: don't hardcode 16 here
         // TODO: warn user if we found overrides like 1.pal, these won't work they have to be 01.pal
@@ -151,7 +165,20 @@ class TilesetArtifactKeyProvider {
             }
         }
 
-        // TODO: fill in anims
+        const auto porytiles_anims = discover_porytiles_anims(tileset_name);
+        for (const auto &anim : porytiles_anims) {
+            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porytiles_anim_frame, 0});
+            if (artifact_exists(frame_00_key)) {
+                result.push_back(frame_00_key);
+            }
+            const auto frames = discover_porytiles_anim_frames(tileset_name, anim);
+            for (const auto &frame : frames) {
+                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, frame});
+                if (artifact_exists(frame_n_key)) {
+                    result.push_back(frame_n_key);
+                }
+            }
+        }
 
         return result;
     }
@@ -171,21 +198,46 @@ class TilesetArtifactKeyProvider {
         std::vector<ArtifactKey> result;
 
         const auto metatiles_key = key_for(tileset_name, TilesetArtifact{metatiles_bin});
-        result.push_back(metatiles_key);
+        if (artifact_exists(metatiles_key)) {
+            result.push_back(metatiles_key);
+        }
+
         const auto attr_key = key_for(tileset_name, TilesetArtifact{metatile_attributes_bin});
         result.push_back(attr_key);
+        if (artifact_exists(attr_key)) {
+            result.push_back(attr_key);
+        }
+
         const auto tiles_png_key = key_for(tileset_name, TilesetArtifact{tiles_png});
         result.push_back(tiles_png_key);
+        if (artifact_exists(tiles_png_key)) {
+            result.push_back(tiles_png_key);
+        }
 
         // TODO: don't hardcode this num_pals value
         // TODO: warn user if we found pals like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (int i = 0; i < num_pals; i++) {
             const auto pal_key = key_for(tileset_name, TilesetArtifact{pal_n, i});
-            result.push_back(pal_key);
+            if (artifact_exists(pal_key)) {
+                result.push_back(pal_key);
+            }
         }
 
-        // TODO: fill in anims
+        const auto porymap_anims = discover_porymap_anims(tileset_name);
+        for (const auto &anim : porymap_anims) {
+            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, 0});
+            if (artifact_exists(frame_00_key)) {
+                result.push_back(frame_00_key);
+            }
+            const auto frames = discover_porymap_anim_frames(tileset_name, anim);
+            for (const auto &frame : frames) {
+                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, frame});
+                if (artifact_exists(frame_n_key)) {
+                    result.push_back(frame_n_key);
+                }
+            }
+        }
 
         return result;
     }

@@ -14,7 +14,7 @@ namespace porytiles2 {
 std::unordered_map<ArtifactKey, std::string>
 ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &tileset_name) const
 {
-    // TODO: implement
+    const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name);
     return {};
 }
 
@@ -34,8 +34,8 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
 
     std::unordered_map<ArtifactKey, std::string> checksums;
     for (const auto &[key, value] : json_data.items()) {
-        // TODO: compute full key by preprending the tileset_root
-        checksums.emplace(ArtifactKey{key}, value.get<std::string>());
+        const auto full_path = key_provider_->tileset_root(tileset_name) / std::filesystem::path{key};
+        checksums.emplace(ArtifactKey{full_path}, value.get<std::string>());
     }
 
     return checksums;
