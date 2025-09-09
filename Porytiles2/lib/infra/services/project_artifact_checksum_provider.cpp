@@ -16,17 +16,18 @@ namespace porytiles2 {
 std::unordered_map<ArtifactKey, std::string>
 ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &tileset_name) const
 {
-    const StreamDigest digest{};
     std::unordered_map<ArtifactKey, std::string> checksums{};
     const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name);
 
     for (const auto &key : all_keys) {
+        const StreamDigest digest{};
         if (!key_provider_->artifact_exists(key)) {
             panic(fmt::format("expected artifact '{}' does not exist", key.key()));
         }
         std::ifstream stream{key.key()};
         const auto key_digest = digest.digest(stream);
-        checksums.emplace(key, key_digest);
+        const auto relative_key = std::filesystem::relative(key.key(), key_provider_->tileset_root(tileset_name));
+        checksums.emplace(relative_key, key_digest);
     }
 
     return checksums;
@@ -65,9 +66,7 @@ Result<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
     // First, collect all relative paths with their checksums
     std::map<std::string, std::string> sorted_checksums;
     for (const auto &[artifact_key, checksum] : checksums) {
-        const auto relative_path =
-            std::filesystem::relative(artifact_key.key(), key_provider_->tileset_root(tileset_name));
-        sorted_checksums[relative_path.string()] = checksum;
+        sorted_checksums[artifact_key.key()] = checksum;
     }
 
     /*
