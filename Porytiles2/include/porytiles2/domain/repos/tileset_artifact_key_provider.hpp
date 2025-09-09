@@ -123,12 +123,21 @@ class TilesetArtifactKeyProvider {
      *
      * @details
      * Each Porytiles artifact has a unique key by which the ArtifactChecksumProvider and the TilesetRepo can identify
-     * it. The format of these keys and the method for producing them are implementation-defined.
+     * it. The format of these keys and the method for producing them are implementation-defined. This method will only
+     * return keys that actually exist in the backing store.
      *
      * @return A vector of Porytiles artifact keys for the given Tileset
      */
     [[nodiscard]] virtual std::vector<ArtifactKey> get_porytiles_artifact_keys(const std::string &tileset_name) const
     {
+        /*
+         * TODO: it feels like the discovery logic here and in tileset_repo.cpp is duplicated. Is there some way to
+         * massage these two classes so we don't need to duplicate the logic in two places? Perhaps ArtifactKey should
+         * also store a std::variant<TilesetArtifact, LayoutArtifact> as metadata. Then, tileset_repo.cpp could call
+         * get_all_artifact_keys directly. And then search the output for the metadata it needs and throw if essential
+         * items are missing?
+         */
+
         using enum TilesetArtifact::Type;
         std::vector<ArtifactKey> result;
 
@@ -138,19 +147,16 @@ class TilesetArtifactKeyProvider {
         }
 
         const auto middle_png_key = key_for(tileset_name, TilesetArtifact{middle_png});
-        result.push_back(middle_png_key);
         if (artifact_exists(middle_png_key)) {
             result.push_back(middle_png_key);
         }
 
         const auto top_png_key = key_for(tileset_name, TilesetArtifact{top_png});
-        result.push_back(top_png_key);
         if (artifact_exists(top_png_key)) {
             result.push_back(top_png_key);
         }
 
         const auto attr_csv_key = key_for(tileset_name, TilesetArtifact{attributes_csv});
-        result.push_back(attr_csv_key);
         if (artifact_exists(attr_csv_key)) {
             result.push_back(attr_csv_key);
         }
@@ -188,7 +194,8 @@ class TilesetArtifactKeyProvider {
      *
      * @details
      * Each Porymap artifact has a unique key by which the ArtifactChecksumProvider and the TilesetRepo can identify it.
-     * The format of these keys and the method for producing them are implementation-defined.
+     * The format of these keys and the method for producing them are implementation-defined. This method will only
+     * return keys that actually exist in the backing store.
      *
      * @return A vector of Porymap artifact keys for the given Tileset
      */
@@ -203,13 +210,11 @@ class TilesetArtifactKeyProvider {
         }
 
         const auto attr_key = key_for(tileset_name, TilesetArtifact{metatile_attributes_bin});
-        result.push_back(attr_key);
         if (artifact_exists(attr_key)) {
             result.push_back(attr_key);
         }
 
         const auto tiles_png_key = key_for(tileset_name, TilesetArtifact{tiles_png});
-        result.push_back(tiles_png_key);
         if (artifact_exists(tiles_png_key)) {
             result.push_back(tiles_png_key);
         }
@@ -247,7 +252,8 @@ class TilesetArtifactKeyProvider {
      *
      * @details
      * This method combines the results from both get_porytiles_artifact_keys() and get_porymap_artifact_keys() to
-     * provide a comprehensive list of all artifact keys associated with the tileset.
+     * provide a comprehensive list of all artifact keys associated with the tileset. This method will only
+     * return keys that actually exist in the backing store.
      *
      * @param tileset_name The name of the Tileset for which to get all artifact keys
      * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset

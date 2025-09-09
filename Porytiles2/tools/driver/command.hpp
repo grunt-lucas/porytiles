@@ -263,8 +263,6 @@ class DebugCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        const auto foo = checksum_provider.load_cached_tileset_checksums(tileset_name_);
-
         // Command logic
         const auto load_result = repo.load(tileset_name_);
         if (!load_result.has_value()) {
