@@ -127,21 +127,109 @@ bool ProjectTilesetArtifactKeyProvider::tileset_exists(const std::string &tilese
 
 std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
 {
-    // TODO: implement
-    return {};
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    const auto anims_dir = tileset_path / porytiles_directory / anim;
+
+    std::set<std::string> anim_names;
+
+    if (!std::filesystem::exists(anims_dir) || !std::filesystem::is_directory(anims_dir)) {
+        return anim_names;
+    }
+
+    for (const auto &entry : std::filesystem::directory_iterator(anims_dir)) {
+        if (entry.is_directory()) {
+            const auto anim_name = entry.path().filename().string();
+            const auto frame_00_path = entry.path() / "00.png";
+
+            // Check if 00.png exists (required for Porytiles animations)
+            if (std::filesystem::exists(frame_00_path)) {
+                anim_names.insert(anim_name);
+            }
+            else {
+                // TODO: warn user about empty folder in porytiles/anim folder
+            }
+        }
+        else {
+            // TODO: warn user about stray file in porytiles/anim folder?
+        }
+    }
+
+    return anim_names;
 }
 
 std::set<int> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    // TODO: implement
-    return {};
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    const auto anim_dir = tileset_path / porytiles_directory / anim / anim_name;
+
+    std::set<int> frame_indices;
+
+    if (!std::filesystem::exists(anim_dir) || !std::filesystem::is_directory(anim_dir)) {
+        return frame_indices;
+    }
+
+    for (const auto &entry : std::filesystem::directory_iterator(anim_dir)) {
+        if (!entry.is_regular_file()) {
+            // TODO: warn user about stray folder in porytiles/anim/anim_name folder
+            continue;
+        }
+
+        const auto filename = entry.path().filename().string();
+
+        if (filename.length() != 6 || !filename.ends_with(".png")) {
+            // TODO: warn user about stray file in porytiles/anim/anim_name folder
+            continue;
+        }
+
+        // Skip 00.png (frame 0 is required, not discovered), handled in the main discover_anims method
+        if (filename == "00.png") {
+            continue;
+        }
+
+        // Check if it's a valid two-digit number
+        const auto frame_str = filename.substr(0, 2);
+        if (!std::isdigit(frame_str[0]) || !std::isdigit(frame_str[1])) {
+            // TODO: warn user about stray file in porytiles/anim/anim_name folder
+            continue;
+        }
+        const int frame_index = std::stoi(frame_str);
+        frame_indices.insert(frame_index);
+    }
+
+    return frame_indices;
 }
 
 std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
 {
-    // TODO: implement
-    return {};
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    const auto anims_dir = tileset_path / anim;
+
+    std::set<std::string> anim_names;
+
+    if (!std::filesystem::exists(anims_dir) || !std::filesystem::is_directory(anims_dir)) {
+        return anim_names;
+    }
+
+    for (const auto &entry : std::filesystem::directory_iterator(anims_dir)) {
+        if (entry.is_directory()) {
+            const auto anim_name = entry.path().filename().string();
+            const auto frame_00_path = entry.path() / "00.png";
+
+            // Check if 00.png exists (required for Porymap animations)
+            if (std::filesystem::exists(frame_00_path)) {
+                anim_names.insert(anim_name);
+            }
+            else {
+                // TODO: warn user about empty folder in anim folder
+            }
+        }
+        else {
+            // TODO: warn user about stray file in anim folder?
+        }
+    }
+
+    return anim_names;
 }
 
 std::set<int> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(

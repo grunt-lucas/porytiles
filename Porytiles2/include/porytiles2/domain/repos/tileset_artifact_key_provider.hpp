@@ -173,13 +173,13 @@ class TilesetArtifactKeyProvider {
 
         const auto porytiles_anims = discover_porytiles_anims(tileset_name);
         for (const auto &anim : porytiles_anims) {
-            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porytiles_anim_frame, 0});
+            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porytiles_anim_frame, anim, 0});
             if (artifact_exists(frame_00_key)) {
                 result.push_back(frame_00_key);
             }
             const auto frames = discover_porytiles_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
-                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, frame});
+                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, frame});
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
@@ -231,13 +231,13 @@ class TilesetArtifactKeyProvider {
 
         const auto porymap_anims = discover_porymap_anims(tileset_name);
         for (const auto &anim : porymap_anims) {
-            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, 0});
+            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, 0});
             if (artifact_exists(frame_00_key)) {
                 result.push_back(frame_00_key);
             }
             const auto frames = discover_porymap_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
-                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, frame});
+                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, frame});
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
