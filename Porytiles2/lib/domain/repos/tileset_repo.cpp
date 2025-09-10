@@ -124,7 +124,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return BasicError{fmt::format("tileset {} does not exist", name)};
+        return BasicError{"tileset '{}' does not exist", std::vector{{name}}};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -138,7 +138,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     if (key_provider_->artifact_exists(bottom_png_key)) {
         const auto result = reader_->read(*tileset, bottom_png_key, bottom_png_artifact);
         if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read bottom.png"}, result);
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                BasicError{"failed to read bottom.png"}, result);
         }
     }
 
@@ -147,7 +148,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     if (key_provider_->artifact_exists(middle_png_key)) {
         const auto result = reader_->read(*tileset, middle_png_key, middle_png_artifact);
         if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read middle.png"}, result);
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                BasicError{"failed to read middle.png"}, result);
         }
     }
 
@@ -156,7 +158,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     if (key_provider_->artifact_exists(top_png_key)) {
         const auto result = reader_->read(*tileset, top_png_key, top_png_artifact);
         if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(BasicError{"failed to read top.png"}, result);
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                BasicError{"failed to read top.png"}, result);
         }
     }
 
@@ -165,7 +168,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     if (key_provider_->artifact_exists(attr_csv_key)) {
         const auto result = reader_->read(*tileset, attr_csv_key, attr_csv_artifact);
         if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                 BasicError{"failed to read attributes.csv"}, result);
         }
     }
@@ -180,7 +183,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
             if (!result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                     BasicError{fmt::format("failed to read {}", override_key.key())}, result);
             }
         }
@@ -198,7 +201,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         const auto frame_00_result =
             reader_->read(*tileset, frame_00_key, TilesetArtifact{porytiles_anim_frame, anim, 0});
         if (!frame_00_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                 BasicError{fmt::format("failed to read {}", frame_00_key.key())}, frame_00_result);
         }
 
@@ -215,7 +218,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             const auto frame_n_result =
                 reader_->read(*tileset, frame_n_key, TilesetArtifact{porytiles_anim_frame, anim, frame});
             if (!frame_n_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                     BasicError{fmt::format("failed to read {}", frame_n_key.key())}, frame_n_result);
             }
             expected_frame++;
@@ -231,7 +234,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
     const auto metatiles_result = reader_->read(*tileset, metatiles_key, metatiles_artifact);
     if (!metatiles_result.has_value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
             BasicError{"failed to read metatiles.bin"}, metatiles_result);
     }
 
@@ -242,7 +245,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
     const auto attr_result = reader_->read(*tileset, attr_key, attr_artifact);
     if (!attr_result.has_value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
             BasicError{"failed to read metatile_attributes.bin"}, attr_result);
     }
 
@@ -253,7 +256,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
     const auto tiles_png_result = reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
     if (!tiles_png_result.has_value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
             BasicError{"failed to read tiles.png"}, tiles_png_result);
     }
 
@@ -268,7 +271,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
         const auto pal_result = reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
         if (!pal_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                 BasicError{fmt::format("failed to read {}", pal_key.key())}, pal_result);
         }
     }
@@ -285,7 +288,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         const auto frame_00_result =
             reader_->read(*tileset, frame_00_key, TilesetArtifact{porymap_anim_frame, anim, 0});
         if (!frame_00_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+            return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                 BasicError{fmt::format("failed to read {}", frame_00_key.key())}, frame_00_result);
         }
 
@@ -302,7 +305,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             const auto frame_n_result =
                 reader_->read(*tileset, frame_n_key, TilesetArtifact{porymap_anim_frame, anim, frame});
             if (!frame_n_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_to(
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
                     BasicError{fmt::format("failed to read {}", frame_n_key.key())}, frame_n_result);
             }
             expected_frame++;

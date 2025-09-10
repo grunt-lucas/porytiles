@@ -14,7 +14,7 @@ Result<std::unique_ptr<Image<IndexPixel>>>
 PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
-        return std::unexpected{fmt::format("does not exist: {}", path.string())};
+        return std::unexpected{fmt::format("file does not exist: {}", path.string())};
     }
 
     try {
@@ -22,7 +22,7 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
         png::image<png::index_pixel> test{path};
     }
     catch (std::exception &) {
-        return std::unexpected{fmt::format("not a valid indexed PNG file: {}", path.string())};
+        return std::unexpected{fmt::format("file not a valid indexed PNG: {}", path.string())};
     }
 
     png::image<png::index_pixel> tilesheet_png{path};

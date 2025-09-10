@@ -129,7 +129,7 @@ class ChainableResult {
      * @return A new ChainableResult containing the combined error chain
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain_to(const E &error, const ChainableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static ChainableResult chain_together(const E &error, const ChainableResult<CauseT, CauseE> &cause)
     {
         return ChainableResult{error, cause};
     }
@@ -320,7 +320,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
      * @return A new ChainableResult containing the combined error chain
      */
     template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain_to(const E &error, const ChainableResult<CauseT, CauseE> &cause)
+    [[nodiscard]] static ChainableResult chain_together(const E &error, const ChainableResult<CauseT, CauseE> &cause)
     {
         return ChainableResult{error, cause};
     }
