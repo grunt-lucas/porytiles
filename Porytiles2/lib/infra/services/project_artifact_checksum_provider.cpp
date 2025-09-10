@@ -25,8 +25,7 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::s
         }
         std::ifstream stream{key.key()};
         const auto key_digest = digest.digest(stream);
-        const auto relative_key = std::filesystem::relative(key.key(), key_provider_->tileset_root(tileset_name));
-        checksums.emplace(relative_key, key_digest);
+        checksums.emplace(key, key_digest);
     }
 
     return checksums;
@@ -69,7 +68,15 @@ Result<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
     // First, collect all relative paths with their checksums
     std::map<std::string, std::string> sorted_checksums;
     for (const auto &[artifact_key, checksum] : checksums) {
-        sorted_checksums[artifact_key.key()] = checksum;
+        /*
+         * Before saving the checksums, relativize the key's path against the tileset root. Since the user might call
+         * the command from different working directories, it shouldn't save the path relative to the working directory.
+         * It also doesn't really make sense to save an absolute path here, since users might rename the tileset or move
+         * their project folder.
+         */
+        const auto relative_key =
+            std::filesystem::relative(artifact_key.key(), key_provider_->tileset_root(tileset_name));
+        sorted_checksums[relative_key] = checksum;
     }
 
     /*

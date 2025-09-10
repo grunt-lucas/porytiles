@@ -23,6 +23,7 @@ namespace porytiles2 {
     }
     const auto tileset = std::move(maybe_tileset.value());
 
+    // TODO: should we split this into separate handling of Porymap and Porytiles assets?
     const auto artifact_keys = tileset_repo_->key_provider().get_all_artifact_keys(tileset_name);
     const auto mismatched_keys =
         tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, artifact_keys);
@@ -32,7 +33,8 @@ namespace porytiles2 {
         for (const auto &key : mismatched_keys) {
             keys.push_back(key.key());
         }
-        return ChainableResult<void>{BasicError{"unimported changes present in tileset assets: {}", keys}};
+        // TODO: create some kind of MultilineBasicError that can correctly format a multiline message
+        return ChainableResult<void>{BasicError{"changes present in tileset assets: {}", keys}};
     }
 
     return {};
