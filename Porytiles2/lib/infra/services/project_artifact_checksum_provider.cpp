@@ -17,9 +17,8 @@ std::unordered_map<ArtifactKey, std::string>
 ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &tileset_name) const
 {
     std::unordered_map<ArtifactKey, std::string> checksums{};
-    const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name);
 
-    for (const auto &key : all_keys) {
+    for (const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name); const auto &key : all_keys) {
         const StreamDigest digest{};
         if (!key_provider_->artifact_exists(key)) {
             panic(fmt::format("expected artifact '{}' does not exist", key.key()));
@@ -39,8 +38,12 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
     // TODO: tileset checksum file location should be configurable?
     const auto artifact_checksum_file = key_provider_->tileset_root(tileset_name) / "artifact_checksums.json";
 
+    // If checksum file doesn't exist, create it
     if (!exists(artifact_checksum_file)) {
-        panic(fmt::format("expected checksum file '{}' does not exist", artifact_checksum_file.string()));
+        const auto new_checksums = compute_tileset_artifact_checksums(tileset_name);
+        if (const auto result = cache_tileset_checksums(tileset_name, new_checksums); !result) {
+            panic(fmt::format("failed to initialize checksum cache for '{}'", tileset_name));
+        }
     }
 
     std::ifstream file{artifact_checksum_file};
