@@ -1,21 +1,24 @@
 #pragma once
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief An implementation of ArtifactChecksumProvider that just does nothing.
+ * @brief TODO: fill in doxygen
  *
- * @details
- * This implementation provides no-op behavior for all checksum operations, returning empty results
- * and always indicating success. It's useful for testing or when checksum functionality is not needed.
+ * @details TODO: fill in doxygen
  */
-class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
+class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
   public:
-    NoopArtifactChecksumProvider() = default;
+    explicit ProjectArtifactChecksumProvider(gsl::not_null<ProjectTilesetArtifactKeyProvider *> key_provider)
+        : key_provider_{key_provider}
+    {
+    }
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
     compute_tileset_artifact_checksums(const std::string &tileset_name) const override;
@@ -25,6 +28,9 @@ class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
 
     [[nodiscard]] Result<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
+
+  private:
+    ProjectTilesetArtifactKeyProvider *key_provider_;
 };
 
 } // namespace porytiles2

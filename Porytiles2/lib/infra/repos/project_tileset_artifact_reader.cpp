@@ -13,6 +13,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/panic.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace {
 
@@ -25,7 +26,7 @@ using namespace porytiles2;
 constexpr std::size_t bytes_per_attr_emerald = 2;
 constexpr std::size_t bytes_per_attr_firered = 4;
 
-Result<void> import_layer_png(
+ChainableResult<void> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
     const PngRgbaImageLoader &loader,
@@ -33,14 +34,15 @@ Result<void> import_layer_png(
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        switch (image_result.error().type) {
+        switch (image_result.error().type()) {
         case ImageLoadError::Type::file_not_found:
             layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
-        case ImageLoadError::Type::other_load_error:
-            // TODO: need a more descriptive ProjectTilesetArtifactReader::read result type
-            return std::unexpected{fmt::format("failed to load bottom.png: {}", image_result.error().metadata)};
+        case ImageLoadError::Type::other_load_error: {
+            const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
+            return ChainableResult<void>::chain_together(BasicError{error_msg}, image_result);
+        }
         default:
             panic("unhandled ImageLoadError type");
         }
@@ -49,13 +51,13 @@ Result<void> import_layer_png(
     return {};
 }
 
-Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatiles_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
-        return std::unexpected{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
+        return BasicError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
     }
 
     for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
@@ -91,13 +93,13 @@ Result<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
     return {};
 }
 
-Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_emerald != 0) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
     }
 
@@ -114,13 +116,13 @@ Result<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey
     return {};
 }
 
-Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_firered != 0) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
     }
 
@@ -141,17 +143,17 @@ Result<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey
     return {};
 }
 
-Result<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
+ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        return std::unexpected{fmt::format("failed to load tiles.png: {}", image_result.error())};
+        return BasicError{fmt::format("failed to load tiles.png: {}", image_result.error())};
     }
     dest.porymap_component().tiles_png(*image_result.value());
     return {};
 }
 
-Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
+ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
 {
     // TODO: don't hardcode 16 here
     if (index < 0 || index >= 16) {
@@ -160,7 +162,7 @@ Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return std::unexpected{fmt::format("{}: failed to load: {}", src_key.key(), pal_result.error())};
+        return BasicError{"{}: failed to load: {}", std::vector{src_key.key(), pal_result.error()}};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
@@ -171,26 +173,41 @@ Result<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index
 
 namespace porytiles2 {
 
-Result<void>
+ChainableResult<void>
 ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const
 {
     switch (artifact.type()) {
     // Porytiles artifacts
-    case TilesetArtifact::Type::bottom_png:
-        return import_layer_png(
+    case TilesetArtifact::Type::bottom_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.bottom(img);
             });
-    case TilesetArtifact::Type::middle_png:
-        return import_layer_png(
+        if (!result.has_value()) {
+            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read bottom.png")}, result);
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::middle_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.middle(img);
             });
-    case TilesetArtifact::Type::top_png:
-        return import_layer_png(
+        if (!result.has_value()) {
+            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read middle.png")}, result);
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::top_png: {
+        const auto result = import_layer_png(
             dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
                 comp.top(img);
             });
+        if (!result.has_value()) {
+            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read top.png")}, result);
+        }
+        return {};
+    }
     case TilesetArtifact::Type::attributes_csv:
         panic("TODO: implement");
     case TilesetArtifact::Type::porytiles_anim_frame:
@@ -199,20 +216,42 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         panic("TODO: implement");
 
     // Porymap artifacts
-    case TilesetArtifact::Type::metatiles_bin:
-        return import_metatiles_bin(dest, src_key);
-    case TilesetArtifact::Type::metatile_attributes_bin:
+    case TilesetArtifact::Type::metatiles_bin: {
+        const auto result = import_metatiles_bin(dest, src_key);
+        if (!result.has_value()) {
+            return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin")}, result};
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::metatile_attributes_bin: {
         // TODO: branch here based on target base game?
-        return import_emerald_metatile_attributes(dest, src_key);
-    case TilesetArtifact::Type::tiles_png:
-        return import_tiles_png(dest, src_key, *png_indexed_loader_);
+        const auto result = import_emerald_metatile_attributes(dest, src_key);
+        if (!result.has_value()) {
+            return ChainableResult<void>{BasicError{fmt::format("could not import metatile_attributes.bin")}, result};
+        }
+        return {};
+    }
+    case TilesetArtifact::Type::tiles_png: {
+        // TODO: make this a ChainableResult
+        const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
+        if (!result.has_value()) {
+            return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png")}, result};
+        }
+        return {};
+    }
     case TilesetArtifact::Type::porymap_anim_frame:
         panic("TODO: implement");
-    case TilesetArtifact::Type::pal_n:
+    case TilesetArtifact::Type::pal_n: {
         if (!artifact.index().has_value()) {
             panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
         }
-        return import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
+        const auto result = import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
+        if (!result.has_value()) {
+            return ChainableResult<void>{
+                BasicError{fmt::format("could not import pal {}", artifact.index().value())}, result};
+        }
+        return {};
+    }
 
     // Default case
     default:

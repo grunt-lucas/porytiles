@@ -9,6 +9,7 @@
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
@@ -29,7 +30,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     {
     }
 
-    [[nodiscard]] Result<void>
+    [[nodiscard]] ChainableResult<void>
     read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;
 
   private:

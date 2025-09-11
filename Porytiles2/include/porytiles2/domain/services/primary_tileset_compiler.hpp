@@ -9,13 +9,13 @@
 namespace porytiles2 {
 
 /**
- * @brief Service interface for compiling a primary PorytilesTilesetComponent into a PorymapTilesetComponent.
+ * @brief Service that compiles a primary PorytilesTilesetComponent into a PorymapTilesetComponent.
  */
 class PrimaryTilesetCompiler {
   public:
     virtual ~PrimaryTilesetCompiler() = default;
 
-    virtual Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset) = 0;
+    Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset);
 
     /**
      * @brief Compiles the given PorytilesTilesetComponent into a PorymapTilesetComponent using a contextual
@@ -28,8 +28,8 @@ class PrimaryTilesetCompiler {
      * @param context The PorymapTilesetComponent to use as the contextual base
      * @returns The compiled PorymapTilesetComponent
      */
-    virtual Result<std::unique_ptr<PorymapTilesetComponent>>
-    compile_incremental(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context) = 0;
+    Result<std::unique_ptr<PorymapTilesetComponent>>
+    compile_incremental(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context);
 };
 
 } // namespace porytiles2

@@ -22,7 +22,7 @@ class PngRgbaImageLoader final {
   public:
     PngRgbaImageLoader() = default;
 
-    [[nodiscard]] Result<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
+    [[nodiscard]] ChainableResult<std::unique_ptr<Image<Rgba32>>, ImageLoadError>
     load_from_file(const std::filesystem::path &path) const;
 };
 

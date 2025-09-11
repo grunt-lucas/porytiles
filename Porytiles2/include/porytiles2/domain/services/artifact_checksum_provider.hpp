@@ -31,7 +31,7 @@ class ArtifactChecksumProvider {
      * @return A mapping of artifact keys to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
-    compute_artifact_checksums(const std::string &tileset_name) const = 0;
+    compute_tileset_artifact_checksums(const std::string &tileset_name) const = 0;
 
     /**
      * @brief Loads the cached checksums for the given Tileset.
@@ -40,7 +40,7 @@ class ArtifactChecksumProvider {
      * @return A mapping of artifact keys to their cached checksums
      */
     [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
-    load_cached_checksums(const std::string &tileset_name) const = 0;
+    load_cached_tileset_checksums(const std::string &tileset_name) const = 0;
 
     /**
      * @brief Caches checksums for the given Tileset to persistent storage.
@@ -49,11 +49,11 @@ class ArtifactChecksumProvider {
      * @param checksums A mapping of artifact keys to their checksums to be cached
      * @return Result indicating success or failure of the cache operation
      */
-    [[nodiscard]] virtual Result<void> cache_checksums(
+    [[nodiscard]] virtual Result<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
 
     /**
-     * @brief Finds all artifacts with unsynced changes compared to cached checksums.
+     * @brief Finds all artifacts for the given Tileset with unsynced changes compared to cached checksums.
      *
      * @details
      * This method compares current checksums against cached checksums for the specified artifact keys and returns a
@@ -63,11 +63,11 @@ class ArtifactChecksumProvider {
      * @param artifact_keys The keys of artifacts to check
      * @return Vector of artifact keys that have mismatched checksums
      */
-    [[nodiscard]] virtual std::vector<ArtifactKey>
-    find_unsynced_artifacts(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
+    [[nodiscard]] virtual std::vector<ArtifactKey> find_unsynced_tileset_artifacts(
+        const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
 
     /**
-     * @brief Checks if all artifact checksums match their cached values.
+     * @brief Checks if all artifact checksums for the given Tileset match their cached values.
      *
      * @details
      * This method compares current checksums against cached checksums for the specified artifact keys and returns true
@@ -79,7 +79,7 @@ class ArtifactChecksumProvider {
      * @return True if all checksums match, false if any differ
      */
     [[nodiscard]] virtual bool
-    all_checksums_match(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
+    all_checksums_tileset_match(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
 };
 
 } // namespace porytiles2

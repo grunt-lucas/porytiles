@@ -64,7 +64,7 @@ class TilesetRepo {
      * @param name The name of the Tileset to load.
      * @return A Tileset Result on success, otherwise an error description.
      */
-    [[nodiscard]] Result<std::unique_ptr<Tileset>> load(const std::string &name) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> load(const std::string &name) const;
 
     /**
      * @brief Checks if the given Tileset exists in the backing store.

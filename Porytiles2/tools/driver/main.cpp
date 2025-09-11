@@ -4,6 +4,9 @@
 #include "porytiles2/build_version.h"
 
 #include "command.hpp"
+#include "create_tileset_command.hpp"
+#include "debug_command.hpp"
+#include "verify_tileset_command.hpp"
 
 int main(const int argc, char **argv)
 {
@@ -47,15 +50,7 @@ https://github.com/huderlem/porymap)");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
     CreateTilesetCommand create_tileset{porytiles_app};
-    CreateLayoutCommand create_layout{porytiles_app};
-
-    CompileTilesetCommand compile_tileset{porytiles_app};
-    CompileLayoutCommand compile_layout{porytiles_app};
-
-    ImportTilesetCommand decompile_tileset{porytiles_app};
-    ImportLayoutCommand decompile_layout{porytiles_app};
-
-    ReduceBitDepthCommand reduce_bit_depth{porytiles_app};
+    VerifyTilesetCommand verify_tileset{porytiles_app};
     DebugCommand debug{porytiles_app};
 
     porytiles_app.require_subcommand();
