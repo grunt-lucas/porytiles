@@ -28,6 +28,11 @@ class NumSupplierOperation final : public Operation {
         return {OperandDeclaration{key_, typeid(int)}};
     }
 
+    [[nodiscard]] std::string key() const
+    {
+        return key_;
+    }
+
   protected:
     [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
     {
@@ -113,14 +118,17 @@ class NumConsumerOperation final : public Operation {
 
 TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder)
 {
-    std::vector<std::shared_ptr<Operation>> ops{};
-    ops.push_back(std::make_shared<NumSupplierOperation>("num0", 10));
-    ops.push_back(std::make_shared<NumSupplierOperation>("num1", 20));
-    ops.push_back(std::make_shared<SumOperation>(std::vector{std::string{"num0"}, std::string{"num1"}}));
-    const auto consumerOp = std::make_shared<NumConsumerOperation>("sum");
-    ops.push_back(consumerOp);
+    std::vector<Operation *> ops{};
+    NumSupplierOperation num0_op{"num0", 10};
+    NumSupplierOperation num1_op{"num1", 20};
+    SumOperation sum_op{std::vector{num0_op.key(), num1_op.key()}};
+    NumConsumerOperation consumer_op{"sum"};
+    ops.push_back(&num0_op);
+    ops.push_back(&num1_op);
+    ops.push_back(&sum_op);
+    ops.push_back(&consumer_op);
 
     Pipeline pipeline{ops};
     const auto result = pipeline.run();
-    ASSERT_EQ(30, consumerOp->consumed());
+    ASSERT_EQ(30, consumer_op.consumed());
 }

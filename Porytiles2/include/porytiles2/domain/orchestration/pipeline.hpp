@@ -29,9 +29,9 @@ class Pipeline {
      * operations to determine execution order. The constructor validates that all required inputs can be satisfied by
      * the outputs of other operations in the pipeline.
      *
-     * @param ops Vector of shared pointers to Operation objects
+     * @param ops Vector of pointers to Operation objects
      */
-    explicit Pipeline(const std::vector<std::shared_ptr<Operation>> &ops);
+    explicit Pipeline(const std::vector<Operation *> &ops);
 
     /**
      * @brief Executes all operations in the pipeline in dependency order.

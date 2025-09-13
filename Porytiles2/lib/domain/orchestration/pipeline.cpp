@@ -7,7 +7,7 @@
 
 namespace porytiles2 {
 
-Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops)
+Pipeline::Pipeline(const std::vector<Operation *> &ops)
 {
     // 1) Map each operand key to the producer op that generates it
     for (auto &op : ops) {
@@ -16,13 +16,13 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops)
             if (producers_.contains(out_key)) {
                 panic(fmt::format("duplicate producers for key: {}", out_key));
             }
-            producers_.insert({out_key, op.get()});
+            producers_.insert({out_key, op});
         }
     }
 
     // 2) Build adjacency and compute in-degrees
     for (auto &op : ops) {
-        adj_.try_emplace(op.get(), std::vector<Operation *>{});
+        adj_.try_emplace(op, std::vector<Operation *>{});
     }
     for (auto &op : ops) {
         const auto inputs = op->declare_inputs();
@@ -30,14 +30,14 @@ Pipeline::Pipeline(const std::vector<std::shared_ptr<Operation>> &ops)
         for (const auto &input_operand : inputs) {
             if (const auto &in_key = input_operand.key(); producers_.contains(in_key)) {
                 auto *producer_op = producers_.at(in_key);
-                adj_.at(producer_op).push_back(op.get());
+                adj_.at(producer_op).push_back(op);
                 deps++;
             }
             else {
                 panic(fmt::format("operation '{}' depends on non-existent operand: '{}'", op->name(), in_key));
             }
         }
-        in_degree_.insert({op.get(), deps});
+        in_degree_.insert({op, deps});
     }
 
     // 3) Kahn's algorithm
