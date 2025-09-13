@@ -1,14 +1,47 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <random>
 #include <ranges>
+#include <sstream>
+#include <string>
 
 #include "fmt/format.h"
 
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/infra/utilities/utilities.hpp"
+#include "porytiles2/templates/panic.hpp"
+
+namespace {
+
+std::filesystem::path create_tmpdir()
+{
+    int maxTries = 1000;
+    auto tmpDir = std::filesystem::temp_directory_path();
+    int i = 0;
+    std::random_device randomDevice;
+    std::mt19937 mersennePrng(randomDevice());
+    std::uniform_int_distribution<uint64_t> uniformIntDistribution(0);
+    std::filesystem::path path;
+    while (true) {
+        std::stringstream stringStream;
+        stringStream << std::hex << uniformIntDistribution(mersennePrng);
+        path = tmpDir / ("porytiles_" + stringStream.str());
+        if (std::filesystem::create_directory(path)) {
+            break;
+        }
+        if (i == maxTries) {
+            porytiles2::panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+        }
+        i++;
+    }
+    return path;
+}
+
+} // namespace
 
 namespace {
 

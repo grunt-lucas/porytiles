@@ -5,6 +5,7 @@
 
 #include "porytiles2/domain/model/porymap_tileset_component.hpp"
 #include "porytiles2/domain/model/porytiles_tileset_component.hpp"
+#include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -25,7 +26,7 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 Result<std::unique_ptr<PorymapTilesetComponent>> PrimaryTilesetCompiler::compile_incremental(
     const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context)
 {
-    return std::unexpected("TODO: implement");
+    panic("TODO: implement");
 }
 
 } // namespace porytiles2
