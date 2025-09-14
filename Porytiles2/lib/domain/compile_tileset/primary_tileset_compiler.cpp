@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/compile_tileset/primary_tileset_compiler.hpp"
 
 #include <expected>
 #include <memory>
@@ -14,6 +14,7 @@ Result<std::unique_ptr<PorymapTilesetComponent>>
 PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 {
     // TODO: implement for real
+    // Pipeline pipeline{};
 
     // Push some dummy values into the component
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
@@ -26,6 +27,8 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 Result<std::unique_ptr<PorymapTilesetComponent>> PrimaryTilesetCompiler::compile_incremental(
     const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context)
 {
+    // TODO: implement for real
+    // Pipeline pipeline{};
     panic("TODO: implement");
 }
 

@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/domain/compile_tileset/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {

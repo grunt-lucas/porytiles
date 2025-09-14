@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/model/porymap_tileset_component.hpp"
 #include "porytiles2/domain/model/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/orchestration/pipeline.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -13,13 +14,13 @@ namespace porytiles2 {
  */
 class PrimaryTilesetCompiler {
   public:
-    virtual ~PrimaryTilesetCompiler() = default;
+    PrimaryTilesetCompiler() = default;
 
     Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset);
 
     /**
-     * @brief Compiles the given PorytilesTilesetComponent into a PorymapTilesetComponent using a contextual
-     * PorymapTilesetComponent as the base for the incremental compilation.
+     * @brief Compiles the given PorytilesTilesetComponent into a PorymapTilesetComponent using a
+     * contextual PorymapTilesetComponent as the base for the incremental compilation.
      *
      * @details
      * TODO: explain the PorymapTilesetComponent contextual base
