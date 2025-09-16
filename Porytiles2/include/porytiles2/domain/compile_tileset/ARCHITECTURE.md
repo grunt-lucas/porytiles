@@ -18,7 +18,8 @@ The rough operation flow is defined below.
 |--------|---------------------------------------|
 | None   | bottom, middle, top RGBA layer Images |
 
-This operation is constructed with a pointer to the PorytilesTilesetComponent and supplies pointers to the bottom, middle, and top RGBA layer images.
+This operation is constructed with a pointer to the PorytilesTilesetComponent
+and supplies pointers to the bottom, middle, and top RGBA layer images.
 
 ### Construct RGBA Metatiles Op
 
@@ -32,13 +33,32 @@ This operation is constructed with a pointer to the PorytilesTilesetComponent an
 |---------------------------|---------|
 | std::vector<RgbaMetatile> | None    |
 
-This leaf operation reads the RgbaMetatiles and generates a warning for rgba32 colors that will collide after gbagfx compression.
+This leaf operation reads the RgbaMetatiles
+and generates a warning for Rgba32 colors that will collide after `gbagfx` compression.
 
 ### Create Normalized Tiles Op
 
 | Inputs                    | Outputs                     |
 |---------------------------|-----------------------------|
 | std::vector<RgbaMetatile> | std::vector<NormalizedTile> |
+
+### Build Color Index Map Op
+
+| Inputs                      | Outputs                                 |
+|-----------------------------|-----------------------------------------|
+| std::vector<NormalizedTile> | std::unordered_map<Rgba32, std::size_t> |
+
+Given a set of normalized tiles,
+this operation builds a map from Rgba32 colors to their unique color index.
+
+### Build Reverse Color Index Map Op
+
+| Inputs                      | Outputs                                 |
+|-----------------------------|-----------------------------------------|
+| std::vector<NormalizedTile> | std::unordered_map<std::size_t, Rgba32> |
+
+Given a set of normalized tiles, this operation builds the inverse of the above map,
+i.e., a mapping from unique color indices back to their corresponding Rgba32 colors.
 
 ## Compile Primary Incremental
 
