@@ -23,39 +23,39 @@ and supplies pointers to the bottom, middle, and top RGBA layer images.
 
 ### Construct RGBA Metatiles Op
 
-| Inputs                                | Outputs                   |
-|---------------------------------------|---------------------------|
-| bottom, middle, top RGBA layer Images | std::vector<RgbaMetatile> |
+| Inputs                                | Outputs                     |
+|---------------------------------------|-----------------------------|
+| bottom, middle, top RGBA layer Images | `std::vector<RgbaMetatile>` |
 
 ### Generate Color Collision Warnings Op
 
-| Inputs                    | Outputs |
-|---------------------------|---------|
-| std::vector<RgbaMetatile> | None    |
+| Inputs                      | Outputs |
+|-----------------------------|---------|
+| `std::vector<RgbaMetatile>` | None    |
 
 This leaf operation reads the RgbaMetatiles
 and generates a warning for Rgba32 colors that will collide after `gbagfx` compression.
 
 ### Create Normalized Tiles Op
 
-| Inputs                    | Outputs                     |
-|---------------------------|-----------------------------|
-| std::vector<RgbaMetatile> | std::vector<NormalizedTile> |
+| Inputs                      | Outputs                       |
+|-----------------------------|-------------------------------|
+| `std::vector<RgbaMetatile>` | `std::vector<NormalizedTile>` |
 
 ### Build Color Index Map Op
 
-| Inputs                      | Outputs                                 |
-|-----------------------------|-----------------------------------------|
-| std::vector<NormalizedTile> | std::unordered_map<Rgba32, std::size_t> |
+| Inputs                        | Outputs                                   |
+|-------------------------------|-------------------------------------------|
+| `std::vector<NormalizedTile>` | `std::unordered_map<Rgba32, std::size_t>` |
 
 Given a set of normalized tiles,
 this operation builds a map from Rgba32 colors to their unique color index.
 
 ### Build Reverse Color Index Map Op
 
-| Inputs                      | Outputs                                 |
-|-----------------------------|-----------------------------------------|
-| std::vector<NormalizedTile> | std::unordered_map<std::size_t, Rgba32> |
+| Inputs                        | Outputs                                   |
+|-------------------------------|-------------------------------------------|
+| `std::vector<NormalizedTile>` | `std::unordered_map<std::size_t, Rgba32>` |
 
 Given a set of normalized tiles, this operation builds the inverse of the above map,
 i.e., a mapping from unique color indices back to their corresponding Rgba32 colors.
