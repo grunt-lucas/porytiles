@@ -4,7 +4,7 @@
 
 The following code is **not legal C++** because virtual functions cannot be templated:
 
-```cpp
+```c++
 template<typename T>
 [[nodiscard]] virtual ArtifactKey<T> key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const = 0;
 ```
@@ -17,7 +17,7 @@ Move the template to the class level and use static polymorphism instead of virt
 
 ### Basic Implementation
 
-```cpp
+```c++
 template<typename T, typename Derived>
 class ArtifactKeyProvider {
 public:
@@ -42,7 +42,7 @@ public:
 
 ### Simple Concept Constraint
 
-```cpp
+```c++
 #include <concepts>
 #include <type_traits>
 
@@ -68,7 +68,7 @@ public:
 
 ### Comprehensive Concept with Additional Checks
 
-```cpp
+```c++
 // More detailed concept with additional checks
 template<typename Derived, typename T>
 concept HasKeyForImpl = requires {
@@ -94,7 +94,7 @@ concept IsArtifactKeyProvider =
 
 If you're not on C++20 or prefer static assertions:
 
-```cpp
+```c++
 template<typename T, typename Derived>
 class ArtifactKeyProvider {
 private:
@@ -128,7 +128,7 @@ public:
 
 ### Correct Implementation
 
-```cpp
+```c++
 // This will compile fine
 template<typename T>
 class GoodProvider : public ArtifactKeyProvider<T, GoodProvider<T>> {
@@ -142,7 +142,7 @@ public:
 
 ### Incorrect Implementation (Compile-Time Error)
 
-```cpp
+```c++
 // This will fail at compile time with a clear error about not satisfying HasKeyForImpl
 template<typename T>
 class BadProvider : public ArtifactKeyProvider<T, BadProvider<T>> {
