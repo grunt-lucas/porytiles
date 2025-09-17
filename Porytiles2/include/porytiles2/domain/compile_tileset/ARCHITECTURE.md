@@ -60,6 +60,21 @@ this operation builds a map from Rgba32 colors to their unique color index.
 Given a set of normalized tiles, this operation builds the inverse of the above map,
 i.e., a mapping from unique color indices back to their corresponding Rgba32 colors.
 
+### Generate ColorSets
+
+| Inputs                                                                   | Outputs                             |
+|--------------------------------------------------------------------------|-------------------------------------|
+| `std::vector<NormalizedTile>`, `std::unordered_map<Rgba32, std::size_t>` | `std::vector<TaggedNormalizedTile>` |
+
+Given a set of normalized tiles and a map from Rgba32 colors to their unique color index,
+this operation generates a set of `TaggedNormalizedTile`s.
+
+`TaggedNormalizedTile` is a struct that contains a `NormalizedTile` as well as some additional metadata.
+The metadata:
+- raw tile index
+- `ColorSet` for the tile
+- assigned palette index (which will be selected by the VM packing code)
+
 ## Compile Primary Incremental
 
 ### Tileset Supplier Op
