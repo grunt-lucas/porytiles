@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <any>
 #include <optional>
+#include <ranges>
 #include <typeindex>
 #include <unordered_map>
 
@@ -98,6 +100,16 @@ class OperandBundle {
     }
 
     /**
+     * @brief Returns the number of operands stored in the bundle.
+     *
+     * @return The count of key-value pairs in the bundle
+     */
+    [[nodiscard]] std::size_t size() const
+    {
+        return config_.size();
+    }
+
+    /**
      * @brief Stores an operand value with the given key.
      *
      * @details
@@ -154,15 +166,9 @@ class OperandBundle {
      */
     [[nodiscard]] bool satisfies_declarations(const std::vector<OperandDeclaration> &declarations) const
     {
-        for (const auto &decl : declarations) {
-            if (!contains(decl.key())) {
-                return false;
-            }
-            if (decl.expected_type() != type_index_of(decl.key())) {
-                return false;
-            }
-        }
-        return true;
+        return std::ranges::all_of(declarations, [this](const auto &decl) {
+            return contains(decl.key()) && decl.expected_type() == type_index_of(decl.key());
+        });
     }
 
   private:

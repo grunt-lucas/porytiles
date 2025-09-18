@@ -28,7 +28,6 @@ class VerifyTilesetCommand final : public Command {
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
         TextFormatter formatter{true};
-        PrimaryTilesetCompiler compiler{};
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};

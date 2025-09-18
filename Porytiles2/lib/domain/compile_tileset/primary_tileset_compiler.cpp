@@ -2,9 +2,12 @@
 
 #include <expected>
 #include <memory>
+#include <vector>
 
+#include "porytiles2/domain/compile_tileset/operations/tileset_supplier_op.hpp"
 #include "porytiles2/domain/model/porymap_tileset_component.hpp"
 #include "porytiles2/domain/model/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/orchestration/pipeline.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 
@@ -13,8 +16,11 @@ namespace porytiles2 {
 Result<std::unique_ptr<PorymapTilesetComponent>>
 PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 {
-    // TODO: implement for real
-    // Pipeline pipeline{};
+    TilesetSupplierOp tileset_supplier_op{&tileset};
+    std::vector<Operation *> ops;
+    ops.push_back(&tileset_supplier_op);
+    const Pipeline pipeline{ops};
+    std::ignore = pipeline.run();
 
     // Push some dummy values into the component
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();

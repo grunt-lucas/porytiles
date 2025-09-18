@@ -1,11 +1,11 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 #include "porytiles2/domain/compile_tileset/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
@@ -57,14 +57,17 @@ class DebugCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        // Initialize use-case
-        CompilePrimaryTileset compile_use_case{&repo, &compiler};
-
-        auto compile_result = compile_use_case.compile(tileset_name_);
-        if (!compile_result.has_value()) {
-            for (const auto &err : compile_result.chain()) {
+        // Run compilation
+        auto maybe_tileset = repo.load(tileset_name_);
+        if (!maybe_tileset.has_value()) {
+            for (const auto &err : maybe_tileset.chain()) {
                 std::cerr << err->details(formatter) << std::endl;
             }
+        }
+        const auto tileset = std::move(maybe_tileset.value());
+        const auto maybe_porymap = compiler.compile(tileset->porytiles_component());
+        if (!maybe_porymap.has_value()) {
+            std::cerr << maybe_porymap.error() << std::endl;
         }
     }
 
