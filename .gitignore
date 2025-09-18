@@ -1,6 +1,7 @@
 # IDE and filesystem metadata
 .vscode/*
 !.vscode/c_cpp_properties.json
+!.vscode/launch.json
 .idea
 .DS_Store
 .claude
