@@ -75,7 +75,6 @@ FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
 add_library(Porytiles2Lib STATIC ${CppSources})
 set(CANONICAL_LIB_NAME "porytiles2")
 set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 
 # Configure CImg
 target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
