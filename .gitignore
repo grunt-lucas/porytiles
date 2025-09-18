@@ -8,7 +8,8 @@
 
 # Build artifacts and executables
 build/**
-cmake-build-*/**
+vscode-build/**
+clion-build-*/**
 
 # Doxygen
 Documentation/html/**
