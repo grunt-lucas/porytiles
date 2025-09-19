@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "porytiles2/domain/compile_tileset/operations/construct_rgba_metatiles_op.hpp"
 #include "porytiles2/domain/compile_tileset/operations/tileset_supplier_op.hpp"
 #include "porytiles2/domain/model/porymap_tileset_component.hpp"
 #include "porytiles2/domain/model/porytiles_tileset_component.hpp"
@@ -21,6 +22,10 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
     // Supplies three layer images from the given tileset
     TilesetSupplierOp tileset_supplier_op{&tileset};
     ops.push_back(&tileset_supplier_op);
+
+    // Take the layer images and construct a vector of rgba metatiles
+    ConstructRgbaMetatilesOp construct_meta_op{};
+    ops.push_back(&construct_meta_op);
 
     // Run the pipeline
     const Pipeline pipeline{ops};
