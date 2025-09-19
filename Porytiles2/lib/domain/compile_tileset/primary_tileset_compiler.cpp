@@ -16,9 +16,13 @@ namespace porytiles2 {
 Result<std::unique_ptr<PorymapTilesetComponent>>
 PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 {
-    TilesetSupplierOp tileset_supplier_op{&tileset};
     std::vector<Operation *> ops;
+
+    // Supplies three layer images from the given tileset
+    TilesetSupplierOp tileset_supplier_op{&tileset};
     ops.push_back(&tileset_supplier_op);
+
+    // Run the pipeline
     const Pipeline pipeline{ops};
     std::ignore = pipeline.run();
 
