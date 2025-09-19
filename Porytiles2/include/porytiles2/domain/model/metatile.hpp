@@ -19,6 +19,10 @@ template <typename PixelType>
     requires SupportsTransparency<PixelType>
 class Metatile {
   public:
+    static constexpr std::size_t tiles_per_side = 2;
+    static constexpr std::size_t tiles_per_metatile = tiles_per_side * tiles_per_side;
+    static constexpr std::size_t metatile_side_length = tiles_per_side * Tile<PixelType>::tile_side_length;
+
     Metatile() : id_{} {}
 
     bool operator==(const Metatile &) const = default;
@@ -147,9 +151,9 @@ class Metatile {
     }
 
   private:
-    std::array<Tile<PixelType>, 4> bottom_;
-    std::array<Tile<PixelType>, 4> middle_;
-    std::array<Tile<PixelType>, 4> top_;
+    std::array<Tile<PixelType>, tiles_per_metatile> bottom_;
+    std::array<Tile<PixelType>, tiles_per_metatile> middle_;
+    std::array<Tile<PixelType>, tiles_per_metatile> top_;
     unsigned int id_;
 };
 

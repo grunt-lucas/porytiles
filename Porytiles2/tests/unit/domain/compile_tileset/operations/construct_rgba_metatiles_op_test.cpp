@@ -96,7 +96,7 @@ TEST_F(ConstructRgbaMetatilesOpTests, ShouldFailWithInvalidDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().find("must be multiples of 16") != std::string::npos);
+    EXPECT_TRUE(result.error().find("must be multiples of") != std::string::npos);
 }
 
 TEST_F(ConstructRgbaMetatilesOpTests, ShouldProduceCorrectMetatileStructure)

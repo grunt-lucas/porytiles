@@ -52,11 +52,11 @@ Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inp
             top.height())};
     }
 
-    // Validate that dimensions are multiples of 16 (metatile size)
-    constexpr std::size_t metatile_size = 16;
+    // Validate that dimensions are multiples of metatile size
+    constexpr std::size_t metatile_size = RgbaMetatile::metatile_side_length;
     if (bottom.width() % metatile_size != 0 || bottom.height() % metatile_size != 0) {
-        return std::unexpected{
-            fmt::format("Image dimensions must be multiples of 16, got {}x{}", bottom.width(), bottom.height())};
+        return std::unexpected{fmt::format(
+            "Image dimensions must be multiples of {}, got {}x{}", metatile_size, bottom.width(), bottom.height())};
     }
 
     const std::size_t metatiles_per_row = bottom.width() / metatile_size;
@@ -71,18 +71,20 @@ Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inp
         for (std::size_t metatile_col = 0; metatile_col < metatiles_per_col; ++metatile_col) {
             RgbaMetatile metatile;
 
-            // Each metatile has 2x2 tiles, each tile is 8x8 pixels
-            // Tile indices in a metatile are arranged as:
-            // 0 1
-            // 2 3
-            for (std::size_t tile_idx = 0; tile_idx < 4; ++tile_idx) {
+            // Each metatile has tiles_per_side x tiles_per_side tiles, each tile is tile_side_length x tile_side_length
+            // pixels Tile indices in a metatile are arranged as: 0 1 2 3
+            constexpr std::size_t tiles_per_side = RgbaMetatile::tiles_per_side;
+            constexpr std::size_t tiles_per_metatile = RgbaMetatile::tiles_per_metatile;
+            constexpr std::size_t tile_side_length = Tile<Rgba32>::tile_side_length;
+
+            for (std::size_t tile_idx = 0; tile_idx < tiles_per_metatile; ++tile_idx) {
                 // Calculate tile position within the metatile
-                const std::size_t tile_row = tile_idx / 2;
-                const std::size_t tile_col = tile_idx % 2;
+                const std::size_t tile_row = tile_idx / tiles_per_side;
+                const std::size_t tile_col = tile_idx % tiles_per_side;
 
                 // Calculate pixel offsets for this tile
-                const std::size_t pixel_row_offset = metatile_row * metatile_size + tile_row * 8;
-                const std::size_t pixel_col_offset = metatile_col * metatile_size + tile_col * 8;
+                const std::size_t pixel_row_offset = metatile_row * metatile_size + tile_row * tile_side_length;
+                const std::size_t pixel_col_offset = metatile_col * metatile_size + tile_col * tile_side_length;
 
                 // Create tiles for each layer
                 Tile<Rgba32> bottom_tile;
@@ -90,8 +92,8 @@ Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inp
                 Tile<Rgba32> top_tile;
 
                 // Copy pixels from source images to tiles
-                for (std::size_t pixel_row = 0; pixel_row < 8; ++pixel_row) {
-                    for (std::size_t pixel_col = 0; pixel_col < 8; ++pixel_col) {
+                for (std::size_t pixel_row = 0; pixel_row < tile_side_length; ++pixel_row) {
+                    for (std::size_t pixel_col = 0; pixel_col < tile_side_length; ++pixel_col) {
                         const std::size_t src_row = pixel_row_offset + pixel_row;
                         const std::size_t src_col = pixel_col_offset + pixel_col;
 
