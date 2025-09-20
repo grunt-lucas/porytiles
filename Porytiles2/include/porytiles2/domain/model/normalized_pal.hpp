@@ -7,23 +7,53 @@
 namespace porytiles2 {
 
 /**
- * @brief A palette that inserts colors in a consistent sorted order.
+ * @brief A palette that stores color types in ascending order.
+ *
+ * @tparam ColorType The type of color objects to store in the palette
  */
+template <typename ColorType>
 class NormalizedPal {
   public:
     NormalizedPal() = default;
 
-    void insert(const Rgba32 &color);
+    /**
+     * @brief Inserts a color into the palette.
+     *
+     * @details
+     * Colors are automatically stored in sorted order using std::set.
+     *
+     * @param color The color to insert into the palette
+     */
+    void insert(const ColorType &color)
+    {
+        colors_.insert(color);
+    }
 
-    [[nodiscard]] std::size_t size() const;
+    /**
+     * @brief Returns the number of colors in the palette.
+     *
+     * @return The number of unique colors stored in the palette
+     */
+    [[nodiscard]] std::size_t size() const
+    {
+        return colors_.size();
+    }
 
-    [[nodiscard]] const std::set<Rgba32> &colors() const
+    /**
+     * @brief Returns a const reference to the underlying color set.
+     *
+     * @details
+     * The colors are stored in ascending order as determined by ColorType's comparison operator.
+     *
+     * @return A const reference to the set containing all colors
+     */
+    [[nodiscard]] const std::set<ColorType> &colors() const
     {
         return colors_;
     }
 
   private:
-    std::set<Rgba32> colors_;
+    std::set<ColorType> colors_;
 };
 
 } // namespace porytiles2
