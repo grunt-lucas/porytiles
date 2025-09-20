@@ -31,7 +31,7 @@ class TilesetSupplierOp final : public Operation {
     [[nodiscard]] std::vector<OperandDeclaration> declare_outputs() const override;
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override;
+    [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override;
 
   private:
     const PorytilesTilesetComponent *tileset_component_;

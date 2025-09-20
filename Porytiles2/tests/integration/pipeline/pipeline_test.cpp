@@ -10,6 +10,7 @@
 #include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/domain/orchestration/pipeline.hpp"
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
+#include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
@@ -34,7 +35,7 @@ class NumSupplierOperation final : public Operation {
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override
     {
         OperandBundle result{};
         result.put(key_, value_);
@@ -69,7 +70,7 @@ class SumOperation final : public Operation {
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override
     {
         int sum = 0;
         for (const auto &key : in_keys_) {
@@ -105,10 +106,10 @@ class NumConsumerOperation final : public Operation {
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override
     {
         consumed_ = inputs.get_unwrapped<int>(key_).value();
-        return {};
+        return OperandBundle{};
     }
 
   private:

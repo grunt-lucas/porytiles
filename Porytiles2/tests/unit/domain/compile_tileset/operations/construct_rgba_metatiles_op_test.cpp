@@ -8,6 +8,7 @@
 #include "porytiles2/domain/model/rgba_metatile.hpp"
 #include "porytiles2/domain/orchestration/operand_bundle.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/templates/text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -44,7 +45,7 @@ TEST_F(ConstructRgbaMetatilesOpTests, ShouldSuccessfullyConstructMetatilesFromVa
     auto result = op_->apply(inputs);
 
     // Verify success
-    ASSERT_TRUE(result.has_value()) << "Operation failed: " << result.error();
+    ASSERT_TRUE(result.has_value()) << "Operation failed: " << result.error().details(TextFormatter{false});
 
     // Get the result
     auto rgba_metatiles_opt = result.value().get_unwrapped<std::vector<RgbaMetatile>>("rgba_metatiles");
@@ -77,7 +78,7 @@ TEST_F(ConstructRgbaMetatilesOpTests, ShouldFailWithMismatchedImageDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().find("mismatched dimensions") != std::string::npos);
+    EXPECT_TRUE(result.error().details(TextFormatter{false}).find("mismatched dimensions") != std::string::npos);
 }
 
 TEST_F(ConstructRgbaMetatilesOpTests, ShouldFailWithInvalidDimensions)
@@ -96,7 +97,7 @@ TEST_F(ConstructRgbaMetatilesOpTests, ShouldFailWithInvalidDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().find("must be multiples of") != std::string::npos);
+    EXPECT_TRUE(result.error().details(TextFormatter{false}).find("must be multiples of") != std::string::npos);
 }
 
 TEST_F(ConstructRgbaMetatilesOpTests, ShouldProduceCorrectMetatileStructure)

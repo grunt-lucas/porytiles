@@ -9,6 +9,7 @@
 #include "porytiles2/domain/model/rgba_metatile.hpp"
 #include "porytiles2/domain/model/tile.hpp"
 #include "porytiles2/domain/orchestration/operand_bundle.hpp"
+#include "porytiles2/templates/error.hpp"
 
 namespace porytiles2 {
 
@@ -25,14 +26,14 @@ std::vector<OperandDeclaration> ConstructRgbaMetatilesOp::declare_outputs() cons
     return {OperandDeclaration{"rgba_metatiles", std::type_index{typeid(std::vector<RgbaMetatile>)}}};
 }
 
-Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inputs)
+ChainableResult<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inputs)
 {
     const auto bottom_opt = inputs.get_unwrapped<Image<Rgba32>>("bottom.png");
     const auto middle_opt = inputs.get_unwrapped<Image<Rgba32>>("middle.png");
     const auto top_opt = inputs.get_unwrapped<Image<Rgba32>>("top.png");
 
     if (!bottom_opt || !middle_opt || !top_opt) {
-        return std::unexpected{"Failed to get one or more layer images from inputs"};
+        return BasicError{"Failed to get one or more layer images from inputs"};
     }
 
     const auto &bottom = *bottom_opt;
@@ -42,7 +43,7 @@ Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inp
     // Validate that all images have the same dimensions
     if (bottom.width() != middle.width() || bottom.height() != middle.height() || bottom.width() != top.width() ||
         bottom.height() != top.height()) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "Layer images have mismatched dimensions: bottom={}x{}, middle={}x{}, top={}x{}",
             bottom.width(),
             bottom.height(),
@@ -55,7 +56,7 @@ Result<OperandBundle> ConstructRgbaMetatilesOp::execute(const OperandBundle &inp
     // Validate that dimensions are multiples of metatile size
     constexpr std::size_t metatile_size = RgbaMetatile::metatile_side_length;
     if (bottom.width() % metatile_size != 0 || bottom.height() % metatile_size != 0) {
-        return std::unexpected{fmt::format(
+        return BasicError{fmt::format(
             "Image dimensions must be multiples of {}, got {}x{}", metatile_size, bottom.width(), bottom.height())};
     }
 

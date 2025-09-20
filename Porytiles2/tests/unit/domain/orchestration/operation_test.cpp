@@ -10,6 +10,7 @@
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
+#include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/result.hpp"
 
 using namespace porytiles2;
@@ -40,7 +41,7 @@ class TestOperation final : public Operation {
     }
 
   protected:
-    [[nodiscard]] Result<OperandBundle> execute(const OperandBundle &inputs) override
+    [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override
     {
         const auto num1 = inputs.get_unwrapped<int>("num1").value();
         const auto num2 = inputs.get_unwrapped<int>("num2").value();

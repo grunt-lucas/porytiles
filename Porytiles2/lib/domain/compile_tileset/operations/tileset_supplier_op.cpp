@@ -26,7 +26,7 @@ std::vector<OperandDeclaration> TilesetSupplierOp::declare_outputs() const
         OperandDeclaration{"top.png", std::type_index{typeid(Image<Rgba32>)}}};
 }
 
-Result<OperandBundle> TilesetSupplierOp::execute(const OperandBundle &inputs)
+ChainableResult<OperandBundle> TilesetSupplierOp::execute(const OperandBundle &inputs)
 {
     OperandBundle outputs;
 
