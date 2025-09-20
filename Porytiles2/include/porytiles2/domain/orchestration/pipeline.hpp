@@ -40,9 +40,9 @@ class Pipeline {
      * Runs each operation in the topologically sorted order, passing outputs from earlier operations as inputs to later
      * operations as specified by their declarations. Propagates any errors that occur during execution.
      *
-     * @return Result<void> indicating success or containing an error
+     * @return ChainableResult<void> indicating success or containing an error
      */
-    [[nodiscard]] Result<void> run() const;
+    [[nodiscard]] ChainableResult<void> run() const;
 
   private:
     std::unordered_map<std::string, Operation *> producers_;

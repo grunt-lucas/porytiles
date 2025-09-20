@@ -130,5 +130,6 @@ TEST(PipelineTests, BasicPipelineShouldExecuteInCorrectOrder)
 
     Pipeline pipeline{ops};
     const auto result = pipeline.run();
+    ASSERT_TRUE(result.has_value());
     ASSERT_EQ(30, consumer_op.consumed());
 }

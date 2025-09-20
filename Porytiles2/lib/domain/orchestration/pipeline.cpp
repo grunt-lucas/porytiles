@@ -3,6 +3,7 @@
 #include <queue>
 
 #include "porytiles2/domain/orchestration/operation.hpp"
+#include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/panic.hpp"
 
 namespace porytiles2 {
@@ -62,7 +63,7 @@ Pipeline::Pipeline(const std::vector<Operation *> &ops)
     }
 }
 
-Result<void> Pipeline::run() const
+ChainableResult<void> Pipeline::run() const
 {
     OperandBundle operand_pool{};
     for (auto *op : sorted_) {
@@ -80,7 +81,7 @@ Result<void> Pipeline::run() const
         // Execute the operation
         auto result = op->apply(inputs);
         if (!result.has_value()) {
-            return std::unexpected{fmt::format("operation '{}' failed: {}", op->name(), result.error())};
+            return BasicError{fmt::format("operation '{}' failed: {}", op->name(), result.error())};
         }
 
         // Merge outputs

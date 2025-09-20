@@ -9,6 +9,7 @@
 #include "porytiles2/domain/model/porymap_tileset_component.hpp"
 #include "porytiles2/domain/model/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/orchestration/pipeline.hpp"
+#include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 
@@ -29,7 +30,10 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 
     // Run the pipeline
     const Pipeline pipeline{ops};
-    std::ignore = pipeline.run();
+    auto pipeline_result = pipeline.run();
+    if (!pipeline_result.has_value()) {
+        return std::unexpected{"Failed to compile primary tileset"};
+    }
 
     // Push some dummy values into the component
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
