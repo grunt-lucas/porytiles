@@ -1,0 +1,194 @@
+#include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
+
+#include <algorithm>
+#include <array>
+#include <set>
+#include <unordered_map>
+
+#include "fmt/format.h"
+
+#include "porytiles2/domain/model/index_pixel.hpp"
+#include "porytiles2/templates/error.hpp"
+
+namespace porytiles2 {
+
+namespace {
+
+/**
+ * @brief Builds a normalized palette from the unique colors in a tile.
+ *
+ * @param rgba_tile The source RGBA tile
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @return ChainableResult containing the palette or an error if too many colors
+ */
+[[nodiscard]] ChainableResult<NormalizedPal<Rgba32>>
+build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency)
+{
+    std::set<Rgba32> unique_colors;
+
+    // Collect all unique non-transparent colors
+    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+        if (const Rgba32 pixel = rgba_tile.at(i); !pixel.is_transparent(extrinsic_transparency)) {
+            unique_colors.insert(pixel);
+        }
+    }
+
+    // Check color count limit (15 non-transparent + 1 transparent = 16 total)
+    if (unique_colors.size() > 15) {
+        return BasicError{fmt::format(
+            "tile has {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
+    }
+
+    NormalizedPal<Rgba32> palette;
+
+    // Set palette extrinsic transparent color
+    palette.extrinsic_transparency(extrinsic_transparency);
+
+    // Insert all non-transparent colors
+    for (const auto &color : unique_colors) {
+        palette.insert(color);
+    }
+
+    return palette;
+}
+
+/**
+ * @brief Converts RGBA pixels to index pixels using the given palette.
+ *
+ * @param rgba_tile The source RGBA tile
+ * @param palette The normalized palette to use for conversion
+ * @param h_flip Whether to apply horizontal flip during conversion
+ * @param v_flip Whether to apply vertical flip during conversion
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @return The converted tile with IndexPixel data
+ */
+[[nodiscard]] Tile<IndexPixel> convert_to_indexed(
+    const RgbaTile &rgba_tile,
+    const NormalizedPal<Rgba32> &palette,
+    bool h_flip,
+    bool v_flip,
+    const Rgba32 &extrinsic_transparency)
+{
+    // Create a mapping from color to palette index for fast lookup
+    // Transparency color should always be at index 0
+    std::unordered_map<Rgba32, unsigned int> color_to_index;
+
+    // Assign transparency color to index 0
+    color_to_index[extrinsic_transparency] = 0;
+
+    // Assign all other colors to subsequent indices
+    unsigned int index = 1;
+    for (const auto &color : palette.colors()) {
+        if (color.is_transparent(extrinsic_transparency)) {
+            panic(fmt::format("palette contains transparent color {} at index {}", color.to_jasc_str(), index));
+        }
+        color_to_index[color] = index++;
+    }
+
+    // Apply flip to the input tile, then process in normal order
+    const auto flipped_tile = rgba_tile.flip(h_flip, v_flip);
+
+    Tile<IndexPixel> indexed_tile;
+
+    for (std::size_t i = 0; i < Tile<IndexPixel>::tile_size; ++i) {
+        const Rgba32 src_pixel = flipped_tile.at(i);
+
+        // Determine the palette index for this pixel
+        unsigned int palette_index = 0; // Transparent color is always at index 0
+        // If not transparent, get the index into the palette
+        if (!src_pixel.is_transparent(extrinsic_transparency)) {
+            auto it = color_to_index.find(src_pixel);
+            if (it == color_to_index.end()) {
+                // Debug: This should never happen
+                panic("it == color_to_index.end()");
+            }
+            palette_index = it->second;
+        }
+
+        indexed_tile.set(i, IndexPixel{palette_index});
+    }
+
+    return indexed_tile;
+}
+
+/**
+ * @brief Creates a candidate NormalizedTile with the specified flip states.
+ *
+ * @param rgba_tile The source RGBA tile
+ * @param h_flip Whether to apply horizontal flip
+ * @param v_flip Whether to apply vertical flip
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @return ChainableResult containing the candidate tile or an error
+ */
+[[nodiscard]] ChainableResult<NormalizedTile<Rgba32>>
+create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba32 &extrinsic_transparency)
+{
+    // First build the normalized palette
+    auto palette_result = build_normalized_palette(rgba_tile, extrinsic_transparency);
+    if (!palette_result.has_value()) {
+        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
+            BasicError{"failed to build normalized palette"}, palette_result);
+    }
+
+    // Convert to indexed tile with the specified flip
+    auto indexed_tile = convert_to_indexed(rgba_tile, palette_result.value(), h_flip, v_flip, extrinsic_transparency);
+
+    // Create the normalized tile
+    NormalizedTile<Rgba32> normalized_tile{h_flip, v_flip};
+
+    // Copy the indexed pixel data
+    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+        normalized_tile.set(i, indexed_tile.at(i));
+    }
+
+    // Set the palette
+    normalized_tile.palette() = palette_result.value();
+
+    return normalized_tile;
+}
+
+} // anonymous namespace
+
+ChainableResult<NormalizedTile<Rgba32>>
+RgbaTileNormalizer::normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency) const
+{
+    // Create four candidate tiles with different flip combinations
+    auto no_flip_result = create_candidate(rgba_tile, false, false, extrinsic_transparency);
+    if (!no_flip_result.has_value()) {
+        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
+            BasicError{"failed to create no-flip candidate"}, no_flip_result);
+    }
+
+    auto h_flip_result = create_candidate(rgba_tile, true, false, extrinsic_transparency);
+    if (!h_flip_result.has_value()) {
+        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
+            BasicError{"failed to create h-flip candidate"}, h_flip_result);
+    }
+
+    auto v_flip_result = create_candidate(rgba_tile, false, true, extrinsic_transparency);
+    if (!v_flip_result.has_value()) {
+        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
+            BasicError{"failed to create v-flip candidate"}, v_flip_result);
+    }
+
+    auto both_flip_result = create_candidate(rgba_tile, true, true, extrinsic_transparency);
+    if (!both_flip_result.has_value()) {
+        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
+            BasicError{"failed to create both-flip candidate"}, both_flip_result);
+    }
+
+    // Find the lexicographically smallest candidate
+    std::array candidates = {
+        no_flip_result.value(), h_flip_result.value(), v_flip_result.value(), both_flip_result.value()};
+
+    // Use traditional min_element with custom comparator
+    const auto min_candidate =
+        std::ranges::min_element(candidates, [](const NormalizedTile<Rgba32> &a, const NormalizedTile<Rgba32> &b) {
+            // Compare the pixel data first (this is what matters for normalization)
+            return static_cast<const Tile<IndexPixel> &>(a) < static_cast<const Tile<IndexPixel> &>(b);
+        });
+
+    return *min_candidate;
+}
+
+} // namespace porytiles2

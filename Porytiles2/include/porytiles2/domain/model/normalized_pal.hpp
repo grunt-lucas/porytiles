@@ -39,6 +39,16 @@ class NormalizedPal {
         return colors_.size();
     }
 
+    [[nodiscard]] const ColorType &extrinsic_transparency() const
+    {
+        return extrinsic_transparency_;
+    }
+
+    void extrinsic_transparency(const ColorType &color)
+    {
+        extrinsic_transparency_ = color;
+    }
+
     /**
      * @brief Returns a const reference to the underlying color set.
      *
@@ -53,6 +63,7 @@ class NormalizedPal {
     }
 
   private:
+    ColorType extrinsic_transparency_;
     std::set<ColorType> colors_;
 };
 

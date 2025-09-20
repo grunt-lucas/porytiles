@@ -9,6 +9,8 @@ class IndexPixel {
     // NOLINTNEXTLINE(google-explicit-constructor)
     IndexPixel(unsigned int index) : index_{index} {}
 
+    auto operator<=>(const IndexPixel &) const = default;
+
     [[nodiscard]] unsigned int index() const
     {
         return index_;
