@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/templates/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -24,7 +25,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     // 3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
     auto maybe_porymap_component = compiler_->compile(*porytiles_component);
     if (!maybe_porymap_component.has_value()) {
-        return std::unexpected{maybe_porymap_component.error()};
+        return std::unexpected{maybe_porymap_component.error().details(TextFormatter{false})};
     }
     auto porymap_component = std::move(maybe_porymap_component.value());
 

@@ -16,7 +16,7 @@ class PrimaryTilesetCompiler {
   public:
     PrimaryTilesetCompiler() = default;
 
-    Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset);
+    ChainableResult<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset);
 
     /**
      * @brief Compiles the given PorytilesTilesetComponent into a PorymapTilesetComponent using a
@@ -29,7 +29,7 @@ class PrimaryTilesetCompiler {
      * @param context The PorymapTilesetComponent to use as the contextual base
      * @returns The compiled PorymapTilesetComponent
      */
-    Result<std::unique_ptr<PorymapTilesetComponent>>
+    ChainableResult<std::unique_ptr<PorymapTilesetComponent>>
     compile_incremental(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context);
 };
 

@@ -15,7 +15,7 @@
 
 namespace porytiles2 {
 
-Result<std::unique_ptr<PorymapTilesetComponent>>
+ChainableResult<std::unique_ptr<PorymapTilesetComponent>>
 PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
 {
     std::vector<Operation *> ops;
@@ -32,7 +32,8 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
     const Pipeline pipeline{ops};
     auto pipeline_result = pipeline.run();
     if (!pipeline_result.has_value()) {
-        return std::unexpected{"Failed to compile primary tileset"};
+        return ChainableResult<std::unique_ptr<PorymapTilesetComponent>>::chain_together(
+            BasicError{"Failed to compile primary tileset"}, pipeline_result);
     }
 
     // Push some dummy values into the component
@@ -43,7 +44,7 @@ PrimaryTilesetCompiler::compile(const PorytilesTilesetComponent &tileset)
     return porymap_component;
 }
 
-Result<std::unique_ptr<PorymapTilesetComponent>> PrimaryTilesetCompiler::compile_incremental(
+ChainableResult<std::unique_ptr<PorymapTilesetComponent>> PrimaryTilesetCompiler::compile_incremental(
     const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context)
 {
     // TODO: implement for real

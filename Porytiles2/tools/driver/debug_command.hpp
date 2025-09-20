@@ -67,7 +67,7 @@ class DebugCommand final : public Command {
         const auto tileset = std::move(maybe_tileset.value());
         const auto maybe_porymap = compiler.compile(tileset->porytiles_component());
         if (!maybe_porymap.has_value()) {
-            std::cerr << maybe_porymap.error() << std::endl;
+            std::cerr << maybe_porymap.error().details(TextFormatter{false}) << std::endl;
         }
     }
 
