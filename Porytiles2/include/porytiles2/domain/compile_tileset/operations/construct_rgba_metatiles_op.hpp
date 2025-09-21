@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/domain/orchestration/operation.hpp"
+#include "porytiles2/domain/services/rgba_image_tileizer.hpp"
 
 namespace porytiles2 {
 
@@ -24,6 +25,9 @@ class ConstructRgbaMetatilesOp final : public Operation {
 
   protected:
     [[nodiscard]] ChainableResult<OperandBundle> execute(const OperandBundle &inputs) override;
+
+  private:
+    RgbaImageTileizer tileizer_;
 };
 
 } // namespace porytiles2

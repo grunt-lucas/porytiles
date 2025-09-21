@@ -97,7 +97,7 @@ TEST_F(ConstructRgbaMetatilesOpTests, ShouldFailWithInvalidDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(TextFormatter{false}).find("must be multiples of") != std::string::npos);
+    EXPECT_TRUE(result.error().details(TextFormatter{false}).find("failed to tileize") != std::string::npos);
 }
 
 TEST_F(ConstructRgbaMetatilesOpTests, ShouldProduceCorrectMetatileStructure)
