@@ -11,10 +11,9 @@ namespace porytiles2 {
  * @brief Constructs RGBA metatiles from bottom, middle, and top layer images.
  *
  * @details
- * This operation takes three RGBA layer images (bottom, middle, top) as input
- * and produces a vector of RgbaMetatile objects. It serves as the second step
- * in the tileset compilation pipeline, processing the layer images supplied
- * by the TilesetSupplierOp.
+ * This operation takes three RGBA layer images (bottom, middle, top) as input and produces a vector of RgbaMetatile
+ * objects. It serves as the second step in the tileset compilation pipeline, processing the layer images supplied by
+ * the TilesetSupplierOp.
  */
 class ConstructRgbaMetatilesOp final : public Operation {
   public:
