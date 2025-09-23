@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "porytiles2/domain/model/tileset.hpp"
-#include "porytiles2/domain/orchestration/pipeline.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/panic.hpp"

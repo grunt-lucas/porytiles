@@ -12,10 +12,11 @@ porytiles2 create-tileset MyTileset
 ### Logic Flow
 1. Check if the primary tileset already exists. If so, abort with an error message.
 2. Initialize a `PorytilesTilesetComponent` with default assets.
-3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
-4. Initialize a new `Tileset` aggregate with the components.
-5. Update the source and header files.
-6. Persist the `Tileset` (which also caches the checksums).
+3. Initialize a blank `PorymapTilesetComponent`, to be filled later.
+4. Initialize a `Tileset` aggregate with the components.
+5. Compile the `Tileset`, generating a new modified `Tileset`.
+6. Update the source and header files.
+7. Persist the new `Tileset` (which also caches the checksums).
 
 ### Outputs
 The resulting tileset directory tree:
@@ -190,7 +191,7 @@ porytiles2 compile-tileset MyTileset
 3. If `PorytilesTilesetComponent` is empty, bail with error.
 4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any differ, bail with the message "unimported changes present in Porymap asset X."
 5. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
-6. Compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
+6. Compile the `Tileset`, generating a new modified `Tileset`.
 7. Persist the `Tileset` (which also caches the checksums).
 
 ## Compile Secondary Tileset
