@@ -7,8 +7,8 @@
 
 namespace porytiles2 {
 
-[[nodiscard]] ChainableResult<std::vector<RgbaMetatile>>
-RgbaImageMetatileizer::metatileize(const Image<Rgba32> &img) const
+[[nodiscard]] ChainableResult<std::vector<RgbaMetatile>> RgbaImageMetatileizer::metatileize(
+    const Image<Rgba32> &bottom, const Image<Rgba32> &middle, const Image<Rgba32> &top) const
 {
     return BasicError{"TODO: implement"};
 }
