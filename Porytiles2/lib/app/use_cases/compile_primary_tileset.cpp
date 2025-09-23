@@ -3,7 +3,7 @@
 #include <expected>
 #include <memory>
 
-#include "porytiles2/domain/compile_tileset/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
@@ -48,23 +48,15 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         return {};
     }
 
-    // 6. Compile the `PorytilesTilesetComponent`, generating a new `PorymapTilesetComponent`.
-    const auto &porytiles_component = tileset->porytiles_component();
-    auto maybe_porymap_component = compiler_->compile(porytiles_component);
-    if (!maybe_porymap_component.has_value()) {
-        return ChainableResult<void>{BasicError{maybe_porymap_component.error()}};
+    // 6. Compile the `Tileset`, generating a new modified `Tileset`.
+    auto maybe_new_tileset = compiler_->compile(*tileset);
+    if (!maybe_new_tileset.has_value()) {
+        return ChainableResult<void>{BasicError{maybe_new_tileset.error()}};
     }
-    auto porymap_component = std::move(maybe_porymap_component.value());
-    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
-    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // persisting. One way around this would be to add PLA files to the Porytiles component. Compilation can simply copy
-    // them over. We'll also have to handle this on the import side. That is, when importing a tileset that contains PLA
-    // files, we need to make sure to copy them into the new Porytiles component.
-    tileset->porymap_component(std::move(porymap_component));
+    const auto new_tileset = std::move(maybe_new_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
+    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
         return ChainableResult<void>{BasicError{save_result.error()}};
     }
 

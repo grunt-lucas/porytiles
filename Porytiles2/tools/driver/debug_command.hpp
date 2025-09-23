@@ -6,8 +6,8 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/domain/compile_tileset/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"

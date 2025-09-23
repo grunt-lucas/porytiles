@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
 #include "porytiles2/templates/text_formatter.hpp"
 
@@ -22,25 +23,28 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     }
     auto porytiles_component = std::move(maybe_porytiles_component.value());
 
-    // 3. Compile the `PorytilesTilesetComponent` to generate an initial `PorymapTilesetComponent`.
-    auto maybe_porymap_component = compiler_->compile(*porytiles_component);
-    if (!maybe_porymap_component.has_value()) {
-        return std::unexpected{maybe_porymap_component.error().details(TextFormatter{false})};
-    }
-    auto porymap_component = std::move(maybe_porymap_component.value());
+    // 3. Initialize a blank `PorymapTilesetComponent`, to be filled later.
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
 
-    // 4. Initialize a new `Tileset` aggregate with the components.
+    // 4. Initialize a `Tileset` aggregate with the components.
     Tileset tileset{tileset_name, std::move(porytiles_component), std::move(porymap_component)};
 
-    // 5. Update the source and header files.
+    // 5. Compile the `Tileset`, generating a new modified `Tileset`.
+    auto maybe_new_tileset = compiler_->compile(tileset);
+    if (!maybe_new_tileset.has_value()) {
+        return std::unexpected{maybe_new_tileset.error().details(TextFormatter{false})};
+    }
+    const auto new_tileset = std::move(maybe_new_tileset.value());
+
+    // 6. Update the source and header files.
     // TODO: this should use some kind of capable C source modification utility
     // if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
     //     !header_update_result.has_value()) {
     //     return std::unexpected{header_update_result.error()};
     // }
 
-    // 6. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(tileset); !save_result.has_value()) {
+    // 7. Persist the new `Tileset` (which also caches the checksums).
+    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
         return std::unexpected{save_result.error()};
     }
 

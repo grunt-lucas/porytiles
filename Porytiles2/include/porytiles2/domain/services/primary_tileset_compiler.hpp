@@ -1,0 +1,22 @@
+#pragma once
+
+#include <memory>
+
+#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/templates/result.hpp"
+
+namespace porytiles2 {
+
+/**
+ * @brief Service that compiles a primary Tileset.
+ */
+class PrimaryTilesetCompiler {
+  public:
+    PrimaryTilesetCompiler() = default;
+
+    ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
+
+    ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
+};
+
+} // namespace porytiles2
