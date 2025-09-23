@@ -132,3 +132,182 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldProduceCorrectMetatileStructure)
         EXPECT_EQ(metatile.bottom(3).at(0, 0), expected_color) << "Metatile " << i << " tile 3 color mismatch";
     }
 }
+
+// ====================================================================================
+// Demetatileize Tests
+// ====================================================================================
+
+TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyDemetatileizeValidMetatiles)
+{
+    // Create a simple 32x32 test image (2x2 metatiles) with distinct colors
+    Image<Rgba32> bottom_image{32, 32};
+    Image<Rgba32> middle_image{32, 32};
+    Image<Rgba32> top_image{32, 32};
+
+    // Fill images with different colors for each layer
+    const Rgba32 bottom_color{255, 0, 0, 255}; // Red
+    const Rgba32 middle_color{0, 255, 0, 255}; // Green
+    const Rgba32 top_color{0, 0, 255, 255};    // Blue
+
+    for (std::size_t row = 0; row < 32; ++row) {
+        for (std::size_t col = 0; col < 32; ++col) {
+            bottom_image.set(row, col, bottom_color);
+            middle_image.set(row, col, middle_color);
+            top_image.set(row, col, top_color);
+        }
+    }
+
+    // Metatileize the images
+    auto metatileize_result = metatileizer_->metatileize(bottom_image, middle_image, top_image);
+    ASSERT_TRUE(metatileize_result.has_value()) << "Failed to metatileize test images";
+
+    const auto &metatiles = metatileize_result.value();
+    EXPECT_EQ(metatiles.size(), 4); // 2x2 = 4 metatiles
+
+    // Demetatileize back to images
+    auto demetatileize_result = metatileizer_->demetatileize(metatiles, 2, 2);
+    ASSERT_TRUE(demetatileize_result.has_value())
+        << "Failed to demetatileize: " << demetatileize_result.error().details(TextFormatter{false});
+
+    const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
+
+    // Verify dimensions match
+    EXPECT_EQ(reconstructed_bottom.width(), 32);
+    EXPECT_EQ(reconstructed_bottom.height(), 32);
+    EXPECT_EQ(reconstructed_middle.width(), 32);
+    EXPECT_EQ(reconstructed_middle.height(), 32);
+    EXPECT_EQ(reconstructed_top.width(), 32);
+    EXPECT_EQ(reconstructed_top.height(), 32);
+
+    // Verify pixel colors match original
+    for (std::size_t row = 0; row < 32; ++row) {
+        for (std::size_t col = 0; col < 32; ++col) {
+            EXPECT_EQ(reconstructed_bottom.at(row, col), bottom_color)
+                << "Bottom mismatch at (" << row << "," << col << ")";
+            EXPECT_EQ(reconstructed_middle.at(row, col), middle_color)
+                << "Middle mismatch at (" << row << "," << col << ")";
+            EXPECT_EQ(reconstructed_top.at(row, col), top_color) << "Top mismatch at (" << row << "," << col << ")";
+        }
+    }
+}
+
+TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
+{
+    // Load test images
+    auto bottom_result = loader_->load_from_file("Resources/Tests/unit/domain/services/bottom1.png");
+    auto middle_result = loader_->load_from_file("Resources/Tests/unit/domain/services/middle1.png");
+    auto top_result = loader_->load_from_file("Resources/Tests/unit/domain/services/top1.png");
+
+    ASSERT_TRUE(bottom_result.has_value()) << "Failed to load bottom test image";
+    ASSERT_TRUE(middle_result.has_value()) << "Failed to load middle test image";
+    ASSERT_TRUE(top_result.has_value()) << "Failed to load top test image";
+
+    const auto &original_bottom = *bottom_result.value();
+    const auto &original_middle = *middle_result.value();
+    const auto &original_top = *top_result.value();
+
+    // Store original dimensions
+    const std::size_t original_width = original_bottom.width();
+    const std::size_t original_height = original_bottom.height();
+
+    // Metatileize
+    auto metatileize_result = metatileizer_->metatileize(original_bottom, original_middle, original_top);
+    ASSERT_TRUE(metatileize_result.has_value()) << "Failed to metatileize original images";
+
+    const auto &metatiles = metatileize_result.value();
+    const std::size_t metatiles_per_row = original_width / RgbaMetatile::metatile_side_length;
+    const std::size_t metatiles_per_col = original_height / RgbaMetatile::metatile_side_length;
+
+    // Demetatileize
+    auto demetatileize_result = metatileizer_->demetatileize(metatiles, metatiles_per_row, metatiles_per_col);
+    ASSERT_TRUE(demetatileize_result.has_value())
+        << "Failed to demetatileize: " << demetatileize_result.error().details(TextFormatter{false});
+
+    const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
+
+    // Verify dimensions match
+    EXPECT_EQ(reconstructed_bottom.width(), original_width);
+    EXPECT_EQ(reconstructed_bottom.height(), original_height);
+    EXPECT_EQ(reconstructed_middle.width(), original_width);
+    EXPECT_EQ(reconstructed_middle.height(), original_height);
+    EXPECT_EQ(reconstructed_top.width(), original_width);
+    EXPECT_EQ(reconstructed_top.height(), original_height);
+
+    // Verify pixel-perfect reconstruction
+    for (std::size_t row = 0; row < original_height; ++row) {
+        for (std::size_t col = 0; col < original_width; ++col) {
+            EXPECT_EQ(reconstructed_bottom.at(row, col), original_bottom.at(row, col))
+                << "Bottom pixel mismatch at (" << row << "," << col << ")";
+            EXPECT_EQ(reconstructed_middle.at(row, col), original_middle.at(row, col))
+                << "Middle pixel mismatch at (" << row << "," << col << ")";
+            EXPECT_EQ(reconstructed_top.at(row, col), original_top.at(row, col))
+                << "Top pixel mismatch at (" << row << "," << col << ")";
+        }
+    }
+}
+
+TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailDemetatileizeWithIncorrectMetatilesCount)
+{
+    // Create some test metatiles
+    std::vector<RgbaMetatile> metatiles(5); // 5 metatiles
+
+    // Try to demetatileize with dimensions that don't match
+    auto result = metatileizer_->demetatileize(metatiles, 2, 2); // Expecting 4 metatiles (2x2), but got 5
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(
+        result.error().details(TextFormatter{false}).find("does not match expected count") != std::string::npos);
+}
+
+TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailDemetatileizeWithZeroDimensions)
+{
+    std::vector<RgbaMetatile> metatiles;
+
+    // Try with zero dimensions
+    auto result1 = metatileizer_->demetatileize(metatiles, 0, 1);
+    ASSERT_FALSE(result1.has_value());
+    EXPECT_TRUE(result1.error().details(TextFormatter{false}).find("must be greater than zero") != std::string::npos);
+
+    auto result2 = metatileizer_->demetatileize(metatiles, 1, 0);
+    ASSERT_FALSE(result2.has_value());
+    EXPECT_TRUE(result2.error().details(TextFormatter{false}).find("must be greater than zero") != std::string::npos);
+}
+
+TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleSingleMetatileDemetatileize)
+{
+    // Create a single 16x16 test image
+    Image<Rgba32> test_image{16, 16};
+    const Rgba32 test_color{128, 64, 192, 255}; // Purple
+
+    for (std::size_t row = 0; row < 16; ++row) {
+        for (std::size_t col = 0; col < 16; ++col) {
+            test_image.set(row, col, test_color);
+        }
+    }
+
+    // Metatileize
+    auto metatileize_result = metatileizer_->metatileize(test_image, test_image, test_image);
+    ASSERT_TRUE(metatileize_result.has_value());
+
+    const auto &metatiles = metatileize_result.value();
+    EXPECT_EQ(metatiles.size(), 1); // Single metatile
+
+    // Demetatileize
+    auto demetatileize_result = metatileizer_->demetatileize(metatiles, 1, 1);
+    ASSERT_TRUE(demetatileize_result.has_value());
+
+    const auto &[bottom, middle, top] = demetatileize_result.value();
+
+    // Verify dimensions
+    EXPECT_EQ(bottom.width(), 16);
+    EXPECT_EQ(bottom.height(), 16);
+
+    // Verify all pixels have the correct color
+    for (std::size_t row = 0; row < 16; ++row) {
+        for (std::size_t col = 0; col < 16; ++col) {
+            EXPECT_EQ(bottom.at(row, col), test_color);
+            EXPECT_EQ(middle.at(row, col), test_color);
+            EXPECT_EQ(top.at(row, col), test_color);
+        }
+    }
+}
