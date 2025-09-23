@@ -8,6 +8,7 @@
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -22,6 +23,7 @@
 #include "porytiles2/templates/text_formatter.hpp"
 
 #include "command.hpp"
+#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 
 class DebugCommand final : public Command {
   public:
@@ -57,7 +59,7 @@ class DebugCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        // Run compilation
+        // Load the tileset
         auto maybe_tileset = repo.load(tileset_name_);
         if (!maybe_tileset.has_value()) {
             for (const auto &err : maybe_tileset.chain()) {
@@ -65,9 +67,22 @@ class DebugCommand final : public Command {
             }
         }
         const auto tileset = std::move(maybe_tileset.value());
-        const auto maybe_porymap = compiler.compile(tileset->porytiles_component());
-        if (!maybe_porymap.has_value()) {
-            std::cerr << maybe_porymap.error().details(TextFormatter{false}) << std::endl;
+
+        // Normalize tiles and write them back so we can inspect the normalization results
+        RgbaLayerImageMetatileizer metatileizer{};
+        auto maybe_metatiles = metatileizer.metatileize(
+            tileset->porytiles_component().bottom(),
+            tileset->porytiles_component().middle(),
+            tileset->porytiles_component().top());
+        if (!maybe_metatiles.has_value()) {
+            for (const auto &err : maybe_metatiles.chain()) {
+                std::cerr << err->details(formatter) << std::endl;
+            }
+        }
+        const auto metatiles = std::move(maybe_metatiles.value());
+
+        std::vector<RgbaMetatile> new_metatiles{};
+        for (const auto &metatile : metatiles) {
         }
     }
 

@@ -8,15 +8,21 @@
 namespace porytiles2 {
 
 /**
- * @brief Domain service for normalizing RGBA tiles.
+ * @brief Domain service for normalizing and denormalizing RGBA tiles.
  *
  * @details
- * The RgbaTileNormalizer converts an RgbaTile to its canonical NormalizedTile form.
- * The normalization process involves:
+ * The RgbaTileNormalizer provides comprehensive functionality for converting between RgbaTile and NormalizedTile
+ * formats.
+ *
+ * Normalization process involves:
  * - Constructing a NormalizedPal from the tile's unique colors
  * - Creating candidate NormalizedTiles with different flip combinations
  * - Selecting the lexicographically smallest tile as the normal form
  * - Validating that the tile has at most 16 unique colors (15 + transparency)
+ *
+ * Denormalization process supports two modes:
+ * - Full denormalization that undoes the flips applied during normalization
+ * - Partial conversion that preserves the normalized flip state for inspection
  */
 class RgbaTileNormalizer {
   public:
@@ -34,6 +40,38 @@ class RgbaTileNormalizer {
      */
     [[nodiscard]] ChainableResult<NormalizedTile<Rgba32>>
     normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency = Rgba32{}) const;
+
+    /**
+     * @brief Converts a NormalizedTile back to the original RgbaTile format.
+     *
+     * @details
+     * This method performs the complete inverse of the normalization process:
+     * 1. Converts IndexPixels back to RGBA colors using the tile's palette
+     * 2. Applies the reverse of any flips that were applied during normalization
+     *
+     * The result should be equivalent to the original tile that was normalized, making this method suitable for
+     * round-trip operations.
+     *
+     * @param normalized_tile The normalized tile to convert back to RGBA format
+     * @return RgbaTile representing the original tile before normalization
+     */
+    [[nodiscard]] RgbaTile denormalize(const NormalizedTile<Rgba32> &normalized_tile) const;
+
+    /**
+     * @brief Converts a NormalizedTile to RGBA format while preserving the normalized flip state.
+     *
+     * @details
+     * This method performs only the color conversion step of denormalization:
+     * 1. Converts IndexPixels back to RGBA colors using the tile's palette
+     * 2. Does NOT undo the flips applied during normalization
+     *
+     * The result preserves the normalized flip state, making it useful for testing and inspecting the effects of
+     * normalization. The returned tile will have the same visual arrangement as the normalized form.
+     *
+     * @param normalized_tile The normalized tile to convert to RGBA format
+     * @return RgbaTile with colors converted but flips preserved
+     */
+    [[nodiscard]] RgbaTile denormalize_preserving_flips(const NormalizedTile<Rgba32> &normalized_tile) const;
 };
 
 } // namespace porytiles2
