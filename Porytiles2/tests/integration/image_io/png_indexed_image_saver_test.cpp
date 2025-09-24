@@ -283,7 +283,7 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly)
 
             // Verify transparency detection works
             if (original_pixel.index() == 0) {
-                EXPECT_TRUE(loaded_pixel.is_transparent(IndexPixel{}))
+                EXPECT_TRUE(loaded_pixel.is_transparent(std::set<IndexPixel>{}))
                     << "Pixel should be transparent at (" << row << ", " << col << ")";
             }
         }

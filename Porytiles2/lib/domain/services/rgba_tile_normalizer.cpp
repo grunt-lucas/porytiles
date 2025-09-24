@@ -24,11 +24,17 @@ namespace {
 [[nodiscard]] ChainableResult<NormalizedPal<Rgba32>>
 build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency)
 {
-    std::set<Rgba32> unique_colors;
+    std::set<Rgba32> unique_colors{};
+
+    /*
+     * TODO: we need to figure out the best way for the Normalizer to handle multiple extrinsic transparency values.
+     */
+    std::set<Rgba32> extrinsics{};
+    extrinsics.insert(extrinsic_transparency);
 
     // Collect all unique non-transparent colors
     for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
-        if (const Rgba32 pixel = rgba_tile.at(i); !pixel.is_transparent(extrinsic_transparency)) {
+        if (const Rgba32 pixel = rgba_tile.at(i); !pixel.is_transparent(extrinsics)) {
             unique_colors.insert(pixel);
         }
     }
@@ -73,13 +79,19 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
     // Transparency color should always be at index 0
     std::unordered_map<Rgba32, unsigned int> color_to_index;
 
+    /*
+     * TODO: we need to figure out the best way for the Normalizer to handle multiple extrinsic transparency values.
+     */
+    std::set<Rgba32> extrinsics{};
+    extrinsics.insert(extrinsic_transparency);
+
     // Assign transparency color to index 0
     color_to_index[extrinsic_transparency] = 0;
 
     // Assign all other colors to subsequent indices
     unsigned int index = 1;
     for (const auto &color : palette.colors()) {
-        if (color.is_transparent(extrinsic_transparency)) {
+        if (color.is_transparent(extrinsics)) {
             panic(fmt::format("palette contains transparent color {} at index {}", color.to_jasc_str(), index));
         }
         color_to_index[color] = index++;
@@ -96,7 +108,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
         // Determine the palette index for this pixel
         unsigned int palette_index = 0; // Transparent color is always at index 0
         // If not transparent, get the index into the palette
-        if (!src_pixel.is_transparent(extrinsic_transparency)) {
+        if (!src_pixel.is_transparent(extrinsics)) {
             auto it = color_to_index.find(src_pixel);
             if (it == color_to_index.end()) {
                 // Debug: This should never happen

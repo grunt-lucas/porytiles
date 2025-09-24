@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <set>
 
 #include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/templates/panic.hpp"
@@ -32,14 +33,14 @@ class Tile {
      *
      * @details
      * A tile is transparent if all of its pixels are either intrinsically transparent or are extrinsically transparent,
-     * according to the provided extrinsic transparency value.
+     * according to the provided extrinsic transparency values.
      *
-     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @param extrinsics The extrinsic transparency values to check each pixel against
      * @return True if all pixels in the tile are transparent, false otherwise
      */
-    [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const
+    [[nodiscard]] virtual bool is_transparent(const std::set<PixelType> &extrinsics) const
     {
-        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
+        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsics); });
     }
 
     [[nodiscard]] PixelType at(std::size_t i) const

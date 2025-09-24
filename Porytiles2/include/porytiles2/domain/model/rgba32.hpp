@@ -2,6 +2,7 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <cstdint>
+#include <set>
 #include <string>
 
 namespace porytiles2 {
@@ -20,17 +21,19 @@ class Rgba32 {
 
     auto operator<=>(const Rgba32 &rgba) const = default;
 
+    bool operator==(const Rgba32 &rgba) const = default;
+
     /**
      * @brief Checks if this color should be treated as transparent.
      *
      * @details
-     * An RGBA32 color is considered transparent if either the color matches the extrinsic transparency color (ignoring
-     * alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
+     * An RGBA32 color is considered transparent if either the color matches one of the extrinsic transparency colors
+     * (ignoring alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
      *
-     * @param extrinsic The extrinsic transparency color to check against
+     * @param extrinsic The extrinsic transparency colors to check against
      * @return True if this color should be treated as transparent, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const;
+    [[nodiscard]] bool is_transparent(const std::set<Rgba32> &extrinsic) const;
 
     [[nodiscard]] std::string to_jasc_str() const;
 
@@ -76,17 +79,17 @@ inline auto format_as(const Rgba32 &rgba)
     return rgba.to_jasc_str();
 }
 
-constexpr Rgba32 kRgbaBlack{0, 0, 0, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaWhite{255, 255, 255, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaGrey{128, 128, 128, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaRed{255, 0, 0, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaGreen{0, 255, 0, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaBlue{0, 0, 255, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaYellow{255, 255, 0, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaMagenta{255, 0, 255, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaCyan{0, 255, 255, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaPurple{128, 0, 255, Rgba32::alpha_opaque};
-constexpr Rgba32 kRgbaLime{128, 255, 128, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_black{0, 0, 0, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_white{255, 255, 255, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_grey{128, 128, 128, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_red{255, 0, 0, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_green{0, 255, 0, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_blue{0, 0, 255, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_yellow{255, 255, 0, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_magenta{255, 0, 255, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_cyan{0, 255, 255, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_purple{128, 0, 255, Rgba32::alpha_opaque};
+constexpr Rgba32 rgba_lime{128, 255, 128, Rgba32::alpha_opaque};
 
 // std::size_t hash_value(const Rgba32 &obj) {
 //     std::size_t seed = 0x7A22F97A;

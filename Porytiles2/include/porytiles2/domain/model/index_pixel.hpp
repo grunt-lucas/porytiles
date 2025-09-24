@@ -1,5 +1,9 @@
 #pragma once
 
+// ReSharper disable once CppUnusedIncludeDirective
+#include <compare>
+#include <set>
+
 namespace porytiles2 {
 
 class IndexPixel {
@@ -22,10 +26,10 @@ class IndexPixel {
      * @details
      * In indexed color mode, palette index 0 is conventionally the transparent color.
      *
-     * @param unused The extrinsic transparency value (unused for indexed pixels)
+     * @param unused The extrinsic transparency values (unused for indexed pixels)
      * @return True if the palette index is 0, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const IndexPixel &unused) const
+    [[nodiscard]] bool is_transparent(const std::set<IndexPixel> &unused) const
     {
         return index_ == 0;
     }

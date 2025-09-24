@@ -97,7 +97,7 @@ class DebugNormalizeCommand final : public Command {
             for (const auto &bottom_tile : metatile.bottom()) {
                 // Convert using the new conversion constructor
                 RgbaTile rgba_tile{bottom_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
                 if (normalized_result.has_value()) {
                     RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
                     new_metatile.set_bottom(tile_idx, denormalized_tile);
@@ -109,7 +109,7 @@ class DebugNormalizeCommand final : public Command {
             for (const auto &middle_tile : metatile.middle()) {
                 // Convert using the new conversion constructor
                 RgbaTile rgba_tile{middle_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
                 if (normalized_result.has_value()) {
                     RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
                     new_metatile.set_middle(tile_idx, denormalized_tile);
@@ -121,7 +121,7 @@ class DebugNormalizeCommand final : public Command {
             for (const auto &top_tile : metatile.top()) {
                 // Convert using the new conversion constructor
                 RgbaTile rgba_tile{top_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
                 if (normalized_result.has_value()) {
                     RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
                     new_metatile.set_top(tile_idx, denormalized_tile);

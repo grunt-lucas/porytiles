@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <set>
 
 #include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/domain/model/tile.hpp"
@@ -31,20 +32,20 @@ class Metatile {
      * @brief Checks if this entire metatile is transparent.
      *
      * @details
-     * A metatile is transparent if all tiles in all three layers (bottom, middle, and top) are transparent, according
-     * to the provided transparency value.
+     * A metatile is transparent if all of its pixels are either intrinsically transparent or are extrinsically
+     * transparent, according to the provided extrinsic transparency values.
      *
-     * @param transparency The transparency value to check each tile against
+     * @param extrinsics The extrinsic transparency values to check each pixel against
      * @return True if all tiles in all layers are transparent, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const PixelType &transparency) const
+    [[nodiscard]] bool is_transparent(const std::set<PixelType> &extrinsics) const
     {
         const bool bottom_transparent =
-            std::ranges::all_of(bottom(), [=](const auto &tile) { return tile.is_transparent(transparency); });
+            std::ranges::all_of(bottom(), [=](const auto &tile) { return tile.is_transparent(extrinsics); });
         const bool middle_transparent =
-            std::ranges::all_of(middle(), [=](const auto &tile) { return tile.is_transparent(transparency); });
+            std::ranges::all_of(middle(), [=](const auto &tile) { return tile.is_transparent(extrinsics); });
         const bool top_transparent =
-            std::ranges::all_of(top(), [=](const auto &tile) { return tile.is_transparent(transparency); });
+            std::ranges::all_of(top(), [=](const auto &tile) { return tile.is_transparent(extrinsics); });
         return bottom_transparent && middle_transparent && top_transparent;
     }
 

@@ -1,12 +1,20 @@
 #include "porytiles2/domain/model/rgba32.hpp"
 
+#include <algorithm>
+#include <set>
 #include <string>
 
 namespace porytiles2 {
 
-[[nodiscard]] bool Rgba32::is_transparent(const Rgba32 &extrinsic) const
+[[nodiscard]] bool Rgba32::is_transparent(const std::set<Rgba32> &extrinsic) const
 {
-    return extrinsic.equals_ignoring_alpha(*this) || alpha_ == alpha_transparent;
+    if (alpha_ == alpha_transparent) {
+        return true;
+    }
+
+    return std::ranges::any_of(extrinsic, [this](const auto &extrinsic_color) {
+        return extrinsic_color.equals_ignoring_alpha(*this);
+    });
 }
 
 std::string Rgba32::to_jasc_str() const

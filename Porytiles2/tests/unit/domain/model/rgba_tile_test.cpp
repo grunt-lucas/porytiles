@@ -17,15 +17,26 @@ TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly)
         tile.set(i, Rgba32{255, 0, 255});
     }
 
-    EXPECT_FALSE(tile.is_transparent(kRgbaBlack));
-    EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
+    std::set<Rgba32> black_set{};
+    black_set.insert(rgba_black);
+    std::set<Rgba32> magenta_set{};
+    magenta_set.insert(rgba_magenta);
+    std::set<Rgba32> both_set{};
+    both_set.insert(rgba_black);
+    both_set.insert(rgba_magenta);
+
+    EXPECT_FALSE(tile.is_transparent(black_set));
+    EXPECT_TRUE(tile.is_transparent(magenta_set));
+    EXPECT_TRUE(tile.is_transparent(both_set));
 }
 
 TEST(RgbaTileTests, IsTransparentShouldUseAlphaCorrectly)
 {
     // Default-constructed RgbaTile is zeroed, i.e. black and transparent
     const RgbaTile tile{};
-    EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
+    std::set<Rgba32> magenta_set{};
+    magenta_set.insert(rgba_magenta);
+    EXPECT_TRUE(tile.is_transparent(magenta_set));
 }
 
 TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
@@ -39,6 +50,11 @@ TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
     // Set a pixel to non-magenta, but set alpha channel to transparent
     tile.set(12, Rgba32{22, 90, 144, Rgba32::alpha_transparent});
 
-    EXPECT_FALSE(tile.is_transparent(kRgbaBlack));
-    EXPECT_TRUE(tile.is_transparent(kRgbaMagenta));
+    std::set<Rgba32> black_set{};
+    black_set.insert(rgba_black);
+    std::set<Rgba32> magenta_set{};
+    magenta_set.insert(rgba_magenta);
+
+    EXPECT_FALSE(tile.is_transparent(black_set));
+    EXPECT_TRUE(tile.is_transparent(magenta_set));
 }
