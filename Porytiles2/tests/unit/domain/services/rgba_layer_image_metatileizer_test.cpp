@@ -216,7 +216,6 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
 
     const auto &metatiles = metatileize_result.value();
     const std::size_t metatiles_per_row = original_width / RgbaMetatile::metatile_side_length;
-    const std::size_t metatiles_per_col = original_height / RgbaMetatile::metatile_side_length;
 
     // Demetatileize
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, metatiles_per_row);
@@ -306,7 +305,8 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailDemetatileizeWithInvalidInput)
     std::vector<RgbaMetatile> empty_metatiles;
 
     // Try with zero metatiles_per_row - this will now panic
-    ASSERT_DEATH(metatileizer_->demetatileize(empty_metatiles, 0), "metatiles_per_row must be greater than zero");
+    ASSERT_DEATH(
+        std::ignore = metatileizer_->demetatileize(empty_metatiles, 0), "metatiles_per_row must be greater than zero");
 
     // Try with empty metatiles vector
     auto result = metatileizer_->demetatileize(empty_metatiles, 1);

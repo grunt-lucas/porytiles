@@ -16,11 +16,13 @@ namespace porytiles2 {
  * from an rgba Image. However, these external library details are entirely encapsulated within the
  * implementation. Users of the Porytiles library need not concern themselves with CImg details.
  */
-class PngRgbaImageSaver final {
+class PngRgbaImageSaver {
   public:
     PngRgbaImageSaver() = default;
+    virtual ~PngRgbaImageSaver() = default;
 
-    [[nodiscard]] Result<void> save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const;
+    [[nodiscard]] virtual Result<void>
+    save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2

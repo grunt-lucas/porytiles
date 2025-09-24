@@ -17,11 +17,12 @@ namespace porytiles2 {
  * @details
  * This loader's implementation uses png++ wrapper for libpng to save the Image to a PNG.
  */
-class PngIndexedImageSaver final {
+class PngIndexedImageSaver {
   public:
     PngIndexedImageSaver() = default;
+    virtual ~PngIndexedImageSaver() = default;
 
-    [[nodiscard]] Result<void>
+    [[nodiscard]] virtual Result<void>
     save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const;
 };
 
