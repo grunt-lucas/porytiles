@@ -6,9 +6,11 @@
 
 #include "CLI/CLI.hpp"
 
+#include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -17,13 +19,14 @@
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
+#include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
 #include "porytiles2/templates/result.hpp"
 #include "porytiles2/templates/text_formatter.hpp"
 
 #include "command.hpp"
-#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 
 class DebugCommand final : public Command {
   public:
@@ -65,6 +68,7 @@ class DebugCommand final : public Command {
             for (const auto &err : maybe_tileset.chain()) {
                 std::cerr << err->details(formatter) << std::endl;
             }
+            return;
         }
         const auto tileset = std::move(maybe_tileset.value());
 
@@ -78,12 +82,68 @@ class DebugCommand final : public Command {
             for (const auto &err : maybe_metatiles.chain()) {
                 std::cerr << err->details(formatter) << std::endl;
             }
+            return;
         }
         const auto metatiles = std::move(maybe_metatiles.value());
 
         std::vector<RgbaMetatile> new_metatiles{};
         for (const auto &metatile : metatiles) {
+            RgbaTileNormalizer normalizer{};
+            RgbaMetatile new_metatile{};
+
+            // Normalize and denormalize tiles to test round-trip functionality
+            std::size_t tile_idx = 0;
+            for (const auto &bottom_tile : metatile.bottom()) {
+                // Convert using the new conversion constructor
+                RgbaTile rgba_tile{bottom_tile};
+                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                if (normalized_result.has_value()) {
+                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+                    new_metatile.set_bottom(tile_idx, denormalized_tile);
+                }
+                ++tile_idx;
+            }
+
+            tile_idx = 0;
+            for (const auto &middle_tile : metatile.middle()) {
+                // Convert using the new conversion constructor
+                RgbaTile rgba_tile{middle_tile};
+                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                if (normalized_result.has_value()) {
+                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+                    new_metatile.set_middle(tile_idx, denormalized_tile);
+                }
+                ++tile_idx;
+            }
+
+            tile_idx = 0;
+            for (const auto &top_tile : metatile.top()) {
+                // Convert using the new conversion constructor
+                RgbaTile rgba_tile{top_tile};
+                auto normalized_result = normalizer.normalize(rgba_tile, kRgbaMagenta);
+                if (normalized_result.has_value()) {
+                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+                    new_metatile.set_top(tile_idx, denormalized_tile);
+                }
+                ++tile_idx;
+            }
+
+            new_metatiles.push_back(std::move(new_metatile));
         }
+
+        auto maybe_demetatileized_images = metatileizer.demetatileize(new_metatiles, 8, 8);
+        if (!maybe_demetatileized_images.has_value()) {
+            for (const auto &err : maybe_demetatileized_images.chain()) {
+                std::cerr << err->details(formatter) << std::endl;
+            }
+            return;
+        }
+        auto demetatileized_images = std::move(maybe_demetatileized_images.value());
+        tileset->porytiles_component().bottom(std::get<0>(demetatileized_images));
+        tileset->porytiles_component().middle(std::get<1>(demetatileized_images));
+        tileset->porytiles_component().top(std::get<2>(demetatileized_images));
+
+        std::ignore = repo.save(*tileset);
     }
 
   private:

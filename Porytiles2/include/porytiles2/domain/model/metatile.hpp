@@ -66,6 +66,19 @@ class Metatile {
     }
 
     /**
+     * @brief Get a constant reference to the entire bottom layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the bottom layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the bottom layer tile array.
+     */
+    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &bottom() const
+    {
+        return bottom_;
+    }
+
+    /**
      * @brief Set a Tile in the bottom layer.
      *
      * @details
@@ -100,6 +113,19 @@ class Metatile {
     }
 
     /**
+     * @brief Get a constant reference to the entire middle layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the middle layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the middle layer tile array.
+     */
+    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &middle() const
+    {
+        return middle_;
+    }
+
+    /**
      * @brief Set a Tile in the middle layer.
      *
      * @details
@@ -131,6 +157,19 @@ class Metatile {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
         }
         return top_[i];
+    }
+
+    /**
+     * @brief Get a constant reference to the entire top layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the top layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the top layer tile array.
+     */
+    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &top() const
+    {
+        return top_;
     }
 
     /**
