@@ -4,9 +4,4 @@
 
 namespace porytiles2 {
 
-bool RgbaTile::equals_as_bgr(const RgbaTile &other) const
-{
-    panic("TODO: unimplemented");
-}
-
 } // namespace porytiles2

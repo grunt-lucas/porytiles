@@ -24,8 +24,6 @@ class RgbaTile final : public Tile<Rgba32> {
             set(i, base_tile.at(i));
         }
     }
-
-    [[nodiscard]] bool equals_as_bgr(const RgbaTile &other) const;
 };
 
 } // namespace porytiles2
