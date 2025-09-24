@@ -27,14 +27,16 @@ and supplies pointers to the bottom, middle, and top RGBA layer images.
 |---------------------------------------|-----------------------------|
 | bottom, middle, top RGBA layer Images | `std::vector<RgbaMetatile>` |
 
-### Generate Color Collision Warnings Op
+### Validate Colors Op
 
 | Inputs                      | Outputs |
 |-----------------------------|---------|
 | `std::vector<RgbaMetatile>` | None    |
 
-This leaf operation reads the RgbaMetatiles
-and generates a warning for Rgba32 colors that will collide after `gbagfx` compression.
+This leaf operation reads the RgbaMetatiles and:
+- generates a warning for Rgba32 colors that will collide after `gbagfx` compression
+- generates a warning for Rgba32 colors with invalid alpha values (must be either 0 or 255)
+  - alpha 0 is treated as transparent, alpha anything else is opaque, but warn user if not 255 since partial opacity isn't a thing and probably isn't what the user intended
 
 ### Create Normalized Tiles Op
 
