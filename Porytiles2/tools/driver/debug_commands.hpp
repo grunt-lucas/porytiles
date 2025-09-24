@@ -132,7 +132,7 @@ class DebugNormalizeCommand final : public Command {
             new_metatiles.push_back(std::move(new_metatile));
         }
 
-        auto maybe_demetatileized_images = metatileizer.demetatileize(new_metatiles, 8, 8);
+        auto maybe_demetatileized_images = metatileizer.demetatileize(new_metatiles, 8);
         if (!maybe_demetatileized_images.has_value()) {
             for (const auto &err : maybe_demetatileized_images.chain()) {
                 std::cerr << err->details(formatter) << std::endl;

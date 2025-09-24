@@ -43,12 +43,12 @@ Multiple build configurations are available:
 - Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
 - GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
 - GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests
 
 Run all tests:
 ```bash
 ./build/Porytiles1/tests/Porytiles1Tests
-./build/Porytiles2/tests/Porytiles2UnitTests
-./build/Porytiles2/tests/Porytiles2IntegrationTests
+./build/Porytiles2/tests/Porytiles2AllTests # this runs both Porytiles2UnitTests and Porytiles2IntegrationTests
 ```
 
 ## Code Quality Tools

@@ -51,19 +51,19 @@ class RgbaLayerImageMetatileizer {
      * @details
      * This method performs the inverse of metatileize, reconstructing the original three layer images from a collection
      * of metatiles. The process involves:
-     * 1. Validating that the metatiles count corresponds to valid image dimensions
+     * 1. Computing the number of metatile rows based on the input vector size and metatiles_per_row
      * 2. Extracting tiles from each metatile and organizing them by layer
      * 3. Reconstructing the full images by combining tiles back into pixel data
+     * 4. Padding incomplete final rows with alpha=0 pixels when necessary
      *
      * @param metatiles The vector of RgbaMetatile objects to convert back to images
      * @param metatiles_per_row The number of metatiles per row (width in metatiles)
-     * @param metatiles_per_col The number of metatiles per column (height in metatiles)
      * @return A ChainableResult containing either:
      *         - Success: A tuple of three Image<Rgba32> objects (bottom, middle, top)
      *         - Error: A BasicError describing why demetatileization failed
      */
-    [[nodiscard]] ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>> demetatileize(
-        const std::vector<RgbaMetatile> &metatiles, std::size_t metatiles_per_row, std::size_t metatiles_per_col) const;
+    [[nodiscard]] ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>>
+    demetatileize(const std::vector<RgbaMetatile> &metatiles, std::size_t metatiles_per_row) const;
 
   private:
     RgbaImageTileizer tileizer_;
