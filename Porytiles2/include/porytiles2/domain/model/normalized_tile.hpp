@@ -119,9 +119,8 @@ class NormalizedTile final : public Tile<IndexPixel> {
     auto operator<=>(const NormalizedTile &other) const
     {
         // First compare the tile pixel data
-        if (auto base_cmp =
-                static_cast<const Tile<IndexPixel> &>(*this) <=> static_cast<const Tile<IndexPixel> &>(other);
-            base_cmp != 0) {
+        const auto base_cmp = static_cast<const Tile &>(*this) <=> static_cast<const Tile &>(other);
+        if (base_cmp != 0) {
             return base_cmp;
         }
 
