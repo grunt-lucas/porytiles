@@ -5,7 +5,7 @@
 
 #include "command.hpp"
 #include "create_tileset_command.hpp"
-#include "debug_command.hpp"
+#include "debug_commands.hpp"
 #include "verify_tileset_command.hpp"
 
 int main(const int argc, char **argv)
@@ -51,7 +51,7 @@ https://github.com/huderlem/porymap)");
 
     CreateTilesetCommand create_tileset{porytiles_app};
     VerifyTilesetCommand verify_tileset{porytiles_app};
-    DebugCommand debug{porytiles_app};
+    DebugNormalizeCommand debug{porytiles_app};
 
     porytiles_app.require_subcommand();
 
