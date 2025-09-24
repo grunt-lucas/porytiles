@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iterator>
+#include <tuple>
 
 #include "fmt/format.h"
 
@@ -104,34 +105,31 @@ class NormalizedTile final : public Tile<IndexPixel> {
         return resolve_index_pixel(at(row, col));
     }
 
-    // TODO: I don't think we need these operators?
-    // /**
-    //  * @brief Compares two NormalizedTile objects for ordering.
-    //  *
-    //  * @details
-    //  * Comparison is performed first on the tile pixel data (via base class), then on the flip states, then on the
-    //  * palette. This ensures that the lexicographically smallest tile representation is chosen as the normal form.
-    //  *
-    //  * @param other The other NormalizedTile to compare against
-    //  * @return Ordering relationship between this tile and other
-    //  */
-    // auto operator<=>(const NormalizedTile &other) const
-    // {
-    //     // First compare the tile pixel data
-    //     if (auto base_cmp = static_cast<const Tile &>(*this) <=> static_cast<const Tile &>(other); base_cmp != 0) {
-    //         return base_cmp;
-    //     }
-    //
-    //     // Then compare flip states
-    //     if (auto flip_cmp = std::tie(h_flip_, v_flip_) <=> std::tie(other.h_flip_, other.v_flip_); flip_cmp != 0) {
-    //         return flip_cmp;
-    //     }
-    //
-    //     // Finally compare palettes
-    //     return pal_.colors() <=> other.pal_.colors();
-    // }
-    //
-    // bool operator==(const NormalizedTile &other) const = default;
+    /**
+     * @brief Compares two NormalizedTile objects for ordering.
+     *
+     * @details
+     * Comparison is performed on the tile pixel data (via base class) and the palette. Flip states are not included in
+     * the comparison since tiles with the same pixel pattern and palette should be considered equivalent regardless of
+     * how they were flipped during normalization.
+     *
+     * @param other The other NormalizedTile to compare against
+     * @return Ordering relationship between this tile and other
+     */
+    auto operator<=>(const NormalizedTile &other) const
+    {
+        // First compare the tile pixel data
+        if (auto base_cmp =
+                static_cast<const Tile<IndexPixel> &>(*this) <=> static_cast<const Tile<IndexPixel> &>(other);
+            base_cmp != 0) {
+            return base_cmp;
+        }
+
+        // Then compare palettes (flip states are not compared)
+        return pal_.colors() <=> other.pal_.colors();
+    }
+
+    bool operator==(const NormalizedTile &other) const = default;
 
   private:
     /**

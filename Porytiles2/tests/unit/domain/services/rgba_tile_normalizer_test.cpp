@@ -1,16 +1,20 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <memory>
+#include <set>
 
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/model/rgba_tile.hpp"
+#include "porytiles2/domain/services/rgba_image_tileizer.hpp"
 #include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
+#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 
 using namespace porytiles2;
 
 class RgbaTileNormalizerTest : public ::testing::Test {
   protected:
-    RgbaTileNormalizer normalizer_;
+    RgbaTileNormalizer normalizer_{};
 
     // Helper function to flip an RgbaTile
     [[nodiscard]] RgbaTile flip_rgba_tile(const RgbaTile &tile, bool h_flip, bool v_flip) const
@@ -697,4 +701,30 @@ TEST_F(RgbaTileNormalizerTest, ShouldWorkWithExtrinsicTransparencyPreservingFlip
     for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
+}
+
+TEST_F(RgbaTileNormalizerTest, ShouldHandleIssue0118EdgeCaseCorrectly)
+{
+    // https://github.com/grunt-lucas/porytiles/issues/118
+    const PngRgbaImageLoader loader{};
+    const RgbaImageTileizer tileizer{};
+
+    auto input_png_result = loader.load_from_file("Resources/Tests/unit/domain/services/normalization_edge_case.png");
+    ASSERT_TRUE(input_png_result.has_value()) << "Failed to load edge case test image";
+
+    const auto tiles_result = tileizer.tileize(*input_png_result.value());
+    ASSERT_TRUE(tiles_result.has_value()) << "Failed to tileize edge case test image";
+
+    const auto &tiles = tiles_result.value();
+
+    std::set<NormalizedTile<Rgba32>> normalized_tiles;
+
+    for (const auto &tile : tiles) {
+        auto normalized_result = normalizer_.normalize(tile);
+        ASSERT_TRUE(normalized_result.has_value()) << "Failed to normalize tile";
+        const auto &normalized_tile = normalized_result.value();
+        normalized_tiles.insert(normalized_tile);
+    }
+
+    ASSERT_EQ(1, normalized_tiles.size()) << "Expected all tiles to normalize to the same result";
 }
