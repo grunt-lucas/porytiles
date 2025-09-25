@@ -27,13 +27,13 @@ class Rgba32 {
      * @brief Checks if this color should be treated as transparent.
      *
      * @details
-     * An RGBA32 color is considered transparent if either the color matches one of the extrinsic transparency colors
-     * (ignoring alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
+     * An RGBA32 color is considered transparent if either the color matches the extrinsic transparency color (ignoring
+     * alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
      *
-     * @param extrinsic The extrinsic transparency colors to check against
+     * @param extrinsic The extrinsic transparency color to check against
      * @return True if this color should be treated as transparent, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const std::set<Rgba32> &extrinsic) const;
+    [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] std::string to_jasc_str() const;
 
