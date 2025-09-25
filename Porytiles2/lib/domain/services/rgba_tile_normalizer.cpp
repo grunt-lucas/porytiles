@@ -36,7 +36,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
     // Check color count limit (15 non-transparent + 1 transparent = 16 total)
     if (unique_colors.size() > 15) {
         return BasicError{fmt::format(
-            "tile has {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
+            "tile had {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
     }
 
     NormalizedPal palette{extrinsic_transparency};

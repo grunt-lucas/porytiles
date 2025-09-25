@@ -17,9 +17,9 @@ namespace porytiles2 {
  *
  * @details
  * NormalizedTile extends the base Tile class to store IndexPixel data along with horizontal and vertical flip states.
- * It also maintains an internal normalized palette.
+ * It also maintains an internal NormalizedPal.
  *
- * @tparam ColorType The type of color objects used in the tile's normalized palette
+ * @tparam ColorType The type of color objects used in the tile's NormalizedPal.
  */
 template <typename ColorType>
 class NormalizedTile final : public Tile<IndexPixel> {
@@ -57,7 +57,7 @@ class NormalizedTile final : public Tile<IndexPixel> {
     }
 
     /**
-     * @brief Returns a const reference to the normalized palette.
+     * @brief Returns a const reference to the NormalizedPal.
      *
      * @return A const reference to the tile's palette
      */
@@ -67,7 +67,7 @@ class NormalizedTile final : public Tile<IndexPixel> {
     }
 
     /**
-     * @brief Returns a mutable reference to the normalized palette.
+     * @brief Returns a mutable reference to the NormalizedPal.
      *
      * @return A mutable reference to the tile's palette
      */
