@@ -3,8 +3,12 @@
 #include <memory>
 #include <vector>
 
+#include "porytiles2/domain/model/normalized_tile.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
 #include "porytiles2/templates/error.hpp"
 #include "porytiles2/templates/panic.hpp"
 #include "porytiles2/templates/result.hpp"
@@ -13,17 +17,52 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
 {
+    // Initialize all the services we need
     RgbaLayerImageMetatileizer metatileizer{};
+    RgbaTileNormalizer normalizer{};
+    ColorIndexMapBuilder color_index_map_builder{};
 
+    // Transform the tileset layer images into a sequence of metatiles
     const auto metatiles_result = metatileizer.metatileize(
         tileset.porytiles_component().bottom(),
         tileset.porytiles_component().middle(),
         tileset.porytiles_component().top());
-
     if (!metatiles_result.has_value()) {
         return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
             BasicError{"failed to metatileize input layer images"}, metatiles_result);
     }
+    const auto &metatiles = metatiles_result.value();
+
+    // Compute NormalizedTiles from the input metatiles
+    std::vector<NormalizedTile<Rgba32>> norm_tiles{};
+    for (const auto &metatile : metatiles) {
+        for (const auto &bottom_tile : metatile.bottom()) {
+            const auto &norm_result = normalizer.normalize(RgbaTile{bottom_tile}, rgba_magenta);
+            if (!norm_result.has_value()) {
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+            }
+            norm_tiles.push_back(norm_result.value());
+        }
+        for (const auto &middle_tile : metatile.middle()) {
+            const auto &norm_result = normalizer.normalize(RgbaTile{middle_tile}, rgba_magenta);
+            if (!norm_result.has_value()) {
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+            }
+            norm_tiles.push_back(norm_result.value());
+        }
+        for (const auto &top_tile : metatile.top()) {
+            const auto &norm_result = normalizer.normalize(RgbaTile{top_tile}, rgba_magenta);
+            if (!norm_result.has_value()) {
+                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+            }
+            norm_tiles.push_back(norm_result.value());
+        }
+    }
+
+    const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
 
     // TODO: set up these components correctly, for now we just use some dummy values
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());

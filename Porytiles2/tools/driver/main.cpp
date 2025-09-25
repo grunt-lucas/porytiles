@@ -51,7 +51,8 @@ https://github.com/huderlem/porymap)");
 
     CreateTilesetCommand create_tileset{porytiles_app};
     VerifyTilesetCommand verify_tileset{porytiles_app};
-    DebugNormalizeCommand debug{porytiles_app};
+    DebugNormalizeCommand debug_normalize{porytiles_app};
+    DebugPrimaryCompileCommand debug_compile{porytiles_app};
 
     porytiles_app.require_subcommand();
 

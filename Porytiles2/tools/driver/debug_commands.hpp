@@ -154,3 +154,74 @@ class DebugNormalizeCommand final : public Command {
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };
+
+class DebugPrimaryCompileCommand final : public Command {
+  public:
+    explicit DebugPrimaryCompileCommand(CLI::App &parent_app)
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    {
+        CLI::App &cmd = get_app();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
+    }
+
+    void Run() override
+    {
+        using namespace porytiles2;
+
+        // Initialize stateless services
+        PngRgbaImageLoader png_rgba_loader{};
+        PngIndexedImageLoader png_indexed_loader{};
+        PngRgbaImageSaver png_rgba_saver{};
+        PngIndexedImageSaver png_indexed_saver{};
+        JascPalLoader jasc_loader{};
+        JascPalSaver jasc_saver{};
+        TextFormatter formatter{true};
+        PrimaryTilesetCompiler compiler{};
+
+        // Setup layered configuration
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{std::move(providers)};
+
+        // Setup the tileset repository
+        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
+        ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
+        ProjectTilesetArtifactKeyProvider key_provider{"."};
+        ProjectArtifactChecksumProvider checksum_provider{&key_provider};
+        TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+
+        // Load the tileset
+        auto maybe_tileset = repo.load(tileset_name_);
+        if (!maybe_tileset.has_value()) {
+            for (const auto &err : maybe_tileset.chain()) {
+                std::cerr << err->details(formatter) << std::endl;
+            }
+            return;
+        }
+        const auto tileset = std::move(maybe_tileset.value());
+
+        // Compile the tileset
+        auto compile_result = compiler.compile(*tileset);
+        if (!compile_result.has_value()) {
+            for (const auto &err : compile_result.chain()) {
+                std::cerr << err->details(formatter) << std::endl;
+            }
+            return;
+        }
+        const auto new_tileset = std::move(compile_result.value());
+
+        // Save the tileset back
+        const auto new_tileset_save_result = repo.save(*new_tileset);
+        if (!new_tileset_save_result.has_value()) {
+            std::cerr << new_tileset_save_result.error() << std::endl;
+            return;
+        }
+    }
+
+  private:
+    static constexpr auto kCommandName = "debug-compile-primary";
+    static constexpr auto kCommandDesc =
+        "Load a tileset, run it through the compile-primary service, and write it back.";
+    static constexpr auto kCommandGroup = "COMMANDS";
+    std::string tileset_name_;
+};
