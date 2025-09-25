@@ -25,12 +25,16 @@ template <typename ColorType>
 class NormalizedTile final : public Tile<IndexPixel> {
   public:
     /**
-     * @brief Constructs a NormalizedTile with the specified flip states.
+     * @brief Constructs a NormalizedTile with the specified flip states and extrinsic transparency color.
      *
      * @param h_flip Whether the tile should be horizontally flipped
      * @param v_flip Whether the tile should be vertically flipped
+     * @param extrinsic The color that represents transparency in this NormalizedTile
      */
-    NormalizedTile(bool h_flip, bool v_flip) : h_flip_{h_flip}, v_flip_{v_flip} {}
+    NormalizedTile(bool h_flip, bool v_flip, const ColorType &extrinsic)
+        : h_flip_{h_flip}, v_flip_{v_flip}, pal_{extrinsic}
+    {
+    }
 
     /**
      * @brief Returns the horizontal flip state of the tile.

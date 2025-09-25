@@ -45,10 +45,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
             "tile has {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
     }
 
-    NormalizedPal<Rgba32> palette;
-
-    // Set palette extrinsic transparent color
-    palette.extrinsic_transparency(extrinsic_transparency);
+    NormalizedPal palette{extrinsic_transparency};
 
     // Insert all non-transparent colors
     for (const auto &color : unique_colors) {
@@ -146,7 +143,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     auto indexed_tile = convert_to_indexed(rgba_tile, palette_result.value(), h_flip, v_flip, extrinsic_transparency);
 
     // Create the normalized tile
-    NormalizedTile<Rgba32> normalized_tile{h_flip, v_flip};
+    NormalizedTile normalized_tile{h_flip, v_flip, extrinsic_transparency};
 
     // Copy the indexed pixel data
     for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {

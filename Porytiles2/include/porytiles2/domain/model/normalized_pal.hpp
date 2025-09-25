@@ -14,7 +14,18 @@ namespace porytiles2 {
 template <typename ColorType>
 class NormalizedPal {
   public:
-    NormalizedPal() = default;
+    /**
+     * @brief Constructs a NormalizedPal with the specified extrinsic transparency color.
+     *
+     * @details
+     * The extrinsic transparency color is used to identify which color in the source data should be treated as
+     * transparent when building this particular NormalizedPal. Even though the source data may have multiple extrinsic
+     * transparency colors, each NormalizedPal (and thus NormalizedTile) can only use one of the extrinsic
+     * transparencies.
+     *
+     * @param extrinsic The color that represents transparency for this particular NormalizedPal
+     */
+    explicit NormalizedPal(const ColorType &extrinsic) : extrinsic_transparency_{extrinsic} {}
 
     /**
      * @brief Inserts a color into the palette.
@@ -42,11 +53,6 @@ class NormalizedPal {
     [[nodiscard]] const ColorType &extrinsic_transparency() const
     {
         return extrinsic_transparency_;
-    }
-
-    void extrinsic_transparency(const ColorType &color)
-    {
-        extrinsic_transparency_ = color;
     }
 
     /**
