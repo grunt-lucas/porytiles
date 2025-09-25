@@ -27,7 +27,8 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
 
     // Collect all unique non-transparent colors
     for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
-        if (const Rgba32 pixel = rgba_tile.at(i); !pixel.is_transparent(extrinsic_transparency)) {
+        const Rgba32 pixel = rgba_tile.at(i);
+        if (!pixel.is_transparent(extrinsic_transparency)) {
             unique_colors.insert(pixel);
         }
     }
@@ -197,6 +198,12 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
 ChainableResult<NormalizedTile<Rgba32>>
 RgbaTileNormalizer::normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency) const
 {
+    /*
+     * TODO: should we clamp up all non-255 alphas on the incoming tile here? That is, we have an earlier step that
+     * warns the user if they have supplied pixels with alpha that wasn't 0 or 255. Should we have that step error so
+     * things are guaranteed to be 0 or 255 here, and we can panic otherwise? Or should we clamp them up here instead?
+     */
+
     // Create four candidate tiles with different flip combinations
     auto no_flip_result = create_candidate(rgba_tile, false, false, extrinsic_transparency);
     if (!no_flip_result.has_value()) {

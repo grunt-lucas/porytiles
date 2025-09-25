@@ -291,6 +291,47 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleExtrinsicTransparency)
     }
 }
 
+TEST_F(RgbaTileNormalizerTest, ShouldForceAllNotFullyTransparentAlphaValuesToOpaque)
+{
+    // TODO: Uncomment this test once we decide what to do about alpha clamping. See TODO comment in
+    // RgbaTileNormalizer::normalize
+
+    // RgbaTile tile{};
+
+    // const Rgba32 transparent{0, 0, 0, 0};
+    // const Rgba32 magenta{255, 0, 255};
+    // const Rgba32 red1{255, 0, 0, 255};
+    // const Rgba32 red2{255, 0, 0, 128};
+    // const Rgba32 red3{255, 0, 0, 20};
+
+    // // Fill with reds
+    // for (std::size_t i = 0; i < RgbaTile::tile_size / 2; i += 2) {
+    //     tile.set(i, red1);
+    //     tile.set(i + 1, red2);
+    // }
+    // for (std::size_t i = RgbaTile::tile_size / 2; i < RgbaTile::tile_size; ++i) {
+    //     tile.set(i, red3);
+    // }
+
+    // // Make a few pixels truly transparent
+    // tile.set(0, transparent);
+    // tile.set(1, transparent);
+    // tile.set(63, magenta);
+
+    // auto result = normalizer_.normalize(tile, magenta); // Treat magenta as transparent
+
+    // ASSERT_TRUE(result.has_value());
+
+    // const auto &normalized = result.value();
+
+    // /*
+    //  * Palette should have size 1. All reds should get regularized. The transparent and magenta pixels will be
+    //  treated
+    //  * as transparent and don't contribute to the palette size.
+    //  */
+    // EXPECT_EQ(1, normalized.palette().size());
+}
+
 TEST_F(RgbaTileNormalizerTest, DocumentsPanicForPaletteContainingTransparentColor)
 {
     // This test documents the defensive panic on (or near, if code has changed) line 83 of rgba_tile_normalizer.cpp.
@@ -342,10 +383,6 @@ TEST_F(RgbaTileNormalizerTest, DocumentsPanicForPaletteContainingTransparentColo
     //
     // The panic serves as a runtime assertion to catch such bugs during development.
 }
-
-// ====================================================================================
-// Denormalization Tests (moved from RgbaTileDenormalizerTest)
-// ====================================================================================
 
 TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeSingleColorTile)
 {
@@ -562,7 +599,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleMaximumColorsInDenormalization)
     }
 }
 
-TEST_F(RgbaTileNormalizerTest, ShouldPreserveFlipsInToRgbaPreservingFlips)
+TEST_F(RgbaTileNormalizerTest, ShouldPreserveFlipsInDenormalizePreservingFlips)
 {
     RgbaTile original_tile{};
 
@@ -621,7 +658,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldPreserveFlipsInToRgbaPreservingFlips)
     }
 }
 
-TEST_F(RgbaTileNormalizerTest, ShouldDifferentiateBetweenDenormalizeAndToRgbaPreservingFlips)
+TEST_F(RgbaTileNormalizerTest, ShouldDifferentiateBetweenDenormalizeAndDenormalizePreservingFlips)
 {
     RgbaTile original_tile{};
 
