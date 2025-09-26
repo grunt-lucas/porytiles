@@ -9,9 +9,8 @@
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
-#include "porytiles2/templates/error.hpp"
-#include "porytiles2/templates/panic.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 

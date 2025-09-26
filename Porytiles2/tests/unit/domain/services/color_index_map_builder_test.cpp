@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 using namespace porytiles2;
 

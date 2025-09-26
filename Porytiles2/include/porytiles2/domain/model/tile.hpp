@@ -4,7 +4,7 @@
 #include <array>
 
 #include "porytiles2/domain/model/supports_transparency.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

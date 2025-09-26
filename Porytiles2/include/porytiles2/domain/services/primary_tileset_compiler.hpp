@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "porytiles2/domain/model/tileset.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 

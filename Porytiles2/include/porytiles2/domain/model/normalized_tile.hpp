@@ -8,7 +8,7 @@
 #include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/normalized_pal.hpp"
 #include "porytiles2/domain/model/tile.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

@@ -5,10 +5,10 @@
 #include <fstream>
 
 #include "fmt/format.h"
-#include "porytiles2/templates/parsing.hpp"
+#include "porytiles2/templates/parse_int.hpp"
 
 #include "porytiles2/templates/result.hpp"
-#include "porytiles2/templates/string_utils.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 

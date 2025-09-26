@@ -12,7 +12,7 @@
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace {

@@ -7,7 +7,8 @@
 #include "porytiles2/domain/model/rgba_metatile.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
-#include "porytiles2/templates/text_formatter.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/xcut/result/text_formatter.hpp"
 
 using namespace porytiles2;
 

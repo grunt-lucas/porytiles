@@ -9,8 +9,8 @@
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/diagnostics/diagnostics.hpp"
-#include "porytiles2/templates/parsing.hpp"
-#include "porytiles2/templates/string_utils.hpp"
+#include "porytiles2/templates/parse_int.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 class TilesPalModeValidator final : public CLI::Validator {
     static constexpr auto kHint = "MODE";

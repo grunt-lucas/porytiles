@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "porytiles2/templates/stream_digest.hpp"
+#include "porytiles2/utilities/stream_digest.hpp"
 
 using namespace porytiles2;
 
@@ -56,7 +56,7 @@ TEST_F(StreamDigestTest, NumericSequence)
 
 TEST_F(StreamDigestTest, TestFile01Pal)
 {
-    std::ifstream file("./Resources/Tests/unit/templates/01.pal", std::ios::binary);
+    std::ifstream file("./Resources/Tests/unit/utilities/01.pal", std::ios::binary);
     ASSERT_TRUE(file.is_open());
     std::string hash = digest_.digest(file);
     EXPECT_EQ(hash, "86bc455280dcf9edf8de64b6b5a93034");
@@ -64,7 +64,7 @@ TEST_F(StreamDigestTest, TestFile01Pal)
 
 TEST_F(StreamDigestTest, TestFileMetatileAttributes)
 {
-    std::ifstream file("./Resources/Tests/unit/templates/metatile_attributes.bin", std::ios::binary);
+    std::ifstream file("./Resources/Tests/unit/utilities/metatile_attributes.bin", std::ios::binary);
     ASSERT_TRUE(file.is_open());
     std::string hash = digest_.digest(file);
     EXPECT_EQ(hash, "2cf616d7123c5677c3bd3f97c51b8833");
@@ -72,7 +72,7 @@ TEST_F(StreamDigestTest, TestFileMetatileAttributes)
 
 TEST_F(StreamDigestTest, TestFileMetatiles)
 {
-    std::ifstream file("./Resources/Tests/unit/templates/metatiles.bin", std::ios::binary);
+    std::ifstream file("./Resources/Tests/unit/utilities/metatiles.bin", std::ios::binary);
     ASSERT_TRUE(file.is_open());
     std::string hash = digest_.digest(file);
     EXPECT_EQ(hash, "0e41bc7e32ffe8949bf2235819c54df5");
@@ -80,7 +80,7 @@ TEST_F(StreamDigestTest, TestFileMetatiles)
 
 TEST_F(StreamDigestTest, TestFileTilesPng)
 {
-    std::ifstream file("./Resources/Tests/unit/templates/tiles.png", std::ios::binary);
+    std::ifstream file("./Resources/Tests/unit/utilities/tiles.png", std::ios::binary);
     ASSERT_TRUE(file.is_open());
     std::string hash = digest_.digest(file);
     EXPECT_EQ(hash, "76ed48af8ac84f00ab6ae40c8c75e367");

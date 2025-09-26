@@ -5,7 +5,7 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace {
 

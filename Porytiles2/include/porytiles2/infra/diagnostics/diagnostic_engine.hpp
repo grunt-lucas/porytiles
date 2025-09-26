@@ -14,7 +14,7 @@
 #include <unordered_map>
 
 #include "porytiles2/infra/diagnostics/diagnostics.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

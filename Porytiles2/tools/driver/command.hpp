@@ -5,7 +5,7 @@
 #include "CLI/CLI.hpp"
 
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 /**
  * @brief Command is an abstract class that provides basic command functionality for the Porytiles

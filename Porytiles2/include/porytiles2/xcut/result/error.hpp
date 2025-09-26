@@ -7,7 +7,7 @@
 #include "fmt/args.h"
 #include "fmt/format.h"
 
-#include "porytiles2/templates/text_formatter.hpp"
+#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
 

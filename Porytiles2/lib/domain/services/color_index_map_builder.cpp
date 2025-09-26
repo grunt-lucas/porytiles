@@ -5,7 +5,7 @@
 
 #include "porytiles2/domain/model/normalized_tile.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

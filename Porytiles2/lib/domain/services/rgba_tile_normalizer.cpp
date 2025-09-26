@@ -7,7 +7,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/model/index_pixel.hpp"
-#include "porytiles2/templates/error.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 

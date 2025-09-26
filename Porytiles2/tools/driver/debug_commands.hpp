@@ -23,8 +23,8 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/templates/text_formatter.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/xcut/result/text_formatter.hpp"
 
 #include "command.hpp"
 

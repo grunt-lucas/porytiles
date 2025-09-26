@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "porytiles2/infra/diagnostics/diagnostic_engine.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace {
 

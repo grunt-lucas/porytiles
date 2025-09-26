@@ -1,6 +1,6 @@
 #include "porytiles2/domain/model/rgba_tile.hpp"
 
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

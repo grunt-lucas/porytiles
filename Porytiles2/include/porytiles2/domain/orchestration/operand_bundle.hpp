@@ -6,9 +6,10 @@
 #include <ranges>
 #include <typeindex>
 #include <unordered_map>
+#include <vector>
 
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

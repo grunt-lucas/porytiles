@@ -6,7 +6,7 @@
 
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/model/tile.hpp"
-#include "porytiles2/templates/error.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
