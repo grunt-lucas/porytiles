@@ -272,7 +272,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         const auto pal_result = reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
         if (!pal_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                BasicError{fmt::format("failed to read {}", pal_key.key())}, pal_result);
+                BasicError{"failed to read {}", std::vector{pal_key.key()}}, pal_result);
         }
     }
 

@@ -23,6 +23,8 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics_stderr_impl.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 #include "porytiles2/xcut/result/text_formatter.hpp"
 
@@ -50,6 +52,7 @@ class DebugNormalizeCommand final : public Command {
         JascPalSaver jasc_saver{};
         TextFormatter formatter{true};
         PrimaryTilesetCompiler compiler{};
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<UserDiagnosticsStderrImpl>();
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -66,9 +69,7 @@ class DebugNormalizeCommand final : public Command {
         // Load the tileset
         auto maybe_tileset = repo.load(tileset_name_);
         if (!maybe_tileset.has_value()) {
-            for (const auto &err : maybe_tileset.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
-            }
+            diag->fatal(maybe_tileset);
             return;
         }
         const auto tileset = std::move(maybe_tileset.value());
@@ -80,9 +81,7 @@ class DebugNormalizeCommand final : public Command {
             tileset->porytiles_component().middle(),
             tileset->porytiles_component().top());
         if (!maybe_metatiles.has_value()) {
-            for (const auto &err : maybe_metatiles.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
-            }
+            diag->fatal(maybe_metatiles);
             return;
         }
         const auto metatiles = std::move(maybe_metatiles.value());
@@ -132,14 +131,12 @@ class DebugNormalizeCommand final : public Command {
             new_metatiles.push_back(std::move(new_metatile));
         }
 
-        auto maybe_demetatileized_images = metatileizer.demetatileize(new_metatiles, 8);
-        if (!maybe_demetatileized_images.has_value()) {
-            for (const auto &err : maybe_demetatileized_images.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
-            }
+        auto demetatileized_images_result = metatileizer.demetatileize(new_metatiles, 8);
+        if (!demetatileized_images_result.has_value()) {
+            diag->fatal(demetatileized_images_result);
             return;
         }
-        auto demetatileized_images = std::move(maybe_demetatileized_images.value());
+        auto demetatileized_images = std::move(demetatileized_images_result.value());
         tileset->porytiles_component().bottom(std::get<0>(demetatileized_images));
         tileset->porytiles_component().middle(std::get<1>(demetatileized_images));
         tileset->porytiles_component().top(std::get<2>(demetatileized_images));
@@ -175,8 +172,8 @@ class DebugPrimaryCompileCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        TextFormatter formatter{true};
         PrimaryTilesetCompiler compiler{};
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<UserDiagnosticsStderrImpl>();
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -190,12 +187,16 @@ class DebugPrimaryCompileCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
+        // Test the UserDiagnostics interface
+        diag->note("this is a test note");
+        diag->warn("test-warning", "this is a test warning");
+        diag->warn_note("test-warning", "this is a test warning note");
+        diag->err("this is a test error");
+
         // Load the tileset
         auto maybe_tileset = repo.load(tileset_name_);
         if (!maybe_tileset.has_value()) {
-            for (const auto &err : maybe_tileset.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
-            }
+            diag->fatal(maybe_tileset);
             return;
         }
         const auto tileset = std::move(maybe_tileset.value());
@@ -203,9 +204,7 @@ class DebugPrimaryCompileCommand final : public Command {
         // Compile the tileset
         auto compile_result = compiler.compile(*tileset);
         if (!compile_result.has_value()) {
-            for (const auto &err : compile_result.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
-            }
+            diag->fatal(compile_result);
             return;
         }
         const auto new_tileset = std::move(compile_result.value());
