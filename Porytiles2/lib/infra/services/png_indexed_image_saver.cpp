@@ -9,8 +9,8 @@
 #include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

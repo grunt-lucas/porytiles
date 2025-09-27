@@ -8,20 +8,107 @@
 
 namespace porytiles2 {
 
+/**
+ * @brief Concrete implementation of UserDiagnostics that outputs to stderr with colored formatting.
+ *
+ * @details
+ * UserDiagnosticsStderrImpl provides a terminal-based implementation of the UserDiagnostics interface, outputting all
+ * diagnostic messages to stderr with ANSI color codes and formatting. The implementation includes:
+ *
+ * - **Colored Output**: Uses fmt library with terminal colors (cyan for notes, magenta for warnings, red for errors)
+ * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented appropriately
+ * - **Error Chain Visualization**: Fatal errors are displayed with tree-like formatting using Unicode box-drawing
+ * characters to show error hierarchy
+ * - **TTY-Aware Formatting**: Conditional ANSI styling based on terminal capabilities
+ *
+ * The class formats output as follows:
+ * - Notes: "note: <message>" in cyan
+ * - Warning Notes: "note: <message> [<tag>]" in cyan
+ * - Warnings: "warning: <message> [<tag>]" in magenta
+ * - Errors: "error: <message>" in red
+ * - Fatal Errors: "fatal: <message>" with error chain visualization
+ */
 class UserDiagnosticsStderrImpl final : public UserDiagnostics {
   public:
+    /**
+     * @brief Display a multi-line informational note to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix on the first line and appropriate indentation for
+     * subsequent lines.
+     *
+     * @param lines Vector of strings representing each line of the note
+     */
     void note(const std::vector<std::string> &lines) const override;
 
+    /**
+     * @brief Display a multi-line tagged warning note to stderr.
+     *
+     * @details
+     * Outputs warning notes with cyan "note:" prefix and tag suffix on the first line, formatted as "note: <message>
+     * [<tag>]" with appropriate indentation for subsequent lines.
+     *
+     * @param tag Categorization tag for the warning note
+     * @param lines Vector of strings representing each line of the warning note
+     */
     void warn_note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
+    /**
+     * @brief Display a multi-line tagged warning to stderr.
+     *
+     * @details
+     * Outputs warnings with magenta "warning:" prefix and tag suffix on the first line, formatted as "warning:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines.
+     *
+     * @param tag Categorization tag for the warning
+     * @param lines Vector of strings representing each line of the warning
+     */
     void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
 
+    /**
+     * @brief Display a multi-line error message to stderr.
+     *
+     * @details
+     * Outputs error messages with red "error:" prefix on the first line and appropriate indentation for subsequent
+     * lines.
+     *
+     * @param lines Vector of strings representing each line of the error
+     */
     void err(const std::vector<std::string> &lines) const override;
 
+    /**
+     * @brief Emit the proximate (immediate) error in a fatal error chain to stderr.
+     *
+     * @details
+     * Displays the most immediate error in a fatal error chain with red "fatal:" prefix and the highest visual
+     * prominence. This represents the direct cause of the failure.
+     *
+     * @param err The proximate error to display
+     */
     void emit_fatal_proximate(const Error &err) const override;
 
+    /**
+     * @brief Emit an intermediate step error in a fatal error chain to stderr.
+     *
+     * @details
+     * Displays intermediate errors in a fatal error chain using tree-like formatting with Unicode box-drawing
+     * characters (├ symbols). These represent the intermediate causes between the proximate and root errors in the
+     * failure chain.
+     *
+     * @param err The step error to display
+     */
     void emit_fatal_step(const Error &err) const override;
 
+    /**
+     * @brief Emit the root cause error in a fatal error chain to stderr.
+     *
+     * @details
+     * Displays the root cause error in a fatal error chain using tree-like formatting with Unicode box-drawing
+     * characters (└ symbols). This represents the original underlying cause of the failure and appears as the final
+     * item in the error hierarchy visualization.
+     *
+     * @param err The root cause error to display
+     */
     void emit_fatal_root(const Error &err) const override;
 };
 
