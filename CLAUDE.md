@@ -112,7 +112,7 @@ Use the following example snippet as a guide for code style.
 - **Never** include header files using relative paths
 - Follow const correctness principles
 - Always use namespace `porytiles2`, don't create child namespaces
-- When creating private helper functions, if possible **prefer to place them in an anonymous namespace in the cpp file** instead of the `private:` section of the header file
+- When creating private helper functions, **PREFER TO PLACE THEM IN AN ANONYMOUS NAMESPACE IN THE CPP FILE** instead of the `private:` section of the header file
 - Both GCC and Clang are supported compilers, so any proposed code **should not be compiler-specific**
 - WHEN RUNNING THE CMAKE BUILD COMMAND, SEND OUTPUT TO A TEMPORARY FILE SO YOU DON'T POLLUTE YOUR CONTEXT. You can then check if the build succeeded by looking at the exit code. If non-zero, inspect the file and see what went wrong.
 

@@ -5,17 +5,16 @@
 #include <string>
 #include <vector>
 
-#include "fmt/format.h"
-#include "fmt/xchar.h"
-
 #include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
 
 void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    std::cerr << fmt::format("{} ", fmt::styled("note:", fmt::emphasis::bold | fg(fmt::terminal_color::cyan)));
+    TextFormatter formatter{true};
+    std::cerr << formatter.cyan_bold("note:") << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
@@ -25,10 +24,10 @@ void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) cons
 void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    std::cerr << fmt::format("{} ", fmt::styled("note:", fmt::emphasis::bold | fg(fmt::terminal_color::cyan)));
+    TextFormatter formatter{true};
+    std::cerr << formatter.cyan_bold("note:") << " ";
     std::cerr << lines.at(0);
-    std::cerr << fmt::format(" [{}]", fmt::styled(tag, fmt::emphasis::bold | fg(fmt::terminal_color::cyan)))
-              << std::endl;
+    std::cerr << " [" << formatter.cyan_bold(tag) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
     }
@@ -37,10 +36,10 @@ void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vec
 void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    std::cerr << fmt::format("{} ", fmt::styled("warning:", fmt::emphasis::bold | fg(fmt::terminal_color::magenta)));
+    TextFormatter formatter{true};
+    std::cerr << formatter.magenta_bold("warning:") << " ";
     std::cerr << lines.at(0);
-    std::cerr << fmt::format(" [{}]", fmt::styled(tag, fmt::emphasis::bold | fg(fmt::terminal_color::magenta)))
-              << std::endl;
+    std::cerr << " [" << formatter.magenta_bold(tag) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
     }
@@ -49,7 +48,8 @@ void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<s
 void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    std::cerr << fmt::format("{} ", fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)));
+    TextFormatter formatter{true};
+    std::cerr << formatter.red_bold("error:") << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
@@ -58,32 +58,29 @@ void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
 
 void UserDiagnosticsStderrImpl::emit_fatal_proximate(const Error &err) const
 {
-    std::cerr << fmt::format("{} ", fmt::styled("fatal:", fmt::emphasis::bold | fg(fmt::terminal_color::red)));
-    std::cerr << err.details(TextFormatter{true}) << std::endl;
+    TextFormatter formatter{true};
+    std::cerr << formatter.red_bold("fatal:") << " ";
+    std::cerr << err.details(formatter) << std::endl;
 }
 
 void UserDiagnosticsStderrImpl::emit_fatal_step(const Error &err) const
 {
-    std::cerr << fmt::format("{} ", fmt::styled("│", fmt::emphasis::bold)) << std::endl;
+    TextFormatter formatter{true};
+    std::cerr << formatter.bold("│") << " " << std::endl;
     std::cerr << "caused by:" << std::endl;
-    std::cerr << fmt::format("{} ", fmt::styled("│", fmt::emphasis::bold)) << std::endl;
-    std::cerr << fmt::format(
-        "{} {} ",
-        fmt::styled("├", fmt::emphasis::bold),
-        fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)));
-    std::cerr << err.details(TextFormatter{true}) << std::endl;
+    std::cerr << formatter.bold("│") << " " << std::endl;
+    std::cerr << formatter.bold("├") << " " << formatter.red_bold("error:") << " ";
+    std::cerr << err.details(formatter) << std::endl;
 }
 
 void UserDiagnosticsStderrImpl::emit_fatal_root(const Error &err) const
 {
-    std::cerr << fmt::format("{} ", fmt::styled("│", fmt::emphasis::bold)) << std::endl;
+    TextFormatter formatter{true};
+    std::cerr << formatter.bold("│") << " " << std::endl;
     std::cerr << "caused by:" << std::endl;
-    std::cerr << fmt::format("{} ", fmt::styled("│", fmt::emphasis::bold)) << std::endl;
-    std::cerr << fmt::format(
-        "{} {} ",
-        fmt::styled("└", fmt::emphasis::bold),
-        fmt::styled("error:", fmt::emphasis::bold | fg(fmt::terminal_color::red)));
-    std::cerr << err.details(TextFormatter{true}) << std::endl;
+    std::cerr << formatter.bold("│") << " " << std::endl;
+    std::cerr << formatter.bold("└") << " " << formatter.red_bold("error:") << " ";
+    std::cerr << err.details(formatter) << std::endl;
 }
 
 } // namespace porytiles2

@@ -5,8 +5,6 @@
 #include <utility>
 #include <variant>
 
-#include "fmt/format.h"
-
 #include "porytiles2/xcut/result/chainable_result.hpp"
 #include "porytiles2/xcut/result/text_formatter.hpp"
 
@@ -62,18 +60,15 @@ class ImageLoadError final : public Error {
     {
         switch (type_) {
         case Type::file_not_found:
-            return fmt::format("{} file not found", fmt::styled(filename_ + ":", formatter.bold()));
+            return formatter.bold(filename_ + ":") + " file not found";
         case Type::unsupported_channel_count: {
             auto channel_count = std::get<ChannelCount>(params_).channel_count_;
-            return fmt::format(
-                "{} unsupported channel count: {}",
-                fmt::styled(filename_ + ":", formatter.bold()),
-                fmt::styled(channel_count, formatter.bold()));
+            return formatter.bold(filename_ + ":") +
+                   " unsupported channel count: " + formatter.bold(std::to_string(channel_count));
         }
         case Type::other_load_error: {
             auto load_error = std::get<OtherLoadError>(params_).load_error_;
-            return fmt::format(
-                "{} could not be loaded: '{}'", fmt::styled(filename_ + ":", formatter.bold()), load_error);
+            return formatter.bold(filename_ + ":") + " could not be loaded: '" + load_error + "'";
         }
         default:
             panic("unhandled ImageLoadError type");

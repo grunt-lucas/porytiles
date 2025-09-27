@@ -4,9 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "fmt/args.h"
-#include "fmt/format.h"
-
 #include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -105,14 +102,7 @@ class BasicError final : public Error {
             return text_;
         }
 
-        // Create a dynamic format argument store
-        fmt::dynamic_format_arg_store<fmt::format_context> store;
-
-        // Add each parameter as a bolded string to the store
-        for (const auto &param : params_) {
-            store.push_back(fmt::format(formatter.bold(), "{}", param));
-        }
-        return fmt::vformat(text_, store);
+        return formatter.format_with_bold_params(text_, params_);
     }
 
     /**
