@@ -20,6 +20,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 using namespace porytiles2;
 
@@ -48,7 +49,7 @@ class MockInfraConfig : public InfraConfig {
 
 class MockPngRgbaImageSaver : public PngRgbaImageSaver {
   public:
-    [[nodiscard]] Result<void>
+    [[nodiscard]] ChainableResult<void>
     save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};

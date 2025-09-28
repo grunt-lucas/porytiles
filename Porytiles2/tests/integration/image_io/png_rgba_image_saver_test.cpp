@@ -70,7 +70,7 @@ TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
 
     auto result = saver_->save_to_file(image, invalid_path);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().contains("Failed to save PNG"));
+    EXPECT_TRUE(result.error().details(TextFormatter{false}).contains("save failed"));
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile)

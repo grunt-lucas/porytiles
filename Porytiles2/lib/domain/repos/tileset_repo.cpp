@@ -11,6 +11,7 @@
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -18,13 +19,13 @@ namespace porytiles2 {
  * TODO: we need better error handling, specifically the std::unexpected returns should be more descriptive
  */
 
-Result<void> TilesetRepo::save(const Tileset &tileset) const
+ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 {
     using enum TilesetArtifact::Type;
 
     // Begin transaction for atomic writes
     if (auto result = writer_->begin_transaction(); !result) {
-        return result;
+        return BasicError{result.error()};
     }
 
     // Perform all write operations within the transaction
@@ -34,28 +35,28 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
 
     auto bottom_png_artifact = TilesetArtifact{bottom_png};
     auto bottom_png_key = key_provider_->key_for(tileset.name(), bottom_png_artifact);
-    if (auto result = writer_->write(bottom_png_key, bottom_png_artifact, tileset); !result) {
+    if (auto result = writer_->write(bottom_png_key, bottom_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
 
     auto middle_png_artifact = TilesetArtifact{middle_png};
     auto middle_png_key = key_provider_->key_for(tileset.name(), middle_png_artifact);
-    if (auto result = writer_->write(middle_png_key, middle_png_artifact, tileset); !result) {
+    if (auto result = writer_->write(middle_png_key, middle_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
 
     auto top_png_artifact = TilesetArtifact{top_png};
     auto top_png_key = key_provider_->key_for(tileset.name(), top_png_artifact);
-    if (auto result = writer_->write(top_png_key, top_png_artifact, tileset); !result) {
+    if (auto result = writer_->write(top_png_key, top_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
 
     auto attr_csv_artifact = TilesetArtifact{attributes_csv};
     auto attr_csv_key = key_provider_->key_for(tileset.name(), attr_csv_artifact);
-    if (auto result = writer_->write(attr_csv_key, attr_csv_artifact, tileset); !result) {
+    if (auto result = writer_->write(attr_csv_key, attr_csv_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
@@ -65,21 +66,21 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
 
     auto metatiles_artifact = TilesetArtifact{metatiles_bin};
     auto metatiles_key = key_provider_->key_for(tileset.name(), metatiles_artifact);
-    if (auto result = writer_->write(metatiles_key, metatiles_artifact, tileset); !result) {
+    if (auto result = writer_->write(metatiles_key, metatiles_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
 
     auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
     auto attr_key = key_provider_->key_for(tileset.name(), attr_artifact);
-    if (auto result = writer_->write(attr_key, attr_artifact, tileset); !result) {
+    if (auto result = writer_->write(attr_key, attr_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
 
     auto tiles_png_artifact = TilesetArtifact{tiles_png};
     auto tiles_png_key = key_provider_->key_for(tileset.name(), tiles_png_artifact);
-    if (auto result = writer_->write(tiles_png_key, tiles_png_artifact, tileset); !result) {
+    if (auto result = writer_->write(tiles_png_key, tiles_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         return result;
     }
@@ -88,7 +89,7 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
     constexpr int num_pals = 16;
     for (int i = 0; i < num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
-        if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result) {
+        if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result.has_value()) {
             std::ignore = writer_->rollback();
             return result;
         }
@@ -98,7 +99,7 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
     if (auto result = writer_->commit(); !result) {
         // Commit failed, attempt rollback (though it may not be necessary after failed commit)
         std::ignore = writer_->rollback();
-        return result;
+        return BasicError{result.error()};
     }
 
     // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
@@ -112,7 +113,11 @@ Result<void> TilesetRepo::save(const Tileset &tileset) const
 
     // Cache checksums after successful save
     const auto current_checksums = checksum_provider_->compute_tileset_artifact_checksums(tileset.name());
-    return checksum_provider_->cache_tileset_checksums(tileset.name(), current_checksums);
+    const auto cache_result = checksum_provider_->cache_tileset_checksums(tileset.name(), current_checksums);
+    if (!cache_result.has_value()) {
+        return BasicError{cache_result.error()};
+    }
+    return {};
 }
 
 ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const

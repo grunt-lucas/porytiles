@@ -14,8 +14,11 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace {
+
+using namespace porytiles2;
 
 std::filesystem::path create_tmpdir()
 {
@@ -41,36 +44,30 @@ std::filesystem::path create_tmpdir()
     return path;
 }
 
-} // namespace
-
-namespace {
-
-using namespace porytiles2;
-
-Result<void>
+ChainableResult<void>
 save_layer_png(const PngRgbaImageSaver &saver, const Image<Rgba32> &layer_png, const std::filesystem::path &path)
 {
-    const auto result = saver.save_to_file(layer_png, path);
+    auto result = saver.save_to_file(layer_png, path);
     if (!result.has_value()) {
         return result;
     }
     return {};
 }
 
-Result<void> save_tiles_png(
+ChainableResult<void> save_tiles_png(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &tiles_png,
     const std::filesystem::path &path,
     TilesPalMode tiles_pal_mode)
 {
-    const auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
+    auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
     if (!result.has_value()) {
         return result;
     }
     return {};
 }
 
-Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
     std::ofstream out{path};
     for (const auto &entry : entries) {
@@ -85,7 +82,8 @@ Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const 
     return {};
 }
 
-Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+ChainableResult<void>
+save_metatile_attributes_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
     // TODO: actually implement attribute handling
     // TODO: firered attributes will need to use std::uint32_t
@@ -102,11 +100,12 @@ Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entri
     return {};
 }
 
-Result<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
-        return std::unexpected{fmt::format("failed to save: {}", path.c_str())};
+        return ChainableResult<void>::chain_together(
+            BasicError{"{}: failed to save", std::vector{std::string{path.c_str()}}}, save_result);
     }
     return {};
 }
@@ -239,11 +238,11 @@ Result<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-Result<void>
+ChainableResult<void>
 ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src)
 {
     if (transaction_root_.empty()) {
-        return std::unexpected{"no transaction in progress"};
+        return BasicError{"no transaction in progress"};
     }
 
     // Compute the destination path within the transaction directory

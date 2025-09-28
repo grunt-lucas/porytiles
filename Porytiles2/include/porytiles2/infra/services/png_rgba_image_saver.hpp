@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -21,7 +21,7 @@ class PngRgbaImageSaver {
     PngRgbaImageSaver() = default;
     virtual ~PngRgbaImageSaver() = default;
 
-    [[nodiscard]] virtual Result<void>
+    [[nodiscard]] virtual ChainableResult<void>
     save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const;
 };
 

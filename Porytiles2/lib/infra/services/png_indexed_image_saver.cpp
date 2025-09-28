@@ -9,12 +9,11 @@
 #include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
-Result<void> PngIndexedImageSaver::save_to_file(
+ChainableResult<void> PngIndexedImageSaver::save_to_file(
     const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const
 {
     using enum TilesPalMode;
@@ -43,7 +42,7 @@ Result<void> PngIndexedImageSaver::save_to_file(
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
-        return std::unexpected{fmt::format("exists but is not a file: {}", path.string())};
+        return BasicError{"{}: exists but is not a file", std::vector{std::string{path.filename().c_str()}}};
     }
 
     // Determine which palette to use
@@ -74,7 +73,8 @@ Result<void> PngIndexedImageSaver::save_to_file(
         out.write(path);
     }
     catch (const std::exception &e) {
-        return std::unexpected{fmt::format("failed to save indexed PNG to {}: {}", path.string(), e.what())};
+        return BasicError{
+            "{}: save failed: {}", std::vector{std::string{path.filename().c_str()}, std::string{e.what()}}};
     }
 
     return {};

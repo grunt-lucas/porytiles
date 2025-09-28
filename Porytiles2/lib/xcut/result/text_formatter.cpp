@@ -8,7 +8,7 @@
 
 namespace {
 
-std::string substitute_params(const std::string &format_str, const std::vector<std::string> &params) const
+std::string substitute_params(const std::string &format_str, const std::vector<std::string> &params)
 {
     // Use fmt::vformat for parameter substitution while keeping it internal
     fmt::dynamic_format_arg_store<fmt::format_context> store;

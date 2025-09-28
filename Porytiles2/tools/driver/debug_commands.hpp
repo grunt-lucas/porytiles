@@ -141,7 +141,11 @@ class DebugNormalizeCommand final : public Command {
         tileset->porytiles_component().middle(std::get<1>(demetatileized_images));
         tileset->porytiles_component().top(std::get<2>(demetatileized_images));
 
-        std::ignore = repo.save(*tileset);
+        const auto tileset_save_result = repo.save(*tileset);
+        if (!tileset_save_result.has_value()) {
+            diag->fatal(tileset_save_result);
+            return;
+        }
     }
 
   private:
@@ -212,7 +216,7 @@ class DebugPrimaryCompileCommand final : public Command {
         // Save the tileset back
         const auto new_tileset_save_result = repo.save(*new_tileset);
         if (!new_tileset_save_result.has_value()) {
-            std::cerr << new_tileset_save_result.error() << std::endl;
+            diag->fatal(new_tileset_save_result);
             return;
         }
     }

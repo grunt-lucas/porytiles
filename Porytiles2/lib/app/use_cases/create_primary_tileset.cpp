@@ -46,7 +46,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
 
     // 7. Persist the new `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error()};
+        return std::unexpected{save_result.error().details(TextFormatter{false})};
     }
 
     return {};

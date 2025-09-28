@@ -11,6 +11,7 @@
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -54,9 +55,9 @@ class TilesetRepo {
      * data.
      *
      * @param tileset The Tileset to save.
-     * @return An empty Result on success, otherwise an error description.
+     * @return An empty ChainableResult on success, otherwise an error trace.
      */
-    [[nodiscard]] Result<void> save(const Tileset &tileset) const;
+    [[nodiscard]] ChainableResult<void> save(const Tileset &tileset) const;
 
     /**
      * @brief Loads an existing Tileset from storage.

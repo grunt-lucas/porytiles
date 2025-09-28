@@ -6,6 +6,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -78,9 +79,9 @@ class TilesetArtifactWriter {
      * @param dest_key The ArtifactKey identifying the destination location in the backing store
      * @param artifact The TilesetArtifact specification including type and optional metadata
      * @param src The Tileset object containing the data to be written
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error trace
      */
-    [[nodiscard]] virtual Result<void>
+    [[nodiscard]] virtual ChainableResult<void>
     write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
 };
 
