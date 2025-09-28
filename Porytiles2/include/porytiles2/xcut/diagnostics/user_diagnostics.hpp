@@ -130,10 +130,6 @@ class UserDiagnostics {
      */
     void warn(const std::string &tag, const MessageBuilder &msg_builder) const
     {
-        /*
-         * TODO: We need to rethink this whole TextFormatter class. I don't like that it exposes fmtlib types in the
-         * API.
-         */
         TextFormatter formatter{true};
         warn(tag, msg_builder(formatter));
     }

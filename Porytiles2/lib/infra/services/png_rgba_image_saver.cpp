@@ -41,7 +41,6 @@ PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesyste
     const auto path_c_str = path.c_str();
     try {
         std::ignore = cimg_png.save_png(path_c_str);
-        throw std::runtime_error("some random root cause issue");
     }
     catch (const std::exception &e) {
         return BasicError{

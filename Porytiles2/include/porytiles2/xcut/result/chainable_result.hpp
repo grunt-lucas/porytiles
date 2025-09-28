@@ -139,9 +139,8 @@ class ChainableResult {
     template <typename OtherT, typename OtherE>
     void add_cause(const ChainableResult<OtherT, OtherE> &cause_result)
     {
-        if (cause_result.has_value()) {
-            panic("cause_result has a value, but should have an error");
-        }
+        assert_or_panic(!cause_result.has_value(), "cause_result has a value, but should have an error");
+
         // Clone errors from cause_result's chain since we can't move from const
         for (const std::unique_ptr<Error> &err : cause_result.chain()) {
             error_chain_.push_back(err->clone());

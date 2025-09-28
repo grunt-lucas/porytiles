@@ -37,21 +37,24 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     auto bottom_png_key = key_provider_->key_for(tileset.name(), bottom_png_artifact);
     if (auto result = writer_->write(bottom_png_key, bottom_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        return ChainableResult<void>::chain_together(
+            BasicError{fmt::format("{}: save failed", bottom_png_key.key())}, result);
     }
 
     auto middle_png_artifact = TilesetArtifact{middle_png};
     auto middle_png_key = key_provider_->key_for(tileset.name(), middle_png_artifact);
     if (auto result = writer_->write(middle_png_key, middle_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        auto failed = BasicError{fmt::format("{}: save failed", middle_png_key.key())};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     auto top_png_artifact = TilesetArtifact{top_png};
     auto top_png_key = key_provider_->key_for(tileset.name(), top_png_artifact);
     if (auto result = writer_->write(top_png_key, top_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        return ChainableResult<void>::chain_together(
+            BasicError{fmt::format("{}: save failed", top_png_key.key())}, result);
     }
 
     auto attr_csv_artifact = TilesetArtifact{attributes_csv};
