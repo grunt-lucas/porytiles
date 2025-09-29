@@ -4,7 +4,7 @@
 
 namespace porytiles2 {
 
-std::string PlainTextFormatter::style(const std::string &text, Style style) const
+std::string PlainTextFormatter::style(const std::string &text, Style styles) const
 {
     // no style text is applied
     return text;

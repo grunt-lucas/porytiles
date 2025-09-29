@@ -6,7 +6,7 @@ namespace porytiles2 {
 
 class AnsiStyledTextFormatter final : public TextFormatter {
   public:
-    [[nodiscard]] std::string style(const std::string &text, Style style) const override;
+    [[nodiscard]] std::string style(const std::string &text, Style styles) const override;
 };
 
 } // namespace porytiles2

@@ -10,6 +10,7 @@
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -101,7 +102,7 @@ TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
 
     auto result = saver_->save_to_file(image, invalid_path, TilesPalMode::true_color);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().contains("failed to save indexed PNG"));
+    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).contains("save failed"));
 }
 
 TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode)

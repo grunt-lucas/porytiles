@@ -9,6 +9,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -70,7 +71,7 @@ TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
 
     auto result = saver_->save_to_file(image, invalid_path);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(TextFormatter{false}).contains("save failed"));
+    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).contains("save failed"));
 }
 
 TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile)

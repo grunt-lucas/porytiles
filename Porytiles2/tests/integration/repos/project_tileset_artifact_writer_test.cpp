@@ -19,7 +19,7 @@
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 using namespace porytiles2;
@@ -60,7 +60,7 @@ class MockPngRgbaImageSaver : public PngRgbaImageSaver {
 
 class MockPngIndexedImageSaver : public PngIndexedImageSaver {
   public:
-    [[nodiscard]] Result<void>
+    [[nodiscard]] ChainableResult<void>
     save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const override
     {
         std::ofstream out{path};
@@ -71,7 +71,7 @@ class MockPngIndexedImageSaver : public PngIndexedImageSaver {
 
 class MockFilePalSaver : public FilePalSaver {
   public:
-    [[nodiscard]] Result<void> save(const RgbaPal &pal, const std::filesystem::path &path) const override
+    [[nodiscard]] ChainableResult<void> save(const RgbaPal &pal, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};
         out << "mock_palette";
@@ -183,7 +183,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
     ArtifactKey key{expected_file.string()};
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
-    ASSERT_TRUE(write_result.has_value()) << "Write error: " << write_result.error();
+    ASSERT_TRUE(write_result.has_value()) << "Write error: " << write_result.error().details(PlainTextFormatter{});
 
     auto commit_result = writer_->commit();
     ASSERT_TRUE(commit_result.has_value());
@@ -305,7 +305,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
     ASSERT_FALSE(write_result.has_value());
-    EXPECT_EQ(write_result.error(), "no transaction in progress");
+    EXPECT_EQ(write_result.error().details(PlainTextFormatter{}), "no transaction in progress");
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)
