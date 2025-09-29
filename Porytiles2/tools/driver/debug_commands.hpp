@@ -22,9 +22,8 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/diagnostics/user_diagnostics_stderr_impl.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 #include "command.hpp"
@@ -51,7 +50,7 @@ class DebugNormalizeCommand final : public Command {
         JascPalSaver jasc_saver{};
         AnsiStyledTextFormatter formatter{};
         PrimaryTilesetCompiler compiler{};
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<UserDiagnosticsStderrImpl>();
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -176,7 +175,7 @@ class DebugPrimaryCompileCommand final : public Command {
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
         PrimaryTilesetCompiler compiler{};
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<UserDiagnosticsStderrImpl>();
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};

@@ -43,7 +43,7 @@ PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesyste
         std::ignore = cimg_png.save_png(path_c_str);
     }
     catch (const std::exception &e) {
-        return BasicError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
+        return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
     }
 
     return {};

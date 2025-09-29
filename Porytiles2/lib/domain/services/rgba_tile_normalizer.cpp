@@ -35,7 +35,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
 
     // Check color count limit (15 non-transparent + 1 transparent = 16 total)
     if (unique_colors.size() > 15) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "tile had {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
     }
 
@@ -124,7 +124,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     auto palette_result = build_normalized_palette(rgba_tile, extrinsic_transparency);
     if (!palette_result.has_value()) {
         return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            BasicError{"failed to build normalized palette"}, palette_result);
+            FormattableError{"failed to build normalized palette"}, palette_result);
     }
 
     // Convert to indexed tile with the specified flip
@@ -208,25 +208,25 @@ RgbaTileNormalizer::normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic
     auto no_flip_result = create_candidate(rgba_tile, false, false, extrinsic_transparency);
     if (!no_flip_result.has_value()) {
         return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            BasicError{"failed to create no-flip candidate"}, no_flip_result);
+            FormattableError{"failed to create no-flip candidate"}, no_flip_result);
     }
 
     auto h_flip_result = create_candidate(rgba_tile, true, false, extrinsic_transparency);
     if (!h_flip_result.has_value()) {
         return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            BasicError{"failed to create h-flip candidate"}, h_flip_result);
+            FormattableError{"failed to create h-flip candidate"}, h_flip_result);
     }
 
     auto v_flip_result = create_candidate(rgba_tile, false, true, extrinsic_transparency);
     if (!v_flip_result.has_value()) {
         return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            BasicError{"failed to create v-flip candidate"}, v_flip_result);
+            FormattableError{"failed to create v-flip candidate"}, v_flip_result);
     }
 
     auto both_flip_result = create_candidate(rgba_tile, true, true, extrinsic_transparency);
     if (!both_flip_result.has_value()) {
         return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            BasicError{"failed to create both-flip candidate"}, both_flip_result);
+            FormattableError{"failed to create both-flip candidate"}, both_flip_result);
     }
 
     // Find the lexicographically smallest candidate

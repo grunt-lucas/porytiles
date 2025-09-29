@@ -41,7 +41,7 @@ ChainableResult<void> import_layer_png(
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
             const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>::chain_together(BasicError{error_msg}, image_result);
+            return ChainableResult<void>::chain_together(FormattableError{error_msg}, image_result);
         }
         default:
             panic("unhandled ImageLoadError type");
@@ -57,7 +57,7 @@ ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
-        return BasicError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
+        return FormattableError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
     }
 
     for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
@@ -99,7 +99,7 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_emerald != 0) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
     }
 
@@ -122,7 +122,7 @@ ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const Ar
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % bytes_per_attr_firered != 0) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
     }
 
@@ -147,7 +147,7 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        return BasicError{fmt::format("failed to load tiles.png: {}", image_result.error())};
+        return FormattableError{fmt::format("failed to load tiles.png: {}", image_result.error())};
     }
     dest.porymap_component().tiles_png(*image_result.value());
     return {};
@@ -162,7 +162,7 @@ ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, 
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return BasicError{fmt::format("failed to load: {}", pal_result.error())};
+        return FormattableError{fmt::format("failed to load: {}", pal_result.error())};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
@@ -184,7 +184,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.bottom(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read bottom.png")}, result);
+            return ChainableResult<void>::chain_together(
+                FormattableError{fmt::format("failed to read bottom.png")}, result);
         }
         return {};
     }
@@ -194,7 +195,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.middle(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read middle.png")}, result);
+            return ChainableResult<void>::chain_together(
+                FormattableError{fmt::format("failed to read middle.png")}, result);
         }
         return {};
     }
@@ -204,7 +206,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.top(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read top.png")}, result);
+            return ChainableResult<void>::chain_together(
+                FormattableError{fmt::format("failed to read top.png")}, result);
         }
         return {};
     }
@@ -219,7 +222,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     case TilesetArtifact::Type::metatiles_bin: {
         const auto result = import_metatiles_bin(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin")}, result};
+            return ChainableResult<void>{FormattableError{fmt::format("could not import metatiles.bin")}, result};
         }
         return {};
     }
@@ -227,7 +230,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: branch here based on target base game?
         const auto result = import_emerald_metatile_attributes(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import metatile_attributes.bin")}, result};
+            return ChainableResult<void>{
+                FormattableError{fmt::format("could not import metatile_attributes.bin")}, result};
         }
         return {};
     }
@@ -235,7 +239,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: make this a ChainableResult
         const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png")}, result};
+            return ChainableResult<void>{FormattableError{fmt::format("could not import tiles.png")}, result};
         }
         return {};
     }
@@ -248,7 +252,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         const auto result = import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
         if (!result.has_value()) {
             return ChainableResult<void>{
-                BasicError{fmt::format("could not import pal {}", artifact.index().value())}, result};
+                FormattableError{fmt::format("could not import pal {}", artifact.index().value())}, result};
         }
         return {};
     }

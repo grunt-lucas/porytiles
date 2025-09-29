@@ -12,7 +12,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
-        return ChainableResult<void>{BasicError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}}};
+        return ChainableResult<void>{
+            FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
@@ -20,13 +21,13 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     if (!maybe_tileset.has_value()) {
         // TODO: hook up ChainableError here
         return ChainableResult<void>::chain_together(
-            BasicError{fmt::format("failed to load tileset '{}'", tileset_name)}, maybe_tileset);
+            FormattableError{fmt::format("failed to load tileset '{}'", tileset_name)}, maybe_tileset);
     }
     const auto tileset = std::move(maybe_tileset.value());
 
     // 3. If `PorytilesTilesetComponent` is empty, bail with error.
     if (tileset->porytiles_component().is_empty()) {
-        return ChainableResult<void>{BasicError{"PorytilesTilesetComponent was empty"}};
+        return ChainableResult<void>{FormattableError{"PorytilesTilesetComponent was empty"}};
     }
 
     // 4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If any
@@ -36,7 +37,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         const auto mismatched_keys =
             tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porymap_keys);
         if (!mismatched_keys.empty()) {
-            return ChainableResult<void>{BasicError{"unimported changes present in Porymap assets: TODO keys here"}};
+            return ChainableResult<void>{
+                FormattableError{"unimported changes present in Porymap assets: TODO keys here"}};
         }
     }
 
@@ -51,13 +53,13 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     // 6. Compile the `Tileset`, generating a new modified `Tileset`.
     auto maybe_new_tileset = compiler_->compile(*tileset);
     if (!maybe_new_tileset.has_value()) {
-        return ChainableResult<void>{BasicError{maybe_new_tileset.error()}};
+        return ChainableResult<void>{FormattableError{maybe_new_tileset.error()}};
     }
     const auto new_tileset = std::move(maybe_new_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return ChainableResult<void>{BasicError{save_result.error()}};
+        return ChainableResult<void>{FormattableError{save_result.error()}};
     }
 
     return {};

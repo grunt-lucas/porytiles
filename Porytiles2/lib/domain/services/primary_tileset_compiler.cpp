@@ -28,7 +28,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         tileset.porytiles_component().top());
     if (!metatiles_result.has_value()) {
         return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-            BasicError{"failed to metatileize input layer images"}, metatiles_result);
+            FormattableError{"failed to metatileize input layer images"}, metatiles_result);
     }
     const auto &metatiles = metatiles_result.value();
 
@@ -39,7 +39,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             const auto &norm_result = normalizer.normalize(RgbaTile{bottom_tile}, rgba_magenta);
             if (!norm_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
             }
             norm_tiles.push_back(norm_result.value());
         }
@@ -47,7 +47,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             const auto &norm_result = normalizer.normalize(RgbaTile{middle_tile}, rgba_magenta);
             if (!norm_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
             }
             norm_tiles.push_back(norm_result.value());
         }
@@ -55,7 +55,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             const auto &norm_result = normalizer.normalize(RgbaTile{top_tile}, rgba_magenta);
             if (!norm_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    BasicError{"normalization failed: TODO print some tile info here"}, norm_result);
+                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
             }
             norm_tiles.push_back(norm_result.value());
         }

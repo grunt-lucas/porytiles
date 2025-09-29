@@ -57,8 +57,8 @@ class Error {
  * @brief General-purpose error implementation with formatted message support.
  *
  * @details
- * BasicError is a concrete Error implementation designed for common error scenarios where creating a specialized error
- * type would be unnecessary overhead. It supports both simple string messages and formatted messages with styled
+ * FormattableError is a concrete Error implementation designed for common error scenarios where creating a specialized
+ * error type would be unnecessary overhead. It supports both simple string messages and formatted messages with styled
  * parameters using TextFormatter and FormatParam.
  *
  * Key features:
@@ -70,55 +70,52 @@ class Error {
  * Example usage:
  * ```C++
  * // Simple string error
- * return BasicError{"file not found"};
+ * return FormattableError{"file not found"};
  *
  * // Formatted error with styled parameters
- * return BasicError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
+ * return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
  * ```
  *
- * When to use BasicError vs specialized error types:
- * - Use BasicError for straightforward error messages that don't require custom behavior
+ * When to use FormattableError vs specialized error types:
+ * - Use FormattableError for straightforward error messages that don't require custom behavior
  * - Use specialized Error subclasses when errors need additional context, state, or special formatting logic
- *
- * @note This class was originally considered for renaming to FormattedError to emphasize its parameter formatting
- * capabilities, but BasicError was retained for simplicity and established usage in the codebase.
  */
-class BasicError final : public Error {
+class FormattableError final : public Error {
   public:
     /**
-     * @brief Constructs a BasicError with a plain text message.
+     * @brief Constructs a FormattableError with a plain text message.
      *
      * @details
-     * Creates a BasicError containing a simple string message with no parameter formatting. This constructor is used
-     * for straightforward error messages that don't require styled parameters.
+     * Creates a FormattableError containing a simple string message with no parameter formatting. This constructor is
+     * used for straightforward error messages that don't require styled parameters.
      *
      * @param text The error message text
      */
-    explicit BasicError(std::string text) : text_{std::move(text)} {}
+    explicit FormattableError(std::string text) : text_{std::move(text)} {}
 
     /**
-     * @brief Constructs a BasicError with a format string and styled parameters.
+     * @brief Constructs a FormattableError with a format string and styled parameters.
      *
      * @details
-     * Creates a BasicError that uses fmtlib-style formatting to substitute styled parameters into the message. The
-     * text parameter should contain `{}` placeholders that will be replaced with the styled text from the params
+     * Creates a FormattableError that uses fmtlib-style formatting to substitute styled parameters into the message.
+     * The text parameter should contain `{}` placeholders that will be replaced with the styled text from the params
      * vector when details() is called.
      *
      * Example:
      * ```C++
-     * BasicError{"file '{}' not found", FormatParam{filename, Style::bold}}
+     * FormattableError{"file '{}' not found", FormatParam{filename, Style::bold}}
      * ```
      *
      * @param text The format string with `{}` placeholders
      * @param params Vector of FormatParams to substitute into the format string
      */
-    explicit BasicError(std::string text, std::vector<FormatParam> params)
+    explicit FormattableError(std::string text, std::vector<FormatParam> params)
         : text_{std::move(text)}, params_{std::move(params)}
     {
     }
 
     /**
-     * @brief Constructs a BasicError with a format string and variadic styled parameters.
+     * @brief Constructs a FormattableError with a format string and variadic styled parameters.
      *
      * @details
      * Convenience constructor that allows passing FormatParams directly as arguments instead of wrapping them in a
@@ -126,8 +123,8 @@ class BasicError final : public Error {
      *
      * Example:
      * ```C++
-     * BasicError{"file '{}' not found", FormatParam{filename, Style::bold}}
-     * BasicError{"expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red}}
+     * FormattableError{"file '{}' not found", FormatParam{filename, Style::bold}}
+     * FormattableError{"expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red}}
      * ```
      *
      * @tparam FirstParam Type of the first parameter
@@ -141,7 +138,7 @@ class BasicError final : public Error {
             !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
             std::is_same_v<std::decay_t<FirstParam>, FormatParam> &&
             (std::is_same_v<std::decay_t<RestParams>, FormatParam> && ...))
-    explicit BasicError(std::string text, FirstParam &&first, RestParams &&...rest) : text_{std::move(text)}
+    explicit FormattableError(std::string text, FirstParam &&first, RestParams &&...rest) : text_{std::move(text)}
     {
         params_.reserve(1 + sizeof...(RestParams));
         params_.push_back(std::forward<FirstParam>(first));
@@ -169,17 +166,17 @@ class BasicError final : public Error {
     }
 
     /**
-     * @brief Creates a polymorphic copy of this BasicError.
+     * @brief Creates a polymorphic copy of this FormattableError.
      *
      * @details
-     * Implements the Error clone pattern by creating a new BasicError with the same text and parameters. This allows
-     * BasicError instances to be copied when building ChainableResult error chains.
+     * Implements the Error clone pattern by creating a new FormattableError with the same text and parameters. This
+     * allows FormattableError instances to be copied when building ChainableResult error chains.
      *
      * @return A unique_ptr to a newly allocated copy of this error
      */
     [[nodiscard]] std::unique_ptr<Error> clone() const override
     {
-        return std::make_unique<BasicError>(text_, params_);
+        return std::make_unique<FormattableError>(text_, params_);
     }
 
   private:

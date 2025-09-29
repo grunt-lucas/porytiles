@@ -1,4 +1,4 @@
-#include "porytiles2/xcut/diagnostics/user_diagnostics_stderr_impl.hpp"
+#include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 
 #include <iostream>
 #include <ranges>
@@ -11,9 +11,13 @@
 
 namespace porytiles2 {
 
-void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::note(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
+    /*
+     * TODO: instead of hardcoding AnsiStyledTextFormatter here, we should have this class detect if stderr is a TTY and
+     * select a text formatter accordingly.
+     */
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0) << std::endl;
@@ -22,7 +26,7 @@ void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) cons
     }
 }
 
-void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
     AnsiStyledTextFormatter formatter{};
@@ -34,7 +38,7 @@ void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vec
     }
 }
 
-void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
     AnsiStyledTextFormatter formatter{};
@@ -46,7 +50,7 @@ void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<s
     }
 }
 
-void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::err(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
     AnsiStyledTextFormatter formatter{};
@@ -57,14 +61,14 @@ void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
     }
 }
 
-void UserDiagnosticsStderrImpl::emit_fatal_proximate(const Error &err) const
+void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
 {
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("fatal:", Style::bold | Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 
-void UserDiagnosticsStderrImpl::emit_fatal_step(const Error &err) const
+void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
 {
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
@@ -74,7 +78,7 @@ void UserDiagnosticsStderrImpl::emit_fatal_step(const Error &err) const
     std::cerr << err.details(formatter) << std::endl;
 }
 
-void UserDiagnosticsStderrImpl::emit_fatal_root(const Error &err) const
+void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
 {
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;

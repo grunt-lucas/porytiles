@@ -40,7 +40,7 @@ class RgbaLayerImageMetatileizer {
      * @param top The top layer RGBA image
      * @return A ChainableResult containing either:
      *         - Success: A vector of RgbaMetatile objects in row-major order
-     *         - Error: A BasicError describing why metatileization failed
+     *         - Error: A FormattableError describing why metatileization failed
      */
     [[nodiscard]] ChainableResult<std::vector<RgbaMetatile>>
     metatileize(const Image<Rgba32> &bottom, const Image<Rgba32> &middle, const Image<Rgba32> &top) const;
@@ -60,7 +60,7 @@ class RgbaLayerImageMetatileizer {
      * @param metatiles_per_row The number of metatiles per row (width in metatiles)
      * @return A ChainableResult containing either:
      *         - Success: A tuple of three Image<Rgba32> objects (bottom, middle, top)
-     *         - Error: A BasicError describing why demetatileization failed
+     *         - Error: A FormattableError describing why demetatileization failed
      */
     [[nodiscard]] ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>>
     demetatileize(const std::vector<RgbaMetatile> &metatiles, std::size_t metatiles_per_row) const;

@@ -1,76 +1,77 @@
-# Task: Add Doxygen Comments to TextFormatter System
+# Task: Refactor BasicError to FormattableError
 
 ## Overview
-Add comprehensive Doxygen documentation to the TextFormatter system components and BasicError class.
+Rename the BasicError class to FormattableError throughout the codebase.
 
 ## Understanding
-The TextFormatter system provides a way to format text with styles (colors, bold) that adapts to TTY/non-TTY output:
-
-- **Style**: Bitwise flags enum for text styling (bold, red, green, blue, yellow, cyan, magenta)
-- **FormatParam**: Struct holding text + Style flags, used as format parameters
-- **TextFormatter**: Abstract base providing `style()` and `format()` methods
-- **PlainTextFormatter**: Returns text unchanged (for non-TTY/files)
-- **AnsiStyledTextFormatter**: Applies ANSI escape codes (for TTY)
-- **BasicError**: Error class using TextFormatter to format messages with styled parameters
-
-The system integrates with UserDiagnostics for styled error reporting and uses fmtlib for parameter substitution.
+BasicError is a general-purpose error implementation with formatted message support. The name "FormattableError" better emphasizes its parameter formatting capabilities. The class is defined in error.hpp and used extensively throughout the codebase.
 
 ## Todo Items
 
-- [ ] Add Doxygen comments to Style enum and related operators/functions in text_formatter.hpp
-- [ ] Add Doxygen comments to FormatParam struct in text_formatter.hpp
-- [ ] Add Doxygen comments to TextFormatter class in text_formatter.hpp
-- [ ] Add Doxygen comments to PlainTextFormatter class in plain_text_formatter.hpp
-- [ ] Add Doxygen comments to AnsiStyledTextFormatter class in ansi_styled_text_formatter.hpp
-- [ ] Enhance Doxygen comments for BasicError class in error.hpp
-- [ ] Run format script to ensure consistent formatting
-- [ ] Build project to verify no compilation errors
-- [ ] Run tests to ensure no regressions
+- [ ] Update error.hpp to rename BasicError to FormattableError
+- [ ] Update all 18 other files that use BasicError:
+  - [ ] text_formatter.hpp
+  - [ ] chainable_result.hpp
+  - [ ] rgba_image_tileizer.hpp
+  - [ ] rgba_layer_image_metatileizer.hpp
+  - [ ] verify_primary_tileset.cpp
+  - [ ] tileset_repo.cpp
+  - [ ] compile_primary_tileset.cpp
+  - [ ] png_rgba_image_saver.cpp
+  - [ ] project_tileset_artifact_writer.cpp
+  - [ ] project_tileset_artifact_reader.cpp
+  - [ ] png_indexed_image_saver.cpp
+  - [ ] jasc_pal_saver.cpp
+  - [ ] pipeline.cpp
+  - [ ] primary_tileset_compiler.cpp
+  - [ ] rgba_layer_image_metatileizer.cpp
+  - [ ] rgba_tile_normalizer.cpp
+  - [ ] rgba_image_tileizer.cpp
+- [ ] Run format script
+- [ ] Build project
+- [ ] Run unit tests
+- [ ] Run integration tests
 
 ## Review
 
-All Doxygen comments have been successfully added to the TextFormatter system components. Here's a summary of the changes:
+Successfully refactored `BasicError` to `FormattableError` throughout the entire codebase.
 
 ### Files Modified
 
-1. **text_formatter.hpp** - Added comprehensive documentation for:
-   - Style enum with inline comments for each value
-   - All bitwise operators (|, &, |=, &=)
-   - has_style() helper function
-   - FormatParam struct with usage example
-   - TextFormatter abstract base class with detailed method documentation
-   - FormattedMessageBuilder type alias
+1. **error.hpp** - Renamed the class from `BasicError` to `FormattableError`, including:
+   - Class name and all constructors
+   - All documentation comments
+   - Example code in documentation
+   - The clone() method implementation
 
-2. **plain_text_formatter.hpp** - Added documentation for:
-   - PlainTextFormatter class describing its role in stripping styles
-   - style() method override
-   - Usage context examples
+2. **text_formatter.hpp** - Updated documentation references from `BasicError` to `FormattableError`
 
-3. **ansi_styled_text_formatter.hpp** - Added documentation for:
-   - AnsiStyledTextFormatter class with ANSI code details
-   - Complete list of supported styles with their ANSI codes
-   - style() method override with implementation notes
+3. **chainable_result.hpp** - Updated the default template parameter from `BasicError` to `FormattableError`
 
-4. **error.hpp** - Enhanced documentation for:
-   - BasicError class with comprehensive feature description
-   - Both constructors (plain text and formatted)
-   - details() method explaining formatter integration
-   - clone() method for error chain copying
-   - Replaced lengthy naming discussion comment with concise @note
+4. **rgba_image_tileizer.hpp** - Updated documentation return type from `BasicError` to `FormattableError`
 
-### Documentation Quality
+5. **rgba_layer_image_metatileizer.hpp** - Updated documentation return types (2 occurrences)
 
-All documentation follows the project's Doxygen style guidelines:
-- @brief and @details sections with blank lines between
-- Parameter and return value documentation
-- Usage examples with C++ code blocks
-- Clear explanations of purpose and context
-- Cross-references between related classes
+6. **All .cpp files** (13 files) - Replaced all occurrences of `BasicError` with `FormattableError`:
+   - verify_primary_tileset.cpp
+   - tileset_repo.cpp
+   - compile_primary_tileset.cpp
+   - png_rgba_image_saver.cpp
+   - project_tileset_artifact_writer.cpp
+   - project_tileset_artifact_reader.cpp
+   - png_indexed_image_saver.cpp
+   - jasc_pal_saver.cpp
+   - pipeline.cpp
+   - primary_tileset_compiler.cpp
+   - rgba_layer_image_metatileizer.cpp
+   - rgba_tile_normalizer.cpp
+   - rgba_image_tileizer.cpp
 
-### Testing
+### Testing Results
 
-- Formatting: ✓ Passed (./Scripts/format.sh)
-- Build: ✓ Passed (cmake --build build)
-- Tests: ✓ All 159 tests passed
+- **Formatting**: ✓ Passed (./Scripts/format.sh)
+- **Build**: ✓ Passed (cmake --build build)
+- **Unit Tests**: ✓ All 116 tests passed
+- **Integration Tests**: ✓ All 43 tests passed
 
-No regressions introduced. All code compiles cleanly and tests pass.
+No regressions introduced. All code compiles cleanly and all tests pass.

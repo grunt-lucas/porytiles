@@ -16,7 +16,7 @@ ChainableResult<std::vector<RgbaTile>> RgbaImageTileizer::tileize(const Image<Rg
 
     // Validate that image dimensions are multiples of tile size
     if (img.width() % tile_side_length != 0 || img.height() % tile_side_length != 0) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "Image dimensions must be a multiple of {}, got {}x{}", tile_side_length, img.width(), img.height())};
     }
 

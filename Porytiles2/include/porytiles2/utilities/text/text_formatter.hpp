@@ -120,7 +120,7 @@ constexpr Style &operator&=(Style &lhs, Style rhs)
  *
  * Example usage:
  * ```C++
- * BasicError{"tileset '{}' not found", FormatParam{name, Style::bold}}
+ * FormattableError{"tileset '{}' not found", FormatParam{name, Style::bold}}
  * ```
  *
  * This struct is typically constructed inline when creating error messages or formatted diagnostic output.
@@ -146,8 +146,8 @@ struct FormatParam {
  * - PlainTextFormatter: Returns text unchanged, stripping all styles (for non-TTY/files)
  * - AnsiStyledTextFormatter: Applies ANSI escape codes for terminal colors (for TTY)
  *
- * This class integrates with the error reporting system through BasicError and UserDiagnostics to provide adaptive
- * styling for diagnostic messages.
+ * This class integrates with the error reporting system through FormattableError and UserDiagnostics to provide
+ * adaptive styling for diagnostic messages.
  */
 class TextFormatter {
   public:
@@ -236,10 +236,10 @@ class TextFormatter {
  * The builder function can use the TextFormatter to style text dynamically, enabling conditional formatting that adapts
  * to the output destination.
  *
- * Example usage in UserDiagnostics::warn():
+ * Example usage:
  * ```C++
- * diag.warn("tag", [](const TextFormatter &fmt) {
- *     return std::vector{fmt.format("Error in '{}'", {FormatParam{name, Style::bold}})};
+ * diag.warn("tag", [&name](const TextFormatter &fmt) {
+ *     return std::vector{fmt.format("Error in '{}'", FormatParam{name, Style::bold | Style::red})};
  * });
  * ```
  */

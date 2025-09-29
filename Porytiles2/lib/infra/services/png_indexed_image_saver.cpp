@@ -42,7 +42,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
-        return BasicError{fmt::format("{}: exists but is not a file", path.filename().c_str())};
+        return FormattableError{fmt::format("{}: exists but is not a file", path.filename().c_str())};
     }
 
     // Determine which palette to use
@@ -73,7 +73,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
         out.write(path);
     }
     catch (const std::exception &e) {
-        return BasicError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
+        return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
     }
 
     return {};

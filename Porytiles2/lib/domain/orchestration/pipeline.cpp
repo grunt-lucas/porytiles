@@ -82,7 +82,7 @@ ChainableResult<void> Pipeline::run() const
         auto result = op->apply(inputs);
         if (!result.has_value()) {
             return ChainableResult<void>::chain_together(
-                BasicError{fmt::format("operation '{}' failed", op->name())}, result);
+                FormattableError{fmt::format("operation '{}' failed", op->name())}, result);
         }
 
         // Merge outputs

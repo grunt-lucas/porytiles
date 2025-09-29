@@ -27,7 +27,7 @@ namespace porytiles2 {
  * @tparam T The type of the expected success value
  * @tparam E The error type, must be derived from Error interface
  */
-template <typename T, typename E = BasicError>
+template <typename T, typename E = FormattableError>
 class ChainableResult {
   public:
     /**

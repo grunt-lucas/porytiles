@@ -12,7 +12,7 @@ namespace porytiles2 {
  * @brief Concrete implementation of UserDiagnostics that outputs to stderr with colored formatting.
  *
  * @details
- * UserDiagnosticsStderrImpl provides a terminal-based implementation of the UserDiagnostics interface, outputting all
+ * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface, outputting all
  * diagnostic messages to stderr with ANSI color codes and formatting. The implementation includes:
  *
  * - **Colored Output**: Uses fmt library with terminal colors (cyan for notes, magenta for warnings, red for errors)
@@ -28,7 +28,7 @@ namespace porytiles2 {
  * - Errors: "error: <message>" in red
  * - Fatal Errors: "fatal: <message>" with error chain visualization
  */
-class UserDiagnosticsStderrImpl final : public UserDiagnostics {
+class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:
     /**
      * @brief Display a multi-line informational note to stderr.

@@ -44,7 +44,7 @@ class RgbaImageTileizer {
      * @param img The source RGBA image to tileize
      * @return A ChainableResult containing either:
      *         - Success: A vector of RgbaTile objects in row-major order
-     *         - Error: A BasicError describing why tileization failed (e.g., invalid dimensions)
+     *         - Error: A FormattableError describing why tileization failed (e.g., invalid dimensions)
      */
     [[nodiscard]] ChainableResult<std::vector<RgbaTile>> tileize(const Image<Rgba32> &img) const;
 };

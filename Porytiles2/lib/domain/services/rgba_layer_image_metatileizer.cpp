@@ -109,7 +109,7 @@ void fill_region_with_transparent(
     // Validate that all images have the same dimensions
     if (bottom.width() != middle.width() || bottom.height() != middle.height() || bottom.width() != top.width() ||
         bottom.height() != top.height()) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "layer images have mismatched dimensions: bottom={}x{}, middle={}x{}, top={}x{}",
             bottom.width(),
             bottom.height(),
@@ -123,21 +123,21 @@ void fill_region_with_transparent(
     const auto bottom_tiles_result = tileizer_.tileize(bottom);
     if (!bottom_tiles_result.has_value()) {
         return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            BasicError{"failed to tileize bottom layer"}, bottom_tiles_result);
+            FormattableError{"failed to tileize bottom layer"}, bottom_tiles_result);
     }
     const auto &bottom_tiles = bottom_tiles_result.value();
 
     const auto middle_tiles_result = tileizer_.tileize(middle);
     if (!middle_tiles_result.has_value()) {
         return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            BasicError{"failed to tileize middle layer"}, middle_tiles_result);
+            FormattableError{"failed to tileize middle layer"}, middle_tiles_result);
     }
     const auto &middle_tiles = middle_tiles_result.value();
 
     const auto top_tiles_result = tileizer_.tileize(top);
     if (!top_tiles_result.has_value()) {
         return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            BasicError{"failed to tileize top layer"}, top_tiles_result);
+            FormattableError{"failed to tileize top layer"}, top_tiles_result);
     }
     const auto &top_tiles = top_tiles_result.value();
 
@@ -149,7 +149,7 @@ void fill_region_with_transparent(
      */
     if (bottom.width() % RgbaMetatile::metatile_side_length != 0 ||
         bottom.height() % RgbaMetatile::metatile_side_length != 0) {
-        return BasicError{fmt::format(
+        return FormattableError{fmt::format(
             "image dimensions must be multiples of {}, got {}x{}",
             RgbaMetatile::metatile_side_length,
             bottom.width(),
@@ -187,7 +187,7 @@ ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>> RgbaLay
     }
 
     if (metatiles.empty()) {
-        return BasicError{"input metatiles vector was empty"};
+        return FormattableError{"input metatiles vector was empty"};
     }
 
     // Compute metatiles_per_col using ceiling division

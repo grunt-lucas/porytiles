@@ -105,7 +105,7 @@ ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::pa
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
         return ChainableResult<void>::chain_together(
-            BasicError{fmt::format("{}: failed to save", path.c_str())}, save_result);
+            FormattableError{fmt::format("{}: failed to save", path.c_str())}, save_result);
     }
     return {};
 }
@@ -242,7 +242,7 @@ ChainableResult<void>
 ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src)
 {
     if (transaction_root_.empty()) {
-        return BasicError{"no transaction in progress"};
+        return FormattableError{"no transaction in progress"};
     }
 
     // Compute the destination path within the transaction directory
