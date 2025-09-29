@@ -11,8 +11,7 @@ namespace porytiles2 {
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
-        return ChainableResult<void>{
-            BasicError{"tileset '{}' does not exist", std::vector{FormatParam{tileset_name, Style::bold}}}};
+        return ChainableResult<void>{BasicError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
@@ -20,8 +19,7 @@ namespace porytiles2 {
     if (!maybe_tileset.has_value()) {
         // TODO: hook up ChainableError here
         return ChainableResult<void>::chain_together(
-            BasicError{"failed to load tileset '{}'", std::vector{FormatParam{tileset_name, Style::bold}}},
-            maybe_tileset);
+            BasicError{"failed to load tileset '{}'", FormatParam{tileset_name, Style::bold}}, maybe_tileset);
     }
     const auto tileset = std::move(maybe_tileset.value());
 

@@ -120,7 +120,7 @@ constexpr Style &operator&=(Style &lhs, Style rhs)
  *
  * Example usage:
  * ```C++
- * BasicError{"tileset '{}' not found", std::vector{FormatParam{name, Style::bold}}}
+ * BasicError{"tileset '{}' not found", FormatParam{name, Style::bold}}
  * ```
  *
  * This struct is typically constructed inline when creating error messages or formatted diagnostic output.
@@ -187,12 +187,42 @@ class TextFormatter {
     [[nodiscard]] virtual std::string
     format(const std::string &format_str, const std::vector<FormatParam> &params) const;
 
-    // template<typename... FormatParams>
-    // [[nodiscard]] std::string format(const std::string &format_str, FormatParams&&... params) const {
-    //     static_assert((std::is_same_v<std::decay_t<FormatParams>, FormatParam> && ...));
-    //     std::vector<FormatParam> param_vector{std::forward<FormatParams>(params)...};
-    //     return this->format(format_str, param_vector);
-    // }
+    /**
+     * @brief Formats a string with styled parameters using variadic template syntax.
+     *
+     * @details
+     * Convenience template that allows passing FormatParams directly as arguments instead of wrapping them in a
+     * std::vector. This provides more natural syntax for formatting calls with a known number of parameters.
+     *
+     * Example:
+     * ```C++
+     * formatter.format("Error in file '{}'", FormatParam{filename, Style::bold})
+     * formatter.format("Expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red})
+     * ```
+     *
+     * This template is disabled when called with a std::vector<FormatParam> to avoid ambiguity with the base
+     * implementation.
+     *
+     * @tparam FirstParam Type of the first parameter
+     * @tparam RestParams Types of remaining parameters
+     * @param format_str The format string with `{}` placeholders
+     * @param first First FormatParam argument
+     * @param rest Remaining FormatParam arguments to substitute into placeholders
+     * @return The formatted string with styled parameters substituted
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_same_v<std::decay_t<FirstParam>, FormatParam> &&
+            (std::is_same_v<std::decay_t<RestParams>, FormatParam> && ...))
+    [[nodiscard]] std::string format(const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        std::vector<FormatParam> param_vector;
+        param_vector.reserve(1 + sizeof...(RestParams));
+        param_vector.push_back(std::forward<FirstParam>(first));
+        (param_vector.push_back(std::forward<RestParams>(rest)), ...);
+        return this->format(format_str, param_vector);
+    }
 };
 
 /**

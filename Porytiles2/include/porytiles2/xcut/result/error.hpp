@@ -73,7 +73,7 @@ class Error {
  * return BasicError{"file not found"};
  *
  * // Formatted error with styled parameters
- * return BasicError{"tileset '{}' does not exist", std::vector{FormatParam{name, Style::bold}}};
+ * return BasicError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
  * ```
  *
  * When to use BasicError vs specialized error types:
@@ -106,7 +106,7 @@ class BasicError final : public Error {
      *
      * Example:
      * ```C++
-     * BasicError{"file '{}' not found", std::vector{FormatParam{filename, Style::bold}}}
+     * BasicError{"file '{}' not found", FormatParam{filename, Style::bold}}
      * ```
      *
      * @param text The format string with `{}` placeholders
@@ -115,6 +115,37 @@ class BasicError final : public Error {
     explicit BasicError(std::string text, std::vector<FormatParam> params)
         : text_{std::move(text)}, params_{std::move(params)}
     {
+    }
+
+    /**
+     * @brief Constructs a BasicError with a format string and variadic styled parameters.
+     *
+     * @details
+     * Convenience constructor that allows passing FormatParams directly as arguments instead of wrapping them in a
+     * std::vector. This provides more natural syntax for error construction with a known number of parameters.
+     *
+     * Example:
+     * ```C++
+     * BasicError{"file '{}' not found", FormatParam{filename, Style::bold}}
+     * BasicError{"expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red}}
+     * ```
+     *
+     * @tparam FirstParam Type of the first parameter
+     * @tparam RestParams Types of remaining parameters
+     * @param text The format string with `{}` placeholders
+     * @param first First FormatParam argument
+     * @param rest Remaining FormatParam arguments to substitute into the format string
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_same_v<std::decay_t<FirstParam>, FormatParam> &&
+            (std::is_same_v<std::decay_t<RestParams>, FormatParam> && ...))
+    explicit BasicError(std::string text, FirstParam &&first, RestParams &&...rest) : text_{std::move(text)}
+    {
+        params_.reserve(1 + sizeof...(RestParams));
+        params_.push_back(std::forward<FirstParam>(first));
+        (params_.push_back(std::forward<RestParams>(rest)), ...);
     }
 
     /**

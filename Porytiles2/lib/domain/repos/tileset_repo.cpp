@@ -132,7 +132,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return BasicError{"tileset '{}' does not exist", std::vector{FormatParam{name, Style::bold}}};
+        return BasicError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
