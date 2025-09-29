@@ -4,17 +4,13 @@
 #include <ranges>
 #include <string>
 
+#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 #include "porytiles2/xcut/result/error.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
-
-/**
- * @brief Type alias for message builder functions that receive a TextFormatter reference.
- */
-using MessageBuilder = std::function<std::vector<std::string>(const TextFormatter &)>;
 
 /**
  * @brief Abstract interface for structured error reporting and diagnostic output.
@@ -128,9 +124,10 @@ class UserDiagnostics {
      * @param tag Categorization tag for the warning
      * @param msg_builder Function that receives a TextFormatter reference and returns formatted message lines
      */
-    void warn(const std::string &tag, const MessageBuilder &msg_builder) const
+    void warn(const std::string &tag, const FormattedMessageBuilder &msg_builder) const
     {
-        TextFormatter formatter{true};
+        // TODO: inject this formatter
+        AnsiStyledTextFormatter formatter{};
         warn(tag, msg_builder(formatter));
     }
 

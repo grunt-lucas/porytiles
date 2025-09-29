@@ -5,8 +5,8 @@
 
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -33,7 +33,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     // 5. Compile the `Tileset`, generating a new modified `Tileset`.
     auto maybe_new_tileset = compiler_->compile(tileset);
     if (!maybe_new_tileset.has_value()) {
-        return std::unexpected{maybe_new_tileset.error().details(TextFormatter{false})};
+        return std::unexpected{maybe_new_tileset.error().details(PlainTextFormatter{})};
     }
     const auto new_tileset = std::move(maybe_new_tileset.value());
 
@@ -46,7 +46,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
 
     // 7. Persist the new `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error().details(TextFormatter{false})};
+        return std::unexpected{save_result.error().details(PlainTextFormatter{})};
     }
 
     return {};

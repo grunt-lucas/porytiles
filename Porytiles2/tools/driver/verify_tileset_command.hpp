@@ -3,6 +3,7 @@
 #include "CLI/CLI.hpp"
 
 #include "porytiles2/app/use_cases/verify_primary_tileset.hpp"
+#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
 
 #include "command.hpp"
 #include "option_group.hpp"
@@ -27,7 +28,7 @@ class VerifyTilesetCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        TextFormatter formatter{true};
+        AnsiStyledTextFormatter formatter{};
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};

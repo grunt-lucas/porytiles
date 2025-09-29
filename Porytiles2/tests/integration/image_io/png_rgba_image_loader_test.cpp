@@ -7,8 +7,8 @@
 #include "porytiles2/infra/services/image_load_error.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 using namespace porytiles2;
 

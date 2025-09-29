@@ -132,7 +132,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return BasicError{"tileset '{}' does not exist", std::vector{{name}}};
+        return BasicError{"tileset '{}' does not exist", std::vector{FormatParam{name, Style::bold}}};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -280,7 +280,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         const auto pal_result = reader_->read(*tileset, pal_key, TilesetArtifact{pal_n, i});
         if (!pal_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                BasicError{"failed to read {}", std::vector{pal_key.key()}}, pal_result);
+                BasicError{fmt::format("failed to read {}", pal_key.key())}, pal_result);
         }
     }
 

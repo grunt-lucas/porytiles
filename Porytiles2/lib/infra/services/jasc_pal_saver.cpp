@@ -13,7 +13,7 @@ ChainableResult<void> JascPalSaver::save(const RgbaPal &pal, const std::filesyst
     // Open in binary so "\r\n" are explicitly written as CRLF on all platforms
     std::ofstream stream{path, std::ios::binary};
     if (!stream.is_open()) {
-        return BasicError{"{}: failed to open for writing", std::vector{path.string()}};
+        return BasicError{fmt::format("{}: failed to open for writing", path.string())};
     }
 
     stream << "JASC-PAL\r\n";
@@ -25,7 +25,7 @@ ChainableResult<void> JascPalSaver::save(const RgbaPal &pal, const std::filesyst
     }
 
     if (stream.fail()) {
-        return BasicError{"{}: failed to write", std::vector{path.string()}};
+        return BasicError{fmt::format("{}: failed to write", path.string())};
     }
 
     return {};

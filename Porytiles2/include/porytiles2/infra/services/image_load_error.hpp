@@ -5,8 +5,8 @@
 #include <utility>
 #include <variant>
 
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -60,15 +60,15 @@ class ImageLoadError final : public Error {
     {
         switch (type_) {
         case Type::file_not_found:
-            return formatter.bold(filename_ + ":") + " file not found";
+            return formatter.style(filename_ + ":", Style::bold) + " file not found";
         case Type::unsupported_channel_count: {
             auto channel_count = std::get<ChannelCount>(params_).channel_count_;
-            return formatter.bold(filename_ + ":") +
-                   " unsupported channel count: " + formatter.bold(std::to_string(channel_count));
+            return formatter.style(filename_ + ":", Style::bold) +
+                   " unsupported channel count: " + formatter.style(std::to_string(channel_count), Style::bold);
         }
         case Type::other_load_error: {
             auto load_error = std::get<OtherLoadError>(params_).load_error_;
-            return formatter.bold(filename_ + ":") + " could not be loaded: '" + load_error + "'";
+            return formatter.style(filename_ + ":", Style::bold) + " could not be loaded: '" + load_error + "'";
         }
         default:
             panic("unhandled ImageLoadError type");

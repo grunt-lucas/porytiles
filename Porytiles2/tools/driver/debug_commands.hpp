@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 #include <string>
 
@@ -23,10 +22,10 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics_stderr_impl.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 #include "command.hpp"
 
@@ -50,7 +49,7 @@ class DebugNormalizeCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        TextFormatter formatter{true};
+        AnsiStyledTextFormatter formatter{};
         PrimaryTilesetCompiler compiler{};
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<UserDiagnosticsStderrImpl>();
 

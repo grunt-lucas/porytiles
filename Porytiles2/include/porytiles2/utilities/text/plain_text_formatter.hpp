@@ -1,0 +1,12 @@
+#pragma once
+
+#include "porytiles2/utilities/text/text_formatter.hpp"
+
+namespace porytiles2 {
+
+class PlainTextFormatter final : public TextFormatter {
+  public:
+    [[nodiscard]] std::string style(const std::string &text, Style style) const override;
+};
+
+} // namespace porytiles2

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -57,7 +58,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 
     // 8. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error().details(TextFormatter{false})};
+        return std::unexpected{save_result.error().details(PlainTextFormatter{})};
     }
 
     return {};

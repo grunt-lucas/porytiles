@@ -105,7 +105,7 @@ ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::pa
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
         return ChainableResult<void>::chain_together(
-            BasicError{"{}: failed to save", std::vector{std::string{path.c_str()}}}, save_result);
+            BasicError{fmt::format("{}: failed to save", path.c_str())}, save_result);
     }
     return {};
 }

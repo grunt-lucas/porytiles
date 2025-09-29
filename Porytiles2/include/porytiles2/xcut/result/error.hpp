@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/xcut/result/text_formatter.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -53,63 +53,56 @@ class Error {
     [[nodiscard]] virtual std::unique_ptr<Error> clone() const = 0;
 };
 
-/**
- * @brief A simple, concrete error implementation for basic error messages.
- *
- * @details
- * BasicError provides a straightforward implementation of the Error interface for representing simple error messages
- * with optional parameterized formatting. It supports both plain text errors and formatted errors where parameters
- * can be substituted into placeholders in the error message using fmt-style formatting (e.g., "{}" placeholders).
- * When formatted for TTY output, parameters are automatically bolded for emphasis.
+/*
+ Based on the code analysis, here are suggested names for BasicError that better communicate its intent as a
+convenient, general-purpose error type for when specialized errors would be overkill:
+
+  Top Recommendations
+
+  1. FormattedError - Emphasizes the key feature of parameter formatting with {} placeholders
+  2. MessageError - Clear that it's for simple message-based errors
+  3. StringError - Specific about handling string-based error messages
+  4. AdHocError - Captures the "when specialized would be overkill" use case
+
+  Other Strong Options
+
+  5. TextError - Simple and clear about text-based errors
+  6. QuickError - Emphasizes convenience and speed of use
+  7. GenericError - Communicates general-purpose nature
+  8. SimpleError - Direct but still somewhat generic
+  9. ParameterizedError - Emphasizes the parameter substitution capability
+  10. ConvenienceError - Emphasizes ease of use
+
+  My Top Pick
+
+  FormattedError is my recommendation because:
+  - It highlights the main technical differentiator (parameter formatting)
+  - It's descriptive without being verbose
+  - It clearly distinguishes it from truly "basic" errors
+  - It tells users what they're getting - an error with formatting capabilities
+
+  The name FormattedError accurately reflects that this class is specifically designed for errors that need parameter
+substitution and conditional TTY formatting, which is its key value proposition over truly basic string errors.
  */
+
 class BasicError final : public Error {
   public:
-    /**
-     * @brief Constructs a BasicError with a plain text message.
-     *
-     * @param text The error message text
-     */
     explicit BasicError(std::string text) : text_{std::move(text)} {}
 
-    /**
-     * @brief Constructs a BasicError with a parameterized message.
-     *
-     * @details
-     * Creates an error with a format string and parameters. The text should contain "{}" placeholders that will be
-     * replaced with the corresponding parameters when details() is called.
-     *
-     * @param text The error message format string with "{}" placeholders
-     * @param params Vector of parameter values to substitute into the format string
-     */
-    explicit BasicError(std::string text, std::vector<std::string> params)
+    explicit BasicError(std::string text, std::vector<FormatParam> params)
         : text_{std::move(text)}, params_{std::move(params)}
     {
     }
 
-    /**
-     * @brief Returns the formatted error message.
-     *
-     * @details
-     * If the error has no parameters, returns the plain text message. If parameters are present, substitutes them into
-     * the format string's placeholders. When TTY formatting is enabled, parameters are rendered in bold for emphasis.
-     *
-     * @param formatter The TextFormatter for conditional TTY formatting
-     * @return The formatted error message with parameters substituted and optionally bolded
-     */
     [[nodiscard]] std::string details(const TextFormatter &formatter) const override
     {
         if (params_.empty()) {
             return text_;
         }
 
-        return formatter.format_with_bold_params(text_, params_);
+        return formatter.format(text_, params_);
     }
 
-    /**
-     * @brief Creates a copy of this BasicError.
-     *
-     * @return A unique_ptr to a new BasicError with the same message
-     */
     [[nodiscard]] std::unique_ptr<Error> clone() const override
     {
         return std::make_unique<BasicError>(text_, params_);
@@ -117,7 +110,7 @@ class BasicError final : public Error {
 
   private:
     std::string text_;
-    std::vector<std::string> params_;
+    std::vector<FormatParam> params_;
 };
 
 } // namespace porytiles2

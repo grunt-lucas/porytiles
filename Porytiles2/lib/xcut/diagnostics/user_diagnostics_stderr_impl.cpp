@@ -5,16 +5,17 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/text_formatter.hpp"
 
 namespace porytiles2 {
 
 void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    TextFormatter formatter{true};
-    std::cerr << formatter.cyan_bold("note:") << " ";
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("note:", Style::cyan) << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
@@ -24,10 +25,10 @@ void UserDiagnosticsStderrImpl::note(const std::vector<std::string> &lines) cons
 void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    TextFormatter formatter{true};
-    std::cerr << formatter.cyan_bold("note:") << " ";
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("note:", Style::cyan) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << formatter.cyan_bold(tag) << "]" << std::endl;
+    std::cerr << " [" << formatter.style(tag, Style::cyan) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
     }
@@ -36,10 +37,10 @@ void UserDiagnosticsStderrImpl::warn_note(const std::string &tag, const std::vec
 void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    TextFormatter formatter{true};
-    std::cerr << formatter.magenta_bold("warning:") << " ";
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("warning:", Style::magenta) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << formatter.magenta_bold(tag) << "]" << std::endl;
+    std::cerr << " [" << formatter.style(tag, Style::magenta) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
     }
@@ -48,8 +49,8 @@ void UserDiagnosticsStderrImpl::warn(const std::string &tag, const std::vector<s
 void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    TextFormatter formatter{true};
-    std::cerr << formatter.red_bold("error:") << " ";
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("error:", Style::red) << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << note_line << std::endl;
@@ -58,28 +59,28 @@ void UserDiagnosticsStderrImpl::err(const std::vector<std::string> &lines) const
 
 void UserDiagnosticsStderrImpl::emit_fatal_proximate(const Error &err) const
 {
-    TextFormatter formatter{true};
-    std::cerr << formatter.red_bold("fatal:") << " ";
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("fatal:", Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 
 void UserDiagnosticsStderrImpl::emit_fatal_step(const Error &err) const
 {
-    TextFormatter formatter{true};
-    std::cerr << formatter.bold("│") << " " << std::endl;
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
     std::cerr << "caused by:" << std::endl;
-    std::cerr << formatter.bold("│") << " " << std::endl;
-    std::cerr << formatter.bold("├") << " " << formatter.red_bold("error:") << " ";
+    std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
+    std::cerr << formatter.style("├", Style::bold) << " " << formatter.style("error:", Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 
 void UserDiagnosticsStderrImpl::emit_fatal_root(const Error &err) const
 {
-    TextFormatter formatter{true};
-    std::cerr << formatter.bold("│") << " " << std::endl;
+    AnsiStyledTextFormatter formatter{};
+    std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
     std::cerr << "caused by:" << std::endl;
-    std::cerr << formatter.bold("│") << " " << std::endl;
-    std::cerr << formatter.bold("└") << " " << formatter.red_bold("error:") << " ";
+    std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
+    std::cerr << formatter.style("└", Style::bold) << " " << formatter.style("error:", Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 

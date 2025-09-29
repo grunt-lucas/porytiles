@@ -162,7 +162,7 @@ ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, 
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return BasicError{"failed to load: {}", std::vector{pal_result.error()}};
+        return BasicError{fmt::format("failed to load: {}", pal_result.error())};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
