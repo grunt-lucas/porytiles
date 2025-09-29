@@ -53,47 +53,81 @@ class Error {
     [[nodiscard]] virtual std::unique_ptr<Error> clone() const = 0;
 };
 
-/*
- Based on the code analysis, here are suggested names for BasicError that better communicate its intent as a
-convenient, general-purpose error type for when specialized errors would be overkill:
-
-  Top Recommendations
-
-  1. FormattedError - Emphasizes the key feature of parameter formatting with {} placeholders
-  2. MessageError - Clear that it's for simple message-based errors
-  3. StringError - Specific about handling string-based error messages
-  4. AdHocError - Captures the "when specialized would be overkill" use case
-
-  Other Strong Options
-
-  5. TextError - Simple and clear about text-based errors
-  6. QuickError - Emphasizes convenience and speed of use
-  7. GenericError - Communicates general-purpose nature
-  8. SimpleError - Direct but still somewhat generic
-  9. ParameterizedError - Emphasizes the parameter substitution capability
-  10. ConvenienceError - Emphasizes ease of use
-
-  My Top Pick
-
-  FormattedError is my recommendation because:
-  - It highlights the main technical differentiator (parameter formatting)
-  - It's descriptive without being verbose
-  - It clearly distinguishes it from truly "basic" errors
-  - It tells users what they're getting - an error with formatting capabilities
-
-  The name FormattedError accurately reflects that this class is specifically designed for errors that need parameter
-substitution and conditional TTY formatting, which is its key value proposition over truly basic string errors.
+/**
+ * @brief General-purpose error implementation with formatted message support.
+ *
+ * @details
+ * BasicError is a concrete Error implementation designed for common error scenarios where creating a specialized error
+ * type would be unnecessary overhead. It supports both simple string messages and formatted messages with styled
+ * parameters using TextFormatter and FormatParam.
+ *
+ * Key features:
+ * - Simple construction with a plain string message
+ * - Format string support with styled parameter substitution using fmtlib syntax
+ * - Automatic TTY-aware styling through TextFormatter integration
+ * - Suitable for ad-hoc error reporting without defining custom error types
+ *
+ * Example usage:
+ * ```C++
+ * // Simple string error
+ * return BasicError{"file not found"};
+ *
+ * // Formatted error with styled parameters
+ * return BasicError{"tileset '{}' does not exist", std::vector{FormatParam{name, Style::bold}}};
+ * ```
+ *
+ * When to use BasicError vs specialized error types:
+ * - Use BasicError for straightforward error messages that don't require custom behavior
+ * - Use specialized Error subclasses when errors need additional context, state, or special formatting logic
+ *
+ * @note This class was originally considered for renaming to FormattedError to emphasize its parameter formatting
+ * capabilities, but BasicError was retained for simplicity and established usage in the codebase.
  */
-
 class BasicError final : public Error {
   public:
+    /**
+     * @brief Constructs a BasicError with a plain text message.
+     *
+     * @details
+     * Creates a BasicError containing a simple string message with no parameter formatting. This constructor is used
+     * for straightforward error messages that don't require styled parameters.
+     *
+     * @param text The error message text
+     */
     explicit BasicError(std::string text) : text_{std::move(text)} {}
 
+    /**
+     * @brief Constructs a BasicError with a format string and styled parameters.
+     *
+     * @details
+     * Creates a BasicError that uses fmtlib-style formatting to substitute styled parameters into the message. The
+     * text parameter should contain `{}` placeholders that will be replaced with the styled text from the params
+     * vector when details() is called.
+     *
+     * Example:
+     * ```C++
+     * BasicError{"file '{}' not found", std::vector{FormatParam{filename, Style::bold}}}
+     * ```
+     *
+     * @param text The format string with `{}` placeholders
+     * @param params Vector of FormatParams to substitute into the format string
+     */
     explicit BasicError(std::string text, std::vector<FormatParam> params)
         : text_{std::move(text)}, params_{std::move(params)}
     {
     }
 
+    /**
+     * @brief Returns the formatted error message with appropriate styling.
+     *
+     * @details
+     * Generates the error message by either returning the plain text (if no parameters were provided) or formatting
+     * the text with styled parameters using the provided TextFormatter. The formatter determines whether to apply
+     * ANSI styling codes or return plain text based on the output context.
+     *
+     * @param formatter The TextFormatter to use for applying styles
+     * @return The formatted error message with styling applied as appropriate
+     */
     [[nodiscard]] std::string details(const TextFormatter &formatter) const override
     {
         if (params_.empty()) {
@@ -103,6 +137,15 @@ class BasicError final : public Error {
         return formatter.format(text_, params_);
     }
 
+    /**
+     * @brief Creates a polymorphic copy of this BasicError.
+     *
+     * @details
+     * Implements the Error clone pattern by creating a new BasicError with the same text and parameters. This allows
+     * BasicError instances to be copied when building ChainableResult error chains.
+     *
+     * @return A unique_ptr to a newly allocated copy of this error
+     */
     [[nodiscard]] std::unique_ptr<Error> clone() const override
     {
         return std::make_unique<BasicError>(text_, params_);
