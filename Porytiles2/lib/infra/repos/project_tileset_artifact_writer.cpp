@@ -124,10 +124,10 @@ Result<void> ProjectTilesetArtifactWriter::begin_transaction()
     return {};
 }
 
-Result<void> ProjectTilesetArtifactWriter::commit()
+ChainableResult<void> ProjectTilesetArtifactWriter::commit()
 {
     if (transaction_root_.empty()) {
-        return std::unexpected{"no transaction in progress"};
+        return FormattableError{"no transaction in progress"};
     }
 
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_files;
@@ -215,7 +215,7 @@ Result<void> ProjectTilesetArtifactWriter::commit()
         }
         transaction_root_.clear();
 
-        return std::unexpected{fmt::format("failed to commit transaction: {}", e.what())};
+        return FormattableError{"failed to commit transaction: {}", FormatParam{e.what()}};
     }
 }
 

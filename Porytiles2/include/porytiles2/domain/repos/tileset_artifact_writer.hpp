@@ -45,9 +45,9 @@ class TilesetArtifactWriter {
      * commit, the transaction is closed and a new one must be started for further transactional writes. If no
      * transaction is active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] virtual Result<void> commit() = 0;
+    [[nodiscard]] virtual ChainableResult<void> commit() = 0;
 
     /**
      * @brief Rolls back all buffered write operations in the current transaction.

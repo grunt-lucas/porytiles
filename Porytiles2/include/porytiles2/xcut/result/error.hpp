@@ -73,7 +73,8 @@ class Error {
  * return FormattableError{"file not found"};
  *
  * // Formatted error with styled parameters
- * return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
+ * return FormattableError{"{}: tileset '{}' does not exist",
+ *     FormatParam{"error", Style::red | Style::bold}, FormatParam{name, Style::bold}};
  * ```
  *
  * When to use FormattableError vs specialized error types:
@@ -101,11 +102,6 @@ class FormattableError final : public Error {
      * The text parameter should contain `{}` placeholders that will be replaced with the styled text from the params
      * vector when details() is called.
      *
-     * Example:
-     * ```C++
-     * FormattableError{"file '{}' not found", FormatParam{filename, Style::bold}}
-     * ```
-     *
      * @param text The format string with `{}` placeholders
      * @param params Vector of FormatParams to substitute into the format string
      */
@@ -123,7 +119,6 @@ class FormattableError final : public Error {
      *
      * Example:
      * ```C++
-     * FormattableError{"file '{}' not found", FormatParam{filename, Style::bold}}
      * FormattableError{"expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red}}
      * ```
      *

@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace porytiles2 {
@@ -125,9 +126,42 @@ constexpr Style &operator&=(Style &lhs, Style rhs)
  *
  * This struct is typically constructed inline when creating error messages or formatted diagnostic output.
  */
-struct FormatParam {
-    std::string text; ///< The text content to be formatted
-    Style styles;     ///< The styling attributes to apply to the text
+class FormatParam {
+  public:
+    /**
+     * @brief Constructs a FormatParam with unstyled text.
+     *
+     * @details
+     * Creates a FormatParam with the given text and no styling applied (Style::none).
+     *
+     * @param text The text content to be formatted
+     */
+    explicit FormatParam(std::string text) : text_{std::move(text)}, styles_{Style::none} {}
+
+    /**
+     * @brief Constructs a FormatParam with styled text.
+     *
+     * @details
+     * Creates a FormatParam with the given text and specified styling attributes.
+     *
+     * @param text The text content to be formatted
+     * @param styles The styling attributes to apply to the text
+     */
+    explicit FormatParam(std::string text, Style styles) : text_{std::move(text)}, styles_{styles} {}
+
+    [[nodiscard]] const std::string &text() const
+    {
+        return text_;
+    }
+
+    [[nodiscard]] Style styles() const
+    {
+        return styles_;
+    }
+
+  private:
+    std::string text_; ///< The text content to be formatted
+    Style styles_;     ///< The styling attributes to apply to the text
 };
 
 /**

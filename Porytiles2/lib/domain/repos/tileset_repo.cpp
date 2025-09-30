@@ -37,15 +37,15 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     auto bottom_png_key = key_provider_->key_for(tileset.name(), bottom_png_artifact);
     if (auto result = writer_->write(bottom_png_key, bottom_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return ChainableResult<void>::chain_together(
-            FormattableError{fmt::format("{}: save failed", bottom_png_key.key())}, result);
+        auto failed = FormattableError{"{}: save failed", FormatParam{bottom_png_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     auto middle_png_artifact = TilesetArtifact{middle_png};
     auto middle_png_key = key_provider_->key_for(tileset.name(), middle_png_artifact);
     if (auto result = writer_->write(middle_png_key, middle_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{fmt::format("{}: save failed", middle_png_key.key())};
+        auto failed = FormattableError{"{}: save failed", FormatParam{middle_png_key.key(), Style::bold}};
         return ChainableResult<void>::chain_together(failed, result);
     }
 
@@ -53,15 +53,16 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     auto top_png_key = key_provider_->key_for(tileset.name(), top_png_artifact);
     if (auto result = writer_->write(top_png_key, top_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return ChainableResult<void>::chain_together(
-            FormattableError{fmt::format("{}: save failed", top_png_key.key())}, result);
+        auto failed = FormattableError{"{}: save failed", FormatParam{top_png_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     auto attr_csv_artifact = TilesetArtifact{attributes_csv};
     auto attr_csv_key = key_provider_->key_for(tileset.name(), attr_csv_artifact);
     if (auto result = writer_->write(attr_csv_key, attr_csv_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        auto failed = FormattableError{"{}: save failed", FormatParam{attr_csv_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     // Porymap assets
@@ -71,21 +72,24 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     auto metatiles_key = key_provider_->key_for(tileset.name(), metatiles_artifact);
     if (auto result = writer_->write(metatiles_key, metatiles_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        auto failed = FormattableError{"{}: save failed", FormatParam{metatiles_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
     auto attr_key = key_provider_->key_for(tileset.name(), attr_artifact);
     if (auto result = writer_->write(attr_key, attr_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        auto failed = FormattableError{"{}: save failed", FormatParam{attr_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     auto tiles_png_artifact = TilesetArtifact{tiles_png};
     auto tiles_png_key = key_provider_->key_for(tileset.name(), tiles_png_artifact);
     if (auto result = writer_->write(tiles_png_key, tiles_png_artifact, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        return result;
+        auto failed = FormattableError{"{}: save failed", FormatParam{tiles_png_key.key(), Style::bold}};
+        return ChainableResult<void>::chain_together(failed, result);
     }
 
     // TODO: don't hardcode 16 here
@@ -94,15 +98,16 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
         if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result.has_value()) {
             std::ignore = writer_->rollback();
-            return result;
+            auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
+            return ChainableResult<void>::chain_together(failed, result);
         }
     }
 
     // Commit all writes atomically
-    if (auto result = writer_->commit(); !result) {
+    if (auto result = writer_->commit(); !result.has_value()) {
         // Commit failed, attempt rollback (though it may not be necessary after failed commit)
         std::ignore = writer_->rollback();
-        return FormattableError{result.error()};
+        return ChainableResult<void>::chain_together(FormattableError{"tileset commit failed"}, result);
     }
 
     // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.

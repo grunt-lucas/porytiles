@@ -33,7 +33,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
 
     [[nodiscard]] Result<void> begin_transaction() override;
 
-    [[nodiscard]] Result<void> commit() override;
+    [[nodiscard]] ChainableResult<void> commit() override;
 
     [[nodiscard]] Result<void> rollback() override;
 
