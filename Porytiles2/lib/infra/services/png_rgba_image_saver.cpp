@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <string>
 
-#include "../../../../clion-build-debug/_deps/cli11_proj-src/include/CLI/Error.hpp"
 #include "CImg.h"
 #include "fmt/format.h"
 
