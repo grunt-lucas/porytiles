@@ -49,7 +49,6 @@ class DebugNormalizeCommand final : public Command {
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
         AnsiStyledTextFormatter formatter{};
-        PrimaryTilesetCompiler compiler{};
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
 
         // Setup layered configuration
