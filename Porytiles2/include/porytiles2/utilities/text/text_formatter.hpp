@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -149,6 +150,44 @@ class FormatParam {
      */
     explicit FormatParam(std::string text, Style styles) : text_{std::move(text)}, styles_{styles} {}
 
+    /**
+     * @brief Constructs a FormatParam by converting a value to string.
+     *
+     * @details
+     * Creates a FormatParam by converting the given value to a string using stream insertion. This constructor is
+     * constrained to accept only types that support operator<<, excluding std::string to avoid ambiguity with the
+     * existing string constructor.
+     *
+     * @tparam T The type of the value (must support stream insertion)
+     * @param value The value to convert to string
+     */
+    template <typename T>
+        requires(
+            !std::is_same_v<std::decay_t<T>, std::string> && !std::is_same_v<std::decay_t<T>, FormatParam> &&
+            requires(std::ostringstream os, T val) { os << val; })
+    explicit FormatParam(T &&value) : FormatParam(to_string_impl(std::forward<T>(value)))
+    {
+    }
+
+    /**
+     * @brief Constructs a FormatParam by converting a value to styled string.
+     *
+     * @details
+     * Creates a FormatParam by converting the given value to a string using stream insertion, with the specified
+     * styling attributes applied.
+     *
+     * @tparam T The type of the value (must support stream insertion)
+     * @param value The value to convert to string
+     * @param styles The styling attributes to apply to the text
+     */
+    template <typename T>
+        requires(
+            !std::is_same_v<std::decay_t<T>, std::string> && !std::is_same_v<std::decay_t<T>, FormatParam> &&
+            requires(std::ostringstream os, T val) { os << val; })
+    explicit FormatParam(T &&value, Style styles) : FormatParam(to_string_impl(std::forward<T>(value)), styles)
+    {
+    }
+
     [[nodiscard]] const std::string &text() const
     {
         return text_;
@@ -162,6 +201,14 @@ class FormatParam {
   private:
     std::string text_; ///< The text content to be formatted
     Style styles_;     ///< The styling attributes to apply to the text
+
+    template <typename T>
+    static std::string to_string_impl(T &&value)
+    {
+        std::ostringstream oss;
+        oss << std::forward<T>(value);
+        return oss.str();
+    }
 };
 
 /**

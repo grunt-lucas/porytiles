@@ -295,7 +295,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
 
     auto commit_result = writer_->commit();
     ASSERT_FALSE(commit_result.has_value());
-    EXPECT_EQ(commit_result.error(), "no transaction in progress");
+    EXPECT_EQ(commit_result.error().details(PlainTextFormatter{}), "no transaction in progress");
 
     auto rollback_result = writer_->rollback();
     ASSERT_FALSE(rollback_result.has_value());

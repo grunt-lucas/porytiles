@@ -14,9 +14,9 @@ class PrimaryTilesetCompiler {
   public:
     PrimaryTilesetCompiler() = default;
 
-    ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
 
-    ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
 };
 
 } // namespace porytiles2

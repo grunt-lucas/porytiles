@@ -2,6 +2,7 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <cstdint>
+#include <ostream>
 #include <set>
 #include <string>
 
@@ -67,6 +68,22 @@ class Rgba32 {
     std::uint8_t blue_;
     std::uint8_t alpha_;
 };
+
+/**
+ * @brief Stream insertion operator for Rgba32.
+ *
+ * @details
+ * Allows Rgba32 objects to be written to output streams using the << operator. Uses the JASC string representation.
+ *
+ * @param os The output stream
+ * @param rgba The Rgba32 color to output
+ * @return Reference to the output stream
+ */
+inline std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba)
+{
+    os << rgba.to_jasc_str();
+    return os;
+}
 
 /**
  * @brief Provides a simple way for fmtlib to format an Rgba32.
