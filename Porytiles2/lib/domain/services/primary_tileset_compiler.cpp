@@ -19,13 +19,13 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
 {
-    // Initialize all the services we need
+    // Initialize all the compilation services
     RgbaLayerImageMetatileizer metatileizer{};
     RgbaTileNormalizer normalizer{};
     ColorIndexMapBuilder color_index_map_builder{};
 
     // Transform the tileset layer images into a sequence of metatiles
-    const auto metatiles_result = metatileizer.metatileize(
+    auto metatiles_result = metatileizer.metatileize(
         tileset.porytiles_component().bottom(),
         tileset.porytiles_component().middle(),
         tileset.porytiles_component().top());
@@ -33,40 +33,17 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
             FormattableError{"failed to metatileize input layer images"}, metatiles_result);
     }
-    const auto &metatiles = metatiles_result.value();
+    auto metatiles = std::move(metatiles_result).value();
 
     // Compute NormalizedTiles from the input metatiles
-    std::vector<NormalizedTile<Rgba32>> norm_tiles{};
-    // TODO: move this loop into a batch normalizer service
-    for (const auto &metatile : metatiles) {
-        // Combine all three layers into a single range
-        std::array layers = {
-            std::ranges::ref_view{metatile.bottom()},
-            std::ranges::ref_view{metatile.middle()},
-            std::ranges::ref_view{metatile.top()}};
-        auto all_tiles = layers | std::views::join;
-
-        std::size_t counter = 0;
-        for (const auto &tile : all_tiles) {
-            // Determine layer: 0 = bottom, 1 = middle, 2 = top
-            std::size_t layer_index = counter / 4;
-            std::size_t tile_index = counter % 4;
-
-            const auto &norm_result = normalizer.normalize(RgbaTile{tile}, rgba_magenta);
-            if (!norm_result.has_value()) {
-                // Better diagnostics with layer and tile indices
-                const char *layer_name = (layer_index == 0) ? "bottom" : (layer_index == 1) ? "middle" : "top";
-                std::string error_msg =
-                    std::string{"normalization failed: "} + layer_name + " layer, tile " + std::to_string(tile_index);
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    FormattableError{error_msg}, norm_result);
-            }
-            norm_tiles.push_back(norm_result.value());
-            ++counter;
-        }
+    auto norm_tiles_result = normalizer.batch_normalize(metatiles, rgba_magenta);
+    if (!norm_tiles_result.has_value()) {
+        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+            FormattableError{"metatile normalization failed"}, metatiles_result);
     }
+    auto norm_tiles = std::move(norm_tiles_result).value();
 
-    // Create AssignableTiles for the bin packing step
+    // Create PackSets for the bin packing step
     const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
     ColorSetBuilder color_set_builder{text_formatter_};
     PackSetGenerator assignable_tile_generator{&color_set_builder};

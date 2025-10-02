@@ -166,7 +166,7 @@ class ChainableResult {
      *
      * @return A mutable reference to the success value
      */
-    [[nodiscard]] T &value()
+    [[nodiscard]] T &value() &
     {
         return result_.value();
     }
@@ -180,9 +180,24 @@ class ChainableResult {
      *
      * @return A const reference to the success value
      */
-    [[nodiscard]] const T &value() const
+    [[nodiscard]] const T &value() const &
     {
         return result_.value();
+    }
+
+    /**
+     * @brief Returns an rvalue reference to the contained success value.
+     *
+     * @details
+     * This method provides move access to the success value when called on an rvalue ChainableResult. It enables
+     * efficient extraction of the value when the ChainableResult itself is a temporary or has been moved from. It will
+     * throw std::bad_expected_access if called when the result contains an error rather than a success value.
+     *
+     * @return An rvalue reference to the success value
+     */
+    [[nodiscard]] T &&value() &&
+    {
+        return std::move(result_).value();
     }
 
     /**
@@ -314,7 +329,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
      * result is indeed a success. It will throw std::bad_expected_access if called when
      * the result contains an error.
      */
-    void value()
+    void value() &
     {
         Base::value();
     }
@@ -327,9 +342,22 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
      * result is indeed a success. It will throw std::bad_expected_access if called when
      * the result contains an error.
      */
-    void value() const
+    void value() const &
     {
         Base::value();
+    }
+
+    /**
+     * @brief Accesses the void success value (rvalue version).
+     *
+     * @details
+     * For the void specialization, this method returns void and simply validates that the
+     * result is indeed a success when called on an rvalue ChainableResult. It will throw
+     * std::bad_expected_access if called when the result contains an error.
+     */
+    void value() &&
+    {
+        std::move(*this).Base::value();
     }
 };
 

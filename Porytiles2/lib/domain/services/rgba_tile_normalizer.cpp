@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <ranges>
 #include <unordered_map>
 
 #include "fmt/format.h"
@@ -47,6 +48,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
     }
 
     return palette;
+    // return FormattableError{"TODO some bogus error"};
 }
 
 /**
@@ -142,6 +144,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     normalized_tile.palette() = palette_result.value();
 
     return normalized_tile;
+    // return FormattableError{"TODO some bogus error"};
 }
 
 /**
@@ -241,6 +244,44 @@ RgbaTileNormalizer::normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic
         });
 
     return *min_candidate;
+}
+
+ChainableResult<std::vector<NormalizedTile<Rgba32>>> RgbaTileNormalizer::batch_normalize(
+    const std::vector<RgbaMetatile> &metatiles, const Rgba32 &extrinsic_transparency) const
+{
+    // Compute NormalizedTiles from the input metatiles
+    std::vector<NormalizedTile<Rgba32>> norm_tiles{};
+    // TODO: move this loop into a batch normalizer service
+    for (const auto &metatile : metatiles) {
+        // Combine all three layers into a single range
+        std::array layers = {
+            std::ranges::ref_view{metatile.bottom()},
+            std::ranges::ref_view{metatile.middle()},
+            std::ranges::ref_view{metatile.top()}};
+        auto all_tiles = layers | std::views::join;
+
+        std::size_t counter = 0;
+        for (const auto &tile : all_tiles) {
+            // Determine layer: 0 = bottom, 1 = middle, 2 = top
+            std::size_t layer_index = counter / 4;
+            std::size_t tile_index = counter % 4;
+
+            const auto &norm_result = normalize(RgbaTile{tile}, rgba_magenta);
+            if (!norm_result.has_value()) {
+                // Better diagnostics with layer and tile indices
+                const std::string layer_name = layer_index == 0 ? "bottom" : layer_index == 1 ? "middle" : "top";
+                return ChainableResult<std::vector<NormalizedTile<Rgba32>>>::chain_together(
+                    FormattableError{
+                        "normalization failed: {} layer, tile {}",
+                        FormatParam{layer_name, Style::bold},
+                        FormatParam{tile_index, Style::bold}},
+                    norm_result);
+            }
+            norm_tiles.push_back(norm_result.value());
+            ++counter;
+        }
+    }
+    return norm_tiles;
 }
 
 RgbaTile RgbaTileNormalizer::denormalize(const NormalizedTile<Rgba32> &normalized_tile) const

@@ -2,6 +2,7 @@
 
 #include "porytiles2/domain/model/normalized_tile.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/model/rgba_metatile.hpp"
 #include "porytiles2/domain/model/rgba_tile.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -40,6 +41,9 @@ class RgbaTileNormalizer {
      */
     [[nodiscard]] ChainableResult<NormalizedTile<Rgba32>>
     normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency = Rgba32{}) const;
+
+    [[nodiscard]] ChainableResult<std::vector<NormalizedTile<Rgba32>>>
+    batch_normalize(const std::vector<RgbaMetatile> &metatiles, const Rgba32 &extrinsic_transparency = Rgba32{}) const;
 
     /**
      * @brief Converts a NormalizedTile back to the original RgbaTile format.
