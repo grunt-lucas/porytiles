@@ -25,23 +25,21 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     ColorIndexMapBuilder color_index_map_builder{};
 
     // Transform the tileset layer images into a sequence of metatiles
-    auto metatiles_result = metatileizer.metatileize(
-        tileset.porytiles_component().bottom(),
-        tileset.porytiles_component().middle(),
-        tileset.porytiles_component().top());
-    if (!metatiles_result.has_value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-            FormattableError{"failed to metatileize input layer images"}, metatiles_result);
-    }
-    auto metatiles = std::move(metatiles_result).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles,
+        metatileizer.metatileize(
+            tileset.porytiles_component().bottom(),
+            tileset.porytiles_component().middle(),
+            tileset.porytiles_component().top()),
+        "failed to metatileize input layer images",
+        std::unique_ptr<Tileset>);
 
     // Compute NormalizedTiles from the input metatiles
-    auto norm_tiles_result = normalizer.batch_normalize(metatiles, rgba_magenta);
-    if (!norm_tiles_result.has_value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-            FormattableError{"metatile normalization failed"}, norm_tiles_result);
-    }
-    auto norm_tiles = std::move(norm_tiles_result).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        norm_tiles,
+        normalizer.batch_normalize(metatiles, rgba_magenta),
+        "metatile normalization failed",
+        std::unique_ptr<Tileset>);
 
     // Create PackSets for the bin packing step
     const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);

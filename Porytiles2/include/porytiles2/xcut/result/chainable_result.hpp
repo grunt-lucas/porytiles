@@ -361,4 +361,49 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     }
 };
 
+/**
+ * @brief Unwraps a ChainableResult, chaining a new error message on failure.
+ *
+ * @details
+ * This macro provides a succinct way to handle ChainableResult unwrapping with error propagation. It evaluates the
+ * expression, checks if it contains a value, and either assigns the value to the variable or returns early with a new
+ * error chained to the existing error chain. This reduces the common 6-line error handling pattern to a single line.
+ *
+ * If the result contains an error, the macro returns from the current function with a ChainableResult containing the
+ * original error chain plus the new error message provided.
+ *
+ * @param var The variable name to assign the unwrapped value to
+ * @param expr The expression returning a ChainableResult
+ * @param msg The error message to chain if the result contains an error
+ * @param return_type The success type of the ChainableResult to return on error
+ */
+#define PT_TRY_ASSIGN_CHAIN_ERR(var, expr, msg, return_type)                                                           \
+    auto var##_result = (expr);                                                                                        \
+    if (!var##_result.has_value()) {                                                                                   \
+        return ChainableResult<return_type>::chain_together(FormattableError{msg}, var##_result);                      \
+    }                                                                                                                  \
+    auto var = std::move(var##_result).value();
+
+/**
+ * @brief Unwraps a ChainableResult, passing through the error without modification on failure.
+ *
+ * @details
+ * This macro provides a succinct way to handle ChainableResult unwrapping with error passthrough. It evaluates the
+ * expression, checks if it contains a value, and either assigns the value to the variable or returns early with the
+ * same error result. This is useful when the current layer doesn't need to add additional error context.
+ *
+ * If the result contains an error, the macro returns from the current function with the same error result unchanged,
+ * preserving the existing error chain.
+ *
+ * @param var The variable name to assign the unwrapped value to
+ * @param expr The expression returning a ChainableResult
+ * @param return_type The success type of the ChainableResult to return on error
+ */
+#define PT_TRY_ASSIGN_PASS_ERR(var, expr, return_type)                                                                 \
+    auto var##_result = (expr);                                                                                        \
+    if (!var##_result.has_value()) {                                                                                   \
+        return var##_result;                                                                                           \
+    }                                                                                                                  \
+    auto var = std::move(var##_result).value();
+
 } // namespace porytiles2

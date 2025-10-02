@@ -122,14 +122,14 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
 create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba32 &extrinsic_transparency)
 {
     // First build the normalized palette
-    auto palette_result = build_normalized_palette(rgba_tile, extrinsic_transparency);
-    if (!palette_result.has_value()) {
-        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            FormattableError{"failed to build normalized palette"}, palette_result);
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        palette,
+        build_normalized_palette(rgba_tile, extrinsic_transparency),
+        "failed to build normalized palette",
+        NormalizedTile<Rgba32>);
 
     // Convert to indexed tile with the specified flip
-    auto indexed_tile = convert_to_indexed(rgba_tile, palette_result.value(), h_flip, v_flip, extrinsic_transparency);
+    auto indexed_tile = convert_to_indexed(rgba_tile, palette, h_flip, v_flip, extrinsic_transparency);
 
     // Create the normalized tile
     NormalizedTile normalized_tile{h_flip, v_flip, extrinsic_transparency};
@@ -140,10 +140,9 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     }
 
     // Set the palette
-    normalized_tile.palette() = palette_result.value();
+    normalized_tile.palette() = palette;
 
     return normalized_tile;
-    // return FormattableError{"TODO some bogus error"};
 }
 
 /**
@@ -207,33 +206,32 @@ RgbaTileNormalizer::normalize(const RgbaTile &rgba_tile, const Rgba32 &extrinsic
      */
 
     // Create four candidate tiles with different flip combinations
-    auto no_flip_result = create_candidate(rgba_tile, false, false, extrinsic_transparency);
-    if (!no_flip_result.has_value()) {
-        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            FormattableError{"failed to create no-flip candidate"}, no_flip_result);
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        no_flip,
+        create_candidate(rgba_tile, false, false, extrinsic_transparency),
+        "failed to create no-flip candidate",
+        NormalizedTile<Rgba32>);
 
-    auto h_flip_result = create_candidate(rgba_tile, true, false, extrinsic_transparency);
-    if (!h_flip_result.has_value()) {
-        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            FormattableError{"failed to create h-flip candidate"}, h_flip_result);
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        h_flip,
+        create_candidate(rgba_tile, true, false, extrinsic_transparency),
+        "failed to create h-flip candidate",
+        NormalizedTile<Rgba32>);
 
-    auto v_flip_result = create_candidate(rgba_tile, false, true, extrinsic_transparency);
-    if (!v_flip_result.has_value()) {
-        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            FormattableError{"failed to create v-flip candidate"}, v_flip_result);
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        v_flip,
+        create_candidate(rgba_tile, false, true, extrinsic_transparency),
+        "failed to create v-flip candidate",
+        NormalizedTile<Rgba32>);
 
-    auto both_flip_result = create_candidate(rgba_tile, true, true, extrinsic_transparency);
-    if (!both_flip_result.has_value()) {
-        return ChainableResult<NormalizedTile<Rgba32>>::chain_together(
-            FormattableError{"failed to create both-flip candidate"}, both_flip_result);
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        both_flip,
+        create_candidate(rgba_tile, true, true, extrinsic_transparency),
+        "failed to create both-flip candidate",
+        NormalizedTile<Rgba32>);
 
     // Find the lexicographically smallest candidate
-    std::array candidates = {
-        no_flip_result.value(), h_flip_result.value(), v_flip_result.value(), both_flip_result.value()};
+    std::array candidates = {no_flip, h_flip, v_flip, both_flip};
 
     // Use traditional min_element with custom comparator
     const auto min_candidate =
@@ -250,7 +248,6 @@ ChainableResult<std::vector<NormalizedTile<Rgba32>>> RgbaTileNormalizer::batch_n
 {
     // Compute NormalizedTiles from the input metatiles
     std::vector<NormalizedTile<Rgba32>> norm_tiles{};
-    // TODO: move this loop into a batch normalizer service
     for (const auto &metatile : metatiles) {
         // Combine all three layers into a single range
         std::array layers = {
@@ -265,7 +262,7 @@ ChainableResult<std::vector<NormalizedTile<Rgba32>>> RgbaTileNormalizer::batch_n
             std::size_t layer_index = counter / 4;
             std::size_t tile_index = counter % 4;
 
-            const auto &norm_result = normalize(RgbaTile{tile}, rgba_magenta);
+            const auto &norm_result = normalize(RgbaTile{tile}, extrinsic_transparency);
             if (!norm_result.has_value()) {
                 // Better diagnostics with layer and tile indices
                 const std::string layer_name = layer_index == 0 ? "bottom" : layer_index == 1 ? "middle" : "top";
