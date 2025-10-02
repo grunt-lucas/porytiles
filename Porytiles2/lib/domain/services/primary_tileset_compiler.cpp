@@ -1,6 +1,8 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
+#include <array>
 #include <memory>
+#include <ranges>
 #include <vector>
 
 #include "porytiles2/domain/model/normalized_tile.hpp"
@@ -35,36 +37,32 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     // Compute NormalizedTiles from the input metatiles
     std::vector<NormalizedTile<Rgba32>> norm_tiles{};
+    // TODO: move this loop into a batch normalizer service
     for (const auto &metatile : metatiles) {
-        /*
-         * Why not zip metatile.bottom(), middle(), and top()? We could do that here, but by keeping things split out by
-         * layer, it's easier to give a better diagnostic when errors occur. Alternatively, we could zip it and
-         * determine which layer we're on by dividing a counter by 4. The tile index would be given by taking the
-         * counter modulo 4.
-         */
-        for (const auto &bottom_tile : metatile.bottom()) {
-            const auto &norm_result = normalizer.normalize(RgbaTile{bottom_tile}, rgba_magenta);
+        // Combine all three layers into a single range
+        std::array layers = {
+            std::ranges::ref_view{metatile.bottom()},
+            std::ranges::ref_view{metatile.middle()},
+            std::ranges::ref_view{metatile.top()}};
+        auto all_tiles = layers | std::views::join;
+
+        std::size_t counter = 0;
+        for (const auto &tile : all_tiles) {
+            // Determine layer: 0 = bottom, 1 = middle, 2 = top
+            std::size_t layer_index = counter / 4;
+            std::size_t tile_index = counter % 4;
+
+            const auto &norm_result = normalizer.normalize(RgbaTile{tile}, rgba_magenta);
             if (!norm_result.has_value()) {
+                // Better diagnostics with layer and tile indices
+                const char *layer_name = (layer_index == 0) ? "bottom" : (layer_index == 1) ? "middle" : "top";
+                std::string error_msg =
+                    std::string{"normalization failed: "} + layer_name + " layer, tile " + std::to_string(tile_index);
                 return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
+                    FormattableError{error_msg}, norm_result);
             }
             norm_tiles.push_back(norm_result.value());
-        }
-        for (const auto &middle_tile : metatile.middle()) {
-            const auto &norm_result = normalizer.normalize(RgbaTile{middle_tile}, rgba_magenta);
-            if (!norm_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
-            }
-            norm_tiles.push_back(norm_result.value());
-        }
-        for (const auto &top_tile : metatile.top()) {
-            const auto &norm_result = normalizer.normalize(RgbaTile{top_tile}, rgba_magenta);
-            if (!norm_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-                    FormattableError{"normalization failed: TODO print some tile info here"}, norm_result);
-            }
-            norm_tiles.push_back(norm_result.value());
+            ++counter;
         }
     }
 
