@@ -22,6 +22,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -166,6 +167,8 @@ class DebugPrimaryCompileCommand final : public Command {
     {
         using namespace porytiles2;
 
+        std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
+
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
@@ -173,7 +176,7 @@ class DebugPrimaryCompileCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        PrimaryTilesetCompiler compiler{};
+        PrimaryTilesetCompiler compiler{text_formatter.get()};
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
 
         // Setup layered configuration

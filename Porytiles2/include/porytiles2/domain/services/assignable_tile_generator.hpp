@@ -1,23 +1,27 @@
 #pragma once
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/model/assignable_tile.hpp"
+#include "porytiles2/domain/model/normalized_tile.hpp"
+#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/services/color_set_builder.hpp"
 
 namespace porytiles2 {
 
-/**
- * @brief Represents a foo.
- */
 class AssignableTileGenerator {
   public:
-    AssignableTileGenerator() = default;
-    ~AssignableTileGenerator() = default;
+    explicit AssignableTileGenerator(gsl::not_null<ColorSetBuilder *> color_set_builder)
+        : color_set_builder_{color_set_builder}
+    {
+    }
 
-    [[nodiscard]] int foo() const;
-
-    [[nodiscard]] AssignableTile generate() const;
+    [[nodiscard]] std::vector<AssignableTile> generate(
+        const std::vector<NormalizedTile<Rgba32>> &norm_tiles,
+        const std::map<Rgba32, unsigned int> &color_index_map) const;
 
   private:
-    int foo_{};
+    ColorSetBuilder *color_set_builder_;
 };
 
 } // namespace porytiles2
