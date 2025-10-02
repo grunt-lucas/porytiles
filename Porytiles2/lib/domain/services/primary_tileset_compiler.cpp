@@ -39,7 +39,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     auto norm_tiles_result = normalizer.batch_normalize(metatiles, rgba_magenta);
     if (!norm_tiles_result.has_value()) {
         return ChainableResult<std::unique_ptr<Tileset>>::chain_together(
-            FormattableError{"metatile normalization failed"}, metatiles_result);
+            FormattableError{"metatile normalization failed"}, norm_tiles_result);
     }
     auto norm_tiles = std::move(norm_tiles_result).value();
 

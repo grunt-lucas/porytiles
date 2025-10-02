@@ -48,7 +48,6 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
     }
 
     return palette;
-    // return FormattableError{"TODO some bogus error"};
 }
 
 /**
