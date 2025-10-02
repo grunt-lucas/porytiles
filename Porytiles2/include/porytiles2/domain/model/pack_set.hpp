@@ -4,11 +4,11 @@
 
 namespace porytiles2 {
 
-class AssignableTile {
+class PackSet {
   public:
     static constexpr int unassigned = -1;
 
-    AssignableTile(unsigned int tile_index, const ColorSet &color_set)
+    PackSet(unsigned int tile_index, const ColorSet &color_set)
         : tile_index_{tile_index}, color_set_{color_set}, assigned_pal_index_{unassigned}
     {
     }
@@ -26,6 +26,11 @@ class AssignableTile {
     [[nodiscard]] int assigned_pal_index() const
     {
         return assigned_pal_index_;
+    }
+
+    void assign_pal_index(int pal_index)
+    {
+        assigned_pal_index_ = pal_index;
     }
 
   private:

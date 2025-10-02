@@ -8,8 +8,8 @@
 #include "porytiles2/domain/model/normalized_tile.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
-#include "porytiles2/domain/services/assignable_tile_generator.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
+#include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -69,8 +69,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // Create AssignableTiles for the bin packing step
     const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
     ColorSetBuilder color_set_builder{text_formatter_};
-    AssignableTileGenerator assignable_tile_generator{&color_set_builder};
-    std::vector<AssignableTile> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
+    PackSetGenerator assignable_tile_generator{&color_set_builder};
+    std::vector<PackSet> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
 
     // TODO: set up these components correctly, for now we just use some dummy values
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
