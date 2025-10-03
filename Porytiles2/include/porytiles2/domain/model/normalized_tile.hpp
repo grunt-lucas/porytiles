@@ -7,6 +7,7 @@
 
 #include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/normalized_pal.hpp"
+#include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/domain/model/tile.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
@@ -22,6 +23,7 @@ namespace porytiles2 {
  * @tparam ColorType The type of color objects used in the tile's NormalizedPal.
  */
 template <typename ColorType>
+    requires SupportsTransparency<ColorType>
 class NormalizedTile final : public Tile<IndexPixel> {
   public:
     /**

@@ -3,6 +3,7 @@
 #include <set>
 
 #include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/model/supports_transparency.hpp"
 
 namespace porytiles2 {
 
@@ -12,6 +13,7 @@ namespace porytiles2 {
  * @tparam ColorType The type of color objects to store in the palette
  */
 template <typename ColorType>
+    requires SupportsTransparency<ColorType>
 class NormalizedPal {
   public:
     /**
