@@ -11,6 +11,8 @@
     - [New Normalized Tiles](#new-normalized-tiles)
     - [New GBA Tiles](#new-gba-tiles)
 - [We need something better](#we-need-something-better)
+  - [Old Technique](#old-technique)
+  - [New Technique](#new-technique)
 
 # ISOMORPHISM
 Ultimately, tiles can be isomorphic in two ways.
@@ -184,28 +186,30 @@ which guarantees that iso-under-flips have same pix and pal.
 Then, we can have a NormalizedTile::isomorphic_under_flip(NormalizedTile&)
 which checks if the other tile's pix and pal match this one.
 
-Old Technique
-
+## Old Technique
 ```
-    | iso-under-flip      | iso-under-color
---------------------------------------------
-pix | always identical    | always identical 
---- | ---------------------------------------
-pal | sometimes identical | ???
+          | iso-under-flip                | iso-under-color
+-------------------------------------------------------------
+pix       | always identical              | always identical 
+--------- | -------------------------------------------------
+pal       | usually identical, not always | usually different
+--------- | -------------------------------------------------
+flip bits | often different               | always identical
 ```
 
 As you can see from this table, the old technique is not really useful for differentiating between the two iso cases.
 If two tiles have the same NormPix, you can't tell under which transformation they are isomorphic.
 You have to look at the NormPal. Most (but not all) iso-under-flip tiles will have identical NormPals.
 
-New Technique
-
+## New Technique
 ```
-    | iso-under-flip      | iso-under-color
---------------------------------------------
-pix | always identical    | sometimes identical 
---- | ---------------------------------------
-pal | always identical    | ???
+          | iso-under-flip      | iso-under-color
+-------------------------------------------------
+pix       | always identical    | ???
+--------- | -------------------------------------
+pal       | always identical    | ???
+--------- | -------------------------------------
+flip bits | often different     | ???
 ```
 
 As you can see from this table, the old technique is not really useful for differentiating between the two iso cases.
