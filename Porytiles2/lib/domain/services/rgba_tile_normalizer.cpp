@@ -17,18 +17,21 @@ namespace {
 /**
  * @brief Builds a normalized palette from the unique colors in a tile.
  *
- * @param rgba_tile The source RGBA tile
+ * @param tile The source tile
  * @param extrinsic_transparency The extrinsic transparency color
+ * @tparam PixelType The pixel type of the input tile
  * @return ChainableResult containing the palette or an error if too many colors
  */
-[[nodiscard]] ChainableResult<NormalizedPal<Rgba32>>
-build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_transparency)
+template <typename PixelType>
+    requires SupportsTransparency<PixelType>
+[[nodiscard]] ChainableResult<NormalizedPal<PixelType>>
+build_normalized_palette(const Tile<PixelType> &tile, const PixelType &extrinsic_transparency)
 {
-    std::set<Rgba32> unique_colors{};
+    std::set<PixelType> unique_colors{};
 
     // Collect all unique non-transparent colors
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
-        const Rgba32 pixel = rgba_tile.at(i);
+    for (std::size_t i = 0; i < Tile<PixelType>::tile_size; ++i) {
+        const PixelType pixel = tile.at(i);
         if (!pixel.is_transparent(extrinsic_transparency)) {
             unique_colors.insert(pixel);
         }
@@ -40,7 +43,7 @@ build_normalized_palette(const RgbaTile &rgba_tile, const Rgba32 &extrinsic_tran
             "tile had {} unique colors, but maximum allowed is 15 (plus transparency)", unique_colors.size())};
     }
 
-    NormalizedPal palette{extrinsic_transparency};
+    NormalizedPal<PixelType> palette{extrinsic_transparency};
 
     // Insert all non-transparent colors
     for (const auto &color : unique_colors) {
@@ -124,7 +127,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     // First build the normalized palette
     PT_TRY_ASSIGN_CHAIN_ERR(
         palette,
-        build_normalized_palette(rgba_tile, extrinsic_transparency),
+        build_normalized_palette<Rgba32>(rgba_tile, extrinsic_transparency),
         "failed to build normalized palette",
         NormalizedTile<Rgba32>);
 
