@@ -77,6 +77,17 @@ The metadata:
 - `ColorSet` for the tile
 - assigned palette index (which will be selected by the VM packing code)
 
+## Compile Primary (Using New Isomorphism Types)
+
+1. Convert layer images into std::vector<RgbaMetatile>
+2. Leaf step to generate precision loss warnings if some colors collapse to same 5 bit color. We do this first so that we have context about where the offending colors are in the input metatiles.
+3. Generate color index map from metatile vector
+4. Using the index map and metatiles, generate std::vector<PackSet> (assignable tiles)
+5. Run pal assignment bin packing (Run pal alignment based on IsoColorTiles?) to generate std::vector<HardwarePalette>
+6. Convert metatiles to std::vector<IsoFlipTile>
+7. std::vector<IsoFlipTile> and std::vector<PackSet> are aligned, do a zip-loop and generate std::vector<Tile<IndexPixel>> (tiles.png) and std::vector<TilemapEntry>
+
+
 ## Compile Primary Incremental
 
 ### Tileset Supplier Op
