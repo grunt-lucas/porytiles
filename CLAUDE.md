@@ -32,12 +32,7 @@ cmake -B build-release -DCMAKE_BUILD_TYPE=Release
 # Build project
 cmake --build build -j7
 ```
-
-### Build Variants
-Multiple build configurations are available:
-- `build/` - Debug build
-- `build-coverage/` - Debug build with coverage
-- `build-release/` - Release build
+Alternatively, if there is a build directory called `clion-build-debug`, use that instead of `build`.
 
 ## Testing
 - Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
@@ -45,9 +40,10 @@ Multiple build configurations are available:
 - GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
 - GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests
 
+Prefer to simply run all tests using the all test runner.
+
 Run all tests:
 ```bash
-./build/Porytiles1/tests/Porytiles1Tests
 ./build/Porytiles2/tests/Porytiles2AllTests # this runs both Porytiles2UnitTests and Porytiles2IntegrationTests
 ```
 
