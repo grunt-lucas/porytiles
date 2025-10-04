@@ -61,21 +61,20 @@ It also shows how the new normalization technique works similarly, just with sli
 These two tiles are iso-under-flips.
 
 ```
-R B G B    B G B R
-B B G B    B G B B
-B B B B    B B B B
-B B B B    B B B B
+R B G B    B G B R    C Y M Y    Y M Y C
+B B G B    B G B B    Y Y M Y    Y M Y Y
+B B B B    B B B B    Y Y Y Y    Y Y Y Y
+B B B B    B B B B    Y Y Y Y    Y Y Y Y
 ```
 
 ### Old Normalized Tiles
 ```
-1 2 1 3    1 2 1 3
-1 2 1 1    1 2 1 1
 1 1 1 1    1 1 1 1
 1 1 1 1    1 1 1 1
-tf         ff
+1 1 2 1    1 1 2 1
+3 1 2 1    3 1 2 1
+ft         tt
 1 2 3      1 2 3
------      -----
 B G R      B G R
 ```
 
@@ -192,9 +191,9 @@ which checks if the other tile's pix and pal match this one.
 -------------------------------------------------------------
 pix       | always identical              | always identical 
 --------- | -------------------------------------------------
-pal       | usually identical, not always | usually different
+pal       | usually identical, not always | always different
 --------- | -------------------------------------------------
-flip bits | often different               | always identical
+flip bits | often different               | sometimes different
 ```
 
 As you can see from this table, the old technique is not really useful for differentiating between the two iso cases.
@@ -215,3 +214,43 @@ flip bits | often different     | ???
 As you can see from this table, the old technique is not really useful for differentiating between the two iso cases.
 If two tiles have the same NormPix, you can't tell under which transformation they are isomorphic.
 You have to look at the NormPal. Most (but not all) iso-under-flip tiles will have identical NormPals.
+
+# Here's An Idea
+
+## Isomorphism Under Color Transformation
+Create a new tile type: `IsoColorTile`.
+
+`IsoColorTile`
+- `Tile<IndexPixel> tile`
+- `std::vector<Rgba32> pal`
+- `bool flip bits`
+
+`IsoColorTileNormalizer`: construct `IsoColorTile`s using the "old" normalization algorithm.
+
+`bool is_isomorphic(IsoColorTile&)`
+- tile pixels are identical
+- pals are not identical
+  - pal are not a simple reordering: push pals into set, if sets are the same, pals are a shuffle
+
+We can compute the function F by aligning the pals of the two tiles.
+Suppose pal 1 is [R, G, B] and pal 2 is [C, M, Y].
+We can conclude that F(R) = C, F(G) = M, F(B) = Y.
+
+The case where the pals are just a reordering of each other
+is the classic Issue 118 case where two tiles are isomorphic under both color and flip.
+In these cases, we'd rather treat these tiles as iso-under-flip only.
+
+## Isomorphism Under Flip Transformation
+Create a new tile type: `IsoFlipTile`.
+
+`IsoFlipTile`
+- `Tile<IndexPixel> tile`
+- `std::set<Rgba32> pal`
+- `bool flip bits`
+
+`IsoFlipTileNormalizer`: construct `IsoFlipTile`s using the "new" normalization algorithm,
+already defined in `RgbaTileNormalizer`.
+
+`bool is_isomorphic(IsoFlipTile&)`
+- tile pixels are identical
+- pals are identical
