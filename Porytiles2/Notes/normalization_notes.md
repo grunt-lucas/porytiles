@@ -43,11 +43,17 @@ A classic example: the Pokemart and Pokecenter roof tiles.
 Same shape, different palettes.
 The vanilla game uses the same GBA tile with cleverly aligned palettes to make this work.
 
-## Neither Isomorphism Is A Special Case Of The Other
-While in some cases, an iso-under-flips case can be "rewritten" as an iso-under-color, this isn't common.
-Most iso-under-flips cannot be represented as an iso-under-color.
+## Takeaways
+Any given pair of rgba tiles will have one of the following states:
+1. not isomorphic
+2. isomorphic under flip only
+3. isomorphic under color only
+4. isomorphic under both flip and color
 
-And it should be obvious that most iso-under-color cannot be rewritten as an iso-under-flips.
+This final state, state 4, is what gave rise to https://github.com/grunt-lucas/porytiles/issues/118
+in the original Porytiles.
+The way the original normalization system interacted with the GBA maketile function
+caused it to fail to generate the correct GBA tile for this case.
 
 # NORMALIZATION
 Normalization is the Porytiles process by which it tries to construct a tile representation
