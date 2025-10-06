@@ -57,17 +57,17 @@ void copy_metatile_to_images(
 
         // Calculate the starting pixel position for this tile in the image
         const std::size_t start_pixel_row =
-            metatile_row * RgbaMetatile::metatile_side_length + tile_row * RgbaTile::tile_side_length;
+            metatile_row * RgbaMetatile::metatile_side_length + tile_row * tile_side_length;
         const std::size_t start_pixel_col =
-            metatile_col * RgbaMetatile::metatile_side_length + tile_col * RgbaTile::tile_side_length;
+            metatile_col * RgbaMetatile::metatile_side_length + tile_col * tile_side_length;
 
         // Copy pixels from each layer's tile to the corresponding image
         const auto &bottom_tile = metatile.bottom(tile_idx);
         const auto &middle_tile = metatile.middle(tile_idx);
         const auto &top_tile = metatile.top(tile_idx);
 
-        for (std::size_t pixel_row = 0; pixel_row < RgbaTile::tile_side_length; ++pixel_row) {
-            for (std::size_t pixel_col = 0; pixel_col < RgbaTile::tile_side_length; ++pixel_col) {
+        for (std::size_t pixel_row = 0; pixel_row < tile_side_length; ++pixel_row) {
+            for (std::size_t pixel_col = 0; pixel_col < tile_side_length; ++pixel_col) {
                 const std::size_t image_row = start_pixel_row + pixel_row;
                 const std::size_t image_col = start_pixel_col + pixel_col;
 
@@ -163,7 +163,7 @@ void fill_region_with_transparent(
     std::vector<RgbaMetatile> rgba_metatiles;
     rgba_metatiles.reserve(total_metatiles);
 
-    const std::size_t tiles_per_image_row = bottom.width() / RgbaTile::tile_side_length;
+    const std::size_t tiles_per_image_row = bottom.width() / tile_side_length;
 
     // Process each 16x16 metatile region
     for (std::size_t metatile_row = 0; metatile_row < metatiles_per_col; ++metatile_row) {

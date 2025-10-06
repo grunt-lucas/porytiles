@@ -12,8 +12,6 @@ namespace porytiles2 {
 
 ChainableResult<std::vector<RgbaTile>> RgbaImageTileizer::tileize(const Image<Rgba32> &img) const
 {
-    constexpr std::size_t tile_side_length = RgbaTile::tile_side_length;
-
     // Validate that image dimensions are multiples of tile size
     if (img.width() % tile_side_length != 0 || img.height() % tile_side_length != 0) {
         return FormattableError{fmt::format(

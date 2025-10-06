@@ -5,6 +5,8 @@
 #include <functional>
 #include <string>
 
+#include "porytiles2/domain/model/color_index.hpp"
+
 namespace porytiles2 {
 
 /**
@@ -58,7 +60,7 @@ class ColorSet {
      *
      * @return A const reference to the bitset
      */
-    [[nodiscard]] const std::bitset<240> &colors() const
+    [[nodiscard]] const std::bitset<num_colors> &colors() const
     {
         return colors_;
     }
@@ -76,7 +78,7 @@ class ColorSet {
 
   private:
     // TODO: define this in terms of num_pals * colors_per_pal (i.e. 16 * 15)
-    std::bitset<240> colors_;
+    std::bitset<num_colors> colors_;
 };
 
 } // namespace porytiles2

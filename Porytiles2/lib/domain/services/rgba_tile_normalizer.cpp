@@ -30,7 +30,7 @@ build_normalized_palette(const Tile<PixelType> &tile, const PixelType &extrinsic
     std::set<PixelType> unique_colors{};
 
     // Collect all unique non-transparent colors
-    for (std::size_t i = 0; i < Tile<PixelType>::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         const PixelType pixel = tile.at(i);
         if (!pixel.is_transparent(extrinsic_transparency)) {
             unique_colors.insert(pixel);
@@ -91,7 +91,7 @@ build_normalized_palette(const Tile<PixelType> &tile, const PixelType &extrinsic
 
     Tile<IndexPixel> indexed_tile;
 
-    for (std::size_t i = 0; i < Tile<IndexPixel>::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         const Rgba32 src_pixel = flipped_tile.at(i);
 
         // Determine the palette index for this pixel
@@ -138,7 +138,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     NormalizedTile normalized_tile{h_flip, v_flip, extrinsic_transparency};
 
     // Copy the indexed pixel data
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         normalized_tile.set(i, indexed_tile.at(i));
     }
 
@@ -163,7 +163,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
     RgbaTile rgba_tile;
 
     // Convert each IndexPixel back to its corresponding RGBA color
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         const Rgba32 color = normalized_tile.color_at(i);
         rgba_tile.set(i, color);
     }
@@ -191,7 +191,7 @@ create_candidate(const RgbaTile &rgba_tile, bool h_flip, bool v_flip, const Rgba
 
     const auto flipped_base = rgba_tile.flip(h_flip, v_flip);
     RgbaTile flipped_rgba_tile;
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         flipped_rgba_tile.set(i, flipped_base.at(i));
     }
     return flipped_rgba_tile;

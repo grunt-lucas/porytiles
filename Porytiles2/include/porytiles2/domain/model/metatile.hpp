@@ -21,7 +21,7 @@ class Metatile {
   public:
     static constexpr std::size_t tiles_per_side = 2;
     static constexpr std::size_t tiles_per_metatile = tiles_per_side * tiles_per_side;
-    static constexpr std::size_t metatile_side_length = tiles_per_side * Tile<PixelType>::tile_side_length;
+    static constexpr std::size_t metatile_side_length = tiles_per_side * tile_side_length;
 
     Metatile() : id_{} {}
 

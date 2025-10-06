@@ -257,8 +257,8 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
         for (std::size_t tile_idx = 0; tile_idx < RgbaMetatile::tiles_per_metatile; ++tile_idx) {
             // Create a test tile filled with the test color
             RgbaTile test_tile{};
-            for (std::size_t row = 0; row < RgbaTile::tile_side_length; ++row) {
-                for (std::size_t col = 0; col < RgbaTile::tile_side_length; ++col) {
+            for (std::size_t row = 0; row < tile_side_length; ++row) {
+                for (std::size_t col = 0; col < tile_side_length; ++col) {
                     test_tile.set(row, col, test_color);
                 }
             }

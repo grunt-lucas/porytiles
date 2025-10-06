@@ -8,6 +8,9 @@
 
 namespace porytiles2 {
 
+inline constexpr std::size_t tile_side_length = 8;
+inline constexpr std::size_t tile_size = tile_side_length * tile_side_length;
+
 /**
  * @brief An 8x8 pixel value object with an arbitrary pixel data type.
  *
@@ -17,9 +20,6 @@ template <typename PixelType>
     requires SupportsTransparency<PixelType>
 class Tile {
   public:
-    static constexpr std::size_t tile_side_length = 8;
-    static constexpr std::size_t tile_size = tile_side_length * tile_side_length;
-
     virtual ~Tile() = default;
 
     explicit Tile() : pix_{} {}
@@ -34,7 +34,7 @@ class Tile {
      * A tile is transparent if all of its pixels are either intrinsically or extrinsically transparent, according to
      * the provided extrinsic transparency value.
      *
-     * @param extrinsics The extrinsic transparency value to check each pixel against
+     * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return True if all pixels in the tile are transparent, false otherwise
      */
     [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const

@@ -21,7 +21,7 @@ class RgbaTileNormalizerTest : public ::testing::Test {
     {
         const auto flipped_base = tile.flip(h_flip, v_flip);
         RgbaTile flipped_rgba_tile;
-        for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+        for (std::size_t i = 0; i < tile_size; ++i) {
             flipped_rgba_tile.set(i, flipped_base.at(i));
         }
         return flipped_rgba_tile;
@@ -34,7 +34,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldNormalizeSingleColorTile)
 
     // Fill with a single non-transparent color
     const Rgba32 red{255, 0, 0, 255};
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, red);
     }
 
@@ -48,7 +48,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldNormalizeSingleColorTile)
     EXPECT_EQ(1, normalized.palette().size()); // red (transparency is separate)
 
     // All pixels should be index 1 (red), since 0 is transparency
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(1, normalized.at(i).index());
     }
 }
@@ -59,7 +59,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldNormalizeTransparentTile)
 
     // Fill with transparent pixels (default constructor creates transparent pixels)
     const Rgba32 transparent{0, 0, 0, 0};
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, transparent);
     }
 
@@ -73,7 +73,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldNormalizeTransparentTile)
     EXPECT_EQ(0, normalized.palette().size()); // no colors (transparency is separate)
 
     // All pixels should be index 0 (transparency)
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(0, normalized.at(i).index());
     }
 }
@@ -87,7 +87,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseCorrectNormalFormWithFlips)
     const Rgba32 transparent{0, 0, 0, 0};
     const Rgba32 red{255, 0, 0, 255};
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, transparent);
     }
     tile.set(0, 0, red); // Top-left corner
@@ -101,7 +101,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseCorrectNormalFormWithFlips)
 
     // Verify that exactly one pixel is red (index 1) and the rest are transparent (index 0)
     int red_count = 0;
-    for (std::size_t i = 0; i < NormalizedTile<Rgba32>::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         if (normalized.at(i).index() == 1) {
             red_count++;
         }
@@ -116,7 +116,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseCorrectNormalFormWithFlips)
      */
     EXPECT_TRUE(normalized.h_flip());
     EXPECT_TRUE(normalized.v_flip());
-    EXPECT_EQ(normalized.color_at(NormalizedTile<Rgba32>::tile_size - 1), red);
+    EXPECT_EQ(normalized.color_at(tile_size - 1), red);
     EXPECT_EQ(normalized.color_at(7, 7), red);
 }
 
@@ -128,7 +128,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseFlippedNormalForm)
     const Rgba32 transparent{0, 0, 0, 0};
     const Rgba32 red{255, 0, 0, 255};
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, transparent);
     }
     tile.set(7, 7, red); // Bottom-right corner
@@ -142,7 +142,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseFlippedNormalForm)
 
     // Verify that exactly one pixel is red (index 1) and the rest are transparent (index 0)
     int red_count = 0;
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         if (normalized.at(i).index() == 1) {
             red_count++;
         }
@@ -154,7 +154,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldChooseFlippedNormalForm)
      */
     EXPECT_FALSE(normalized.h_flip());
     EXPECT_FALSE(normalized.v_flip());
-    EXPECT_EQ(normalized.color_at(Tile<Rgba32>::tile_size - 1), red);
+    EXPECT_EQ(normalized.color_at(tile_size - 1), red);
     EXPECT_EQ(normalized.color_at(7, 7), red);
 }
 
@@ -171,7 +171,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleMaximumColors)
 
     // Fill remaining pixels with transparency
     const Rgba32 transparent{0, 0, 0, 0};
-    for (std::size_t i = 15; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 15; i < tile_size; ++i) {
         tile.set(i, transparent);
     }
 
@@ -268,10 +268,10 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleExtrinsicTransparency)
     const Rgba32 red{255, 0, 0, 255};
 
     // Fill with magenta and red
-    for (std::size_t i = 0; i < RgbaTile::tile_size / 2; ++i) {
+    for (std::size_t i = 0; i < tile_size / 2; ++i) {
         tile.set(i, magenta);
     }
-    for (std::size_t i = RgbaTile::tile_size / 2; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = tile_size / 2; i < tile_size; ++i) {
         tile.set(i, red);
     }
 
@@ -283,10 +283,10 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleExtrinsicTransparency)
     EXPECT_EQ(1, normalized.palette().size()); // red (magenta/transparency is separate)
 
     // First half should be index 0 (transparent), second half should be index 1 (red)
-    for (std::size_t i = 0; i < RgbaTile::tile_size / 2; ++i) {
+    for (std::size_t i = 0; i < tile_size / 2; ++i) {
         EXPECT_EQ(0, normalized.at(i).index());
     }
-    for (std::size_t i = RgbaTile::tile_size / 2; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = tile_size / 2; i < tile_size; ++i) {
         EXPECT_EQ(1, normalized.at(i).index());
     }
 }
@@ -356,7 +356,7 @@ TEST_F(RgbaTileNormalizerTest, DocumentsPanicForPaletteContainingTransparentColo
     constexpr Rgba32 red_transparent{255, 0, 0, 0}; // Same RGB, different alpha
 
     // Fill tile with the opaque version
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, red_opaque);
     }
 
@@ -370,7 +370,7 @@ TEST_F(RgbaTileNormalizerTest, DocumentsPanicForPaletteContainingTransparentColo
     EXPECT_EQ(0, normalized.palette().size());
 
     // All pixels should be index 0 (transparent)
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(0, normalized.at(i).index());
     }
 
@@ -390,7 +390,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeSingleColorTile)
 
     // Fill with a single non-transparent color
     const Rgba32 red{255, 0, 0, 255};
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         original_tile.set(i, red);
     }
 
@@ -402,7 +402,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeSingleColorTile)
     const auto denormalized_tile = normalizer_.denormalize(normalized_result.value());
 
     // All pixels should be red
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(red, denormalized_tile.at(i));
     }
 }
@@ -413,7 +413,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeTransparentTile)
 
     // Fill with transparent pixels
     const Rgba32 transparent{0, 0, 0, 0};
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         original_tile.set(i, transparent);
     }
 
@@ -425,7 +425,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeTransparentTile)
     const auto denormalized_tile = normalizer_.denormalize(normalized_result.value());
 
     // All pixels should be transparent
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(transparent, denormalized_tile.at(i));
     }
 }
@@ -473,7 +473,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeMultiColorTile)
     EXPECT_EQ(normalized_tile.v_flip(), renormalized_tile.v_flip());
     EXPECT_EQ(normalized_tile.palette().size(), renormalized_tile.palette().size());
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
 }
@@ -486,10 +486,10 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeWithExtrinsicTransparency)
     const Rgba32 red{255, 0, 0, 255};
 
     // Fill with magenta and red
-    for (std::size_t i = 0; i < RgbaTile::tile_size / 2; ++i) {
+    for (std::size_t i = 0; i < tile_size / 2; ++i) {
         original_tile.set(i, magenta);
     }
-    for (std::size_t i = RgbaTile::tile_size / 2; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = tile_size / 2; i < tile_size; ++i) {
         original_tile.set(i, red);
     }
 
@@ -512,7 +512,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDenormalizeWithExtrinsicTransparency)
     EXPECT_EQ(normalized_tile.v_flip(), renormalized_tile.v_flip());
     EXPECT_EQ(normalized_tile.palette().size(), renormalized_tile.palette().size());
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
 }
@@ -528,7 +528,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldBeInverseOfNormalizer)
     const Rgba32 green{0, 255, 0, 255};
 
     // Fill with mostly transparent, but add some distinctive pattern
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         original_tile.set(i, transparent);
     }
     original_tile.set(0, 0, red);   // Top-left
@@ -554,7 +554,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldBeInverseOfNormalizer)
     EXPECT_EQ(normalized_tile.v_flip(), renormalized_tile.v_flip());
     EXPECT_EQ(normalized_tile.palette().size(), renormalized_tile.palette().size());
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
 }
@@ -571,7 +571,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleMaximumColorsInDenormalization)
 
     // Fill remaining pixels with transparency
     const Rgba32 transparent{0, 0, 0, 0};
-    for (std::size_t i = 15; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 15; i < tile_size; ++i) {
         original_tile.set(i, transparent);
     }
 
@@ -594,7 +594,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldHandleMaximumColorsInDenormalization)
     EXPECT_EQ(normalized_tile.v_flip(), renormalized_tile.v_flip());
     EXPECT_EQ(normalized_tile.palette().size(), renormalized_tile.palette().size());
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
 }
@@ -609,7 +609,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldPreserveFlipsInDenormalizePreservingFlips)
     const Rgba32 green{0, 255, 0, 255};
 
     // Fill with transparent
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         original_tile.set(i, transparent);
     }
     original_tile.set(0, 0, red);   // Top-left
@@ -628,7 +628,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldPreserveFlipsInDenormalizePreservingFlips)
     RgbaTile expected_flipped_tile = flip_rgba_tile(original_tile, normalized_tile.h_flip(), normalized_tile.v_flip());
 
     // Verify each pixel matches
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(expected_flipped_tile.at(i), rgba_preserving_flips.at(i));
     }
 
@@ -667,7 +667,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDifferentiateBetweenDenormalizeAndDenormali
     const Rgba32 blue{0, 0, 255, 255};
 
     // Fill with transparent, put blue at bottom-right
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         original_tile.set(i, transparent);
     }
     original_tile.set(7, 7, blue); // Bottom-right corner
@@ -690,7 +690,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldDifferentiateBetweenDenormalizeAndDenormali
     if (normalized_tile.h_flip() || normalized_tile.v_flip()) {
         // The tiles should be different in this case
         bool tiles_are_different = false;
-        for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+        for (std::size_t i = 0; i < tile_size; ++i) {
             if (denormalized_tile.at(i) != rgba_preserving_flips.at(i)) {
                 tiles_are_different = true;
                 break;
@@ -708,10 +708,10 @@ TEST_F(RgbaTileNormalizerTest, ShouldWorkWithExtrinsicTransparencyPreservingFlip
     const Rgba32 yellow{255, 255, 0, 255};
 
     // Fill with magenta and yellow
-    for (std::size_t i = 0; i < RgbaTile::tile_size / 2; ++i) {
+    for (std::size_t i = 0; i < tile_size / 2; ++i) {
         original_tile.set(i, magenta);
     }
-    for (std::size_t i = RgbaTile::tile_size / 2; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = tile_size / 2; i < tile_size; ++i) {
         original_tile.set(i, yellow);
     }
 
@@ -735,7 +735,7 @@ TEST_F(RgbaTileNormalizerTest, ShouldWorkWithExtrinsicTransparencyPreservingFlip
     EXPECT_EQ(normalized_tile.v_flip(), renormalized_tile.v_flip());
     EXPECT_EQ(normalized_tile.palette().size(), renormalized_tile.palette().size());
 
-    for (std::size_t i = 0; i < RgbaTile::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         EXPECT_EQ(normalized_tile.at(i).index(), renormalized_tile.at(i).index());
     }
 }

@@ -13,7 +13,7 @@ TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly)
 {
     RgbaTile tile{};
 
-    for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, Rgba32{255, 0, 255});
     }
 
@@ -32,7 +32,7 @@ TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
 {
     RgbaTile tile{};
 
-    for (std::size_t i = 0; i < Tile<Rgba32>::tile_size; ++i) {
+    for (std::size_t i = 0; i < tile_size; ++i) {
         tile.set(i, Rgba32{255, 0, 255});
     }
 
