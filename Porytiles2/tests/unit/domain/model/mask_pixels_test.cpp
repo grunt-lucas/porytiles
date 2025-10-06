@@ -2,13 +2,13 @@
 
 #include <unordered_set>
 
-#include "porytiles2/domain/model/tile_mask.hpp"
+#include "porytiles2/domain/model/mask_pixels.hpp"
 
 using namespace porytiles2;
 
 // Helper function to create a TileMask with a specific pattern
 namespace {
-TileMask create_test_mask()
+MaskPixels create_test_mask()
 {
     // Creates a simple pattern:
     // 10000000  (0x80)
@@ -19,13 +19,13 @@ TileMask create_test_mask()
     // 00000100  (0x04)
     // 00000010  (0x02)
     // 00000001  (0x01)
-    return TileMask{{0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01}};
+    return MaskPixels{{0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01}};
 }
 } // namespace
 
-TEST(TileMaskTest, DefaultConstruction)
+TEST(MaskPixelsTest, DefaultConstruction)
 {
-    TileMask tm;
+    MaskPixels tm;
     EXPECT_EQ(tm.rows().size(), 8);
     // Default constructed mask should have all zeros
     for (const auto &row : tm.rows()) {
@@ -33,9 +33,9 @@ TEST(TileMaskTest, DefaultConstruction)
     }
 }
 
-TEST(TileMaskTest, RowsAccessor)
+TEST(MaskPixelsTest, RowsAccessor)
 {
-    TileMask tm = create_test_mask();
+    MaskPixels tm = create_test_mask();
     const auto &rows = tm.rows();
     EXPECT_EQ(rows[0], 0x80);
     EXPECT_EQ(rows[1], 0x40);
@@ -47,20 +47,20 @@ TEST(TileMaskTest, RowsAccessor)
     EXPECT_EQ(rows[7], 0x01);
 }
 
-TEST(TileMaskTest, EqualityComparison)
+TEST(MaskPixelsTest, EqualityComparison)
 {
-    TileMask tm1 = create_test_mask();
-    TileMask tm2 = create_test_mask();
-    TileMask tm3;
+    MaskPixels tm1 = create_test_mask();
+    MaskPixels tm2 = create_test_mask();
+    MaskPixels tm3;
 
     EXPECT_EQ(tm1, tm2);
     EXPECT_NE(tm1, tm3);
 }
 
-TEST(TileMaskTest, ComparisonOperators)
+TEST(MaskPixelsTest, ComparisonOperators)
 {
-    TileMask tm1{{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
-    TileMask tm2{{0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+    MaskPixels tm1{{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+    MaskPixels tm2{{0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
     EXPECT_LT(tm1, tm2);
     EXPECT_LE(tm1, tm2);
@@ -68,18 +68,18 @@ TEST(TileMaskTest, ComparisonOperators)
     EXPECT_GE(tm2, tm1);
 }
 
-TEST(TileMaskTest, GetFlipNoFlip)
+TEST(MaskPixelsTest, GetFlipNoFlip)
 {
-    TileMask tm = create_test_mask();
-    TileMask flipped = tm.get_flip(false, false);
+    MaskPixels tm = create_test_mask();
+    MaskPixels flipped = tm.get_flip(false, false);
 
     EXPECT_EQ(tm, flipped);
 }
 
-TEST(TileMaskTest, GetFlipHorizontal)
+TEST(MaskPixelsTest, GetFlipHorizontal)
 {
-    TileMask tm = create_test_mask();
-    TileMask flipped = tm.get_flip(true, false);
+    MaskPixels tm = create_test_mask();
+    MaskPixels flipped = tm.get_flip(true, false);
 
     // Horizontal flip reverses the bits in each row
     // 10000000 -> 00000001
@@ -96,10 +96,10 @@ TEST(TileMaskTest, GetFlipHorizontal)
     EXPECT_EQ(flipped.rows()[7], 0x80);
 }
 
-TEST(TileMaskTest, GetFlipVertical)
+TEST(MaskPixelsTest, GetFlipVertical)
 {
-    TileMask tm = create_test_mask();
-    TileMask flipped = tm.get_flip(false, true);
+    MaskPixels tm = create_test_mask();
+    MaskPixels flipped = tm.get_flip(false, true);
 
     // Vertical flip reverses the order of rows
     EXPECT_EQ(flipped.rows()[0], 0x01);
@@ -112,10 +112,10 @@ TEST(TileMaskTest, GetFlipVertical)
     EXPECT_EQ(flipped.rows()[7], 0x80);
 }
 
-TEST(TileMaskTest, GetFlipBoth)
+TEST(MaskPixelsTest, GetFlipBoth)
 {
-    TileMask tm = create_test_mask();
-    TileMask flipped = tm.get_flip(true, true);
+    MaskPixels tm = create_test_mask();
+    MaskPixels flipped = tm.get_flip(true, true);
 
     // Both flips: rows are reversed AND bits in each row are reversed
     // Original row 7 (00000001) -> reversed bits (10000000) -> goes to row 0
@@ -129,31 +129,31 @@ TEST(TileMaskTest, GetFlipBoth)
     EXPECT_EQ(flipped.rows()[7], 0x01);
 }
 
-TEST(TileMaskTest, GetFlipSymmetry)
+TEST(MaskPixelsTest, GetFlipSymmetry)
 {
-    TileMask tm = create_test_mask();
+    MaskPixels tm = create_test_mask();
 
     // Flipping twice should return to original
-    TileMask h_flip = tm.get_flip(true, false);
-    TileMask h_flip_back = h_flip.get_flip(true, false);
+    MaskPixels h_flip = tm.get_flip(true, false);
+    MaskPixels h_flip_back = h_flip.get_flip(true, false);
     EXPECT_EQ(tm, h_flip_back);
 
-    TileMask v_flip = tm.get_flip(false, true);
-    TileMask v_flip_back = v_flip.get_flip(false, true);
+    MaskPixels v_flip = tm.get_flip(false, true);
+    MaskPixels v_flip_back = v_flip.get_flip(false, true);
     EXPECT_EQ(tm, v_flip_back);
 
-    TileMask both_flip = tm.get_flip(true, true);
-    TileMask both_flip_back = both_flip.get_flip(true, true);
+    MaskPixels both_flip = tm.get_flip(true, true);
+    MaskPixels both_flip_back = both_flip.get_flip(true, true);
     EXPECT_EQ(tm, both_flip_back);
 }
 
-TEST(TileMaskTest, HashFunction)
+TEST(MaskPixelsTest, HashFunction)
 {
-    TileMask tm1 = create_test_mask();
-    TileMask tm2 = create_test_mask();
-    TileMask tm3;
+    MaskPixels tm1 = create_test_mask();
+    MaskPixels tm2 = create_test_mask();
+    MaskPixels tm3;
 
-    std::hash<TileMask> hasher;
+    std::hash<MaskPixels> hasher;
 
     // Equal objects should have equal hashes
     EXPECT_EQ(hasher(tm1), hasher(tm2));
@@ -162,13 +162,13 @@ TEST(TileMaskTest, HashFunction)
     EXPECT_NE(hasher(tm1), hasher(tm3));
 }
 
-TEST(TileMaskTest, HashInUnorderedSet)
+TEST(MaskPixelsTest, HashInUnorderedSet)
 {
-    std::unordered_set<TileMask> mask_set;
+    std::unordered_set<MaskPixels> mask_set;
 
-    TileMask tm1 = create_test_mask();
-    TileMask tm2 = create_test_mask();
-    TileMask tm3;
+    MaskPixels tm1 = create_test_mask();
+    MaskPixels tm2 = create_test_mask();
+    MaskPixels tm3;
 
     mask_set.insert(tm1);
     mask_set.insert(tm2); // Should not be inserted (duplicate)
@@ -179,9 +179,9 @@ TEST(TileMaskTest, HashInUnorderedSet)
     EXPECT_TRUE(mask_set.contains(tm3));
 }
 
-TEST(TileMaskTest, SetBit)
+TEST(MaskPixelsTest, SetBit)
 {
-    TileMask tm;
+    MaskPixels tm;
 
     // Set bit at row 0, col 0 (leftmost bit of first row)
     tm.set(0, 0);
@@ -196,9 +196,9 @@ TEST(TileMaskTest, SetBit)
     EXPECT_EQ(tm.rows()[3], 0x08); // 00001000
 }
 
-TEST(TileMaskTest, UnsetBit)
+TEST(MaskPixelsTest, UnsetBit)
 {
-    TileMask tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+    MaskPixels tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
     // Unset bit at row 0, col 0
     tm.unset(0, 0);
@@ -213,9 +213,9 @@ TEST(TileMaskTest, UnsetBit)
     EXPECT_EQ(tm.rows()[5], 0xEF); // 11101111
 }
 
-TEST(TileMaskTest, SetMultipleBits)
+TEST(MaskPixelsTest, SetMultipleBits)
 {
-    TileMask tm;
+    MaskPixels tm;
 
     // Create a diagonal pattern
     for (int i = 0; i < 8; ++i) {
@@ -233,9 +233,9 @@ TEST(TileMaskTest, SetMultipleBits)
     EXPECT_EQ(tm.rows()[7], 0x01); // 00000001
 }
 
-TEST(TileMaskTest, SetIsIdempotent)
+TEST(MaskPixelsTest, SetIsIdempotent)
 {
-    TileMask tm;
+    MaskPixels tm;
 
     // Set a bit multiple times
     tm.set(2, 3);
@@ -246,9 +246,9 @@ TEST(TileMaskTest, SetIsIdempotent)
     EXPECT_EQ(tm.rows()[2], 0x10); // 00010000
 }
 
-TEST(TileMaskTest, UnsetIsIdempotent)
+TEST(MaskPixelsTest, UnsetIsIdempotent)
 {
-    TileMask tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
+    MaskPixels tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
     // Unset a bit multiple times
     tm.unset(4, 5);
@@ -259,9 +259,9 @@ TEST(TileMaskTest, UnsetIsIdempotent)
     EXPECT_EQ(tm.rows()[4], 0xFB); // 11111011
 }
 
-TEST(TileMaskTest, SetAndUnset)
+TEST(MaskPixelsTest, SetAndUnset)
 {
-    TileMask tm;
+    MaskPixels tm;
 
     // Set some bits
     tm.set(0, 0);

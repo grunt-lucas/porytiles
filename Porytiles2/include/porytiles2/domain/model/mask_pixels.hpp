@@ -7,16 +7,16 @@
 
 namespace porytiles2 {
 
-class TileMask {
+class MaskPixels {
   public:
-    TileMask() = default;
+    MaskPixels() = default;
 
-    explicit TileMask(const std::array<uint8_t, tile_side_length> &rows) : rows_{rows} {}
+    explicit MaskPixels(const std::array<uint8_t, tile_side_length> &rows) : rows_{rows} {}
 
     // (lexicographic on rows array)
-    auto operator<=>(const TileMask &) const = default;
+    auto operator<=>(const MaskPixels &) const = default;
 
-    [[nodiscard]] TileMask get_flip(bool h, bool v) const;
+    [[nodiscard]] MaskPixels get_flip(bool h, bool v) const;
 
     void set(int row, int col);
 
@@ -34,15 +34,15 @@ class TileMask {
 } // namespace porytiles2
 
 /**
- * @brief std::hash specialization for TileMask.
+ * @brief std::hash specialization for MaskPixels.
  *
  * @details
- * Provides a hash function for TileMask objects to enable their use in standard hash-based containers like
+ * Provides a hash function for MaskPixels objects to enable their use in standard hash-based containers like
  * std::unordered_set and std::unordered_map. The hash is computed by combining each byte of the mask.
  */
 template <>
-struct std::hash<porytiles2::TileMask> {
-    size_t operator()(const porytiles2::TileMask &tm) const noexcept
+struct std::hash<porytiles2::MaskPixels> {
+    size_t operator()(const porytiles2::MaskPixels &tm) const noexcept
     {
         // Simple hash combining all 8 bytes
         size_t h = 0;

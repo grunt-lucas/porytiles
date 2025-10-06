@@ -1,4 +1,4 @@
-#include "porytiles2/domain/model/tile_mask.hpp"
+#include "porytiles2/domain/model/mask_pixels.hpp"
 
 #include <cstdint>
 
@@ -6,13 +6,13 @@
 
 namespace porytiles2 {
 
-TileMask TileMask::get_flip(bool h, bool v) const
+MaskPixels MaskPixels::get_flip(bool h, bool v) const
 {
     if (!h && !v) {
         return *this;
     }
 
-    TileMask result;
+    MaskPixels result;
     const int8_t v_inc = v ? -1 : 1;
     const int8_t v_start = v ? 7 : 0;
 
@@ -23,12 +23,12 @@ TileMask TileMask::get_flip(bool h, bool v) const
     return result;
 }
 
-void TileMask::set(int row, int col)
+void MaskPixels::set(int row, int col)
 {
     rows_[row] |= (1 << (7 - col));
 }
 
-void TileMask::unset(int row, int col)
+void MaskPixels::unset(int row, int col)
 {
     rows_[row] &= ~(1 << (7 - col));
 }
