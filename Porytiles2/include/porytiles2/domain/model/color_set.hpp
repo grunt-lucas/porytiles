@@ -5,9 +5,39 @@
 #include <functional>
 #include <string>
 
-#include "porytiles2/domain/model/color_index.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
+
+inline constexpr std::size_t colors_per_pal = 16;
+inline constexpr std::size_t num_pals = 16;
+inline constexpr std::size_t num_colors = colors_per_pal * num_pals;
+
+/**
+ * @brief A bounded container class for an index into a ColorSet.
+ */
+class ColorIndex {
+  public:
+    ColorIndex() = default;
+
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    ColorIndex(unsigned int index) : index_{index}
+    {
+        if (index_ >= num_colors) {
+            panic("invalid ColorIndex value: " + std::to_string(index_));
+        }
+    }
+
+    auto operator<=>(const ColorIndex &) const = default;
+
+    [[nodiscard]] unsigned int index() const
+    {
+        return index_;
+    }
+
+  private:
+    unsigned int index_;
+};
 
 /**
  * @brief A set of colors represented as a bitset.
@@ -29,7 +59,7 @@ class ColorSet {
      * @param index The index of the bit to test
      * @return true if the bit is set, false otherwise
      */
-    [[nodiscard]] bool test(std::size_t index) const;
+    [[nodiscard]] bool test(ColorIndex index) const;
 
     /**
      * @brief Sets a bit at the given index.
@@ -40,7 +70,7 @@ class ColorSet {
      * @param index The index of the bit to set
      * @param value The value to set (true or false)
      */
-    void set(std::size_t index, bool value = true);
+    void set(ColorIndex index, bool value = true);
 
     /**
      * @brief Resets a bit at the given index to false.
@@ -50,7 +80,7 @@ class ColorSet {
      *
      * @param index The index of the bit to reset
      */
-    void reset(std::size_t index);
+    void reset(ColorIndex index);
 
     /**
      * @brief Gets the underlying bitset.

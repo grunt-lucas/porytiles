@@ -2,19 +2,19 @@
 
 namespace porytiles2 {
 
-bool ColorSet::test(std::size_t index) const
+bool ColorSet::test(ColorIndex index) const
 {
-    return colors_.test(index);
+    return colors_.test(index.index());
 }
 
-void ColorSet::set(std::size_t index, bool value)
+void ColorSet::set(ColorIndex index, bool value)
 {
-    colors_.set(index, value);
+    colors_.set(index.index(), value);
 }
 
-void ColorSet::reset(std::size_t index)
+void ColorSet::reset(ColorIndex index)
 {
-    colors_.reset(index);
+    colors_.reset(index.index());
 }
 
 } // namespace porytiles2
