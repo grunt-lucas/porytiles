@@ -2,7 +2,7 @@
 
 #include <unordered_set>
 
-#include "porytiles2/domain/model/shape_mask.hpp"
+#include "porytiles2/domain/model/tile/shape_mask.hpp"
 
 using namespace porytiles2;
 
@@ -71,7 +71,7 @@ TEST(ShapeMaskTests, ComparisonOperators)
 TEST(ShapeMaskTests, GetFlipNoFlip)
 {
     ShapeMask tm = create_test_mask();
-    ShapeMask flipped = tm.get_flip(false, false);
+    ShapeMask flipped = tm.flip(false, false);
 
     EXPECT_EQ(tm, flipped);
 }
@@ -79,7 +79,7 @@ TEST(ShapeMaskTests, GetFlipNoFlip)
 TEST(ShapeMaskTests, GetFlipHorizontal)
 {
     ShapeMask tm = create_test_mask();
-    ShapeMask flipped = tm.get_flip(true, false);
+    ShapeMask flipped = tm.flip(true, false);
 
     // Horizontal flip reverses the bits in each row
     // 10000000 -> 00000001
@@ -99,7 +99,7 @@ TEST(ShapeMaskTests, GetFlipHorizontal)
 TEST(ShapeMaskTests, GetFlipVertical)
 {
     ShapeMask tm = create_test_mask();
-    ShapeMask flipped = tm.get_flip(false, true);
+    ShapeMask flipped = tm.flip(false, true);
 
     // Vertical flip reverses the order of rows
     EXPECT_EQ(flipped.rows()[0], 0x01);
@@ -115,7 +115,7 @@ TEST(ShapeMaskTests, GetFlipVertical)
 TEST(ShapeMaskTests, GetFlipBoth)
 {
     ShapeMask tm = create_test_mask();
-    ShapeMask flipped = tm.get_flip(true, true);
+    ShapeMask flipped = tm.flip(true, true);
 
     // Both flips: rows are reversed AND bits in each row are reversed
     // Original row 7 (00000001) -> reversed bits (10000000) -> goes to row 0
@@ -134,16 +134,16 @@ TEST(ShapeMaskTests, GetFlipSymmetry)
     ShapeMask tm = create_test_mask();
 
     // Flipping twice should return to original
-    ShapeMask h_flip = tm.get_flip(true, false);
-    ShapeMask h_flip_back = h_flip.get_flip(true, false);
+    ShapeMask h_flip = tm.flip(true, false);
+    ShapeMask h_flip_back = h_flip.flip(true, false);
     EXPECT_EQ(tm, h_flip_back);
 
-    ShapeMask v_flip = tm.get_flip(false, true);
-    ShapeMask v_flip_back = v_flip.get_flip(false, true);
+    ShapeMask v_flip = tm.flip(false, true);
+    ShapeMask v_flip_back = v_flip.flip(false, true);
     EXPECT_EQ(tm, v_flip_back);
 
-    ShapeMask both_flip = tm.get_flip(true, true);
-    ShapeMask both_flip_back = both_flip.get_flip(true, true);
+    ShapeMask both_flip = tm.flip(true, true);
+    ShapeMask both_flip_back = both_flip.flip(true, true);
     EXPECT_EQ(tm, both_flip_back);
 }
 

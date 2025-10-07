@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "porytiles2/domain/model/tile.hpp"
+#include "porytiles2/domain/model/tile/tile_constants.hpp"
 
 namespace porytiles2 {
 
@@ -38,7 +38,7 @@ class ShapeMask {
      *
      * @param rows An array of 8 bytes representing the tile rows
      */
-    explicit ShapeMask(const std::array<uint8_t, tile_side_length> &rows) : rows_{rows} {}
+    explicit ShapeMask(const std::array<uint8_t, tile::side_length_pix> &rows) : rows_{rows} {}
 
     // (lexicographic on rows array)
     auto operator<=>(const ShapeMask &) const = default;
@@ -55,7 +55,7 @@ class ShapeMask {
      * @param v True to flip vertically
      * @return The flipped mask
      */
-    [[nodiscard]] ShapeMask get_flip(bool h, bool v) const;
+    [[nodiscard]] ShapeMask flip(bool h, bool v) const;
 
     /**
      * @brief Sets the bit at the specified row and column to 1.
@@ -95,7 +95,7 @@ class ShapeMask {
     }
 
   private:
-    std::array<uint8_t, tile_side_length> rows_{};
+    std::array<uint8_t, tile::side_length_pix> rows_{};
 };
 
 } // namespace porytiles2

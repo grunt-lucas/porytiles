@@ -4,6 +4,8 @@
 #include <compare>
 #include <set>
 
+#include "porytiles2/xcut/panic/panic.hpp"
+
 namespace porytiles2 {
 
 class IndexPixel {
@@ -11,16 +13,17 @@ class IndexPixel {
     IndexPixel() : index_{0} {}
 
     // NOLINTNEXTLINE(google-explicit-constructor)
-    IndexPixel(unsigned int index) : index_{index} {}
+    IndexPixel(unsigned int index) : index_{index}
+    {
+        // TODO: don't hardcode 16 here
+        if (index_ >= 16) {
+            panic("invalid IndexPixel value: " + std::to_string(index_));
+        }
+    }
 
     bool operator==(const IndexPixel &other) const = default;
 
     auto operator<=>(const IndexPixel &) const = default;
-
-    [[nodiscard]] unsigned int index() const
-    {
-        return index_;
-    }
 
     /**
      * @brief Checks if this indexed pixel is transparent.
@@ -34,6 +37,11 @@ class IndexPixel {
     [[nodiscard]] bool is_transparent(const IndexPixel &unused) const
     {
         return index_ == 0;
+    }
+
+    [[nodiscard]] unsigned int index() const
+    {
+        return index_;
     }
 
   private:

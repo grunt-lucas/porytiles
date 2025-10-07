@@ -1,4 +1,4 @@
-#include "porytiles2/domain/model/shape_mask.hpp"
+#include "porytiles2/domain/model/tile/shape_mask.hpp"
 
 #include <cstdint>
 
@@ -6,7 +6,7 @@
 
 namespace porytiles2 {
 
-ShapeMask ShapeMask::get_flip(bool h, bool v) const
+ShapeMask ShapeMask::flip(bool h, bool v) const
 {
     if (!h && !v) {
         return *this;
