@@ -5,17 +5,21 @@
 namespace porytiles2 {
 
 /**
- * @brief Concept that requires a type to support both intrinsic and extrinsic transparency checks.
+ * @brief Concept that requires a type to support transparency checks.
  *
  * @details
- * A type satisfies this concept if it has an `is_transparent()` method that returns a bool value. This transparency
- * could be either an "intrinsic" or "extrinsic" transparency. Intrinsic; that is, it can be computed from internal
- * properties of the type in question. Extrinsic; that is, it matches the user-supplied transparency value, even
- * if the type isn't "intrinsically" transparent. Here, the user supplied "extrinsic" value is the one passed in to
- * `is_transparent`.
+ * A type satisfies this concept if it has an `is_transparent()` method that returns a bool value. This method
+ * can either:
+ * - Take no parameters (intrinsic transparency only, e.g., IndexPixel where index 0 is always transparent)
+ * - Take a parameter of the same type (extrinsic transparency, e.g., Rgba32 where a color can match an external
+ *   transparency value)
+ *
+ * Tile and container types use requires clauses to provide only the appropriate overload(s) based on the pixel type.
  */
 template <typename T>
 concept SupportsTransparency = requires(const T &t) {
+    { t.is_transparent() } -> std::convertible_to<bool>;
+} || requires(const T &t) {
     { t.is_transparent(t) } -> std::convertible_to<bool>;
 };
 } // namespace porytiles2

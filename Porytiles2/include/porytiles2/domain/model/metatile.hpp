@@ -28,16 +28,38 @@ class Metatile {
     bool operator==(const Metatile &) const = default;
 
     /**
+     * @brief Checks if this entire metatile is transparent (intrinsic transparency only).
+     *
+     * @details
+     * A metatile is transparent if all of its pixels are intrinsically transparent. This overload is only available for
+     * pixel types that support parameterless is_transparent() (e.g., IndexPixel).
+     *
+     * @return True if all tiles in all layers are transparent, false otherwise
+     */
+    [[nodiscard]] bool is_transparent() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        const bool bottom_transparent =
+            std::ranges::all_of(bottom(), [](const auto &tile) { return tile.is_transparent(); });
+        const bool middle_transparent =
+            std::ranges::all_of(middle(), [](const auto &tile) { return tile.is_transparent(); });
+        const bool top_transparent = std::ranges::all_of(top(), [](const auto &tile) { return tile.is_transparent(); });
+        return bottom_transparent && middle_transparent && top_transparent;
+    }
+
+    /**
      * @brief Checks if this entire metatile is transparent.
      *
      * @details
      * A metatile is transparent if all of its pixels are either intrinsically transparent or are extrinsically
-     * transparent, according to the provided extrinsic transparency value.
+     * transparent, according to the provided extrinsic transparency value. This overload is only available for pixel
+     * types that support extrinsic transparency (e.g., Rgba32).
      *
-     * @param extrinsics The extrinsic transparency value to check each pixel against
+     * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return True if all tiles in all layers are transparent, false otherwise
      */
     [[nodiscard]] bool is_transparent(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
     {
         const bool bottom_transparent =
             std::ranges::all_of(bottom(), [=](const auto &tile) { return tile.is_transparent(extrinsic); });

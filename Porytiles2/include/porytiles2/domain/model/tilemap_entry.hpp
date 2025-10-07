@@ -25,10 +25,9 @@ class TilemapEntry {
      * required by the Gen III engine, tile 0 in the vanilla tilesets is always transparent. Porytiles enforces this
      * explicitly.
      *
-     * @param unused The extrinsic transparency value (unused for TilemapEntry)
      * @return True if this TilemapEntry refers to the transparent tile, false otherwise
      */
-    [[nodiscard]] bool is_transparent(const TilemapEntry &unused) const;
+    [[nodiscard]] bool is_transparent() const;
 
     [[nodiscard]] unsigned int tile_index() const
     {

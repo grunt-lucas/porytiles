@@ -2,7 +2,7 @@
 
 namespace porytiles2 {
 
-bool TilemapEntry::is_transparent(const TilemapEntry &unused) const
+bool TilemapEntry::is_transparent() const
 {
     return tile_index_ == 0;
 }

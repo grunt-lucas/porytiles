@@ -17,11 +17,19 @@ class ShapeTile {
 
     bool operator==(const ShapeTile &other) const = default;
 
+    // CRITICAL: Custom operator< that ONLY compares keys, not values
+    // This is the key to canonical orientation finding - it compares ONLY the shape masks, not the colors
     bool operator<(const ShapeTile &other) const
     {
         auto keys1 = colors_ | std::views::keys;
         auto keys2 = other.colors_ | std::views::keys;
         return std::ranges::lexicographical_compare(keys1, keys2);
+    }
+
+    [[nodiscard]] bool is_transparent() const
+    {
+        auto keys = colors_ | std::views::keys;
+        return std::ranges::all_of(keys, &ShapeMask::is_transparent);
     }
 
     [[nodiscard]] ShapeTile flip(bool h, bool v) const

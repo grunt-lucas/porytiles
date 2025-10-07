@@ -277,3 +277,35 @@ TEST(ShapeMaskTests, SetAndUnset)
     EXPECT_EQ(tm.rows()[0], 0x01); // 00000001
     EXPECT_EQ(tm.rows()[3], 0x10); // 00010000 (unchanged)
 }
+
+TEST(ShapeMaskTests, IsTransparentForDefaultMask)
+{
+    ShapeMask tm;
+
+    // Default mask should be fully transparent (all zeros)
+    EXPECT_TRUE(tm.is_transparent());
+}
+
+TEST(ShapeMaskTests, IsTransparentForNonEmptyMask)
+{
+    ShapeMask tm = create_test_mask();
+
+    // Mask with any bits set should not be transparent
+    EXPECT_FALSE(tm.is_transparent());
+}
+
+TEST(ShapeMaskTests, IsTransparentAfterSettingAndUnsetting)
+{
+    ShapeMask tm;
+
+    // Start transparent
+    EXPECT_TRUE(tm.is_transparent());
+
+    // Set a bit - no longer transparent
+    tm.set(3, 4);
+    EXPECT_FALSE(tm.is_transparent());
+
+    // Unset the bit - transparent again
+    tm.unset(3, 4);
+    EXPECT_TRUE(tm.is_transparent());
+}

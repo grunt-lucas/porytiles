@@ -1,5 +1,6 @@
 #include "porytiles2/domain/model/tile/shape_mask.hpp"
 
+#include <algorithm>
 #include <cstdint>
 
 #include "porytiles2/utilities/reverse_bits.hpp"
@@ -31,6 +32,11 @@ void ShapeMask::set(int row, int col)
 void ShapeMask::unset(int row, int col)
 {
     rows_[row] &= ~(1 << (7 - col));
+}
+
+bool ShapeMask::is_transparent() const
+{
+    return std::ranges::all_of(rows_, [](uint8_t byte) { return byte == 0; });
 }
 
 } // namespace porytiles2

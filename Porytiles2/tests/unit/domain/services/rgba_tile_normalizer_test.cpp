@@ -334,11 +334,11 @@ TEST_F(RgbaTileNormalizerTest, ShouldForceAllNotFullyTransparentAlphaValuesToOpa
 
 TEST_F(RgbaTileNormalizerTest, DocumentsPanicForPaletteContainingTransparentColor)
 {
-    // This test documents the defensive panic on (or near, if code has changed) line 83 of rgba_tile_normalizer.cpp.
+    // This test documents the defensive panic on (or near, if code has changed) line 84 of rgba_tile_normalizer.cpp.
     //
     // ANALYSIS: The panic appears to be unreachable under the current implementation:
-    // - build_normalized_palette() only adds colors where !pixel.is_transparent(extrinsic_transparency)
-    // - convert_to_indexed() panics if color.is_transparent(extrinsic_transparency)
+    // - build_normalized_palette() only adds colors where !check_transparency(pixel, extrinsic_transparency)
+    // - convert_to_indexed() panics if check_transparency(color, extrinsic_transparency)
     // - These are logically opposite conditions
     //
     // CONCLUSION: The panic serves as a defensive assertion against future code changes

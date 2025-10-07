@@ -29,16 +29,33 @@ class PixelTile {
     auto operator<=>(const PixelTile &) const = default;
 
     /**
+     * @brief Checks if this entire PixelTile is transparent (intrinsic transparency only).
+     *
+     * @details
+     * A PixelTile is transparent if all of its pixels are intrinsically transparent. This overload is only available
+     * for pixel types that support parameterless is_transparent() (e.g., IndexPixel).
+     *
+     * @return True if all pixels in the PixelTile are transparent, false otherwise
+     */
+    [[nodiscard]] bool is_transparent() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        return std::ranges::all_of(pix(), [](const auto &pixel) { return pixel.is_transparent(); });
+    }
+
+    /**
      * @brief Checks if this entire PixelTile is transparent.
      *
      * @details
      * A PixelTile is transparent if all of its pixels are either intrinsically or extrinsically transparent, according
-     * to the provided extrinsic transparency value.
+     * to the provided extrinsic transparency value. This overload is only available for pixel types that support
+     * extrinsic transparency (e.g., Rgba32).
      *
      * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return True if all pixels in the PixelTile are transparent, false otherwise
      */
-    [[nodiscard]] virtual bool is_transparent(const PixelType &extrinsic) const
+    [[nodiscard]] bool is_transparent(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
     {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
     }

@@ -82,6 +82,16 @@ class ShapeMask {
     void unset(int row, int col);
 
     /**
+     * @brief Checks if this entire ShapeMask is transparent.
+     *
+     * @details
+     * A ShapeMask is transparent if every bit in every mask integer is unset.
+     *
+     * @return True if all bits in the mask are unset, false otherwise
+     */
+    [[nodiscard]] bool is_transparent() const;
+
+    /**
      * @brief Returns the raw row data.
      *
      * @details
