@@ -6,7 +6,7 @@
 
 using namespace porytiles2;
 
-// Helper function to create a TileMask with a specific pattern
+// Helper function to create a ShapeMask with a specific pattern
 namespace {
 ShapeMask create_test_mask()
 {
@@ -23,7 +23,7 @@ ShapeMask create_test_mask()
 }
 } // namespace
 
-TEST(MaskPixelsTest, DefaultConstruction)
+TEST(ShapeMaskTests, DefaultConstruction)
 {
     ShapeMask tm;
     EXPECT_EQ(tm.rows().size(), 8);
@@ -33,7 +33,7 @@ TEST(MaskPixelsTest, DefaultConstruction)
     }
 }
 
-TEST(MaskPixelsTest, RowsAccessor)
+TEST(ShapeMaskTests, RowsAccessor)
 {
     ShapeMask tm = create_test_mask();
     const auto &rows = tm.rows();
@@ -47,7 +47,7 @@ TEST(MaskPixelsTest, RowsAccessor)
     EXPECT_EQ(rows[7], 0x01);
 }
 
-TEST(MaskPixelsTest, EqualityComparison)
+TEST(ShapeMaskTests, EqualityComparison)
 {
     ShapeMask tm1 = create_test_mask();
     ShapeMask tm2 = create_test_mask();
@@ -57,7 +57,7 @@ TEST(MaskPixelsTest, EqualityComparison)
     EXPECT_NE(tm1, tm3);
 }
 
-TEST(MaskPixelsTest, ComparisonOperators)
+TEST(ShapeMaskTests, ComparisonOperators)
 {
     ShapeMask tm1{{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
     ShapeMask tm2{{0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
@@ -68,7 +68,7 @@ TEST(MaskPixelsTest, ComparisonOperators)
     EXPECT_GE(tm2, tm1);
 }
 
-TEST(MaskPixelsTest, GetFlipNoFlip)
+TEST(ShapeMaskTests, GetFlipNoFlip)
 {
     ShapeMask tm = create_test_mask();
     ShapeMask flipped = tm.get_flip(false, false);
@@ -76,7 +76,7 @@ TEST(MaskPixelsTest, GetFlipNoFlip)
     EXPECT_EQ(tm, flipped);
 }
 
-TEST(MaskPixelsTest, GetFlipHorizontal)
+TEST(ShapeMaskTests, GetFlipHorizontal)
 {
     ShapeMask tm = create_test_mask();
     ShapeMask flipped = tm.get_flip(true, false);
@@ -96,7 +96,7 @@ TEST(MaskPixelsTest, GetFlipHorizontal)
     EXPECT_EQ(flipped.rows()[7], 0x80);
 }
 
-TEST(MaskPixelsTest, GetFlipVertical)
+TEST(ShapeMaskTests, GetFlipVertical)
 {
     ShapeMask tm = create_test_mask();
     ShapeMask flipped = tm.get_flip(false, true);
@@ -112,7 +112,7 @@ TEST(MaskPixelsTest, GetFlipVertical)
     EXPECT_EQ(flipped.rows()[7], 0x80);
 }
 
-TEST(MaskPixelsTest, GetFlipBoth)
+TEST(ShapeMaskTests, GetFlipBoth)
 {
     ShapeMask tm = create_test_mask();
     ShapeMask flipped = tm.get_flip(true, true);
@@ -129,7 +129,7 @@ TEST(MaskPixelsTest, GetFlipBoth)
     EXPECT_EQ(flipped.rows()[7], 0x01);
 }
 
-TEST(MaskPixelsTest, GetFlipSymmetry)
+TEST(ShapeMaskTests, GetFlipSymmetry)
 {
     ShapeMask tm = create_test_mask();
 
@@ -147,7 +147,7 @@ TEST(MaskPixelsTest, GetFlipSymmetry)
     EXPECT_EQ(tm, both_flip_back);
 }
 
-TEST(MaskPixelsTest, HashFunction)
+TEST(ShapeMaskTests, HashFunction)
 {
     ShapeMask tm1 = create_test_mask();
     ShapeMask tm2 = create_test_mask();
@@ -162,7 +162,7 @@ TEST(MaskPixelsTest, HashFunction)
     EXPECT_NE(hasher(tm1), hasher(tm3));
 }
 
-TEST(MaskPixelsTest, HashInUnorderedSet)
+TEST(ShapeMaskTests, HashInUnorderedSet)
 {
     std::unordered_set<ShapeMask> mask_set;
 
@@ -179,7 +179,7 @@ TEST(MaskPixelsTest, HashInUnorderedSet)
     EXPECT_TRUE(mask_set.contains(tm3));
 }
 
-TEST(MaskPixelsTest, SetBit)
+TEST(ShapeMaskTests, SetBit)
 {
     ShapeMask tm;
 
@@ -196,7 +196,7 @@ TEST(MaskPixelsTest, SetBit)
     EXPECT_EQ(tm.rows()[3], 0x08); // 00001000
 }
 
-TEST(MaskPixelsTest, UnsetBit)
+TEST(ShapeMaskTests, UnsetBit)
 {
     ShapeMask tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
@@ -213,7 +213,7 @@ TEST(MaskPixelsTest, UnsetBit)
     EXPECT_EQ(tm.rows()[5], 0xEF); // 11101111
 }
 
-TEST(MaskPixelsTest, SetMultipleBits)
+TEST(ShapeMaskTests, SetMultipleBits)
 {
     ShapeMask tm;
 
@@ -233,7 +233,7 @@ TEST(MaskPixelsTest, SetMultipleBits)
     EXPECT_EQ(tm.rows()[7], 0x01); // 00000001
 }
 
-TEST(MaskPixelsTest, SetIsIdempotent)
+TEST(ShapeMaskTests, SetIsIdempotent)
 {
     ShapeMask tm;
 
@@ -246,7 +246,7 @@ TEST(MaskPixelsTest, SetIsIdempotent)
     EXPECT_EQ(tm.rows()[2], 0x10); // 00010000
 }
 
-TEST(MaskPixelsTest, UnsetIsIdempotent)
+TEST(ShapeMaskTests, UnsetIsIdempotent)
 {
     ShapeMask tm{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
@@ -259,7 +259,7 @@ TEST(MaskPixelsTest, UnsetIsIdempotent)
     EXPECT_EQ(tm.rows()[4], 0xFB); // 11111011
 }
 
-TEST(MaskPixelsTest, SetAndUnset)
+TEST(ShapeMaskTests, SetAndUnset)
 {
     ShapeMask tm;
 
