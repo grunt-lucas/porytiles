@@ -2,27 +2,37 @@
 
 # Check if we have exactly 3 arguments
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <directory> <find_string> <replace_string>"
+    echo "Usage: $0 <file_or_directory> <find_string> <replace_string>"
     exit 1
 fi
 
-DIRECTORY="$1"
+TARGET="$1"
 FIND_STRING="$2"
 REPLACE_STRING="$3"
 
-# Check if directory exists
-if [ ! -d "$DIRECTORY" ]; then
-    echo "Error: Directory '$DIRECTORY' does not exist"
+# Check if target exists
+if [ ! -e "$TARGET" ]; then
+    echo "Error: '$TARGET' does not exist"
     exit 1
 fi
 
 # Detect OS for sed compatibility
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    find "$DIRECTORY" -type f -exec sed -i '' "s|$FIND_STRING|$REPLACE_STRING|g" {} +
+    SED_INPLACE=(-i '')
 else
-    # Linux
-    find "$DIRECTORY" -type f -exec sed -i "s|$FIND_STRING|$REPLACE_STRING|g" {} +
+    SED_INPLACE=(-i)
 fi
 
-echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $DIRECTORY"
+# Handle file or directory
+if [ -f "$TARGET" ]; then
+    # Single file
+    sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" "$TARGET"
+    echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
+elif [ -d "$TARGET" ]; then
+    # Directory - process recursively
+    find "$TARGET" -type f -exec sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" {} +
+    echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
+else
+    echo "Error: '$TARGET' is neither a file nor a directory"
+    exit 1
+fi

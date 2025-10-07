@@ -1,4 +1,4 @@
-#include "porytiles2/domain/model/mask_pixels.hpp"
+#include "porytiles2/domain/model/shape_mask.hpp"
 
 #include <cstdint>
 
@@ -6,13 +6,13 @@
 
 namespace porytiles2 {
 
-MaskPixels MaskPixels::get_flip(bool h, bool v) const
+ShapeMask ShapeMask::get_flip(bool h, bool v) const
 {
     if (!h && !v) {
         return *this;
     }
 
-    MaskPixels result;
+    ShapeMask result;
     const int8_t v_inc = v ? -1 : 1;
     const int8_t v_start = v ? 7 : 0;
 
@@ -23,12 +23,12 @@ MaskPixels MaskPixels::get_flip(bool h, bool v) const
     return result;
 }
 
-void MaskPixels::set(int row, int col)
+void ShapeMask::set(int row, int col)
 {
     rows_[row] |= (1 << (7 - col));
 }
 
-void MaskPixels::unset(int row, int col)
+void ShapeMask::unset(int row, int col)
 {
     rows_[row] &= ~(1 << (7 - col));
 }
