@@ -4,6 +4,7 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -17,8 +18,10 @@ namespace porytiles2 {
 class PrimaryTilesetCompiler {
   public:
     explicit PrimaryTilesetCompiler(
-        gsl::not_null<TextFormatter *> text_formatter, gsl::not_null<UserDiagnostics *> diag)
-        : text_formatter_{text_formatter}, diag_{diag}
+        gsl::not_null<DomainConfig *> config,
+        gsl::not_null<TextFormatter *> format,
+        gsl::not_null<UserDiagnostics *> diag)
+        : config_{config}, format_{format}, diag_{diag}
     {
     }
 
@@ -27,7 +30,8 @@ class PrimaryTilesetCompiler {
     [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
 
   private:
-    TextFormatter *text_formatter_;
+    DomainConfig *config_;
+    TextFormatter *format_;
     UserDiagnostics *diag_;
 };
 

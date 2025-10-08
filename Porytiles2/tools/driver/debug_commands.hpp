@@ -166,7 +166,14 @@ class DebugPrimaryCompileCommand final : public Command {
     {
         using namespace porytiles2;
 
+        // Setup layered configuration
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{std::move(providers)};
+
+        // Init text formatter and user diagnostic implementation
         std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
@@ -175,13 +182,9 @@ class DebugPrimaryCompileCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
-        PrimaryTilesetCompiler compiler{text_formatter.get(), diag.get()};
 
-        // Setup layered configuration
-        std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<DefaultProvider>());
-        LazyLayeredConfig config{std::move(providers)};
+        // Setup primary compiler
+        PrimaryTilesetCompiler compiler{&config, text_formatter.get(), diag.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
@@ -207,7 +210,10 @@ class DebugPrimaryCompileCommand final : public Command {
         // Compile the tileset
         auto compile_result = compiler.compile(*tileset);
         if (!compile_result.has_value()) {
-            diag->fatal(compile_result);
+            const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>::chain_together(
+                FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                compile_result);
+            diag->fatal(fail_result);
             return;
         }
         const auto new_tileset = std::move(compile_result.value());

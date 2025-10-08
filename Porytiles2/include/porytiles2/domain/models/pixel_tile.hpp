@@ -43,7 +43,7 @@ class PixelTile {
   public:
     virtual ~PixelTile() = default;
 
-    explicit PixelTile() : pix_{} {}
+    PixelTile() : pix_{} {}
 
     explicit PixelTile(const std::array<PixelType, tile::size_pix> &pix) : pix_{pix} {}
 
