@@ -3,9 +3,9 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/index_pixel.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"

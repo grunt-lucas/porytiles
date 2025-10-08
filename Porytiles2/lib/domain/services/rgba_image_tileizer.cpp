@@ -4,10 +4,10 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/tile/pixel_tile.hpp"
-#include "porytiles2/domain/model/tile/rgba_tile.hpp"
-#include "porytiles2/domain/model/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tile/pixel_tile.hpp"
+#include "porytiles2/domain/models/tile/rgba_tile.hpp"
+#include "porytiles2/domain/models/tile/tile_constants.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

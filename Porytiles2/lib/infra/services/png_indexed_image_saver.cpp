@@ -6,8 +6,8 @@
 #include "fmt/format.h"
 #include "png++/png.hpp"
 
-#include "porytiles2/domain/model/index_pixel.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 

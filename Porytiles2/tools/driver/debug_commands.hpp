@@ -5,7 +5,7 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"

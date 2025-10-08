@@ -2,8 +2,8 @@
 
 #include <map>
 
-#include "porytiles2/domain/model/color_set.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/color_set.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/color_set_builder.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 

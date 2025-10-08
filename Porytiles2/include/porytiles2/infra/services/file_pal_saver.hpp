@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include "porytiles2/domain/model/rgba_pal.hpp"
+#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

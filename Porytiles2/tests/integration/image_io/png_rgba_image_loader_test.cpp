@@ -2,8 +2,8 @@
 
 #include <tuple>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/services/image_load_error.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"

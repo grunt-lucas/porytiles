@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "porytiles2/domain/model/tile/rgba_tile.hpp"
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tile/rgba_tile.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

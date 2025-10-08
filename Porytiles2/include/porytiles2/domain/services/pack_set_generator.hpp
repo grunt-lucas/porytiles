@@ -2,8 +2,8 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/model/pack_set.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/pack_set.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/color_set_builder.hpp"
 
 namespace porytiles2 {

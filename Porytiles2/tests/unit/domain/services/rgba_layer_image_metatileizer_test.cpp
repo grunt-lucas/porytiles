@@ -2,10 +2,10 @@
 
 #include <memory>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/tile/rgba_metatile.hpp"
-#include "porytiles2/domain/model/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tile/rgba_metatile.hpp"
+#include "porytiles2/domain/models/tile/tile_constants.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
