@@ -2,8 +2,8 @@
 
 #include <array>
 
-#include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/domain/models/tile_constants.hpp"
 
 namespace porytiles2 {
@@ -68,6 +68,26 @@ class Metatile {
     }
 
     /**
+     * @brief Decomposes this metatile into an array of \link PixelTile PixelTiles \endlink in metatile order.
+     *
+     * @details
+     * Returns tiles in bottom-middle-top layer order, with each layer's tiles arranged sequentially.
+     *
+     * @return An array containing the constituent tiles
+     */
+    [[nodiscard]] std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> decompose() const
+    {
+        std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> tiles{};
+
+        auto out_it = tiles.begin();
+        out_it = std::ranges::copy(bottom(), out_it).out;
+        out_it = std::ranges::copy(middle(), out_it).out;
+        std::ranges::copy(top(), out_it);
+
+        return tiles;
+    }
+
+    /**
      * @brief Get a constant reference to a PixelTile from the bottom layer.
      *
      * @details
@@ -92,7 +112,7 @@ class Metatile {
      *
      * @return Constant reference to the bottom layer tile array.
      */
-    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &bottom() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &bottom() const
     {
         return bottom_;
     }
@@ -139,7 +159,7 @@ class Metatile {
      *
      * @return Constant reference to the middle layer tile array.
      */
-    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &middle() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &middle() const
     {
         return middle_;
     }
@@ -186,7 +206,7 @@ class Metatile {
      *
      * @return Constant reference to the top layer tile array.
      */
-    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &top() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &top() const
     {
         return top_;
     }
@@ -209,9 +229,9 @@ class Metatile {
     }
 
   private:
-    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> bottom_;
-    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> middle_;
-    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> top_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> bottom_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> middle_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
     unsigned int id_;
 };
 

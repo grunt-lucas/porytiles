@@ -255,7 +255,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
     // Initialize each metatile with a test pattern so we can verify reconstruction
     const Rgba32 test_color{100, 150, 200, 255};
     for (auto &metatile : metatiles) {
-        for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
+        for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile_layer; ++tile_idx) {
             // Create a test tile filled with the test color
             RgbaTile test_tile{};
             for (std::size_t row = 0; row < tile::side_length_pix; ++row) {

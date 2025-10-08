@@ -24,7 +24,7 @@ void populate_metatile_at_position(
     std::size_t metatile_col,
     std::size_t tiles_per_image_row)
 {
-    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
+    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile_layer; ++tile_idx) {
         // Calculate tile position within the metatile
         const std::size_t tile_row = tile_idx / metatile::tiles_per_side;
         const std::size_t tile_col = tile_idx % metatile::tiles_per_side;
@@ -50,7 +50,7 @@ void copy_metatile_to_images(
     std::size_t metatile_col)
 {
     // Extract tiles from this metatile and place them in the appropriate image positions
-    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
+    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile_layer; ++tile_idx) {
         // Calculate tile position within the metatile
         const std::size_t tile_row = tile_idx / metatile::tiles_per_side;
         const std::size_t tile_col = tile_idx % metatile::tiles_per_side;

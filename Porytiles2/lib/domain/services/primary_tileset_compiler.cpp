@@ -31,6 +31,13 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
+    // Decompose metatiles into a raw tiles vector
+    std::vector<RgbaTile> tiles{};
+    tiles.reserve(metatiles.size() * metatile::tiles_per_metatile);
+    for (const auto &metatile : metatiles) {
+        const auto decomposed = metatile.decompose();
+    }
+
     // Compute NormalizedTiles from the input metatiles
     // PT_TRY_ASSIGN_CHAIN_ERR(
     //     norm_tiles,
