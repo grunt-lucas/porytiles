@@ -40,6 +40,7 @@ class ChainableResult {
      *
      * @param value The success value to store
      */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     ChainableResult(T value) : result_{std::move(value)} {}
 
     /**
@@ -52,6 +53,7 @@ class ChainableResult {
      *
      * @param error The error value to store
      */
+    // NOLINTNEXTLINE(google-explicit-constructor)
     ChainableResult(const E &error) : result_{std::unexpected{error}}
     {
         static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
@@ -405,5 +407,55 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
         return var##_result;                                                                                           \
     }                                                                                                                  \
     auto var = std::move(var##_result).value();
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, counter)                                                          \
+    auto pt_try_call_result_##counter = (expr);                                                                        \
+    if (!pt_try_call_result_##counter.has_value()) {                                                                   \
+        return ChainableResult<void>::chain_together(FormattableError{msg}, pt_try_call_result_##counter);             \
+    }
+
+/**
+ * @brief Unwraps a void ChainableResult, chaining a new error message on failure.
+ *
+ * @details
+ * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error propagation. It
+ * evaluates the expression, checks if it contains a success value, and either continues execution or returns early
+ * with a new error chained to the existing error chain. This is the void equivalent of PT_TRY_ASSIGN_CHAIN_ERR.
+ *
+ * If the result contains an error, the macro returns from the current function with a ChainableResult<void> containing
+ * the original error chain plus the new error message provided.
+ *
+ * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ *
+ * @param expr The expression returning a ChainableResult<void, E>
+ * @param msg The error message to chain if the result contains an error
+ */
+#define PT_TRY_CALL_CHAIN_ERR(expr, msg) PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, __COUNTER__)
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, counter)                                                                \
+    auto pt_try_call_result_##counter = (expr);                                                                        \
+    if (!pt_try_call_result_##counter.has_value()) {                                                                   \
+        return pt_try_call_result_##counter;                                                                           \
+    }
+
+/**
+ * @brief Unwraps a void ChainableResult, passing through the error without modification on failure.
+ *
+ * @details
+ * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error passthrough. It
+ * evaluates the expression, checks if it contains a success value, and either continues execution or returns early
+ * with the same error result. This is the void equivalent of PT_TRY_ASSIGN_PASS_ERR and is useful when the current
+ * layer doesn't need to add additional error context.
+ *
+ * If the result contains an error, the macro returns from the current function with the same error result unchanged,
+ * preserving the existing error chain.
+ *
+ * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ *
+ * @param expr The expression returning a ChainableResult<void, E>
+ */
+#define PT_TRY_CALL_PASS_ERR(expr) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, __COUNTER__)
 
 } // namespace porytiles2
