@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <sstream>
 #include <string>
@@ -21,7 +22,7 @@ namespace porytiles2 {
  *
  * The enum uses an explicit uint32_t underlying type to ensure consistent bitmask behavior across platforms.
  */
-enum class Style : uint32_t {
+enum class Style : std::uint32_t {
     none = 0,        ///< No styling applied
     bold = 1 << 0,   ///< Bold text formatting
     red = 1 << 1,    ///< Red text color
@@ -45,7 +46,7 @@ enum class Style : uint32_t {
  */
 [[nodiscard]] constexpr Style operator|(Style lhs, Style rhs)
 {
-    return static_cast<Style>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+    return static_cast<Style>(static_cast<std::uint32_t>(lhs) | static_cast<std::uint32_t>(rhs));
 }
 
 /**
@@ -61,7 +62,7 @@ enum class Style : uint32_t {
  */
 [[nodiscard]] constexpr Style operator&(Style lhs, Style rhs)
 {
-    return static_cast<Style>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+    return static_cast<Style>(static_cast<std::uint32_t>(lhs) & static_cast<std::uint32_t>(rhs));
 }
 
 /**

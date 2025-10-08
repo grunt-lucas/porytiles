@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/domain/model/tile.hpp"
+#include "porytiles2/domain/model/tile/tile_constants.hpp"
 
 namespace porytiles2 {
 
