@@ -26,9 +26,9 @@ namespace porytiles2 {
  * for those pixels.
  *
  * Key design features:
- * - operator< compares ONLY shape masks (keys), ignoring pixel values - this is critical for canonical orientation
- *   finding
- * - operator== compares both shape masks AND pixel values for full equality
+ * - operator== and operator<=> compare both shape masks AND pixel values for full equality and ordering
+ * - compare_shape_only() provides specialized shape-only comparison, ignoring pixel values - this is critical for
+ *   canonical orientation finding
  * - Flipping operations transform all masks while preserving color mappings
  *
  * @tparam PixelType The pixel type stored for each shape region
@@ -42,27 +42,30 @@ class ShapeTile {
 
     bool operator==(const ShapeTile &other) const = default;
 
+    auto operator<=>(const ShapeTile &other) const = default;
+
     /**
-     * @brief Compares this ShapeTile with another based ONLY on shape masks, ignoring pixel values.
+     * @brief Compares two ShapeTiles based ONLY on shape masks, ignoring pixel values.
      *
      * @details
-     * This operator performs a lexicographic comparison of the shape masks (keys) only, completely ignoring the
-     * associated pixel values. This is the critical design feature that enables canonical orientation finding - tiles
-     * with identical shapes but different colors will compare based solely on their geometric structure.
+     * This static method performs a lexicographic comparison of the shape masks (keys) only, completely ignoring the
+     * associated pixel values. This is a specialized comparison used for canonical orientation finding - tiles with
+     * identical shapes but different colors will compare based solely on their geometric structure.
      *
      * This comparison is used to find the "minimal" or "canonical" orientation of a tile among its flipped variants,
      * ensuring that tiles with the same shape structure but different color assignments can be identified as having
      * equivalent geometry.
      *
-     * Contrast with operator==, which compares both shape masks AND pixel values for full equality.
+     * Note: This is different from operator< and operator<=>, which compare both shape masks AND pixel values.
      *
-     * @param other The ShapeTile to compare against
-     * @return True if this tile's shape masks are lexicographically less than other's shape masks
+     * @param lhs The left-hand ShapeTile to compare
+     * @param rhs The right-hand ShapeTile to compare
+     * @return True if lhs's shape masks are lexicographically less than rhs's shape masks
      */
-    bool operator<(const ShapeTile &other) const
+    [[nodiscard]] static bool compare_shape_only(const ShapeTile &lhs, const ShapeTile &rhs)
     {
-        auto keys1 = colors_ | std::views::keys;
-        auto keys2 = other.colors_ | std::views::keys;
+        auto keys1 = lhs.colors_ | std::views::keys;
+        auto keys2 = rhs.colors_ | std::views::keys;
         return std::ranges::lexicographical_compare(keys1, keys2);
     }
 
