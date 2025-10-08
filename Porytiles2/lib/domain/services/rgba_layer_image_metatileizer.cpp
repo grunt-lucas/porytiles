@@ -6,8 +6,8 @@
 
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/rgba_metatile.hpp"
-#include "porytiles2/domain/model/rgba_tile.hpp"
+#include "porytiles2/domain/model/tile/rgba_metatile.hpp"
+#include "porytiles2/domain/model/tile/rgba_tile.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -24,14 +24,14 @@ void populate_metatile_at_position(
     std::size_t metatile_col,
     std::size_t tiles_per_image_row)
 {
-    for (std::size_t tile_idx = 0; tile_idx < RgbaMetatile::tiles_per_metatile; ++tile_idx) {
+    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
         // Calculate tile position within the metatile
-        const std::size_t tile_row = tile_idx / RgbaMetatile::tiles_per_side;
-        const std::size_t tile_col = tile_idx % RgbaMetatile::tiles_per_side;
+        const std::size_t tile_row = tile_idx / metatile::tiles_per_side;
+        const std::size_t tile_col = tile_idx % metatile::tiles_per_side;
 
         // Calculate which tile index we need from the tileized arrays
-        const std::size_t global_tile_row = metatile_row * RgbaMetatile::tiles_per_side + tile_row;
-        const std::size_t global_tile_col = metatile_col * RgbaMetatile::tiles_per_side + tile_col;
+        const std::size_t global_tile_row = metatile_row * metatile::tiles_per_side + tile_row;
+        const std::size_t global_tile_col = metatile_col * metatile::tiles_per_side + tile_col;
         const std::size_t global_tile_idx = global_tile_row * tiles_per_image_row + global_tile_col;
 
         // Set tiles in the metatile from the tileized arrays
@@ -50,24 +50,22 @@ void copy_metatile_to_images(
     std::size_t metatile_col)
 {
     // Extract tiles from this metatile and place them in the appropriate image positions
-    for (std::size_t tile_idx = 0; tile_idx < RgbaMetatile::tiles_per_metatile; ++tile_idx) {
+    for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
         // Calculate tile position within the metatile
-        const std::size_t tile_row = tile_idx / RgbaMetatile::tiles_per_side;
-        const std::size_t tile_col = tile_idx % RgbaMetatile::tiles_per_side;
+        const std::size_t tile_row = tile_idx / metatile::tiles_per_side;
+        const std::size_t tile_col = tile_idx % metatile::tiles_per_side;
 
         // Calculate the starting pixel position for this tile in the image
-        const std::size_t start_pixel_row =
-            metatile_row * RgbaMetatile::metatile_side_length + tile_row * tile_side_length;
-        const std::size_t start_pixel_col =
-            metatile_col * RgbaMetatile::metatile_side_length + tile_col * tile_side_length;
+        const std::size_t start_pixel_row = metatile_row * metatile::side_length_pix + tile_row * tile::side_length_pix;
+        const std::size_t start_pixel_col = metatile_col * metatile::side_length_pix + tile_col * tile::side_length_pix;
 
         // Copy pixels from each layer's tile to the corresponding image
         const auto &bottom_tile = metatile.bottom(tile_idx);
         const auto &middle_tile = metatile.middle(tile_idx);
         const auto &top_tile = metatile.top(tile_idx);
 
-        for (std::size_t pixel_row = 0; pixel_row < tile_side_length; ++pixel_row) {
-            for (std::size_t pixel_col = 0; pixel_col < tile_side_length; ++pixel_col) {
+        for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
+            for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
                 const std::size_t image_row = start_pixel_row + pixel_row;
                 const std::size_t image_col = start_pixel_col + pixel_col;
 
@@ -89,10 +87,10 @@ void fill_region_with_transparent(
     const Rgba32 transparent_pixel{0, 0, 0, 0};
 
     // Fill the entire 16x16 region for this metatile position with transparent pixels
-    for (std::size_t pixel_row = 0; pixel_row < RgbaMetatile::metatile_side_length; ++pixel_row) {
-        for (std::size_t pixel_col = 0; pixel_col < RgbaMetatile::metatile_side_length; ++pixel_col) {
-            const std::size_t image_row = metatile_row * RgbaMetatile::metatile_side_length + pixel_row;
-            const std::size_t image_col = metatile_col * RgbaMetatile::metatile_side_length + pixel_col;
+    for (std::size_t pixel_row = 0; pixel_row < metatile::side_length_pix; ++pixel_row) {
+        for (std::size_t pixel_col = 0; pixel_col < metatile::side_length_pix; ++pixel_col) {
+            const std::size_t image_row = metatile_row * metatile::side_length_pix + pixel_row;
+            const std::size_t image_col = metatile_col * metatile::side_length_pix + pixel_col;
 
             bottom_image.set(image_row, image_col, transparent_pixel);
             middle_image.set(image_row, image_col, transparent_pixel);
@@ -147,23 +145,22 @@ void fill_region_with_transparent(
      * checked in the tileization step if the image dimensions were a multiple of 8. Now, we check that the image
      * dimensions are a multiple of 16 to confirm that it can be correctly metatileized.
      */
-    if (bottom.width() % RgbaMetatile::metatile_side_length != 0 ||
-        bottom.height() % RgbaMetatile::metatile_side_length != 0) {
+    if (bottom.width() % metatile::side_length_pix != 0 || bottom.height() % metatile::side_length_pix != 0) {
         return FormattableError{fmt::format(
             "image dimensions must be multiples of {}, got {}x{}",
-            RgbaMetatile::metatile_side_length,
+            metatile::side_length_pix,
             bottom.width(),
             bottom.height())};
     }
 
-    const std::size_t metatiles_per_row = bottom.width() / RgbaMetatile::metatile_side_length;
-    const std::size_t metatiles_per_col = bottom.height() / RgbaMetatile::metatile_side_length;
+    const std::size_t metatiles_per_row = bottom.width() / metatile::side_length_pix;
+    const std::size_t metatiles_per_col = bottom.height() / metatile::side_length_pix;
     const std::size_t total_metatiles = metatiles_per_row * metatiles_per_col;
 
     std::vector<RgbaMetatile> rgba_metatiles;
     rgba_metatiles.reserve(total_metatiles);
 
-    const std::size_t tiles_per_image_row = bottom.width() / tile_side_length;
+    const std::size_t tiles_per_image_row = bottom.width() / tile::side_length_pix;
 
     // Process each 16x16 metatile region
     for (std::size_t metatile_row = 0; metatile_row < metatiles_per_col; ++metatile_row) {
@@ -194,8 +191,8 @@ ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>> RgbaLay
     const std::size_t metatiles_per_col = (metatiles.size() + metatiles_per_row - 1) / metatiles_per_row;
 
     // Calculate image dimensions
-    const std::size_t image_width = metatiles_per_row * RgbaMetatile::metatile_side_length;
-    const std::size_t image_height = metatiles_per_col * RgbaMetatile::metatile_side_length;
+    const std::size_t image_width = metatiles_per_row * metatile::side_length_pix;
+    const std::size_t image_height = metatiles_per_col * metatile::side_length_pix;
 
     // Create the three layer images
     Image<Rgba32> bottom_image{image_width, image_height};

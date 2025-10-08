@@ -2,8 +2,9 @@
 
 #include <utility>
 
-#include "porytiles2/domain/model/metatile.hpp"
-#include "porytiles2/domain/model/rgba_tile.hpp"
+#include "porytiles2/domain/model/tile/metatile.hpp"
+#include "porytiles2/domain/model/tile/pixel_tile.hpp"
+#include "porytiles2/domain/model/tile/rgba_tile.hpp"
 
 namespace porytiles2 {
 
@@ -23,7 +24,7 @@ class RgbaMetatile : public Metatile<Rgba32> {
      */
     void set_bottom(std::size_t i, const RgbaTile &tile)
     {
-        Metatile::set_bottom(i, static_cast<Tile<Rgba32>>(tile));
+        Metatile::set_bottom(i, static_cast<PixelTile<Rgba32>>(tile));
     }
 
     /**
@@ -38,7 +39,7 @@ class RgbaMetatile : public Metatile<Rgba32> {
      */
     void set_middle(std::size_t i, const RgbaTile &tile)
     {
-        Metatile::set_middle(i, static_cast<Tile<Rgba32>>(tile));
+        Metatile::set_middle(i, static_cast<PixelTile<Rgba32>>(tile));
     }
 
     /**
@@ -53,7 +54,7 @@ class RgbaMetatile : public Metatile<Rgba32> {
      */
     void set_top(std::size_t i, const RgbaTile &tile)
     {
-        Metatile::set_top(i, static_cast<Tile<Rgba32>>(tile));
+        Metatile::set_top(i, static_cast<PixelTile<Rgba32>>(tile));
     }
 };
 

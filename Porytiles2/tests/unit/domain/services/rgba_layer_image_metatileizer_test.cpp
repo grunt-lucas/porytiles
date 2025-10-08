@@ -4,7 +4,8 @@
 
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/rgba_metatile.hpp"
+#include "porytiles2/domain/model/tile/rgba_metatile.hpp"
+#include "porytiles2/domain/model/tile/tile_constants.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -216,7 +217,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
     ASSERT_TRUE(metatileize_result.has_value()) << "Failed to metatileize original images";
 
     const auto &metatiles = metatileize_result.value();
-    const std::size_t metatiles_per_row = original_width / RgbaMetatile::metatile_side_length;
+    const std::size_t metatiles_per_row = original_width / metatile::side_length_pix;
 
     // Demetatileize
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, metatiles_per_row);
@@ -254,11 +255,11 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
     // Initialize each metatile with a test pattern so we can verify reconstruction
     const Rgba32 test_color{100, 150, 200, 255};
     for (auto &metatile : metatiles) {
-        for (std::size_t tile_idx = 0; tile_idx < RgbaMetatile::tiles_per_metatile; ++tile_idx) {
+        for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile; ++tile_idx) {
             // Create a test tile filled with the test color
             RgbaTile test_tile{};
-            for (std::size_t row = 0; row < tile_side_length; ++row) {
-                for (std::size_t col = 0; col < tile_side_length; ++col) {
+            for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
+                for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                     test_tile.set(row, col, test_color);
                 }
             }

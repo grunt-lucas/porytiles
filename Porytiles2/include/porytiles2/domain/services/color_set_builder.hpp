@@ -5,7 +5,6 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/model/color_set.hpp"
-#include "porytiles2/domain/model/normalized_pal.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -37,8 +36,8 @@ class ColorSetBuilder {
      * @param color_index_map A map from RGBA32 colors to their corresponding index values
      * @return A ColorSet containing the indexed color data
      */
-    [[nodiscard]] ColorSet
-    build(const NormalizedPal<Rgba32> &pal, const std::map<Rgba32, unsigned int> &color_index_map) const;
+    // [[nodiscard]] ColorSet
+    // build(const NormalizedPal<Rgba32> &pal, const std::map<Rgba32, unsigned int> &color_index_map) const;
 
   private:
     /**

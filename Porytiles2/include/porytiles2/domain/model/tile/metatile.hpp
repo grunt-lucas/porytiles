@@ -3,27 +3,23 @@
 #include <array>
 
 #include "porytiles2/domain/model/supports_transparency.hpp"
-#include "porytiles2/domain/model/tile.hpp"
+#include "porytiles2/domain/model/tile/pixel_tile.hpp"
 #include "porytiles2/domain/model/tile/tile_constants.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief The core tileset entity - a 2x2 grid of Tile objects arranged into three layers.
+ * @brief The core tileset entity - a 2x2 grid of PixelTile objects arranged into three layers.
  *
  * @details
- * Like its component Tile objects, the pixel type of Metatile is arbitrary.
+ * Like its component PixelTile objects, the pixel type of Metatile is arbitrary.
  *
- * @tparam PixelType The pixel type of this Metatile's Tile objects
+ * @tparam PixelType The pixel type of this Metatile's PixelTile objects
  */
 template <typename PixelType>
     requires SupportsTransparency<PixelType>
 class Metatile {
   public:
-    static constexpr std::size_t tiles_per_side = 2;
-    static constexpr std::size_t tiles_per_metatile = tiles_per_side * tiles_per_side;
-    static constexpr std::size_t metatile_side_length = tiles_per_side * tile_side_length;
-
     Metatile() : id_{} {}
 
     bool operator==(const Metatile &) const = default;
@@ -72,15 +68,15 @@ class Metatile {
     }
 
     /**
-     * @brief Get a constant reference to a Tile from the bottom layer.
+     * @brief Get a constant reference to a PixelTile from the bottom layer.
      *
      * @details
-     * Retrieves the Tile at the specified index in the bottom layer array.
+     * Retrieves the PixelTile at the specified index in the bottom layer array.
      *
      * @param i The index into the bottom layer array (must be 0-3).
-     * @return Constant reference to the Tile at the specified index.
+     * @return Constant reference to the PixelTile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &bottom(std::size_t i) const
+    [[nodiscard]] const PixelTile<PixelType> &bottom(std::size_t i) const
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -96,21 +92,21 @@ class Metatile {
      *
      * @return Constant reference to the bottom layer tile array.
      */
-    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &bottom() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &bottom() const
     {
         return bottom_;
     }
 
     /**
-     * @brief Set a Tile in the bottom layer.
+     * @brief Set a PixelTile in the bottom layer.
      *
      * @details
-     * Moves the provided Tile into the specified index of the bottom layer array.
+     * Moves the provided PixelTile into the specified index of the bottom layer array.
      *
      * @param i The index into the bottom layer array (must be 0-3).
-     * @param tile The Tile to move into the array.
+     * @param tile The PixelTile to move into the array.
      */
-    void set_bottom(std::size_t i, Tile<PixelType> tile)
+    void set_bottom(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -119,15 +115,15 @@ class Metatile {
     }
 
     /**
-     * @brief Get a constant reference to a Tile from the middle layer.
+     * @brief Get a constant reference to a PixelTile from the middle layer.
      *
      * @details
-     * Retrieves the Tile at the specified index in the middle layer array.
+     * Retrieves the PixelTile at the specified index in the middle layer array.
      *
      * @param i The index into the middle layer array (must be 0-3).
-     * @return Constant reference to the Tile at the specified index.
+     * @return Constant reference to the PixelTile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &middle(std::size_t i) const
+    [[nodiscard]] const PixelTile<PixelType> &middle(std::size_t i) const
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -143,21 +139,21 @@ class Metatile {
      *
      * @return Constant reference to the middle layer tile array.
      */
-    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &middle() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &middle() const
     {
         return middle_;
     }
 
     /**
-     * @brief Set a Tile in the middle layer.
+     * @brief Set a PixelTile in the middle layer.
      *
      * @details
-     * Moves the provided Tile into the specified index of the middle layer array.
+     * Moves the provided PixelTile into the specified index of the middle layer array.
      *
      * @param i The index into the middle layer array (must be 0-3).
-     * @param tile The Tile to move into the array.
+     * @param tile The PixelTile to move into the array.
      */
-    void set_middle(std::size_t i, Tile<PixelType> tile)
+    void set_middle(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -166,15 +162,15 @@ class Metatile {
     }
 
     /**
-     * @brief Get a constant reference to a Tile from the top layer.
+     * @brief Get a constant reference to a PixelTile from the top layer.
      *
      * @details
-     * Retrieves the Tile at the specified index in the top layer array.
+     * Retrieves the PixelTile at the specified index in the top layer array.
      *
      * @param i The index into the top layer array (must be 0-3).
      * @return Constant reference to the Tile at the specified index.
      */
-    [[nodiscard]] const Tile<PixelType> &top(std::size_t i) const
+    [[nodiscard]] const PixelTile<PixelType> &top(std::size_t i) const
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -190,7 +186,7 @@ class Metatile {
      *
      * @return Constant reference to the top layer tile array.
      */
-    [[nodiscard]] const std::array<Tile<PixelType>, tiles_per_metatile> &top() const
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> &top() const
     {
         return top_;
     }
@@ -199,12 +195,12 @@ class Metatile {
      * @brief Set a Tile in the top layer.
      *
      * @details
-     * Moves the provided Tile into the specified index of the top layer array.
+     * Moves the provided PixelTile into the specified index of the top layer array.
      *
      * @param i The index into the top layer array (must be 0-3).
-     * @param tile The Tile to move into the array.
+     * @param tile The PixelTile to move into the array.
      */
-    void set_top(std::size_t i, Tile<PixelType> tile)
+    void set_top(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
             panic(fmt::format("index {} out of bounds: must be [0,3]", i));
@@ -213,9 +209,9 @@ class Metatile {
     }
 
   private:
-    std::array<Tile<PixelType>, tiles_per_metatile> bottom_;
-    std::array<Tile<PixelType>, tiles_per_metatile> middle_;
-    std::array<Tile<PixelType>, tiles_per_metatile> top_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> bottom_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> middle_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> top_;
     unsigned int id_;
 };
 

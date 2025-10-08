@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Check if we have exactly 3 arguments
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <file_or_directory> <find_string> <replace_string>"
@@ -30,7 +32,7 @@ if [ -f "$TARGET" ]; then
     echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
 elif [ -d "$TARGET" ]; then
     # Directory - process recursively
-    find "$TARGET" -type f -exec sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" {} +
+    find "$TARGET" -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -exec sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" {} +
     echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
 else
     echo "Error: '$TARGET' is neither a file nor a directory"

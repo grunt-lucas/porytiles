@@ -3,9 +3,9 @@
 #include <tuple>
 #include <vector>
 
+#include "../model/tile/rgba_metatile.hpp"
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/rgba_metatile.hpp"
 #include "porytiles2/domain/services/rgba_image_tileizer.hpp"
 #include "porytiles2/templates/result.hpp"
 

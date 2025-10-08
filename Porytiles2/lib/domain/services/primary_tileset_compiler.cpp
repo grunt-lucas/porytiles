@@ -5,13 +5,11 @@
 #include <ranges>
 #include <vector>
 
-#include "porytiles2/domain/model/normalized_tile.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 #include "porytiles2/domain/model/tileset.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
-#include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -21,7 +19,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Initialize all the compilation services
     RgbaLayerImageMetatileizer metatileizer{};
-    RgbaTileNormalizer normalizer{};
     ColorIndexMapBuilder color_index_map_builder{};
 
     // Transform the tileset layer images into a sequence of metatiles
@@ -35,17 +32,17 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         std::unique_ptr<Tileset>);
 
     // Compute NormalizedTiles from the input metatiles
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        norm_tiles,
-        normalizer.batch_normalize(metatiles, rgba_magenta),
-        "metatile normalization failed",
-        std::unique_ptr<Tileset>);
+    // PT_TRY_ASSIGN_CHAIN_ERR(
+    //     norm_tiles,
+    //     normalizer.batch_normalize(metatiles, rgba_magenta),
+    //     "metatile normalization failed",
+    //     std::unique_ptr<Tileset>);
 
     // Create PackSets for the bin packing step
-    const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
-    ColorSetBuilder color_set_builder{text_formatter_};
-    PackSetGenerator assignable_tile_generator{&color_set_builder};
-    std::vector<PackSet> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
+    // const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
+    // ColorSetBuilder color_set_builder{text_formatter_};
+    // PackSetGenerator assignable_tile_generator{&color_set_builder};
+    // std::vector<PackSet> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
 
     // TODO: set up these components correctly, for now we just use some dummy values
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());

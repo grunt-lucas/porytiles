@@ -5,7 +5,8 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/domain/model/rgba_tile.hpp"
+#include "porytiles2/domain/model/tile/rgba_tile.hpp"
+#include "porytiles2/domain/model/tile/tile_constants.hpp"
 
 using namespace porytiles2;
 
@@ -13,7 +14,7 @@ TEST(RgbaTileTests, IsTransparentShouldUseExtrinsicCorrectly)
 {
     RgbaTile tile{};
 
-    for (std::size_t i = 0; i < tile_size; ++i) {
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
         tile.set(i, Rgba32{255, 0, 255});
     }
 
@@ -32,7 +33,7 @@ TEST(RgbaTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
 {
     RgbaTile tile{};
 
-    for (std::size_t i = 0; i < tile_size; ++i) {
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
         tile.set(i, Rgba32{255, 0, 255});
     }
 

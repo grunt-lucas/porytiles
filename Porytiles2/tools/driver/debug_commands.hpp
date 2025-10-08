@@ -9,7 +9,6 @@
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
-#include "porytiles2/domain/services/rgba_tile_normalizer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -85,49 +84,49 @@ class DebugNormalizeCommand final : public Command {
         const auto metatiles = std::move(maybe_metatiles.value());
 
         std::vector<RgbaMetatile> new_metatiles{};
-        for (const auto &metatile : metatiles) {
-            RgbaTileNormalizer normalizer{};
-            RgbaMetatile new_metatile{};
-
-            // Normalize and denormalize tiles to test round-trip functionality
-            std::size_t tile_idx = 0;
-            for (const auto &bottom_tile : metatile.bottom()) {
-                // Convert using the new conversion constructor
-                RgbaTile rgba_tile{bottom_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
-                if (normalized_result.has_value()) {
-                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
-                    new_metatile.set_bottom(tile_idx, denormalized_tile);
-                }
-                ++tile_idx;
-            }
-
-            tile_idx = 0;
-            for (const auto &middle_tile : metatile.middle()) {
-                // Convert using the new conversion constructor
-                RgbaTile rgba_tile{middle_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
-                if (normalized_result.has_value()) {
-                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
-                    new_metatile.set_middle(tile_idx, denormalized_tile);
-                }
-                ++tile_idx;
-            }
-
-            tile_idx = 0;
-            for (const auto &top_tile : metatile.top()) {
-                // Convert using the new conversion constructor
-                RgbaTile rgba_tile{top_tile};
-                auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
-                if (normalized_result.has_value()) {
-                    RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
-                    new_metatile.set_top(tile_idx, denormalized_tile);
-                }
-                ++tile_idx;
-            }
-
-            new_metatiles.push_back(std::move(new_metatile));
-        }
+        // for (const auto &metatile : metatiles) {
+        //     RgbaTileNormalizer normalizer{};
+        //     RgbaMetatile new_metatile{};
+        //
+        //     // Normalize and denormalize tiles to test round-trip functionality
+        //     std::size_t tile_idx = 0;
+        //     for (const auto &bottom_tile : metatile.bottom()) {
+        //         // Convert using the new conversion constructor
+        //         RgbaTile rgba_tile{bottom_tile};
+        //         auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
+        //         if (normalized_result.has_value()) {
+        //             RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+        //             new_metatile.set_bottom(tile_idx, denormalized_tile);
+        //         }
+        //         ++tile_idx;
+        //     }
+        //
+        //     tile_idx = 0;
+        //     for (const auto &middle_tile : metatile.middle()) {
+        //         // Convert using the new conversion constructor
+        //         RgbaTile rgba_tile{middle_tile};
+        //         auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
+        //         if (normalized_result.has_value()) {
+        //             RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+        //             new_metatile.set_middle(tile_idx, denormalized_tile);
+        //         }
+        //         ++tile_idx;
+        //     }
+        //
+        //     tile_idx = 0;
+        //     for (const auto &top_tile : metatile.top()) {
+        //         // Convert using the new conversion constructor
+        //         RgbaTile rgba_tile{top_tile};
+        //         auto normalized_result = normalizer.normalize(rgba_tile, rgba_magenta);
+        //         if (normalized_result.has_value()) {
+        //             RgbaTile denormalized_tile = normalizer.denormalize_preserving_flips(normalized_result.value());
+        //             new_metatile.set_top(tile_idx, denormalized_tile);
+        //         }
+        //         ++tile_idx;
+        //     }
+        //
+        //     new_metatiles.push_back(std::move(new_metatile));
+        // }
 
         auto demetatileized_images_result = metatileizer.demetatileize(new_metatiles, 8);
         if (!demetatileized_images_result.has_value()) {

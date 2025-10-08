@@ -3,7 +3,6 @@
 #include <map>
 #include <vector>
 
-#include "porytiles2/domain/model/normalized_tile.hpp"
 #include "porytiles2/domain/model/rgba32.hpp"
 
 namespace porytiles2 {
@@ -34,8 +33,8 @@ class ColorIndexMapBuilder {
      * @return A mapping from RGBA colors to their assigned palette indices
      * @throws panic if any color is transparent or matches the extrinsic color
      */
-    [[nodiscard]] std::map<Rgba32, unsigned int>
-    build_map(const std::vector<NormalizedTile<Rgba32>> &tiles, const Rgba32 &extrinsic) const;
+    // [[nodiscard]] std::map<Rgba32, unsigned int>
+    // build_map(const std::vector<NormalizedTile<Rgba32>> &tiles, const Rgba32 &extrinsic) const;
 };
 
 } // namespace porytiles2
