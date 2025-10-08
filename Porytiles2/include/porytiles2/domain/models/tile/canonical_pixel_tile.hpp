@@ -38,8 +38,6 @@ template <typename PixelType>
     requires SupportsTransparency<PixelType>
 class CanonicalPixelTile : public PixelTile<PixelType> {
   public:
-    virtual ~CanonicalPixelTile() = default;
-
     /**
      * @brief Constructs a CanonicalPixelTile by finding the canonical orientation of the input tile.
      *
@@ -59,7 +57,7 @@ class CanonicalPixelTile : public PixelTile<PixelType> {
      *
      * @param tile The input PixelTile to canonicalize
      */
-    CanonicalPixelTile(const PixelTile<PixelType> &tile) : PixelTile<PixelType>{}
+    explicit CanonicalPixelTile(const PixelTile<PixelType> &tile) : PixelTile<PixelType>{}
     {
         // Helper struct to store candidate tiles with their flip flags
         struct Candidate {
