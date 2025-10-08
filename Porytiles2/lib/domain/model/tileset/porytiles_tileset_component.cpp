@@ -1,4 +1,4 @@
-#include "porytiles2/domain/model/porytiles_tileset_component.hpp"
+#include "../../../../include/porytiles2/domain/model/tileset/porytiles_tileset_component.hpp"
 
 namespace porytiles2 {
 

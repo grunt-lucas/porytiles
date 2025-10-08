@@ -1,11 +1,11 @@
-#include "porytiles2/domain/model/porymap_tileset_component.hpp"
+#include "../../../../include/porytiles2/domain/model/tileset/porymap_tileset_component.hpp"
 
 #include <utility>
 
 #include "fmt/format.h"
 
+#include "../../../../include/porytiles2/domain/model/tileset/tilemap_entry.hpp"
 #include "porytiles2/domain/model/rgba_pal.hpp"
-#include "porytiles2/domain/model/tilemap_entry.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {

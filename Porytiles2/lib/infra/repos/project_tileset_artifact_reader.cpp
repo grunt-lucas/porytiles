@@ -4,15 +4,14 @@
 #include <fstream>
 #include <functional>
 #include <iterator>
-#include <ostream>
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/tilemap_entry.hpp"
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/model/tileset/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/model/tileset/tilemap_entry.hpp"
+#include "porytiles2/domain/model/tileset/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
-#include "porytiles2/templates/result.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace {

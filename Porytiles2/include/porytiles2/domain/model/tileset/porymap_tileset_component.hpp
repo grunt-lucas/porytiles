@@ -6,7 +6,7 @@
 #include "porytiles2/domain/model/image.hpp"
 #include "porytiles2/domain/model/index_pixel.hpp"
 #include "porytiles2/domain/model/rgba_pal.hpp"
-#include "porytiles2/domain/model/tilemap_entry.hpp"
+#include "tilemap_entry.hpp"
 
 namespace porytiles2 {
 

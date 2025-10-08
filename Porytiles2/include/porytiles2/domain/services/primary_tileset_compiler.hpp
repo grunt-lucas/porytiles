@@ -4,7 +4,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/model/tileset/tileset.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
