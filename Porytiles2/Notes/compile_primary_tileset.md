@@ -97,7 +97,8 @@ sequenceDiagram
 11. Run VM packing
 12. Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
 13. Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus `PackBin`s to create `vector<CanonicalPixelTile<IndexPixel>>`
-14. Use the `vector<CanonicalPixelTile<IndexPixel>>` and `vector<PackSet>` to fill up tile workspace and generate TilemapEntries
+14. Init blank TileWorkspace, add in override tiles from `porytiles/tiles_override.png`
+15. Use the `vector<CanonicalPixelTile<IndexPixel>>` and `vector<PackSet>` to fill up TileWorkspace and generate TilemapEntries
 
 We have three parallel tile vectors, each entry aligned to correspond to the same tile:
 - vector<RgbaTile>: the original PixelTile with color data
@@ -105,3 +106,18 @@ We have three parallel tile vectors, each entry aligned to correspond to the sam
 - vector<PackSet>: this tile's PackSet, which stores the tile ColorSet and final pal assignment
 
 ### Compile Primary Incremental
+1. Convert layer images into vector<RgbaMetatile>
+2. Leaf step to throw error if there are too many metatiles.
+3. Decompose vector<RgbaMetatile> into vector<RgbaTile> (we have a compute_metatile function which allows us to reconstruct the original metatile params from a raw tile index)
+4. Leaf step to throw errors if any tiles have more than 15+1 colors.
+5. Leaf step to generate precision loss warnings if some colors collapse to the same 5-bit color.
+6. Create color index map from vector<RgbaTile>
+7. Generate vector<CanonicalShapeTile<ColorIndex>> using color index map and vector<RgbaTile>
+8. Create `vector<PackSet>` for VM packing (definition TBD)
+9. Optional: via `vector<CanonicalShapeTile>` compute color isomorphism cliques to pass to VM packer
+10. Create `vector<PackBin>` to pass to VM packer (`PackBin` is the hardware pal type?), init PackBins with overrides from `palettes` folder
+11. Run VM packing
+12. Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
+13. Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus `PackBin`s to create `vector<CanonicalPixelTile<IndexPixel>>`
+14. Init blank TileWorkspace, add in override tiles from `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
+15. Use the `vector<CanonicalPixelTile<IndexPixel>>` and `vector<PackSet>` to fill up TileWorkspace and generate TilemapEntries
