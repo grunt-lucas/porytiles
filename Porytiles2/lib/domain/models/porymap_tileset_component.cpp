@@ -4,8 +4,8 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {

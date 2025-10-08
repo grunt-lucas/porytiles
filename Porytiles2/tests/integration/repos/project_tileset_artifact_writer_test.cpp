@@ -8,10 +8,10 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
-#include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
