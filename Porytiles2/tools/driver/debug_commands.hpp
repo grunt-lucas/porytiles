@@ -175,8 +175,8 @@ class DebugPrimaryCompileCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        PrimaryTilesetCompiler compiler{text_formatter.get()};
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
+        PrimaryTilesetCompiler compiler{text_formatter.get(), diag.get()};
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
