@@ -6,8 +6,8 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tile/rgba_metatile.hpp"
-#include "porytiles2/domain/models/tile/rgba_tile.hpp"
+#include "porytiles2/domain/models/rgba_metatile.hpp"
+#include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 

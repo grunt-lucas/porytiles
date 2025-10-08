@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tileset/tileset.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"

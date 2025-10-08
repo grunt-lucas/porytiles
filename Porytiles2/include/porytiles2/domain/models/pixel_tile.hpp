@@ -4,7 +4,7 @@
 #include <array>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/domain/models/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/tile_constants.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {

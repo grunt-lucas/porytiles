@@ -4,7 +4,7 @@
 #include <map>
 #include <ranges>
 
-#include "porytiles2/domain/models/tile/shape_mask.hpp"
+#include "porytiles2/domain/models/shape_mask.hpp"
 
 namespace porytiles2 {
 

@@ -2,9 +2,9 @@
 
 #include "porytiles2/domain/models/color_set.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tile/canonical_shape_tile.hpp"
-#include "porytiles2/domain/models/tile/shape_mask.hpp"
-#include "porytiles2/domain/models/tile/shape_tile.hpp"
+#include "porytiles2/domain/models/canonical_shape_tile.hpp"
+#include "porytiles2/domain/models/shape_mask.hpp"
+#include "porytiles2/domain/models/shape_tile.hpp"
 
 using namespace porytiles2;
 

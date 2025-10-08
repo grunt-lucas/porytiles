@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "porytiles2/domain/models/tile/metatile.hpp"
-#include "porytiles2/domain/models/tile/pixel_tile.hpp"
-#include "porytiles2/domain/models/tile/rgba_tile.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba_tile.hpp"
 
 namespace porytiles2 {
 

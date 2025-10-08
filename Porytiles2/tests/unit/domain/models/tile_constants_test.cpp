@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "porytiles2/domain/models/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/tile_constants.hpp"
 
 using namespace porytiles2::metatile;
 

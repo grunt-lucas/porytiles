@@ -5,8 +5,8 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/models/index_pixel.hpp"
-#include "porytiles2/domain/models/tile/pixel_tile.hpp"
-#include "porytiles2/domain/models/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/tile_constants.hpp"
 
 using namespace porytiles2;
 

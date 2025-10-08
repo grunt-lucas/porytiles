@@ -2,7 +2,7 @@
 
 #include <any>
 
-#include "porytiles2/domain/models/tileset/tileset.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/result.hpp"

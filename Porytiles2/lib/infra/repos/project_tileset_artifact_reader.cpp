@@ -7,9 +7,9 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/models/tileset/porytiles_tileset_component.hpp"
-#include "porytiles2/domain/models/tileset/tilemap_entry.hpp"
-#include "porytiles2/domain/models/tileset/tileset.hpp"
+#include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/models/tilemap_entry.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"

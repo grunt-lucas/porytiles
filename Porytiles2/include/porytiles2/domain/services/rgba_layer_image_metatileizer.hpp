@@ -5,7 +5,7 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tile/rgba_metatile.hpp"
+#include "porytiles2/domain/models/rgba_metatile.hpp"
 #include "porytiles2/domain/services/rgba_image_tileizer.hpp"
 
 namespace porytiles2 {

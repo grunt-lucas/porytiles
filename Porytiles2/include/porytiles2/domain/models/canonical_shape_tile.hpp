@@ -5,7 +5,7 @@
 #include <compare>
 #include <vector>
 
-#include "porytiles2/domain/models/tile/shape_tile.hpp"
+#include "porytiles2/domain/models/shape_tile.hpp"
 
 namespace porytiles2 {
 

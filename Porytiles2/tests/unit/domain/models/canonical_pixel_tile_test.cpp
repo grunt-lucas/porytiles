@@ -2,8 +2,8 @@
 
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tile/canonical_pixel_tile.hpp"
-#include "porytiles2/domain/models/tile/pixel_tile.hpp"
+#include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 
 using namespace porytiles2;
 

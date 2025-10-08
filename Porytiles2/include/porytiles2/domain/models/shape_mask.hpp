@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "porytiles2/domain/models/tile/tile_constants.hpp"
+#include "porytiles2/domain/models/tile_constants.hpp"
 
 namespace porytiles2 {
 

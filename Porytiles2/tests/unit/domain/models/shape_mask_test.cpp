@@ -2,7 +2,7 @@
 
 #include <unordered_set>
 
-#include "porytiles2/domain/models/tile/shape_mask.hpp"
+#include "porytiles2/domain/models/shape_mask.hpp"
 
 using namespace porytiles2;
 

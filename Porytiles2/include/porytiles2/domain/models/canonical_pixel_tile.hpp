@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/domain/models/tile/pixel_tile.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 
 namespace porytiles2 {
 
