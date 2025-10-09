@@ -11,6 +11,9 @@
 
 namespace porytiles2 {
 
+/**
+ * @brief A collection of tile validation functions for compilation operations.
+ */
 class TileValidator {
   public:
     explicit TileValidator(gsl::not_null<TextFormatter *> format, gsl::not_null<UserDiagnostics *> diag)
@@ -18,11 +21,11 @@ class TileValidator {
     {
     }
 
+    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<RgbaTile> &tiles) const;
+
     [[nodiscard]] ChainableResult<void> validate_unique_color_count(const std::vector<RgbaTile> &tiles) const;
 
     [[nodiscard]] ChainableResult<void> generate_precision_loss_warnings(const std::vector<RgbaTile> &tiles) const;
-
-    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<RgbaTile> &tiles) const;
 
   private:
     TextFormatter *format_;

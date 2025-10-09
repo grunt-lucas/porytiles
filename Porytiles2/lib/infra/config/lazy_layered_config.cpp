@@ -50,59 +50,55 @@ T LazyLayeredConfig::resolve_config_value(
 std::size_t LazyLayeredConfig::num_tiles_primary() const
 {
     return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_primary"), [](const ConfigProvider &provider) { return provider.num_tiles_primary(); });
+        "num_tiles_primary", [](const ConfigProvider &provider) { return provider.num_tiles_primary(); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_total() const
 {
     return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_total"), [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
+        "num_tiles_total", [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_primary() const
 {
-    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_primary"), [](const ConfigProvider &provider) {
-        return provider.num_metatiles_primary();
-    });
+    return resolve_config_value<std::size_t>(
+        "num_metatiles_primary", [](const ConfigProvider &provider) { return provider.num_metatiles_primary(); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_total() const
 {
-    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_total"), [](const ConfigProvider &provider) {
-        return provider.num_metatiles_total();
-    });
+    return resolve_config_value<std::size_t>(
+        "num_metatiles_total", [](const ConfigProvider &provider) { return provider.num_metatiles_total(); });
 }
 
 std::size_t LazyLayeredConfig::num_pals_primary() const
 {
     return resolve_config_value<std::size_t>(
-        fmt::format("num_pals_primary"), [](const ConfigProvider &provider) { return provider.num_pals_primary(); });
+        "num_pals_primary", [](const ConfigProvider &provider) { return provider.num_pals_primary(); });
 }
 
 std::size_t LazyLayeredConfig::num_pals_total() const
 {
     return resolve_config_value<std::size_t>(
-        fmt::format("num_pals_total"), [](const ConfigProvider &provider) { return provider.num_pals_total(); });
+        "num_pals_total", [](const ConfigProvider &provider) { return provider.num_pals_total(); });
 }
 
 std::size_t LazyLayeredConfig::max_map_data_size() const
 {
     return resolve_config_value<std::size_t>(
-        fmt::format("max_map_data_size"), [](const ConfigProvider &provider) { return provider.max_map_data_size(); });
+        "max_map_data_size", [](const ConfigProvider &provider) { return provider.max_map_data_size(); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_per_metatile() const
 {
-    return resolve_config_value<std::size_t>(fmt::format("num_tiles_per_metatile"), [](const ConfigProvider &provider) {
-        return provider.num_tiles_per_metatile();
-    });
+    return resolve_config_value<std::size_t>(
+        "num_tiles_per_metatile", [](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(); });
 }
 
 Rgba32 LazyLayeredConfig::extrinsic_transparency() const
 {
-    return resolve_config_value<Rgba32>(fmt::format("extrinsic_transparency"), [](const ConfigProvider &provider) {
-        return provider.extrinsic_transparency();
-    });
+    return resolve_config_value<Rgba32>(
+        "extrinsic_transparency", [](const ConfigProvider &provider) { return provider.extrinsic_transparency(); });
 }
 
 IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string &tileset_name) const
