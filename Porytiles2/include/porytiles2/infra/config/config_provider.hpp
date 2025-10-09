@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 namespace porytiles2 {
@@ -61,6 +62,8 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size() const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile() const;
+
+    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency() const;
 
     /*
      * App Config

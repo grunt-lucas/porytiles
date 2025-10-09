@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <tuple>
 
+#include "porytiles2/xcut/panic/panic.hpp"
+
 namespace porytiles2 {
 
 namespace tile {
@@ -21,7 +23,35 @@ inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_lengt
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 
+inline std::string to_string(Layer layer)
+{
+    switch (layer) {
+    case Layer::bottom:
+        return "bottom";
+    case Layer::middle:
+        return "middle";
+    case Layer::top:
+        return "top";
+    }
+    panic("unhandled Layer value");
+}
+
 enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
+
+inline std::string to_string(Subtile layer)
+{
+    switch (layer) {
+    case Subtile::northwest:
+        return "northwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::northeast:
+        return "northeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southwest:
+        return "southwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southeast:
+        return "southeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    }
+    panic("unhandled Subtile value");
+}
 
 [[nodiscard]] inline std::tuple<std::size_t, Layer, Subtile> compute_metatile(std::size_t tile_index)
 {

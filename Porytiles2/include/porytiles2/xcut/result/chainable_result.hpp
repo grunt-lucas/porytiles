@@ -399,9 +399,8 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  *
  * @param var The variable name to assign the unwrapped value to
  * @param expr The expression returning a ChainableResult
- * @param return_type The success type of the ChainableResult to return on error
  */
-#define PT_TRY_ASSIGN_PASS_ERR(var, expr, return_type)                                                                 \
+#define PT_TRY_ASSIGN_PASS_ERR(var, expr)                                                                              \
     auto var##_result = (expr);                                                                                        \
     if (!var##_result.has_value()) {                                                                                   \
         return var##_result;                                                                                           \
@@ -409,10 +408,10 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     auto var = std::move(var##_result).value();
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, counter)                                                          \
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, counter)                                             \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
-        return ChainableResult<void>::chain_together(FormattableError{msg}, pt_try_call_result_##counter);             \
+        return ChainableResult<return_type>::chain_together(FormattableError{msg}, pt_try_call_result_##counter);      \
     }
 
 /**
@@ -430,8 +429,10 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  *
  * @param expr The expression returning a ChainableResult<void, E>
  * @param msg The error message to chain if the result contains an error
+ * @param return_type The success type of the ChainableResult to return on error
  */
-#define PT_TRY_CALL_CHAIN_ERR(expr, msg) PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, __COUNTER__)
+#define PT_TRY_CALL_CHAIN_ERR(expr, msg, return_type)                                                                  \
+    PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, __COUNTER__)
 
 // Internal implementation detail - do not use directly
 #define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, counter)                                                                \

@@ -96,6 +96,11 @@ inline auto format_as(const Rgba32 &rgba)
     return rgba.to_jasc_str();
 }
 
+inline std::string to_string(const Rgba32 &rgba)
+{
+    return rgba.to_jasc_str();
+}
+
 constexpr Rgba32 rgba_black{0, 0, 0, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_white{255, 255, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_grey{128, 128, 128, Rgba32::alpha_opaque};

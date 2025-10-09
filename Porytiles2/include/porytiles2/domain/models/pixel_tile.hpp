@@ -145,7 +145,6 @@ class PixelTile {
         return flipped_tile;
     }
 
-  protected:
     [[nodiscard]] const std::array<PixelType, tile::size_pix> &pix() const
     {
         return pix_;

@@ -98,6 +98,13 @@ std::size_t LazyLayeredConfig::num_tiles_per_metatile() const
     });
 }
 
+Rgba32 LazyLayeredConfig::extrinsic_transparency() const
+{
+    return resolve_config_value<Rgba32>(fmt::format("extrinsic_transparency"), [](const ConfigProvider &provider) {
+        return provider.extrinsic_transparency();
+    });
+}
+
 IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string &tileset_name) const
 {
     return resolve_config_value<IncrementalBuildMode>(

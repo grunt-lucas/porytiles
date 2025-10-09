@@ -42,6 +42,11 @@ LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile() const
     return LayerValue<std::size_t>{};
 }
 
+LayerValue<Rgba32> ConfigProvider::extrinsic_transparency() const
+{
+    return LayerValue<Rgba32>{};
+}
+
 LayerValue<IncrementalBuildMode> ConfigProvider::incremental_build_mode(const std::string &tileset_name) const
 {
     return LayerValue<IncrementalBuildMode>{};

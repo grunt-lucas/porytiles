@@ -9,6 +9,7 @@
 
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
@@ -66,6 +67,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::size_t max_map_data_size() const override;
 
     [[nodiscard]] std::size_t num_tiles_per_metatile() const override;
+
+    [[nodiscard]] Rgba32 extrinsic_transparency() const override;
 
     /*
      * App Config

@@ -36,6 +36,8 @@ class DefaultProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile() const override;
 
+    [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency() const override;
+
     [[nodiscard]] LayerValue<IncrementalBuildMode>
     incremental_build_mode(const std::string &tileset_name) const override;
 

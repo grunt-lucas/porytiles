@@ -10,8 +10,11 @@
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
+
+#include <unordered_set>
 
 namespace porytiles2 {
 
@@ -20,8 +23,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // Initialize all the compilation services
     RgbaLayerImageMetatileizer metatileizer{};
     ColorIndexMapBuilder color_index_map_builder{};
+    TileValidator validator{format_, diag_};
 
-    // 1. Convert layer images into vector<RgbaMetatile>
+    // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatileizer.metatileize(
@@ -31,7 +35,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
-    // 2. Leaf step to throw error if there are too many metatiles.
+    // Leaf step to throw error if there are too many metatiles.
     if (metatiles.size() > config_->num_metatiles_primary()) {
         return FormattableError{
             "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
@@ -39,7 +43,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             FormatParam{config_->num_metatiles_primary(), Style::bold}};
     }
 
-    // 3. Decompose vector<RgbaMetatile> into vector<RgbaTile>
+    // Decompose vector<RgbaMetatile> into vector<RgbaTile>
     std::vector<RgbaTile> tiles{};
     tiles.reserve(metatiles.size() * metatile::tiles_per_metatile);
     for (const auto &metatile : metatiles) {
@@ -49,21 +53,15 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         }
     }
 
-    // 4. Leaf step to throw errors if any tiles have more than 15+1 colors.
-    // TODO: impl
+    // Leaf step to throw errors if:
+    // - any tiles have more than 15+1 colors
+    // - generate precision loss warnings if some colors collapse to the same 5-bit color
+    // - any tiles contain an invalid alpha value
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_alpha_channels(tiles), "input validation failed", std::unique_ptr<Tileset>);
 
-    // 5. Leaf step to generate precision loss warnings if some colors collapse to the same 5-bit color.
+    // Create color index map from vector<RgbaTile>
     // TODO: impl
-
-    // 6. Create color index map from vector<RgbaTile>
-    // TODO: impl
-
-    // Compute NormalizedTiles from the input metatiles
-    // PT_TRY_ASSIGN_CHAIN_ERR(
-    //     norm_tiles,
-    //     normalizer.batch_normalize(metatiles, rgba_magenta),
-    //     "metatile normalization failed",
-    //     std::unique_ptr<Tileset>);
 
     // Create PackSets for the bin packing step
     // const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);

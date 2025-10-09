@@ -4,6 +4,7 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -62,6 +63,8 @@ class DomainConfig {
     [[nodiscard]] virtual std::size_t max_map_data_size() const = 0;
 
     [[nodiscard]] virtual std::size_t num_tiles_per_metatile() const = 0;
+
+    [[nodiscard]] virtual Rgba32 extrinsic_transparency() const = 0;
 };
 
 } // namespace porytiles2

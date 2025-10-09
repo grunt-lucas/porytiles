@@ -47,6 +47,11 @@ LayerValue<std::size_t> DefaultProvider::num_tiles_per_metatile() const
     return {8, "default value"};
 }
 
+LayerValue<Rgba32> DefaultProvider::extrinsic_transparency() const
+{
+    return {rgba_magenta, "default value"};
+}
+
 LayerValue<IncrementalBuildMode> DefaultProvider::incremental_build_mode(const std::string &tileset_name) const
 {
     return {IncrementalBuildMode::off, "default value"};
