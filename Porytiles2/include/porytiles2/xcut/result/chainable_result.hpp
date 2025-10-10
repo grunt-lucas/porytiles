@@ -387,20 +387,46 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     auto var = std::move(var##_result).value();
 
 /**
- * @brief Unwraps a ChainableResult, passing through the error without modification on failure.
+ * @brief Unwraps a ChainableResult, passing through the error chain with a PassError when types differ.
  *
  * @details
- * This macro provides a succinct way to handle ChainableResult unwrapping with error passthrough. It evaluates the
- * expression, checks if it contains a value, and either assigns the value to the variable or returns early with the
- * same error result. This is useful when the current layer doesn't need to add additional error context.
+ * This macro provides a succinct way to handle ChainableResult unwrapping with error passthrough when the inner
+ * result's success type differs from the outer function's return type. It evaluates the expression, checks if it
+ * contains a value, and either assigns the value to the variable or returns early with a PassError chained to the
+ * existing error chain. This is useful when the current layer doesn't need to add additional error context but the
+ * result types don't match (e.g., inner function returns ChainableResult<Foo, E> but outer returns ChainableResult<Bar,
+ * E>).
  *
- * If the result contains an error, the macro returns from the current function with the same error result unchanged,
- * preserving the existing error chain.
+ * If the result contains an error, the macro returns from the current function with a new ChainableResult<return_type>
+ * containing a PassError chained to the original error chain.
  *
  * @param var The variable name to assign the unwrapped value to
  * @param expr The expression returning a ChainableResult
+ * @param return_type The success type of the ChainableResult to return on error (differs from expr's success type)
  */
-#define PT_TRY_ASSIGN_PASS_ERR(var, expr)                                                                              \
+#define PT_TRY_ASSIGN_PASS_ERR(var, expr, return_type)                                                                 \
+    auto var##_result = (expr);                                                                                        \
+    if (!var##_result.has_value()) {                                                                                   \
+        return ChainableResult<return_type>::chain_together(PassError{}, var##_result);                                \
+    }                                                                                                                  \
+    auto var = std::move(var##_result).value();
+
+/**
+ * @brief Unwraps a ChainableResult, passing through the error unchanged when types match.
+ *
+ * @details
+ * This macro provides a succinct way to handle ChainableResult unwrapping with error passthrough when the inner
+ * result's type matches the outer function's return type. It evaluates the expression, checks if it contains a value,
+ * and either assigns the value to the variable or returns early with the same error result unchanged. This is useful
+ * when the current layer doesn't need to add additional error context and the result types match exactly.
+ *
+ * If the result contains an error, the macro returns from the current function with the same error result unchanged,
+ * preserving the existing error chain without any modifications.
+ *
+ * @param var The variable name to assign the unwrapped value to
+ * @param expr The expression returning a ChainableResult with the same type as the outer function's return type
+ */
+#define PT_TRY_ASSIGN_PASS_SAME_ERR(var, expr)                                                                         \
     auto var##_result = (expr);                                                                                        \
     if (!var##_result.has_value()) {                                                                                   \
         return var##_result;                                                                                           \
@@ -435,28 +461,57 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, __COUNTER__)
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, counter)                                                                \
+#define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, counter)                                                   \
+    auto pt_try_call_result_##counter = (expr);                                                                        \
+    if (!pt_try_call_result_##counter.has_value()) {                                                                   \
+        return ChainableResult<return_type>::chain_together(PassError{}, pt_try_call_result_##counter);                \
+    }
+
+/**
+ * @brief Unwraps a void ChainableResult, passing through the error chain with a PassError when types differ.
+ *
+ * @details
+ * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error passthrough when
+ * the inner result's success type differs from the outer function's return type. It evaluates the expression, checks
+ * if it contains a success value, and either continues execution or returns early with a PassError chained to the
+ * existing error chain. This is the void equivalent of PT_TRY_ASSIGN_PASS_ERR and is useful when the current layer
+ * doesn't need to add additional error context but the result types don't match.
+ *
+ * If the result contains an error, the macro returns from the current function with a new ChainableResult<return_type>
+ * containing a PassError chained to the original error chain.
+ *
+ * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ *
+ * @param expr The expression returning a ChainableResult<void, E>
+ * @param return_type The success type of the ChainableResult to return on error (differs from expr's success type)
+ */
+#define PT_TRY_CALL_PASS_ERR(expr, return_type) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, __COUNTER__)
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, counter)                                                           \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
         return pt_try_call_result_##counter;                                                                           \
     }
 
 /**
- * @brief Unwraps a void ChainableResult, passing through the error without modification on failure.
+ * @brief Unwraps a void ChainableResult, passing through the error unchanged when types match.
  *
  * @details
- * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error passthrough. It
- * evaluates the expression, checks if it contains a success value, and either continues execution or returns early
- * with the same error result. This is the void equivalent of PT_TRY_ASSIGN_PASS_ERR and is useful when the current
- * layer doesn't need to add additional error context.
+ * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error passthrough when
+ * the inner result's type matches the outer function's return type. It evaluates the expression, checks if it contains
+ * a success value, and either continues execution or returns early with the same error result unchanged. This is the
+ * void equivalent of PT_TRY_ASSIGN_PASS_SAME_ERR and is useful when the current layer doesn't need to add additional
+ * error context and the result types match exactly.
  *
  * If the result contains an error, the macro returns from the current function with the same error result unchanged,
- * preserving the existing error chain.
+ * preserving the existing error chain without any modifications.
  *
  * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
  *
- * @param expr The expression returning a ChainableResult<void, E>
+ * @param expr The expression returning a ChainableResult<void, E> with the same type as the outer function's return
+ * type
  */
-#define PT_TRY_CALL_PASS_ERR(expr) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, __COUNTER__)
+#define PT_TRY_CALL_PASS_SAME_ERR(expr) PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, __COUNTER__)
 
 } // namespace porytiles2

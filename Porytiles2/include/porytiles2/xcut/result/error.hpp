@@ -179,4 +179,27 @@ class FormattableError final : public Error {
     std::vector<FormatParam> params_;
 };
 
+/**
+ * @brief A message-less error for error chain passthrough.
+ */
+class PassError final : public Error {
+  public:
+    PassError() = default;
+
+    /**
+     * @brief Returns an empty details string.
+     * @param unused The TextFormatter to maintain interface compatibility
+     * @return An empty details string
+     */
+    [[nodiscard]] std::string details([[maybe_unused]] const TextFormatter &unused) const override
+    {
+        return "";
+    }
+
+    [[nodiscard]] std::unique_ptr<Error> clone() const override
+    {
+        return std::make_unique<PassError>();
+    }
+};
+
 } // namespace porytiles2

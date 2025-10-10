@@ -82,7 +82,7 @@ void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
 {
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
-    std::cerr << "caused by:" << std::endl;
+    std::cerr << "root cause:" << std::endl;
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
     std::cerr << formatter.style("└", Style::bold) << " " << formatter.style("error:", Style::bold | Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
