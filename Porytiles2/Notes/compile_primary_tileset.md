@@ -91,9 +91,9 @@ Leaf step to throw error if there are too many metatiles.
 Decompose vector<RgbaMetatile> into vector<RgbaTile> (we have a compute_metatile function which allows us to reconstruct the original metatile params from a raw tile index)
  
 Leaf step to throw errors if:
+- any tiles contain an invalid alpha value
 - any tiles have more than 15+1 colors
 - generate precision loss warnings if some colors collapse to the same 5-bit color
-- any tiles contain an invalid alpha value
 
 Create color index map from vector<RgbaTile>
 
