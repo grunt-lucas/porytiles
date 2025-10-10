@@ -4,10 +4,16 @@
 #include <array>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/domain/models/tile_constants.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
+
+namespace tile {
+
+inline constexpr std::size_t side_length_pix = 8;
+inline constexpr std::size_t size_pix = side_length_pix * side_length_pix;
+
+} // namespace tile
 
 /**
  * @brief An 8x8 tile backed by literal-array-based per-pixel storage of an arbitrary pixel type.

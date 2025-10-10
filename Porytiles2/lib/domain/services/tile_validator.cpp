@@ -2,8 +2,9 @@
 
 #include <unordered_set>
 
+#include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba_tile.hpp"
-#include "porytiles2/domain/models/tile_constants.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -17,17 +18,15 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<R
             for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                 const auto &pixel = tile.at(row, col);
                 if (pixel.alpha() != Rgba32::alpha_opaque && pixel.alpha() != Rgba32::alpha_transparent) {
+                    // if (pixel == Rgba32{65, 90, 189}) {
                     hit_error = true;
-                    auto [metatile_index, layer, subtile] = metatile::compute_metatile(tile_index);
-                    // TODO: create a standard utility to format metatile string
+                    auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
                     std::vector errors = {format_->format(
-                        "|metatile {}|{}|{}|{},{}|: invalid alpha channel: {}",
-                        FormatParam{metatile_index, Style::bold},
-                        FormatParam{to_string(layer), Style::bold},
-                        FormatParam{to_string(subtile), Style::bold},
-                        FormatParam{std::to_string(row), Style::bold},
-                        FormatParam{std::to_string(col), Style::bold},
+                        "{}: invalid alpha channel: {}",
+                        FormatParam{metatile::message_header(metatile_index, layer, subtile, row, col, *format_)},
                         FormatParam{std::to_string(pixel.alpha()), Style::bold})};
+                    std::vector highlight = tile_printer_->print_metatile_highlight(subtile, row, col, Style::red);
+                    std::ranges::copy(highlight, std::back_inserter(errors));
                     diag_->err(errors);
                 }
             }

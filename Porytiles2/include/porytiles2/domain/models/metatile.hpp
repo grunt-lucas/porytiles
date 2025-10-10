@@ -4,9 +4,77 @@
 
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/domain/models/tile_constants.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
+
+namespace metatile {
+
+inline constexpr std::size_t tiles_per_side = 2;
+inline constexpr std::size_t tiles_per_metatile_layer = tiles_per_side * tiles_per_side;
+inline constexpr std::size_t tiles_per_metatile = tiles_per_metatile_layer * 3;
+inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_length_pix;
+
+enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
+
+inline std::string to_string(Layer layer)
+{
+    switch (layer) {
+    case Layer::bottom:
+        return "bottom";
+    case Layer::middle:
+        return "middle";
+    case Layer::top:
+        return "top";
+    }
+    panic("unhandled Layer value");
+}
+
+enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
+
+inline std::string to_string(Subtile layer)
+{
+    switch (layer) {
+    case Subtile::northwest:
+        return "northwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::northeast:
+        return "northeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southwest:
+        return "southwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southeast:
+        return "southeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    }
+    panic("unhandled Subtile value");
+}
+
+[[nodiscard]] inline std::tuple<std::size_t, Layer, Subtile> from_tile_index(std::size_t tile_index)
+{
+    const std::size_t metatile_index = tile_index / tiles_per_metatile;
+    const std::size_t local_index = tile_index % tiles_per_metatile;
+    const auto layer = static_cast<Layer>(local_index / tiles_per_metatile_layer);
+    const auto subtile = static_cast<Subtile>(local_index % tiles_per_metatile_layer);
+
+    return {metatile_index, layer, subtile};
+}
+
+[[nodiscard]] inline std::string message_header(
+    std::size_t index,
+    Layer layer,
+    Subtile subtile,
+    std::size_t subtile_row,
+    std::size_t subtile_col,
+    const TextFormatter &format)
+{
+    return format.format(
+        "|metatile {}|{}|{}|{},{}|",
+        FormatParam{index, Style::bold},
+        FormatParam{to_string(layer), Style::bold},
+        FormatParam{to_string(subtile), Style::bold},
+        FormatParam{std::to_string(subtile_row), Style::bold},
+        FormatParam{std::to_string(subtile_col), Style::bold});
+}
+
+} // namespace metatile
 
 /**
  * @brief The core tileset entity - a 2x2 grid of PixelTile objects arranged into three layers.

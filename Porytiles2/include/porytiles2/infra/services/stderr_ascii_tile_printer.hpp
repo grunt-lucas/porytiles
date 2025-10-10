@@ -5,7 +5,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/tile_constants.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -19,7 +19,7 @@ class StderrAsciiTilePrinter final : public TilePrinter {
     explicit StderrAsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     [[nodiscard]] std::vector<std::string>
-    print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col) const override;
+    print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col, Style color) const override;
 
   private:
     TextFormatter *format_;

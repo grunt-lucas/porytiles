@@ -7,7 +7,6 @@
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/rgba_tile.hpp"
-#include "porytiles2/domain/models/tile_constants.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

@@ -3,6 +3,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
+#include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -29,11 +30,12 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
         tile2.set(i, Rgba32{200, 100, 50, Rgba32::alpha_opaque});
     }
 
-    std::vector<RgbaTile> tiles = {tile1, tile2};
+    std::vector tiles = {tile1, tile2};
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    TileValidator validator{&formatter, &diag};
+    StderrAsciiTilePrinter tile_printer{&formatter};
+    TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(tiles);
 
@@ -72,7 +74,8 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    TileValidator validator{&formatter, &diag};
+    StderrAsciiTilePrinter tile_printer{&formatter};
+    TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(tiles);
 

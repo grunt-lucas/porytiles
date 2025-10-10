@@ -23,7 +23,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // Initialize all the compilation services
     RgbaLayerImageMetatileizer metatileizer{};
     ColorIndexMapBuilder color_index_map_builder{};
-    TileValidator validator{format_, diag_};
+    TileValidator validator{format_, diag_, tile_printer_};
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(

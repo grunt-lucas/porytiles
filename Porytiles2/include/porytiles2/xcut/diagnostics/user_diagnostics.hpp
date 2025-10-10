@@ -113,23 +113,23 @@ class UserDiagnostics {
      */
     virtual void warn(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
-    /**
-     * @brief Display a tagged warning message using a formatter-aware builder function.
-     *
-     * @details
-     * This overload allows callers to provide a function that dynamically generates warning messages with access to
-     * text formatting capabilities. The TextFormatter is provided to enable conditional styling based on TTY output
-     * settings.
-     *
-     * @param tag Categorization tag for the warning
-     * @param msg_builder Function that receives a TextFormatter reference and returns formatted message lines
-     */
-    void warn(const std::string &tag, const FormattedMessageBuilder &msg_builder) const
-    {
-        // TODO: inject this formatter
-        AnsiStyledTextFormatter formatter{};
-        warn(tag, msg_builder(formatter));
-    }
+    // /**
+    //  * @brief Display a tagged warning message using a formatter-aware builder function.
+    //  *
+    //  * @details
+    //  * This overload allows callers to provide a function that dynamically generates warning messages with access to
+    //  * text formatting capabilities. The TextFormatter is provided to enable conditional styling based on TTY output
+    //  * settings.
+    //  *
+    //  * @param tag Categorization tag for the warning
+    //  * @param msg_builder Function that receives a TextFormatter reference and returns formatted message lines
+    //  */
+    // void warn(const std::string &tag, const FormattedMessageBuilder &msg_builder) const
+    // {
+    //     // TODO: inject this formatter
+    //     AnsiStyledTextFormatter formatter{};
+    //     warn(tag, msg_builder(formatter));
+    // }
 
     /**
      * @brief Display an error message.

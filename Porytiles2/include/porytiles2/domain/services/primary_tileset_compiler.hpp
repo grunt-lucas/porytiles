@@ -6,6 +6,7 @@
 
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -20,8 +21,9 @@ class PrimaryTilesetCompiler {
     explicit PrimaryTilesetCompiler(
         gsl::not_null<DomainConfig *> config,
         gsl::not_null<TextFormatter *> format,
-        gsl::not_null<UserDiagnostics *> diag)
-        : config_{config}, format_{format}, diag_{diag}
+        gsl::not_null<UserDiagnostics *> diag,
+        gsl::not_null<TilePrinter *> tile_printer)
+        : config_{config}, format_{format}, diag_{diag}, tile_printer_{tile_printer}
     {
     }
 
@@ -33,6 +35,7 @@ class PrimaryTilesetCompiler {
     DomainConfig *config_;
     TextFormatter *format_;
     UserDiagnostics *diag_;
+    TilePrinter *tile_printer_;
 };
 
 } // namespace porytiles2

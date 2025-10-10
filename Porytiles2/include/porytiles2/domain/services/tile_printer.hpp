@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/models/tile_constants.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -15,7 +16,7 @@ class TilePrinter {
     virtual ~TilePrinter() = default;
 
     [[nodiscard]] virtual std::vector<std::string>
-    print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col) const = 0;
+    print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col, Style color) const = 0;
 };
 
 } // namespace porytiles2

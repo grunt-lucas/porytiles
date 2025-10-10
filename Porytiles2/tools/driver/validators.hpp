@@ -8,7 +8,6 @@
 #include "fmt/format.h"
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/infra/diagnostics/diagnostics.hpp"
 #include "porytiles2/templates/parse_int.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
@@ -98,9 +97,9 @@ class DiagnosticIsWarningValidator final : public CLI::Validator {
     {
         name_ = "DIAGNOSTIC_IS_WARNING";
         std::unordered_set<std::string> warning_diags;
-        for (const auto name : porytiles2::all_diag_names(porytiles2::DiagLevel::warning)) {
-            warning_diags.insert(name);
-        }
+        // for (const auto name : porytiles2::all_diag_names(porytiles2::DiagLevel::warning)) {
+        //     warning_diags.insert(name);
+        // }
         func_ = [warning_diags](const std::string &str) {
             if (warning_diags.contains(str)) {
                 return std::string{};

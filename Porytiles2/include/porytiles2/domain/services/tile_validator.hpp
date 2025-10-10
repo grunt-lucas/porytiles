@@ -5,6 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/rgba_tile.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -16,8 +17,11 @@ namespace porytiles2 {
  */
 class TileValidator {
   public:
-    explicit TileValidator(gsl::not_null<TextFormatter *> format, gsl::not_null<UserDiagnostics *> diag)
-        : format_{format}, diag_{diag}
+    explicit TileValidator(
+        gsl::not_null<TextFormatter *> format,
+        gsl::not_null<UserDiagnostics *> diag,
+        gsl::not_null<TilePrinter *> tile_printer)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}
     {
     }
 
@@ -30,6 +34,7 @@ class TileValidator {
   private:
     TextFormatter *format_;
     UserDiagnostics *diag_;
+    TilePrinter *tile_printer_;
 };
 
 } // namespace porytiles2

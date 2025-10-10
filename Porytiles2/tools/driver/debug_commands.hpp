@@ -5,10 +5,10 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -21,6 +21,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
 #include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -174,6 +175,7 @@ class DebugPrimaryCompileCommand final : public Command {
         // Init text formatter and user diagnostic implementation
         std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
+        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<StderrAsciiTilePrinter>(text_formatter.get());
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
@@ -184,7 +186,7 @@ class DebugPrimaryCompileCommand final : public Command {
         JascPalSaver jasc_saver{};
 
         // Setup primary compiler
-        PrimaryTilesetCompiler compiler{&config, text_formatter.get(), diag.get()};
+        PrimaryTilesetCompiler compiler{&config, text_formatter.get(), diag.get(), tile_printer.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
