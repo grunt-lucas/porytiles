@@ -216,15 +216,31 @@ class UserDiagnostics {
         const auto &chain = result.chain();
         assert_or_panic(!chain.empty(), "error chain was empty");
 
-        emit_fatal_proximate(*chain.at(0));
-        if (chain.size() > 1) {
+        // Filter out PassError instances from the chain
+        auto filtered_view = chain | std::views::filter([](const auto &err) {
+                                 return dynamic_cast<const PassError *>(err.get()) == nullptr;
+                             });
+
+        std::vector<const Error *> filtered_chain;
+        for (const auto &err : filtered_view) {
+            filtered_chain.push_back(err.get());
+        }
+
+        // If all errors were PassError (defensive, shouldn't happen), return early
+        if (filtered_chain.empty()) {
+            panic("filtered error chain was empty, there should always be at least one non-PassError");
+        }
+
+        emit_fatal_proximate(*filtered_chain.at(0));
+        if (filtered_chain.size() > 1) {
             // Emit steps for all but the first and last
-            auto middle_range = std::ranges::views::drop(chain, 1) | std::ranges::views::take(chain.size() - 2);
-            for (const auto &err : middle_range) {
+            auto middle_range =
+                std::ranges::views::drop(filtered_chain, 1) | std::ranges::views::take(filtered_chain.size() - 2);
+            for (const auto *err : middle_range) {
                 emit_fatal_step(*err);
             }
             // Emit the last one as root
-            emit_fatal_root(*chain.back());
+            emit_fatal_root(*filtered_chain.back());
         }
     }
 };
