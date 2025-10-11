@@ -37,7 +37,7 @@ std::filesystem::path create_tmpdir()
             break;
         }
         if (i == maxTries) {
-            porytiles2::panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+            panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
         }
         i++;
     }
@@ -104,8 +104,7 @@ ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::pa
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
-        return ChainableResult<void>::chain_together(
-            FormattableError{fmt::format("{}: failed to save", path.c_str())}, save_result);
+        return ChainableResult<void>{FormattableError{fmt::format("{}: failed to save", path.c_str())}, save_result};
     }
     return {};
 }

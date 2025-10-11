@@ -120,22 +120,22 @@ void fill_region_with_transparent(
     // Tileize each layer image
     const auto bottom_tiles_result = tileizer_.tileize(bottom);
     if (!bottom_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            FormattableError{"failed to tileize bottom layer"}, bottom_tiles_result);
+        return ChainableResult<std::vector<RgbaMetatile>>{
+            FormattableError{"failed to tileize bottom layer"}, bottom_tiles_result};
     }
     const auto &bottom_tiles = bottom_tiles_result.value();
 
     const auto middle_tiles_result = tileizer_.tileize(middle);
     if (!middle_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            FormattableError{"failed to tileize middle layer"}, middle_tiles_result);
+        return ChainableResult<std::vector<RgbaMetatile>>{
+            FormattableError{"failed to tileize middle layer"}, middle_tiles_result};
     }
     const auto &middle_tiles = middle_tiles_result.value();
 
     const auto top_tiles_result = tileizer_.tileize(top);
     if (!top_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>::chain_together(
-            FormattableError{"failed to tileize top layer"}, top_tiles_result);
+        return ChainableResult<std::vector<RgbaMetatile>>{
+            FormattableError{"failed to tileize top layer"}, top_tiles_result};
     }
     const auto &top_tiles = top_tiles_result.value();
 

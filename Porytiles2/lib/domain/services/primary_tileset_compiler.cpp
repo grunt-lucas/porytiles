@@ -57,12 +57,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // - any tiles contain an invalid alpha value
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(tiles), "input validation failed", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles), "input validation failed", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(tiles), "input validation failed", std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(validator.validate_alpha_channels(tiles), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(validator.validate_unique_color_count(tiles), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(validator.generate_precision_loss_warnings(tiles), std::unique_ptr<Tileset>);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl

@@ -216,9 +216,13 @@ class UserDiagnostics {
         const auto &chain = result.chain();
         assert_or_panic(!chain.empty(), "error chain was empty");
 
-        // Filter out PassError instances from the chain
+        // filter out FormattableErrors with no details
         auto filtered_view = chain | std::views::filter([](const auto &err) {
-                                 return dynamic_cast<const PassError *>(err.get()) == nullptr;
+                                 const auto formattable_err = dynamic_cast<const FormattableError *>(err.get());
+                                 if (formattable_err == nullptr) {
+                                     return false;
+                                 }
+                                 return formattable_err->has_details();
                              });
 
         std::vector<const Error *> filtered_chain;
@@ -226,7 +230,7 @@ class UserDiagnostics {
             filtered_chain.push_back(err.get());
         }
 
-        // If all errors were PassError (defensive, shouldn't happen), return early
+        // If all errors were blank FormattableErrors (defensive, shouldn't happen), return early
         if (filtered_chain.empty()) {
             panic("filtered error chain was empty, there should always be at least one non-PassError");
         }

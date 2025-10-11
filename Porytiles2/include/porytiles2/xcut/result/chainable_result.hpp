@@ -83,41 +83,6 @@ class ChainableResult {
         add_cause(cause_result);
     }
 
-    // WHY THIS METHOD MUST BE CALLED chain_to AND CANNOT BE CALLED chain
-    //
-    // This is due to C++'s name hiding rules. When the void specialization declares its own static chain() method
-    // (lines 306-310), it hides all methods named chain from the base class - including the non-static chain() const
-    // method that returns the error chain.
-    //
-    // In C++, when a derived class declares any member with a given name, it hides all base class members with that
-    // same name, regardless of their signatures (static vs non-static, different parameters, etc.).
-    // The base class's add_cause() method (line 148) needs to call cause_result.chain() to access the error chain, but
-    // this non-static method is hidden by the derived class's static chain() method. Without the explicit forwarding
-    // function, you get a compiler error because the name lookup stops at the derived class and only finds the static
-    // version, which doesn't match the required signature.
-    //
-    // Methods like has_value() work fine because the void specialization doesn't declare its own version of
-    // has_value(), so there's no name hiding occurring.
-
-    /**
-     * @brief Static factory method for chaining errors.
-     *
-     * @details
-     * Provides a more readable way to chain errors compared to direct constructor usage. This method creates a new
-     * ChainableResult that combines a new error with an existing error chain from a cause result.
-     *
-     * @tparam CauseT The success type of the cause result
-     * @tparam CauseE The error type of the cause result
-     * @param error The new error to add at this level
-     * @param cause The ChainableResult containing the error chain to chain
-     * @return A new ChainableResult containing the combined error chain
-     */
-    template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain_together(const E &error, const ChainableResult<CauseT, CauseE> &cause)
-    {
-        return ChainableResult{error, cause};
-    }
-
     /*
      * Move-only semantics
      */
@@ -304,26 +269,6 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     }
 
     /**
-     * @brief Static factory method for chaining errors.
-     *
-     * @details
-     * Provides a more readable way to chain errors compared to direct constructor usage. This
-     * method creates a new ChainableResult that combines a new error with an existing error
-     * chain from a cause result.
-     *
-     * @tparam CauseT The success type of the cause result
-     * @tparam CauseE The error type of the cause result
-     * @param error The new error to add at this level
-     * @param cause The ChainableResult containing the error chain to chain
-     * @return A new ChainableResult containing the combined error chain
-     */
-    template <typename CauseT, typename CauseE>
-    [[nodiscard]] static ChainableResult chain_together(const E &error, const ChainableResult<CauseT, CauseE> &cause)
-    {
-        return ChainableResult{error, cause};
-    }
-
-    /**
      * @brief Accesses the void success value.
      *
      * @details
@@ -382,7 +327,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
 #define PT_TRY_ASSIGN_CHAIN_ERR(var, expr, msg, return_type)                                                           \
     auto var##_result = (expr);                                                                                        \
     if (!var##_result.has_value()) {                                                                                   \
-        return ChainableResult<return_type>::chain_together(FormattableError{msg}, var##_result);                      \
+        return ChainableResult<return_type>{FormattableError{msg}, var##_result};                                      \
     }                                                                                                                  \
     auto var = std::move(var##_result).value();
 
@@ -407,7 +352,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
 #define PT_TRY_ASSIGN_PASS_ERR(var, expr, return_type)                                                                 \
     auto var##_result = (expr);                                                                                        \
     if (!var##_result.has_value()) {                                                                                   \
-        return ChainableResult<return_type>::chain_together(PassError{}, var##_result);                                \
+        return ChainableResult<return_type>{FormattableError{}, var##_result};                                         \
     }                                                                                                                  \
     auto var = std::move(var##_result).value();
 
@@ -437,7 +382,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
 #define PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, msg, return_type, counter)                                           \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
-        return ChainableResult<return_type>::chain_together(FormattableError{msg}, pt_try_call_result_##counter);      \
+        return ChainableResult<return_type>{FormattableError{msg}, pt_try_call_result_##counter};                      \
     }
 
 // Internal implementation detail - do not use directly
@@ -468,7 +413,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
 #define PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)                                                 \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
-        return ChainableResult<return_type>::chain_together(PassError{}, pt_try_call_result_##counter);                \
+        return ChainableResult<return_type>{FormattableError{}, pt_try_call_result_##counter};                         \
     }
 
 // Internal implementation detail - do not use directly
@@ -503,8 +448,7 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     }
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, counter)                                                           \
-    PT_DETAIL_TRY_CALL_PASS_SAME_ERR_EXPAND(expr, counter)
+#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, counter) PT_DETAIL_TRY_CALL_PASS_SAME_ERR_EXPAND(expr, counter)
 
 /**
  * @brief Unwraps a void ChainableResult, passing through the error unchanged when types match.

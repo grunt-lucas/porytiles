@@ -40,7 +40,7 @@ ChainableResult<void> import_layer_png(
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
             const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>::chain_together(FormattableError{error_msg}, image_result);
+            return ChainableResult<void>{FormattableError{error_msg}, image_result};
         }
         default:
             panic("unhandled ImageLoadError type");
@@ -183,8 +183,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.bottom(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(
-                FormattableError{fmt::format("failed to read bottom.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read bottom.png")}, result};
         }
         return {};
     }
@@ -194,8 +193,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.middle(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(
-                FormattableError{fmt::format("failed to read middle.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read middle.png")}, result};
         }
         return {};
     }
@@ -205,8 +203,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.top(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(
-                FormattableError{fmt::format("failed to read top.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read top.png")}, result};
         }
         return {};
     }

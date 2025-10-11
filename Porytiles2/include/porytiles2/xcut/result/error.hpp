@@ -83,12 +83,14 @@ class Error {
  */
 class FormattableError final : public Error {
   public:
+    FormattableError() = default;
+
     /**
      * @brief Constructs a FormattableError with a plain text message.
      *
      * @details
-     * Creates a FormattableError containing a simple string message with no parameter formatting. This constructor is
-     * used for straightforward error messages that don't require styled parameters.
+     * Creates a FormattableError containing a simple string message with no parameter formatting. This constructor
+     * is used for straightforward error messages that don't require styled parameters.
      *
      * @param text The error message text
      */
@@ -160,6 +162,11 @@ class FormattableError final : public Error {
         return formatter.format(text_, params_);
     }
 
+    [[nodiscard]] bool has_details() const
+    {
+        return !text_.empty();
+    }
+
     /**
      * @brief Creates a polymorphic copy of this FormattableError.
      *
@@ -177,29 +184,6 @@ class FormattableError final : public Error {
   private:
     std::string text_;
     std::vector<FormatParam> params_;
-};
-
-/**
- * @brief A message-less error for error chain passthrough.
- */
-class PassError final : public Error {
-  public:
-    PassError() = default;
-
-    /**
-     * @brief Returns an empty details string.
-     * @param unused The TextFormatter to maintain interface compatibility
-     * @return An empty details string
-     */
-    [[nodiscard]] std::string details([[maybe_unused]] const TextFormatter &unused) const override
-    {
-        return "";
-    }
-
-    [[nodiscard]] std::unique_ptr<Error> clone() const override
-    {
-        return std::make_unique<PassError>();
-    }
 };
 
 } // namespace porytiles2

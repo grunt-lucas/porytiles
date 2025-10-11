@@ -19,9 +19,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
-        // TODO: hook up ChainableError here
-        return ChainableResult<void>::chain_together(
-            FormattableError{fmt::format("failed to load tileset '{}'", tileset_name)}, maybe_tileset);
+        return ChainableResult<void>{
+            FormattableError{fmt::format("failed to load tileset '{}'", tileset_name)}, maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
 
