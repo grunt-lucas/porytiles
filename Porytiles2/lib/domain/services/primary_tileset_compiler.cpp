@@ -75,20 +75,20 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // std::vector<PackSet> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
 
     // TODO: set up these components correctly, for now we just use some dummy values
-    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
-    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
-    porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
-    porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
+    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 
     // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
     // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
     // component. So we'll need to pull them from the original component and inject them into this one before
-    // returning. One way around this would be to add PLA files to the Porytiles component. Compilation can simply copy
-    // them over. We'll also have to handle this on the import side. That is, when importing a tileset that contains PLA
-    // files, we need to make sure to copy them into the new Porytiles component.
+    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all this
+    // is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain concept, so
+    // they should be handled like any other file type (e.g. pal files, override files, etc).
+    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
+    new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
+    new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
 
     auto new_tileset =
-        std::make_unique<Tileset>(tileset.name(), std::move(porytiles_component), std::move(porymap_component));
+        std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
 
     return new_tileset;
 }
