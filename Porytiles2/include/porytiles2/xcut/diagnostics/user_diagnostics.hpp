@@ -220,7 +220,7 @@ class UserDiagnostics {
         auto filtered_view = chain | std::views::filter([](const auto &err) {
                                  const auto formattable_err = dynamic_cast<const FormattableError *>(err.get());
                                  if (formattable_err == nullptr) {
-                                     return false;
+                                     return true;
                                  }
                                  return formattable_err->has_details();
                              });
