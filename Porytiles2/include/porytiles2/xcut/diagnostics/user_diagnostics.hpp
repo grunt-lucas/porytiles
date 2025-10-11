@@ -211,9 +211,9 @@ class UserDiagnostics {
     template <typename T, typename E>
     void fatal(const ChainableResult<T, E> &result) const
     {
-        assert_or_panic(!result.has_value(), "result was not of error type");
-
+        // Preconditions
         const auto &chain = result.chain();
+        assert_or_panic(!result.has_value(), "result was not of error type");
         assert_or_panic(!chain.empty(), "error chain was empty");
 
         // filter out FormattableErrors with no details
@@ -232,13 +232,13 @@ class UserDiagnostics {
 
         // If all errors were blank FormattableErrors (defensive, shouldn't happen), return early
         if (filtered_chain.empty()) {
-            panic("filtered error chain was empty, there should always be at least one non-PassError");
+            panic("filtered error chain was empty, there should always be at least one FormattableError with details");
         }
 
         emit_fatal_proximate(*filtered_chain.at(0));
         if (filtered_chain.size() > 1) {
             // Emit steps for all but the first and last
-            auto middle_range =
+            const auto middle_range =
                 std::ranges::views::drop(filtered_chain, 1) | std::ranges::views::take(filtered_chain.size() - 2);
             for (const auto *err : middle_range) {
                 emit_fatal_step(*err);

@@ -332,18 +332,18 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     auto var = std::move(var##_result).value();
 
 /**
- * @brief Unwraps a ChainableResult, passing through the error chain with a PassError when types differ.
+ * @brief Unwraps a ChainableResult, passing through the error chain with an empty FormattableError when types differ.
  *
  * @details
  * This macro provides a succinct way to handle ChainableResult unwrapping with error passthrough when the inner
  * result's success type differs from the outer function's return type. It evaluates the expression, checks if it
- * contains a value, and either assigns the value to the variable or returns early with a PassError chained to the
- * existing error chain. This is useful when the current layer doesn't need to add additional error context but the
- * result types don't match (e.g., inner function returns ChainableResult<Foo, E> but outer returns ChainableResult<Bar,
- * E>).
+ * contains a value, and either assigns the value to the variable or returns early with an empty FormattableError
+ * chained to the existing error chain. This is useful when the current layer doesn't need to add additional error
+ * context but the result types don't match (e.g., inner function returns ChainableResult<Foo, E> but outer returns
+ * ChainableResult<Bar, E>).
  *
  * If the result contains an error, the macro returns from the current function with a new ChainableResult<return_type>
- * containing a PassError chained to the original error chain.
+ * containing an empty FormattableError chained to the original error chain.
  *
  * @param var The variable name to assign the unwrapped value to
  * @param expr The expression returning a ChainableResult
@@ -421,17 +421,18 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)
 
 /**
- * @brief Unwraps a void ChainableResult, passing through the error chain with a PassError when types differ.
+ * @brief Unwraps a void ChainableResult, passing through the error chain with an empty FormattableError when types
+ * differ.
  *
  * @details
  * This macro provides a succinct way to handle void-returning ChainableResult unwrapping with error passthrough when
  * the inner result's success type differs from the outer function's return type. It evaluates the expression, checks
- * if it contains a success value, and either continues execution or returns early with a PassError chained to the
- * existing error chain. This is the void equivalent of PT_TRY_ASSIGN_PASS_ERR and is useful when the current layer
- * doesn't need to add additional error context but the result types don't match.
+ * if it contains a success value, and either continues execution or returns early with an empty FormattableError
+ * chained to the existing error chain. This is the void equivalent of PT_TRY_ASSIGN_PASS_ERR and is useful when the
+ * current layer doesn't need to add additional error context but the result types don't match.
  *
  * If the result contains an error, the macro returns from the current function with a new ChainableResult<return_type>
- * containing a PassError chained to the original error chain.
+ * containing an empty FormattableError chained to the original error chain.
  *
  * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
  *

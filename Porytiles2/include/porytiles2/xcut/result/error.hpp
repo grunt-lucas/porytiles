@@ -83,6 +83,14 @@ class Error {
  */
 class FormattableError final : public Error {
   public:
+    /**
+     * @brief Constructs an empty FormattableError with no message.
+     *
+     * @details
+     * Creates a FormattableError with no text content. This is primarily used for error chain passthrough scenarios
+     * where the current layer doesn't need to add additional error context. Empty FormattableErrors can be detected
+     * using the has_details() method and are typically filtered out during error chain visualization.
+     */
     FormattableError() = default;
 
     /**
@@ -162,6 +170,17 @@ class FormattableError final : public Error {
         return formatter.format(text_, params_);
     }
 
+    /**
+     * @brief Checks whether this FormattableError contains any message content.
+     *
+     * @details
+     * Returns true if the error was constructed with a non-empty text message, false otherwise. This method is used
+     * to distinguish between errors that carry meaningful information and empty errors created for passthrough
+     * purposes. Empty errors (created with the default constructor or empty string) are typically filtered out during
+     * error chain visualization in UserDiagnostics::fatal().
+     *
+     * @return True if the error contains a non-empty message, false if the error is empty
+     */
     [[nodiscard]] bool has_details() const
     {
         return !text_.empty();
