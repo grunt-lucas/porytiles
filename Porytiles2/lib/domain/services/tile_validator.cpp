@@ -48,6 +48,7 @@ ChainableResult<void> TileValidator::validate_unique_color_count(const std::vect
 
 ChainableResult<void> TileValidator::generate_precision_loss_warnings(const std::vector<RgbaTile> &tiles) const
 {
+    // TODO: implement
     return {};
 }
 

@@ -434,11 +434,15 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     auto var = std::move(var##_result).value();
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, counter)                                             \
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, msg, return_type, counter)                                           \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
         return ChainableResult<return_type>::chain_together(FormattableError{msg}, pt_try_call_result_##counter);      \
     }
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, counter)                                             \
+    PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, msg, return_type, counter)
 
 /**
  * @brief Unwraps a void ChainableResult, chaining a new error message on failure.
@@ -461,11 +465,15 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, __COUNTER__)
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, counter)                                                   \
+#define PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)                                                 \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
         return ChainableResult<return_type>::chain_together(PassError{}, pt_try_call_result_##counter);                \
     }
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, counter)                                                   \
+    PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)
 
 /**
  * @brief Unwraps a void ChainableResult, passing through the error chain with a PassError when types differ.
@@ -488,11 +496,15 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
 #define PT_TRY_CALL_PASS_ERR(expr, return_type) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, __COUNTER__)
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, counter)                                                           \
+#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_EXPAND(expr, counter)                                                         \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
         return pt_try_call_result_##counter;                                                                           \
     }
+
+// Internal implementation detail - do not use directly
+#define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, counter)                                                           \
+    PT_DETAIL_TRY_CALL_PASS_SAME_ERR_EXPAND(expr, counter)
 
 /**
  * @brief Unwraps a void ChainableResult, passing through the error unchanged when types match.
