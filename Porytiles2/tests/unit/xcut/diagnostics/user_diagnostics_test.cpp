@@ -135,8 +135,8 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErr
 {
     // Create a chain with both FormattableError and MockError (non-FormattableError)
     ChainableResult<int, MockError> root_result{MockError{"mock root error"}};
-    ChainableResult<std::string, FormattableError> middle_result{FormattableError{"formattable middle error"},
-                                                                  root_result};
+    ChainableResult<std::string, FormattableError> middle_result{
+        FormattableError{"formattable middle error"}, root_result};
     ChainableResult<void, MockError> top_result{MockError{"mock proximate error"}, middle_result};
 
     BufferedUserDiagnostics diagnostics{};

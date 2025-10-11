@@ -63,6 +63,11 @@ void StderrStyledUserDiagnostics::err(const std::vector<std::string> &lines) con
 
 void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
 {
+    // TODO: emit some kind of cool ascii art for start of fatal chain
+    // something like:
+    // |-------- FATAL ERROR CHAIN --------|
+    // |-----------------------------------|
+    // or something similar
     AnsiStyledTextFormatter formatter{};
     std::cerr << formatter.style("fatal:", Style::bold | Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
@@ -74,7 +79,7 @@ void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
     std::cerr << "caused by:" << std::endl;
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
-    std::cerr << formatter.style("├", Style::bold) << " " << formatter.style("error:", Style::bold | Style::red) << " ";
+    std::cerr << formatter.style("├", Style::bold) << " " << formatter.style("fatal:", Style::bold | Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 
@@ -84,7 +89,7 @@ void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
     std::cerr << "root cause:" << std::endl;
     std::cerr << formatter.style("│", Style::bold) << " " << std::endl;
-    std::cerr << formatter.style("└", Style::bold) << " " << formatter.style("error:", Style::bold | Style::red) << " ";
+    std::cerr << formatter.style("└", Style::bold) << " " << formatter.style("fatal:", Style::bold | Style::red) << " ";
     std::cerr << err.details(formatter) << std::endl;
 }
 
