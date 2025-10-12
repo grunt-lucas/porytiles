@@ -36,11 +36,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         std::unique_ptr<Tileset>);
 
     // Leaf step to throw error if there are too many metatiles.
-    if (metatiles.size() > config_->num_metatiles_primary()) {
+    if (metatiles.size() > config_->num_metatiles_primary(tileset.name())) {
         return FormattableError{
             "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
             FormatParam{metatiles.size(), Style::bold},
-            FormatParam{config_->num_metatiles_primary(), Style::bold}};
+            FormatParam{config_->num_metatiles_primary(tileset.name()), Style::bold}};
     }
 
     // Decompose vector<RgbaMetatile> into vector<RgbaTile>
@@ -59,7 +59,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles, config_->extrinsic_transparency()),
+        validator.validate_unique_color_count(tiles, config_->extrinsic_transparency(tileset.name())),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(

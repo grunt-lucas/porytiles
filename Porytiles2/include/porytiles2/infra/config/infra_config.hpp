@@ -17,7 +17,7 @@ class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
 
-    [[nodiscard]] virtual TilesPalMode tiles_pal_mode(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual TilesPalMode tiles_pal_mode(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2

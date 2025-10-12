@@ -17,7 +17,7 @@ class AppConfig {
   public:
     virtual ~AppConfig() = default;
 
-    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2

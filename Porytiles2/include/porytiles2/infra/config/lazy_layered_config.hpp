@@ -52,34 +52,34 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Domain Config
      */
 
-    [[nodiscard]] std::size_t num_tiles_primary() const override;
+    [[nodiscard]] std::size_t num_tiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_tiles_total() const override;
+    [[nodiscard]] std::size_t num_tiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_metatiles_primary() const override;
+    [[nodiscard]] std::size_t num_metatiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_metatiles_total() const override;
+    [[nodiscard]] std::size_t num_metatiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_pals_primary() const override;
+    [[nodiscard]] std::size_t num_pals_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_pals_total() const override;
+    [[nodiscard]] std::size_t num_pals_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t max_map_data_size() const override;
+    [[nodiscard]] std::size_t max_map_data_size(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_tiles_per_metatile() const override;
+    [[nodiscard]] std::size_t num_tiles_per_metatile(const std::string &tileset) const override;
 
-    [[nodiscard]] Rgba32 extrinsic_transparency() const override;
+    [[nodiscard]] Rgba32 extrinsic_transparency(const std::string &tileset) const override;
 
     /*
      * App Config
      */
 
-    [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset_name) const override;
+    [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset) const override;
 
     /*
      * Infra Config
      */
-    [[nodiscard]] TilesPalMode tiles_pal_mode(const std::string &tileset_name) const override;
+    [[nodiscard]] TilesPalMode tiles_pal_mode(const std::string &tileset) const override;
 
     /*
      * LazyLayeredConfig Specific Functionality

@@ -20,51 +20,57 @@ class DomainConfig {
   public:
     virtual ~DomainConfig() = default;
 
-    [[nodiscard]] virtual std::size_t num_tiles_primary() const = 0;
+    [[nodiscard]] virtual std::size_t num_tiles_primary(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual std::size_t num_tiles_total() const = 0;
+    [[nodiscard]] virtual std::size_t num_tiles_total(const std::string &tileset) const = 0;
 
-    [[nodiscard]] std::size_t num_tiles_secondary() const
+    [[nodiscard]] std::size_t num_tiles_secondary(const std::string &tileset) const
     {
-        if (num_tiles_total() < num_tiles_primary()) {
-            panic(fmt::format("num_tiles_total({}) < num_tiles_primary({})", num_tiles_total(), num_tiles_primary()));
+        if (num_tiles_total(tileset) < num_tiles_primary(tileset)) {
+            panic(
+                fmt::format(
+                    "num_tiles_total({}) < num_tiles_primary({})",
+                    num_tiles_total(tileset),
+                    num_tiles_primary(tileset)));
         }
-        return num_tiles_total() - num_tiles_primary();
+        return num_tiles_total(tileset) - num_tiles_primary(tileset);
     }
 
-    [[nodiscard]] virtual std::size_t num_metatiles_primary() const = 0;
+    [[nodiscard]] virtual std::size_t num_metatiles_primary(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual std::size_t num_metatiles_total() const = 0;
+    [[nodiscard]] virtual std::size_t num_metatiles_total(const std::string &tileset) const = 0;
 
-    [[nodiscard]] std::size_t num_metatiles_secondary() const
+    [[nodiscard]] std::size_t num_metatiles_secondary(const std::string &tileset) const
     {
-        if (num_tiles_total() < num_tiles_primary()) {
+        if (num_tiles_total(tileset) < num_tiles_primary(tileset)) {
             panic(
                 fmt::format(
                     "num_metatiles_total({}) < num_metatiles_primary({})",
-                    num_metatiles_total(),
-                    num_metatiles_primary()));
+                    num_metatiles_total(tileset),
+                    num_metatiles_primary(tileset)));
         }
-        return num_metatiles_total() - num_metatiles_primary();
+        return num_metatiles_total(tileset) - num_metatiles_primary(tileset);
     }
 
-    [[nodiscard]] virtual std::size_t num_pals_primary() const = 0;
+    [[nodiscard]] virtual std::size_t num_pals_primary(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual std::size_t num_pals_total() const = 0;
+    [[nodiscard]] virtual std::size_t num_pals_total(const std::string &tileset) const = 0;
 
-    [[nodiscard]] std::size_t num_pals_secondary() const
+    [[nodiscard]] std::size_t num_pals_secondary(const std::string &tileset) const
     {
-        if (num_tiles_total() < num_tiles_primary()) {
-            panic(fmt::format("num_pals_total({}) < num_pals_primary({})", num_pals_total(), num_pals_primary()));
+        if (num_tiles_total(tileset) < num_tiles_primary(tileset)) {
+            panic(
+                fmt::format(
+                    "num_pals_total({}) < num_pals_primary({})", num_pals_total(tileset), num_pals_primary(tileset)));
         }
-        return num_pals_total() - num_pals_primary();
+        return num_pals_total(tileset) - num_pals_primary(tileset);
     }
 
-    [[nodiscard]] virtual std::size_t max_map_data_size() const = 0;
+    [[nodiscard]] virtual std::size_t max_map_data_size(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual std::size_t num_tiles_per_metatile() const = 0;
+    [[nodiscard]] virtual std::size_t num_tiles_per_metatile(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual Rgba32 extrinsic_transparency() const = 0;
+    [[nodiscard]] virtual Rgba32 extrinsic_transparency(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2

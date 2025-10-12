@@ -20,28 +20,27 @@ class DefaultProvider final : public ConfigProvider {
      */
     [[nodiscard]] std::string name() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_primary() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_total() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_primary() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_total(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> max_map_data_size() const override;
+    [[nodiscard]] LayerValue<std::size_t> max_map_data_size(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile() const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency() const override;
+    [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<IncrementalBuildMode>
-    incremental_build_mode(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const override;
+    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const override;
 };
 
 } // namespace porytiles2
