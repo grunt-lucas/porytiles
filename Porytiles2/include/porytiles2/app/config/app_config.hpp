@@ -3,6 +3,7 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
@@ -17,7 +18,8 @@ class AppConfig {
   public:
     virtual ~AppConfig() = default;
 
-    [[nodiscard]] virtual IncrementalBuildMode incremental_build_mode(const std::string &tileset) const = 0;
+    [[nodiscard]] virtual ConfigValue<IncrementalBuildMode>
+    incremental_build_mode(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2

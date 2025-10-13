@@ -13,6 +13,7 @@
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
@@ -52,34 +53,34 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Domain Config
      */
 
-    [[nodiscard]] std::size_t num_tiles_primary(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_tiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_tiles_total(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_tiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_metatiles_primary(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_metatiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_metatiles_total(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_metatiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_pals_primary(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_pals_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_pals_total(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_pals_total(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t max_map_data_size(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> max_map_data_size(const std::string &tileset) const override;
 
-    [[nodiscard]] std::size_t num_tiles_per_metatile(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const override;
 
-    [[nodiscard]] Rgba32 extrinsic_transparency(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<Rgba32> extrinsic_transparency(const std::string &tileset) const override;
 
     /*
      * App Config
      */
 
-    [[nodiscard]] IncrementalBuildMode incremental_build_mode(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const override;
 
     /*
      * Infra Config
      */
-    [[nodiscard]] TilesPalMode tiles_pal_mode(const std::string &tileset) const override;
+    [[nodiscard]] ConfigValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const override;
 
     /*
      * LazyLayeredConfig Specific Functionality
@@ -122,10 +123,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @tparam T The type of the config value
      * @param cache_key The key to use for caching this value
      * @param provider_call Function that calls the appropriate method on a ConfigProvider
-     * @return The resolved config value
+     * @return The resolved config value wrapped in a ConfigValue with source information
      */
     template <typename T>
-    T resolve_config_value(
+    ConfigValue<T> resolve_config_value(
         const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 

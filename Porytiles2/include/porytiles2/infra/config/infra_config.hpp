@@ -3,6 +3,7 @@
 #include <string>
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
@@ -17,7 +18,7 @@ class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
 
-    [[nodiscard]] virtual TilesPalMode tiles_pal_mode(const std::string &tileset) const = 0;
+    [[nodiscard]] virtual ConfigValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2
