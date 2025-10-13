@@ -2,9 +2,8 @@
 
 #include <string>
 
-#include "fmt/format.h"
-
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -30,16 +29,24 @@ class DomainConfig {
     {
         PlainTextFormatter formatter{};
         const auto total = num_tiles_total(tileset);
+        const auto total_name = total.name();
         const auto primary = num_tiles_primary(tileset);
+        const auto primary_name = primary.name();
         if (total.value() < primary.value()) {
+            /*
+             * TODO: this should not panic, since it's possible for the user to mistakenly configure this. Any bad state
+             * that is user-reachable after valid user intervention should never panic. Thus, we'll need some kind of
+             * configuration validation system to run on program init, and fail gracefully when user provides bad
+             * configuration.
+             */
             const auto msg =
-                formatter.format("num_tiles_total({}) < num_tiles_primary({})", total.value(), primary.value());
+                formatter.format("{}({}) < {}({})", total.name(), total.value(), primary.name(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
         const auto source = formatter.format(
-            "Derived: num_tiles_total ({}) - num_tiles_primary ({})", total.source(), primary.source());
-        return ConfigValue{result, "num_tiles_secondary", source};
+            "Derived: {} ({}) - {} ({})", total.name(), total.source(), primary.name(), primary.source());
+        return ConfigValue{result, extract_function_name(), source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> num_metatiles_primary(const std::string &tileset) const = 0;
@@ -50,16 +57,24 @@ class DomainConfig {
     {
         PlainTextFormatter formatter{};
         const auto total = num_metatiles_total(tileset);
+        const auto total_name = total.name();
         const auto primary = num_metatiles_primary(tileset);
+        const auto primary_name = primary.name();
         if (total.value() < primary.value()) {
+            /*
+             * TODO: this should not panic, since it's possible for the user to mistakenly configure this. Any bad state
+             * that is user-reachable after valid user intervention should never panic. Thus, we'll need some kind of
+             * configuration validation system to run on program init, and fail gracefully when user provides bad
+             * configuration.
+             */
             const auto msg =
-                formatter.format("num_metatiles_total({}) < num_metatiles_primary({})", total.value(), primary.value());
+                formatter.format("{}({}) < {}({})", total.name(), total.value(), primary.name(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
         const auto source = formatter.format(
-            "Derived: num_metatiles_total ({}) - num_metatiles_primary ({})", total.source(), primary.source());
-        return ConfigValue{result, "num_metatiles_secondary", source};
+            "Derived: {} ({}) - {} ({})", total.name(), total.source(), primary.name(), primary.source());
+        return ConfigValue{result, extract_function_name(), source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> num_pals_primary(const std::string &tileset) const = 0;
@@ -70,16 +85,24 @@ class DomainConfig {
     {
         PlainTextFormatter formatter{};
         const auto total = num_pals_total(tileset);
+        const auto total_name = total.name();
         const auto primary = num_pals_primary(tileset);
+        const auto primary_name = primary.name();
         if (total.value() < primary.value()) {
+            /*
+             * TODO: this should not panic, since it's possible for the user to mistakenly configure this. Any bad state
+             * that is user-reachable after valid user intervention should never panic. Thus, we'll need some kind of
+             * configuration validation system to run on program init, and fail gracefully when user provides bad
+             * configuration.
+             */
             const auto msg =
-                formatter.format("num_pals_total({}) < num_pals_primary({})", total.value(), primary.value());
+                formatter.format("{}({}) < {}({})", total.name(), total.value(), primary.name(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
-        const auto source =
-            formatter.format("Derived: num_pals_total ({}) - num_pals_primary ({})", total.source(), primary.source());
-        return ConfigValue{result, "num_pals_secondary", source};
+        const auto source = formatter.format(
+            "Derived: {} ({}) - {} ({})", total.name(), total.source(), primary.name(), primary.source());
+        return ConfigValue{result, extract_function_name(), source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> max_map_data_size(const std::string &tileset) const = 0;
