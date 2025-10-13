@@ -9,6 +9,7 @@
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -49,77 +50,77 @@ T LazyLayeredConfig::resolve_config_value(
 
 std::size_t LazyLayeredConfig::num_tiles_primary(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_tiles_primary";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_primary(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_total(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_tiles_total";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_total(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_primary(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_metatiles_primary";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_primary(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_metatiles_total(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_metatiles_total";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_total(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_pals_primary(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_pals_primary";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_primary(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_pals_total(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_pals_total";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_total(tileset); });
 }
 
 std::size_t LazyLayeredConfig::max_map_data_size(const std::string &tileset) const
 {
-    const auto key = tileset + ":max_map_data_size";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.max_map_data_size(tileset); });
 }
 
 std::size_t LazyLayeredConfig::num_tiles_per_metatile(const std::string &tileset) const
 {
-    const auto key = tileset + ":num_tiles_per_metatile";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<std::size_t>(
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(tileset); });
 }
 
 Rgba32 LazyLayeredConfig::extrinsic_transparency(const std::string &tileset) const
 {
-    const auto key = tileset + ":extrinsic_transparency";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<Rgba32>(
         key, [&tileset](const ConfigProvider &provider) { return provider.extrinsic_transparency(tileset); });
 }
 
 IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string &tileset) const
 {
-    const auto key = tileset + ":incremental_build_mode";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<IncrementalBuildMode>(
         key, [&tileset](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset); });
 }
 
 TilesPalMode LazyLayeredConfig::tiles_pal_mode(const std::string &tileset) const
 {
-    const auto key = tileset + ":tiles_pal_mode";
+    const auto key = tileset + ":" + extract_function_name();
     return resolve_config_value<TilesPalMode>(
         key, [&tileset](const ConfigProvider &provider) { return provider.tiles_pal_mode(tileset); });
 }

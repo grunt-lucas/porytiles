@@ -6,13 +6,13 @@ namespace porytiles2 {
  * @brief Represents a foo.
  */
 class MetatileDecompiler {
-public:
+  public:
     MetatileDecompiler() = default;
     ~MetatileDecompiler() = default;
 
     [[nodiscard]] int foo() const;
 
-private:
+  private:
     int foo_{};
 };
 

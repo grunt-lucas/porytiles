@@ -5,8 +5,10 @@
 
 namespace porytiles2 {
 
-std::string extract_simple_function_name(std::string_view full_function_name)
+std::string extract_function_name(const std::source_location &location)
 {
+    std::string_view full_function_name = location.function_name();
+
     // Handle empty input
     if (full_function_name.empty()) {
         return "";

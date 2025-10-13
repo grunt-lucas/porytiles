@@ -2,7 +2,8 @@
 
 namespace porytiles2 {
 
-int MetatileDecompiler::foo() const {
+int MetatileDecompiler::foo() const
+{
     return foo_;
 }
 
