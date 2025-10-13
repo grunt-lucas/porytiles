@@ -38,23 +38,23 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     diag_->note(format_->format(
         "{} {} ({})",
         FormatParam{config_->num_metatiles_primary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_metatiles_primary(tileset.name())},
-        FormatParam{config_->num_metatiles_primary(tileset.name()).source(), Style::bold}));
+        FormatParam{config_->num_metatiles_primary(tileset.name()), Style::bold},
+        config_->num_metatiles_primary(tileset.name()).source()));
     diag_->note(format_->format(
         "{} {} ({})",
         FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_tiles_secondary(tileset.name())},
-        FormatParam{config_->num_tiles_secondary(tileset.name()).source(), Style::bold}));
+        FormatParam{config_->num_tiles_secondary(tileset.name()), Style::bold},
+        config_->num_tiles_secondary(tileset.name()).source()));
     diag_->note(format_->format(
         "{} {} ({})",
         FormatParam{config_->num_metatiles_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_metatiles_secondary(tileset.name())},
-        FormatParam{config_->num_metatiles_secondary(tileset.name()).source(), Style::bold}));
+        FormatParam{config_->num_metatiles_secondary(tileset.name()), Style::bold},
+        config_->num_metatiles_secondary(tileset.name()).source()));
     diag_->note(format_->format(
         "{} {} ({})",
         FormatParam{config_->num_pals_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_pals_secondary(tileset.name())},
-        FormatParam{config_->num_pals_secondary(tileset.name()).source(), Style::bold}));
+        FormatParam{config_->num_pals_secondary(tileset.name()), Style::bold},
+        config_->num_pals_secondary(tileset.name()).source()));
 
     // Leaf step to throw error if there are too many metatiles.
     if (metatiles.size() > config_->num_metatiles_primary(tileset.name())) {
