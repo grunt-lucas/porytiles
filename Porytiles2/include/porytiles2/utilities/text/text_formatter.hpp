@@ -138,7 +138,7 @@ class FormatParam {
      *
      * @param text The text content to be formatted
      */
-    explicit FormatParam(std::string text) : text_{std::move(text)}, styles_{Style::none} {}
+    FormatParam(std::string text) : text_{std::move(text)}, styles_{Style::none} {}
 
     /**
      * @brief Constructs a FormatParam with styled text.
@@ -166,7 +166,7 @@ class FormatParam {
         requires(
             !std::is_same_v<std::decay_t<T>, std::string> && !std::is_same_v<std::decay_t<T>, FormatParam> &&
             requires(std::ostringstream os, T val) { os << val; })
-    explicit FormatParam(T &&value) : FormatParam(to_string_impl(std::forward<T>(value)))
+    FormatParam(T &&value) : FormatParam(to_string_impl(std::forward<T>(value)))
     {
     }
 
@@ -278,8 +278,8 @@ class TextFormatter {
      *
      * Example:
      * ```C++
-     * formatter.format("Error in file '{}'", FormatParam{filename, Style::bold})
-     * formatter.format("Expected {} but got {}", FormatParam{expected, Style::green}, FormatParam{actual, Style::red})
+     * formatter.format("Error in file '{}'", FormatParam{filename, Style::bold | Style::red});
+     * formatter.format("Expected {} but got {}", expected, actual);
      * ```
      *
      * This template is disabled when called with a std::vector<FormatParam> to avoid ambiguity with the base
@@ -295,14 +295,14 @@ class TextFormatter {
     template <typename FirstParam, typename... RestParams>
         requires(
             !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
-            std::is_same_v<std::decay_t<FirstParam>, FormatParam> &&
-            (std::is_same_v<std::decay_t<RestParams>, FormatParam> && ...))
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
     [[nodiscard]] std::string format(const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
     {
         std::vector<FormatParam> param_vector;
         param_vector.reserve(1 + sizeof...(RestParams));
-        param_vector.push_back(std::forward<FirstParam>(first));
-        (param_vector.push_back(std::forward<RestParams>(rest)), ...);
+        param_vector.emplace_back(std::forward<FirstParam>(first));
+        (param_vector.emplace_back(std::forward<RestParams>(rest)), ...);
         return this->format(format_str, param_vector);
     }
 };

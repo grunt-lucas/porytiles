@@ -32,17 +32,13 @@ class DomainConfig {
         const auto total = num_tiles_total(tileset);
         const auto primary = num_tiles_primary(tileset);
         if (total.value() < primary.value()) {
-            const auto msg = formatter.format(
-                "num_tiles_total({}) < num_tiles_primary({})",
-                FormatParam{total.value()},
-                FormatParam{primary.value()});
+            const auto msg =
+                formatter.format("num_tiles_total({}) < num_tiles_primary({})", total.value(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
         const auto source = formatter.format(
-            "Derived: num_tiles_total ({}) - num_tiles_primary ({})",
-            FormatParam{total.source()},
-            FormatParam{primary.source()});
+            "Derived: num_tiles_total ({}) - num_tiles_primary ({})", total.source(), primary.source());
         return ConfigValue{result, "num_tiles_secondary", source};
     }
 
@@ -56,17 +52,13 @@ class DomainConfig {
         const auto total = num_metatiles_total(tileset);
         const auto primary = num_metatiles_primary(tileset);
         if (total.value() < primary.value()) {
-            const auto msg = formatter.format(
-                "num_metatiles_total({}) < num_metatiles_primary({})",
-                FormatParam{total.value()},
-                FormatParam{primary.value()});
+            const auto msg =
+                formatter.format("num_metatiles_total({}) < num_metatiles_primary({})", total.value(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
         const auto source = formatter.format(
-            "Derived: num_metatiles_total ({}) - num_metatiles_primary ({})",
-            FormatParam{total.source()},
-            FormatParam{primary.source()});
+            "Derived: num_metatiles_total ({}) - num_metatiles_primary ({})", total.source(), primary.source());
         return ConfigValue{result, "num_metatiles_secondary", source};
     }
 
@@ -80,15 +72,13 @@ class DomainConfig {
         const auto total = num_pals_total(tileset);
         const auto primary = num_pals_primary(tileset);
         if (total.value() < primary.value()) {
-            const auto msg = formatter.format(
-                "num_pals_total({}) < num_pals_primary({})", FormatParam{total.value()}, FormatParam{primary.value()});
+            const auto msg =
+                formatter.format("num_pals_total({}) < num_pals_primary({})", total.value(), primary.value());
             panic(msg);
         }
         const std::size_t result = total.value() - primary.value();
-        const auto source = formatter.format(
-            "Derived: num_pals_total ({}) - num_pals_primary ({})",
-            FormatParam{total.source()},
-            FormatParam{primary.source()});
+        const auto source =
+            formatter.format("Derived: num_pals_total ({}) - num_pals_primary ({})", total.source(), primary.source());
         return ConfigValue{result, "num_pals_secondary", source};
     }
 
