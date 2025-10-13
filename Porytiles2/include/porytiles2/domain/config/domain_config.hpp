@@ -27,7 +27,7 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_tiles_secondary(const std::string &tileset) const
     {
-        const auto name = extract_function_name();
+        const auto name = tileset + ":" + extract_function_name();
         return compute_secondary(
             tileset,
             name,
@@ -41,7 +41,7 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_metatiles_secondary(const std::string &tileset) const
     {
-        const auto name = extract_function_name();
+        const auto name = tileset + ":" + extract_function_name();
         return compute_secondary(
             tileset,
             name,
@@ -55,7 +55,7 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_pals_secondary(const std::string &tileset) const
     {
-        const auto name = extract_function_name();
+        const auto name = tileset + ":" + extract_function_name();
         return compute_secondary(
             tileset,
             name,

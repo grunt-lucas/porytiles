@@ -121,16 +121,13 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @brief Resolves config values using the common caching and provider iteration pattern.
      *
      * @tparam T The type of the config value
-     * @param cache_key The key to use for caching this value
-     * @param name The name of the config value (e.g., "num_tiles_primary")
+     * @param cache_key The key to use for caching this value (also used for value name)
      * @param provider_call Function that calls the appropriate method on a ConfigProvider
      * @return The resolved config value wrapped in a ConfigValue with name and source information
      */
     template <typename T>
     ConfigValue<T> resolve_config_value(
-        const std::string &cache_key,
-        const std::string &name,
-        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+        const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2
