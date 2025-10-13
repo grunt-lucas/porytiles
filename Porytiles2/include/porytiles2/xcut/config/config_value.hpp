@@ -6,12 +6,12 @@
 namespace porytiles2 {
 
 /**
- * @brief A container that wraps a configuration value with its source information.
+ * @brief A container that wraps a configuration value with its name and source information.
  *
  * @details
- * ConfigValue provides transparent access to configuration values while also tracking where each value originated
- * (e.g., which config provider supplied it). It supports implicit conversion to the underlying type for ergonomic
- * usage.
+ * ConfigValue provides transparent access to configuration values while also tracking the config value's name and where
+ * each value originated (e.g., which ConfigProvider supplied it). It supports implicit conversion to the underlying
+ * type for ergonomic usage.
  *
  * @tparam T The type of the configuration value
  */
@@ -19,12 +19,16 @@ template <typename T>
 class ConfigValue {
   public:
     /**
-     * @brief Constructs a ConfigValue with a value and its source information.
+     * @brief Constructs a ConfigValue with a value, name, and source information.
      *
      * @param value The configuration value
+     * @param name The name of the configuration value (e.g., "num_tiles_primary")
      * @param source A string describing where this value came from
      */
-    ConfigValue(T value, std::string source) : value_{std::move(value)}, source_{std::move(source)} {}
+    ConfigValue(T value, std::string name, std::string source)
+        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}
+    {
+    }
 
     /**
      * @brief Implicit conversion to const reference of the underlying value.
@@ -73,13 +77,29 @@ class ConfigValue {
     }
 
     /**
+     * @brief Gets the name of this configuration value.
+     *
+     * @details
+     * The name identifies the configuration value, such as:
+     * - "num_tiles_primary"
+     * - "num_tiles_secondary"
+     * - "incremental_build_mode"
+     *
+     * @return A const reference to the name string
+     */
+    [[nodiscard]] const std::string &name() const
+    {
+        return name_;
+    }
+
+    /**
      * @brief Gets the source information for this configuration value.
      *
      * @details
      * The source string describes where this value originated, such as:
-     * - "DefaultProvider: default value"
-     * - "MockTomlProvider: from toml file"
-     * - "computed: num_tiles_total (Provider: X) - num_tiles_primary (Provider: Y)"
+     * - "Default Provider: default value"
+     * - "Mock Toml Provider: from toml file"
+     * - "Derived: num_tiles_total (Provider: X) - num_tiles_primary (Provider: Y)"
      *
      * @return A const reference to the source string
      */
@@ -90,6 +110,7 @@ class ConfigValue {
 
   private:
     T value_;
+    std::string name_;
     std::string source_;
 };
 

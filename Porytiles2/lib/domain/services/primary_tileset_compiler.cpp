@@ -35,6 +35,27 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
+    diag_->note(format_->format(
+        "{} {} ({})",
+        FormatParam{config_->num_metatiles_primary(tileset.name()).name() + ":", Style::bold},
+        FormatParam{config_->num_metatiles_primary(tileset.name())},
+        FormatParam{config_->num_metatiles_primary(tileset.name()).source(), Style::bold}));
+    diag_->note(format_->format(
+        "{} {} ({})",
+        FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
+        FormatParam{config_->num_tiles_secondary(tileset.name())},
+        FormatParam{config_->num_tiles_secondary(tileset.name()).source(), Style::bold}));
+    diag_->note(format_->format(
+        "{} {} ({})",
+        FormatParam{config_->num_metatiles_secondary(tileset.name()).name() + ":", Style::bold},
+        FormatParam{config_->num_metatiles_secondary(tileset.name())},
+        FormatParam{config_->num_metatiles_secondary(tileset.name()).source(), Style::bold}));
+    diag_->note(format_->format(
+        "{} {} ({})",
+        FormatParam{config_->num_pals_secondary(tileset.name()).name() + ":", Style::bold},
+        FormatParam{config_->num_pals_secondary(tileset.name())},
+        FormatParam{config_->num_pals_secondary(tileset.name()).source(), Style::bold}));
+
     // Leaf step to throw error if there are too many metatiles.
     if (metatiles.size() > config_->num_metatiles_primary(tileset.name())) {
         return FormattableError{
@@ -80,9 +101,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
     // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
     // component. So we'll need to pull them from the original component and inject them into this one before
-    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all this
-    // is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain concept, so
-    // they should be handled like any other file type (e.g. pal files, override files, etc).
+    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
+    // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
+    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc).
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});

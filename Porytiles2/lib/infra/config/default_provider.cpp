@@ -4,7 +4,7 @@ namespace porytiles2 {
 
 std::string DefaultProvider::name() const
 {
-    return "DefaultProvider";
+    return "Default Provider";
 }
 
 LayerValue<std::size_t> DefaultProvider::num_tiles_primary(const std::string &tileset) const

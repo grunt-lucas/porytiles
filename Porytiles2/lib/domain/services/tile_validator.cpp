@@ -56,6 +56,7 @@ TileValidator::validate_unique_color_count(const std::vector<RgbaTile> &tiles, c
                 }
                 // TODO: don't hardcode 15 here
                 if (unique_colors.size() > 15) {
+                    // if (unique_colors.size() > 7) {
                     hit_error = true;
                     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
                     // TODO: don't hardcode 16 here

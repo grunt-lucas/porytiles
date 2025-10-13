@@ -5,6 +5,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
@@ -27,15 +28,22 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_tiles_secondary(const std::string &tileset) const
     {
-        auto total = num_tiles_total(tileset);
-        auto primary = num_tiles_primary(tileset);
+        PlainTextFormatter formatter{};
+        const auto total = num_tiles_total(tileset);
+        const auto primary = num_tiles_primary(tileset);
         if (total.value() < primary.value()) {
-            panic(fmt::format("num_tiles_total({}) < num_tiles_primary({})", total.value(), primary.value()));
+            const auto msg = formatter.format(
+                "num_tiles_total({}) < num_tiles_primary({})",
+                FormatParam{total.value()},
+                FormatParam{primary.value()});
+            panic(msg);
         }
-        std::size_t result = total.value() - primary.value();
-        std::string source =
-            fmt::format("computed: num_tiles_total ({}) - num_tiles_primary ({})", total.source(), primary.source());
-        return ConfigValue<std::size_t>{result, source};
+        const std::size_t result = total.value() - primary.value();
+        const auto source = formatter.format(
+            "Derived: num_tiles_total ({}) - num_tiles_primary ({})",
+            FormatParam{total.source()},
+            FormatParam{primary.source()});
+        return ConfigValue{result, "num_tiles_secondary", source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> num_metatiles_primary(const std::string &tileset) const = 0;
@@ -44,15 +52,22 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_metatiles_secondary(const std::string &tileset) const
     {
-        auto total = num_metatiles_total(tileset);
-        auto primary = num_metatiles_primary(tileset);
+        PlainTextFormatter formatter{};
+        const auto total = num_metatiles_total(tileset);
+        const auto primary = num_metatiles_primary(tileset);
         if (total.value() < primary.value()) {
-            panic(fmt::format("num_metatiles_total({}) < num_metatiles_primary({})", total.value(), primary.value()));
+            const auto msg = formatter.format(
+                "num_metatiles_total({}) < num_metatiles_primary({})",
+                FormatParam{total.value()},
+                FormatParam{primary.value()});
+            panic(msg);
         }
-        std::size_t result = total.value() - primary.value();
-        std::string source = fmt::format(
-            "computed: num_metatiles_total ({}) - num_metatiles_primary ({})", total.source(), primary.source());
-        return ConfigValue<std::size_t>{result, source};
+        const std::size_t result = total.value() - primary.value();
+        const auto source = formatter.format(
+            "Derived: num_metatiles_total ({}) - num_metatiles_primary ({})",
+            FormatParam{total.source()},
+            FormatParam{primary.source()});
+        return ConfigValue{result, "num_metatiles_secondary", source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> num_pals_primary(const std::string &tileset) const = 0;
@@ -61,15 +76,20 @@ class DomainConfig {
 
     [[nodiscard]] ConfigValue<std::size_t> num_pals_secondary(const std::string &tileset) const
     {
-        auto total = num_pals_total(tileset);
-        auto primary = num_pals_primary(tileset);
+        PlainTextFormatter formatter{};
+        const auto total = num_pals_total(tileset);
+        const auto primary = num_pals_primary(tileset);
         if (total.value() < primary.value()) {
-            panic(fmt::format("num_pals_total({}) < num_pals_primary({})", total.value(), primary.value()));
+            const auto msg = formatter.format(
+                "num_pals_total({}) < num_pals_primary({})", FormatParam{total.value()}, FormatParam{primary.value()});
+            panic(msg);
         }
-        std::size_t result = total.value() - primary.value();
-        std::string source =
-            fmt::format("computed: num_pals_total ({}) - num_pals_primary ({})", total.source(), primary.source());
-        return ConfigValue<std::size_t>{result, source};
+        const std::size_t result = total.value() - primary.value();
+        const auto source = formatter.format(
+            "Derived: num_pals_total ({}) - num_pals_primary ({})",
+            FormatParam{total.source()},
+            FormatParam{primary.source()});
+        return ConfigValue{result, "num_pals_secondary", source};
     }
 
     [[nodiscard]] virtual ConfigValue<std::size_t> max_map_data_size(const std::string &tileset) const = 0;
