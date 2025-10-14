@@ -12,11 +12,14 @@
 namespace porytiles2 {
 
 /**
- * @brief Concrete implementation of UserDiagnostics that outputs to stderr with colored formatting.
+ * @brief Concrete implementation of UserDiagnostics that outputs structured messages to stderr, optionally with colored
+ * formatting.
  *
  * @details
- * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface, outputting all
- * diagnostic messages to stderr with ANSI color codes and formatting. The implementation includes:
+ * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface. It outputs all
+ * diagnostic messages to stderr with some additional pretty-print structuring. If provided with an
+ * AnsiStyledTextFormatter, it will additionally use canonical diagnostic coloring and styling (canonical, i.e. magenta
+ * for warnings, red for errors, etc.) via ANSI color codes. The implementation includes:
  *
  * - **Colored Output**: Uses fmt library with terminal colors (cyan for notes, magenta for warnings, red for errors)
  * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented appropriately
