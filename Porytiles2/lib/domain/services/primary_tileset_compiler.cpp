@@ -35,6 +35,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
+    // TODO: remove these, just here to test config stuff
     diag_->note(format_->format(
         "{} {} ({})",
         FormatParam{config_->num_metatiles_primary(tileset.name()).name() + ":", Style::bold},

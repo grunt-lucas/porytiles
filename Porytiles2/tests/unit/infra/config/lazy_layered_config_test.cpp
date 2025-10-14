@@ -155,10 +155,10 @@ TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues)
 
 TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues)
 {
-    const std::string tileset_name = "test_tileset";
     std::vector<std::unique_ptr<ConfigProvider>> providers;
     auto mock_toml = std::make_unique<MockConfigurableProvider>("MockTomlProvider", "from toml file");
-    mock_toml->num_tiles_total_[tileset_name] = 1000;
+    mock_toml->num_tiles_total_["test_tileset"] = 1000;
+    mock_toml->num_tiles_primary_["another_tileset"] = 5000;
     providers.push_back(std::move(mock_toml));
     providers.push_back(std::make_unique<DefaultProvider>());
 
@@ -176,12 +176,27 @@ TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues)
 
     // Verify that all expected values are now cached
     EXPECT_TRUE(warmed_dump.find("LazyLayeredConfig {") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("num_tiles_primary") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("num_tiles_total = 1000 [MockTomlProvider: from toml file]") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("num_tiles_primary") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("num_tiles_total") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("max_map_data_size") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("num_tiles_per_metatile") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_primary") != std::string::npos);
+    EXPECT_TRUE(
+        warmed_dump.find("another_tileset:num_tiles_primary = 5000 [MockTomlProvider: from toml file]") !=
+        std::string::npos);
+
+    EXPECT_TRUE(
+        warmed_dump.find("test_tileset:num_tiles_total = 1000 [MockTomlProvider: from toml file]") !=
+        std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_total") != std::string::npos);
+
+    EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_primary") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_primary") != std::string::npos);
+
+    EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_total") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_total") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("test_tileset:max_map_data_size") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:max_map_data_size") != std::string::npos);
+
+    EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_per_metatile") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_per_metatile") != std::string::npos);
+
     EXPECT_TRUE(warmed_dump.find("test_tileset:incremental_build_mode") != std::string::npos);
     EXPECT_TRUE(warmed_dump.find("another_tileset:incremental_build_mode") != std::string::npos);
 }
