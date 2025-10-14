@@ -10,7 +10,11 @@ class RgbaPal final {
   public:
     RgbaPal() = default;
 
+    explicit RgbaPal(Rgba32 color);
+
     void add(Rgba32 color);
+
+    void set(Rgba32 color, std::size_t index);
 
     [[nodiscard]] std::size_t size() const;
 

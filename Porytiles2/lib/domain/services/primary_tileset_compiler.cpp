@@ -5,7 +5,10 @@
 #include <ranges>
 #include <vector>
 
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
@@ -109,6 +112,16 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
     // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
+
+    Image<IndexPixel> tiles_png{128, 128};
+    RgbaPal pal{rgba_red};
+    pal.set(config_->extrinsic_transparency(tileset.name()), 0);
+
+    new_porymap_component->tiles_png(tiles_png);
+    // TODO: don't hardcode 16 here
+    for (int i = 0; i < 16; i++) {
+        new_porymap_component->set_pal(pal, i);
+    }
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
 
