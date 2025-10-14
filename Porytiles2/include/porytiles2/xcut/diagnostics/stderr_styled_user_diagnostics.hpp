@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#include "gsl/pointers"
+
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/error.hpp"
 
@@ -30,6 +33,8 @@ namespace porytiles2 {
  */
 class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:
+    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
+
     /**
      * @brief Display a multi-line informational note to stderr.
      *
@@ -110,6 +115,9 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param err The root cause error to display
      */
     void emit_fatal_root(const Error &err) const override;
+
+  private:
+    TextFormatter *format_;
 };
 
 } // namespace porytiles2

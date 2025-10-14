@@ -35,27 +35,19 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
-    // TODO: remove these, just here to test config stuff
-    diag_->note(format_->format(
-        "{} {} ({})",
-        FormatParam{config_->num_metatiles_primary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_metatiles_primary(tileset.name()), Style::bold},
-        config_->num_metatiles_primary(tileset.name()).source()));
-    diag_->note(format_->format(
-        "{} {} ({})",
-        FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_tiles_secondary(tileset.name()), Style::bold},
-        config_->num_tiles_secondary(tileset.name()).source()));
-    diag_->note(format_->format(
-        "{} {} ({})",
-        FormatParam{config_->num_metatiles_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_metatiles_secondary(tileset.name()), Style::bold},
-        config_->num_metatiles_secondary(tileset.name()).source()));
-    diag_->note(format_->format(
-        "{} {} ({})",
-        FormatParam{config_->num_pals_secondary(tileset.name()).name() + ":", Style::bold},
-        FormatParam{config_->num_pals_secondary(tileset.name()), Style::bold},
-        config_->num_pals_secondary(tileset.name()).source()));
+    // TODO: remove these, just here to test config/diagnostic stuff
+    diag_->note(
+        std::vector{
+            format_->format(
+                "{} {}",
+                FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
+                FormatParam{config_->num_tiles_secondary(tileset.name()), Style::bold}),
+            format_->format("({})", config_->num_tiles_secondary(tileset.name()).source()),
+            std::string{"foo"},
+            std::string{"bar"}});
+    diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
+    diag_->warn_note("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
+    diag_->err(std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
 
     // Leaf step to throw error if there are too many metatiles.
     if (metatiles.size() > config_->num_metatiles_primary(tileset.name())) {

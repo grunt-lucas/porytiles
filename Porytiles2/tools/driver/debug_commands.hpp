@@ -49,8 +49,8 @@ class DebugNormalizeCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        AnsiStyledTextFormatter formatter{};
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
+        std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter.get());
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -174,7 +174,7 @@ class DebugPrimaryCompileCommand final : public Command {
 
         // Init text formatter and user diagnostic implementation
         std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>();
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter.get());
         std::unique_ptr<TilePrinter> tile_printer = std::make_unique<StderrAsciiTilePrinter>(text_formatter.get());
 
         // Initialize stateless services
