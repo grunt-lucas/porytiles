@@ -66,7 +66,8 @@ inline std::string to_string(Subtile layer)
     const TextFormatter &format)
 {
     return format.format(
-        "|metatile {}|{}|{}|{},{}|",
+        "{} {}|{}|{}|{},{}",
+        FormatParam{"metatile", Style::bold},
         FormatParam{index, Style::bold},
         FormatParam{to_string(layer), Style::bold},
         FormatParam{to_string(subtile), Style::bold},

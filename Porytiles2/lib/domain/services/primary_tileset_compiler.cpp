@@ -40,6 +40,15 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         std::vector{
             format_->format(
                 "{} {}",
+                FormatParam{config_->num_tiles_primary(tileset.name()).name() + ":", Style::bold},
+                FormatParam{config_->num_tiles_primary(tileset.name()), Style::bold}),
+            format_->format("({})", config_->num_tiles_primary(tileset.name()).source()),
+            std::string{"foo"},
+            std::string{"bar"}});
+    diag_->note(
+        std::vector{
+            format_->format(
+                "{} {}",
                 FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
                 FormatParam{config_->num_tiles_secondary(tileset.name()), Style::bold}),
             format_->format("({})", config_->num_tiles_secondary(tileset.name()).source()),
@@ -96,7 +105,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // component. So we'll need to pull them from the original component and inject them into this one before
     // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
     // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
-    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc).
+    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
+    // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
+    // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});

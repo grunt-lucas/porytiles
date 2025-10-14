@@ -19,20 +19,13 @@ namespace porytiles2 {
  * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface. It outputs all
  * diagnostic messages to stderr with some additional pretty-print structuring. If provided with an
  * AnsiStyledTextFormatter, it will additionally use canonical diagnostic coloring and styling (canonical, i.e. magenta
- * for warnings, red for errors, etc.) via ANSI color codes. The implementation includes:
+ * for warnings, red for errors, boldin where appropriate, etc.) via ANSI terminal codes. The implementation includes:
  *
- * - **Colored Output**: Uses fmt library with terminal colors (cyan for notes, magenta for warnings, red for errors)
- * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented appropriately
+ * - **Colored Output**: Uses ANSI codes for terminal colors (cyan for notes, magenta for warnings, red for errors)
+ * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented with visual
+ * guidelines to aid reading
  * - **Error Chain Visualization**: Fatal errors are displayed with tree-like formatting using Unicode box-drawing
  * characters to show error hierarchy
- * - **TTY-Aware Formatting**: Conditional ANSI styling based on terminal capabilities
- *
- * The class formats output as follows:
- * - Notes: "note: <message>" in cyan
- * - Warning Notes: "note: <message> [<tag>]" in cyan
- * - Warnings: "warning: <message> [<tag>]" in magenta
- * - Errors: "error: <message>" in red
- * - Fatal Errors: "fatal: <message>" with error chain visualization
  */
 class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:

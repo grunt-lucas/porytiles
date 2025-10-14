@@ -20,7 +20,7 @@ void StderrStyledUserDiagnostics::note(const std::vector<std::string> &lines) co
     std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << "    " << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
+        std::cerr << "   " << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
     }
 }
 
@@ -31,7 +31,7 @@ void StderrStyledUserDiagnostics::warn_note(const std::string &tag, const std::v
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << "    " << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
+        std::cerr << "   " << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
     }
 }
 
@@ -42,7 +42,7 @@ void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::magenta) << "]" << std::endl;
     for (const auto &warn_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << "       " << format_->style("│", Style::bold | Style::magenta) << " " << warn_line << std::endl;
+        std::cerr << "   " << format_->style("│", Style::bold | Style::magenta) << " " << warn_line << std::endl;
     }
 }
 
@@ -52,7 +52,7 @@ void StderrStyledUserDiagnostics::err(const std::vector<std::string> &lines) con
     std::cerr << format_->style("error:", Style::bold | Style::red) << " ";
     std::cerr << lines.at(0) << std::endl;
     for (const auto &err_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << "     " << format_->style("│", Style::bold | Style::red) << " " << err_line << std::endl;
+        std::cerr << "   " << format_->style("│", Style::bold | Style::red) << " " << err_line << std::endl;
     }
 }
 
@@ -70,19 +70,17 @@ void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
 void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
 {
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << "caused by:" << std::endl;
+    std::cerr << format_->style("caused by:", Style::bold) << std::endl;
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << format_->style("├", Style::bold) << " " << format_->style("fatal:", Style::bold | Style::red) << " ";
-    std::cerr << err.details(*format_) << std::endl;
+    std::cerr << format_->style("├", Style::bold) << " " << err.details(*format_) << std::endl;
 }
 
 void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
 {
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << "root cause:" << std::endl;
+    std::cerr << format_->style("root cause:", Style::bold) << std::endl;
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << format_->style("└", Style::bold) << " " << format_->style("fatal:", Style::bold | Style::red) << " ";
-    std::cerr << err.details(*format_) << std::endl;
+    std::cerr << format_->style("└", Style::bold) << " " << err.details(*format_) << std::endl;
 }
 
 } // namespace porytiles2

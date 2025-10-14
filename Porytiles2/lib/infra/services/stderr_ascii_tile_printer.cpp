@@ -9,8 +9,6 @@
 
 namespace {
 
-constexpr std::size_t DIAG_MARGIN_SIZE = 7;
-
 void push_to_stream(std::stringstream &ss, const std::string_view s, const std::size_t n)
 {
     for (std::size_t i = 0; i < n; i++) {
@@ -36,11 +34,6 @@ std::vector<std::string> StderrAsciiTilePrinter::print_metatile_highlight(
 
     for (std::size_t i = 0; i < metatile::side_length_pix; i++) {
         for (std::size_t j = 0; j < metatile::side_length_pix; j++) {
-            if (j == 0) {
-                push_to_stream(ss, " ", DIAG_MARGIN_SIZE);
-                ss << "|";
-            }
-
             // General case. Decide if we are drawing the highlighted tile
             // and pixel. If not, draw a "-".
 
@@ -96,8 +89,6 @@ std::vector<std::string> StderrAsciiTilePrinter::print_metatile_highlight(
 
         // Insert a spacer line between top and bottom tiles
         if (i == 7) {
-            push_to_stream(ss, " ", DIAG_MARGIN_SIZE);
-            ss << "|";
             highlight.push_back(ss.str());
             reset_stream(ss);
         }
