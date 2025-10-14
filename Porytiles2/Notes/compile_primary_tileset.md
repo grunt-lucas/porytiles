@@ -107,9 +107,11 @@ Create `vector<PackBin>` to pass to VM packer (`PackBin` is the hardware pal typ
 
 Run VM packing
 
+Convert `vector<PackBin>` to `vector<RgbaPal>`
+
 Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
 
-Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus `PackBin`s to create `vector<CanonicalPixelTile<IndexPixel>>`
+Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus `vector<RgbaPal>` to create `vector<CanonicalPixelTile<IndexPixel>>`
 
 Init blank TileWorkspace, add in override tiles from `porytiles/tiles_override.png`
 
@@ -120,19 +122,41 @@ We have three parallel tile vectors, each entry aligned to correspond to the sam
 - vector<CanonicalShapeTile>: the canonicalized ShapeTile version of the tile, mapped to ColorIndex
 - vector<PackSet>: this tile's PackSet, which stores the tile ColorSet and final pal assignment
 
-### Compile Primary Incremental
-1. Convert layer images into vector<RgbaMetatile>
-2. Leaf step to throw error if there are too many metatiles.
-3. Decompose vector<RgbaMetatile> into vector<RgbaTile> (we have a compute_metatile function which allows us to reconstruct the original metatile params from a raw tile index)
-4. Leaf step to throw errors if any tiles have more than 15+1 colors.
-5. Leaf step to generate precision loss warnings if some colors collapse to the same 5-bit color.
-6. Create color index map from vector<RgbaTile>
-7. Generate vector<CanonicalShapeTile<ColorIndex>> using color index map and vector<RgbaTile>
-8. Create `vector<PackSet>` for VM packing (definition TBD)
-9. Optional: via `vector<CanonicalShapeTile>` compute color isomorphism cliques to pass to VM packer
-10. Create `vector<PackBin>` to pass to VM packer (`PackBin` is the hardware pal type?), init PackBins with overrides from `palettes` folder
-11. Run VM packing
-12. Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
-13. Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus `PackBin`s to create `vector<CanonicalPixelTile<IndexPixel>>`
-14. Init blank TileWorkspace, add in override tiles from `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
-15. Use the `vector<CanonicalPixelTile<IndexPixel>>` and `vector<PackSet>` to fill up TileWorkspace and generate TilemapEntries
+### Compile Primary Incremental -- Fixed
+Convert `PorytilesTilesetComponent` layer images into `vector<RgbaMetatile> porytiles`
+
+Use `MetatileDecompiler` to decompile the `PorymapTilesetComponent` into `vector<RgbaMetatile> porymap`
+
+Leaf step to throw error if there are too many metatiles.
+
+Decompose `vector<RgbaMetatile> porytiles` into `vector<RgbaTile> porytiles`
+(we have a compute_metatile function which allows us to reconstruct the original metatile params from a raw tile index)
+
+Decompose `vector<RgbaMetatile> porymap` into `vector<RgbaTile> porymap`
+
+Leaf step to throw errors if any `vector<RgbaTile> porytiles` have more than 15+1 colors.
+
+Leaf step to generate precision loss warnings if some `vector<RgbaTile> porytiles` colors collapse to the same 5-bit color.
+
+Create color index map from `vector<RgbaTile> porytiles`
+
+Generate `vector<CanonicalShapeTile<ColorIndex>>` using color index map and `vector<RgbaTile> porytiles`
+
+Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
+
+Init a `vector<size_t> pal_indexes`.
+Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus Porymap `vector<RgbaPal>` to create `vector<CanonicalPixelTile<IndexPixel>>`
+Note: we need to make sure to only check the pals relevent to the tileset, i.e. if this is primary, don't check pals 7-15.
+If no pal matches, emit an error and continue until the end of the vector.
+Otherwise, push back the matching pal index to `pal_indexes`.
+
+Init blank TileWorkspace, add in override tiles from Porymap `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
+
+Iterate over `vector<CanonicalPixelTile<IndexPixel>>` and both `vector<RgbaTile>`.
+If current `porytiles RgbaTile` exactly equals the `porymap RgbaTile`, then we don't need to compute anything, it's unchanged.
+Just grab the original tilemap entry and re-emit.
+If the tiles differ, then we have a genuine update.
+Find the current `CanonicalPixelTile<IndexPixel>` in the TileWorkspace.
+If it doesn't exist, emit an error and continue until the end of the vector.
+Otherwise, check the corresponding pal index in `pal_indexes`.
+We now have the tile index, pal index, and flip bits. Emit a tilemap entry.

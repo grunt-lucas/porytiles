@@ -15,6 +15,8 @@ if they make edits in Porymap or another external tool.
 User can specify an incremental tileset build by specifying `--incremental=keep-unused` at the CLI
 or by setting `incremental = keep-unused` in the tileset TOML config.
 
+`incremental=fixed` is the default, will error if any Porytiles component tiles aren't compatible with assets as-is.
+
 When `incremental=keep-unused` is set,
 compilation will not disturb currently existing Porymap assets.
 That is, existing palettes will be fixed,
