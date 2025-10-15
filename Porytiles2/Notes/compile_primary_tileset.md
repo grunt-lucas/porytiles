@@ -146,7 +146,7 @@ Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<R
 
 Init a `vector<size_t> pal_indexes`.
 Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus Porymap `vector<RgbaPal>` to create `vector<CanonicalPixelTile<IndexPixel>>`
-Note: we need to make sure to only check the pals relevent to the tileset, i.e. if this is primary, don't check pals 7-15.
+Note: we need to make sure to only check the pals relevant to the tileset, i.e. if this is primary, don't check pals 7-15.
 If no pal matches, emit an error and continue until the end of the vector.
 Otherwise, push back the matching pal index to `pal_indexes`.
 
