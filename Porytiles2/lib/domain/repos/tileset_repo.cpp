@@ -94,8 +94,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     // TODO: don't hardcode 16 here
-    constexpr int num_pals = 16;
-    for (int i = 0; i < num_pals; i++) {
+    for (int i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
         if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result.has_value()) {
             std::ignore = writer_->rollback();
@@ -186,9 +185,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // TODO: emit warning to user about missing attr csv
     }
 
-    // TODO: don't hardcode 16 here
-    constexpr int num_pal_overrides = 16;
-    for (int i = 0; i < num_pal_overrides; i++) {
+    for (int i = 0; i < pal::num_pals; i++) {
         const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
         if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});

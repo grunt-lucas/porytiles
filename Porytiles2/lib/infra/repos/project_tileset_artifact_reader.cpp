@@ -105,28 +105,14 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
         std::uint16_t byte0 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald));
         std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
         std::uint16_t attribute = (byte1 << 8) | byte0;
-        /*
-         * TODO: CRITICAL
-         * The Problem:
-         * - LayerType only defines 3 valid values (0, 1, 2)
-         * - The extraction attribute >> 12 & 0x000F produces 4-bit values (0-15)
-         * - 13 out of 16 possible values (3-15) are invalid!
-         *
-         * What happens with invalid values:
-         * 1. The static_cast succeeds silently, creating an invalid LayerType
-         * 2. When to_string(LayerType) is called (line 20-32), invalid values hit the default: case at line 30, which
-         * panics the program
-         * 3. Any code that assumes only valid enumerators exist will have undefined behavior
-         *
-         * This is a serious bug - corrupted or malformed binary data will crash the program instead of returning a
-         * proper error.
-         *
-         * Recommended fix: Add validation after the extraction to check if the value is in range [0-2], and return a
-         * ChainableResult error if not, similar to how the function already handles other validation errors (like file
-         * size checks).
-         */
-        MetatileAttribute metatile_attribute{
-            static_cast<attr::LayerType>(attribute >> 12 & 0x000F), static_cast<std::uint16_t>(attribute & 0x00FF)};
+
+        auto layer_type_result = attr::layer_type_from_int(attribute >> 12 & 0x000F);
+        if (!layer_type_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"invalid layer type for metatile '{}'", FormatParam{metatile_index, Style::bold}},
+                layer_type_result};
+        }
+        MetatileAttribute metatile_attribute{layer_type_result.value(), static_cast<std::uint16_t>(attribute & 0x00FF)};
         dest.porymap_component().push_back_attribute(metatile_attribute);
     }
 
