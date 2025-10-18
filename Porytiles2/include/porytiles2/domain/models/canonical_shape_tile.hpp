@@ -44,37 +44,6 @@ template <typename PixelType>
 class CanonicalShapeTile : public ShapeTile<PixelType> {
   public:
     /**
-     * @brief Equality comparison operator that compares all fields.
-     *
-     * @details
-     * Two CanonicalShapeTile instances are equal if and only if they have identical canonical tile data (both shape
-     * masks AND pixel values) and identical flip flags. Uses ShapeTile's defaulted operator== which compares both
-     * keys and values in the underlying std::map.
-     *
-     * @param other The CanonicalShapeTile to compare against
-     * @return True if equal, false otherwise
-     */
-    bool operator==(const CanonicalShapeTile &other) const = default;
-
-    /**
-     * @brief Three-way comparison operator that compares all fields.
-     *
-     * @details
-     * Performs member-wise comparison in declaration order:
-     * 1. Base ShapeTile (shape masks AND pixel values via ShapeTile::operator<=>)
-     * 2. h_flip_ flag
-     * 3. v_flip_ flag
-     *
-     * This operator is consistent with operator==, ensuring that:
-     * - If (a <=> b) == 0, then (a == b) is true
-     * - If (a == b) is true, then (a <=> b) == 0
-     *
-     * @param other The CanonicalShapeTile to compare against
-     * @return A std::strong_ordering indicating less than, equal to, or greater than relationship
-     */
-    auto operator<=>(const CanonicalShapeTile &other) const = default;
-
-    /**
      * @brief Constructs a CanonicalShapeTile by finding the canonical orientation of the input tile.
      *
      * @details
@@ -94,7 +63,7 @@ class CanonicalShapeTile : public ShapeTile<PixelType> {
      *
      * @param tile The input ShapeTile to canonicalize
      */
-    CanonicalShapeTile(const ShapeTile<PixelType> &tile) : ShapeTile<PixelType>{}
+    explicit CanonicalShapeTile(const ShapeTile<PixelType> &tile) : ShapeTile<PixelType>{}
     {
         // Helper struct to store candidate tiles with their flip flags
         struct Candidate {
@@ -125,6 +94,24 @@ class CanonicalShapeTile : public ShapeTile<PixelType> {
         h_flip_ = min_candidate.h_flip;
         v_flip_ = min_candidate.v_flip;
     }
+
+    /**
+     * @brief Three-way comparison operator that compares all fields.
+     *
+     * @details
+     * Performs member-wise comparison in declaration order:
+     * 1. Base ShapeTile (shape masks AND pixel values via ShapeTile::operator<=>)
+     * 2. h_flip_ flag
+     * 3. v_flip_ flag
+     *
+     * This operator is consistent with operator==, ensuring that:
+     * - If (a <=> b) == 0, then (a == b) is true
+     * - If (a == b) is true, then (a <=> b) == 0
+     *
+     * @param other The CanonicalShapeTile to compare against
+     * @return A std::strong_ordering indicating less than, equal to, or greater than relationship
+     */
+    auto operator<=>(const CanonicalShapeTile &other) const = default;
 
     /**
      * @brief Returns the horizontal flip flag.

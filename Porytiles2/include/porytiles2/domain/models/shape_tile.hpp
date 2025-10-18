@@ -40,8 +40,6 @@ class ShapeTile {
 
     ShapeTile() = default;
 
-    bool operator==(const ShapeTile &other) const = default;
-
     auto operator<=>(const ShapeTile &other) const = default;
 
     /**

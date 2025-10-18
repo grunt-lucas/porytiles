@@ -53,8 +53,6 @@ class PixelTile {
 
     explicit PixelTile(const std::array<PixelType, tile::size_pix> &pix) : pix_{pix} {}
 
-    bool operator==(const PixelTile &) const = default;
-
     auto operator<=>(const PixelTile &) const = default;
 
     /**
