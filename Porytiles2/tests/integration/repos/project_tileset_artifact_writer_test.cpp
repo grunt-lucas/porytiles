@@ -101,7 +101,7 @@ Tileset create_test_tileset(const std::string &name)
     porymap_component->tiles_png(create_test_indexed_image());
 
     for (std::uint32_t i = 0; i < 64; i++) {
-        porymap_component->push_back_tilemap_entry(TilemapEntry{i, false, false, 0});
+        porymap_component->push_back_tilemap_entry(TilemapEntry{i, false, false, false});
     }
 
     for (int i = 0; i < 16; i++) {
