@@ -108,6 +108,13 @@ Tileset create_test_tileset(const std::string &name)
         porymap_component->set_pal(RgbaPal{}, i);
     }
 
+    // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come
+    // back and update this test. For now, let's just assume we have dual-layer metatiles so there should be 8
+    // attributes
+    for (int i = 0; i < 8; i++) {
+        porymap_component->push_back_attribute(MetatileAttribute{});
+    }
+
     return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
 }
 
@@ -394,7 +401,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     auto commit_result = writer_->commit();
     ASSERT_TRUE(commit_result.has_value());
     ASSERT_TRUE(std::filesystem::exists(expected_file));
-    ASSERT_GT(std::filesystem::file_size(expected_file), 0);
+    // we wrote 8 attributes in create_test_tileset, so size should be 16 bytes
+    // TODO: we'll want to fix this later once we properly handle num_tiles_per_metatile
+    ASSERT_EQ(std::filesystem::file_size(expected_file), 16);
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
