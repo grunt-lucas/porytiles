@@ -11,6 +11,7 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -92,18 +93,16 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
 }
 
 ChainableResult<void>
-save_metatile_attributes_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
 {
-    // TODO: actually implement attribute handling
-    // TODO: firered attributes will need to use std::uint32_t
+    // TODO: will need different handling for firered attrs
     std::ofstream out{path};
-    std::size_t num_entries = entries.size();
-    // TODO: this assumes dual layer
-    const std::size_t num_attributes = num_entries / 8;
-    for (int i = 0; i < num_attributes; i++) {
-        constexpr std::uint16_t attribute_value = 0;
-        out << static_cast<char>(attribute_value);
-        out << static_cast<char>(attribute_value >> 8);
+    for (const auto &attribute : attributes) {
+        const std::uint16_t behavior = attribute.behavior();
+        const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
+        const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
+        out << static_cast<std::uint8_t>(attribute_value);
+        out << static_cast<std::uint8_t>(attribute_value >> 8);
     }
     out.flush();
     return {};
@@ -283,7 +282,7 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
     case TilesetArtifact::Type::metatiles_bin:
         return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        return save_metatile_attributes_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
+        return save_metatile_attributes_bin(src.porymap_component().metatile_attributes(), transaction_dest_path);
     case TilesetArtifact::Type::tiles_png:
         return save_tiles_png(
             *png_indexed_saver_,

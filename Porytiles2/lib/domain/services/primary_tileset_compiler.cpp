@@ -118,12 +118,15 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     pal.set(config_->extrinsic_transparency(tileset.name()), 0);
 
     new_porymap_component->tiles_png(tiles_png);
-    // TODO: don't hardcode 16 here
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < pal::num_pals; i++) {
         new_porymap_component->set_pal(pal, i);
     }
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
+    // TODO: write attributes for real, for now just write back what we read
+    for (const auto &attr : tileset.porymap_component().metatile_attributes()) {
+        new_porymap_component->push_back_attribute(attr);
+    }
 
     auto new_tileset =
         std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
