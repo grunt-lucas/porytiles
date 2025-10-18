@@ -5,8 +5,9 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/rgba_pal.hpp"
-#include "tilemap_entry.hpp"
+#include "porytiles2/domain/models/tilemap_entry.hpp"
 
 namespace porytiles2 {
 
@@ -15,14 +16,24 @@ class PorymapTilesetComponent {
     PorymapTilesetComponent() = default;
 
     /**
-     * @brief Add a tilemap entry to the end of the entries vector.
+     * @brief Add a TilemapEntry to the end of the entry vector.
      *
      * @details
-     * Moves the provided TilemapEntry into the entries vector.
+     * Moves the provided TilemapEntry into the entry vector.
      *
      * @param entry The TilemapEntry to move into the vector.
      */
     void push_back_tilemap_entry(TilemapEntry entry);
+
+    /**
+     * @brief Add a MetatileAttribute to the end of the attribute vector.
+     *
+     * @details
+     * Moves the provided MetatileAttribute into the attribute vector.
+     *
+     * @param attribute The MetatileAttribute to move into the vector.
+     */
+    void push_back_attribute(MetatileAttribute attribute);
 
     void set_pal(RgbaPal pal, int pal_index);
 
@@ -35,6 +46,11 @@ class PorymapTilesetComponent {
         return metatiles_bin_;
     }
 
+    [[nodiscard]] const std::vector<MetatileAttribute> &metatile_attributes() const
+    {
+        return metatile_attributes_;
+    }
+
     [[nodiscard]] const Image<IndexPixel> &tiles_png() const
     {
         return tiles_png_;
@@ -45,16 +61,16 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::array<RgbaPal, 16> &pals() const
+    [[nodiscard]] const std::array<RgbaPal, pal::num_pals> &pals() const
     {
         return pals_;
     }
 
   private:
     std::vector<TilemapEntry> metatiles_bin_;
+    std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
-    // TODO: don't hardcode 16 here
-    std::array<RgbaPal, 16> pals_;
+    std::array<RgbaPal, pal::num_pals> pals_;
 };
 
 } // namespace porytiles2

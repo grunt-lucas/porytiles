@@ -7,6 +7,7 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
@@ -18,13 +19,6 @@ namespace {
 
 using namespace porytiles2;
 
-/*
- * TODO: remove these hardcoded constants. fieldmap.c and global.fieldmap.h contain definitions for attribute shifts and
- * masks that could be used to infer these values
- */
-constexpr std::size_t bytes_per_attr_emerald = 2;
-constexpr std::size_t bytes_per_attr_firered = 4;
-
 ChainableResult<void> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
@@ -34,6 +28,9 @@ ChainableResult<void> import_layer_png(
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         switch (image_result.error().type()) {
+            // TODO: this shouldn't load a blank image, it should just error. To support the "import" case, we're going
+            // to create a special tileset operation called "import" which is distinct from "load", and which assumes a
+            // Porytiles component is not present.
         case ImageLoadError::Type::file_not_found:
             layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
@@ -97,19 +94,40 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
-    if (data_buf.size() % bytes_per_attr_emerald != 0) {
+    if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
         return FormattableError{fmt::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
+            attr::bytes_per_attr_emerald)};
     }
 
-    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint16_t byte0 = data_buf.at((metatile_index * bytes_per_attr_emerald));
-        std::uint16_t byte1 = data_buf.at((metatile_index * bytes_per_attr_emerald) + 1);
+        std::uint16_t byte0 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald));
+        std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
         std::uint16_t attribute = (byte1 << 8) | byte0;
-        // attributes.metatileBehavior = attribute & 0x00FF;
-        // attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
-        // TODO: init an attr here and insert into 'dest'
+        /*
+         * TODO: CRITICAL
+         * The Problem:
+         * - LayerType only defines 3 valid values (0, 1, 2)
+         * - The extraction attribute >> 12 & 0x000F produces 4-bit values (0-15)
+         * - 13 out of 16 possible values (3-15) are invalid!
+         *
+         * What happens with invalid values:
+         * 1. The static_cast succeeds silently, creating an invalid LayerType
+         * 2. When to_string(LayerType) is called (line 20-32), invalid values hit the default: case at line 30, which
+         * panics the program
+         * 3. Any code that assumes only valid enumerators exist will have undefined behavior
+         *
+         * This is a serious bug - corrupted or malformed binary data will crash the program instead of returning a
+         * proper error.
+         *
+         * Recommended fix: Add validation after the extraction to check if the value is in range [0-2], and return a
+         * ChainableResult error if not, similar to how the function already handles other validation errors (like file
+         * size checks).
+         */
+        MetatileAttribute metatile_attribute{
+            static_cast<attr::LayerType>(attribute >> 12 & 0x000F), static_cast<std::uint16_t>(attribute & 0x00FF)};
+        dest.porymap_component().push_back_attribute(metatile_attribute);
     }
 
     return {};
@@ -120,17 +138,18 @@ ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const Ar
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
-    if (data_buf.size() % bytes_per_attr_firered != 0) {
+    if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
         return FormattableError{fmt::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
+            attr::bytes_per_attr_firered)};
     }
 
-    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint32_t byte0 = data_buf.at((metatile_count * bytes_per_attr_firered));
-        std::uint32_t byte1 = data_buf.at((metatile_count * bytes_per_attr_firered) + 1);
-        std::uint32_t byte2 = data_buf.at((metatile_count * bytes_per_attr_firered) + 2);
-        std::uint32_t byte3 = data_buf.at((metatile_count * bytes_per_attr_firered) + 3);
+        std::uint32_t byte0 = data_buf.at((metatile_count * attr::bytes_per_attr_firered));
+        std::uint32_t byte1 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 1);
+        std::uint32_t byte2 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 2);
+        std::uint32_t byte3 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 3);
         std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
         // attributes.metatileBehavior = attribute & 0x000001FF;
         // attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);

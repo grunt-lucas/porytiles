@@ -6,6 +6,14 @@
 
 namespace porytiles2 {
 
+namespace pal {
+
+inline constexpr std::size_t max_size = 16;
+
+inline constexpr std::size_t num_pals = 16;
+
+}
+
 class RgbaPal final {
   public:
     RgbaPal() = default;

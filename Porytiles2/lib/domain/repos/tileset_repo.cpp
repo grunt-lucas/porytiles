@@ -5,6 +5,7 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
@@ -269,9 +270,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             FormattableError{"failed to read tiles.png"}, tiles_png_result};
     }
 
-    // TODO: don't hardcode 16 here
-    constexpr int num_pals = 16;
-    for (int i = 0; i < num_pals; i++) {
+    for (int i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
         if (!key_provider_->artifact_exists(pal_key)) {
             // TODO: emit validation error: missing required artifact {:02}.pal
@@ -320,6 +319,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             expected_frame++;
         }
     }
+
+    /*
+     * TODO: now that we've loaded the attributes and metatiles, if we're not triple layer then use the loaded
+     * information to pad out tilemap_entry vector with transparent entries for the missing layers.
+     */
 
     if (fail_at_exit) {
         return FormattableError{"errors while loading tileset"};

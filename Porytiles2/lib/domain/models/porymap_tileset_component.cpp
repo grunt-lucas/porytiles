@@ -16,10 +16,14 @@ void PorymapTilesetComponent::push_back_tilemap_entry(TilemapEntry entry)
     metatiles_bin_.push_back(std::move(entry));
 }
 
+void PorymapTilesetComponent::push_back_attribute(MetatileAttribute attribute)
+{
+    metatile_attributes_.push_back(std::move(attribute));
+}
+
 void PorymapTilesetComponent::set_pal(RgbaPal pal, int pal_index)
 {
-    // TODO: don't hardcode 16 here
-    if (pal_index < 0 || pal_index >= 16) {
+    if (pal_index < 0 || pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));
     }
     pals_[pal_index] = std::move(pal);
@@ -27,8 +31,7 @@ void PorymapTilesetComponent::set_pal(RgbaPal pal, int pal_index)
 
 const RgbaPal &PorymapTilesetComponent::pal_at(int pal_index) const
 {
-    // TODO: don't hardcode 16 here
-    if (pal_index < 0 || pal_index >= 16) {
+    if (pal_index < 0 || pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));
     }
     return pals_[pal_index];
