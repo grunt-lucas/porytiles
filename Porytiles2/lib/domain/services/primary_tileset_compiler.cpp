@@ -45,22 +45,32 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
      */
 
     // TODO: remove these, just here to test config/diagnostic stuff
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        num_tiles_primary_config,
+        config_->num_tiles_primary(tileset.name()),
+        "failed to get num_tiles_primary config",
+        std::unique_ptr<Tileset>);
     diag_->note(
         std::vector{
             format_->format(
                 "{} {}",
-                FormatParam{config_->num_tiles_primary(tileset.name()).name() + ":", Style::bold},
-                FormatParam{config_->num_tiles_primary(tileset.name()), Style::bold}),
-            format_->format("({})", config_->num_tiles_primary(tileset.name()).source()),
+                FormatParam{num_tiles_primary_config.name() + ":", Style::bold},
+                FormatParam{num_tiles_primary_config, Style::bold}),
+            format_->format("({})", num_tiles_primary_config.source()),
             std::string{"foo"},
             std::string{"bar"}});
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        num_tiles_secondary_config,
+        config_->num_tiles_secondary(tileset.name()),
+        "failed to get num_tiles_secondary config",
+        std::unique_ptr<Tileset>);
     diag_->note(
         std::vector{
             format_->format(
                 "{} {}",
-                FormatParam{config_->num_tiles_secondary(tileset.name()).name() + ":", Style::bold},
-                FormatParam{config_->num_tiles_secondary(tileset.name()), Style::bold}),
-            format_->format("({})", config_->num_tiles_secondary(tileset.name()).source()),
+                FormatParam{num_tiles_secondary_config.name() + ":", Style::bold},
+                FormatParam{num_tiles_secondary_config, Style::bold}),
+            format_->format("({})", num_tiles_secondary_config.source()),
             std::string{"foo"},
             std::string{"bar"}});
     diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
@@ -68,11 +78,16 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     diag_->err(std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
 
     // Leaf step to throw error if there are too many metatiles.
-    if (metatiles.size() > config_->num_metatiles_primary(tileset.name())) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        num_metatiles_primary_config,
+        config_->num_metatiles_primary(tileset.name()),
+        "failed to get num_metatiles_primary config",
+        std::unique_ptr<Tileset>);
+    if (metatiles.size() > num_metatiles_primary_config.value()) {
         return FormattableError{
             "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
             FormatParam{metatiles.size(), Style::bold},
-            FormatParam{config_->num_metatiles_primary(tileset.name()), Style::bold}};
+            FormatParam{num_metatiles_primary_config, Style::bold}};
     }
 
     // Decompose vector<RgbaMetatile> into vector<RgbaTile>
@@ -90,8 +105,13 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        extrinsic_transparency_config,
+        config_->extrinsic_transparency(tileset.name()),
+        "failed to get extrinsic_transparency config",
+        std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles, config_->extrinsic_transparency(tileset.name())),
+        validator.validate_unique_color_count(tiles, extrinsic_transparency_config.value()),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
@@ -121,7 +141,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     Image<IndexPixel> tiles_png{128, 128};
     RgbaPal pal{rgba_red};
-    pal.set(config_->extrinsic_transparency(tileset.name()), 0);
+    pal.set(extrinsic_transparency_config.value(), 0);
 
     new_porymap_component->tiles_png(tiles_png);
     for (int i = 0; i < pal::num_pals; i++) {

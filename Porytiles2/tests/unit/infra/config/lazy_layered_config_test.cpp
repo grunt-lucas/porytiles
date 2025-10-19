@@ -25,25 +25,25 @@ class MockConfigurableProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const override
     {
         if (num_tiles_primary_.contains(tileset)) {
-            return LayerValue<std::size_t>{num_tiles_primary_.at(tileset), metadata_};
+            return LayerValue<std::size_t>::valid(num_tiles_primary_.at(tileset), metadata_);
         }
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
+        return LayerValue<std::size_t>::not_provided();
     }
 
     [[nodiscard]] LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const override
     {
         if (num_tiles_total_.contains(tileset)) {
-            return LayerValue<std::size_t>{num_tiles_total_.at(tileset), metadata_};
+            return LayerValue<std::size_t>::valid(num_tiles_total_.at(tileset), metadata_);
         }
-        return LayerValue<std::size_t>{std::nullopt, metadata_};
+        return LayerValue<std::size_t>::not_provided();
     }
 
     [[nodiscard]] LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const override
     {
         if (incremental_build_modes_.contains(tileset)) {
-            return LayerValue<IncrementalBuildMode>{incremental_build_modes_.at(tileset), metadata_};
+            return LayerValue<IncrementalBuildMode>::valid(incremental_build_modes_.at(tileset), metadata_);
         }
-        return LayerValue<IncrementalBuildMode>{std::nullopt, metadata_};
+        return LayerValue<IncrementalBuildMode>::not_provided();
     }
 
   private:
@@ -69,19 +69,27 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
 
     LazyLayeredConfig config{std::move(providers)};
 
-    std::size_t tiles_primary = config.num_tiles_primary(tileset_name);
-    std::size_t tiles_total = config.num_tiles_total(tileset_name);
-    std::size_t tiles_secondary = config.num_tiles_secondary(tileset_name);
-    std::size_t max_map_size = config.max_map_data_size(tileset_name);
-    IncrementalBuildMode test_tileset_mode = config.incremental_build_mode("test_tileset");
-    IncrementalBuildMode another_tileset_mode = config.incremental_build_mode("another_tileset");
+    auto tiles_primary_result = config.num_tiles_primary(tileset_name);
+    auto tiles_total_result = config.num_tiles_total(tileset_name);
+    auto tiles_secondary_result = config.num_tiles_secondary(tileset_name);
+    auto max_map_size_result = config.max_map_data_size(tileset_name);
+    auto test_tileset_mode_result = config.incremental_build_mode("test_tileset");
+    auto another_tileset_mode_result = config.incremental_build_mode("another_tileset");
 
-    EXPECT_EQ(tiles_primary, 2000);
-    EXPECT_EQ(tiles_total, 4000);
-    EXPECT_EQ(tiles_secondary, 2000);
-    EXPECT_EQ(max_map_size, 10240);
-    EXPECT_EQ(test_tileset_mode, IncrementalBuildMode::keep_unused);
-    EXPECT_EQ(another_tileset_mode, IncrementalBuildMode::off);
+    ASSERT_TRUE(tiles_primary_result.has_value());
+    ASSERT_TRUE(tiles_total_result.has_value());
+    ASSERT_TRUE(tiles_secondary_result.has_value());
+    ASSERT_TRUE(max_map_size_result.has_value());
+    ASSERT_TRUE(test_tileset_mode_result.has_value());
+    ASSERT_TRUE(another_tileset_mode_result.has_value());
+
+    // The second value() call is unnecessary since ConfigValue provides implicit unwrapping
+    EXPECT_EQ(tiles_primary_result.value().value(), 2000);
+    EXPECT_EQ(tiles_total_result.value(), 4000);
+    EXPECT_EQ(tiles_secondary_result.value(), 2000);
+    EXPECT_EQ(max_map_size_result.value(), 10240);
+    EXPECT_EQ(test_tileset_mode_result.value(), IncrementalBuildMode::keep_unused);
+    EXPECT_EQ(another_tileset_mode_result.value(), IncrementalBuildMode::off);
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldReturnNoCachedValuesWhenCold)
@@ -110,13 +118,17 @@ TEST(LazyLayeredConfigTest, DumpShouldShowCachedValuesWithProvenance)
     LazyLayeredConfig config{std::move(providers)};
 
     // Trigger caching by calling some config methods
-    std::size_t tiles_primary = config.num_tiles_primary(tileset_name);
-    std::size_t tiles_total = config.num_tiles_total(tileset_name);
-    std::size_t max_map_size = config.max_map_data_size(tileset_name);
+    auto tiles_primary_result = config.num_tiles_primary(tileset_name);
+    auto tiles_total_result = config.num_tiles_total(tileset_name);
+    auto max_map_size_result = config.max_map_data_size(tileset_name);
 
-    EXPECT_EQ(tiles_primary, 2000);
-    EXPECT_EQ(tiles_total, 4000);
-    EXPECT_EQ(max_map_size, 10240);
+    ASSERT_TRUE(tiles_primary_result.has_value());
+    ASSERT_TRUE(tiles_total_result.has_value());
+    ASSERT_TRUE(max_map_size_result.has_value());
+
+    EXPECT_EQ(tiles_primary_result.value().value(), 2000);
+    EXPECT_EQ(tiles_total_result.value().value(), 4000);
+    EXPECT_EQ(max_map_size_result.value().value(), 10240);
 
     std::string dump_result = config.dump();
 
@@ -142,8 +154,9 @@ TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues)
     LazyLayeredConfig config{std::move(providers)};
 
     // Only call one config method to cache one value
-    std::size_t tiles_primary = config.num_tiles_primary(tileset_name);
-    EXPECT_EQ(tiles_primary, 512);
+    auto tiles_primary_result = config.num_tiles_primary(tileset_name);
+    ASSERT_TRUE(tiles_primary_result.has_value());
+    EXPECT_EQ(tiles_primary_result.value().value(), 512);
 
     std::string dump_result = config.dump();
 

@@ -16,7 +16,7 @@
 namespace porytiles2 {
 
 template <typename T>
-ConfigValue<T> LazyLayeredConfig::resolve_config_value(
+ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
     /*
@@ -38,21 +38,32 @@ ConfigValue<T> LazyLayeredConfig::resolve_config_value(
 
     // Search through providers in priority order
     for (const auto &provider : providers_) {
-        if (LayerValue<T> layer_value = provider_call(*provider); layer_value.value.has_value()) {
+        LayerValue<T> layer_value = provider_call(*provider);
+
+        // Check if provider found an invalid value - stop immediately and return error
+        if (layer_value.state == ValidationState::invalid) {
+            return FormattableError{fmt::format(
+                "Invalid config value for '{}' from {}: {}", cache_key, provider->name(), layer_value.error_message)};
+        }
+
+        // Check if provider has a valid value
+        if (layer_value.state == ValidationState::valid) {
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
-            std::string source = fmt::format("{}: {}", provider->name(), layer_value.metadata);
+            std::string source = fmt::format("{}: {}", provider->name(), layer_value.source_info);
             provenance_[cache_key] = source;
             return ConfigValue<T>{resolved_value, cache_key, source};
         }
+
+        // Otherwise, state is not_provided - continue to next provider
     }
 
     // No value found in any layer - this is a programmer error
-    panic(fmt::format("no value found for {} in any config layer", cache_key));
+    panic(fmt::format("no value found for '{}' in any config layer", cache_key));
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_primary(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_primary(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -60,7 +71,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_primary(const std::string 
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_primary(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_total(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_total(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -68,7 +79,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_total(const std::string &t
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_total(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_primary(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_primary(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -76,7 +87,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_primary(const std::str
         key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_primary(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_total(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_total(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -84,7 +95,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_total(const std::strin
         key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_total(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_pals_primary(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_primary(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -92,7 +103,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_pals_primary(const std::string &
         key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_primary(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_pals_total(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_total(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -100,7 +111,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_pals_total(const std::string &ti
         key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_total(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::max_map_data_size(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::max_map_data_size(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -108,7 +119,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::max_map_data_size(const std::string 
         key, [&tileset](const ConfigProvider &provider) { return provider.max_map_data_size(tileset); });
 }
 
-ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_per_metatile(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_per_metatile(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -116,7 +127,7 @@ ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_per_metatile(const std::st
         key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(tileset); });
 }
 
-ConfigValue<Rgba32> LazyLayeredConfig::extrinsic_transparency(const std::string &tileset) const
+ChainableResult<ConfigValue<Rgba32>> LazyLayeredConfig::extrinsic_transparency(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -124,7 +135,8 @@ ConfigValue<Rgba32> LazyLayeredConfig::extrinsic_transparency(const std::string 
         key, [&tileset](const ConfigProvider &provider) { return provider.extrinsic_transparency(tileset); });
 }
 
-ConfigValue<IncrementalBuildMode> LazyLayeredConfig::incremental_build_mode(const std::string &tileset) const
+ChainableResult<ConfigValue<IncrementalBuildMode>>
+LazyLayeredConfig::incremental_build_mode(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -132,7 +144,7 @@ ConfigValue<IncrementalBuildMode> LazyLayeredConfig::incremental_build_mode(cons
         key, [&tileset](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset); });
 }
 
-ConfigValue<TilesPalMode> LazyLayeredConfig::tiles_pal_mode(const std::string &tileset) const
+ChainableResult<ConfigValue<TilesPalMode>> LazyLayeredConfig::tiles_pal_mode(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
@@ -165,6 +177,9 @@ std::string LazyLayeredConfig::dump() const
 void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_names) const
 {
     for (const auto &tileset_name : tileset_names) {
+        // Note: These calls now return ChainableResult, but we ignore both success and error cases
+        // This is intentional for warmup - we just want to populate the cache
+        // If you want to validate config at startup, call these and check has_value()
         std::ignore = incremental_build_mode(tileset_name);
         std::ignore = tiles_pal_mode(tileset_name);
         std::ignore = num_tiles_primary(tileset_name);

@@ -12,7 +12,7 @@ inline constexpr std::size_t max_size = 16;
 
 inline constexpr std::size_t num_pals = 16;
 
-}
+} // namespace pal
 
 class RgbaPal final {
   public:

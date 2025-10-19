@@ -4,6 +4,7 @@
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -18,7 +19,7 @@ class AppConfig {
   public:
     virtual ~AppConfig() = default;
 
-    [[nodiscard]] virtual ConfigValue<IncrementalBuildMode>
+    [[nodiscard]] virtual ChainableResult<ConfigValue<IncrementalBuildMode>>
     incremental_build_mode(const std::string &tileset) const = 0;
 };
 

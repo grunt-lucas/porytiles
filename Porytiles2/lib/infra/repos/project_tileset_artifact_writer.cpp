@@ -275,12 +275,15 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
         return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::metatile_attributes_bin:
         return save_metatile_attributes_bin(src.porymap_component().metatile_attributes(), transaction_dest_path);
-    case TilesetArtifact::Type::tiles_png:
+    case TilesetArtifact::Type::tiles_png: {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            tiles_pal_mode_config, config_->tiles_pal_mode(src.name()), "failed to get tiles_pal_mode config", void);
         return save_tiles_png(
             *png_indexed_saver_,
             src.porymap_component().tiles_png(),
             transaction_dest_path,
-            config_->tiles_pal_mode(src.name()));
+            tiles_pal_mode_config.value());
+    }
     case TilesetArtifact::Type::porymap_anim_frame:
         // TODO: implement
         return {};

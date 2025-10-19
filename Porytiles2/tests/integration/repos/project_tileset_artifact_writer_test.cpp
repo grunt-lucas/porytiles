@@ -29,7 +29,7 @@ namespace {
 
 class MockInfraConfig : public InfraConfig {
   public:
-    [[nodiscard]] ConfigValue<TilesPalMode> tiles_pal_mode(const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &) const override
     {
         return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock"};
     }
