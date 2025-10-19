@@ -14,6 +14,7 @@
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
+#include "porytiles2/utilities/unwrap_config.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -45,32 +46,24 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
      */
 
     // TODO: remove these, just here to test config/diagnostic stuff
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        num_tiles_primary_config,
-        config_->num_tiles_primary(tileset.name()),
-        "failed to get num_tiles_primary config",
-        std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     diag_->note(
         std::vector{
             format_->format(
                 "{} {}",
-                FormatParam{num_tiles_primary_config.name() + ":", Style::bold},
-                FormatParam{num_tiles_primary_config, Style::bold}),
-            format_->format("({})", num_tiles_primary_config.source()),
+                FormatParam{num_tiles_primary.name() + ":", Style::bold},
+                FormatParam{num_tiles_primary, Style::bold}),
+            format_->format("({})", num_tiles_primary.source()),
             std::string{"foo"},
             std::string{"bar"}});
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        num_tiles_secondary_config,
-        config_->num_tiles_secondary(tileset.name()),
-        "failed to get num_tiles_secondary config",
-        std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_secondary, tileset.name(), std::unique_ptr<Tileset>);
     diag_->note(
         std::vector{
             format_->format(
                 "{} {}",
-                FormatParam{num_tiles_secondary_config.name() + ":", Style::bold},
-                FormatParam{num_tiles_secondary_config, Style::bold}),
-            format_->format("({})", num_tiles_secondary_config.source()),
+                FormatParam{num_tiles_secondary.name() + ":", Style::bold},
+                FormatParam{num_tiles_secondary, Style::bold}),
+            format_->format("({})", num_tiles_secondary.source()),
             std::string{"foo"},
             std::string{"bar"}});
     diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
@@ -78,16 +71,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     diag_->err(std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
 
     // Leaf step to throw error if there are too many metatiles.
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        num_metatiles_primary_config,
-        config_->num_metatiles_primary(tileset.name()),
-        "failed to get num_metatiles_primary config",
-        std::unique_ptr<Tileset>);
-    if (metatiles.size() > num_metatiles_primary_config.value()) {
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    if (metatiles.size() > num_metatiles_primary.value()) {
         return FormattableError{
             "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
             FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary_config, Style::bold}};
+            FormatParam{num_metatiles_primary, Style::bold}};
     }
 
     // Decompose vector<RgbaMetatile> into vector<RgbaTile>

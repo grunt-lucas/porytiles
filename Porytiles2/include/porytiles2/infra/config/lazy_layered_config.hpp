@@ -7,16 +7,29 @@
 #include <unordered_map>
 #include <vector>
 
+#include "gsl/pointers"
+
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
+
+/*
+ * TODO: implement a better system for configuration validation. Right now, we rely on each ConfigProvider
+ * implementation to provide validation internally before returning LayerValue::invalid. However, this means certain
+ * config validations will have to be repeated multiple times in every single ConfigProvider impl. This is fine for some
+ * validation. E.g. CommandLineProvider and YamlProvider might have some different format validation needs. However, we
+ * should have some kind of general one-time validation that can run at startup, to check general validations that are
+ * agnostic of input format e.g. num_tiles_primary <= num_tiles_total.
+ */
 
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
@@ -43,10 +56,29 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
      * panic.
      *
+     * @param format A pointer to the TextFormatter to use
+     * @param providers The list of providers in priority order
+     */
+    explicit LazyLayeredConfig(
+        gsl::not_null<TextFormatter *> format, std::vector<std::unique_ptr<ConfigProvider>> &&providers)
+        : format_{format}, providers_{std::move(providers)}
+    {
+    }
+
+    /**
+     * @brief Constructs a LazyLayeredConfig with a default PlainTextFormatter.
+     *
+     * @details
+     * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
+     * LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
+     * ConfigProvider ConfigProviders \endlink in order. It is the programmer's responsibility to provide a default
+     * layer as the final provider in the list.
+     *
      * @param providers The list of providers in priority order
      */
     explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigProvider>> &&providers)
-        : providers_{std::move(providers)}
+        : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()},
+          providers_{std::move(providers)}
     {
     }
 
@@ -118,6 +150,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     void warmup_cache(const std::vector<std::string> &tileset_names) const;
 
   private:
+    std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
+    TextFormatter *format_;                       // Non-owning pointer to formatter
     // Providers in priority order (highest first)
     std::vector<std::unique_ptr<ConfigProvider>> providers_;
 
