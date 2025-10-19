@@ -70,15 +70,6 @@ ChainableResult<void> save_tiles_png(
 
 ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
-    /*
-     * TODO: here, we need to check if dual-layer output is enabled. If so, then we can assume the compilation code
-     * already set the correct LayerType attribute for each metatile. We can also assume that the compiler has validated
-     * the tilemap entries to guarantee that at least one layer is completely transparent. So here, if dual layer is on,
-     * we can simply filter out one of the groups of four entries if it is entirely transparent. It doesn't actually
-     * matter which, as long as we filter on a multiple-of-four boundary. Since the attribute layer type is already set,
-     * we just need to get rid of the first transparent layer we find. If the next layer after is also transparent, it
-     * will still work correctly.
-     */
     std::ofstream out{path};
     for (const auto &entry : entries) {
         // TODO: does this code work as expected on a big-endian machine?

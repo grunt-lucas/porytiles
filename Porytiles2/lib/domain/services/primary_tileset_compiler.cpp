@@ -38,6 +38,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
+    /*
+     * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has
+     * non-transparent content on all three layers. Otherwise, use the present layers to attempt to infer the layer type
+     * automatically and save it off to a vector.
+     */
+
     // TODO: remove these, just here to test config/diagnostic stuff
     diag_->note(
         std::vector{
@@ -121,8 +127,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     for (int i = 0; i < pal::num_pals; i++) {
         new_porymap_component->set_pal(pal, i);
     }
+
+    /*
+     * TODO: here, we need to check if dual-layer output is enabled. If so, check the layer type and skip the empty
+     * layer.
+     */
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
+
     // TODO: write attributes for real, for now just write back what we read
     for (const auto &attr : tileset.porymap_component().metatile_attributes()) {
         new_porymap_component->push_back_attribute(attr);
