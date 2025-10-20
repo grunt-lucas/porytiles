@@ -235,6 +235,10 @@ class UserDiagnostics {
             panic("filtered error chain was empty, there should always be at least one FormattableError with details");
         }
 
+        /*
+         * TODO: should we provide some mechanism to support multi-line error messages for each fatal step?
+         */
+
         emit_fatal_proximate(*filtered_chain.at(0));
         if (filtered_chain.size() > 1) {
             // Emit steps for all but the first and last
