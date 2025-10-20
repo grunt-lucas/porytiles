@@ -2,34 +2,40 @@
 
 #include <memory>
 
-#include "porytiles2/domain/model/porymap_tileset_component.hpp"
-#include "porytiles2/domain/model/porytiles_tileset_component.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "gsl/pointers"
+
+#include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief Service that compiles a primary PorytilesTilesetComponent into a PorymapTilesetComponent.
+ * @brief Service that compiles a primary Tileset.
  */
 class PrimaryTilesetCompiler {
   public:
-    virtual ~PrimaryTilesetCompiler() = default;
+    explicit PrimaryTilesetCompiler(
+        gsl::not_null<DomainConfig *> config,
+        gsl::not_null<TextFormatter *> format,
+        gsl::not_null<UserDiagnostics *> diag,
+        gsl::not_null<TilePrinter *> tile_printer)
+        : config_{config}, format_{format}, diag_{diag}, tile_printer_{tile_printer}
+    {
+    }
 
-    Result<std::unique_ptr<PorymapTilesetComponent>> compile(const PorytilesTilesetComponent &tileset);
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
 
-    /**
-     * @brief Compiles the given PorytilesTilesetComponent into a PorymapTilesetComponent using a contextual
-     * PorymapTilesetComponent as the base for the incremental compilation.
-     *
-     * @details
-     * TODO: explain the PorymapTilesetComponent contextual base
-     *
-     * @param tileset The PorytilesTilesetComponent to compile
-     * @param context The PorymapTilesetComponent to use as the contextual base
-     * @returns The compiled PorymapTilesetComponent
-     */
-    Result<std::unique_ptr<PorymapTilesetComponent>>
-    compile_incremental(const PorytilesTilesetComponent &tileset, const PorymapTilesetComponent &context);
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
+
+  private:
+    DomainConfig *config_;
+    TextFormatter *format_;
+    UserDiagnostics *diag_;
+    TilePrinter *tile_printer_;
 };
 
 } // namespace porytiles2

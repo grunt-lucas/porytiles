@@ -1,16 +1,13 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 
-#include <expected>
 #include <filesystem>
 #include <memory>
 #include <string>
 
 #include "CImg.h"
-#include "fmt/format.h"
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 
 namespace porytiles2 {
 

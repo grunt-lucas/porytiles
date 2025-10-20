@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 
 namespace porytiles2 {
@@ -46,33 +47,34 @@ class ConfigProvider {
      * Domain Config
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(const std::string &tileset) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile() const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const;
+
+    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const;
 
     /*
      * App Config
      */
 
-    [[nodiscard]] virtual LayerValue<IncrementalBuildMode>
-    incremental_build_mode(const std::string &tileset_name) const;
+    [[nodiscard]] virtual LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const;
 
     /*
      * Infra Config
      */
-    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset_name) const;
+    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const;
 };
 
 } // namespace porytiles2

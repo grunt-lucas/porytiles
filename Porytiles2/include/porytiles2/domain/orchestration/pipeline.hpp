@@ -29,9 +29,9 @@ class Pipeline {
      * operations to determine execution order. The constructor validates that all required inputs can be satisfied by
      * the outputs of other operations in the pipeline.
      *
-     * @param ops Vector of shared pointers to Operation objects
+     * @param ops Vector of pointers to Operation objects
      */
-    explicit Pipeline(const std::vector<std::shared_ptr<Operation>> &ops);
+    explicit Pipeline(const std::vector<Operation *> &ops);
 
     /**
      * @brief Executes all operations in the pipeline in dependency order.
@@ -40,9 +40,9 @@ class Pipeline {
      * Runs each operation in the topologically sorted order, passing outputs from earlier operations as inputs to later
      * operations as specified by their declarations. Propagates any errors that occur during execution.
      *
-     * @return Result<void> indicating success or containing an error
+     * @return ChainableResult<void> indicating success or containing an error
      */
-    [[nodiscard]] Result<void> run() const;
+    [[nodiscard]] ChainableResult<void> run() const;
 
   private:
     std::unordered_map<std::string, Operation *> producers_;

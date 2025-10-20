@@ -11,15 +11,15 @@ namespace porytiles2 {
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
-        return ChainableResult<void>{BasicError{"tileset '{}' does not exist", std::vector{tileset_name}}};
+        return ChainableResult<void>{
+            FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
-        // TODO: hook up ChainableError here
-        return ChainableResult<void>::chain_together(
-            BasicError{"failed to load tileset '{}'", std::vector{tileset_name}}, maybe_tileset);
+        return ChainableResult<void>{
+            FormattableError{"failed to load tileset '{}'", FormatParam{tileset_name, Style::bold}}, maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
 
@@ -28,13 +28,13 @@ namespace porytiles2 {
     const auto mismatched_keys =
         tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, artifact_keys);
     if (!mismatched_keys.empty()) {
-        std::vector<std::string> keys;
+        std::vector<FormatParam> keys;
         keys.reserve(mismatched_keys.size());
         for (const auto &key : mismatched_keys) {
-            keys.push_back(key.key());
+            keys.emplace_back(key.key(), Style::bold);
         }
-        // TODO: create some kind of MultilineBasicError that can correctly format a multiline message
-        return ChainableResult<void>{BasicError{"changes present in tileset assets: {}", keys}};
+        // TODO: create some kind of MultilineFormattableError that can correctly format a multiline message
+        return ChainableResult<void>{FormattableError{"changes present in tileset assets: {}", keys}};
     }
 
     return {};

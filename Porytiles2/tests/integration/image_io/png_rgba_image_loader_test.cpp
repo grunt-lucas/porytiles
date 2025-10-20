@@ -2,13 +2,13 @@
 
 #include <tuple>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/services/image_load_error.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/templates/text_formatter.hpp"
+#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 using namespace porytiles2;
 
@@ -17,7 +17,7 @@ using namespace porytiles2;
 TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
-    TextFormatter formatter{true};
+    AnsiStyledTextFormatter formatter{};
 
     auto result = loader->load_from_file("Resources/Tests/integration/image_io/non_existent_file.png");
     ASSERT_FALSE(result.has_value());

@@ -4,27 +4,20 @@
 #include <fstream>
 #include <functional>
 #include <iterator>
-#include <ostream>
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/tilemap_entry.hpp"
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/models/metatile_attribute.hpp"
+#include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/models/tilemap_entry.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
-#include "porytiles2/templates/panic.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace {
 
 using namespace porytiles2;
-
-/*
- * TODO: remove these hardcoded constants. fieldmap.c and global.fieldmap.h contain definitions for attribute shifts and
- * masks that could be used to infer these values
- */
-constexpr std::size_t bytes_per_attr_emerald = 2;
-constexpr std::size_t bytes_per_attr_firered = 4;
 
 ChainableResult<void> import_layer_png(
     Tileset &dest,
@@ -35,13 +28,16 @@ ChainableResult<void> import_layer_png(
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         switch (image_result.error().type()) {
+            // TODO: this shouldn't load a blank image, it should just error. To support the "import" case, we're going
+            // to create a special tileset operation called "import" which is distinct from "load", and which assumes a
+            // Porytiles component is not present.
         case ImageLoadError::Type::file_not_found:
             layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
             const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>::chain_together(BasicError{error_msg}, image_result);
+            return ChainableResult<void>{FormattableError{error_msg}, image_result};
         }
         default:
             panic("unhandled ImageLoadError type");
@@ -57,7 +53,7 @@ ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
-        return BasicError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
+        return FormattableError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
     }
 
     for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
@@ -98,19 +94,26 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
-    if (data_buf.size() % bytes_per_attr_emerald != 0) {
-        return BasicError{fmt::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_emerald)};
+    if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
+        return FormattableError{fmt::format(
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
+            attr::bytes_per_attr_emerald)};
     }
 
-    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint16_t byte0 = data_buf.at((metatile_index * bytes_per_attr_emerald));
-        std::uint16_t byte1 = data_buf.at((metatile_index * bytes_per_attr_emerald) + 1);
+        std::uint16_t byte0 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald));
+        std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
         std::uint16_t attribute = (byte1 << 8) | byte0;
-        // attributes.metatileBehavior = attribute & 0x00FF;
-        // attributes.layerType = layerTypeFromInt((attribute >> 12) & 0x000F);
-        // TODO: init an attr here and insert into 'dest'
+
+        auto layer_type_result = attr::layer_type_from_int(attribute >> 12 & 0x000F);
+        if (!layer_type_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"invalid layer type for metatile '{}'", FormatParam{metatile_index, Style::bold}},
+                layer_type_result};
+        }
+        MetatileAttribute metatile_attribute{layer_type_result.value(), static_cast<std::uint16_t>(attribute & 0x00FF)};
+        dest.porymap_component().push_back_attribute(metatile_attribute);
     }
 
     return {};
@@ -121,17 +124,18 @@ ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const Ar
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
-    if (data_buf.size() % bytes_per_attr_firered != 0) {
-        return BasicError{fmt::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted", bytes_per_attr_firered)};
+    if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
+        return FormattableError{fmt::format(
+            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
+            attr::bytes_per_attr_firered)};
     }
 
-    std::size_t metatile_count = data_buf.size() / bytes_per_attr_emerald;
+    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint32_t byte0 = data_buf.at((metatile_count * bytes_per_attr_firered));
-        std::uint32_t byte1 = data_buf.at((metatile_count * bytes_per_attr_firered) + 1);
-        std::uint32_t byte2 = data_buf.at((metatile_count * bytes_per_attr_firered) + 2);
-        std::uint32_t byte3 = data_buf.at((metatile_count * bytes_per_attr_firered) + 3);
+        std::uint32_t byte0 = data_buf.at((metatile_count * attr::bytes_per_attr_firered));
+        std::uint32_t byte1 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 1);
+        std::uint32_t byte2 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 2);
+        std::uint32_t byte3 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 3);
         std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
         // attributes.metatileBehavior = attribute & 0x000001FF;
         // attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
@@ -147,7 +151,7 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        return BasicError{fmt::format("failed to load tiles.png: {}", image_result.error())};
+        return FormattableError{fmt::format("failed to load tiles.png: {}", image_result.error())};
     }
     dest.porymap_component().tiles_png(*image_result.value());
     return {};
@@ -162,7 +166,7 @@ ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, 
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return BasicError{"{}: failed to load: {}", std::vector{src_key.key(), pal_result.error()}};
+        return FormattableError{fmt::format("failed to load: {}", pal_result.error())};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 
@@ -184,7 +188,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.bottom(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read bottom.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read bottom.png")}, result};
         }
         return {};
     }
@@ -194,7 +198,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.middle(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read middle.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read middle.png")}, result};
         }
         return {};
     }
@@ -204,7 +208,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
                 comp.top(img);
             });
         if (!result.has_value()) {
-            return ChainableResult<void>::chain_together(BasicError{fmt::format("failed to read top.png")}, result);
+            return ChainableResult<void>{FormattableError{fmt::format("failed to read top.png")}, result};
         }
         return {};
     }
@@ -219,7 +223,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
     case TilesetArtifact::Type::metatiles_bin: {
         const auto result = import_metatiles_bin(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import metatiles.bin")}, result};
+            return ChainableResult<void>{FormattableError{fmt::format("could not import metatiles.bin")}, result};
         }
         return {};
     }
@@ -227,7 +231,8 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: branch here based on target base game?
         const auto result = import_emerald_metatile_attributes(dest, src_key);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import metatile_attributes.bin")}, result};
+            return ChainableResult<void>{
+                FormattableError{fmt::format("could not import metatile_attributes.bin")}, result};
         }
         return {};
     }
@@ -235,7 +240,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         // TODO: make this a ChainableResult
         const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
         if (!result.has_value()) {
-            return ChainableResult<void>{BasicError{fmt::format("could not import tiles.png")}, result};
+            return ChainableResult<void>{FormattableError{fmt::format("could not import tiles.png")}, result};
         }
         return {};
     }
@@ -248,7 +253,7 @@ ProjectTilesetArtifactReader::read(Tileset &dest, const ArtifactKey &src_key, co
         const auto result = import_palette(dest, src_key, artifact.index().value(), *pal_loader_);
         if (!result.has_value()) {
             return ChainableResult<void>{
-                BasicError{fmt::format("could not import pal {}", artifact.index().value())}, result};
+                FormattableError{fmt::format("could not import pal {}", artifact.index().value())}, result};
         }
         return {};
     }

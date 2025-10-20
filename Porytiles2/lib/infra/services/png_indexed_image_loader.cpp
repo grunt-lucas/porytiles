@@ -5,7 +5,7 @@
 #include "fmt/format.h"
 #include "png++/png.hpp"
 
-#include "porytiles2/domain/model/index_pixel.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {

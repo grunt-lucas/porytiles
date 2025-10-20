@@ -1,0 +1,307 @@
+#pragma once
+
+#include <array>
+
+#include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/supports_transparency.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+
+namespace porytiles2 {
+
+namespace metatile {
+
+inline constexpr std::size_t tiles_per_side = 2;
+inline constexpr std::size_t tiles_per_metatile_layer = tiles_per_side * tiles_per_side;
+inline constexpr std::size_t tiles_per_metatile = tiles_per_metatile_layer * 3;
+inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_length_pix;
+
+enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
+
+inline std::string to_string(Layer layer)
+{
+    switch (layer) {
+    case Layer::bottom:
+        return "bottom";
+    case Layer::middle:
+        return "middle";
+    case Layer::top:
+        return "top";
+    }
+    panic("unhandled Layer value");
+}
+
+enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
+
+inline std::string to_string(Subtile layer)
+{
+    switch (layer) {
+    case Subtile::northwest:
+        return "northwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::northeast:
+        return "northeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southwest:
+        return "southwest(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    case Subtile::southeast:
+        return "southeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
+    }
+    panic("unhandled Subtile value");
+}
+
+[[nodiscard]] inline std::tuple<std::size_t, Layer, Subtile> from_tile_index(std::size_t tile_index)
+{
+    const std::size_t metatile_index = tile_index / tiles_per_metatile;
+    const std::size_t local_index = tile_index % tiles_per_metatile;
+    const auto layer = static_cast<Layer>(local_index / tiles_per_metatile_layer);
+    const auto subtile = static_cast<Subtile>(local_index % tiles_per_metatile_layer);
+
+    return {metatile_index, layer, subtile};
+}
+
+[[nodiscard]] inline std::string message_header(
+    std::size_t index,
+    Layer layer,
+    Subtile subtile,
+    std::size_t subtile_row,
+    std::size_t subtile_col,
+    const TextFormatter &format)
+{
+    return format.format(
+        "{} {}|{}|{}|{},{}",
+        FormatParam{"metatile", Style::bold},
+        FormatParam{index, Style::bold},
+        FormatParam{to_string(layer), Style::bold},
+        FormatParam{to_string(subtile), Style::bold},
+        FormatParam{std::to_string(subtile_row), Style::bold},
+        FormatParam{std::to_string(subtile_col), Style::bold});
+}
+
+} // namespace metatile
+
+/**
+ * @brief The core tileset entity - a 2x2 grid of PixelTile objects arranged into three layers.
+ *
+ * @details
+ * Like its component PixelTile objects, the pixel type of Metatile is arbitrary.
+ *
+ * @tparam PixelType The pixel type of this Metatile's PixelTile objects
+ */
+template <typename PixelType>
+    requires SupportsTransparency<PixelType>
+class Metatile {
+  public:
+    Metatile() : id_{} {}
+
+    bool operator==(const Metatile &) const = default;
+
+    /**
+     * @brief Checks if this entire metatile is transparent (intrinsic transparency only).
+     *
+     * @details
+     * A metatile is transparent if all of its pixels are intrinsically transparent. This overload is only available for
+     * pixel types that support parameterless is_transparent() (e.g., IndexPixel).
+     *
+     * @return True if all tiles in all layers are transparent, false otherwise
+     */
+    [[nodiscard]] bool is_transparent() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        const bool bottom_transparent =
+            std::ranges::all_of(bottom(), [](const auto &tile) { return tile.is_transparent(); });
+        const bool middle_transparent =
+            std::ranges::all_of(middle(), [](const auto &tile) { return tile.is_transparent(); });
+        const bool top_transparent = std::ranges::all_of(top(), [](const auto &tile) { return tile.is_transparent(); });
+        return bottom_transparent && middle_transparent && top_transparent;
+    }
+
+    /**
+     * @brief Checks if this entire metatile is transparent.
+     *
+     * @details
+     * A metatile is transparent if all of its pixels are either intrinsically transparent or are extrinsically
+     * transparent, according to the provided extrinsic transparency value. This overload is only available for pixel
+     * types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return True if all tiles in all layers are transparent, false otherwise
+     */
+    [[nodiscard]] bool is_transparent(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        const bool bottom_transparent =
+            std::ranges::all_of(bottom(), [=](const auto &tile) { return tile.is_transparent(extrinsic); });
+        const bool middle_transparent =
+            std::ranges::all_of(middle(), [=](const auto &tile) { return tile.is_transparent(extrinsic); });
+        const bool top_transparent =
+            std::ranges::all_of(top(), [=](const auto &tile) { return tile.is_transparent(extrinsic); });
+        return bottom_transparent && middle_transparent && top_transparent;
+    }
+
+    /**
+     * @brief Decomposes this metatile into an array of \link PixelTile PixelTiles \endlink in metatile order.
+     *
+     * @details
+     * Returns tiles in bottom-middle-top layer order, with each layer's tiles arranged sequentially.
+     *
+     * @return An array containing the constituent tiles
+     */
+    [[nodiscard]] std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> decompose() const
+    {
+        std::array<PixelTile<PixelType>, metatile::tiles_per_metatile> tiles{};
+
+        auto out_it = tiles.begin();
+        out_it = std::ranges::copy(bottom(), out_it).out;
+        out_it = std::ranges::copy(middle(), out_it).out;
+        std::ranges::copy(top(), out_it);
+
+        return tiles;
+    }
+
+    /**
+     * @brief Get a constant reference to a PixelTile from the bottom layer.
+     *
+     * @details
+     * Retrieves the PixelTile at the specified index in the bottom layer array.
+     *
+     * @param i The index into the bottom layer array (must be 0-3).
+     * @return Constant reference to the PixelTile at the specified index.
+     */
+    [[nodiscard]] const PixelTile<PixelType> &bottom(std::size_t i) const
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        return bottom_[i];
+    }
+
+    /**
+     * @brief Get a constant reference to the entire bottom layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the bottom layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the bottom layer tile array.
+     */
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &bottom() const
+    {
+        return bottom_;
+    }
+
+    /**
+     * @brief Set a PixelTile in the bottom layer.
+     *
+     * @details
+     * Moves the provided PixelTile into the specified index of the bottom layer array.
+     *
+     * @param i The index into the bottom layer array (must be 0-3).
+     * @param tile The PixelTile to move into the array.
+     */
+    void set_bottom(std::size_t i, PixelTile<PixelType> tile)
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        bottom_[i] = std::move(tile);
+    }
+
+    /**
+     * @brief Get a constant reference to a PixelTile from the middle layer.
+     *
+     * @details
+     * Retrieves the PixelTile at the specified index in the middle layer array.
+     *
+     * @param i The index into the middle layer array (must be 0-3).
+     * @return Constant reference to the PixelTile at the specified index.
+     */
+    [[nodiscard]] const PixelTile<PixelType> &middle(std::size_t i) const
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        return middle_[i];
+    }
+
+    /**
+     * @brief Get a constant reference to the entire middle layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the middle layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the middle layer tile array.
+     */
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &middle() const
+    {
+        return middle_;
+    }
+
+    /**
+     * @brief Set a PixelTile in the middle layer.
+     *
+     * @details
+     * Moves the provided PixelTile into the specified index of the middle layer array.
+     *
+     * @param i The index into the middle layer array (must be 0-3).
+     * @param tile The PixelTile to move into the array.
+     */
+    void set_middle(std::size_t i, PixelTile<PixelType> tile)
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        middle_[i] = std::move(tile);
+    }
+
+    /**
+     * @brief Get a constant reference to a PixelTile from the top layer.
+     *
+     * @details
+     * Retrieves the PixelTile at the specified index in the top layer array.
+     *
+     * @param i The index into the top layer array (must be 0-3).
+     * @return Constant reference to the Tile at the specified index.
+     */
+    [[nodiscard]] const PixelTile<PixelType> &top(std::size_t i) const
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        return top_[i];
+    }
+
+    /**
+     * @brief Get a constant reference to the entire top layer array.
+     *
+     * @details
+     * Returns the complete array of tiles in the top layer, allowing for range-based iteration.
+     *
+     * @return Constant reference to the top layer tile array.
+     */
+    [[nodiscard]] const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &top() const
+    {
+        return top_;
+    }
+
+    /**
+     * @brief Set a Tile in the top layer.
+     *
+     * @details
+     * Moves the provided PixelTile into the specified index of the top layer array.
+     *
+     * @param i The index into the top layer array (must be 0-3).
+     * @param tile The PixelTile to move into the array.
+     */
+    void set_top(std::size_t i, PixelTile<PixelType> tile)
+    {
+        if (i > 3) {
+            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+        }
+        top_[i] = std::move(tile);
+    }
+
+  private:
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> bottom_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> middle_;
+    std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
+    unsigned int id_;
+};
+
+} // namespace porytiles2

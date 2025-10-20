@@ -32,23 +32,19 @@ cmake -B build-release -DCMAKE_BUILD_TYPE=Release
 # Build project
 cmake --build build -j7
 ```
-
-### Build Variants
-Multiple build configurations are available:
-- `build/` - Debug build
-- `build-coverage/` - Debug build with coverage
-- `build-release/` - Release build
+Alternatively, if there is a build directory called `clion-build-debug`, use that instead of `build`.
 
 ## Testing
 - Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
 - GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
 - GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests
+
+Prefer to simply run all tests using the all test runner.
 
 Run all tests:
 ```bash
-./build/Porytiles1/tests/Porytiles1Tests
-./build/Porytiles2/tests/Porytiles2UnitTests
-./build/Porytiles2/tests/Porytiles2IntegrationTests
+./build/Porytiles2/tests/Porytiles2AllTests # this runs both Porytiles2UnitTests and Porytiles2IntegrationTests
 ```
 
 ## Code Quality Tools
@@ -112,7 +108,7 @@ Use the following example snippet as a guide for code style.
 - **Never** include header files using relative paths
 - Follow const correctness principles
 - Always use namespace `porytiles2`, don't create child namespaces
-- When creating private helper functions, if possible **prefer to place them in an anonymous namespace in the cpp file** instead of the `private:` section of the header file
+- When creating private helper functions, **PREFER TO PLACE THEM IN AN ANONYMOUS NAMESPACE IN THE CPP FILE** instead of the `private:` section of the header file
 - Both GCC and Clang are supported compilers, so any proposed code **should not be compiler-specific**
 - WHEN RUNNING THE CMAKE BUILD COMMAND, SEND OUTPUT TO A TEMPORARY FILE SO YOU DON'T POLLUTE YOUR CONTEXT. You can then check if the build succeeded by looking at the exit code. If non-zero, inspect the file and see what went wrong.
 

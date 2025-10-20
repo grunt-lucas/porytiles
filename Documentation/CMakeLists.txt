@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
         doxygen-awesome-css
         GIT_REPOSITORY "https://github.com/jothepro/doxygen-awesome-css"
-        GIT_TAG "v2.3.4")
+        GIT_TAG "v2.4.0")
 FetchContent_MakeAvailable(doxygen-awesome-css)
 FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
 

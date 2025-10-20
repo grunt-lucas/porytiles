@@ -4,10 +4,10 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/index_pixel.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -17,11 +17,12 @@ namespace porytiles2 {
  * @details
  * This loader's implementation uses png++ wrapper for libpng to save the Image to a PNG.
  */
-class PngIndexedImageSaver final {
+class PngIndexedImageSaver {
   public:
     PngIndexedImageSaver() = default;
+    virtual ~PngIndexedImageSaver() = default;
 
-    [[nodiscard]] Result<void>
+    [[nodiscard]] virtual ChainableResult<void>
     save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const;
 };
 

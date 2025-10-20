@@ -106,3 +106,13 @@ class Foo {
     int compute_bar(int factor); 
 };
 ```
+
+Note about markdown code blocks: when writing multiline C++ code blocks,
+use "C++" after the triple backticks. E.g.,
+```C++
+int main() {
+    // This is a multiline C++ code block
+    // Notice that the triple backticks are followed by "C++"
+    return 0;
+}
+```

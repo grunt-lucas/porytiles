@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/templates/result.hpp"
 

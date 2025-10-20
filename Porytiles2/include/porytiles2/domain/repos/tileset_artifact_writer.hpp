@@ -2,10 +2,11 @@
 
 #include <any>
 
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -44,9 +45,9 @@ class TilesetArtifactWriter {
      * commit, the transaction is closed and a new one must be started for further transactional writes. If no
      * transaction is active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] virtual Result<void> commit() = 0;
+    [[nodiscard]] virtual ChainableResult<void> commit() = 0;
 
     /**
      * @brief Rolls back all buffered write operations in the current transaction.
@@ -78,9 +79,9 @@ class TilesetArtifactWriter {
      * @param dest_key The ArtifactKey identifying the destination location in the backing store
      * @param artifact The TilesetArtifact specification including type and optional metadata
      * @param src The Tileset object containing the data to be written
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error trace
      */
-    [[nodiscard]] virtual Result<void>
+    [[nodiscard]] virtual ChainableResult<void>
     write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
 };
 

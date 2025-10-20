@@ -4,14 +4,16 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/xcut/result/chainable_result.hpp"
+
 namespace porytiles2 {
 
-Result<void> JascPalSaver::save(const RgbaPal &pal, const std::filesystem::path &path) const
+ChainableResult<void> JascPalSaver::save(const RgbaPal &pal, const std::filesystem::path &path) const
 {
     // Open in binary so "\r\n" are explicitly written as CRLF on all platforms
     std::ofstream stream{path, std::ios::binary};
     if (!stream.is_open()) {
-        return std::unexpected{fmt::format("failed to open file for writing: {}", path.string())};
+        return FormattableError{fmt::format("{}: failed to open for writing", path.string())};
     }
 
     stream << "JASC-PAL\r\n";
@@ -23,7 +25,7 @@ Result<void> JascPalSaver::save(const RgbaPal &pal, const std::filesystem::path 
     }
 
     if (stream.fail()) {
-        return std::unexpected{fmt::format("failed to write to file: {}", path.string())};
+        return FormattableError{fmt::format("{}: failed to write", path.string())};
     }
 
     return {};

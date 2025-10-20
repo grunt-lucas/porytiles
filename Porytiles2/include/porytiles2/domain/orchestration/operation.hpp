@@ -5,8 +5,9 @@
 
 #include "porytiles2/domain/orchestration/operand_bundle.hpp"
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
-#include "porytiles2/templates/panic.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/xcut/result/error.hpp"
 
 namespace porytiles2 {
 
@@ -44,9 +45,9 @@ class Operation {
      * method. Panics if inputs are invalid.
      *
      * @param inputs Bundle of input operands to process
-     * @return Result containing the output operand bundle or an error
+     * @return ChainableResult containing the output operand bundle or an error
      */
-    [[nodiscard]] virtual Result<OperandBundle> apply(const OperandBundle &inputs)
+    [[nodiscard]] virtual ChainableResult<OperandBundle> apply(const OperandBundle &inputs)
     {
         const auto declared_inputs = declare_inputs();
         if (!inputs.satisfies_declarations(declared_inputs)) {
@@ -84,9 +85,9 @@ class Operation {
      * apply after input validation has passed.
      *
      * @param inputs Validated bundle of input operands
-     * @return Result containing the output operand bundle or an error
+     * @return ChainableResult containing the output operand bundle or an error
      */
-    [[nodiscard]] virtual Result<OperandBundle> execute(const OperandBundle &inputs) = 0;
+    [[nodiscard]] virtual ChainableResult<OperandBundle> execute(const OperandBundle &inputs) = 0;
 
   private:
     std::string name_;

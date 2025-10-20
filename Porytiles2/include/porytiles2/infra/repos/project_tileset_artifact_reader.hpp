@@ -2,7 +2,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/model/tileset.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"

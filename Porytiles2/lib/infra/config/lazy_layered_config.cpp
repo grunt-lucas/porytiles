@@ -9,12 +9,14 @@
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/templates/panic.hpp"
+#include "porytiles2/utilities/source_locations.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 
 template <typename T>
-T LazyLayeredConfig::resolve_config_value(
+ConfigValue<T> LazyLayeredConfig::resolve_config_value(
     const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
     /*
@@ -29,7 +31,9 @@ T LazyLayeredConfig::resolve_config_value(
     // Check if already cached
     if (cache_.contains(cache_key)) {
         // TODO: catch bad_any_cast here and panic
-        return std::any_cast<T>(cache_.at(cache_key));
+        T cached_value = std::any_cast<T>(cache_.at(cache_key));
+        std::string source = provenance_.at(cache_key);
+        return ConfigValue<T>{cached_value, cache_key, source};
     }
 
     // Search through providers in priority order
@@ -38,8 +42,9 @@ T LazyLayeredConfig::resolve_config_value(
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
-            provenance_[cache_key] = fmt::format("{}: {}", provider->name(), layer_value.metadata);
-            return resolved_value;
+            std::string source = fmt::format("{}: {}", provider->name(), layer_value.metadata);
+            provenance_[cache_key] = source;
+            return ConfigValue<T>{resolved_value, cache_key, source};
         }
     }
 
@@ -47,69 +52,92 @@ T LazyLayeredConfig::resolve_config_value(
     panic(fmt::format("no value found for {} in any config layer", cache_key));
 }
 
-std::size_t LazyLayeredConfig::num_tiles_primary() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_primary(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_primary"), [](const ConfigProvider &provider) { return provider.num_tiles_primary(); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_primary(tileset); });
 }
 
-std::size_t LazyLayeredConfig::num_tiles_total() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_total(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<std::size_t>(
-        fmt::format("num_tiles_total"), [](const ConfigProvider &provider) { return provider.num_tiles_total(); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_total(tileset); });
 }
 
-std::size_t LazyLayeredConfig::num_metatiles_primary() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_primary(const std::string &tileset) const
 {
-    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_primary"), [](const ConfigProvider &provider) {
-        return provider.num_metatiles_primary();
-    });
-}
-
-std::size_t LazyLayeredConfig::num_metatiles_total() const
-{
-    return resolve_config_value<std::size_t>(fmt::format("num_metatiles_total"), [](const ConfigProvider &provider) {
-        return provider.num_metatiles_total();
-    });
-}
-
-std::size_t LazyLayeredConfig::num_pals_primary() const
-{
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<std::size_t>(
-        fmt::format("num_pals_primary"), [](const ConfigProvider &provider) { return provider.num_pals_primary(); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_primary(tileset); });
 }
 
-std::size_t LazyLayeredConfig::num_pals_total() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_metatiles_total(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<std::size_t>(
-        fmt::format("num_pals_total"), [](const ConfigProvider &provider) { return provider.num_pals_total(); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_metatiles_total(tileset); });
 }
 
-std::size_t LazyLayeredConfig::max_map_data_size() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_pals_primary(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<std::size_t>(
-        fmt::format("max_map_data_size"), [](const ConfigProvider &provider) { return provider.max_map_data_size(); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_primary(tileset); });
 }
 
-std::size_t LazyLayeredConfig::num_tiles_per_metatile() const
+ConfigValue<std::size_t> LazyLayeredConfig::num_pals_total(const std::string &tileset) const
 {
-    return resolve_config_value<std::size_t>(fmt::format("num_tiles_per_metatile"), [](const ConfigProvider &provider) {
-        return provider.num_tiles_per_metatile();
-    });
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
+    return resolve_config_value<std::size_t>(
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_pals_total(tileset); });
 }
 
-IncrementalBuildMode LazyLayeredConfig::incremental_build_mode(const std::string &tileset_name) const
+ConfigValue<std::size_t> LazyLayeredConfig::max_map_data_size(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
+    return resolve_config_value<std::size_t>(
+        key, [&tileset](const ConfigProvider &provider) { return provider.max_map_data_size(tileset); });
+}
+
+ConfigValue<std::size_t> LazyLayeredConfig::num_tiles_per_metatile(const std::string &tileset) const
+{
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
+    return resolve_config_value<std::size_t>(
+        key, [&tileset](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(tileset); });
+}
+
+ConfigValue<Rgba32> LazyLayeredConfig::extrinsic_transparency(const std::string &tileset) const
+{
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
+    return resolve_config_value<Rgba32>(
+        key, [&tileset](const ConfigProvider &provider) { return provider.extrinsic_transparency(tileset); });
+}
+
+ConfigValue<IncrementalBuildMode> LazyLayeredConfig::incremental_build_mode(const std::string &tileset) const
+{
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<IncrementalBuildMode>(
-        fmt::format("incremental_build_mode:{}", tileset_name),
-        [&tileset_name](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset_name); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset); });
 }
 
-TilesPalMode LazyLayeredConfig::tiles_pal_mode(const std::string &tileset_name) const
+ConfigValue<TilesPalMode> LazyLayeredConfig::tiles_pal_mode(const std::string &tileset) const
 {
+    const auto name = extract_function_name();
+    const auto key = tileset + ":" + name;
     return resolve_config_value<TilesPalMode>(
-        fmt::format("tiles_pal_mode:{}", tileset_name),
-        [&tileset_name](const ConfigProvider &provider) { return provider.tiles_pal_mode(tileset_name); });
+        key, [&tileset](const ConfigProvider &provider) { return provider.tiles_pal_mode(tileset); });
 }
 
 std::string LazyLayeredConfig::dump() const
@@ -136,21 +164,18 @@ std::string LazyLayeredConfig::dump() const
 
 void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_names) const
 {
-    // Cache tileset-specific values for each provided tileset
     for (const auto &tileset_name : tileset_names) {
         std::ignore = incremental_build_mode(tileset_name);
         std::ignore = tiles_pal_mode(tileset_name);
+        std::ignore = num_tiles_primary(tileset_name);
+        std::ignore = num_tiles_total(tileset_name);
+        std::ignore = num_metatiles_primary(tileset_name);
+        std::ignore = num_metatiles_total(tileset_name);
+        std::ignore = num_pals_primary(tileset_name);
+        std::ignore = num_pals_total(tileset_name);
+        std::ignore = max_map_data_size(tileset_name);
+        std::ignore = num_tiles_per_metatile(tileset_name);
     }
-
-    // Cache global (non-tileset-specific) values
-    std::ignore = num_tiles_primary();
-    std::ignore = num_tiles_total();
-    std::ignore = num_metatiles_primary();
-    std::ignore = num_metatiles_total();
-    std::ignore = num_pals_primary();
-    std::ignore = num_pals_total();
-    std::ignore = max_map_data_size();
-    std::ignore = num_tiles_per_metatile();
 }
 
 } // namespace porytiles2

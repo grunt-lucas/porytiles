@@ -1,44 +1,84 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <random>
 #include <ranges>
+#include <sstream>
+#include <string>
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/infra/utilities/utilities.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace {
 
 using namespace porytiles2;
 
-Result<void>
+std::filesystem::path create_tmpdir()
+{
+    int maxTries = 1000;
+    auto tmpDir = std::filesystem::temp_directory_path();
+    int i = 0;
+    std::random_device randomDevice;
+    std::mt19937 mersennePrng(randomDevice());
+    std::uniform_int_distribution<uint64_t> uniformIntDistribution(0);
+    std::filesystem::path path;
+    while (true) {
+        std::stringstream stringStream;
+        stringStream << std::hex << uniformIntDistribution(mersennePrng);
+        path = tmpDir / ("porytiles_" + stringStream.str());
+        if (std::filesystem::create_directory(path)) {
+            break;
+        }
+        if (i == maxTries) {
+            panic("tmpfiles::createTmpdir getTmpdirPath took too many tries");
+        }
+        i++;
+    }
+    return path;
+}
+
+ChainableResult<void>
 save_layer_png(const PngRgbaImageSaver &saver, const Image<Rgba32> &layer_png, const std::filesystem::path &path)
 {
-    const auto result = saver.save_to_file(layer_png, path);
+    auto result = saver.save_to_file(layer_png, path);
     if (!result.has_value()) {
         return result;
     }
     return {};
 }
 
-Result<void> save_tiles_png(
+ChainableResult<void> save_tiles_png(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &tiles_png,
     const std::filesystem::path &path,
     TilesPalMode tiles_pal_mode)
 {
-    const auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
+    auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
     if (!result.has_value()) {
         return result;
     }
     return {};
 }
 
-Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
+    /*
+     * TODO: here, we need to check if dual-layer output is enabled. If so, then we can assume the compilation code
+     * already set the correct LayerType attribute for each metatile. We can also assume that the compiler has validated
+     * the tilemap entries to guarantee that at least one layer is completely transparent. So here, if dual layer is on,
+     * we can simply filter out one of the groups of four entries if it is entirely transparent. It doesn't actually
+     * matter which, as long as we filter on a multiple-of-four boundary. Since the attribute layer type is already set,
+     * we just need to get rid of the first transparent layer we find. If the next layer after is also transparent, it
+     * will still work correctly.
+     */
     std::ofstream out{path};
     for (const auto &entry : entries) {
         // TODO: does this code work as expected on a big-endian machine?
@@ -52,28 +92,27 @@ Result<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const 
     return {};
 }
 
-Result<void> save_metatile_attributes_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
+ChainableResult<void>
+save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
 {
-    // TODO: actually implement attribute handling
-    // TODO: firered attributes will need to use std::uint32_t
+    // TODO: will need different handling for firered attrs
     std::ofstream out{path};
-    std::size_t num_entries = entries.size();
-    // TODO: this assumes dual layer
-    const std::size_t num_attributes = num_entries / 8;
-    for (int i = 0; i < num_attributes; i++) {
-        constexpr std::uint16_t attribute_value = 0;
-        out << static_cast<char>(attribute_value);
-        out << static_cast<char>(attribute_value >> 8);
+    for (const auto &attribute : attributes) {
+        const std::uint16_t behavior = attribute.behavior();
+        const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
+        const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
+        out << static_cast<std::uint8_t>(attribute_value);
+        out << static_cast<std::uint8_t>(attribute_value >> 8);
     }
     out.flush();
     return {};
 }
 
-Result<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
-        return std::unexpected{fmt::format("failed to save: {}", path.c_str())};
+        return ChainableResult<void>{FormattableError{fmt::format("{}: failed to save", path.c_str())}, save_result};
     }
     return {};
 }
@@ -92,10 +131,10 @@ Result<void> ProjectTilesetArtifactWriter::begin_transaction()
     return {};
 }
 
-Result<void> ProjectTilesetArtifactWriter::commit()
+ChainableResult<void> ProjectTilesetArtifactWriter::commit()
 {
     if (transaction_root_.empty()) {
-        return std::unexpected{"no transaction in progress"};
+        return FormattableError{"no transaction in progress"};
     }
 
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_files;
@@ -183,7 +222,7 @@ Result<void> ProjectTilesetArtifactWriter::commit()
         }
         transaction_root_.clear();
 
-        return std::unexpected{fmt::format("failed to commit transaction: {}", e.what())};
+        return FormattableError{"failed to commit transaction: {}", FormatParam{e.what()}};
     }
 }
 
@@ -206,11 +245,11 @@ Result<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-Result<void>
+ChainableResult<void>
 ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src)
 {
     if (transaction_root_.empty()) {
-        return std::unexpected{"no transaction in progress"};
+        return FormattableError{"no transaction in progress"};
     }
 
     // Compute the destination path within the transaction directory
@@ -243,7 +282,7 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
     case TilesetArtifact::Type::metatiles_bin:
         return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        return save_metatile_attributes_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
+        return save_metatile_attributes_bin(src.porymap_component().metatile_attributes(), transaction_dest_path);
     case TilesetArtifact::Type::tiles_png:
         return save_tiles_png(
             *png_indexed_saver_,

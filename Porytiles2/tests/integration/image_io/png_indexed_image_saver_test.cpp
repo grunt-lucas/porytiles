@@ -3,13 +3,14 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/index_pixel.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -101,7 +102,7 @@ TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
 
     auto result = saver_->save_to_file(image, invalid_path, TilesPalMode::true_color);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().contains("failed to save indexed PNG"));
+    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).contains("save failed"));
 }
 
 TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode)
@@ -283,7 +284,7 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly)
 
             // Verify transparency detection works
             if (original_pixel.index() == 0) {
-                EXPECT_TRUE(loaded_pixel.is_transparent(IndexPixel{}))
+                EXPECT_TRUE(loaded_pixel.is_transparent())
                     << "Pixel should be transparent at (" << row << ", " << col << ")";
             }
         }

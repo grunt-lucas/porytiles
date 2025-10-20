@@ -7,6 +7,7 @@
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -32,11 +33,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
 
     [[nodiscard]] Result<void> begin_transaction() override;
 
-    [[nodiscard]] Result<void> commit() override;
+    [[nodiscard]] ChainableResult<void> commit() override;
 
     [[nodiscard]] Result<void> rollback() override;
 
-    [[nodiscard]] Result<void>
+    [[nodiscard]] ChainableResult<void>
     write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) override;
 
   private:

@@ -2,8 +2,8 @@
 
 #include <filesystem>
 
-#include "porytiles2/domain/model/rgba_pal.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -18,7 +18,7 @@ class FilePalSaver {
   public:
     virtual ~FilePalSaver() = default;
 
-    [[nodiscard]] virtual Result<void> save(const RgbaPal &pal, const std::filesystem::path &path) const = 0;
+    [[nodiscard]] virtual ChainableResult<void> save(const RgbaPal &pal, const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

@@ -7,16 +7,17 @@
 #include "CImg.h"
 #include "fmt/format.h"
 
-#include "porytiles2/domain/model/image.hpp"
-#include "porytiles2/domain/model/rgba32.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
 using cimg_library::CImg;
 using cimg_library::CImgException;
 
-Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const
+ChainableResult<void>
+PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesystem::path &path) const
 {
     const auto width = static_cast<int>(image.width());
     const auto height = static_cast<int>(image.height());
@@ -40,8 +41,8 @@ Result<void> PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const s
     try {
         std::ignore = cimg_png.save_png(path_c_str);
     }
-    catch (const CImgException &e) {
-        return std::unexpected{fmt::format("Failed to save PNG to {}: {}", path_c_str, e.what())};
+    catch (const std::exception &e) {
+        return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
     }
 
     return {};
