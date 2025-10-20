@@ -10,6 +10,7 @@
 #include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -24,6 +25,12 @@ ChainableResult<std::vector<RgbaMetatile>> MetatileDecompiler::decompile_metatil
 
     if (num_tiles_per_metatile_ == 8) {
         // dual layer
+    }
+    else if (num_tiles_per_metatile_ == 12) {
+        // triple layer
+    }
+    else {
+        panic("invalid value of num_tiles_per_metatile_: " + std::to_string(num_tiles_per_metatile_));
     }
 
     return decompiled;
