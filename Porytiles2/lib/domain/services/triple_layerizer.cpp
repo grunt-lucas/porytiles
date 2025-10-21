@@ -2,7 +2,8 @@
 
 namespace porytiles2 {
 
-int TripleLayerizer::foo() const {
+int TripleLayerizer::foo() const
+{
     return foo_;
 }
 
