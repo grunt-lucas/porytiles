@@ -1,10 +1,12 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
@@ -21,11 +23,13 @@ namespace porytiles2 {
 class MetatileDecompiler {
   public:
     explicit MetatileDecompiler(
-        std::size_t num_tiles_per_metatile,
+        std::string tileset_name,
+        gsl::not_null<DomainConfig *> config,
         gsl::not_null<TextFormatter *> format,
         gsl::not_null<UserDiagnostics *> diag,
         gsl::not_null<TilePrinter *> tile_printer)
-        : num_tiles_per_metatile_{num_tiles_per_metatile}, format_{format}, diag_{diag}, tile_printer_{tile_printer}
+        : tileset_name_{std::move(tileset_name)}, config_{config}, format_{format}, diag_{diag},
+          tile_printer_{tile_printer}
     {
     }
 
@@ -36,7 +40,8 @@ class MetatileDecompiler {
         const std::array<RgbaPal, pal::num_pals> &pals);
 
   private:
-    std::size_t num_tiles_per_metatile_;
+    std::string tileset_name_;
+    DomainConfig *config_;
     TextFormatter *format_;
     UserDiagnostics *diag_;
     TilePrinter *tile_printer_;

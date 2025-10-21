@@ -23,14 +23,13 @@ ChainableResult<std::vector<RgbaMetatile>> MetatileDecompiler::decompile_metatil
 {
     std::vector<RgbaMetatile> decompiled;
 
-    if (num_tiles_per_metatile_ == 8) {
-        // dual layer
+    // Precondition: entry vector must be triple-layerized
+    if (entries.size() % 12 != 0) {
+        // TODO: don't hardcode 12
+        panic("entry vector size was not divisible 12");
     }
-    else if (num_tiles_per_metatile_ == 12) {
-        // triple layer
-    }
-    else {
-        panic("invalid value of num_tiles_per_metatile_: " + std::to_string(num_tiles_per_metatile_));
+    if (entries.size() / 12 != attributes.size()) {
+        panic("entry vector size (div 12) did not match attribute size");
     }
 
     return decompiled;
