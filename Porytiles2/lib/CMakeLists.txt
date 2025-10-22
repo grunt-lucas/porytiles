@@ -51,6 +51,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# Google Fruit DI
+FetchContent_Declare(
+        fruit
+        GIT_REPOSITORY https://github.com/google/fruit.git
+        GIT_TAG master  # Use master branch for CMake compatibility fix
+)
+set(FRUIT_USES_BOOST FALSE CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+# Fruit needs C++17 or earlier, not compatible with C++23
+set(CMAKE_CXX_STANDARD 17)
+FetchContent_MakeAvailable(fruit)
+# Restore C++23 for Porytiles
+set(CMAKE_CXX_STANDARD 23)
+
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
 find_library(PNG_STATIC
@@ -123,12 +137,19 @@ target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
 # Public link API exposed libs
 target_link_libraries(Porytiles2Lib PUBLIC fmt::fmt)
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
+target_link_libraries(Porytiles2Lib PUBLIC fruit)
 
 
 ##################################
 #### Export Porytiles library ####
 ##################################
 
-# Export the library.
-# We have to export GSL explicitly since the GSL CMake disables exporting by default.
-export(TARGETS Porytiles2Lib GSL FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
+# Export the library and its dependencies.
+# Libraries with modern CMake export configuration (like fmt::fmt) handle their own exports
+# automatically through namespaced targets and don't need to be listed here.
+# However, libraries without proper export configuration must be explicitly exported:
+# - GSL: Only exports when built as a top-level project (GSL_INSTALL defaults to false
+#        when used via FetchContent as a subdirectory)
+# - fruit: Uses simple CMake targets without automatic export handling
+# These must be manually included so downstream projects can find them as dependencies.
+export(TARGETS Porytiles2Lib GSL fruit FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
