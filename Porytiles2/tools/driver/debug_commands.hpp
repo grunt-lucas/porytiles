@@ -3,8 +3,12 @@
 #include <memory>
 #include <string>
 
-#include "CLI/CLI.hpp"
+#include <unistd.h>
 
+#include "CLI/CLI.hpp"
+#include "fruit/fruit.h"
+
+#include "porytiles2/di/components.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
@@ -22,7 +26,6 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
-#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -42,15 +45,19 @@ class DebugPrimaryCompileCommand final : public Command {
     {
         using namespace porytiles2;
 
-        // Init text formatter and user diagnostic implementation
-        std::unique_ptr<TextFormatter> text_formatter = std::make_unique<AnsiStyledTextFormatter>();
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter.get());
-        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<StderrAsciiTilePrinter>(text_formatter.get());
+        // Use Fruit DI to inject TextFormatter based on no_color flag
+        const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
+        fruit::Injector<TextFormatter> injector{di::getFormatterComponent, no_color};
+        TextFormatter *text_formatter = injector.get<TextFormatter *>();
+
+        // Manually create other services (not yet using DI for these)
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
+        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<StderrAsciiTilePrinter>(text_formatter);
 
         // Setup layered configuration
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<DefaultProvider>());
-        LazyLayeredConfig config{text_formatter.get(), std::move(providers)};
+        LazyLayeredConfig config{text_formatter, std::move(providers)};
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
@@ -61,7 +68,7 @@ class DebugPrimaryCompileCommand final : public Command {
         JascPalSaver jasc_saver{};
 
         // Setup primary compiler
-        PrimaryTilesetCompiler compiler{&config, text_formatter.get(), diag.get(), tile_printer.get()};
+        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
