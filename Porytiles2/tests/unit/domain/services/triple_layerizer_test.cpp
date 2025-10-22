@@ -3,9 +3,3 @@
 #include "porytiles2/domain/services/triple_layerizer.hpp"
 
 using namespace porytiles2;
-
-TEST(TripleLayerizerTests, FooShouldBeZero)
-{
-    TripleLayerizer foo{};
-    EXPECT_EQ(foo.foo(), 0);
-}
