@@ -17,6 +17,8 @@
                 "${workspaceFolder}/build/_deps/googletest-src/googletest/include/**",
                 "${workspaceFolder}/build/_deps/pngpp-src/include/**",
                 "${workspaceFolder}/build/_deps/json-src/include/**",
+                "${workspaceFolder}/build/_deps/fruit-src/include/**",
+                "${workspaceFolder}/build/_deps/fruit-build/include/**",
                 "/opt/homebrew/opt/libpng/include/**"
             ],
             "defines": [
