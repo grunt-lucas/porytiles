@@ -15,15 +15,15 @@ namespace porytiles2 {
  * @brief A workspace for managing canonical IndexPixel tiles destined for tiles.png output.
  *
  * @details
- * TilesPngWorkspace provides a fixed-capacity container for canonical pixel tiles that will be written to the tiles.png
- * output file in the PorymapTilesetComponent of a Tileset. The workspace manages tile deduplication, transparent tile
- * slots, and efficient insertion through cursor-based tracking.
+ * TilesPngWorkspace provides a fixed-capacity container for \link PixelTile PixelTiles \endlink that will be written to
+ * the tiles.png output file in the PorymapTilesetComponent of a Tileset. The workspace manages tile deduplication,
+ * transparent tile slots, and efficient insertion through cursor-based tracking.
  *
  * Key Features:
  * - Pre-allocated storage: The workspace pre-allocates all tile slots up to capacity with transparent tiles
  * - Tile 0 reservation: Index 0 is always reserved for a transparent tile per pokeemerald tileset conventions
  * - Cursor-based insertion: Tracks the next available transparent slot for O(1) insertion in the common case
- * - Deduplication support: Maintains a map of canonical tile forms to their first occurrence indices
+ * - Deduplication support: Maintains a mapping of canonical tile forms to their first occurrence indices
  * - Transparent tile rejection: Refuses to insert transparent tiles (except the reserved tile 0)
  *
  * Storage Model:
@@ -32,7 +32,7 @@ namespace porytiles2 {
  * available transparent slot, skipping over already-inserted non-transparent tiles.
  *
  * Canonical Forms:
- * Only non-transparent tiles are tracked in the canonical_forms_ map for deduplication purposes. This map stores the
+ * Only non-transparent tiles are tracked in the canonical forms map for deduplication purposes. This map stores the
  * canonical (lexicographically minimal) representation of each unique tile and all indices where that tile appears in
  * the workspace.
  */
@@ -121,21 +121,6 @@ class TilesPngWorkspace {
     [[nodiscard]] bool insert_tile(const CanonicalPixelTile<IndexPixel> &tile);
 
     /**
-     * @brief Checks if the workspace has reached capacity and can no longer accept new tile insertions.
-     *
-     * @details
-     * Returns true when the cursor has reached or exceeded the capacity, indicating that all available transparent tile
-     * slots have been filled with non-transparent tiles. At this point, insert_tile() will return false for any further
-     * insertion attempts.
-     *
-     * Note: This method returns true even if there are still transparent tiles in the workspace beyond the cursor
-     * position, as the cursor always advances forward and never backtracks.
-     *
-     * @return true if cursor == capacity, false otherwise
-     */
-    [[nodiscard]] bool at_capacity() const;
-
-    /**
      * @brief Finds the first occurrence index of a given canonical tile in the workspace.
      *
      * @details
@@ -176,6 +161,66 @@ class TilesPngWorkspace {
      * @throws Panics if index >= tiles_.size()
      */
     [[nodiscard]] CanonicalPixelTile<IndexPixel> tile_at(std::size_t index) const;
+
+    /**
+     * @brief Exports the workspace tiles to an Image<IndexPixel> in canonical form (tiles.png format).
+     *
+     * @details
+     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
+     * tiles per row (128 pixels wide). This method exports tiles in their canonical (lexicographically minimal) form
+     * as stored in the workspace, without applying any flip transformations.
+     *
+     * Image Layout:
+     * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
+     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
+     * - Tile arrangement: Row-major order, matching the extraction order from the constructor
+     *
+     * Canonical Form:
+     * Each tile is exported exactly as stored in the workspace - in its canonical (lexicographically minimal)
+     * orientation among all flip variants. Flip flags are not applied during export. This is the appropriate format
+     * for tiles.png output in fresh compilations, where there is no "original" tile orientation to preserve.
+     *
+     * @return An Image<IndexPixel> containing all workspace tiles in canonical form (tiles.png format)
+     */
+    [[nodiscard]] Image<IndexPixel> export_canonical_image() const;
+
+    /**
+     * @brief Exports the workspace tiles to an Image<IndexPixel> in original (pre-canonicalization) form.
+     *
+     * @details
+     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
+     * tiles per row (128 pixels wide). This method applies flip transformations to restore tiles to their original
+     * orientations as they were before canonicalization.
+     *
+     * Image Layout:
+     * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
+     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
+     * - Tile arrangement: Row-major order, matching the extraction order from the constructor
+     *
+     * Original Form Restoration:
+     * Each tile is exported with flip transformations applied based on its stored h_flip and v_flip flags. This
+     * reverses the canonicalization process, restoring tiles to their original pixel arrangements. This enables
+     * round-trip preservation: original image → workspace → exported original image, which is particularly useful in
+     * incremental builds.
+     *
+     * @return An Image<IndexPixel> containing all workspace tiles in original (flipped) form
+     */
+    [[nodiscard]] Image<IndexPixel> export_original_image() const;
+
+    /**
+     * @brief Checks if the workspace has reached capacity and can no longer accept new tile insertions.
+     *
+     * @details
+     * Returns true when the cursor has reached or exceeded the capacity, indicating that all available transparent tile
+     * slots have been filled with non-transparent tiles. At this point, insert_tile() will return false for any further
+     * insertion attempts.
+     *
+     * Note: This method returns true even if there are still transparent tiles in the workspace beyond the cursor
+     * position, as the cursor always advances forward and never backtracks.
+     *
+     * @return true if cursor == capacity, false otherwise
+     */
+    [[nodiscard]] bool at_capacity() const;
 
     /**
      * @brief Returns the maximum number of tiles this workspace can hold.

@@ -458,3 +458,345 @@ TEST(TilesPngWorkspaceTests, ShouldDeduplicateTilesFromImage)
     // Should find the first occurrence
     EXPECT_EQ(occurrence.value(), 0);
 }
+
+// ========================================
+// Export Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldHaveCorrectDimensions)
+{
+    TilesPngWorkspace workspace{256};
+
+    auto img = workspace.export_canonical_image();
+
+    // Standard tiles.png format: 128 pixels wide (16 tiles)
+    EXPECT_EQ(img.width(), 128);
+    // 256 tiles / 16 tiles per row = 16 rows * 8 pixels per tile = 128 pixels
+    EXPECT_EQ(img.height(), 128);
+}
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldCalculateHeightForNonSquareCapacity)
+{
+    TilesPngWorkspace workspace{32};
+
+    auto img = workspace.export_canonical_image();
+
+    // Standard tiles.png format: 128 pixels wide (16 tiles)
+    EXPECT_EQ(img.width(), 128);
+    // 32 tiles / 16 tiles per row = 2 rows * 8 pixels per tile = 16 pixels
+    EXPECT_EQ(img.height(), 16);
+}
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldHandleNonEvenCapacity)
+{
+    TilesPngWorkspace workspace{20};
+
+    auto img = workspace.export_canonical_image();
+
+    // Standard tiles.png format: 128 pixels wide (16 tiles)
+    EXPECT_EQ(img.width(), 128);
+    // 20 tiles / 16 tiles per row = 2 rows (ceiling) * 8 pixels per tile = 16 pixels
+    EXPECT_EQ(img.height(), 16);
+}
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldBeAllTransparentForEmptyWorkspace)
+{
+    TilesPngWorkspace workspace{16};
+
+    auto img = workspace.export_canonical_image();
+
+    // All pixels should be transparent (IndexPixel(0))
+    for (std::size_t row = 0; row < img.height(); ++row) {
+        for (std::size_t col = 0; col < img.width(); ++col) {
+            EXPECT_EQ(img.at(row, col).index(), 0);
+        }
+    }
+}
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldContainInsertedTiles)
+{
+    TilesPngWorkspace workspace{10};
+
+    // Create and insert a tile with a specific pixel
+    // Note: A tile with only pixel (0,0) set gets canonicalized to pixel (7,7)
+    // So we use a tile that's already in canonical form (symmetric)
+    PixelTile<IndexPixel> pixel_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        pixel_tile.set(i, IndexPixel{42});
+    }
+    CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+
+    workspace.insert_tile(tile);
+
+    auto img = workspace.export_canonical_image();
+
+    // Tile 1 should be at pixel position (0, 8) since tile 0 is transparent
+    // Tile 1 starts at pixel column 8 (second tile in first row)
+    // Check that all pixels in the tile are 42
+    EXPECT_EQ(img.at(0, 8).index(), 42);
+    EXPECT_EQ(img.at(7, 15).index(), 42);
+}
+
+TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveImageContents)
+{
+    // Create a simple image with distinct tiles using canonical-form-friendly patterns
+    // We fill entire tiles with solid colors to ensure they remain canonical
+    Image<IndexPixel> original{16, 8};
+
+    // First tile (0-7, 0-7) - fill with value 1
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            original.set(row, col, IndexPixel{1});
+        }
+    }
+
+    // Second tile (0-7, 8-15) - fill with value 2
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            original.set(row, col, IndexPixel{2});
+        }
+    }
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export back to image
+    auto exported = workspace.export_canonical_image();
+
+    // Verify the tiles are preserved - check a few pixels from each tile
+    EXPECT_EQ(exported.at(0, 0).index(), 1);
+    EXPECT_EQ(exported.at(4, 4).index(), 1);
+    EXPECT_EQ(exported.at(7, 7).index(), 1);
+
+    EXPECT_EQ(exported.at(0, 8).index(), 2);
+    EXPECT_EQ(exported.at(4, 12).index(), 2);
+    EXPECT_EQ(exported.at(7, 15).index(), 2);
+}
+
+TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveComplexImage)
+{
+    // Create a more complex image with canonical-form-friendly tiles
+    Image<IndexPixel> original{32, 16};
+
+    // Fill different tiles with solid colors to ensure canonical forms
+    // Tile at (0, 0) - fill with value 10
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            original.set(row, col, IndexPixel{10});
+        }
+    }
+
+    // Tile at (0, 1) - fill with value 20
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            original.set(row, col, IndexPixel{20});
+        }
+    }
+
+    // Tile at (0, 2) - fill with value 30
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 16; col < 24; ++col) {
+            original.set(row, col, IndexPixel{30});
+        }
+    }
+
+    // Tile at (1, 0) - fill with value 40
+    for (std::size_t row = 8; row < 16; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            original.set(row, col, IndexPixel{40});
+        }
+    }
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 256};
+
+    // Export back to image
+    auto exported = workspace.export_canonical_image();
+
+    // Verify dimensions match (workspace capacity may be larger)
+    EXPECT_EQ(exported.width(), 128); // Standard width
+
+    // Verify the specific pixels are preserved (check multiple pixels per tile)
+    // Note: Original image was 4 tiles wide x 2 tiles tall, but exported is 16 tiles wide
+    // Tiles are laid out in row-major order in the exported image
+    EXPECT_EQ(exported.at(0, 0).index(), 10); // Tile 0 at (0,0)
+    EXPECT_EQ(exported.at(7, 7).index(), 10);
+    EXPECT_EQ(exported.at(0, 8).index(), 20); // Tile 1 at (0,1)
+    EXPECT_EQ(exported.at(7, 15).index(), 20);
+    EXPECT_EQ(exported.at(0, 16).index(), 30); // Tile 2 at (0,2)
+    EXPECT_EQ(exported.at(7, 23).index(), 30);
+    EXPECT_EQ(exported.at(0, 32).index(), 40); // Tile 4 at (0,4) in exported layout
+    EXPECT_EQ(exported.at(7, 39).index(), 40);
+}
+
+TEST(TilesPngWorkspaceTests, ExportImageShouldPlaceTilesInCorrectPositions)
+{
+    TilesPngWorkspace workspace{256};
+
+    // Create and insert tiles filled with solid colors (canonical form)
+    PixelTile<IndexPixel> pixel_tile1;
+    for (std::size_t i = 0; i < 64; ++i) {
+        pixel_tile1.set(i, IndexPixel{100});
+    }
+    CanonicalPixelTile<IndexPixel> tile1{pixel_tile1};
+    workspace.insert_tile(tile1);
+
+    // Create and insert another tile
+    PixelTile<IndexPixel> pixel_tile2;
+    for (std::size_t i = 0; i < 64; ++i) {
+        pixel_tile2.set(i, IndexPixel{200});
+    }
+    CanonicalPixelTile<IndexPixel> tile2{pixel_tile2};
+    workspace.insert_tile(tile2);
+
+    auto img = workspace.export_canonical_image();
+
+    // Tile 0 should be transparent
+    EXPECT_EQ(img.at(0, 0).index(), 0);
+
+    // Tile 1 should be at pixel (0, 8) - second tile in first row
+    EXPECT_EQ(img.at(0, 8).index(), 100);
+    EXPECT_EQ(img.at(7, 15).index(), 100); // Last pixel of tile 1
+
+    // Tile 2 should be at pixel (0, 16) - third tile in first row
+    EXPECT_EQ(img.at(0, 16).index(), 200);
+    EXPECT_EQ(img.at(7, 23).index(), 200); // Last pixel of tile 2
+}
+
+// ========================================
+// Export Original Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldPreserveOriginalPixelArrangement)
+{
+    // Create an image with a non-canonical tile (top-left pixel set)
+    Image<IndexPixel> original{8, 8};
+    original.set(0, 0, IndexPixel{42});
+    original.set(1, 1, IndexPixel{43});
+
+    // Load into workspace (will be canonicalized)
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export with original form restoration
+    auto exported_original = workspace.export_original_image();
+
+    // The original pixel arrangement should be preserved
+    EXPECT_EQ(exported_original.at(0, 0).index(), 42);
+    EXPECT_EQ(exported_original.at(1, 1).index(), 43);
+
+    // All other pixels should be transparent
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            if ((row == 0 && col == 0) || (row == 1 && col == 1)) {
+                continue;
+            }
+            EXPECT_EQ(exported_original.at(row, col).index(), 0);
+        }
+    }
+}
+
+TEST(TilesPngWorkspaceTests, ExportOriginalVsCanonicalShouldDifferForNonCanonicalTiles)
+{
+    // Create an image with a tile that will be canonicalized (top-left pixel set)
+    Image<IndexPixel> original{8, 8};
+    original.set(0, 0, IndexPixel{99});
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export both forms
+    auto exported_canonical = workspace.export_canonical_image();
+    auto exported_original = workspace.export_original_image();
+
+    // Canonical form should have the pixel at (7,7) due to HV flip being lex-minimal
+    EXPECT_EQ(exported_canonical.at(7, 7).index(), 99);
+    EXPECT_EQ(exported_canonical.at(0, 0).index(), 0);
+
+    // Original form should have the pixel at (0,0) as in the input
+    EXPECT_EQ(exported_original.at(0, 0).index(), 99);
+    EXPECT_EQ(exported_original.at(7, 7).index(), 0);
+}
+
+TEST(TilesPngWorkspaceTests, RoundTripWithExportOriginalShouldPreserveAllPixels)
+{
+    // Create an image with asymmetric tiles
+    Image<IndexPixel> original{16, 8};
+
+    // First tile with distinct pattern
+    original.set(0, 0, IndexPixel{10});
+    original.set(0, 1, IndexPixel{11});
+    original.set(1, 0, IndexPixel{12});
+
+    // Second tile with different pattern
+    original.set(0, 8, IndexPixel{20});
+    original.set(0, 9, IndexPixel{21});
+    original.set(2, 8, IndexPixel{22});
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export with original form restoration
+    auto exported = workspace.export_original_image();
+
+    // Verify all specific pixels are preserved
+    EXPECT_EQ(exported.at(0, 0).index(), 10);
+    EXPECT_EQ(exported.at(0, 1).index(), 11);
+    EXPECT_EQ(exported.at(1, 0).index(), 12);
+
+    EXPECT_EQ(exported.at(0, 8).index(), 20);
+    EXPECT_EQ(exported.at(0, 9).index(), 21);
+    EXPECT_EQ(exported.at(2, 8).index(), 22);
+}
+
+TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldHandleComplexPatterns)
+{
+    // Create an image with a complex asymmetric pattern
+    Image<IndexPixel> original{8, 8};
+
+    // Create a diagonal gradient pattern (top-left to bottom-right)
+    for (std::size_t i = 0; i < 8; ++i) {
+        original.set(i, i, IndexPixel{static_cast<unsigned int>(i + 1)});
+    }
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export with original form restoration
+    auto exported = workspace.export_original_image();
+
+    // Verify the diagonal pattern is preserved
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(exported.at(i, i).index(), i + 1);
+    }
+
+    // Verify non-diagonal pixels are transparent
+    EXPECT_EQ(exported.at(0, 1).index(), 0);
+    EXPECT_EQ(exported.at(1, 0).index(), 0);
+    EXPECT_EQ(exported.at(7, 6).index(), 0);
+}
+
+TEST(TilesPngWorkspaceTests, ExportCanonicalShouldMatchForSymmetricTiles)
+{
+    // Create an image with a symmetric tile (solid color)
+    Image<IndexPixel> original{8, 8};
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            original.set(row, col, IndexPixel{50});
+        }
+    }
+
+    // Load into workspace
+    TilesPngWorkspace workspace{original, 10};
+
+    // Export both forms
+    auto exported_canonical = workspace.export_canonical_image();
+    auto exported_original = workspace.export_original_image();
+
+    // For symmetric tiles, both exports should be identical
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            EXPECT_EQ(exported_canonical.at(row, col).index(), exported_original.at(row, col).index());
+            EXPECT_EQ(exported_canonical.at(row, col).index(), 50);
+        }
+    }
+}

@@ -45,10 +45,14 @@ class DebugPrimaryCompileCommand final : public Command {
     {
         using namespace porytiles2;
 
+        /*
+         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
+         * Fruit.
+         */
         // Use Fruit DI to inject TextFormatter based on no_color flag
         const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
-        fruit::Injector<TextFormatter> injector{di::getFormatterComponent, no_color};
-        TextFormatter *text_formatter = injector.get<TextFormatter *>();
+        fruit::Injector injector{di::getFormatterComponent, no_color};
+        auto text_formatter = injector.get<TextFormatter *>();
 
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
