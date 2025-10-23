@@ -213,6 +213,134 @@ TODO
 TODO
 
 
+## Dump Tileset
+Dump the contents of a tileset to a file in the current working directory.
+
+This command will be really useful for debugging purposes,
+allowing users to inspect the state of their tilesets using a human-readable text format.
+
+### CLI Invocation
+```sh
+porytiles2 dump-tileset MyPrimaryTileset
+
+porytiles2 dump-tileset MyPrimaryTileset --format=yaml --component=metatiles.bin,attributes.csv
+```
+
+### Outputs
+Outputs a single file called `<TILESET-NAME>.<FORMAT>` (e.g. `MyPrimaryTileset.json`) to the CWD.
+Users can use `--format` to control the output format.
+Default is JSON, but we could also support YAML, CSV, etc.
+Users can use `--component=<comma-separate-list>` to select which tileset components they want.
+Default is all.
+
+JSON example:
+```json
+{
+  "name": "MyPrimaryTileset",
+  "layer_mode": "triple",
+  "assets_with_diffs": [
+    "metatiles.bin",
+    "porytiles/attributes.csv"
+  ],
+  "metatiles.bin": {
+    "entries_count": 24,
+    "entries": [
+      {
+        "tile_index": 12,
+        "pal_index": 0,
+        "hflip": true,
+        "vflip": false
+      },
+      {
+        "tile_index": 2,
+        "pal_index": 4,
+        "hflip": false,
+        "vflip": false
+      },
+      // ...
+    ]
+  },
+  "metatile_attributes.bin": {
+    "attributes_count": 2,
+    "attributes": [
+      {
+        "id": 0,
+        "layer_type": "normal",
+        "metatile_behavior": "MB_NORMAL"
+      },
+      {
+        "id": 1,
+        "layer_type": "split",
+        "metatile_behavior": "MB_OCEAN"
+      }
+    ]
+  },
+  "tiles.png": {
+    "tiles_count": 512,
+    "non_transparent_tiles_count": 322,
+    "tiles": [
+      {
+        "index": 0,
+        "transparent": true
+      },
+      {
+        "index": 1,
+        "transparent": false
+      },
+      // ...
+    ]
+  },
+  "palettes": {
+    "00.pal": [
+      "255 0 255",
+      "8 0 8",
+      // ...
+    ],
+    "01.pal": [
+      "255 0 255",
+      "128 128 12",
+      // ...
+    ],
+    // ...
+  },
+  "porytiles": {
+    "bottom.png": {
+      // TODO: what to put here?
+    },
+    // middle.png, top.png
+    "attributes.csv": {
+      "attributes_count": 2,
+      "attributes": [
+        {
+          "id": 0,
+          "layer_type": "normal",
+          "metatile_behavior": "MB_OCEAN"
+        },
+        {
+          "id": 1,
+          "layer_type": "split",
+          "metatile_behavior": "MB_OCEAN"
+        }
+      ]
+    },
+    "tiles.override.png": {
+      "tiles_count": 512,
+      "non_transparent_tiles_count": 3,
+      "tiles": [
+        {
+          "index": 0,
+          "transparent": true
+        },
+        {
+          "index": 1,
+          "transparent": false
+        },
+        // ...
+      ]
+    }
+  }
+}
+```
 
 ## Create Layout
 TODO

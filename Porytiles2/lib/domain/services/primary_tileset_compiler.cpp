@@ -31,6 +31,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     TileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
+    /*
+     * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has
+     * non-transparent content on all three layers. Otherwise, use the present layers to attempt to infer the layer type
+     * automatically and save it off to a vector.
+     */
+
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
@@ -41,17 +47,28 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
+    /*
+     * TODO: our first step in any compilation operation should validate the LayerMode. First, we need to check the
+     * num_tiles_per_metatile configuration setting. If it's set to 8, the user is requesting dual-layer compilation. If
+     * it's 12, triple. Any other value will have been caught earlier by config validation. If it's 8, then we need to
+     * check the input metatiles and throw an error for all metatiles that have non-transparent content on all three
+     * layers. While doing this, we can also compute the inferred layer type and save it into a vector for later.
+     *
+     * If it's 12, then we're good, just move on. No need to validate or do anything special for the inferred layer type
+     * vector. Just set it to LayerType::normal and move on.
+     *
+     * Since we'll be overwriting the output tilemap entries and attributes as part of the compilation operation, no
+     * need to validate them via LayerModeConverter::detect_layer_mode at this point. (Let's really think through this.
+     * Would we want to warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the
+     * decompilation operations this is an error condition.)
+     */
+
+    // TODO: remove, here for testing
     PT_TRY_CALL_CHAIN_ERR(
         layer_converter.detect_layer_mode(
             tileset.porymap_component().metatiles_bin(), tileset.porymap_component().metatile_attributes()),
         "layer mode detection failed",
         std::unique_ptr<Tileset>);
-
-    /*
-     * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has
-     * non-transparent content on all three layers. Otherwise, use the present layers to attempt to infer the layer type
-     * automatically and save it off to a vector.
-     */
 
     // TODO: remove these, just here to test config/diagnostic stuff
     PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
