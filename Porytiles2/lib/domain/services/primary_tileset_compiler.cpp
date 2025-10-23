@@ -41,8 +41,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
 
-    layer_converter.detect_layer_mode(
-        tileset.porymap_component().metatiles_bin(), tileset.porymap_component().metatile_attributes());
+    PT_TRY_CALL_CHAIN_ERR(
+        layer_converter.detect_layer_mode(
+            tileset.porymap_component().metatiles_bin(), tileset.porymap_component().metatile_attributes()),
+        "layer mode detection failed",
+        std::unique_ptr<Tileset>);
 
     /*
      * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has

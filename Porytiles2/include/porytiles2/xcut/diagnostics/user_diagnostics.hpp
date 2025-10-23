@@ -236,7 +236,18 @@ class UserDiagnostics {
         }
 
         /*
-         * TODO: should we provide some mechanism to support multi-line error messages for each fatal step?
+         * TODO: should we provide some mechanism to support multi-line error messages for each fatal step? This would
+         * allow for more intuitive error messages in many cases. E.g. LayerModeConverter::detect_layer_mode writes a
+         * detailed err before returning FormattableError with the root cause. The problem is that from the user
+         * perspective, it's not immediately obvious that the err, which gets printed first, is related to the fatal
+         * chain. This is a case where it makes sense to have the root cause be detailed and multi-lined.
+         *
+         * In other cases, it might make sense to print a bunch of different errors before showing the fatal. I am
+         * thinking of tile max color count validation. We'd want to iterate over every input tile and report all tiles
+         * that have > 15 colors before bailing. It would be a frustrating user experience to have the program die on
+         * the first tile it hits if they have > 15 colors. It would also be strange to have a root cause message with
+         * dozens of lines detailing each tile that failed. Having a separate error message for each tile failure reads
+         * more naturally. So there really is a need for both types of error reporting.
          */
 
         emit_fatal_proximate(*filtered_chain.at(0));

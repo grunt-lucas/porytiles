@@ -22,13 +22,21 @@ ChainableResult<metatile::LayerMode> LayerModeConverter::detect_layer_mode(
         return metatile::LayerMode::dual;
     }
 
+    // TODO: perhaps we should have a multi-line root cause here
     diag_->err("failed to detect layer mode from metatiles.bin and metatile_attributes.bin");
     diag_->note({
-        format_->format("found {} tilemap entries and {} metatile attributes", entries.size(), metatile_count),
-        format_->format("for dual layer mode, expected {} entries (8 per metatile)", metatile_count * 8),
-        format_->format("for triple layer mode, expected {} entries (12 per metatile)", metatile_count * 12),
+        format_->format(
+            "found {} tilemap entries and {} metatile attributes",
+            FormatParam{entries.size(), Style::bold},
+            FormatParam{metatile_count, Style::bold}),
+        format_->format(
+            "for dual layer metatiles, expected {} entries (8 per metatile)",
+            FormatParam{metatile_count * 8, Style::bold}),
+        format_->format(
+            "for triple layer metatiles, expected {} entries (12 per metatile)",
+            FormatParam{metatile_count * 12, Style::bold}),
     });
-    return FormattableError{"layer mode detection failed"};
+    return FormattableError{"metatiles.bin size did not correspond to metatile_attributes.bin size"};
 }
 
 ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(
