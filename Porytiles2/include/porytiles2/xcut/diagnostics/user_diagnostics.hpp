@@ -135,8 +135,8 @@ class UserDiagnostics {
      * @brief Display an error message.
      *
      * @details
-     * Errors indicate serious issues that require attention but don't necessarily cause complete failure of the
-     * operation.
+     * Errors indicate serious issues that require attention but don't necessarily cause immediate failure of the
+     * current operation.
      *
      * @param msg The error message to display
      */

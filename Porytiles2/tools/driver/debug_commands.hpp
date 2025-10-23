@@ -51,7 +51,7 @@ class DebugPrimaryCompileCommand final : public Command {
          */
         // Use Fruit DI to inject TextFormatter based on no_color flag
         const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
-        fruit::Injector injector{di::getFormatterComponent, no_color};
+        fruit::Injector injector{di::get_formatter_component, no_color};
         auto text_formatter = injector.get<TextFormatter *>();
 
         // Manually create other services (not yet using DI for these)

@@ -75,6 +75,19 @@ inline std::string to_string(Subtile layer)
         FormatParam{std::to_string(subtile_col), Style::bold});
 }
 
+enum class LayerMode { dual, triple };
+
+inline std::string to_string(LayerMode mode)
+{
+    switch (mode) {
+    case LayerMode::dual:
+        return "dual";
+    case LayerMode::triple:
+        return "triple";
+    }
+    panic("unhandled LayerMode value");
+}
+
 } // namespace metatile
 
 /**

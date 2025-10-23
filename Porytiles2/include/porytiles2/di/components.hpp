@@ -15,13 +15,13 @@ namespace porytiles2::di {
  *
  * Usage:
  * ```C++
- * fruit::Injector<TextFormatter> injector(getFormatterComponent, false);
+ * fruit::Injector<TextFormatter> injector(get_formatter_component, false);
  * auto* formatter = injector.get<TextFormatter*>();
  * ```
  *
  * @param no_color If true, use PlainTextFormatter; otherwise use AnsiStyledTextFormatter
  * @return Component providing TextFormatter interface
  */
-fruit::Component<TextFormatter> getFormatterComponent(bool no_color);
+fruit::Component<TextFormatter> get_formatter_component(bool no_color);
 
 } // namespace porytiles2::di

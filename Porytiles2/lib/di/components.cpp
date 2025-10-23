@@ -7,7 +7,7 @@
 
 namespace porytiles2::di {
 
-fruit::Component<TextFormatter> getFormatterComponent(bool no_color)
+fruit::Component<TextFormatter> get_formatter_component(bool no_color)
 {
     if (no_color) {
         return fruit::createComponent()

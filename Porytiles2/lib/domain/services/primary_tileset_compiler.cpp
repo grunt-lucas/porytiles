@@ -11,6 +11,7 @@
 #include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
+#include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
@@ -28,6 +29,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     RgbaLayerImageMetatileizer metatileizer{};
     ColorIndexMapBuilder color_index_map_builder{};
     TileValidator validator{format_, diag_, tile_printer_};
+    LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -38,6 +40,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             tileset.porytiles_component().top()),
         "failed to metatileize input layer images",
         std::unique_ptr<Tileset>);
+
+    layer_converter.detect_layer_mode(
+        tileset.porymap_component().metatiles_bin(), tileset.porymap_component().metatile_attributes());
 
     /*
      * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has
