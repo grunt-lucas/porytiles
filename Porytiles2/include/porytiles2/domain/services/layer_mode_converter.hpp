@@ -4,7 +4,6 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -23,9 +22,6 @@ class LayerModeConverter {
         : format_{format}, diag_{diag}, tile_printer_{tile_printer}
     {
     }
-
-    [[nodiscard]] ChainableResult<metatile::LayerMode>
-    detect_layer_mode(const std::vector<TilemapEntry> &entries, const std::vector<MetatileAttribute> &attributes);
 
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>>
     triple_layerize(const std::vector<TilemapEntry> &entries, const std::vector<MetatileAttribute> &attributes);

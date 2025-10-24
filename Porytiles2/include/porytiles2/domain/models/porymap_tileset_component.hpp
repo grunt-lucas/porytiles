@@ -11,6 +11,23 @@
 
 namespace porytiles2 {
 
+namespace tileset {
+
+enum class LayerMode { dual, triple };
+
+inline std::string to_string(LayerMode mode)
+{
+    switch (mode) {
+    case LayerMode::dual:
+        return "dual";
+    case LayerMode::triple:
+        return "triple";
+    }
+    panic("unhandled LayerMode value");
+}
+
+} // namespace tileset
+
 class PorymapTilesetComponent {
   public:
     PorymapTilesetComponent() = default;
@@ -35,18 +52,20 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(RgbaPal pal, int pal_index);
+    void set_pal(RgbaPal pal, unsigned int pal_index);
 
-    [[nodiscard]] const RgbaPal &pal_at(int pal_index) const;
+    [[nodiscard]] const RgbaPal &pal_at(unsigned int pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
+
+    [[nodiscard]] ChainableResult<tileset::LayerMode> detect_layer_mode() const;
 
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
     {
         return metatiles_bin_;
     }
 
-    [[nodiscard]] const std::vector<MetatileAttribute> &metatile_attributes() const
+    [[nodiscard]] const std::vector<MetatileAttribute> &metatile_attributes_bin() const
     {
         return metatile_attributes_;
     }

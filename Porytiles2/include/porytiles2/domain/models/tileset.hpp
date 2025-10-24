@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 
 namespace porytiles2 {

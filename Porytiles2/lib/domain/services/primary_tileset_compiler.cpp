@@ -31,12 +31,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     TileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
-    /*
-     * TODO: here, we need to check if dual-layer output is enabled. If so, throw an error if any metatile has
-     * non-transparent content on all three layers. Otherwise, use the present layers to attempt to infer the layer type
-     * automatically and save it off to a vector.
-     */
-
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
@@ -58,17 +52,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
      * vector. Just set it to LayerType::normal and move on.
      *
      * Since we'll be overwriting the output tilemap entries and attributes as part of the compilation operation, no
-     * need to validate them via LayerModeConverter::detect_layer_mode at this point. (Let's really think through this.
-     * Would we want to warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the
-     * decompilation operations this is an error condition.)
+     * need to validate them via detect_layer_mode at this point. (Let's really think through this. Would we want to
+     * warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the decompilation operations
+     * this is an error condition.)
      */
 
     // TODO: remove, here for testing
     PT_TRY_CALL_CHAIN_ERR(
-        layer_converter.detect_layer_mode(
-            tileset.porymap_component().metatiles_bin(), tileset.porymap_component().metatile_attributes()),
-        "layer mode detection failed",
-        std::unique_ptr<Tileset>);
+        tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
 
     // TODO: remove these, just here to test config/diagnostic stuff
     PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
@@ -170,7 +161,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
 
     // TODO: write attributes for real, for now just write back what we read
-    for (const auto &attr : tileset.porymap_component().metatile_attributes()) {
+    for (const auto &attr : tileset.porymap_component().metatile_attributes_bin()) {
         new_porymap_component->push_back_attribute(attr);
     }
 
@@ -183,7 +174,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_incremental(const Tileset &tileset)
 {
     // TODO: implement for real
-    // Pipeline pipeline{};
     panic("TODO: implement");
 }
 
