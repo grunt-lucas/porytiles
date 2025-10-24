@@ -10,7 +10,7 @@
 
 namespace porytiles2 {
 
-void StderrStyledUserDiagnostics::note(const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
     /*
@@ -18,7 +18,8 @@ void StderrStyledUserDiagnostics::note(const std::vector<std::string> &lines) co
      * select a text formatter accordingly.
      */
     std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
-    std::cerr << lines.at(0) << std::endl;
+    std::cerr << lines.at(0);
+    std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << "   " << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
     }
@@ -46,11 +47,12 @@ void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector
     }
 }
 
-void StderrStyledUserDiagnostics::err(const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::err(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
     std::cerr << format_->style("error:", Style::bold | Style::red) << " ";
-    std::cerr << lines.at(0) << std::endl;
+    std::cerr << lines.at(0);
+    std::cerr << " [" << format_->style(tag, Style::bold | Style::red) << "]" << std::endl;
     for (const auto &err_line : std::ranges::views::drop(lines, 1)) {
         std::cerr << "   " << format_->style("│", Style::bold | Style::red) << " " << err_line << std::endl;
     }

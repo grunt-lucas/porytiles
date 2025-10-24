@@ -8,7 +8,7 @@
 
 namespace porytiles2 {
 
-void BufferedUserDiagnostics::note(const std::vector<std::string> &lines) const
+void BufferedUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     notes_.push_back(lines);
 }
@@ -23,7 +23,7 @@ void BufferedUserDiagnostics::warn(const std::string &tag, const std::vector<std
     warnings_.push_back(lines);
 }
 
-void BufferedUserDiagnostics::err(const std::vector<std::string> &lines) const
+void BufferedUserDiagnostics::err(const std::string &tag, const std::vector<std::string> &lines) const
 {
     errors_.push_back(lines);
 }

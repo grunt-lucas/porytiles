@@ -27,7 +27,7 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<R
                         FormatParam{std::to_string(pixel.alpha()), Style::bold})};
                     std::vector highlight = tile_printer_->print_metatile_highlight(subtile, row, col, Style::red);
                     std::ranges::copy(highlight, std::back_inserter(errors));
-                    diag_->err(errors);
+                    diag_->err("alpha-channel-validation", errors);
                 }
             }
         }
@@ -66,7 +66,7 @@ TileValidator::validate_unique_color_count(const std::vector<RgbaTile> &tiles, c
                         FormatParam{pixel.to_jasc_str(), Style::bold})};
                     std::vector highlight = tile_printer_->print_metatile_highlight(subtile, row, col, Style::red);
                     std::ranges::copy(highlight, std::back_inserter(errors));
-                    diag_->err(errors);
+                    diag_->err("color-count-validation", errors);
                     goto next_tile;
                 }
             }

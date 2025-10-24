@@ -32,15 +32,16 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     /**
-     * @brief Display a multi-line informational note to stderr.
+     * @brief Display a multi-line tagged informational note to stderr.
      *
      * @details
-     * Outputs informational messages with cyan "note:" prefix on the first line and appropriate indentation for
-     * subsequent lines.
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines.
      *
+     * @param tag Categorization tag for the note
      * @param lines Vector of strings representing each line of the note
      */
-    void note(const std::vector<std::string> &lines) const override;
+    void note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged warning note to stderr.
@@ -67,15 +68,16 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
-     * @brief Display a multi-line error message to stderr.
+     * @brief Display a multi-line tagged error message to stderr.
      *
      * @details
-     * Outputs error messages with red "error:" prefix on the first line and appropriate indentation for subsequent
-     * lines.
+     * Outputs error messages with red "error:" prefix and tag suffix on the first line, formatted as "error: <message>
+     * [<tag>]" with appropriate indentation for subsequent lines.
      *
+     * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    void err(const std::vector<std::string> &lines) const override;
+    void err(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain to stderr.

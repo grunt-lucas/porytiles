@@ -35,29 +35,32 @@ class UserDiagnostics {
     virtual ~UserDiagnostics() = default;
 
     /**
-     * @brief Display an informational note message.
+     * @brief Display a tagged informational note message.
      *
      * @details
      * Notes are the lowest severity diagnostic level, used for informational messages that help users understand what's
-     * happening without indicating any problems.
+     * happening without indicating any problems. They include a categorization tag to help users understand and/or
+     * filter the type of note being reported.
      *
+     * @param tag Categorization tag for the note
      * @param msg The informational message to display
      */
-    void note(const std::string &msg) const
+    void note(const std::string &tag, const std::string &msg) const
     {
-        note(std::vector{msg});
+        note(tag, std::vector{msg});
     }
 
     /**
-     * @brief Display a multi-line informational note message.
+     * @brief Display a multi-line tagged informational note message.
      *
      * @details
      * Virtual method for displaying multi-line informational messages. Implementations typically format the first line
      * with a "note:" prefix and subsequent lines with appropriate indentation.
      *
+     * @param tag Categorization tag for the note
      * @param lines Vector of strings representing each line of the note
      */
-    virtual void note(const std::vector<std::string> &lines) const = 0;
+    virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
     /**
      * @brief Display a note message with a warning tag.
@@ -132,29 +135,32 @@ class UserDiagnostics {
     // }
 
     /**
-     * @brief Display an error message.
+     * @brief Display a tagged error message.
      *
      * @details
      * Errors indicate serious issues that require attention but don't necessarily cause immediate failure of the
-     * current operation.
+     * current operation. They include a categorization tag to help users understand and/or filter the type of error
+     * being reported.
      *
+     * @param tag Categorization tag for the error
      * @param msg The error message to display
      */
-    void err(const std::string &msg) const
+    void err(const std::string &tag, const std::string &msg) const
     {
-        err(std::vector{msg});
+        err(tag, std::vector{msg});
     }
 
     /**
-     * @brief Display a multi-line error message.
+     * @brief Display a multi-line tagged error message.
      *
      * @details
      * Virtual method for displaying multi-line error messages. Implementations typically format the first line with
      * an "error:" prefix and subsequent lines with appropriate indentation.
      *
+     * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    virtual void err(const std::vector<std::string> &lines) const = 0;
+    virtual void err(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain.

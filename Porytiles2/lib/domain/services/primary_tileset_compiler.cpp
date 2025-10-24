@@ -64,6 +64,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // TODO: remove these, just here to test config/diagnostic stuff
     PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     diag_->note(
+        "config-info",
         std::vector{
             format_->format(
                 "{} {}",
@@ -74,6 +75,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             std::string{"bar"}});
     PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_secondary, tileset.name(), std::unique_ptr<Tileset>);
     diag_->note(
+        "config-info",
         std::vector{
             format_->format(
                 "{} {}",
@@ -84,7 +86,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             std::string{"bar"}});
     diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
     diag_->warn_note("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-    diag_->err(std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
+    diag_->err("test-error", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
 
     // Leaf step to throw error if there are too many metatiles.
     PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
@@ -149,7 +151,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     pal.set(extrinsic_transparency_config.value(), 0);
 
     new_porymap_component->tiles_png(tiles_png);
-    for (int i = 0; i < pal::num_pals; i++) {
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
         new_porymap_component->set_pal(pal, i);
     }
 
