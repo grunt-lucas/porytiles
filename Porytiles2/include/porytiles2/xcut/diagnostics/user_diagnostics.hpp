@@ -1,11 +1,8 @@
 #pragma once
 
-#include <functional>
 #include <ranges>
 #include <string>
 
-#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 #include "porytiles2/xcut/result/error.hpp"
