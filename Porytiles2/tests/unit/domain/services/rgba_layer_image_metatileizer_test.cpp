@@ -41,15 +41,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyConstructMetatilesFrom
 
     // Verify success
     if (!result.has_value()) {
-        auto error_lines = result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        FAIL() << "Metatileization failed: " << joined_error;
+        FAIL() << "Metatileization failed: " << result.error().join(PlainTextFormatter{});
     }
 
     const auto &rgba_metatiles = result.value();
@@ -195,15 +187,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyDemetatileizeValidMeta
     // Demetatileize back to images
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, 2);
     if (!demetatileize_result.has_value()) {
-        auto error_lines = demetatileize_result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        FAIL() << "Failed to demetatileize: " << joined_error;
+        FAIL() << "Failed to demetatileize: " << demetatileize_result.error().join(PlainTextFormatter{});
     }
 
     const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
@@ -257,15 +241,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
     // Demetatileize
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, metatiles_per_row);
     if (!demetatileize_result.has_value()) {
-        auto error_lines = demetatileize_result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        FAIL() << "Failed to demetatileize: " << joined_error;
+        FAIL() << "Failed to demetatileize: " << demetatileize_result.error().join(PlainTextFormatter{});
     }
 
     const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
@@ -318,15 +294,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
     auto result = metatileizer_->demetatileize(metatiles, 2);
 
     if (!result.has_value()) {
-        auto error_lines = result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        FAIL() << "Demetatileize failed: " << joined_error;
+        FAIL() << "Demetatileize failed: " << result.error().join(PlainTextFormatter{});
     }
 
     const auto &[bottom, middle, top] = result.value();

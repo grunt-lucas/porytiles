@@ -45,6 +45,35 @@ class Error {
     [[nodiscard]] virtual std::vector<std::string> details(const TextFormatter &formatter) const = 0;
 
     /**
+     * @brief Joins the error details into a single string with a specified delimiter.
+     *
+     * @details
+     * This is a convenience method that calls details() and joins the resulting lines with the specified delimiter.
+     * This is particularly useful in test code where a single string representation of the error is needed for
+     * assertion messages.
+     *
+     * @param formatter The TextFormatter to use for conditional formatting based on TTY status
+     * @param delimiter The string to use between lines (defaults to newline)
+     * @return A single string with all error detail lines joined by the delimiter
+     */
+    [[nodiscard]] virtual std::string join(const TextFormatter &formatter, const std::string &delimiter = "\n") const
+    {
+        const auto lines = details(formatter);
+        if (lines.empty()) {
+            return "";
+        }
+
+        std::string result;
+        for (std::size_t i = 0; i < lines.size(); ++i) {
+            if (i > 0) {
+                result += delimiter;
+            }
+            result += lines[i];
+        }
+        return result;
+    }
+
+    /**
      * @brief Creates a polymorphic copy of this error.
      *
      * @details

@@ -192,15 +192,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
     if (!write_result.has_value()) {
-        auto error_lines = write_result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        FAIL() << "Write error: " << joined_error;
+        FAIL() << "Write error: " << write_result.error().join(PlainTextFormatter{});
     }
 
     auto commit_result = writer_->commit();
