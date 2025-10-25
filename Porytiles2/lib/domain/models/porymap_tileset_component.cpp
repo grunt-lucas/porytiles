@@ -60,21 +60,17 @@ ChainableResult<tileset::LayerMode> PorymapTilesetComponent::detect_layer_mode()
         return tileset::LayerMode::dual;
     }
 
-    // TODO: perhaps we should have a multi-line root cause here
-    // diag_->err("failed to detect layer mode from metatiles.bin and metatile_attributes.bin");
-    // diag_->note({
-    //     format_->format(
-    //         "found {} tilemap entries and {} metatile attributes",
-    //         FormatParam{entries.size(), Style::bold},
-    //         FormatParam{metatile_count, Style::bold}),
-    //     format_->format(
-    //         "for dual layer metatiles, expected {} entries (8 per metatile)",
-    //         FormatParam{metatile_count * 8, Style::bold}),
-    //     format_->format(
-    //         "for triple layer metatiles, expected {} entries (12 per metatile)",
-    //         FormatParam{metatile_count * 12, Style::bold}),
-    // });
-    return FormattableError{"metatiles.bin size did not correspond to metatile_attributes.bin size"};
+    return FormattableError{
+        std::vector<std::string>{
+            "metatiles.bin size did not correspond to metatile_attributes.bin size",
+            "found {} tilemap entries and {} metatile attributes",
+            "for dual layer metatiles, expected {} entries (8 per metatile)",
+            "for triple layer metatiles, expected {} entries (12 per metatile)"},
+        std::vector<std::vector<FormatParam>>{
+            {},
+            {FormatParam{entries.size(), Style::bold}, FormatParam{metatile_count, Style::bold}},
+            {FormatParam{metatile_count * 8, Style::bold}},
+            {FormatParam{metatile_count * 12, Style::bold}}}};
 }
 
 } // namespace porytiles2
