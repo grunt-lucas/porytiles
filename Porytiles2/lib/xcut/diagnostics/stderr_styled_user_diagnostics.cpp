@@ -65,8 +65,14 @@ void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
     // |-------- FATAL ERROR CHAIN --------|
     // |-----------------------------------|
     // or something similar
-    std::cerr << format_->style("fatal:", Style::bold | Style::red) << " ";
-    std::cerr << err.details(*format_) << std::endl;
+    auto lines = err.details(*format_);
+    if (!lines.empty()) {
+        std::cerr << format_->style("fatal:", Style::bold | Style::red) << " ";
+        std::cerr << lines.at(0) << std::endl;
+        for (const auto &line : std::ranges::views::drop(lines, 1)) {
+            std::cerr << "   " << format_->style("│", Style::bold | Style::red) << " " << line << std::endl;
+        }
+    }
 }
 
 void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
@@ -74,7 +80,14 @@ void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
     std::cerr << format_->style("caused by:", Style::bold) << std::endl;
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << format_->style("├", Style::bold) << " " << err.details(*format_) << std::endl;
+
+    auto lines = err.details(*format_);
+    if (!lines.empty()) {
+        std::cerr << format_->style("├", Style::bold) << " " << lines.at(0) << std::endl;
+        for (const auto &line : std::ranges::views::drop(lines, 1)) {
+            std::cerr << "   " << format_->style("│", Style::bold) << " " << line << std::endl;
+        }
+    }
 }
 
 void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
@@ -82,7 +95,14 @@ void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
     std::cerr << format_->style("root cause:", Style::bold) << std::endl;
     std::cerr << format_->style("│", Style::bold) << " " << std::endl;
-    std::cerr << format_->style("└", Style::bold) << " " << err.details(*format_) << std::endl;
+
+    auto lines = err.details(*format_);
+    if (!lines.empty()) {
+        std::cerr << format_->style("└", Style::bold) << " " << lines.at(0) << std::endl;
+        for (const auto &line : std::ranges::views::drop(lines, 1)) {
+            std::cerr << "   " << format_->style(" ", Style::bold) << " " << line << std::endl;
+        }
+    }
 }
 
 } // namespace porytiles2

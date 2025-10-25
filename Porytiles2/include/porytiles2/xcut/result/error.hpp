@@ -28,17 +28,21 @@ class Error {
     virtual ~Error() = default;
 
     /**
-     * @brief Returns a formatted string representation of the error.
+     * @brief Returns a formatted multi-line string representation of the error.
      *
      * @details
      * This method generates a human-readable description of the error, potentially including ANSI formatting codes if
      * the provided TextFormatter indicates TTY output is enabled. Implementations should provide clear, actionable
      * error messages that help users understand what went wrong and potentially how to fix it.
      *
+     * The return value is a vector of strings, where each element represents one line of the error message. Single-line
+     * errors return a vector with one element, while multi-line errors can return multiple lines for richer
+     * diagnostics.
+     *
      * @param formatter The TextFormatter to use for conditional formatting based on TTY status
-     * @return A formatted string describing the error
+     * @return A vector of formatted strings describing the error, with each element representing one line
      */
-    [[nodiscard]] virtual std::string details(const TextFormatter &formatter) const = 0;
+    [[nodiscard]] virtual std::vector<std::string> details(const TextFormatter &formatter) const = 0;
 
     /**
      * @brief Creates a polymorphic copy of this error.
@@ -98,11 +102,17 @@ class FormattableError final : public Error {
      *
      * @details
      * Creates a FormattableError containing a simple string message with no parameter formatting. This constructor
-     * is used for straightforward error messages that don't require styled parameters.
+     * is used for straightforward error messages that don't require styled parameters. The message is stored as a
+     * single-line error.
      *
      * @param text The error message text
      */
-    explicit FormattableError(std::string text) : text_{std::move(text)} {}
+    explicit FormattableError(std::string text)
+    {
+        if (!text.empty()) {
+            text_.push_back(std::move(text));
+        }
+    }
 
     /**
      * @brief Constructs a FormattableError with a format string and styled parameters.
@@ -110,14 +120,17 @@ class FormattableError final : public Error {
      * @details
      * Creates a FormattableError that uses fmtlib-style formatting to substitute styled parameters into the message.
      * The text parameter should contain `{}` placeholders that will be replaced with the styled text from the params
-     * vector when details() is called.
+     * vector when details() is called. The message is stored as a single-line error.
      *
      * @param text The format string with `{}` placeholders
      * @param params Vector of FormatParams to substitute into the format string
      */
     explicit FormattableError(std::string text, std::vector<FormatParam> params)
-        : text_{std::move(text)}, params_{std::move(params)}
     {
+        if (!text.empty() || !params.empty()) {
+            text_.push_back(std::move(text));
+            params_.push_back(std::move(params));
+        }
     }
 
     /**
@@ -126,6 +139,7 @@ class FormattableError final : public Error {
      * @details
      * Convenience constructor that allows passing FormatParams directly as arguments instead of wrapping them in a
      * std::vector. This provides more natural syntax for error construction with a known number of parameters.
+     * The message is stored as a single-line error.
      *
      * Example:
      * ```C++
@@ -143,47 +157,95 @@ class FormattableError final : public Error {
             !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
             std::is_same_v<std::decay_t<FirstParam>, FormatParam> &&
             (std::is_same_v<std::decay_t<RestParams>, FormatParam> && ...))
-    explicit FormattableError(std::string text, FirstParam &&first, RestParams &&...rest) : text_{std::move(text)}
+    explicit FormattableError(std::string text, FirstParam &&first, RestParams &&...rest)
     {
-        params_.reserve(1 + sizeof...(RestParams));
-        params_.push_back(std::forward<FirstParam>(first));
-        (params_.push_back(std::forward<RestParams>(rest)), ...);
+        text_.push_back(std::move(text));
+
+        std::vector<FormatParam> line_params;
+        line_params.reserve(1 + sizeof...(RestParams));
+        line_params.push_back(std::forward<FirstParam>(first));
+        (line_params.push_back(std::forward<RestParams>(rest)), ...);
+        params_.push_back(std::move(line_params));
     }
 
     /**
-     * @brief Returns the formatted error message with appropriate styling.
+     * @brief Constructs a FormattableError with multiple plain text lines.
      *
      * @details
-     * Generates the error message by either returning the plain text (if no parameters were provided) or formatting
-     * the text with styled parameters using the provided TextFormatter. The formatter determines whether to apply
-     * ANSI styling codes or return plain text based on the output context.
+     * Creates a FormattableError containing multiple lines of text with no parameter formatting. This constructor
+     * is used for multi-line error messages that don't require styled parameters.
+     *
+     * @param lines Vector of error message lines
+     */
+    explicit FormattableError(std::vector<std::string> lines) : text_{std::move(lines)} {}
+
+    /**
+     * @brief Constructs a FormattableError with multiple formatted lines.
+     *
+     * @details
+     * Creates a FormattableError with multiple lines, where each line can have its own styled parameters. The lines
+     * vector should contain format strings with `{}` placeholders, and the params vector should contain a
+     * corresponding vector of FormatParams for each line.
+     *
+     * If params is shorter than lines, the extra lines will have no parameters. If params is longer than lines, the
+     * extra parameter vectors will be ignored.
+     *
+     * @param lines Vector of format strings, one per line
+     * @param params Vector of parameter vectors, one per line
+     */
+    explicit FormattableError(std::vector<std::string> lines, std::vector<std::vector<FormatParam>> params)
+        : text_{std::move(lines)}, params_{std::move(params)}
+    {
+    }
+
+    /**
+     * @brief Returns the formatted error message lines with appropriate styling.
+     *
+     * @details
+     * Generates the error message lines by formatting each line independently. For lines without parameters, the
+     * plain text is returned. For lines with parameters, the text is formatted with styled parameters using the
+     * provided TextFormatter. The formatter determines whether to apply ANSI styling codes or return plain text based
+     * on the output context.
      *
      * @param formatter The TextFormatter to use for applying styles
-     * @return The formatted error message with styling applied as appropriate
+     * @return A vector of formatted error message lines with styling applied as appropriate
      */
-    [[nodiscard]] std::string details(const TextFormatter &formatter) const override
+    [[nodiscard]] std::vector<std::string> details(const TextFormatter &formatter) const override
     {
-        if (params_.empty()) {
-            return text_;
+        std::vector<std::string> result;
+        result.reserve(text_.size());
+
+        for (std::size_t i = 0; i < text_.size(); ++i) {
+            if (i < params_.size() && !params_[i].empty()) {
+                result.push_back(formatter.format(text_[i], params_[i]));
+            }
+            else {
+                result.push_back(text_[i]);
+            }
         }
 
-        return formatter.format(text_, params_);
+        return result;
     }
 
     /**
      * @brief Checks whether this FormattableError contains any message content.
      *
      * @details
-     * Returns true if the error was constructed with a non-empty text message, false otherwise. This method is used
-     * to distinguish between errors that carry meaningful information and empty errors created for passthrough
-     * purposes. Empty errors (created with the default constructor or empty string) are typically filtered out during
-     * error chain visualization in UserDiagnostics::fatal().
+     * Returns true if the error contains at least one non-empty line, false otherwise. This method is used to
+     * distinguish between errors that carry meaningful information and empty errors created for passthrough purposes.
+     * Empty errors (created with the default constructor, empty string, or only empty lines) are typically filtered
+     * out during error chain visualization in UserDiagnostics::fatal().
      *
-     * @return True if the error contains a non-empty message, false if the error is empty
+     * @return True if the error contains at least one non-empty line, false if the error is empty
      */
     [[nodiscard]] bool has_details() const
     {
-        return !text_.empty();
+        for (const auto &line : text_) {
+            if (!line.empty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -201,8 +263,8 @@ class FormattableError final : public Error {
     }
 
   private:
-    std::string text_;
-    std::vector<FormatParam> params_;
+    std::vector<std::string> text_;
+    std::vector<std::vector<FormatParam>> params_;
 };
 
 } // namespace porytiles2

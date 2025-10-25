@@ -105,11 +105,12 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
      *
      * @details
      * Returns a reference to the vector containing all fatal proximate error messages that were passed to
-     * emit_fatal_proximate(). Each element represents one call to emit_fatal_proximate(), stored as a string.
+     * emit_fatal_proximate(). Each element represents one call to emit_fatal_proximate(), stored as a vector of
+     * message lines.
      *
      * @return Reference to the fatal proximate buffer
      */
-    [[nodiscard]] const std::vector<std::string> &fatal_proximates() const
+    [[nodiscard]] const std::vector<std::vector<std::string>> &fatal_proximates() const
     {
         return fatal_proximates_;
     }
@@ -119,11 +120,11 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
      *
      * @details
      * Returns a reference to the vector containing all fatal step error messages that were passed to
-     * emit_fatal_step(). Each element represents one call to emit_fatal_step(), stored as a string.
+     * emit_fatal_step(). Each element represents one call to emit_fatal_step(), stored as a vector of message lines.
      *
      * @return Reference to the fatal step buffer
      */
-    [[nodiscard]] const std::vector<std::string> &fatal_steps() const
+    [[nodiscard]] const std::vector<std::vector<std::string>> &fatal_steps() const
     {
         return fatal_steps_;
     }
@@ -133,11 +134,11 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
      *
      * @details
      * Returns a reference to the vector containing all fatal root error messages that were passed to
-     * emit_fatal_root(). Each element represents one call to emit_fatal_root(), stored as a string.
+     * emit_fatal_root(). Each element represents one call to emit_fatal_root(), stored as a vector of message lines.
      *
      * @return Reference to the fatal root buffer
      */
-    [[nodiscard]] const std::vector<std::string> &fatal_roots() const
+    [[nodiscard]] const std::vector<std::vector<std::string>> &fatal_roots() const
     {
         return fatal_roots_;
     }
@@ -203,9 +204,9 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     mutable std::vector<std::vector<std::string>> warn_notes_;
     mutable std::vector<std::vector<std::string>> warnings_;
     mutable std::vector<std::vector<std::string>> errors_;
-    mutable std::vector<std::string> fatal_proximates_;
-    mutable std::vector<std::string> fatal_steps_;
-    mutable std::vector<std::string> fatal_roots_;
+    mutable std::vector<std::vector<std::string>> fatal_proximates_;
+    mutable std::vector<std::vector<std::string>> fatal_steps_;
+    mutable std::vector<std::vector<std::string>> fatal_roots_;
     mutable std::map<std::string, size_t> note_tag_counts_;
     mutable std::map<std::string, size_t> warn_note_tag_counts_;
     mutable std::map<std::string, size_t> warning_tag_counts_;

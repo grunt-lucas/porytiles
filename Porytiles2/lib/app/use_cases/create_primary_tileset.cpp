@@ -33,7 +33,15 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
     // 5. Compile the `Tileset`, generating a new modified `Tileset`.
     auto maybe_new_tileset = compiler_->compile(tileset);
     if (!maybe_new_tileset.has_value()) {
-        return std::unexpected{maybe_new_tileset.error().details(PlainTextFormatter{})};
+        auto error_lines = maybe_new_tileset.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        return std::unexpected{joined_error};
     }
     const auto new_tileset = std::move(maybe_new_tileset.value());
 
@@ -46,7 +54,15 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
 
     // 7. Persist the new `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error().details(PlainTextFormatter{})};
+        auto error_lines = save_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        return std::unexpected{joined_error};
     }
 
     return {};

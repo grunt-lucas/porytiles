@@ -40,7 +40,17 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyConstructMetatilesFrom
     auto result = metatileizer_->metatileize(*bottom_result.value(), *middle_result.value(), *top_result.value());
 
     // Verify success
-    ASSERT_TRUE(result.has_value()) << "Metatileization failed: " << result.error().details(PlainTextFormatter{});
+    if (!result.has_value()) {
+        auto error_lines = result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        FAIL() << "Metatileization failed: " << joined_error;
+    }
 
     const auto &rgba_metatiles = result.value();
 
@@ -63,7 +73,15 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailWithMismatchedImageDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).find("mismatched dimensions") != std::string::npos);
+    auto details = result.error().details(PlainTextFormatter{});
+    bool found = false;
+    for (const auto &line : details) {
+        if (line.find("mismatched dimensions") != std::string::npos) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
 }
 
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailWithInvalidDimensions)
@@ -76,7 +94,15 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailWithInvalidDimensions)
 
     // Verify failure
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).find("failed to tileize") != std::string::npos);
+    auto details = result.error().details(PlainTextFormatter{});
+    bool found = false;
+    for (const auto &line : details) {
+        if (line.find("failed to tileize") != std::string::npos) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
 }
 
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldProduceCorrectMetatileStructure)
@@ -168,8 +194,17 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyDemetatileizeValidMeta
 
     // Demetatileize back to images
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, 2);
-    ASSERT_TRUE(demetatileize_result.has_value())
-        << "Failed to demetatileize: " << demetatileize_result.error().details(PlainTextFormatter{});
+    if (!demetatileize_result.has_value()) {
+        auto error_lines = demetatileize_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        FAIL() << "Failed to demetatileize: " << joined_error;
+    }
 
     const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
 
@@ -221,8 +256,17 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
 
     // Demetatileize
     auto demetatileize_result = metatileizer_->demetatileize(metatiles, metatiles_per_row);
-    ASSERT_TRUE(demetatileize_result.has_value())
-        << "Failed to demetatileize: " << demetatileize_result.error().details(PlainTextFormatter{});
+    if (!demetatileize_result.has_value()) {
+        auto error_lines = demetatileize_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        FAIL() << "Failed to demetatileize: " << joined_error;
+    }
 
     const auto &[reconstructed_bottom, reconstructed_middle, reconstructed_top] = demetatileize_result.value();
 
@@ -273,7 +317,17 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
     // This should create a 2x3 grid (3 rows) where the final row has padding
     auto result = metatileizer_->demetatileize(metatiles, 2);
 
-    ASSERT_TRUE(result.has_value()) << "Demetatileize failed: " << result.error().details(PlainTextFormatter{});
+    if (!result.has_value()) {
+        auto error_lines = result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        FAIL() << "Demetatileize failed: " << joined_error;
+    }
 
     const auto &[bottom, middle, top] = result.value();
 
@@ -313,7 +367,15 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailDemetatileizeWithInvalidInput)
     // Try with empty metatiles vector
     auto result = metatileizer_->demetatileize(empty_metatiles, 1);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).find("empty") != std::string::npos);
+    auto details = result.error().details(PlainTextFormatter{});
+    bool found = false;
+    for (const auto &line : details) {
+        if (line.find("empty") != std::string::npos) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
 }
 
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleNonSquareImagesDemetatileize)

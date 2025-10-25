@@ -25,9 +25,17 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
 
     auto result2 = loader->load_from_file("Resources/Tests/integration/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
-    EXPECT_TRUE(result2.error().details(formatter).contains(
-        "Failed to recognize format of file "
-        "'Resources/Tests/integration/metatile_behaviors.h'"));
+    auto details = result2.error().details(formatter);
+    bool found = false;
+    for (const auto &line : details) {
+        if (line.contains(
+                "Failed to recognize format of file "
+                "'Resources/Tests/integration/metatile_behaviors.h'")) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
 }
 
 TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)

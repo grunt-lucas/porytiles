@@ -191,7 +191,17 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
     ArtifactKey key{expected_file.string()};
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
-    ASSERT_TRUE(write_result.has_value()) << "Write error: " << write_result.error().details(PlainTextFormatter{});
+    if (!write_result.has_value()) {
+        auto error_lines = write_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        FAIL() << "Write error: " << joined_error;
+    }
 
     auto commit_result = writer_->commit();
     ASSERT_TRUE(commit_result.has_value());
@@ -303,7 +313,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
 
     auto commit_result = writer_->commit();
     ASSERT_FALSE(commit_result.has_value());
-    EXPECT_EQ(commit_result.error().details(PlainTextFormatter{}), "no transaction in progress");
+    auto commit_error_lines = commit_result.error().details(PlainTextFormatter{});
+    ASSERT_EQ(commit_error_lines.size(), 1);
+    EXPECT_EQ(commit_error_lines[0], "no transaction in progress");
 
     auto rollback_result = writer_->rollback();
     ASSERT_FALSE(rollback_result.has_value());
@@ -313,7 +325,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
     ASSERT_FALSE(write_result.has_value());
-    EXPECT_EQ(write_result.error().details(PlainTextFormatter{}), "no transaction in progress");
+    auto error_lines = write_result.error().details(PlainTextFormatter{});
+    ASSERT_EQ(error_lines.size(), 1);
+    EXPECT_EQ(error_lines[0], "no transaction in progress");
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)

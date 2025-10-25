@@ -58,7 +58,15 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 
     // 8. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error().details(PlainTextFormatter{})};
+        auto error_lines = save_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        return std::unexpected{joined_error};
     }
 
     return {};

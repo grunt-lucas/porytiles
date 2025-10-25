@@ -11,9 +11,9 @@ class MockError : public Error {
   public:
     explicit MockError(std::string msg) : msg_{std::move(msg)} {}
 
-    [[nodiscard]] std::string details(const TextFormatter &formatter) const override
+    [[nodiscard]] std::vector<std::string> details(const TextFormatter &formatter) const override
     {
-        return msg_;
+        return {msg_};
     }
 
     [[nodiscard]] std::unique_ptr<Error> clone() const override
@@ -48,8 +48,10 @@ TEST(UserDiagnosticsTests, FatalShouldFilterOutEmptyFormattableErrors)
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
     // Verify the content
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("proximate error"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("root cause error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("proximate error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("root cause error"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldPreserveNonEmptyFormattableErrors)
@@ -71,9 +73,12 @@ TEST(UserDiagnosticsTests, FatalShouldPreserveNonEmptyFormattableErrors)
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
     // Verify the content
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("top layer"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_steps()[0].find("middle layer"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("root cause"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("top layer"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
+    EXPECT_NE(diagnostics.fatal_steps()[0][0].find("middle layer"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("root cause"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldHandleMultipleEmptyErrorsInChain)
@@ -93,8 +98,10 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMultipleEmptyErrorsInChain)
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
     // Verify the content
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("actual proximate"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("actual root"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("actual proximate"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("actual root"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldHandleSingleNonEmptyError)
@@ -111,7 +118,8 @@ TEST(UserDiagnosticsTests, FatalShouldHandleSingleNonEmptyError)
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
     // Verify the content
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("single error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("single error"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldIncludeNonFormattableErrors)
@@ -128,7 +136,8 @@ TEST(UserDiagnosticsTests, FatalShouldIncludeNonFormattableErrors)
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
     // Verify the MockError appears in output
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("custom error message"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("custom error message"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErrors)
@@ -148,9 +157,12 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErr
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
     // Verify all errors appear in output
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("mock proximate error"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_steps()[0].find("formattable middle error"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("mock root error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("mock proximate error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
+    EXPECT_NE(diagnostics.fatal_steps()[0][0].find("formattable middle error"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("mock root error"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldFilterEmptyFormattableErrorsButKeepNonFormattableErrors)
@@ -172,9 +184,12 @@ TEST(UserDiagnosticsTests, FatalShouldFilterEmptyFormattableErrorsButKeepNonForm
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
     // Verify all MockErrors appear in output
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("mock proximate"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_steps()[0].find("mock middle"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("mock root"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("mock proximate"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
+    EXPECT_NE(diagnostics.fatal_steps()[0][0].find("mock middle"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("mock root"), std::string::npos);
 }
 
 TEST(UserDiagnosticsTests, FatalShouldHandleChainWithOnlyNonFormattableErrors)
@@ -193,7 +208,10 @@ TEST(UserDiagnosticsTests, FatalShouldHandleChainWithOnlyNonFormattableErrors)
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
     // Verify proper categorization
-    EXPECT_NE(diagnostics.fatal_proximates()[0].find("non-formattable proximate"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_steps()[0].find("non-formattable middle"), std::string::npos);
-    EXPECT_NE(diagnostics.fatal_roots()[0].find("non-formattable root"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
+    EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("non-formattable proximate"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
+    EXPECT_NE(diagnostics.fatal_steps()[0][0].find("non-formattable middle"), std::string::npos);
+    ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
+    EXPECT_NE(diagnostics.fatal_roots()[0][0].find("non-formattable root"), std::string::npos);
 }
