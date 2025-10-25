@@ -11,6 +11,13 @@
 
 namespace porytiles2 {
 
+/*
+ * TODO: change this class to ConfigurableUserDiagnostics. We should expose for configuration:
+ * 1. Where the diagnostics go: stderr, stdout, a file?
+ * 2. Colors on or off
+ * 3. Diagnostic tag include and exclude filters
+ */
+
 /**
  * @brief Concrete implementation of UserDiagnostics that outputs structured messages to stderr, optionally with colored
  * formatting.
@@ -19,7 +26,7 @@ namespace porytiles2 {
  * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface. It outputs all
  * diagnostic messages to stderr with some additional pretty-print structuring. If provided with an
  * AnsiStyledTextFormatter, it will additionally use canonical diagnostic coloring and styling (canonical, i.e. magenta
- * for warnings, red for errors, boldin where appropriate, etc.) via ANSI terminal codes. The implementation includes:
+ * for warnings, red for errors, bolding where appropriate, etc.) via ANSI terminal codes. The implementation includes:
  *
  * - **Colored Output**: Uses ANSI codes for terminal colors (cyan for notes, magenta for warnings, red for errors)
  * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented with visual

@@ -77,7 +77,7 @@ class TilesetArtifact {
      * @param type The artifact type
      * @param index The index associated with the artifact
      */
-    explicit TilesetArtifact(const Type type, int index) : type_{type}, name_{std::nullopt}, index_{index} {}
+    explicit TilesetArtifact(const Type type, unsigned int index) : type_{type}, name_{std::nullopt}, index_{index} {}
 
     /**
      * @brief Constructs a tileset artifact with a type, name, and index.
@@ -120,7 +120,7 @@ class TilesetArtifact {
      *
      * @return Optional index value, or nullopt if the artifact has no associated index
      */
-    [[nodiscard]] std::optional<int> index() const
+    [[nodiscard]] std::optional<unsigned int> index() const
     {
         return index_;
     }
@@ -133,7 +133,7 @@ class TilesetArtifact {
      * programmer here.
      */
     std::optional<std::string> name_;
-    std::optional<int> index_;
+    std::optional<unsigned int> index_;
 };
 
 } // namespace porytiles2

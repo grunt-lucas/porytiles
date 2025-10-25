@@ -106,6 +106,18 @@ class DebugPrimaryCompileCommand final : public Command {
         }
         const auto new_tileset = std::move(compile_result.value());
 
+        // Multi-line fatal print demo
+        // FormattableError proximate{std::vector<std::string>{
+        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
+        // FormattableError middle{std::vector<std::string>{
+        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
+        // FormattableError root{std::vector<std::string>{
+        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
+        // ChainableResult<void> root_result{root};
+        // ChainableResult<void> middle_result{middle, root_result};
+        // ChainableResult<void> prox_result{proximate, middle_result};
+        // diag->fatal(prox_result);
+
         // Save the tileset back
         const auto new_tileset_save_result = repo.save(*new_tileset);
         if (!new_tileset_save_result.has_value()) {
