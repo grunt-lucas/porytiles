@@ -16,6 +16,7 @@ namespace porytiles2 {
  * 1. Where the diagnostics go: stderr, stdout, a file?
  * 2. Colors on or off
  * 3. Diagnostic tag include and exclude filters
+ * 4. Diagnostic tag settable limits: stop showing diagnostics with a given tag when a limit is hit
  */
 
 /**
