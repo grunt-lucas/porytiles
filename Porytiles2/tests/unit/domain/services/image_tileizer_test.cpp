@@ -2,14 +2,14 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/services/rgba_image_tileizer.hpp"
+#include "porytiles2/domain/services/image_tileizer.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 using namespace porytiles2;
 
 class RgbaImageTileizerTests : public ::testing::Test {
   protected:
-    RgbaImageTileizer tileizer_;
+    ImageTileizer<Rgba32> tileizer_;
 };
 
 TEST_F(RgbaImageTileizerTests, TileizeValidSingleTileImage)

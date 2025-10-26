@@ -6,7 +6,7 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/services/rgba_image_tileizer.hpp"
+#include "porytiles2/domain/services/image_tileizer.hpp"
 
 namespace porytiles2 {
 
@@ -65,7 +65,7 @@ class RgbaLayerImageMetatileizer {
     demetatileize(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t metatiles_per_row) const;
 
   private:
-    RgbaImageTileizer tileizer_;
+    ImageTileizer<Rgba32> tileizer_;
 };
 
 } // namespace porytiles2
