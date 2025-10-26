@@ -5,6 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/metatile_attribute.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -23,11 +24,18 @@ class LayerModeConverter {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>>
-    triple_layerize(const std::vector<TilemapEntry> &entries, const std::vector<MetatileAttribute> &attributes);
+    /**
+     * @brief TODO
+     *
+     * @details
+     * TODO
+     *
+     * @param component TODO
+     * @return A triple-layerized TilemapEntry vector
+     */
+    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> triple_layerize(const PorymapTilesetComponent &component);
 
-    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>>
-    dual_layerize(const std::vector<TilemapEntry> &entries, const std::vector<MetatileAttribute> &attributes);
+    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> dual_layerize(const PorymapTilesetComponent &component);
 
   private:
     TextFormatter *format_;
