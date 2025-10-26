@@ -11,9 +11,9 @@
 #include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/color_index_map_builder.hpp"
+#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
-#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/utilities/unwrap_config.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -26,7 +26,7 @@ namespace porytiles2 {
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
 {
     // Initialize all the compilation services
-    RgbaLayerImageMetatileizer metatileizer{};
+    LayerImageMetatileizer<Rgba32> metatileizer{};
     ColorIndexMapBuilder color_index_map_builder{};
     TileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};

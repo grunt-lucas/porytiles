@@ -10,8 +10,8 @@
 
 #include "porytiles2/di/components.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"

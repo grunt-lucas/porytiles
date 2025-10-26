@@ -6,7 +6,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -18,11 +18,11 @@ class RgbaLayerImageMetatileizerTests : public ::testing::Test {
     void SetUp() override
     {
         loader_ = std::make_unique<PngRgbaImageLoader>();
-        metatileizer_ = std::make_unique<RgbaLayerImageMetatileizer>();
+        metatileizer_ = std::make_unique<LayerImageMetatileizer<Rgba32>>();
     }
 
     std::unique_ptr<PngRgbaImageLoader> loader_;
-    std::unique_ptr<RgbaLayerImageMetatileizer> metatileizer_;
+    std::unique_ptr<LayerImageMetatileizer<Rgba32>> metatileizer_;
 };
 
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldSuccessfullyConstructMetatilesFromValidImages)
