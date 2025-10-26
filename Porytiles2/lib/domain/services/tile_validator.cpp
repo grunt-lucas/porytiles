@@ -4,12 +4,11 @@
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
-#include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
-ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<RgbaTile> &tiles) const
+ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<PixelTile<Rgba32>> &tiles) const
 {
     bool hit_error = false;
     std::size_t tile_index = 0;
@@ -42,7 +41,7 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<R
 }
 
 ChainableResult<void>
-TileValidator::validate_unique_color_count(const std::vector<RgbaTile> &tiles, const Rgba32 &extrinsic) const
+TileValidator::validate_unique_color_count(const std::vector<PixelTile<Rgba32>> &tiles, const Rgba32 &extrinsic) const
 {
     bool hit_error = false;
     std::size_t tile_index = 0;
@@ -83,7 +82,7 @@ TileValidator::validate_unique_color_count(const std::vector<RgbaTile> &tiles, c
     return {};
 }
 
-ChainableResult<void> TileValidator::generate_precision_loss_warnings(const std::vector<RgbaTile> &tiles) const
+ChainableResult<void> TileValidator::generate_precision_loss_warnings(const std::vector<PixelTile<Rgba32>> &tiles) const
 {
     // TODO: implement
     return {};

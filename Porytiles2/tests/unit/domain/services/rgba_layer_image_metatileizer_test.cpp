@@ -3,9 +3,9 @@
 #include <memory>
 
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_metatile.hpp"
 #include "porytiles2/domain/services/rgba_layer_image_metatileizer.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -270,14 +270,14 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldBeInverseOfMetatileize)
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteRows)
 {
     // Create some test metatiles - 5 metatiles which will create an incomplete final row when using 2 per row
-    std::vector<RgbaMetatile> metatiles(5); // 5 metatiles
+    std::vector<Metatile<Rgba32>> metatiles(5); // 5 metatiles
 
     // Initialize each metatile with a test pattern so we can verify reconstruction
     const Rgba32 test_color{100, 150, 200, 255};
     for (auto &metatile : metatiles) {
         for (std::size_t tile_idx = 0; tile_idx < metatile::tiles_per_metatile_layer; ++tile_idx) {
             // Create a test tile filled with the test color
-            RgbaTile test_tile{};
+            PixelTile<Rgba32> test_tile{};
             for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
                 for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                     test_tile.set(row, col, test_color);
@@ -326,7 +326,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldHandleDemetatileizeWithIncompleteR
 
 TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailDemetatileizeWithInvalidInput)
 {
-    std::vector<RgbaMetatile> empty_metatiles;
+    std::vector<Metatile<Rgba32>> empty_metatiles;
 
     // Try with zero metatiles_per_row - this will now panic
     ASSERT_DEATH(

@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_metatile.hpp"
 #include "porytiles2/domain/services/rgba_image_tileizer.hpp"
 
 namespace porytiles2 {
@@ -19,7 +19,7 @@ namespace porytiles2 {
  * layer.
  *
  * This service handles the validation of input dimensions, tileization of each layer, and the construction of metatiles
- * by combining corresponding tiles from each layer.
+ * by combining corresponding tiles from each layer. Returns Metatile<Rgba32> objects.
  */
 class RgbaLayerImageMetatileizer {
   public:
@@ -38,10 +38,10 @@ class RgbaLayerImageMetatileizer {
      * @param middle The middle layer RGBA image
      * @param top The top layer RGBA image
      * @return A ChainableResult containing either:
-     *         - Success: A vector of RgbaMetatile objects in row-major order
+     *         - Success: A vector of Metatile<Rgba32> objects in row-major order
      *         - Error: A FormattableError describing why metatileization failed
      */
-    [[nodiscard]] ChainableResult<std::vector<RgbaMetatile>>
+    [[nodiscard]] ChainableResult<std::vector<Metatile<Rgba32>>>
     metatileize(const Image<Rgba32> &bottom, const Image<Rgba32> &middle, const Image<Rgba32> &top) const;
 
     /**
@@ -55,14 +55,14 @@ class RgbaLayerImageMetatileizer {
      * 3. Reconstructing the full images by combining tiles back into pixel data
      * 4. Padding incomplete final rows with alpha=0 pixels when necessary
      *
-     * @param metatiles The vector of RgbaMetatile objects to convert back to images
+     * @param metatiles The vector of Metatile<Rgba32> objects to convert back to images
      * @param metatiles_per_row The number of metatiles per row (width in metatiles)
      * @return A ChainableResult containing either:
      *         - Success: A tuple of three Image<Rgba32> objects (bottom, middle, top)
      *         - Error: A FormattableError describing why demetatileization failed
      */
     [[nodiscard]] ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>>
-    demetatileize(const std::vector<RgbaMetatile> &metatiles, std::size_t metatiles_per_row) const;
+    demetatileize(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t metatiles_per_row) const;
 
   private:
     RgbaImageTileizer tileizer_;

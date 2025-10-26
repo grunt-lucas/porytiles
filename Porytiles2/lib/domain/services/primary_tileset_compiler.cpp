@@ -97,13 +97,13 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             FormatParam{num_metatiles_primary, Style::bold}};
     }
 
-    // Decompose vector<RgbaMetatile> into vector<RgbaTile>
-    std::vector<RgbaTile> tiles{};
+    // Decompose vector<RgbaMetatile> into vector<PixelTile<Rgba32>>
+    std::vector<PixelTile<Rgba32>> tiles{};
     tiles.reserve(metatiles.size() * metatile::tiles_per_metatile);
     for (const auto &metatile : metatiles) {
         const auto decomposed = metatile.decompose();
         for (const auto &pixel_tile : decomposed) {
-            tiles.emplace_back(pixel_tile);
+            tiles.push_back(pixel_tile);
         }
     }
 

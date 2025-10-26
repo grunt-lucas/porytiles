@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -13,7 +13,7 @@ using namespace porytiles2;
 TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSuccess)
 {
     // Create tiles with only valid alpha values (0 or 255)
-    RgbaTile tile1{};
+    PixelTile<Rgba32> tile1{};
     for (std::size_t i = 0; i < tile::size_pix; i++) {
         // Set half the pixels to opaque, half to transparent
         if (i < tile::size_pix / 2) {
@@ -24,7 +24,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
         }
     }
 
-    RgbaTile tile2{};
+    PixelTile<Rgba32> tile2{};
     for (std::size_t i = 0; i < tile::size_pix; i++) {
         // All pixels opaque
         tile2.set(i, Rgba32{200, 100, 50, Rgba32::alpha_opaque});
@@ -46,7 +46,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
 TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFailure)
 {
     // Create tiles with some invalid alpha values
-    RgbaTile tile1{};
+    PixelTile<Rgba32> tile1{};
     for (std::size_t i = 0; i < tile::size_pix; i++) {
         if (i == 0) {
             // First pixel has invalid alpha value
@@ -58,7 +58,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
         }
     }
 
-    RgbaTile tile2{};
+    PixelTile<Rgba32> tile2{};
     for (std::size_t i = 0; i < tile::size_pix; i++) {
         if (i == tile::size_pix - 1) {
             // Last pixel has invalid alpha value
@@ -70,7 +70,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
         }
     }
 
-    std::vector<RgbaTile> tiles = {tile1, tile2};
+    std::vector<PixelTile<Rgba32>> tiles = {tile1, tile2};
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};

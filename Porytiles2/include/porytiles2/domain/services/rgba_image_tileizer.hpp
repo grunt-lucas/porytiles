@@ -3,8 +3,8 @@
 #include <vector>
 
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -19,7 +19,7 @@ namespace porytiles2 {
  *
  * The service validates that input images have dimensions that are multiples of the tile size (8 pixels) and
  * processes the image in row-major order, creating tiles from left-to-right, top-to-bottom. Each resulting
- * RgbaTile contains the exact pixel data from the corresponding 8x8 region of the source image.
+ * PixelTile<Rgba32> contains the exact pixel data from the corresponding 8x8 region of the source image.
  */
 class RgbaImageTileizer {
   public:
@@ -43,10 +43,10 @@ class RgbaImageTileizer {
      *
      * @param img The source RGBA image to tileize
      * @return A ChainableResult containing either:
-     *         - Success: A vector of RgbaTile objects in row-major order
+     *         - Success: A vector of PixelTile<Rgba32> objects in row-major order
      *         - Error: A FormattableError describing why tileization failed (e.g., invalid dimensions)
      */
-    [[nodiscard]] ChainableResult<std::vector<RgbaTile>> tileize(const Image<Rgba32> &img) const;
+    [[nodiscard]] ChainableResult<std::vector<PixelTile<Rgba32>>> tileize(const Image<Rgba32> &img) const;
 };
 
 } // namespace porytiles2

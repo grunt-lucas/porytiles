@@ -5,9 +5,9 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_metatile.hpp"
-#include "porytiles2/domain/models/rgba_tile.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -16,10 +16,10 @@ namespace porytiles2 {
 namespace {
 
 void populate_metatile_at_position(
-    RgbaMetatile &metatile,
-    const std::vector<RgbaTile> &bottom_tiles,
-    const std::vector<RgbaTile> &middle_tiles,
-    const std::vector<RgbaTile> &top_tiles,
+    Metatile<Rgba32> &metatile,
+    const std::vector<PixelTile<Rgba32>> &bottom_tiles,
+    const std::vector<PixelTile<Rgba32>> &middle_tiles,
+    const std::vector<PixelTile<Rgba32>> &top_tiles,
     std::size_t metatile_row,
     std::size_t metatile_col,
     std::size_t tiles_per_image_row)
@@ -42,7 +42,7 @@ void populate_metatile_at_position(
 }
 
 void copy_metatile_to_images(
-    const RgbaMetatile &metatile,
+    const Metatile<Rgba32> &metatile,
     Image<Rgba32> &bottom_image,
     Image<Rgba32> &middle_image,
     Image<Rgba32> &top_image,
@@ -101,7 +101,7 @@ void fill_region_with_transparent(
 
 } // namespace
 
-[[nodiscard]] ChainableResult<std::vector<RgbaMetatile>> RgbaLayerImageMetatileizer::metatileize(
+[[nodiscard]] ChainableResult<std::vector<Metatile<Rgba32>>> RgbaLayerImageMetatileizer::metatileize(
     const Image<Rgba32> &bottom, const Image<Rgba32> &middle, const Image<Rgba32> &top) const
 {
     // Validate that all images have the same dimensions
@@ -120,21 +120,21 @@ void fill_region_with_transparent(
     // Tileize each layer image
     const auto bottom_tiles_result = tileizer_.tileize(bottom);
     if (!bottom_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>{
+        return ChainableResult<std::vector<Metatile<Rgba32>>>{
             FormattableError{"failed to tileize bottom layer"}, bottom_tiles_result};
     }
     const auto &bottom_tiles = bottom_tiles_result.value();
 
     const auto middle_tiles_result = tileizer_.tileize(middle);
     if (!middle_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>{
+        return ChainableResult<std::vector<Metatile<Rgba32>>>{
             FormattableError{"failed to tileize middle layer"}, middle_tiles_result};
     }
     const auto &middle_tiles = middle_tiles_result.value();
 
     const auto top_tiles_result = tileizer_.tileize(top);
     if (!top_tiles_result.has_value()) {
-        return ChainableResult<std::vector<RgbaMetatile>>{
+        return ChainableResult<std::vector<Metatile<Rgba32>>>{
             FormattableError{"failed to tileize top layer"}, top_tiles_result};
     }
     const auto &top_tiles = top_tiles_result.value();
@@ -157,26 +157,26 @@ void fill_region_with_transparent(
     const std::size_t metatiles_per_col = bottom.height() / metatile::side_length_pix;
     const std::size_t total_metatiles = metatiles_per_row * metatiles_per_col;
 
-    std::vector<RgbaMetatile> rgba_metatiles;
-    rgba_metatiles.reserve(total_metatiles);
+    std::vector<Metatile<Rgba32>> metatiles;
+    metatiles.reserve(total_metatiles);
 
     const std::size_t tiles_per_image_row = bottom.width() / tile::side_length_pix;
 
     // Process each 16x16 metatile region
     for (std::size_t metatile_row = 0; metatile_row < metatiles_per_col; ++metatile_row) {
         for (std::size_t metatile_col = 0; metatile_col < metatiles_per_row; ++metatile_col) {
-            RgbaMetatile metatile;
+            Metatile<Rgba32> metatile;
             populate_metatile_at_position(
                 metatile, bottom_tiles, middle_tiles, top_tiles, metatile_row, metatile_col, tiles_per_image_row);
-            rgba_metatiles.push_back(std::move(metatile));
+            metatiles.push_back(std::move(metatile));
         }
     }
 
-    return rgba_metatiles;
+    return metatiles;
 }
 
 ChainableResult<std::tuple<Image<Rgba32>, Image<Rgba32>, Image<Rgba32>>> RgbaLayerImageMetatileizer::demetatileize(
-    const std::vector<RgbaMetatile> &metatiles, std::size_t metatiles_per_row) const
+    const std::vector<Metatile<Rgba32>> &metatiles, std::size_t metatiles_per_row) const
 {
     // Validate input parameters
     if (metatiles_per_row == 0) {
