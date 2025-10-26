@@ -88,6 +88,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::dual_layerize(con
         // No-op case
         return component.metatiles_bin();
     }
+    // Iterate over component tilemap entries and attributes.
     panic("TODO: implement");
 }
 

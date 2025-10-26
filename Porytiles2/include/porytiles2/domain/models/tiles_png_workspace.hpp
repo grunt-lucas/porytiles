@@ -82,11 +82,11 @@ class TilesPngWorkspace {
      * After loading the image, the cursor is positioned at the first transparent tile index greater than 0.
      * If all tiles from the image are non-transparent, the cursor points to the first padding tile.
      *
-     * @param img The IndexPixel image to extract tiles from; dimensions must be multiples of 8
-     * @param capacity The maximum number of tiles this workspace can hold
-     *
      * @pre Image dimensions must be multiples of 8
      * @pre Image may not contain more tiles than the specified capacity
+     *
+     * @param img The IndexPixel image to extract tiles from; dimensions must be multiples of 8
+     * @param capacity The maximum number of tiles this workspace can hold
      */
     explicit TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t capacity);
 

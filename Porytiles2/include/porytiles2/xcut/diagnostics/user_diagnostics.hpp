@@ -205,11 +205,13 @@ class UserDiagnostics {
      * - Steps: Intermediate causes (if chain has >2 errors)
      * - Root: The original cause (if chain has >1 error)
      *
-     * @tparam T The success value type of the ChainableResult
-     * @tparam E The error type of the ChainableResult
-     * @param result The failed ChainableResult containing the error chain
      * @pre result.has_value() must be false (contains an error)
      * @pre result.chain() must not be empty
+     *
+     * @tparam T The success value type of the ChainableResult
+     * @tparam E The error type of the ChainableResult
+     *
+     * @param result The failed ChainableResult containing the error chain
      */
     template <typename T, typename E>
     void fatal(const ChainableResult<T, E> &result) const
