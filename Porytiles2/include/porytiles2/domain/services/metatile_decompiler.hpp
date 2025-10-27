@@ -30,7 +30,7 @@ class MetatileDecompiler {
 
     [[nodiscard]] ChainableResult<std::vector<Metatile<Rgba32>>> decompile_metatiles(
         const std::vector<TilemapEntry> &entries,
-        const Image<IndexPixel> &tiles,
+        const Image<IndexPixel> &tiles_png,
         const std::array<RgbaPal, pal::num_pals> &pals);
 
   private:

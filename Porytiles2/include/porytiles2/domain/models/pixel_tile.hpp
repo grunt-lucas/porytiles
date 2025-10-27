@@ -55,7 +55,7 @@ class PixelTile {
 
     PixelTile() : pix_{} {}
 
-    explicit PixelTile(const std::array<PixelType, tile::size_pix> &pix) : pix_{pix} {}
+    explicit PixelTile(std::array<PixelType, tile::size_pix> pix) : pix_{std::move(pix)} {}
 
     auto operator<=>(const PixelTile &) const = default;
 

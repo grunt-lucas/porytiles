@@ -57,7 +57,7 @@ class ImageTileizer {
         // Validate that image dimensions are multiples of tile size
         if (img.width() % tile::side_length_pix != 0 || img.height() % tile::side_length_pix != 0) {
             return FormattableError{fmt::format(
-                "Image dimensions must be a multiple of {}, got {}x{}",
+                "image dimensions must be a multiple of {}, got {}x{}",
                 tile::side_length_pix,
                 img.width(),
                 img.height())};
