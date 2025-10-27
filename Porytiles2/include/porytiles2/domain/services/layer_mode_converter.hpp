@@ -25,12 +25,19 @@ class LayerModeConverter {
     }
 
     /**
-     * @brief TODO
+     * @brief Converts a tileset component to triple-layer format.
      *
      * @details
-     * TODO
+     * Converts dual-layer metatiles (8 entries per metatile) to triple-layer metatiles (12 entries per metatile) by
+     * inserting transparent tilemap entries based on each metatile's LayerType attribute. If the component is already
+     * in triple-layer format, it is returned unchanged.
      *
-     * @param component TODO
+     * The conversion strategy depends on the metatile's LayerType:
+     * - normal: Inserts 4 transparent entries at the beginning, followed by the 8 original entries
+     * - covered: Copies the 8 original entries first, then appends 4 transparent entries at the end
+     * - split: Copies the first 4 entries, inserts 4 transparent entries in the middle, then copies the last 4 entries
+     *
+     * @param component The tileset component to convert
      * @return A triple-layerized TilemapEntry vector
      */
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> triple_layerize(const PorymapTilesetComponent &component);
