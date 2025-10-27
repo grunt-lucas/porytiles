@@ -153,8 +153,13 @@ Otherwise, push back the matching pal index to `pal_indexes`.
 Init blank TileWorkspace, add in override tiles from Porymap `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
 
 Iterate over `vector<CanonicalPixelTile<IndexPixel>>` and both `vector<RgbaTile>`.
-If current `porytiles RgbaTile` exactly equals the `porymap RgbaTile`, then we don't need to compute anything, it's unchanged.
+If current `porytiles RgbaTile` equals the `porymap RgbaTile`, then we don't need to compute anything, it's unchanged.
 Just grab the original tilemap entry and re-emit.
+Note: it's possible the `porytiles RgbaTile` and `porymap RgbaTile` might have different transparencies.
+E.g. the porytiles one might be using alpha channel,
+while the porymap one will be using the extrinsic transparency color (see MetatileDecompiler).
+So we need to check equality while ignoring different representations of transparent pixels.
+
 If the tiles differ, then we have a genuine update.
 Find the current `CanonicalPixelTile<IndexPixel>` in the TileWorkspace.
 If it doesn't exist, emit an error and continue until the end of the vector.
