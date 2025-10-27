@@ -8,6 +8,16 @@
 
 namespace porytiles2 {
 
+/**
+ * @brief Represents an indexed color pixel.
+ *
+ * @details
+ * In indexed color mode, each pixel stores an index into a palette rather than a direct color value. By convention,
+ * palette index 0 is always the transparent color.
+ *
+ * @invariant Default-constructed IndexPixel is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `IndexPixel{}` produces a transparent pixel value with index 0.
+ */
 class IndexPixel {
   public:
     IndexPixel() : index_{0} {}

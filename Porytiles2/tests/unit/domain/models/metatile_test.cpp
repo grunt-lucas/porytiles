@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 
+using namespace porytiles2;
 using namespace porytiles2::metatile;
 
 TEST(TileConstantsTests, ComputeMetatileBottomLayer)
@@ -95,4 +98,16 @@ TEST(TileConstantsTests, ComputeMetatileHigherIndices)
     EXPECT_EQ(mt1, 8);
     EXPECT_EQ(layer1, Layer::middle);
     EXPECT_EQ(subtile1, Subtile::southwest);
+}
+
+TEST(MetatileTests, DefaultConstructedValueShouldBeTransparent)
+{
+    // Test with IndexPixel
+    const Metatile<IndexPixel> metatile_index{};
+    EXPECT_TRUE(metatile_index.is_transparent());
+
+    // Test with Rgba32
+    const Metatile<Rgba32> metatile_rgba{};
+    const Rgba32 transparent_ref{0, 0, 0, Rgba32::alpha_transparent};
+    EXPECT_TRUE(metatile_rgba.is_transparent(transparent_ref));
 }

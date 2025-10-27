@@ -24,6 +24,9 @@ namespace porytiles2 {
  * to a specific color index. The flipping operations and lexicographic comparison enable the compiler to find canonical
  * (minimal) orientations for tiles in a color-agnostic way, allowing deduplication of tiles that are identical under
  * flips or color transformations.
+ *
+ * @invariant Default-constructed ShapeMask is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `ShapeMask{}` produces a fully transparent mask with all bits unset (all rows are 0).
  */
 class ShapeMask {
   public:

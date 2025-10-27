@@ -85,6 +85,10 @@ inline std::string to_string(Subtile layer)
  * @details
  * Like its component PixelTile objects, the pixel type of Metatile is arbitrary.
  *
+ * @invariant Default-constructed Metatile is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `Metatile<PixelType>{}` produces a metatile where all PixelTile objects in all three layers are default-constructed
+ * (and thus transparent, assuming PixelTile and PixelType satisfy the invariant).
+ *
  * @tparam PixelType The pixel type of this Metatile's PixelTile objects
  */
 template <typename PixelType>

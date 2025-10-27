@@ -8,6 +8,16 @@
 
 namespace porytiles2 {
 
+/**
+ * @brief Represents a 32-bit RGBA color.
+ *
+ * @details
+ * RGBA32 stores color values as four 8-bit components: red, green, blue, and alpha. Alpha of 0 indicates full
+ * transparency, while alpha of 255 indicates full opacity.
+ *
+ * @invariant Default-constructed Rgba32 is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `Rgba32{}` produces a transparent color with all components set to 0, including alpha.
+ */
 class Rgba32 {
   public:
     static constexpr std::uint8_t alpha_transparent = 0;

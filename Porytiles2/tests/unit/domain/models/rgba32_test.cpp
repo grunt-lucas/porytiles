@@ -52,3 +52,11 @@ TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
     // equals_ignoring_alpha should ignore alpha, so these should be equal
     EXPECT_TRUE(rgba1.equals_ignoring_alpha(rgba2));
 }
+
+TEST(Rgba32Tests, DefaultConstructedValueShouldBeTransparent)
+{
+    const Rgba32 default_rgba{};
+    const Rgba32 transparent_ref{0, 0, 0, Rgba32::alpha_transparent};
+    EXPECT_TRUE(default_rgba.is_transparent(transparent_ref));
+    EXPECT_EQ(default_rgba.alpha(), Rgba32::alpha_transparent);
+}

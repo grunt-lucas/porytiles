@@ -5,11 +5,18 @@
 namespace porytiles2 {
 
 /**
- * @brief TODO: fill in doc string
+ * @brief Represents a tilemap entry referencing a tile with palette and flip attributes.
+ *
+ * @details
+ * TilemapEntry stores a reference to a tile (via tile_index) along with palette selection and flip flags. In Pokémon
+ * Generation III decomp projects, tile index 0 is conventionally the transparent tile.
+ *
+ * @invariant Default-constructed TilemapEntry is transparent (satisfies SupportsTransparency design invariant). That
+ * is, `TilemapEntry{}` produces an entry with tile_index=0, which refers to the canonical transparent tile.
  */
 class TilemapEntry {
   public:
-    TilemapEntry() = default;
+    TilemapEntry() : tile_index_{0}, pal_index_{0}, hflip_{false}, vflip_{false} {}
 
     TilemapEntry(unsigned int tile_index, unsigned int pal_index, bool hflip, bool vflip)
         : tile_index_{tile_index}, pal_index_{pal_index}, hflip_{hflip}, vflip_{vflip}

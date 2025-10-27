@@ -41,6 +41,10 @@ inline constexpr std::size_t size_pix = side_length_pix * side_length_pix;
  * - Transparency checking with overloads for both intrinsic and extrinsic transparency
  * - Full equality and comparison support via defaulted spaceship operator
  *
+ * @invariant Default-constructed PixelTile is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `PixelTile<PixelType>{}` produces a tile where all pixels are default-constructed (and thus transparent, assuming
+ * PixelType itself satisfies the invariant).
+ *
  * @tparam PixelType The pixel type of this tile; must satisfy SupportsTransparency concept
  */
 template <typename PixelType>

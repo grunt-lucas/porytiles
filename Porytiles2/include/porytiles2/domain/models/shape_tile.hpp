@@ -31,6 +31,10 @@ namespace porytiles2 {
  *   canonical orientation finding
  * - Flipping operations transform all masks while preserving color mappings
  *
+ * @invariant Default-constructed ShapeTile is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `ShapeTile{}` produces a transparent tile with an empty colors_ map, and an empty map is considered fully transparent
+ * by is_transparent().
+ *
  * @tparam PixelType The pixel type stored for each shape region
  */
 template <typename PixelType>
