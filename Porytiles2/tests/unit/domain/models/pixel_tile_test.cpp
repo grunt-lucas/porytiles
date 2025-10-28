@@ -62,3 +62,125 @@ TEST(PixelTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
     EXPECT_FALSE(tile.is_transparent(rgba_black));
     EXPECT_TRUE(tile.is_transparent(rgba_magenta));
 }
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithIntrinsicTransparency)
+{
+    PixelTile<IndexPixel> tile1{};
+    PixelTile<IndexPixel> tile2{};
+
+    // Fill both tiles with same transparent value (index 0 is the only intrinsically transparent value for IndexPixel)
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, IndexPixel{0}); // transparent
+        tile2.set(i, IndexPixel{0}); // same transparent value
+    }
+
+    // Both tiles should be considered equal since all pixels are transparent
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1));
+}
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectNonTransparentDifferences)
+{
+    PixelTile<IndexPixel> tile1{};
+    PixelTile<IndexPixel> tile2{};
+
+    // Fill both tiles with same non-transparent value
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, IndexPixel{5});
+        tile2.set(i, IndexPixel{5});
+    }
+
+    // Change one pixel in tile2 to a different non-transparent value
+    tile2.set(10, IndexPixel{6});
+
+    // Tiles should not be equal
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2));
+    EXPECT_FALSE(tile2.equals_ignoring_transparency(tile1));
+}
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedTransparentAndNonTransparent)
+{
+    PixelTile<IndexPixel> tile1{};
+    PixelTile<IndexPixel> tile2{};
+
+    // Fill both tiles with mix of transparent and non-transparent values
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        if (i % 2 == 0) {
+            tile1.set(i, IndexPixel{0}); // transparent (index 0)
+            tile2.set(i, IndexPixel{0}); // same transparent value
+        }
+        else {
+            tile1.set(i, IndexPixel{5}); // non-transparent
+            tile2.set(i, IndexPixel{5}); // same non-transparent value
+        }
+    }
+
+    // Tiles should be equal since transparent pixels match logically and non-transparent match exactly
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1));
+}
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithExtrinsicTransparency)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // Fill tile1 with extrinsically transparent pixels (magenta)
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, Rgba32{255, 0, 255});
+    }
+
+    // Fill tile2 with intrinsically transparent pixels (alpha=0)
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile2.set(i, Rgba32{0, 0, 0, Rgba32::alpha_transparent});
+    }
+
+    // With magenta as extrinsic transparency, both tiles should be considered equal
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
+}
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectExtrinsicNonTransparentDifferences)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // Fill both tiles with same non-transparent color
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, Rgba32{100, 150, 200});
+        tile2.set(i, Rgba32{100, 150, 200});
+    }
+
+    // Change one pixel in tile2
+    tile2.set(20, Rgba32{100, 150, 201});
+
+    // Tiles should not be equal
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
+    EXPECT_FALSE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
+}
+
+TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedExtrinsicTransparency)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // Fill both tiles with mix of transparent and non-transparent
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        if (i % 3 == 0) {
+            tile1.set(i, Rgba32{255, 0, 255});                        // extrinsically transparent (magenta)
+            tile2.set(i, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // intrinsically transparent
+        }
+        else if (i % 3 == 1) {
+            tile1.set(i, Rgba32{100, 150, 200}); // non-transparent
+            tile2.set(i, Rgba32{100, 150, 200}); // same non-transparent
+        }
+        else {
+            tile1.set(i, Rgba32{50, 75, 100, Rgba32::alpha_transparent}); // intrinsically transparent
+            tile2.set(i, Rgba32{255, 0, 255});                            // extrinsically transparent (magenta)
+        }
+    }
+
+    // With magenta as extrinsic transparency, tiles should be equal
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
+}

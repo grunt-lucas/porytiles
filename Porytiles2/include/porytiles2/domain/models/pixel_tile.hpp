@@ -91,6 +91,83 @@ class PixelTile {
         return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
+    /**
+     * @brief Compares this PixelTile with another, treating all transparent pixels as equal.
+     *
+     * @details
+     * This method provides a semantic equality comparison that differs from operator== in that it considers all
+     * transparent pixels to be equal, regardless of their underlying representation. Two pixels are considered equal
+     * if:
+     * - Both are transparent (via intrinsic is_transparent()), OR
+     * - Neither is transparent and they compare equal via operator==
+     *
+     * This is useful when comparing tiles where only the logical transparency state matters, not the specific pixel
+     * values. The practical application depends on the pixel type's transparency semantics. For IndexPixel, since only
+     * index 0 is intrinsically transparent, this method behaves like operator== in typical usage. However, for pixel
+     * types with more complex intrinsic transparency (e.g., hypothetical future types supporting multiple transparent
+     * representations), this method would treat all such representations as equal.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * @param other The PixelTile to compare against
+     * @return True if the tiles are equivalent under transparency-ignoring semantics, false otherwise
+     */
+    [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other) const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        for (std::size_t i = 0; i < tile::size_pix; ++i) {
+            const auto &pixel1 = pix_.at(i);
+            const auto &pixel2 = other.pix_.at(i);
+
+            if (pixel1.is_transparent() && pixel2.is_transparent()) {
+                continue; // Both transparent, consider equal
+            }
+            if (pixel1 != pixel2) {
+                return false; // Different pixels
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Compares this PixelTile with another, treating all transparent pixels as equal.
+     *
+     * @details
+     * This method provides a semantic equality comparison that differs from operator== in that it considers all
+     * transparent pixels to be equal, regardless of their underlying representation. Two pixels are considered equal
+     * if:
+     * - Both are transparent (via extrinsic is_transparent(extrinsic)), OR
+     * - Neither is transparent and they compare equal via operator==
+     *
+     * This is useful when comparing tiles where the specific representation of transparent pixels doesn't matter,
+     * only the logical transparency state. For example, a tile with Rgba32{255,0,255} (magenta, considered
+     * extrinsically transparent under default settings) and another with Rgba32{0,0,0,0} (black with alpha=0, also
+     * transparent) would be considered equal at those positions when using the appropriate extrinsic transparency
+     * value.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param other The PixelTile to compare against
+     * @param extrinsic The extrinsic transparency value to use when checking pixel transparency
+     * @return True if the tiles are equivalent under transparency-ignoring semantics, false otherwise
+     */
+    [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other, const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        for (std::size_t i = 0; i < tile::size_pix; ++i) {
+            const auto &pixel1 = pix_.at(i);
+            const auto &pixel2 = other.pix_.at(i);
+
+            if (pixel1.is_transparent(extrinsic) && pixel2.is_transparent(extrinsic)) {
+                continue; // Both transparent, consider equal
+            }
+            if (pixel1 != pixel2) {
+                return false; // Different pixels
+            }
+        }
+        return true;
+    }
+
     [[nodiscard]] PixelType at(std::size_t i) const
     {
         if (i >= tile::size_pix) {
