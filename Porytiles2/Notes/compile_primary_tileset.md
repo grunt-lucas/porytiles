@@ -167,5 +167,9 @@ Otherwise, check the corresponding pal index in `pal_indexes`.
 We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
 
 ```c++
-
+// This is a rough outline, consider it pseudocode
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_incremental(const Tileset &tileset)
+{
+    
+}
 ```
