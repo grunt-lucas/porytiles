@@ -310,4 +310,29 @@ class Metatile {
     unsigned int id_;
 };
 
+namespace metatile {
+
+template <typename T>
+[[nodiscard]] std::vector<PixelTile<T>> decompose(const std::vector<Metatile<T>> &metatiles)
+{
+    std::vector<PixelTile<T>> tiles;
+    tiles.reserve(metatiles.size() * tiles_per_metatile);
+    for (const auto &mt : metatiles) {
+        tiles.append_range(mt.decompose());
+    }
+    return tiles;
+
+    // This is a less performant version that uses std::ranges
+    //
+    // auto tiles = metatiles
+    //     | std::views::transform([](const auto& mt) { return mt.decompose(); })
+    //     | std::views::join
+    //     | std::ranges::to<std::vector>();
+    //
+    // This transforms each Metatile to a vector<Tile>, flattens (joins) all the vectors together, and collects into a
+    // final vector<Tile>.
+}
+
+} // namespace metatile
+
 } // namespace porytiles2

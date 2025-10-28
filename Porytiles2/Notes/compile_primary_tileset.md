@@ -170,6 +170,15 @@ We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
 // This is a rough outline, consider it pseudocode
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_incremental(const Tileset &tileset)
 {
-    
+    // Read Porytiles layer images and decompose into tile vector
+    std::vector<Metatile<Rgba32>> porytiles_metatiles =
+            metatileizer.metatileize(tileset.porytiles_component().bottom(), tileset.porytiles_component().middle(), tileset.porytiles_component().top());
+    std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
+
+    // Decompile Porymap tilemap entries and decompose into tile vector
+    auto tilemap_entries = layer_mode_converter.triple_layerize(tileset.porymap_component().metatiles_bin());
+    std::vector<Metatile<Rgba32>> porymap_metatiles =
+            metatile_decompiler.decompile(tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals());
+    std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
 }
 ```
