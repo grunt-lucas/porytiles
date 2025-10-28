@@ -173,6 +173,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_increm
     // Read Porytiles layer images and decompose into tile vector
     std::vector<Metatile<Rgba32>> porytiles_metatiles =
             metatileizer.metatileize(tileset.porytiles_component().bottom(), tileset.porytiles_component().middle(), tileset.porytiles_component().top());
+
+    if (porytiles_metatiles.size() > config_->num_metatiles_primary()) {
+        return FormattableError{"too many input metatiles in porytiles component"};
+    }
+
     std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
