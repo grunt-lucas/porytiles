@@ -165,3 +165,7 @@ Find the current `CanonicalPixelTile<IndexPixel>` in the TileWorkspace.
 If it doesn't exist, emit an error and continue until the end of the vector.
 Otherwise, check the corresponding pal index in `pal_indexes`.
 We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
+
+```c++
+
+```
