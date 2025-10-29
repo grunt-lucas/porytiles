@@ -184,3 +184,174 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedExtrinsicTrans
     EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
 }
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnEmptySetForDefaultTile)
+{
+    const PixelTile<IndexPixel> tile{};
+
+    const auto colors = tile.unique_nontransparent_colors();
+
+    // Default-constructed tile has all pixels set to IndexPixel{0} (transparent), so should return empty set
+    EXPECT_EQ(0, colors.size());
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnSingleColorForUniformTile)
+{
+    PixelTile<IndexPixel> tile{};
+
+    // Fill entire tile with same non-transparent color
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, IndexPixel{7});
+    }
+
+    const auto colors = tile.unique_nontransparent_colors();
+
+    EXPECT_EQ(1, colors.size());
+    EXPECT_TRUE(colors.contains(IndexPixel{7}));
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnMultipleColorsForVariedTile)
+{
+    PixelTile<IndexPixel> tile{};
+
+    // Fill tile with multiple non-transparent colors in a pattern
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        if (i % 4 == 0) {
+            tile.set(i, IndexPixel{1});
+        }
+        else if (i % 4 == 1) {
+            tile.set(i, IndexPixel{2});
+        }
+        else if (i % 4 == 2) {
+            tile.set(i, IndexPixel{3});
+        }
+        else {
+            tile.set(i, IndexPixel{4});
+        }
+    }
+
+    const auto colors = tile.unique_nontransparent_colors();
+
+    // Should have exactly 4 unique non-transparent colors
+    EXPECT_EQ(4, colors.size());
+    EXPECT_TRUE(colors.contains(IndexPixel{1}));
+    EXPECT_TRUE(colors.contains(IndexPixel{2}));
+    EXPECT_TRUE(colors.contains(IndexPixel{3}));
+    EXPECT_TRUE(colors.contains(IndexPixel{4}));
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldWorkWithRgba32)
+{
+    PixelTile<Rgba32> tile{};
+
+    // Set some pixels to different non-transparent colors
+    tile.set(0, Rgba32{255, 0, 0}); // red
+    tile.set(1, Rgba32{0, 255, 0}); // green
+    tile.set(2, Rgba32{0, 0, 255}); // blue
+    tile.set(3, Rgba32{255, 0, 0}); // red again (duplicate)
+
+    // Rest remain default (black with alpha=0, intrinsically transparent)
+
+    const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
+
+    // Should have 3 unique non-transparent colors: red, green, blue
+    // Default black with alpha=0 is filtered out because it's intrinsically transparent
+    EXPECT_EQ(3, colors.size());
+    EXPECT_TRUE(colors.contains(Rgba32{255, 0, 0}));
+    EXPECT_TRUE(colors.contains(Rgba32{0, 255, 0}));
+    EXPECT_TRUE(colors.contains(Rgba32{0, 0, 255}));
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeIntrinsicTransparentIndexPixel)
+{
+    PixelTile<IndexPixel> tile{};
+
+    // Fill tile with mix of transparent (index 0) and non-transparent colors
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        if (i % 2 == 0) {
+            tile.set(i, IndexPixel{0}); // intrinsically transparent
+        }
+        else {
+            tile.set(i, IndexPixel{5}); // non-transparent
+        }
+    }
+
+    const auto colors = tile.unique_nontransparent_colors();
+
+    // Should only include the non-transparent index 5, not the transparent index 0
+    EXPECT_EQ(1, colors.size());
+    EXPECT_TRUE(colors.contains(IndexPixel{5}));
+    EXPECT_FALSE(colors.contains(IndexPixel{0}));
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeAllIntrinsicTransparentRgba32Values)
+{
+    PixelTile<Rgba32> tile{};
+
+    // Set pixels to different RGB values, all with alpha=0 (intrinsically transparent)
+    tile.set(0, Rgba32{255, 0, 0, Rgba32::alpha_transparent});     // red, transparent
+    tile.set(1, Rgba32{0, 255, 0, Rgba32::alpha_transparent});     // green, transparent
+    tile.set(2, Rgba32{0, 0, 255, Rgba32::alpha_transparent});     // blue, transparent
+    tile.set(3, Rgba32{255, 0, 0, Rgba32::alpha_transparent});     // red, transparent (duplicate)
+    tile.set(4, Rgba32{100, 100, 100, Rgba32::alpha_transparent}); // gray, transparent
+
+    // Rest remain default (black with alpha=0)
+
+    const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
+
+    // Should return empty set because all pixels are intrinsically transparent
+    EXPECT_EQ(0, colors.size());
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeExtrinsicTransparentColors)
+{
+    PixelTile<Rgba32> tile{};
+
+    // Set some pixels to extrinsically transparent color (magenta)
+    tile.set(0, Rgba32{255, 0, 255});   // magenta (extrinsically transparent)
+    tile.set(1, Rgba32{255, 0, 255});   // magenta (duplicate)
+    tile.set(2, Rgba32{100, 150, 200}); // non-transparent color
+
+    // Rest remain default (black with alpha=0, intrinsically transparent)
+
+    const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
+
+    // Should only include the non-transparent color
+    // Magenta is excluded (extrinsically transparent)
+    // Default black is excluded (intrinsically transparent)
+    EXPECT_EQ(1, colors.size());
+    EXPECT_TRUE(colors.contains(Rgba32{100, 150, 200}));
+    EXPECT_FALSE(colors.contains(Rgba32{255, 0, 255}));
+    EXPECT_FALSE(colors.contains(Rgba32{}));
+}
+
+TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeBothIntrinsicAndExtrinsicTransparentColors)
+{
+    PixelTile<Rgba32> tile{};
+
+    // Create a tile with various types of transparency and non-transparent colors
+    tile.set(0, Rgba32{255, 0, 255});                          // extrinsically transparent (magenta)
+    tile.set(1, Rgba32{100, 0, 0, Rgba32::alpha_transparent}); // intrinsically transparent (red with alpha=0)
+    tile.set(2, Rgba32{0, 100, 0, Rgba32::alpha_transparent}); // intrinsically transparent (green with alpha=0)
+    tile.set(3, Rgba32{200, 200, 200});                        // non-transparent (gray)
+    tile.set(4, Rgba32{50, 50, 50});                           // non-transparent (dark gray)
+    tile.set(5, Rgba32{255, 0, 255});                          // extrinsically transparent (magenta, duplicate)
+    tile.set(
+        6, Rgba32{100, 0, 0, Rgba32::alpha_transparent}); // intrinsically transparent (red with alpha=0, duplicate)
+
+    // Rest remain default (black with alpha=0)
+
+    const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
+
+    // Should only include the 2 non-transparent colors: gray and dark gray
+    // Magenta is excluded (extrinsically transparent)
+    // Red and green with alpha=0 are excluded (intrinsically transparent)
+    // Default black is excluded (intrinsically transparent)
+    EXPECT_EQ(2, colors.size());
+    EXPECT_TRUE(colors.contains(Rgba32{200, 200, 200}));
+    EXPECT_TRUE(colors.contains(Rgba32{50, 50, 50}));
+    EXPECT_FALSE(colors.contains(Rgba32{255, 0, 255}));
+    EXPECT_FALSE(colors.contains(Rgba32{100, 0, 0, Rgba32::alpha_transparent}));
+    EXPECT_FALSE(colors.contains(Rgba32{0, 100, 0, Rgba32::alpha_transparent}));
+    EXPECT_FALSE(colors.contains(Rgba32{}));
+}

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <set>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -228,6 +229,62 @@ class PixelTile {
             }
         }
         return flipped_tile;
+    }
+
+    /**
+     * @brief Returns the set of unique non-transparent colors present in this PixelTile (intrinsic transparency only).
+     *
+     * @details
+     * This method constructs and returns a std::set containing all unique non-transparent PixelType values found in the
+     * tile. Pixels are filtered using their intrinsic transparency (via parameterless is_transparent()), and only
+     * non-transparent pixels are included in the result. The set automatically handles uniqueness, so duplicate pixel
+     * values will only appear once.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel). For
+     * IndexPixel tiles, this means index 0 (intrinsically transparent) will be excluded from the returned set.
+     *
+     * @return A std::set containing all unique non-transparent pixel values in this tile
+     */
+    [[nodiscard]] std::set<PixelType> unique_nontransparent_colors() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        std::set<PixelType> colors;
+        for (const auto &pixel : pix_) {
+            if (!pixel.is_transparent()) {
+                colors.insert(pixel);
+            }
+        }
+        return colors;
+    }
+
+    /**
+     * @brief Returns the set of unique non-transparent colors present in this PixelTile.
+     *
+     * @details
+     * This method constructs and returns a std::set containing all unique non-transparent PixelType values found in the
+     * tile. Pixels are filtered using both intrinsic and extrinsic transparency (via is_transparent(extrinsic)), and
+     * only non-transparent pixels are included in the result. The set automatically handles uniqueness, so duplicate
+     * pixel values will only appear once.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32). For Rgba32
+     * tiles:
+     * - Pixels with alpha=0 (intrinsically transparent) are excluded
+     * - Pixels matching the extrinsic transparency value (e.g., magenta) are excluded
+     * - Only opaque, non-transparent pixels are included in the result
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return A std::set containing all unique non-transparent pixel values in this tile
+     */
+    [[nodiscard]] std::set<PixelType> unique_nontransparent_colors(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        std::set<PixelType> colors;
+        for (const auto &pixel : pix_) {
+            if (!pixel.is_transparent(extrinsic)) {
+                colors.insert(pixel);
+            }
+        }
+        return colors;
     }
 
     [[nodiscard]] const std::array<PixelType, tile::size_pix> &pix() const

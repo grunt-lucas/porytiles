@@ -10,7 +10,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/services/color_index_map_builder.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
@@ -27,9 +26,15 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    ColorIndexMapBuilder color_index_map_builder{};
     TileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
+
+    // Grab configuration values we'll need
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        extrinsic_transparency_config,
+        config_->extrinsic_transparency(tileset.name()),
+        "failed to get extrinsic_transparency config",
+        std::unique_ptr<Tileset>);
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -112,11 +117,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        extrinsic_transparency_config,
-        config_->extrinsic_transparency(tileset.name()),
-        "failed to get extrinsic_transparency config",
-        std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
         validator.validate_unique_color_count(tiles, extrinsic_transparency_config.value()),
         "tile validation error",
@@ -126,6 +126,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
+
+    // Throw error if ColorIndexMap has too many unique colors
 
     // Create PackSets for the bin packing step
     // const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);

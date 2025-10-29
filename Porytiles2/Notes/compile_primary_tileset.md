@@ -173,17 +173,32 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_increm
     // Read Porytiles layer images and decompose into tile vector
     std::vector<Metatile<Rgba32>> porytiles_metatiles =
             metatileizer.metatileize(tileset.porytiles_component().bottom(), tileset.porytiles_component().middle(), tileset.porytiles_component().top());
-
     if (porytiles_metatiles.size() > config_->num_metatiles_primary()) {
         return FormattableError{"too many input metatiles in porytiles component"};
     }
-
     std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     auto tilemap_entries = layer_mode_converter.triple_layerize(tileset.porymap_component().metatiles_bin());
     std::vector<Metatile<Rgba32>> porymap_metatiles =
             metatile_decompiler.decompile(tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals());
+    // We don't need to check porymap_metatiles size here. We're going to overwrite it anyway.
+    // We only need to check the size of the final tilemap entry vector.
+    // Incremental builds don't need to preserve tilemap entries since those cannot be referenced by other tilesets.
     std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
+
+    // Leaf steps to catch too many colors, bad alpha, warn about precision loss
+    PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_unique_color_count(tiles, extrinsic_transparency_config.value()),
+        "tile validation error",
+        std::unique_ptr<Tileset>);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.generate_precision_loss_warnings(tiles), "tile validation error", std::unique_ptr<Tileset>);
+
+    ColorIndexMap color_index_map{porytiles_tiles, extrinsic_transparency.value()};
+    if (color_index_map.size() > num_colors_primary) {
+        return FormattableError{"too many unique colors in porytiles component"};
+    }
 }
 ```

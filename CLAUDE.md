@@ -31,8 +31,9 @@ cmake -B build-release -DCMAKE_BUILD_TYPE=Release
 
 # Build project
 cmake --build build -j7
+# Note: build folder may also be called `clion-build-debug` or `vscode-build`.
+# If you don't see `build`, check for one of these other two.
 ```
-Alternatively, if there is a build directory called `clion-build-debug`, use that instead of `build`.
 
 ## Testing
 - Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
