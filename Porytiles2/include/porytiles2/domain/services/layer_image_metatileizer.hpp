@@ -184,6 +184,8 @@ class LayerImageMetatileizer {
     }
 
   private:
+    ImageTileizer<T> tileizer_;
+
     static void populate_metatile_at_position(
         Metatile<T> &metatile,
         const std::vector<PixelTile<T>> &bottom_tiles,
@@ -269,8 +271,6 @@ class LayerImageMetatileizer {
             }
         }
     }
-
-    ImageTileizer<T> tileizer_;
 };
 
 } // namespace porytiles2
