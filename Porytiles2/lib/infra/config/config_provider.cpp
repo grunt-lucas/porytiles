@@ -2,57 +2,57 @@
 
 namespace porytiles2 {
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_primary([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_total(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_total([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_primary([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_total(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_total([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_primary(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_pals_primary([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_total(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_pals_total([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::max_map_data_size(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::max_map_data_size([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile(const std::string &tileset) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(const std::string &tileset) const
+LayerValue<Rgba32> ConfigProvider::extrinsic_transparency([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<Rgba32>::not_provided();
 }
 
-LayerValue<IncrementalBuildMode> ConfigProvider::incremental_build_mode(const std::string &tileset) const
+LayerValue<bool> ConfigProvider::patch_build_enabled([[maybe_unused]] const std::string &tileset) const
 {
-    return LayerValue<IncrementalBuildMode>::not_provided();
+    return LayerValue<bool>::not_provided();
 }
 
-LayerValue<TilesPalMode> ConfigProvider::tiles_pal_mode(const std::string &tileset) const
+LayerValue<TilesPalMode> ConfigProvider::tiles_pal_mode([[maybe_unused]] const std::string &tileset) const
 {
     return LayerValue<TilesPalMode>::not_provided();
 }

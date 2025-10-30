@@ -110,12 +110,11 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency(const std::string &tileset) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled(const std::string &tileset) const override;
+
     /*
      * App Config
      */
-
-    [[nodiscard]] ChainableResult<ConfigValue<IncrementalBuildMode>>
-    incremental_build_mode(const std::string &tileset) const override;
 
     /*
      * Infra Config

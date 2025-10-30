@@ -139,13 +139,12 @@ ChainableResult<ConfigValue<Rgba32>> LazyLayeredConfig::extrinsic_transparency(c
         key, [&tileset](const ConfigProvider &provider) { return provider.extrinsic_transparency(tileset); });
 }
 
-ChainableResult<ConfigValue<IncrementalBuildMode>>
-LazyLayeredConfig::incremental_build_mode(const std::string &tileset) const
+ChainableResult<ConfigValue<bool>> LazyLayeredConfig::patch_build_enabled(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     const auto key = tileset + ":" + name;
-    return resolve_config_value<IncrementalBuildMode>(
-        key, [&tileset](const ConfigProvider &provider) { return provider.incremental_build_mode(tileset); });
+    return resolve_config_value<bool>(
+        key, [&tileset](const ConfigProvider &provider) { return provider.patch_build_enabled(tileset); });
 }
 
 ChainableResult<ConfigValue<TilesPalMode>> LazyLayeredConfig::tiles_pal_mode(const std::string &tileset) const
@@ -184,8 +183,8 @@ void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_nam
         // Note: These calls now return ChainableResult, but we ignore both success and error cases
         // This is intentional for warmup - we just want to populate the cache
         // If you want to validate config at startup, call these and check has_value()
-        std::ignore = incremental_build_mode(tileset_name);
-        std::ignore = tiles_pal_mode(tileset_name);
+
+        // Domain config
         std::ignore = num_tiles_primary(tileset_name);
         std::ignore = num_tiles_total(tileset_name);
         std::ignore = num_metatiles_primary(tileset_name);
@@ -194,6 +193,14 @@ void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_nam
         std::ignore = num_pals_total(tileset_name);
         std::ignore = max_map_data_size(tileset_name);
         std::ignore = num_tiles_per_metatile(tileset_name);
+        std::ignore = extrinsic_transparency(tileset_name);
+        std::ignore = patch_build_enabled(tileset_name);
+
+        // App config
+        // TODO: stuff
+
+        // Infra config
+        std::ignore = tiles_pal_mode(tileset_name);
     }
 }
 

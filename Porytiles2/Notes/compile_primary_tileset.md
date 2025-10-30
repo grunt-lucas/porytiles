@@ -13,7 +13,7 @@ in a single representation.
 ## Tile Workspace
 `tiles.png` can be represented by a TileWorkspace,
 which is basically a searchable collection of canonical tiles.
-For the incremental compilation case,
+For the patch compilation case,
 we can prefill the workspace with the existing tiles.
 That way, when we get to the tile assignment step,
 we can just look up the tile in the workspace.
@@ -122,7 +122,7 @@ We have three parallel tile vectors, each entry aligned to correspond to the sam
 - vector<CanonicalShapeTile>: the canonicalized ShapeTile version of the tile, mapped to ColorIndex
 - vector<PackSet>: this tile's PackSet, which stores the tile ColorSet and final pal assignment
 
-### Compile Primary Incremental -- Fixed
+### Compile Primary Patch -- Tiles And Pals Fixed
 Convert `PorytilesTilesetComponent` layer images into `vector<RgbaMetatile> porytiles`
 
 Use `MetatileDecompiler` to decompile the `PorymapTilesetComponent` into `vector<RgbaMetatile> porymap`
@@ -168,7 +168,7 @@ We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
 
 ```c++
 // This is a rough outline, consider it pseudocode
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_incremental(const Tileset &tileset)
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(const Tileset &tileset)
 {
     // Read Porytiles layer images and decompose into tile vector
     std::vector<Metatile<Rgba32>> porytiles_metatiles =
@@ -184,7 +184,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_increm
             metatile_decompiler.decompile(tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals());
     // We don't need to check porymap_metatiles size here. We're going to overwrite it anyway.
     // We only need to check the size of the final tilemap entry vector.
-    // Incremental builds don't need to preserve tilemap entries since those cannot be referenced by other tilesets.
+    // Patch builds don't need to preserve tilemap entries since those cannot be referenced by other tilesets.
     std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
 
     // Leaf steps to catch too many colors, bad alpha, warn about precision loss

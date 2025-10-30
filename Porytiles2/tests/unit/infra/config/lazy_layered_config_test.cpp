@@ -15,7 +15,7 @@ class MockConfigurableProvider final : public ConfigProvider {
     // Public fields to make tests easy to write, reduce bloat
     std::unordered_map<std::string, std::size_t> num_tiles_primary_;
     std::unordered_map<std::string, std::size_t> num_tiles_total_;
-    std::unordered_map<std::string, IncrementalBuildMode> incremental_build_modes_;
+    std::unordered_map<std::string, bool> patch_build_enabled_;
 
     [[nodiscard]] std::string name() const override
     {
@@ -38,12 +38,12 @@ class MockConfigurableProvider final : public ConfigProvider {
         return LayerValue<std::size_t>::not_provided();
     }
 
-    [[nodiscard]] LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const override
+    [[nodiscard]] LayerValue<bool> patch_build_enabled(const std::string &tileset) const override
     {
-        if (incremental_build_modes_.contains(tileset)) {
-            return LayerValue<IncrementalBuildMode>::valid(incremental_build_modes_.at(tileset), metadata_);
+        if (patch_build_enabled_.contains(tileset)) {
+            return LayerValue<bool>::valid(patch_build_enabled_.at(tileset), metadata_);
         }
-        return LayerValue<IncrementalBuildMode>::not_provided();
+        return LayerValue<bool>::not_provided();
     }
 
   private:
@@ -60,7 +60,7 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     auto mock_env = std::make_unique<MockConfigurableProvider>("MockEnvProvider", "from env");
     mock_env->num_tiles_total_[tileset_name] = 4000;
     auto mock_header = std::make_unique<MockConfigurableProvider>("MockHeaderProvider", "from header");
-    mock_header->incremental_build_modes_[tileset_name] = IncrementalBuildMode::keep_unused;
+    mock_header->patch_build_enabled_[tileset_name] = true;
     mock_header->num_tiles_total_[tileset_name] = 0; // this value is overridden by toml layer
     providers.push_back(std::move(mock_toml));
     providers.push_back(std::move(mock_env));
@@ -73,8 +73,8 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     auto tiles_total_result = config.num_tiles_total(tileset_name);
     auto tiles_secondary_result = config.num_tiles_secondary(tileset_name);
     auto max_map_size_result = config.max_map_data_size(tileset_name);
-    auto test_tileset_mode_result = config.incremental_build_mode("test_tileset");
-    auto another_tileset_mode_result = config.incremental_build_mode("another_tileset");
+    auto test_tileset_mode_result = config.patch_build_enabled("test_tileset");
+    auto another_tileset_mode_result = config.patch_build_enabled("another_tileset");
 
     ASSERT_TRUE(tiles_primary_result.has_value());
     ASSERT_TRUE(tiles_total_result.has_value());
@@ -88,8 +88,8 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     EXPECT_EQ(tiles_total_result.value(), 4000);
     EXPECT_EQ(tiles_secondary_result.value(), 2000);
     EXPECT_EQ(max_map_size_result.value(), 10240);
-    EXPECT_EQ(test_tileset_mode_result.value(), IncrementalBuildMode::keep_unused);
-    EXPECT_EQ(another_tileset_mode_result.value(), IncrementalBuildMode::off);
+    EXPECT_EQ(test_tileset_mode_result.value(), true);
+    EXPECT_EQ(another_tileset_mode_result.value(), false);
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldReturnNoCachedValuesWhenCold)
@@ -204,6 +204,6 @@ TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues)
     EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_per_metatile") != std::string::npos);
     EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_per_metatile") != std::string::npos);
 
-    EXPECT_TRUE(warmed_dump.find("test_tileset:incremental_build_mode") != std::string::npos);
-    EXPECT_TRUE(warmed_dump.find("another_tileset:incremental_build_mode") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("test_tileset:patch_build_enabled") != std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:patch_build_enabled") != std::string::npos);
 }

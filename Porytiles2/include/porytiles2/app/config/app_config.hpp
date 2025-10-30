@@ -18,9 +18,6 @@ namespace porytiles2 {
 class AppConfig {
   public:
     virtual ~AppConfig() = default;
-
-    [[nodiscard]] virtual ChainableResult<ConfigValue<IncrementalBuildMode>>
-    incremental_build_mode(const std::string &tileset) const = 0;
 };
 
 } // namespace porytiles2

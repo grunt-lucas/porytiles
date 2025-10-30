@@ -201,7 +201,7 @@ class TilesPngWorkspace {
      * Each tile is exported with flip transformations applied based on its stored h_flip and v_flip flags. This
      * reverses the canonicalization process, restoring tiles to their original pixel arrangements. This enables
      * round-trip preservation: original image → workspace → exported original image, which is particularly useful in
-     * incremental builds.
+     * patch builds.
      *
      * @return An Image<IndexPixel> containing all workspace tiles in original (flipped) form
      */

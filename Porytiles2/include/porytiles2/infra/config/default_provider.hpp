@@ -38,7 +38,7 @@ class DefaultProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const override;
 
-    [[nodiscard]] LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const override;
+    [[nodiscard]] LayerValue<bool> patch_build_enabled(const std::string &tileset) const override;
 
     [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const override;
 };

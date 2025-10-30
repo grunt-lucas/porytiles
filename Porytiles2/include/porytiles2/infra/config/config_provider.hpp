@@ -123,11 +123,11 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const;
 
+    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(const std::string &tileset) const;
+
     /*
      * App Config
      */
-
-    [[nodiscard]] virtual LayerValue<IncrementalBuildMode> incremental_build_mode(const std::string &tileset) const;
 
     /*
      * Infra Config

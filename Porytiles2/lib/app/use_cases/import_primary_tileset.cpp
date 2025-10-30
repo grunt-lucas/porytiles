@@ -53,7 +53,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     // component. So we'll need to pull them from the original component and inject them into this one before
     // persisting.
 
-    // 7. Perform an incremental compilation.
+    // 7. Perform a patch build.
     // TODO: add this
 
     // 8. Persist the `Tileset` (which also caches the checksums).

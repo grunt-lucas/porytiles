@@ -175,7 +175,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     return new_tileset;
 }
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_incremental(const Tileset &tileset)
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(const Tileset &tileset)
 {
     // TODO: implement for real
     panic("TODO: implement");

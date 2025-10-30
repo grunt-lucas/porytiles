@@ -29,7 +29,7 @@ class PrimaryTilesetCompiler {
 
     [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_incremental(const Tileset &tileset);
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_patch(const Tileset &tileset);
 
   private:
     DomainConfig *config_;

@@ -113,17 +113,18 @@ porytiles2 import-tileset general
 3. Import the tileset into a `Tileset` aggregate using the special "import" operation.
 4. If `PorymapTilesetComponent` is empty, bail with error.
 5. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-6. Perform an incremental compilation.
+6. Perform a patch compilation with all assets set to `fixed`
 7. Persist the `Tileset` (which also caches the checksums).
 
 ### Outputs
-Importing a tileset for the first time will set `incremental: fixed` by default.
-[See here for more on incremental builds.](#incremental-build-support)
+Importing a tileset for the first time will set `patch.enabled:true` by default with all assets set to `fixed`.
 
 ```yaml
-# general.yaml
-tileset:
-  incremental: fixed
+# tileset.yaml
+patch:
+  enabled: true
+  tiles: fixed
+  pals: fixed
 ```
 
 
