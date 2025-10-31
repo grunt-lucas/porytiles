@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -56,9 +57,9 @@ TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
     ASSERT_TRUE(blue_index.has_value());
 
     // Indices should be sequential (0, 1, 2) in some order
-    EXPECT_LE(red_index.value(), 2);
-    EXPECT_LE(green_index.value(), 2);
-    EXPECT_LE(blue_index.value(), 2);
+    EXPECT_LE(red_index.value().index(), 2);
+    EXPECT_LE(green_index.value().index(), 2);
+    EXPECT_LE(blue_index.value().index(), 2);
 
     // All indices should be different
     EXPECT_NE(red_index.value(), green_index.value());
@@ -80,9 +81,9 @@ TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
     ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Each index should have a color
-    auto color_at_0 = map.color_at_index(0);
-    auto color_at_1 = map.color_at_index(1);
-    auto color_at_2 = map.color_at_index(2);
+    auto color_at_0 = map.color_at_index(ColorIndex{0});
+    auto color_at_1 = map.color_at_index(ColorIndex{1});
+    auto color_at_2 = map.color_at_index(ColorIndex{2});
 
     ASSERT_TRUE(color_at_0.has_value());
     ASSERT_TRUE(color_at_1.has_value());
@@ -172,7 +173,7 @@ TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
     ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should only have index 0, not 99
-    auto color_at_99 = map.color_at_index(99);
+    auto color_at_99 = map.color_at_index(ColorIndex{99});
     EXPECT_FALSE(color_at_99.has_value());
 }
 
@@ -195,7 +196,7 @@ TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
     // Red should be present
     auto red_index = map.index_at_color(Rgba32{255, 0, 0});
     ASSERT_TRUE(red_index.has_value());
-    EXPECT_EQ(0, red_index.value());
+    EXPECT_EQ(0, red_index.value().index());
 
     // Magenta and transparent black should not be present
     EXPECT_FALSE(map.index_at_color(Rgba32{255, 0, 255}).has_value());
@@ -249,8 +250,8 @@ TEST(ColorIndexMapTests, SequentialIndicesStartAtZero)
     ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should have indices 0, 1, 2, 3
-    EXPECT_TRUE(map.color_at_index(0).has_value());
-    EXPECT_TRUE(map.color_at_index(1).has_value());
-    EXPECT_TRUE(map.color_at_index(2).has_value());
-    EXPECT_FALSE(map.color_at_index(3).has_value());
+    EXPECT_TRUE(map.color_at_index(ColorIndex{0}).has_value());
+    EXPECT_TRUE(map.color_at_index(ColorIndex{1}).has_value());
+    EXPECT_TRUE(map.color_at_index(ColorIndex{2}).has_value());
+    EXPECT_FALSE(map.color_at_index(ColorIndex{3}).has_value());
 }

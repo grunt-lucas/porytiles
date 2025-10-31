@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 
+#include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 
@@ -43,13 +44,13 @@ namespace porytiles2 {
  * // Forward lookup: color -> index
  * auto index_opt = color_map.index_at_color(Rgba32{255, 0, 0});
  * if (index_opt) {
- *     // index_opt contains the index for red
+ *     // index_opt contains the ColorIndex for red
  * }
  *
  * // Reverse lookup: index -> color
- * auto color_opt = color_map.color_at_index(0);
+ * auto color_opt = color_map.color_at_index(ColorIndex{0});
  * if (color_opt) {
- *     // color_opt contains the color at index 0
+ *     // color_opt contains the color at ColorIndex 0
  * }
  * @endcode
  */
@@ -140,16 +141,16 @@ class ColorIndexMap {
      * @brief Retrieves the color associated with a given index.
      *
      * @details
-     * Performs a lookup in the index-to-color mapping to find the pixel color assigned to the specified index. If
-     * the index exists in the map, returns the associated color. If the index does not exist (was never assigned
-     * during construction), returns std::nullopt.
+     * Performs a lookup in the index-to-color mapping to find the pixel color assigned to the specified index. If the
+     * index exists in the map, returns the associated color. If the index does not exist (was never assigned during
+     * construction), returns std::nullopt.
      *
      * This method enables efficient reverse lookup: given an index, retrieve its color.
      *
-     * @param index The integer index to lookup
+     * @param index The color index to lookup
      * @return std::optional<PixelType> containing the color if found, std::nullopt otherwise
      */
-    [[nodiscard]] std::optional<PixelType> color_at_index(unsigned int index) const
+    [[nodiscard]] std::optional<PixelType> color_at_index(ColorIndex index) const
     {
         auto it = color_map_.find(index);
         if (it != color_map_.end()) {
@@ -162,16 +163,16 @@ class ColorIndexMap {
      * @brief Retrieves the index associated with a given color.
      *
      * @details
-     * Performs a lookup in the color-to-index mapping to find the integer index assigned to the specified pixel color.
+     * Performs a lookup in the color-to-index mapping to find the color index assigned to the specified pixel color.
      * If the color exists in the map, returns the associated index. If the color does not exist (was never assigned
      * during construction or was filtered out as transparent), returns std::nullopt.
      *
      * This method enables efficient forward lookup: given a color, retrieve its index.
      *
      * @param color The pixel color to lookup
-     * @return std::optional<unsigned int> containing the index if found, std::nullopt otherwise
+     * @return std::optional<ColorIndex> containing the index if found, std::nullopt otherwise
      */
-    [[nodiscard]] std::optional<unsigned int> index_at_color(const PixelType &color) const
+    [[nodiscard]] std::optional<ColorIndex> index_at_color(const PixelType &color) const
     {
         auto it = index_map_.find(color);
         if (it != index_map_.end()) {
@@ -196,14 +197,14 @@ class ColorIndexMap {
     template <typename ColorExtractor>
     void constructor_impl(const std::vector<PixelTile<PixelType>> &tiles, ColorExtractor extract_colors)
     {
-        std::map<PixelType, unsigned int> pixel_indexes{};
-        std::map<unsigned int, PixelType> index_to_color{};
+        std::map<PixelType, ColorIndex> pixel_indexes{};
+        std::map<ColorIndex, PixelType> index_to_color{};
 
         unsigned int color_index = 0;
         for (const auto &tile : tiles) {
             for (const auto &pixel : extract_colors(tile)) {
-                if (pixel_indexes.insert({pixel, color_index}).second) {
-                    index_to_color.insert({color_index, pixel});
+                if (pixel_indexes.insert({pixel, ColorIndex{color_index}}).second) {
+                    index_to_color.insert({ColorIndex{color_index}, pixel});
                     color_index++;
                 }
             }
@@ -213,8 +214,8 @@ class ColorIndexMap {
         color_map_ = index_to_color;
     }
 
-    std::map<PixelType, unsigned int> index_map_;
-    std::map<unsigned int, PixelType> color_map_;
+    std::map<PixelType, ColorIndex> index_map_;
+    std::map<ColorIndex, PixelType> color_map_;
 };
 
 } // namespace porytiles2

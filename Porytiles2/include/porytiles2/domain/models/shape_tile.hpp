@@ -4,6 +4,7 @@
 #include <map>
 #include <ranges>
 
+#include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/shape_mask.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
@@ -215,7 +216,7 @@ class ShapeTile {
      */
     void set(const ShapeMask &mask, const PixelType &color)
     {
-        colors_[mask] = color;
+        colors_.insert_or_assign(mask, color);
     }
 
   private:
@@ -260,7 +261,7 @@ class ShapeTile {
                     panic("Pixel not found in ColorIndexMap");
                 }
 
-                unsigned int index = *index_opt;
+                unsigned int index = index_opt->index();
 
                 // Create mask if it doesn't exist
                 if (index_to_mask.find(index) == index_to_mask.end()) {
