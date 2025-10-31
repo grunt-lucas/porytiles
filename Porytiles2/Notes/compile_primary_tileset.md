@@ -123,22 +123,7 @@ We have three parallel tile vectors, each entry aligned to correspond to the sam
 - vector<PackSet>: this tile's PackSet, which stores the tile ColorSet and final pal assignment
 
 ### Compile Primary Patch -- Tiles And Pals Fixed
-Convert `PorytilesTilesetComponent` layer images into `vector<RgbaMetatile> porytiles`
-
-Use `MetatileDecompiler` to decompile the `PorymapTilesetComponent` into `vector<RgbaMetatile> porymap`
-
-Leaf step to throw error if there are too many metatiles.
-
-Decompose `vector<RgbaMetatile> porytiles` into `vector<RgbaTile> porytiles`
-(we have a compute_metatile function which allows us to reconstruct the original metatile params from a raw tile index)
-
-Decompose `vector<RgbaMetatile> porymap` into `vector<RgbaTile> porymap`
-
-Leaf step to throw errors if any `vector<RgbaTile> porytiles` have more than 15+1 colors.
-
-Leaf step to generate precision loss warnings if some `vector<RgbaTile> porytiles` colors collapse to the same 5-bit color.
-
-Create color index map from `vector<RgbaTile> porytiles`
+...
 
 Generate `vector<CanonicalShapeTile<ColorIndex>>` using color index map and `vector<RgbaTile> porytiles`
 
@@ -196,6 +181,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(
     PT_TRY_CALL_CHAIN_ERR(
         validator.generate_precision_loss_warnings(tiles), "tile validation error", std::unique_ptr<Tileset>);
 
+    // Create color index map from porytiles_tiles
     ColorIndexMap color_index_map{porytiles_tiles, extrinsic_transparency.value()};
     if (color_index_map.size() > num_colors_primary) {
         return FormattableError{"too many unique colors in porytiles component"};
