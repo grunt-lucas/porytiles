@@ -8,7 +8,7 @@ using namespace porytiles2;
 
 TEST(ColorIndexMapTests, DefaultConstructedMapShouldBeEmpty)
 {
-    ColorIndexMap map{};
+    ColorIndexMap<Rgba32> map{};
 
     EXPECT_TRUE(map.empty());
 }
@@ -27,7 +27,7 @@ TEST(ColorIndexMapTests, ConstructorShouldBuildBidirectionalMapping)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should have 3 unique colors
     EXPECT_EQ(3, map.size());
@@ -44,7 +44,7 @@ TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Each color should have an index
     auto red_index = map.index_at_color(Rgba32{255, 0, 0});
@@ -77,7 +77,7 @@ TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Each index should have a color
     auto color_at_0 = map.color_at_index(0);
@@ -114,7 +114,7 @@ TEST(ColorIndexMapTests, BidirectionalLookupShouldBeConsistent)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     const Rgba32 red{255, 0, 0};
     const Rgba32 green{0, 255, 0};
@@ -153,7 +153,7 @@ TEST(ColorIndexMapTests, LookupNonexistentColorShouldReturnNullopt)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Yellow was never added
     auto yellow_index = map.index_at_color(Rgba32{255, 255, 0});
@@ -169,7 +169,7 @@ TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should only have index 0, not 99
     auto color_at_99 = map.color_at_index(99);
@@ -187,7 +187,7 @@ TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should only have red (index 0)
     EXPECT_EQ(1, map.size());
@@ -219,7 +219,7 @@ TEST(ColorIndexMapTests, DeduplicationAcrossMultipleTiles)
     tiles.push_back(tile1);
     tiles.push_back(tile2);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should have 3 unique colors (red, green, blue)
     EXPECT_EQ(3, map.size());
@@ -246,7 +246,7 @@ TEST(ColorIndexMapTests, SequentialIndicesStartAtZero)
 
     tiles.push_back(tile);
 
-    ColorIndexMap map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
 
     // Should have indices 0, 1, 2, 3
     EXPECT_TRUE(map.color_at_index(0).has_value());

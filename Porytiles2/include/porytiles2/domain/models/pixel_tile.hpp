@@ -48,8 +48,7 @@ inline constexpr std::size_t size_pix = side_length_pix * side_length_pix;
  *
  * @tparam PixelType The pixel type of this tile; must satisfy SupportsTransparency concept
  */
-template <typename PixelType>
-    requires SupportsTransparency<PixelType>
+template <SupportsTransparency PixelType>
 class PixelTile {
   public:
     virtual ~PixelTile() = default;

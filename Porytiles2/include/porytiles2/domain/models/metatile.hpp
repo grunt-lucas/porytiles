@@ -91,8 +91,7 @@ inline std::string to_string(Subtile layer)
  *
  * @tparam PixelType The pixel type of this Metatile's PixelTile objects
  */
-template <typename PixelType>
-    requires SupportsTransparency<PixelType>
+template <SupportsTransparency PixelType>
 class Metatile {
   public:
     Metatile() : id_{} {}
