@@ -71,7 +71,7 @@ class PixelTile {
     [[nodiscard]] bool is_transparent() const
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        return std::ranges::all_of(pix(), [](const auto &pixel) { return pixel.is_transparent(); });
+        return is_transparent_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
     }
 
     /**
@@ -88,7 +88,7 @@ class PixelTile {
     [[nodiscard]] bool is_transparent(const PixelType &extrinsic) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        return std::ranges::all_of(pix(), [=](const auto &pixel) { return pixel.is_transparent(extrinsic); });
+        return is_transparent_impl([&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
     /**
@@ -115,18 +115,7 @@ class PixelTile {
     [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other) const
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        for (std::size_t i = 0; i < tile::size_pix; ++i) {
-            const auto &pixel1 = pix_.at(i);
-            const auto &pixel2 = other.pix_.at(i);
-
-            if (pixel1.is_transparent() && pixel2.is_transparent()) {
-                continue; // Both transparent, consider equal
-            }
-            if (pixel1 != pixel2) {
-                return false; // Different pixels
-            }
-        }
-        return true;
+        return equals_ignoring_transparency_impl(other, [](const PixelType &pixel) { return pixel.is_transparent(); });
     }
 
     /**
@@ -154,18 +143,8 @@ class PixelTile {
     [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other, const PixelType &extrinsic) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        for (std::size_t i = 0; i < tile::size_pix; ++i) {
-            const auto &pixel1 = pix_.at(i);
-            const auto &pixel2 = other.pix_.at(i);
-
-            if (pixel1.is_transparent(extrinsic) && pixel2.is_transparent(extrinsic)) {
-                continue; // Both transparent, consider equal
-            }
-            if (pixel1 != pixel2) {
-                return false; // Different pixels
-            }
-        }
-        return true;
+        return equals_ignoring_transparency_impl(
+            other, [&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
     [[nodiscard]] PixelType at(std::size_t i) const
@@ -247,13 +226,7 @@ class PixelTile {
     [[nodiscard]] std::set<PixelType> unique_nontransparent_colors() const
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        std::set<PixelType> colors;
-        for (const auto &pixel : pix_) {
-            if (!pixel.is_transparent()) {
-                colors.insert(pixel);
-            }
-        }
-        return colors;
+        return unique_nontransparent_colors_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
     }
 
     /**
@@ -277,13 +250,8 @@ class PixelTile {
     [[nodiscard]] std::set<PixelType> unique_nontransparent_colors(const PixelType &extrinsic) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        std::set<PixelType> colors;
-        for (const auto &pixel : pix_) {
-            if (!pixel.is_transparent(extrinsic)) {
-                colors.insert(pixel);
-            }
-        }
-        return colors;
+        return unique_nontransparent_colors_impl(
+            [&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
     }
 
     [[nodiscard]] const std::array<PixelType, tile::size_pix> &pix() const
@@ -292,6 +260,79 @@ class PixelTile {
     }
 
   private:
+    /**
+     * @brief Helper method implementing the core transparency checking logic.
+     *
+     * @details
+     * This private helper contains the common transparency checking logic shared by both is_transparent() overloads.
+     * It accepts a transparency predicate that determines whether a pixel is transparent, allowing the same
+     * implementation to work with both intrinsic and extrinsic transparency checking.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return True if all pixels satisfy the transparency predicate, false otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] bool is_transparent_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        return std::ranges::all_of(pix(), is_transparent_pred);
+    }
+
+    /**
+     * @brief Helper method implementing the core transparency-ignoring comparison logic.
+     *
+     * @details
+     * This private helper contains the common comparison logic shared by both equals_ignoring_transparency() overloads.
+     * It accepts a transparency predicate that determines whether a pixel is transparent, allowing the same
+     * implementation to work with both intrinsic and extrinsic transparency checking.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param other The PixelTile to compare against
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return True if the tiles are equivalent under transparency-ignoring semantics, false otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] bool
+    equals_ignoring_transparency_impl(const PixelTile &other, TransparencyPredicate is_transparent_pred) const
+    {
+        for (std::size_t i = 0; i < tile::size_pix; ++i) {
+            const auto &pixel1 = pix_.at(i);
+            const auto &pixel2 = other.pix_.at(i);
+
+            if (is_transparent_pred(pixel1) && is_transparent_pred(pixel2)) {
+                continue; // Both transparent, consider equal
+            }
+            if (pixel1 != pixel2) {
+                return false; // Different pixels
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Helper method implementing the core unique color extraction logic.
+     *
+     * @details
+     * This private helper contains the common color extraction logic shared by both unique_nontransparent_colors()
+     * overloads. It accepts a transparency predicate that determines whether a pixel is transparent, allowing the
+     * same implementation to work with both intrinsic and extrinsic transparency checking.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return A std::set containing all unique non-transparent pixel values in this tile
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] std::set<PixelType> unique_nontransparent_colors_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        std::set<PixelType> colors;
+        for (const auto &pixel : pix_) {
+            if (!is_transparent_pred(pixel)) {
+                colors.insert(pixel);
+            }
+        }
+        return colors;
+    }
+
     std::array<PixelType, tile::size_pix> pix_;
 };
 

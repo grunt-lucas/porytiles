@@ -80,21 +80,7 @@ class ColorIndexMap {
     ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles)
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        std::map<PixelType, unsigned int> pixel_indexes{};
-        std::map<unsigned int, PixelType> index_to_color{};
-
-        unsigned int color_index = 0;
-        for (const auto &tile : tiles) {
-            for (const auto &pixel : tile.unique_nontransparent_colors()) {
-                if (pixel_indexes.insert({pixel, color_index}).second) {
-                    index_to_color.insert({color_index, pixel});
-                    color_index++;
-                }
-            }
-        }
-
-        index_map_ = pixel_indexes;
-        color_map_ = index_to_color;
+        constructor_impl(tiles, [](const PixelTile<PixelType> &tile) { return tile.unique_nontransparent_colors(); });
     }
 
     /**
@@ -121,21 +107,9 @@ class ColorIndexMap {
     ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles, const PixelType &extrinsic)
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        std::map<PixelType, unsigned int> pixel_indexes{};
-        std::map<unsigned int, PixelType> index_to_color{};
-
-        unsigned int color_index = 0;
-        for (const auto &tile : tiles) {
-            for (const auto &pixel : tile.unique_nontransparent_colors(extrinsic)) {
-                if (pixel_indexes.insert({pixel, color_index}).second) {
-                    index_to_color.insert({color_index, pixel});
-                    color_index++;
-                }
-            }
-        }
-
-        index_map_ = pixel_indexes;
-        color_map_ = index_to_color;
+        constructor_impl(tiles, [&extrinsic](const PixelTile<PixelType> &tile) {
+            return tile.unique_nontransparent_colors(extrinsic);
+        });
     }
 
     /**
@@ -207,6 +181,38 @@ class ColorIndexMap {
     }
 
   private:
+    /**
+     * @brief Helper method implementing the core ColorIndexMap construction logic.
+     *
+     * @details
+     * This private helper contains the common construction logic shared by both ColorIndexMap constructors. It accepts
+     * a color extractor function that determines how to extract unique non-transparent colors from each tile, allowing
+     * the same implementation to work with both intrinsic and extrinsic transparency checking.
+     *
+     * @tparam ColorExtractor A callable type that takes a PixelTile and returns std::set<PixelType>
+     * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
+     * @param extract_colors A function that extracts unique non-transparent colors from a tile
+     */
+    template <typename ColorExtractor>
+    void constructor_impl(const std::vector<PixelTile<PixelType>> &tiles, ColorExtractor extract_colors)
+    {
+        std::map<PixelType, unsigned int> pixel_indexes{};
+        std::map<unsigned int, PixelType> index_to_color{};
+
+        unsigned int color_index = 0;
+        for (const auto &tile : tiles) {
+            for (const auto &pixel : extract_colors(tile)) {
+                if (pixel_indexes.insert({pixel, color_index}).second) {
+                    index_to_color.insert({color_index, pixel});
+                    color_index++;
+                }
+            }
+        }
+
+        index_map_ = pixel_indexes;
+        color_map_ = index_to_color;
+    }
+
     std::map<PixelType, unsigned int> index_map_;
     std::map<unsigned int, PixelType> color_map_;
 };
