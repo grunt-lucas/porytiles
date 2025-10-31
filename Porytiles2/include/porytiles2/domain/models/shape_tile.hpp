@@ -4,7 +4,9 @@
 #include <map>
 #include <ranges>
 
+#include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/shape_mask.hpp"
+#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 
@@ -43,6 +45,76 @@ class ShapeTile {
     virtual ~ShapeTile() = default;
 
     ShapeTile() = default;
+
+    /**
+     * @brief Converts a PixelTile to a ShapeTile<unsigned int> using a ColorIndexMap (intrinsic transparency).
+     *
+     * @details
+     * This static method creates a ShapeTile<unsigned int> from a PixelTile by mapping each unique non-transparent
+     * color to its corresponding color index from the ColorIndexMap. For each color index, a ShapeMask is constructed
+     * that marks all pixel positions containing that color.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * The conversion process:
+     * 1. Iterates through all 64 pixels in the PixelTile
+     * 2. Skips intrinsically transparent pixels
+     * 3. For each non-transparent pixel, looks up its color index in the ColorIndexMap
+     * 4. Panics if a non-transparent pixel is not found in the ColorIndexMap
+     * 5. Builds ShapeMasks for each unique color index
+     * 6. Returns a ShapeTile<unsigned int> mapping ShapeMasks to color indices
+     *
+     * @tparam InputPixelType The pixel type of the input tile, must support intrinsic transparency
+     * @param pixel_tile The PixelTile to convert
+     * @param color_index_map The ColorIndexMap providing color-to-index mappings
+     * @return A ShapeTile<unsigned int> with ShapeMasks mapped to color indices
+     * @throws Panics if any non-transparent pixel in pixel_tile is not found in color_index_map
+     */
+    template <SupportsTransparency InputPixelType>
+    [[nodiscard]] static ShapeTile<unsigned int>
+    from_pixel_tile(const PixelTile<InputPixelType> &pixel_tile, const ColorIndexMap<InputPixelType> &color_index_map)
+        requires requires(const InputPixelType &p) { p.is_transparent(); }
+    {
+        return from_pixel_tile_impl(
+            pixel_tile, color_index_map, [](const InputPixelType &p) { return p.is_transparent(); });
+    }
+
+    /**
+     * @brief Converts a PixelTile to a ShapeTile<unsigned int> using a ColorIndexMap (extrinsic transparency).
+     *
+     * @details
+     * This static method creates a ShapeTile<unsigned int> from a PixelTile by mapping each unique non-transparent
+     * color to its corresponding color index from the ColorIndexMap. For each color index, a ShapeMask is constructed
+     * that marks all pixel positions containing that color.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32). Transparency
+     * is determined using both intrinsic (alpha=0) and extrinsic (matching the provided value) checks.
+     *
+     * The conversion process:
+     * 1. Iterates through all 64 pixels in the PixelTile
+     * 2. Skips pixels that are either intrinsically or extrinsically transparent
+     * 3. For each non-transparent pixel, looks up its color index in the ColorIndexMap
+     * 4. Panics if a non-transparent pixel is not found in the ColorIndexMap
+     * 5. Builds ShapeMasks for each unique color index
+     * 6. Returns a ShapeTile<unsigned int> mapping ShapeMasks to color indices
+     *
+     * @tparam InputPixelType The pixel type of the input tile, must support extrinsic transparency
+     * @param pixel_tile The PixelTile to convert
+     * @param color_index_map The ColorIndexMap providing color-to-index mappings
+     * @param extrinsic The extrinsic transparency value to check pixels against
+     * @return A ShapeTile<unsigned int> with ShapeMasks mapped to color indices
+     * @throws Panics if any non-transparent pixel in pixel_tile is not found in color_index_map
+     */
+    template <SupportsTransparency InputPixelType>
+    [[nodiscard]] static ShapeTile<unsigned int> from_pixel_tile(
+        const PixelTile<InputPixelType> &pixel_tile,
+        const ColorIndexMap<InputPixelType> &color_index_map,
+        const InputPixelType &extrinsic)
+        requires requires(const InputPixelType &p) { p.is_transparent(p); }
+    {
+        return from_pixel_tile_impl(
+            pixel_tile, color_index_map, [&extrinsic](const InputPixelType &p) { return p.is_transparent(extrinsic); });
+    }
 
     auto operator<=>(const ShapeTile &other) const = default;
 
@@ -147,6 +219,68 @@ class ShapeTile {
     }
 
   private:
+    /**
+     * @brief Helper method implementing the core PixelTile to ShapeTile conversion logic.
+     *
+     * @details
+     * This private helper contains the common conversion logic shared by both from_pixel_tile() overloads. It accepts
+     * a transparency predicate (function/lambda) that determines whether a pixel is transparent, allowing the same
+     * implementation to work with both intrinsic and extrinsic transparency checking.
+     *
+     * @tparam InputPixelType The pixel type of the input tile
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param pixel_tile The PixelTile to convert
+     * @param color_index_map The ColorIndexMap providing color-to-index mappings
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return A ShapeTile<unsigned int> with ShapeMasks mapped to color indices
+     * @throws Panics if any non-transparent pixel is not found in the ColorIndexMap
+     */
+    template <SupportsTransparency InputPixelType, typename TransparencyPredicate>
+    [[nodiscard]] static ShapeTile<unsigned int> from_pixel_tile_impl(
+        const PixelTile<InputPixelType> &pixel_tile,
+        const ColorIndexMap<InputPixelType> &color_index_map,
+        TransparencyPredicate is_transparent_pred)
+    {
+        // Map from color index to ShapeMask
+        std::map<unsigned int, ShapeMask> index_to_mask;
+
+        // Iterate through all pixels
+        for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
+            for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
+                const auto pixel = pixel_tile.at(row, col);
+
+                // Skip transparent pixels
+                if (is_transparent_pred(pixel)) {
+                    continue;
+                }
+
+                // Look up the color index
+                auto index_opt = color_index_map.index_at_color(pixel);
+                if (!index_opt) {
+                    panic("Pixel not found in ColorIndexMap");
+                }
+
+                unsigned int index = *index_opt;
+
+                // Create mask if it doesn't exist
+                if (index_to_mask.find(index) == index_to_mask.end()) {
+                    index_to_mask[index] = ShapeMask{};
+                }
+
+                // Set the bit for this position
+                index_to_mask[index].set(row, col);
+            }
+        }
+
+        // Build the result ShapeTile
+        ShapeTile<unsigned int> result;
+        for (const auto &[index, mask] : index_to_mask) {
+            result.set(mask, index);
+        }
+
+        return result;
+    }
+
     std::map<ShapeMask, PixelType> colors_;
 };
 
