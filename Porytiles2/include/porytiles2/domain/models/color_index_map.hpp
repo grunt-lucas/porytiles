@@ -59,6 +59,45 @@ class ColorIndexMap {
     ColorIndexMap() = default;
 
     /**
+     * @brief Constructs a ColorIndexMap from a collection of tiles using intrinsic transparency.
+     *
+     * @details
+     * This constructor analyzes all provided tiles to identify unique non-transparent colors and assigns each a
+     * sequential integer index starting from 0. The process:
+     *
+     * 1. Iterates through each tile in the collection
+     * 2. Extracts unique non-transparent colors from each tile (using PixelTile::unique_nontransparent_colors)
+     * 3. Filters colors based on intrinsic transparency only (e.g., index 0 for IndexPixel)
+     * 4. Assigns each unique color that passes filtering a sequential index (0, 1, 2, ...)
+     * 5. Ensures deduplication: colors appearing in multiple tiles receive the same index
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * The order of index assignment depends on the order in which colors are encountered during tile iteration.
+     *
+     * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
+     */
+    ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles)
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        std::map<PixelType, unsigned int> pixel_indexes{};
+        std::map<unsigned int, PixelType> index_to_color{};
+
+        unsigned int color_index = 0;
+        for (const auto &tile : tiles) {
+            for (const auto &pixel : tile.unique_nontransparent_colors()) {
+                if (pixel_indexes.insert({pixel, color_index}).second) {
+                    index_to_color.insert({color_index, pixel});
+                    color_index++;
+                }
+            }
+        }
+
+        index_map_ = pixel_indexes;
+        color_map_ = index_to_color;
+    }
+
+    /**
      * @brief Constructs a ColorIndexMap from a collection of tiles and an extrinsic transparency value.
      *
      * @details
@@ -72,12 +111,15 @@ class ColorIndexMap {
      * 4. Assigns each unique color that passes filtering a sequential index (0, 1, 2, ...)
      * 5. Ensures deduplication: colors appearing in multiple tiles receive the same index
      *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
      * The order of index assignment depends on the order in which colors are encountered during tile iteration.
      *
      * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
      * @param extrinsic The extrinsic transparency value used for transparency filtering
      */
     ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles, const PixelType &extrinsic)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
     {
         std::map<PixelType, unsigned int> pixel_indexes{};
         std::map<unsigned int, PixelType> index_to_color{};
