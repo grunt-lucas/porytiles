@@ -7,8 +7,8 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
@@ -149,7 +149,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
 
     Image<IndexPixel> tiles_png{128, 128};
-    RgbaPal pal{rgba_red};
+    Palette<Rgba32> pal{rgba_red};
     pal.set(extrinsic_transparency_config.value(), 0);
 
     new_porymap_component->tiles_png(tiles_png);

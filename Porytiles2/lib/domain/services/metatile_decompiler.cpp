@@ -6,8 +6,8 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -31,7 +31,9 @@ namespace {
  * @return A new PixelTile<Rgba32> with colors from the palette
  */
 PixelTile<Rgba32> convert_tile(
-    const PixelTile<IndexPixel> &index_tile, unsigned int pal_index, const std::array<RgbaPal, pal::num_pals> &pals)
+    const PixelTile<IndexPixel> &index_tile,
+    unsigned int pal_index,
+    const std::array<Palette<Rgba32>, pal::num_pals> &pals)
 {
     std::array<Rgba32, tile::size_pix> rgba_pixels{};
     const auto &palette_colors = pals[pal_index].colors();
@@ -50,7 +52,7 @@ PixelTile<Rgba32> convert_tile(
 ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_metatiles(
     const std::vector<TilemapEntry> &entries,
     const Image<IndexPixel> &tiles_png,
-    const std::array<RgbaPal, pal::num_pals> &pals)
+    const std::array<Palette<Rgba32>, pal::num_pals> &pals)
 {
     std::vector<Metatile<Rgba32>> decompiled;
 

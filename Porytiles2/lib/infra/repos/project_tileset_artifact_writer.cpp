@@ -100,7 +100,8 @@ save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, c
     return {};
 }
 
-ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+ChainableResult<void>
+save_palette(const Palette<Rgba32> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {

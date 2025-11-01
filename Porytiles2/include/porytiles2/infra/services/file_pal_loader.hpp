@@ -2,13 +2,14 @@
 
 #include <filesystem>
 
-#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/templates/result.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief A service interface that loads an RgbaPal from a given file.
+ * @brief A service interface that loads a Palette from a given file.
  *
  * @details
  * The FilePalLoader interface is file-format-agnostic. Different implementations can load from various pal file formats
@@ -18,7 +19,7 @@ class FilePalLoader {
   public:
     virtual ~FilePalLoader() = default;
 
-    [[nodiscard]] virtual Result<RgbaPal> load(const std::filesystem::path &path) const = 0;
+    [[nodiscard]] virtual Result<Palette<Rgba32>> load(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

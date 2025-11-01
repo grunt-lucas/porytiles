@@ -8,10 +8,10 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
@@ -72,7 +72,8 @@ class MockPngIndexedImageSaver : public PngIndexedImageSaver {
 
 class MockFilePalSaver : public FilePalSaver {
   public:
-    [[nodiscard]] ChainableResult<void> save(const RgbaPal &pal, const std::filesystem::path &path) const override
+    [[nodiscard]] ChainableResult<void>
+    save(const Palette<Rgba32> &pal, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};
         out << "mock_palette";
@@ -105,7 +106,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(RgbaPal{}, i);
+        porymap_component->set_pal(Palette<Rgba32>{}, i);
     }
 
     // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come

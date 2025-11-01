@@ -8,8 +8,8 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -31,7 +31,7 @@ class MetatileDecompiler {
     [[nodiscard]] ChainableResult<std::vector<Metatile<Rgba32>>> decompile_metatiles(
         const std::vector<TilemapEntry> &entries,
         const Image<IndexPixel> &tiles_png,
-        const std::array<RgbaPal, pal::num_pals> &pals);
+        const std::array<Palette<Rgba32>, pal::num_pals> &pals);
 
   private:
     TextFormatter *format_;

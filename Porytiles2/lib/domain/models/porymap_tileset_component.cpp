@@ -6,7 +6,8 @@
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -26,7 +27,7 @@ void PorymapTilesetComponent::push_back_attribute(MetatileAttribute attribute)
     metatile_attributes_.push_back(std::move(attribute));
 }
 
-void PorymapTilesetComponent::set_pal(RgbaPal pal, unsigned int pal_index)
+void PorymapTilesetComponent::set_pal(Palette<Rgba32> pal, unsigned int pal_index)
 {
     if (pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));
@@ -34,7 +35,7 @@ void PorymapTilesetComponent::set_pal(RgbaPal pal, unsigned int pal_index)
     pals_[pal_index] = std::move(pal);
 }
 
-const RgbaPal &PorymapTilesetComponent::pal_at(unsigned int pal_index) const
+const Palette<Rgba32> &PorymapTilesetComponent::pal_at(unsigned int pal_index) const
 {
     if (pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));

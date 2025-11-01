@@ -63,13 +63,13 @@ Result<Rgba32> parse_jasc_line(std::string_view line)
 
 namespace porytiles2 {
 
-Result<RgbaPal> JascPalLoader::load(const std::filesystem::path &path) const
+Result<Palette<Rgba32>> JascPalLoader::load(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
         return std::unexpected{fmt::format("does not exist: {}", path.string())};
     }
 
-    RgbaPal pal{};
+    Palette<Rgba32> pal{};
     std::string line_buf{};
     std::ifstream stream{path};
 
@@ -90,7 +90,7 @@ Result<RgbaPal> JascPalLoader::load(const std::filesystem::path &path) const
     // Next line of file *must* be the declared size of the palette
     std::getline(stream, line_buf);
     trim_line_ending(line_buf);
-    const auto declared_size_result = parse_int<int>(line_buf);
+    const auto declared_size_result = parse_int<unsigned int>(line_buf);
     if (!declared_size_result.has_value()) {
         return std::unexpected{fmt::format(
             "{}: expected integral value on line 3: {}", path.c_str(), line_buf, declared_size_result.error())};

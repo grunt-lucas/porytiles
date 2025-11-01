@@ -6,7 +6,8 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 
 namespace porytiles2 {
@@ -52,9 +53,9 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(RgbaPal pal, unsigned int pal_index);
+    void set_pal(Palette<Rgba32> pal, unsigned int pal_index);
 
-    [[nodiscard]] const RgbaPal &pal_at(unsigned int pal_index) const;
+    [[nodiscard]] const Palette<Rgba32> &pal_at(unsigned int pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
@@ -80,7 +81,7 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::array<RgbaPal, pal::num_pals> &pals() const
+    [[nodiscard]] const std::array<Palette<Rgba32>, pal::num_pals> &pals() const
     {
         return pals_;
     }
@@ -89,7 +90,7 @@ class PorymapTilesetComponent {
     std::vector<TilemapEntry> metatiles_bin_;
     std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
-    std::array<RgbaPal, pal::num_pals> pals_;
+    std::array<Palette<Rgba32>, pal::num_pals> pals_;
 };
 
 } // namespace porytiles2

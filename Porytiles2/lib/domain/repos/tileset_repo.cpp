@@ -5,7 +5,8 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
