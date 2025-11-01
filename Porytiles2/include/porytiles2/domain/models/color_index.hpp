@@ -21,9 +21,10 @@ inline constexpr std::size_t num_colors = colors_per_pal * num_pals;
  * the global ColorIndexMap construction process. This type provides type safety and semantic clarity when working with
  * color indices, distinguishing them from other integer values in the codebase.
  *
- * Unlike IndexPixel, ColorIndex does not support transparency concepts, as it is used to represent the sequential
- * indices assigned to non-transparent colors in the ColorIndexMap. A ColorSet is a collection of ColorIndexes, which
- * can be redeemed for their original colors by consulting the ColorIndexMap.
+ * Unlike IndexPixel, ColorIndex does not follow the SupportsTransparency concept, as it is used to represent the
+ * sequential indices assigned to non-transparent colors in the ColorIndexMap. A ColorSet is a collection of
+ * \link ColorIndex ColorIndexes, \endlink which can be redeemed for their original colors by consulting the
+ * ColorIndexMap.
  *
  * @note The default constructor is provided solely for STL compatibility (e.g., std::map operations). In the Porytiles
  * problem domain, it semantically never makes sense to default-construct a ColorIndex. The default constructor
