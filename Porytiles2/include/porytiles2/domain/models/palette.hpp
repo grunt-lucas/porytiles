@@ -28,7 +28,7 @@ inline constexpr std::size_t num_pals = 16;
  * The ColorType template parameter must satisfy the SupportsTransparency concept, meaning it must provide methods for
  * checking whether a color is transparent.
  *
- * @tparam ColorType The color type of this palette; must satisfy SupportsTransparency concept
+ * @tparam ColorType The color type of this palette must satisfy the SupportsTransparency concept
  */
 template <SupportsTransparency ColorType>
 class Palette {

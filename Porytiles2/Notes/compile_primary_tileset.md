@@ -136,6 +136,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(
         return FormattableError{"too many input metatiles in porytiles component"};
     }
     std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles = map<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     auto tilemap_entries = layer_mode_converter.triple_layerize(tileset.porymap_component().metatiles_bin());
@@ -145,6 +146,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(
     // We only need to check the size of the final tilemap entry vector.
     // Patch builds don't need to preserve tilemap entries since those cannot be referenced by other tilesets.
     std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles = map<CanonicalPixelTile<Rgba32>>(porymap_tiles);
 
     // Leaf steps to catch too many colors, bad alpha, warn about precision loss
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
@@ -165,10 +167,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(
     if (color_index_map.size() > num_colors_primary) {
         return FormattableError{"too many unique colors in porytiles component"};
     }
-
-    // Compute canonical form vectors for both the Porymap and Porytiles Rgba32 tiles.
-    std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles = map<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
-    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles = map<CanonicalPixelTile<Rgba32>>(porymap_tiles);
 
     // Generate `vector<CanonicalShapeTile<ColorIndex>>` using color index map and `vector<RgbaTile> porytiles`
 

@@ -20,7 +20,7 @@ namespace porytiles2 {
     auto config##_result = ptr->config(tileset);                                                                       \
     if (!config##_result.has_value()) {                                                                                \
         return ChainableResult<return_type>{                                                                           \
-            FormattableError{"failed to get '{}' config value", FormatParam{#config, Style::bold}}, config##_result};  \
+            FormattableError{"failed to get config value '{}'", FormatParam{#config, Style::bold}}, config##_result};  \
     }                                                                                                                  \
     auto config = std::move(config##_result).value();
 

@@ -5,6 +5,8 @@
 #include <ranges>
 #include <vector>
 
+#include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -12,8 +14,10 @@
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
+#include "porytiles2/domain/services/metatile_decompiler.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
+#include "porytiles2/utilities/transform.hpp"
 #include "porytiles2/utilities/unwrap_config.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -30,11 +34,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Grab configuration values we'll need
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        extrinsic_transparency_config,
-        config_->extrinsic_transparency(tileset.name()),
-        "failed to get extrinsic_transparency config",
-        std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -43,7 +43,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             tileset.porytiles_component().bottom(),
             tileset.porytiles_component().middle(),
             tileset.porytiles_component().top()),
-        "failed to metatileize input layer images",
+        "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
 
     /*
@@ -118,7 +118,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles, extrinsic_transparency_config.value()),
+        validator.validate_unique_color_count(tiles, extrinsic_transparency.value()),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
@@ -149,8 +149,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
 
     Image<IndexPixel> tiles_png{128, 128};
-    Palette<Rgba32> pal{rgba_red};
-    pal.set(extrinsic_transparency_config.value(), 0);
+    Palette pal{rgba_red};
+    pal.set(extrinsic_transparency.value(), 0);
 
     new_porymap_component->tiles_png(tiles_png);
     for (unsigned int i = 0; i < pal::num_pals; i++) {
@@ -175,10 +175,74 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     return new_tileset;
 }
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(const Tileset &tileset)
+ChainableResult<std::unique_ptr<Tileset>>
+PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tileset)
 {
-    // TODO: implement for real
-    panic("TODO: implement");
+    // Initialize all the compilation services
+    LayerImageMetatileizer<Rgba32> metatileizer{};
+    TileValidator validator{format_, diag_, tile_printer_};
+    LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
+    MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
+
+    // Grab configuration values we'll need
+    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+
+    // Read Porytiles layer images and decompose into tile vectors
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porytiles_metatiles,
+        metatileizer.metatileize(
+            tileset.porytiles_component().bottom(),
+            tileset.porytiles_component().middle(),
+            tileset.porytiles_component().top()),
+        "failed to metatileize input layer images for " + tileset.name(),
+        std::unique_ptr<Tileset>);
+    if (porytiles_metatiles.size() > num_metatiles_primary) {
+        // TODO: better error message
+        return FormattableError{"too many input metatiles in Porytiles component"};
+    }
+    std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles =
+        map<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
+
+    // Decompile Porymap tilemap entries and decompose into tile vector
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tilemap_entries,
+        layer_mode_converter.triple_layerize(tileset.porymap_component()),
+        "failed to triple-layerize Porymap component for " + tileset.name(),
+        std::unique_ptr<Tileset>);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porymap_metatiles,
+        metatile_decompiler.decompile_metatiles(
+            tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
+        "failed to decompile Porymap component for " + tileset.name(),
+        std::unique_ptr<Tileset>);
+    /*
+     * We don't need to check porymap_metatiles size here. We're going to overwrite it anyway. We only need to check the
+     * size of the final tilemap entry vector. Patch builds don't need to preserve tilemap entries since those cannot be
+     * referenced by other tilesets.
+     */
+    std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles = map<CanonicalPixelTile<Rgba32>>(porymap_tiles);
+
+    /*
+     * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
+     * However, we build one so that we can throw if the user specified too many unique colors in the input. We're
+     * guaranteed to fail again at a later step if this is triggered. But we'll use this opportunity to emit an error
+     * early and then continue.
+     */
+    ColorIndexMap color_index_map{porytiles_tiles, extrinsic_transparency.value()};
+    if (color_index_map.size() > num_pals_primary.value() * (pal::max_size - 1)) {
+        diag_->err(
+            "color-limit-exceeded",
+            format_->format(
+                "too many unique colors ({}) in Porytiles component for '{}'",
+                FormatParam{color_index_map.size(), Style::bold},
+                FormatParam{tileset.name(), Style::bold}));
+    }
+
+    panic("TODO: finish implementation");
 }
 
 } // namespace porytiles2
