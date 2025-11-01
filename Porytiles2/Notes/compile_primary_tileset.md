@@ -123,36 +123,10 @@ We have three parallel tile vectors, each entry aligned to correspond to the sam
 - vector<PackSet>: this tile's PackSet, which stores the tile ColorSet and final pal assignment
 
 ### Compile Primary Patch -- Tiles And Pals Fixed
-...
-
-Generate `vector<CanonicalShapeTile<ColorIndex>>` using color index map and `vector<RgbaTile> porytiles`
-
-Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
-
-Init a `vector<size_t> pal_indexes`.
-Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus Porymap `vector<RgbaPal>` to create `vector<CanonicalPixelTile<IndexPixel>>`
-Note: we need to make sure to only check the pals relevant to the tileset, i.e. if this is primary, don't check pals 7-15.
-If no pal matches, emit an error and continue until the end of the vector.
-Otherwise, push back the matching pal index to `pal_indexes`.
-
-Init blank TileWorkspace, add in override tiles from Porymap `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
-
-Iterate over `vector<CanonicalPixelTile<IndexPixel>>` and both `vector<RgbaTile>`.
-If current `porytiles RgbaTile` equals the `porymap RgbaTile`, then we don't need to compute anything, it's unchanged.
-Just grab the original tilemap entry and re-emit.
-Note: it's possible the `porytiles RgbaTile` and `porymap RgbaTile` might have different transparencies.
-E.g. the porytiles one might be using alpha channel,
-while the porymap one will be using the extrinsic transparency color (see MetatileDecompiler).
-So we need to check equality while ignoring different representations of transparent pixels.
-
-If the tiles differ, then we have a genuine update.
-Find the current `CanonicalPixelTile<IndexPixel>` in the TileWorkspace.
-If it doesn't exist, emit an error and continue until the end of the vector.
-Otherwise, check the corresponding pal index in `pal_indexes`.
-We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
-
 ```c++
-// This is a rough outline, consider it pseudocode
+// This is a rough outline, consider it pseudocode.
+// This is the flow for a patch build when both tiles and pals are fixed.
+// This type of build is very simple.
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(const Tileset &tileset)
 {
     // Read Porytiles layer images and decompose into tile vector
@@ -181,10 +155,45 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_patch(
     PT_TRY_CALL_CHAIN_ERR(
         validator.generate_precision_loss_warnings(tiles), "tile validation error", std::unique_ptr<Tileset>);
 
-    // Create color index map from porytiles_tiles
+    // Create ColorIndexMap from porytiles_tiles
+    // We don't actually need a ColorIndexMap for a pals:fixed patch build
+    // However, we build one so that we can throw if the user specified too many unique colors in the input
+    // TODO: do we care? In a completely fixed build, if the user does specify too many unique colors, it is guaranteed
+    // to fail at a later step which may be more descriptive for the user. Perhaps we can keep this here and just emit
+    // a regular error and let compilation continue?
     ColorIndexMap color_index_map{porytiles_tiles, extrinsic_transparency.value()};
     if (color_index_map.size() > num_colors_primary) {
         return FormattableError{"too many unique colors in porytiles component"};
     }
+
+    // Compute canonical form vectors for both the Porymap and Porytiles Rgba32 tiles.
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles = map<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles = map<CanonicalPixelTile<Rgba32>>(porymap_tiles);
+
+    // Generate `vector<CanonicalShapeTile<ColorIndex>>` using color index map and `vector<RgbaTile> porytiles`
+
+    // Convert `vector<CanonicalShapeTile<ColorIndex>>` -> `vector<CanonicalShapeTile<Rgba32>>`
+
+    // Init a `vector<size_t> pal_indexes`.
+    // Use each elem of `vector<CanonicalShapeTile<Rgba32>>` plus Porymap `vector<RgbaPal>` to create `vector<CanonicalPixelTile<IndexPixel>>`
+    // Note: we need to make sure to only check the pals relevant to the tileset, i.e. if this is primary, don't check pals 7-15.
+    // If no pal matches, emit an error and continue until the end of the vector.
+    // Otherwise, push back the matching pal index to `pal_indexes`.
+
+    // Init blank TileWorkspace, add in override tiles from Porymap `tiles.png` (warn that `porytiles/tiles_override.png` will be ignored)
+
+    // Iterate over `vector<CanonicalPixelTile<IndexPixel>>` and both `vector<RgbaTile>`.
+    // If current `porytiles RgbaTile` equals the `porymap RgbaTile`, then we don't need to compute anything, it's unchanged.
+    // Just grab the original tilemap entry and re-emit.
+    // Note: it's possible the `porytiles RgbaTile` and `porymap RgbaTile` might have different transparencies.
+    // E.g. the porytiles one might be using alpha channel,
+    // while the porymap one will be using the extrinsic transparency color (see MetatileDecompiler).
+    // So we need to check equality while ignoring different representations of transparent pixels.
+
+    // If the tiles differ, then we have a genuine update.
+    // Find the current `CanonicalPixelTile<IndexPixel>` in the TileWorkspace.
+    // If it doesn't exist, emit an error and continue until the end of the vector.
+    // Otherwise, check the corresponding pal index in `pal_indexes`.
+    // We now have the tile index, pal index, and flip bits. Emit a tilemap entry.
 }
 ```
