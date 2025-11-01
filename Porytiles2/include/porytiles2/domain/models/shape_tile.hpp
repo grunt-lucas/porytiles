@@ -185,7 +185,7 @@ class ShapeTile {
 
         ShapeTile result;
         for (const auto &[mask, color] : colors_) {
-            result.colors_[mask.flip(h, v)] = color;
+            result.colors_.insert_or_assign(mask.flip(h, v), color);
         }
         return result;
     }

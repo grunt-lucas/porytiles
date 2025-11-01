@@ -26,16 +26,10 @@ inline constexpr std::size_t num_colors = colors_per_pal * num_pals;
  * \link ColorIndex ColorIndexes, \endlink which can be redeemed for their original colors by consulting the
  * ColorIndexMap.
  *
- * @note The default constructor is provided solely for STL compatibility (e.g., std::map operations). In the Porytiles
- * problem domain, it semantically never makes sense to default-construct a ColorIndex. The default constructor
- * initializes the index to 0.
- *
  * @invariant ColorIndex value must be less than num_colors (256). Construction with an invalid index will panic.
  */
 class ColorIndex {
   public:
-    ColorIndex() = default;
-
     // NOLINTNEXTLINE(google-explicit-constructor)
     ColorIndex(unsigned int index) : index_{index}
     {

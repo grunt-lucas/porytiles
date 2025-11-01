@@ -21,18 +21,14 @@ Uses CMake with C++23 standard. The build system requires:
 ### Build Commands
 ```bash
 # Configure debug build
-cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -B vscode-build -DCMAKE_BUILD_TYPE=Debug
 
 # Configure debug build with coverage
-cmake -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
-
-# Configure release build
-cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake -B vscode-build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
 # Build project
-cmake --build build -j7
-# Note: build folder may also be called `clion-build-debug` or `vscode-build`.
-# If you don't see `build`, check for one of these other two.
+cmake --build vscode-build -j7
+# Note: build folder may also be called `clion-build-debug`
 ```
 
 ## Testing
@@ -45,6 +41,9 @@ Prefer to simply run all tests using the all test runner.
 
 Run all tests:
 ```bash
+# WHEN RUNNING TESTS, ALWAYS SEND OUTPUT TO A TEMPORARY FILE SO YOU DON'T POLLUTE YOUR CONTEXT.
+# You can then check if the build succeeded by looking at the exit code.
+# If non-zero, inspect the file and see what went wrong.
 ./build/Porytiles2/tests/Porytiles2AllTests # this runs both Porytiles2UnitTests and Porytiles2IntegrationTests
 ```
 
