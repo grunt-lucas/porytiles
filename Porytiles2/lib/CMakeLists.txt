@@ -51,6 +51,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# jbeder - yaml-cpp
+FetchContent_Declare(
+        yaml-cpp
+        GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp.git"
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(yaml-cpp)
+
 # Google Fruit DI
 FetchContent_Declare(
         fruit
@@ -139,6 +147,9 @@ target_link_libraries(Porytiles2Lib PUBLIC fmt::fmt)
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
 target_link_libraries(Porytiles2Lib PUBLIC fruit)
 
+# Private link internal libs
+target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
+
 
 ##################################
 #### Export Porytiles library ####
@@ -151,5 +162,7 @@ target_link_libraries(Porytiles2Lib PUBLIC fruit)
 # - GSL: Only exports when built as a top-level project (GSL_INSTALL defaults to false
 #        when used via FetchContent as a subdirectory)
 # - fruit: Uses simple CMake targets without automatic export handling
+# - yaml-cpp: Only exports when built as a top-level project (YAML_CPP_INSTALL defaults to
+#             false when used via FetchContent as a subdirectory)
 # These must be manually included so downstream projects can find them as dependencies.
-export(TARGETS Porytiles2Lib GSL fruit FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
+export(TARGETS Porytiles2Lib GSL fruit yaml-cpp FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
