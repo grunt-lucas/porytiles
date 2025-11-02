@@ -134,14 +134,9 @@ TEST(LazyLayeredConfigTest, DumpShouldShowCachedValuesWithProvenance)
 
     // Verify the dump contains the expected cached values and provenance
     EXPECT_TRUE(dump_result.find("LazyLayeredConfig {") != std::string::npos);
-    EXPECT_TRUE(
-        dump_result.find("test_tileset:num_tiles_primary = 2000 [MockTomlProvider: from toml file]") !=
-        std::string::npos);
-    EXPECT_TRUE(
-        dump_result.find("test_tileset:num_tiles_total = 4000 [MockEnvProvider: from env]") != std::string::npos);
-    EXPECT_TRUE(
-        dump_result.find("test_tileset:max_map_data_size = 10240 [DefaultProvider: default value]") !=
-        std::string::npos);
+    EXPECT_TRUE(dump_result.find("test_tileset:num_tiles_primary = 2000 [from toml file]") != std::string::npos);
+    EXPECT_TRUE(dump_result.find("test_tileset:num_tiles_total = 4000 [from env]") != std::string::npos);
+    EXPECT_TRUE(dump_result.find("test_tileset:max_map_data_size = 10240 [default value]") != std::string::npos);
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues)
@@ -190,13 +185,9 @@ TEST(LazyLayeredConfigTest, WarmupCacheShouldCacheAllValues)
     // Verify that all expected values are now cached
     EXPECT_TRUE(warmed_dump.find("LazyLayeredConfig {") != std::string::npos);
     EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_primary") != std::string::npos);
-    EXPECT_TRUE(
-        warmed_dump.find("another_tileset:num_tiles_primary = 5000 [MockTomlProvider: from toml file]") !=
-        std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_primary = 5000 [from toml file]") != std::string::npos);
 
-    EXPECT_TRUE(
-        warmed_dump.find("test_tileset:num_tiles_total = 1000 [MockTomlProvider: from toml file]") !=
-        std::string::npos);
+    EXPECT_TRUE(warmed_dump.find("test_tileset:num_tiles_total = 1000 [from toml file]") != std::string::npos);
     EXPECT_TRUE(warmed_dump.find("another_tileset:num_tiles_total") != std::string::npos);
 
     EXPECT_TRUE(warmed_dump.find("test_tileset:max_map_data_size") != std::string::npos);
