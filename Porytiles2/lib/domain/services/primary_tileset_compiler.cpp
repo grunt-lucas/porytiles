@@ -246,10 +246,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             format_->format(
                 "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}),
             format_->format(
-                "{}: {}",
+                "{} = {}",
                 FormatParam{num_pals_primary.name(), Style::bold},
                 FormatParam{num_pals_primary.value(), Style::bold}),
-            format_->format("Source: {}", FormatParam{num_pals_primary.source(), Style::bold}),
+            format_->format("Source: {}", num_pals_primary.source()),
             std::string{""},
             format_->format(
                 "Color limit definition: {} * {}: {} * {}: {}",

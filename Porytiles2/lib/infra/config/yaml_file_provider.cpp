@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <map>
 #include <sstream>
 
@@ -9,63 +10,103 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 namespace {
+
+using namespace porytiles2;
+
+// Static caches shared across all YamlFileProvider instances
+std::map<std::filesystem::path, YAML::Node> yaml_cache;
+std::map<std::filesystem::path, std::vector<std::string>> file_lines_cache;
+
+// Forward declaration
+std::string get_line_content(const std::filesystem::path &path, std::size_t line_num);
+
+/**
+ * @brief Constructs a source location string with file path, line number, and line content.
+ *
+ * @details
+ * Creates a formatted string in the form "path:line  content" where:
+ * - path is the file path
+ * - line is the 1-indexed line number
+ * - content is the text content of that line
+ *
+ * @param format The text formatter to use
+ * @param file_path The path to the YAML file
+ * @param mark The YAML mark containing line number information
+ * @return Formatted source location string
+ */
+std::string make_source_string(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
+{
+    auto line_content = get_line_content(file_path, mark.line);
+    trim(line_content);
+    return format->format(
+        "{}:{} - '{}'",
+        FormatParam{file_path, Style::bold},
+        FormatParam{mark.line + 1, Style::bold},
+        FormatParam{line_content, Style::bold | Style::italic});
+}
 
 /**
  * @brief Attempts to parse a std::size_t value from a YAML node.
  *
+ * @param format The text formatter to use
  * @param node The YAML node to parse
  * @param key The configuration key name (for error messages)
  * @param file_path The YAML file path (for source info)
  * @return LayerValue containing the parsed value, error, or not_provided status
  */
-porytiles2::LayerValue<std::size_t>
-parse_size_t(const YAML::Node &node, const std::string &key, const std::string &file_path)
+LayerValue<std::size_t>
+parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return porytiles2::LayerValue<std::size_t>::not_provided();
+        return LayerValue<std::size_t>::not_provided();
     }
 
     try {
         const auto value = node.as<std::size_t>();
         const auto mark = node.Mark();
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<std::size_t>::valid(value, source);
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<std::size_t>::valid(value, source);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error = fmt::format("Failed to parse '{}' as std::size_t: {}", key, e.what());
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<std::size_t>::invalid(error, source);
+        const auto error =
+            format->format("failed to parse '{}' as std::size_t: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<std::size_t>::invalid(error, source);
     }
 }
 
 /**
  * @brief Attempts to parse a bool value from a YAML node.
  *
+ * @param format The text formatter to use
  * @param node The YAML node to parse
  * @param key The configuration key name (for error messages)
  * @param file_path The YAML file path (for source info)
  * @return LayerValue containing the parsed value, error, or not_provided status
  */
-porytiles2::LayerValue<bool> parse_bool(const YAML::Node &node, const std::string &key, const std::string &file_path)
+LayerValue<bool>
+parse_bool(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return porytiles2::LayerValue<bool>::not_provided();
+        return LayerValue<bool>::not_provided();
     }
 
     try {
         const auto value = node.as<bool>();
         const auto mark = node.Mark();
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<bool>::valid(value, source);
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<bool>::valid(value, source);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error = fmt::format("Failed to parse '{}' as bool: {}", key, e.what());
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<bool>::invalid(error, source);
+        const auto error = format->format("failed to parse '{}' as bool: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<bool>::invalid(error, source);
     }
 }
 
@@ -76,48 +117,53 @@ porytiles2::LayerValue<bool> parse_bool(const YAML::Node &node, const std::strin
  * Expects the YAML node to be a sequence with 3 or 4 elements: [r, g, b] or [r, g, b, a]. If alpha is not provided, it
  * defaults to 255 (opaque).
  *
+ * @param format The text formatter to use
  * @param node The YAML node to parse
  * @param key The configuration key name (for error messages)
  * @param file_path The YAML file path (for source info)
  * @return LayerValue containing the parsed value, error, or not_provided status
  */
-porytiles2::LayerValue<porytiles2::Rgba32>
-parse_rgba32(const YAML::Node &node, const std::string &key, const std::string &file_path)
+LayerValue<Rgba32>
+parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return porytiles2::LayerValue<porytiles2::Rgba32>::not_provided();
+        return LayerValue<Rgba32>::not_provided();
     }
 
     try {
         const auto mark = node.Mark();
 
         if (!node.IsSequence()) {
-            const auto error = fmt::format("'{}' must be a sequence [r, g, b] or [r, g, b, a]", key);
-            const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-            return porytiles2::LayerValue<porytiles2::Rgba32>::invalid(error, source);
+            const auto error =
+                format->format("'{}' must be a sequence [r, g, b] or [r, g, b, a]", FormatParam{key, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<Rgba32>::invalid(error, source);
         }
 
         if (node.size() < 3 || node.size() > 4) {
-            const auto error =
-                fmt::format("'{}' must have 3 or 4 elements [r, g, b] or [r, g, b, a], got {}", key, node.size());
-            const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-            return porytiles2::LayerValue<porytiles2::Rgba32>::invalid(error, source);
+            const auto error = format->format(
+                "'{}' must have 3 or 4 elements [r, g, b] or [r, g, b, a], got {}",
+                FormatParam{key, Style::bold},
+                FormatParam{node.size(), Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<Rgba32>::invalid(error, source);
         }
 
         const auto r = node[0].as<std::uint8_t>();
         const auto g = node[1].as<std::uint8_t>();
         const auto b = node[2].as<std::uint8_t>();
-        const auto a = (node.size() == 4) ? node[3].as<std::uint8_t>() : porytiles2::Rgba32::alpha_opaque;
+        const auto a = (node.size() == 4) ? node[3].as<std::uint8_t>() : Rgba32::alpha_opaque;
 
-        const porytiles2::Rgba32 color{r, g, b, a};
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<porytiles2::Rgba32>::valid(color, source);
+        const Rgba32 color{r, g, b, a};
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<Rgba32>::valid(color, source);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error = fmt::format("Failed to parse '{}' as Rgba32: {}", key, e.what());
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<porytiles2::Rgba32>::invalid(error, source);
+        const auto error =
+            format->format("failed to parse '{}' as Rgba32: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<Rgba32>::invalid(error, source);
     }
 }
 
@@ -127,38 +173,42 @@ parse_rgba32(const YAML::Node &node, const std::string &key, const std::string &
  * @details
  * Expects a string value that matches one of the valid TilesPalMode strings: "true-color" or "greyscale".
  *
+ * @param format The text formatter to use
  * @param node The YAML node to parse
  * @param key The configuration key name (for error messages)
  * @param file_path The YAML file path (for source info)
  * @return LayerValue containing the parsed value, error, or not_provided status
  */
-porytiles2::LayerValue<porytiles2::TilesPalMode>
-parse_tiles_pal_mode(const YAML::Node &node, const std::string &key, const std::string &file_path)
+LayerValue<TilesPalMode> parse_tiles_pal_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return porytiles2::LayerValue<porytiles2::TilesPalMode>::not_provided();
+        return LayerValue<TilesPalMode>::not_provided();
     }
 
     try {
         const auto mark = node.Mark();
         const auto str = node.as<std::string>();
-        const auto mode_opt = porytiles2::tiles_pal_mode_from_str(str);
+        const auto mode_opt = tiles_pal_mode_from_str(str);
 
         if (!mode_opt.has_value()) {
-            const auto error =
-                fmt::format("'{}' has invalid value '{}', expected 'true-color' or 'greyscale'", key, str);
-            const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-            return porytiles2::LayerValue<porytiles2::TilesPalMode>::invalid(error, source);
+            const auto error = format->format(
+                "'{}' has invalid value '{}', expected 'true-color' or 'greyscale'",
+                FormatParam{key, Style::bold},
+                FormatParam{str, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<TilesPalMode>::invalid(error, source);
         }
 
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<porytiles2::TilesPalMode>::valid(mode_opt.value(), source);
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<TilesPalMode>::valid(mode_opt.value(), source);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error = fmt::format("Failed to parse '{}' as TilesPalMode: {}", key, e.what());
-        const auto source = fmt::format("{}:{}", file_path, mark.line + 1);
-        return porytiles2::LayerValue<porytiles2::TilesPalMode>::invalid(error, source);
+        const auto error =
+            format->format("failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<TilesPalMode>::invalid(error, source);
     }
 }
 
@@ -174,9 +224,6 @@ parse_tiles_pal_mode(const YAML::Node &node, const std::string &key, const std::
  */
 std::optional<YAML::Node> load_yaml_file(const std::filesystem::path &path)
 {
-    // Static cache shared across all YamlFileProvider instances
-    static std::map<std::filesystem::path, YAML::Node> yaml_cache;
-
     // Check cache first
     const auto cache_it = yaml_cache.find(path);
     if (cache_it != yaml_cache.end()) {
@@ -192,12 +239,42 @@ std::optional<YAML::Node> load_yaml_file(const std::filesystem::path &path)
     try {
         auto node = YAML::LoadFile(path.string());
         yaml_cache[path] = node;
+
+        // Also cache the file contents line-by-line for source info
+        std::ifstream file{path};
+        std::vector<std::string> lines;
+        std::string line;
+        while (std::getline(file, line)) {
+            lines.push_back(line);
+        }
+        file_lines_cache[path] = std::move(lines);
+
         return node;
     }
     catch (const YAML::Exception &) {
         // Failed to parse YAML, return nullopt
         return std::nullopt;
     }
+}
+
+/**
+ * @brief Gets the content of a specific line from a cached YAML file.
+ *
+ * @details
+ * Returns the content of the specified line from the file contents cache. If the file is not cached or the line number
+ * is out of bounds, returns an empty string.
+ *
+ * @param path The path to the YAML file
+ * @param line_num The line number (0-indexed)
+ * @return The line content, or empty string if not found
+ */
+std::string get_line_content(const std::filesystem::path &path, std::size_t line_num)
+{
+    const auto it = file_lines_cache.find(path);
+    if (it != file_lines_cache.end() && line_num < it->second.size()) {
+        return it->second[line_num];
+    }
+    return "";
 }
 
 /**
@@ -215,17 +292,22 @@ std::optional<YAML::Node> load_yaml_file(const std::filesystem::path &path)
  * @param tileset The name of the tileset
  * @return Vector of config file paths in priority order
  */
-std::vector<std::filesystem::path> get_config_paths(
+std::vector<std::filesystem::path> get_tileset_config_path_chain(
     const std::filesystem::path &project_root,
-    const porytiles2::TilesetArtifactKeyProvider *key_provider,
+    const TilesetArtifactKeyProvider *key_provider,
     const std::string &tileset)
 {
+    /*
+     * TODO: once we add layout support, we'll need a separate method to resolve the config path chain for layouts,
+     * since layouts will have their own LayoutArtifactKeyProvider.
+     */
+
     std::vector<std::filesystem::path> paths;
 
     // Get tileset-specific config paths using the key provider
-    using enum porytiles2::TilesetArtifact::Type;
-    const auto tileset_local_config_key = key_provider->key_for(tileset, porytiles2::TilesetArtifact{local_config});
-    const auto tileset_config_key = key_provider->key_for(tileset, porytiles2::TilesetArtifact{config});
+    using enum TilesetArtifact::Type;
+    const auto tileset_local_config_key = key_provider->key_for(tileset, TilesetArtifact{local_config});
+    const auto tileset_config_key = key_provider->key_for(tileset, TilesetArtifact{config});
 
     // Priority order (highest to lowest):
     // 1. tileset_folder/config.local.yaml
@@ -258,7 +340,8 @@ std::vector<std::filesystem::path> get_config_paths(
  * @tparam T The type of value to return
  * @tparam LoadFunc Function type for loading YAML files (path -> optional<YAML::Node>)
  * @tparam NodeExtractFunc Function type for extracting node (YAML::Node -> YAML::Node)
- * @tparam ParseFunc Function type for parsing value (node, key, path -> LayerValue<T>)
+ * @tparam ParseFunc Function type for parsing value (format, node, key, path -> LayerValue<T>)
+ * @param format The text formatter to use
  * @param paths Config file paths to search in priority order
  * @param load_func Function to load a YAML file
  * @param extract_node_func Function to extract the target node from the YAML doc
@@ -267,15 +350,14 @@ std::vector<std::filesystem::path> get_config_paths(
  * @return The first valid LayerValue found, or not_provided if not found in any file
  */
 template <typename T, typename LoadFunc, typename NodeExtractFunc, typename ParseFunc>
-porytiles2::LayerValue<T> search_config_files(
+LayerValue<T> search_config_files(
+    const TextFormatter *format,
     const std::vector<std::filesystem::path> &paths,
     LoadFunc load_func,
     NodeExtractFunc extract_node_func,
     ParseFunc parse_func,
     const std::string &key)
 {
-    using porytiles2::ValidationState;
-
     for (const auto &path : paths) {
         const auto yaml_doc = load_func(path);
         if (!yaml_doc.has_value()) {
@@ -285,7 +367,7 @@ porytiles2::LayerValue<T> search_config_files(
 
         try {
             const auto node = extract_node_func(yaml_doc.value());
-            const auto result = parse_func(node, key, path.string());
+            const auto result = parse_func(format, node, key, path.string());
 
             // If we got a valid value or an error, return it immediately
             if (result.state == ValidationState::valid || result.state == ValidationState::invalid) {
@@ -302,7 +384,7 @@ porytiles2::LayerValue<T> search_config_files(
     }
 
     // Not found in any file
-    return porytiles2::LayerValue<T>::not_provided();
+    return LayerValue<T>::not_provided();
 }
 
 } // namespace
@@ -310,8 +392,18 @@ porytiles2::LayerValue<T> search_config_files(
 namespace porytiles2 {
 
 YamlFileProvider::YamlFileProvider(
+    gsl::not_null<TextFormatter *> format,
+    const std::filesystem::path &project_root,
+    const TilesetArtifactKeyProvider &tileset_key_provider)
+    : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
+{
+    // Config files are loaded lazily when first accessed via the anonymous namespace functions
+}
+
+YamlFileProvider::YamlFileProvider(
     const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider)
-    : project_root_{project_root}, key_provider_{&tileset_key_provider}
+    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
+      tileset_key_provider_{&tileset_key_provider}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
@@ -323,8 +415,9 @@ std::string YamlFileProvider::name() const
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_primary"]; },
@@ -334,8 +427,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(const std::string &t
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_total(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_total"]; },
@@ -345,8 +439,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(const std::string &til
 
 LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_primary"]; },
@@ -356,8 +451,9 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(const std::strin
 
 LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_total"]; },
@@ -367,8 +463,9 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(const std::string 
 
 LayerValue<std::size_t> YamlFileProvider::num_pals_primary(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_primary"]; },
@@ -378,8 +475,9 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_primary(const std::string &ti
 
 LayerValue<std::size_t> YamlFileProvider::num_pals_total(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_total"]; },
@@ -389,8 +487,9 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(const std::string &tile
 
 LayerValue<std::size_t> YamlFileProvider::max_map_data_size(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["max_map_data_size"]; },
@@ -400,8 +499,9 @@ LayerValue<std::size_t> YamlFileProvider::max_map_data_size(const std::string &t
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<std::size_t>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_per_metatile"]; },
@@ -411,8 +511,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(const std::stri
 
 LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<Rgba32>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["extrinsic_transparency"]; },
@@ -422,8 +523,9 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(const std::string &t
 
 LayerValue<bool> YamlFileProvider::patch_build_enabled(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<bool>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["patch"]["enabled"]; },
@@ -433,8 +535,9 @@ LayerValue<bool> YamlFileProvider::patch_build_enabled(const std::string &tilese
 
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(const std::string &tileset) const
 {
-    const auto paths = get_config_paths(project_root_, key_provider_, tileset);
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
     return search_config_files<TilesPalMode>(
+        format_,
         paths,
         load_yaml_file,
         [](const YAML::Node &doc) { return doc["tiles_pal_mode"]; },

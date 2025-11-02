@@ -62,7 +62,7 @@ class DebugPrimaryCompileCommand final : public Command {
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{"."};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<YamlFileProvider>(".", key_provider));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 

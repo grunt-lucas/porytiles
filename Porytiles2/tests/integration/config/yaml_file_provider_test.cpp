@@ -464,7 +464,7 @@ fieldmap:
     auto result = provider.num_tiles_primary("test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
-    EXPECT_TRUE(result.error_message.find("Failed to parse") != std::string::npos);
+    EXPECT_TRUE(result.error_message.find("failed to parse") != std::string::npos);
 }
 
 TEST_F(YamlFileProviderTest, LineNumberIsIncludedInSource)

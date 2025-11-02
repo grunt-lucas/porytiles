@@ -43,11 +43,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         // Check if provider found an invalid value - stop immediately and return error
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
-            return FormattableError{format_->format(
-                "{} <- {}: invalid value: {}",
-                FormatParam{cache_key, Style::bold},
-                FormatParam{source_info, Style::bold},
-                layer_value.error_message)};
+            return FormattableError{format_->format("{}: invalid: {}", source_info, layer_value.error_message)};
         }
 
         // Check if provider has a valid value

@@ -1,10 +1,14 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <string>
+
+#include "gsl/pointers"
 
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -30,6 +34,23 @@ class YamlFileProvider final : public ConfigProvider {
      * @details
      * This constructor sets up the provider to search for configuration values across multiple config files in priority
      * order. Config files are loaded lazily when first accessed and cached for subsequent lookups.
+     *
+     * @param format A pointer to the TextFormatter to use
+     * @param project_root The root directory of the project
+     * @param tileset_key_provider Provider for generating tileset artifact keys and paths
+     */
+    explicit YamlFileProvider(
+        gsl::not_null<TextFormatter *> format,
+        const std::filesystem::path &project_root,
+        const TilesetArtifactKeyProvider &tileset_key_provider);
+
+    /**
+     * @brief Constructs a YamlFileProvider with a default PlainTextFormatter.
+     *
+     * @details
+     * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
+     * YamlFileProvider will search for configuration values across multiple config files in priority order. Config
+     * files are loaded lazily when first accessed and cached for subsequent lookups.
      *
      * @param project_root The root directory of the project
      * @param tileset_key_provider Provider for generating tileset artifact keys and paths
@@ -67,8 +88,10 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const override;
 
   private:
+    std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
+    TextFormatter *format_;                       // Non-owning pointer to formatter
     std::filesystem::path project_root_;
-    const TilesetArtifactKeyProvider *key_provider_;
+    const TilesetArtifactKeyProvider *tileset_key_provider_;
 };
 
 } // namespace porytiles2

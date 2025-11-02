@@ -39,6 +39,18 @@ enum class ValidationState {
 template <typename T>
 struct LayerValue {
     std::optional<T> value;
+    /*
+     * TODO: how easy would it be to make source_info a vector? Would be nice to be able to display multi-line source
+     * info. E.g. for YAML files we could show something like:
+     *
+     * ...
+     * fieldmap:
+     *   num_pals_primary: 2
+     * >  num_pals_total: 4 < (this line bolded)
+     *   num_tiles_primary: 512
+     * ...
+     *
+     */
     std::string source_info;
     ValidationState state = ValidationState::not_provided;
     std::string error_message;
