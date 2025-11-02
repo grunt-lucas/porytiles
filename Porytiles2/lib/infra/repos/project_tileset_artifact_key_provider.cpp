@@ -25,21 +25,23 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
     panic(fmt::format("tileset '{}' does not exist", tileset_name));
 }
 
+const std::filesystem::path porytiles_directory{"porytiles"};
+const std::filesystem::path bottom_png{"bottom.png"};
+const std::filesystem::path middle_png{"middle.png"};
+const std::filesystem::path top_png{"top.png"};
+const std::filesystem::path attributes_csv{"attributes.csv"};
+const std::filesystem::path anim{"anim"};
+const std::filesystem::path pal_overrides{"palette-overrides"};
+const std::filesystem::path metatiles_bin{"metatiles.bin"};
+const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
+const std::filesystem::path tiles_png{"tiles.png"};
+const std::filesystem::path palettes{"palettes"};
+const std::filesystem::path config{"config.yaml"};
+const std::filesystem::path local_config{"config.local.yaml"};
+
 } // namespace
 
 namespace porytiles2 {
-
-static const std::filesystem::path porytiles_directory{"porytiles"};
-static const std::filesystem::path bottom_png{"bottom.png"};
-static const std::filesystem::path middle_png{"middle.png"};
-static const std::filesystem::path top_png{"top.png"};
-static const std::filesystem::path attributes_csv{"attributes.csv"};
-static const std::filesystem::path anim{"anim"};
-static const std::filesystem::path pal_overrides{"palette-overrides"};
-static const std::filesystem::path metatiles_bin{"metatiles.bin"};
-static const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
-static const std::filesystem::path tiles_png{"tiles.png"};
-static const std::filesystem::path palettes{"palettes"};
 
 ArtifactKey
 ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
@@ -100,6 +102,12 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         }
         const auto pal_index = artifact.index().value();
         return ArtifactKey{tileset_path / palettes / fmt::format("{:02}.pal", pal_index)};
+    }
+    case TilesetArtifact::Type::config: {
+        return ArtifactKey{tileset_path / config};
+    }
+    case TilesetArtifact::Type::local_config: {
+        return ArtifactKey{tileset_path / local_config};
     }
 
     // Default case

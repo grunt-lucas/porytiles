@@ -43,8 +43,10 @@ class TilesetArtifact {
         metatile_attributes_bin, ///< Metatile attributes output for Porymap
         tiles_png,               ///< Combined tile sheet PNG output for Porymap
         porymap_anim_frame,      ///< Animation frame PNG for Porymap-format animation
-        pal_n                    ///< JASC palette data file
+        pal_n,                   ///< JASC palette data file
         // pal_hint_n,            // TODO: pal hints could be like Porytiles1's palette primers?
+        config,      /// Tileset configuration YAML file
+        local_config /// Local tileset configuration YAML file
     };
 
     /**

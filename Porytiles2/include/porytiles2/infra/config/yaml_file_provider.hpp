@@ -1,34 +1,41 @@
 #pragma once
 
-#include <optional>
+#include <filesystem>
 #include <string>
 
-#include "yaml-cpp/yaml.h"
-
+#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief A ConfigProvider implementation that reads configuration values from a YAML file.
+ * @brief A ConfigProvider implementation that reads configuration values from multiple YAML files with priority.
  *
  * @details
- * YamlFileProvider loads a YAML configuration file and provides access to configuration values defined within it. If
- * the YAML file does not exist or cannot be loaded, all configuration methods return LayerValue::not_provided(). This
- * allows the provider to gracefully fall back to other providers in a layered configuration system.
+ * YamlFileProvider loads YAML configuration files from multiple locations and provides access to configuration values
+ * defined within them. Config files are searched in priority order:
+ * 1. tileset_folder/config.local.yaml (highest priority)
+ * 2. tileset_folder/config.yaml
+ * 3. project_root/config.local.yaml
+ * 4. project_root/config.yaml (lowest priority)
+ *
+ * Files are loaded lazily and cached for performance. If no config files exist or a key is not found, methods return
+ * LayerValue::not_provided(), allowing graceful fallback to other providers in a layered configuration system.
  */
 class YamlFileProvider final : public ConfigProvider {
   public:
     /**
-     * @brief Constructs a YamlFileProvider that loads configuration from the specified YAML file.
+     * @brief Constructs a YamlFileProvider that searches for configuration across multiple YAML files.
      *
      * @details
-     * If the file does not exist or cannot be parsed, the provider will still be constructed successfully, but all
-     * configuration methods will return LayerValue::not_provided().
+     * This constructor sets up the provider to search for configuration values across multiple config files in priority
+     * order. Config files are loaded lazily when first accessed and cached for subsequent lookups.
      *
-     * @param yaml_file_path Path to the YAML configuration file
+     * @param project_root The root directory of the project
+     * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
-    explicit YamlFileProvider(const std::string &yaml_file_path);
+    explicit YamlFileProvider(
+        const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider);
 
     /**
      * @brief Gets the name of this config layer.
@@ -60,8 +67,8 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const override;
 
   private:
-    std::optional<YAML::Node> yaml_doc_;
-    std::string file_path_;
+    std::filesystem::path project_root_;
+    const TilesetArtifactKeyProvider *key_provider_;
 };
 
 } // namespace porytiles2
