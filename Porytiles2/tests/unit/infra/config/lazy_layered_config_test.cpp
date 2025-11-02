@@ -140,7 +140,7 @@ TEST(LazyLayeredConfigTest, DumpShouldShowCachedValuesWithProvenance)
     EXPECT_TRUE(
         dump_result.find("test_tileset:num_tiles_total = 4000 [MockEnvProvider: from env]") != std::string::npos);
     EXPECT_TRUE(
-        dump_result.find("test_tileset:max_map_data_size = 10240 [DefaultProvider: default]") != std::string::npos);
+        dump_result.find("test_tileset:max_map_data_size = 10240 [DefaultProvider: default value]") != std::string::npos);
 }
 
 TEST(LazyLayeredConfigTest, DumpShouldOnlyShowCachedValues)

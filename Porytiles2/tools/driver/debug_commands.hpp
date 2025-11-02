@@ -81,12 +81,6 @@ class DebugPrimaryCompileCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        // Test the UserDiagnostics interface
-        // diag->note("this is a test note");
-        // diag->warn("test-warning", "this is a test warning");
-        // diag->warn_note("test-warning", "this is a test warning note");
-        // diag->err("this is a test error");
-
         // Load the tileset
         auto maybe_tileset = repo.load(tileset_name_);
         if (!maybe_tileset.has_value()) {
