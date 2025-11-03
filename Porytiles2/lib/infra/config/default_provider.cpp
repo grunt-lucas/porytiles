@@ -15,7 +15,6 @@ std::string DefaultProvider::name() const
 
 LayerValue<std::size_t> DefaultProvider::num_tiles_primary([[maybe_unused]] const std::string &tileset) const
 {
-    // return LayerValue<std::size_t>::invalid("value must be <= 512", "default");
     return LayerValue<std::size_t>::valid(512, source_info);
 }
 

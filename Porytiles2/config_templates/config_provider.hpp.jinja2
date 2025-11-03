@@ -1,3 +1,9 @@
+{#
+  Template for generating config_provider.hpp
+
+  This template generates the ConfigProvider base class with virtual methods for
+  configuration values defined in config_schema.yaml.
+#}
 #pragma once
 
 #include <optional>
@@ -119,35 +125,25 @@ class ConfigProvider {
     /*
      * Domain Config
      */
+{% for value in config_values if value.layer == 'domain' %}
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const;
-
-    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+{% endfor %}
 
     /*
      * App Config
      */
+{% for value in config_values if value.layer == 'app' %}
+
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+{% endfor %}
 
     /*
      * Infra Config
      */
-    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const;
+{% for value in config_values if value.layer == 'infra' %}
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+{% endfor %}
 };
 
 } // namespace porytiles2

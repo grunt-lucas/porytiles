@@ -1,3 +1,9 @@
+{#
+  Template for generating infra_config.hpp
+
+  This template generates the InfraConfig interface with virtual methods for
+  configuration values defined in config_schema.yaml.
+#}
 #pragma once
 
 #include <string>
@@ -21,9 +27,11 @@ namespace porytiles2 {
 class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
+{% for value in config_values if value.layer == 'infra' %}
 
-    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode(const std::string &tileset) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
+{% endfor %}
 };
 
 } // namespace porytiles2

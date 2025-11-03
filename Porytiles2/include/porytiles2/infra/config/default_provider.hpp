@@ -10,6 +10,9 @@ namespace porytiles2 {
  * @details
  * This provider returns default values for all configuration parameters. It's useful as a base layer in a configuration
  * system where other providers can override specific values.
+ *
+ * NOTE: This file is AUTO-GENERATED from config_schema.yaml.
+ * To add new config values, edit config_schema.yaml and regenerate using Scripts/generate_config.py
  */
 class DefaultProvider final : public ConfigProvider {
   public:

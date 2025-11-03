@@ -47,11 +47,38 @@ def generate_config_files():
         lstrip_blocks=True,
     )
 
-    # Define template -> output mappings (only domain_config.hpp for MVP)
+    # Define template -> output mappings
     templates = [
+        # Layer interfaces
         (
             "domain_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/domain/config/domain_config.hpp",
+        ),
+        (
+            "app_config.hpp.jinja2",
+            "Porytiles2/include/porytiles2/app/config/app_config.hpp",
+        ),
+        (
+            "infra_config.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/infra_config.hpp",
+        ),
+        # ConfigProvider base class
+        (
+            "config_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/config_provider.hpp",
+        ),
+        (
+            "config_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/config_provider.cpp",
+        ),
+        # DefaultProvider
+        (
+            "default_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/default_provider.hpp",
+        ),
+        (
+            "default_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/default_provider.cpp",
         ),
     ]
 

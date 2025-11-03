@@ -19,9 +19,18 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-# Define generated output file(s)
-set(GENERATED_DOMAIN_CONFIG
+# Define generated output files
+set(GENERATED_CONFIG_FILES
+    # Layer interfaces
     ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/domain/config/domain_config.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/app/config/app_config.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/infra_config.hpp
+    # ConfigProvider
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/config_provider.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/config_provider.cpp
+    # DefaultProvider
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/default_provider.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/default_provider.cpp
 )
 
 # Define schema and template files
@@ -29,18 +38,24 @@ set(CONFIG_SCHEMA
     ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_schema.yaml
 )
 
-set(DOMAIN_CONFIG_TEMPLATE
+set(CONFIG_TEMPLATES
     ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/domain_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/app_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/infra_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.cpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.cpp.jinja2
 )
 
 # Generate config files before building
 add_custom_command(
-    OUTPUT ${GENERATED_DOMAIN_CONFIG}
+    OUTPUT ${GENERATED_CONFIG_FILES}
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
     DEPENDS
         ${CONFIG_SCHEMA}
         ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
-        ${DOMAIN_CONFIG_TEMPLATE}
+        ${CONFIG_TEMPLATES}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating configuration code from templates..."
     VERBATIM
@@ -48,7 +63,7 @@ add_custom_command(
 
 # Create target that depends on generated files
 add_custom_target(generate_config_code
-    DEPENDS ${GENERATED_DOMAIN_CONFIG}
+    DEPENDS ${GENERATED_CONFIG_FILES}
 )
 
 # ============================================================================
