@@ -4,10 +4,9 @@
 # Fields:
 #   name: Method name for the config value
 #   type: C++ type for the value
-#   parser: Parser function name (e.g., "parse_size_t") - shared across all providers
+#   parser: Parser function name (e.g., "parse_size_t") - shared across all providers (if relevant)
 #   layer: Configuration layer (domain/app/infra)
-#   scope_type: Method parameter scope (none/tileset/layout)
-#     - none: No parameter
+#   scope_type: Method parameter scope (tileset/layout)
 #     - tileset: Takes const std::string &tileset parameter
 #     - layout: Takes const std::string &layout parameter
 #   default_value: Default value for DefaultProvider (C++ expression as string)

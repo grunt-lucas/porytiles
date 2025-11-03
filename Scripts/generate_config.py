@@ -80,6 +80,15 @@ def generate_config_files():
             "default_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/default_provider.cpp",
         ),
+        # YamlFileProvider
+        (
+            "yaml_file_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp",
+        ),
+        (
+            "yaml_file_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/yaml_file_provider.cpp",
+        ),
     ]
 
     # Generate each file

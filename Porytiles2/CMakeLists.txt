@@ -31,6 +31,9 @@ set(GENERATED_CONFIG_FILES
     # DefaultProvider
     ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/default_provider.hpp
     ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/default_provider.cpp
+    # YamlFileProvider
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/yaml_file_provider.cpp
 )
 
 # Define schema and template files
@@ -46,6 +49,8 @@ set(CONFIG_TEMPLATES
     ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.cpp.jinja2
     ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.hpp.jinja2
     ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.cpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.cpp.jinja2
 )
 
 # Generate config files before building
