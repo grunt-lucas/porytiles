@@ -5,79 +5,84 @@
 #   name: Method name for the config value
 #   type: C++ type for the value
 #   layer: Configuration layer (domain/app/infra)
-#   takes_tileset: Whether the method takes a tileset parameter
-#   yaml_path: Dot-separated YAML path for YamlFileProvider (e.g., "fieldmap.num_tiles_primary")
-#   parser: Parser function name for YAML parsing (e.g., "parse_size_t")
+#   scope_type: Method parameter scope (none/tileset/layout)
+#     - none: No parameter
+#     - tileset: Takes const std::string &tileset parameter
+#     - layout: Takes const std::string &layout parameter
+#   yaml: YAML configuration for YamlFileProvider
+#     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
+#     parser: Parser function name (e.g., "parse_size_t")
 
 config_values:
   # Domain Layer Configuration Values
   - name: num_tiles_primary
     type: std::size_t
     layer: domain
-    takes_tileset: true
-    yaml_path: fieldmap.num_tiles_primary
-    parser: parse_size_t
+    scope_type: tileset
+    yaml:
+      path: fieldmap.num_tiles_primary
+      parser: parse_size_t
 
   - name: num_tiles_total
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_tiles_total
     parser: parse_size_t
 
   - name: num_metatiles_primary
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_metatiles_primary
     parser: parse_size_t
 
   - name: num_metatiles_total
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_metatiles_total
     parser: parse_size_t
 
   - name: num_pals_primary
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_pals_primary
     parser: parse_size_t
 
   - name: num_pals_total
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_pals_total
     parser: parse_size_t
 
   - name: max_map_data_size
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.max_map_data_size
     parser: parse_size_t
 
   - name: num_tiles_per_metatile
     type: std::size_t
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: fieldmap.num_tiles_per_metatile
     parser: parse_size_t
 
   - name: extrinsic_transparency
     type: Rgba32
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: extrinsic_transparency
     parser: parse_rgba32
 
   - name: patch_build_enabled
     type: bool
     layer: domain
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: patch.enabled
     parser: parse_bool
 
@@ -85,6 +90,6 @@ config_values:
   - name: tiles_pal_mode
     type: TilesPalMode
     layer: infra
-    takes_tileset: true
+    scope_type: tileset
     yaml_path: tiles_pal_mode
     parser: parse_tiles_pal_mode

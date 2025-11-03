@@ -33,7 +33,7 @@ class DomainConfig {
 
 {% for value in config_values if value.layer == 'domain' %}
     [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}({% if value.takes_tileset %}const std::string &tileset{% endif %}) const = 0;
+    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
 
 {% endfor %}
     // ========================================

@@ -20,8 +20,8 @@ def generate_config_files():
     project_root = Path(__file__).parent.parent
     print(f"Project root: {project_root}")
 
-    # Load schema
-    schema_path = project_root / "config_schema.yaml"
+    # Load schema from Porytiles2/config_templates/
+    schema_path = project_root / "Porytiles2" / "config_templates" / "config_schema.yaml"
     print(f"Loading schema from: {schema_path}")
 
     if not schema_path.exists():
@@ -38,8 +38,8 @@ def generate_config_files():
 
     print(f"Loaded {len(schema['config_values'])} config values from schema")
 
-    # Setup Jinja2 environment
-    template_dir = project_root / "templates"
+    # Setup Jinja2 environment with new template directory
+    template_dir = project_root / "Porytiles2" / "config_templates"
     env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(),

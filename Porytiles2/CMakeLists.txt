@@ -24,9 +24,13 @@ set(GENERATED_DOMAIN_CONFIG
     ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/domain/config/domain_config.hpp
 )
 
-# Define template file
+# Define schema and template files
+set(CONFIG_SCHEMA
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_schema.yaml
+)
+
 set(DOMAIN_CONFIG_TEMPLATE
-    ${CMAKE_SOURCE_DIR}/templates/domain_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/domain_config.hpp.jinja2
 )
 
 # Generate config files before building
@@ -34,7 +38,7 @@ add_custom_command(
     OUTPUT ${GENERATED_DOMAIN_CONFIG}
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
     DEPENDS
-        ${CMAKE_SOURCE_DIR}/config_schema.yaml
+        ${CONFIG_SCHEMA}
         ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
         ${DOMAIN_CONFIG_TEMPLATE}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
