@@ -98,6 +98,9 @@ add_library(Porytiles2Lib STATIC ${CppSources})
 set(CANONICAL_LIB_NAME "porytiles2")
 set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 
+# Ensure config code is generated before building the library
+add_dependencies(Porytiles2Lib generate_config_code)
+
 # Configure CImg
 target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
 target_compile_definitions(Porytiles2Lib PRIVATE cimg_display=0)
