@@ -1,4 +1,4 @@
-# Code Generation Solutions for Layered Config System
+# Code Generation for Layered Config System
 
 ## Problem Statement
 
@@ -11,112 +11,76 @@ Adding a new configuration value currently requires editing multiple files:
 
 This is tedious and error-prone. We want to define each config value **once** and generate all the boilerplate automatically.
 
-## Solution Options
+## Solution: Python Script + Jinja2 Templates
 
-### Option 1: X-Macros (Preprocessor-Based)
+### Overview
 
-**Overview:** Define all config values in a single macro list, then include that list multiple times with different macro definitions to generate the various pieces of code.
+Define the configuration schema in YAML, create Jinja2 templates for each generated C++ file, and run a Python script at build time to generate all the boilerplate code. This approach provides clean separation of concerns: the schema defines *what* to generate, templates define *how* to generate it, and the script orchestrates the generation process.
 
-**Zero Dependencies:** Works with any C++ compiler, no external tools required.
+### Why Jinja2?
 
-**Example Implementation:**
+**Advantages:**
+- **Very flexible and powerful** - can handle complex generation logic
+- **Clean separation** - schema, templates, and generated code are completely separate
+- **Easy to understand** - templates look very similar to the C++ code they generate
+- **Great for complex scenarios** - conditionals, loops, filters, and macros built-in
+- **Multi-format generation** - can generate C++ code, documentation, JSON schemas, etc.
+- **Widely used and well-documented** - industry standard for code generation
+- **Type-safe** - generated C++ code is validated by the compiler
+- **Good IDE support** - generated files are normal C++ files
 
-```C++
-// config_definitions.hpp
-// Define all config values in one place
-#define CONFIG_VALUE_LIST \
-    /* name, type, layer, takes_tileset */ \
-    CONFIG_VALUE(num_tiles_primary, std::size_t, domain, true) \
-    CONFIG_VALUE(num_tiles_total, std::size_t, domain, true) \
-    CONFIG_VALUE(num_metatiles_primary, std::size_t, domain, true) \
-    CONFIG_VALUE(num_pals_total, std::size_t, domain, true) \
-    CONFIG_VALUE(tiles_pal_mode, TilesPalMode, infra, true) \
-    CONFIG_VALUE(extrinsic_transparency, Rgba32, domain, true) \
-    CONFIG_VALUE(patch_build_enabled, bool, domain, true)
+**Trade-offs:**
+- Adds Python dependency (though many C++ projects already use Python)
+- Requires maintaining template files alongside code
+- Slightly more complex build process (but integrates cleanly with CMake)
+- Generated files must be either committed to version control or regenerated on every build
+
+### Python Environment Setup
+
+To avoid polluting the global Python environment, we'll use a virtual environment to manage dependencies.
+
+**Step 1: Create virtual environment**
+```bash
+# From project root
+python3 -m venv .venv
 ```
 
-```C++
-// domain_config.hpp
-class DomainConfig {
-  public:
-    virtual ~DomainConfig() = default;
+**Step 2: Activate virtual environment**
+```bash
+# On macOS/Linux
+source .venv/bin/activate
 
-    // Generate pure virtual methods for domain config values
-    #define CONFIG_VALUE(name, type, layer, takes_tileset) \
-        BOOST_PP_IIF(BOOST_PP_EQUAL(layer, domain), \
-            [[nodiscard]] virtual ChainableResult<ConfigValue<type>> \
-            name(BOOST_PP_IIF(takes_tileset, const std::string &tileset, BOOST_PP_EMPTY)()) const = 0;, \
-            BOOST_PP_EMPTY())
-
-    CONFIG_VALUE_LIST
-
-    #undef CONFIG_VALUE
-
-    // Derived/computed methods stay hand-written
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_secondary(const std::string &tileset) const { /* ... */ }
-};
+# On Windows
+.venv\Scripts\activate
 ```
 
-```C++
-// config_provider.hpp
-class ConfigProvider {
-  public:
-    virtual ~ConfigProvider() = default;
-
-    [[nodiscard]] virtual std::string name() const = 0;
-
-    // Generate virtual methods with default implementations
-    #define CONFIG_VALUE(name, type, layer, takes_tileset) \
-        [[nodiscard]] virtual LayerValue<type> \
-        name(BOOST_PP_IIF(takes_tileset, const std::string &tileset, BOOST_PP_EMPTY)()) const;
-
-    CONFIG_VALUE_LIST
-
-    #undef CONFIG_VALUE
-};
+**Step 3: Install dependencies**
+```bash
+pip install jinja2 pyyaml
 ```
 
-```C++
-// config_provider.cpp
-#define CONFIG_VALUE(name, type, layer, takes_tileset) \
-    LayerValue<type> ConfigProvider::name(\
-        BOOST_PP_IIF(takes_tileset, const std::string &tileset, BOOST_PP_EMPTY)()) const \
-    { \
-        return LayerValue<type>::not_provided(); \
-    }
-
-CONFIG_VALUE_LIST
-
-#undef CONFIG_VALUE
+**Step 4: Create requirements.txt** (for reproducibility)
+```bash
+pip freeze > Scripts/requirements.txt
 ```
 
-**Pros:**
-- No external dependencies or build tools
-- Everything stays in C++
-- Works with any compiler (GCC, Clang, MSVC)
-- Very fast - just preprocessor expansion
-- Easy to integrate with existing build system
-- Type-safe
+This creates a `Scripts/requirements.txt` file that looks like:
+```
+Jinja2==3.1.2
+MarkupSafe==2.1.1
+PyYAML==6.0
+```
 
-**Cons:**
-- Preprocessor-heavy code can be harder to debug
-- IDE support may be limited (code completion, navigation)
-- Error messages can be cryptic
-- Limited expressiveness compared to full templating language
-- Requires learning X-Macro pattern
+**Future setup** (for other developers or CI/CD):
+```bash
+source .venv/bin/activate
+pip install -r Scripts/requirements.txt
+```
 
-**Integration:**
-- No CMake changes needed
-- Just create `config_definitions.hpp` and include where needed
+**CMake Integration:**
+The CMake configuration will automatically use Python from the virtual environment if activated, or fall back to system Python. See the CMake section below for details.
 
-**Recommendation for this project:** ⭐⭐⭐⭐ Good fit - simple, no dependencies, works with your existing setup.
-
----
-
-### Option 2: Python Script + Jinja2 Templates
-
-**Overview:** Define configuration schema in YAML/JSON, write Jinja2 templates for each generated file, run Python script at build time to generate C++ code.
+### Schema Definition
 
 **Example Implementation:**
 
@@ -199,354 +163,374 @@ if __name__ == '__main__':
     generate_config_files()
 ```
 
+### CMake Integration
+
+The build system needs to run the generation script before compiling the library. Here's how to integrate it with CMake:
+
 ```cmake
-# CMakeLists.txt addition
+# Find Python interpreter (works with venv if activated)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# Define all generated output files
+set(GENERATED_CONFIG_FILES
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/domain/config/domain_config.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/app/config/app_config.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/infra_config.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/config_provider.hpp
+    ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/config_provider.cpp
+)
+
+# Define all template files
+set(CONFIG_TEMPLATES
+    ${CMAKE_SOURCE_DIR}/templates/domain_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/templates/app_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/templates/infra_config.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/templates/config_provider.hpp.jinja2
+    ${CMAKE_SOURCE_DIR}/templates/config_provider.cpp.jinja2
+)
 
 # Generate config files before building
 add_custom_command(
-    OUTPUT
-        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/domain/config/domain_config.hpp
-        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/config_provider.hpp
+    OUTPUT ${GENERATED_CONFIG_FILES}
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
     DEPENDS
         ${CMAKE_SOURCE_DIR}/config_schema.yaml
-        ${CMAKE_SOURCE_DIR}/templates/domain_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/templates/config_provider.hpp.jinja2
+        ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
+        ${CONFIG_TEMPLATES}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Generating configuration code..."
+    COMMENT "Generating configuration code from templates..."
+    VERBATIM
 )
 
+# Create a target that depends on generated files
 add_custom_target(generate_config_code
-    DEPENDS
-        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/domain/config/domain_config.hpp
+    DEPENDS ${GENERATED_CONFIG_FILES}
 )
 
+# Make the library depend on generated code
 add_dependencies(porytiles2_lib generate_config_code)
 ```
 
-**Pros:**
-- Very flexible and powerful
-- Clean separation: schema, templates, and generated code are separate
-- Easy to understand and modify templates
-- Good for complex generation logic
-- Can generate any text format (C++, docs, JSON, etc.)
-- Widely used and well-documented
-- Can generate documentation alongside code
+**How it works:**
+- `find_package(Python3)` locates Python (respects activated venv)
+- `add_custom_command` defines the generation process
+- Lists all OUTPUT files so CMake knows what gets generated
+- Lists all DEPENDS so CMake knows when to regenerate
+- `VERBATIM` ensures proper command-line escaping
+- `add_dependencies` ensures generation runs before compilation
 
-**Cons:**
-- Adds Python dependency (though already needed for many C++ projects)
-- More complex build process
-- Generated files need to be either committed or regenerated on every build
-- Requires maintaining template files
-- Slightly slower than preprocessor (but still fast)
+**Regeneration triggers:**
+The code will be regenerated automatically when:
+- `config_schema.yaml` changes
+- Any template file changes
+- `Scripts/generate_config.py` changes
+- Generated files are deleted
 
-**Integration:**
-- Add custom CMake commands as shown above
-- Add `pip install jinja2 pyyaml` to build instructions
-- Could use Python virtual environment to isolate dependencies
+### Template Examples
 
-**Recommendation for this project:** ⭐⭐⭐⭐⭐ Excellent fit - flexible, clean, plays well with CMake.
+Templates use Jinja2 syntax to generate C++ code. Here are some more detailed examples:
 
----
-
-### Option 3: Cog (Embedded Python Code Generator)
-
-**Overview:** Embed Python code in C++ files as comments. Cog processes these files and generates C++ code inline.
-
-**Example Implementation:**
-
-```C++
-// domain_config.hpp
+**domain_config.hpp.jinja2** (expanded):
+```jinja2
+{# templates/domain_config.hpp.jinja2 #}
 #pragma once
 
 #include <string>
+
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
+/**
+ * @brief Domain layer configuration interface.
+ *
+ * @details
+ * Generated from config_schema.yaml - DO NOT EDIT THIS FILE DIRECTLY.
+ * Edit config_schema.yaml and regenerate using Scripts/generate_config.py
+ */
 class DomainConfig {
   public:
     virtual ~DomainConfig() = default;
 
-/*[[[cog
-import cog
+{% for value in config_values if value.layer == 'domain' %}
+    /**
+     * @brief Get {{ value.name }} configuration value.
+     */
+    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>
+    {{ value.name }}({% if value.takes_tileset %}const std::string &tileset{% endif %}) const = 0;
 
-config_values = [
-    ('num_tiles_primary', 'std::size_t'),
-    ('num_tiles_total', 'std::size_t'),
-    ('num_metatiles_primary', 'std::size_t'),
-]
+{% endfor %}
+    // Hand-written derived/computed methods below
+    // These are NOT auto-generated and should be maintained manually
 
-for name, type_name in config_values:
-    cog.outl(f"    [[nodiscard]] virtual ChainableResult<ConfigValue<{type_name}>>")
-    cog.outl(f"    {name}(const std::string &tileset) const = 0;")
-    cog.outl("")
-]]]*/
-//[[[end]]]
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_secondary(const std::string &tileset) const;
 };
 
 } // namespace porytiles2
 ```
 
-After running `cog -r domain_config.hpp`:
+**config_provider.cpp.jinja2** (with default implementations):
+```jinja2
+{# templates/config_provider.cpp.jinja2 #}
+#include "porytiles2/infra/config/config_provider.hpp"
 
-```C++
-class DomainConfig {
-  public:
-    virtual ~DomainConfig() = default;
+namespace porytiles2 {
 
-/*[[[cog
-import cog
-
-config_values = [
-    ('num_tiles_primary', 'std::size_t'),
-    ('num_tiles_total', 'std::size_t'),
-]
-
-for name, type_name in config_values:
-    cog.outl(f"    [[nodiscard]] virtual ChainableResult<ConfigValue<{type_name}>>")
-    cog.outl(f"    {name}(const std::string &tileset) const = 0;")
-    cog.outl("")
-]]]*/
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary(const std::string &tileset) const = 0;
-
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_total(const std::string &tileset) const = 0;
-
-//[[[end]]]
-};
-```
-
-**Pros:**
-- Generation logic lives right next to generated code
-- Can see both generator and output in same file
-- Simple to understand what's being generated
-- Python for generation logic (very flexible)
-- Can commit generated code to version control
-
-**Cons:**
-- Mixes concerns (generator + generated code)
-- Files become longer
-- Generated sections must be committed (or regenerated)
-- Less clean separation than external templates
-- Another tool dependency (`pip install cogapp`)
-- Generated code can't be easily grep'd (it's in comments too)
-
-**Integration:**
-```cmake
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
-add_custom_target(cog_generate
-    COMMAND ${Python3_EXECUTABLE} -m cogapp -r
-        include/porytiles2/domain/config/domain_config.hpp
-        include/porytiles2/infra/config/config_provider.hpp
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running cog code generation..."
-)
-```
-
-**Recommendation for this project:** ⭐⭐⭐ Decent option, but mixing generation and code is less clean.
-
----
-
-### Option 4: Boost.Hana / Magic Enum / Reflection
-
-**Overview:** Use C++ metaprogramming libraries to reduce boilerplate through compile-time reflection and type manipulation.
-
-**Example (conceptual):**
-
-```C++
-// Define config schema using constexpr
-struct ConfigSchema {
-    static constexpr auto values = hana::make_tuple(
-        hana::make_pair("num_tiles_primary"_s, hana::type_c<std::size_t>),
-        hana::make_pair("num_tiles_total"_s, hana::type_c<std::size_t>)
-    );
-};
-
-// Generate methods via template metaprogramming
-template<typename Schema>
-class GeneratedDomainConfig {
-    // ... template magic to generate methods ...
-};
-```
-
-**Pros:**
-- Pure C++ solution
-- Type-safe at compile time
-- No external build steps
-
-**Cons:**
-- Very complex to implement correctly
-- Steep learning curve
-- Significantly increased compile times
-- C++ doesn't have native reflection yet (proposed for C++26)
-- May not work well with virtual interfaces
-- Hard to debug template errors
-- Not all compilers support all features equally
-
-**Recommendation for this project:** ⭐ Not recommended - too complex for the benefit.
-
----
-
-### Option 5: Custom DSL with Parser
-
-**Overview:** Create a custom domain-specific language for config definitions, write a parser, generate C++ code.
-
-**Example:**
-
-```
-// config.porytiles
-@domain config {
-    num_tiles_primary: size_t with tileset;
-    num_tiles_total: size_t with tileset;
-    extrinsic_transparency: Rgba32 with tileset;
+{% for value in config_values %}
+LayerValue<{{ value.type }}> ConfigProvider::{{ value.name }}(
+    {%- if value.takes_tileset %}const std::string &tileset{% endif -%}
+) const {
+    // Default: not provided at this layer
+    return LayerValue<{{ value.type }}>::not_provided();
 }
 
-@infra config {
-    tiles_pal_mode: TilesPalMode with tileset;
-}
+{% endfor %}
+
+} // namespace porytiles2
 ```
 
-**Pros:**
-- Highly customized to your exact needs
-- Clean, readable syntax
-- Can add validation rules
-- Educational/interesting to build
+### Generation Script
 
-**Cons:**
-- Significant upfront development cost
-- Parser maintenance burden
-- Overkill for this use case
-- Another language to learn
+The Python script reads the schema and renders each template:
 
-**Recommendation for this project:** ⭐ Not recommended - way too much work.
+```python
+# Scripts/generate_config.py (expanded version)
+#!/usr/bin/env python3
+"""
+Generate configuration code from YAML schema and Jinja2 templates.
+"""
 
----
+import sys
+from pathlib import Path
+import yaml
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-## Comparison Matrix
+def generate_config_files():
+    """Main generation function."""
+    # Determine project root (script is in Scripts/)
+    project_root = Path(__file__).parent.parent
 
-| Solution | Complexity | Dependencies | Flexibility | IDE Support | Compiler Portability |
-|----------|-----------|--------------|-------------|-------------|---------------------|
-| X-Macros | Low | None | Medium | Poor | Excellent |
-| Python + Jinja2 | Medium | Python, Jinja2 | Very High | Good | Excellent |
-| Cog | Medium | Python, Cog | High | Medium | Excellent |
-| Boost.Hana | Very High | Boost | Medium | Poor | Good |
-| Custom DSL | Very High | Parser lib | Very High | Poor | Excellent |
+    # Load schema
+    schema_path = project_root / 'config_schema.yaml'
+    print(f"Loading schema from: {schema_path}")
+    with open(schema_path) as f:
+        schema = yaml.safe_load(f)
 
-## Recommendations
+    # Setup Jinja2 environment
+    template_dir = project_root / 'templates'
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
 
-### Best Overall: Python Script + Jinja2 ⭐⭐⭐⭐⭐
+    # Define template -> output mappings
+    templates = [
+        ('domain_config.hpp.jinja2',
+         'Porytiles2/include/porytiles2/domain/config/domain_config.hpp'),
+        ('app_config.hpp.jinja2',
+         'Porytiles2/include/porytiles2/app/config/app_config.hpp'),
+        ('infra_config.hpp.jinja2',
+         'Porytiles2/include/porytiles2/infra/config/infra_config.hpp'),
+        ('config_provider.hpp.jinja2',
+         'Porytiles2/include/porytiles2/infra/config/config_provider.hpp'),
+        ('config_provider.cpp.jinja2',
+         'Porytiles2/lib/infra/config/config_provider.cpp'),
+    ]
 
-**Why:**
-- Clean separation of concerns (schema separate from templates)
-- Very flexible - can easily add new features
-- Integrates well with CMake
-- Can generate documentation alongside code
-- Easy to understand and maintain
-- Widely used in industry
+    # Generate each file
+    for template_name, output_rel_path in templates:
+        print(f"Generating: {output_rel_path}")
 
-**How to implement:**
-1. Create `config_schema.yaml` defining all config values
-2. Create Jinja2 templates for each generated file
-3. Write `Scripts/generate_config.py`
-4. Add CMake custom commands to run generation before build
-5. Optionally commit generated files (for faster builds) or generate on-demand
+        template = env.get_template(template_name)
+        output = template.render(**schema)
 
-### Simplest: X-Macros ⭐⭐⭐⭐
+        output_path = project_root / output_rel_path
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output)
 
-**Why:**
-- Zero dependencies
-- No build system changes
-- Just works with existing setup
-- Fast
+    print("✓ Configuration code generation complete")
 
-**Trade-offs:**
-- Less flexible than Jinja2
-- Harder to debug
-- Limited IDE support
+if __name__ == '__main__':
+    try:
+        generate_config_files()
+    except Exception as e:
+        print(f"Error generating config files: {e}", file=sys.stderr)
+        sys.exit(1)
+```
 
-**When to choose:** If you want the absolute simplest solution with no dependencies and don't mind preprocessor-heavy code.
+### Generated Files: Commit or Regenerate?
 
-### Middle Ground: Cog ⭐⭐⭐
+**Option A: Commit generated files**
+- **Pros:** Faster builds, no Python dependency for most developers, easier to review changes
+- **Cons:** Merge conflicts in generated files, must remember to regenerate before committing
 
-**Why:**
-- Keeps generation close to code
-- Python for generation logic
-- Can commit generated code
+**Option B: Always regenerate**
+- **Pros:** Generated files always in sync, no merge conflicts, smaller repo
+- **Cons:** Requires Python setup for all developers, slightly slower builds
 
-**Trade-offs:**
-- Mixes generator and generated code
-- Less clean than separate templates
+**Recommendation:** Start with Option A (commit generated files) for simplicity. The generation script is fast, and committing generated files makes it easier for developers who just want to build without setting up Python. Add a pre-commit check to ensure generated files are up-to-date.
 
-## Proposed Implementation Path
+## Implementation Roadmap
 
-If choosing **Python + Jinja2** (recommended):
+### Phase 1: Setup Infrastructure (1-2 hours)
+1. Create Python virtual environment
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install jinja2 pyyaml
+   pip freeze > Scripts/requirements.txt
+   ```
 
-1. **Phase 1:** Setup infrastructure
-   - Create `config_schema.yaml` with current config values
-   - Create template directory structure
-   - Write first template (e.g., `domain_config.hpp`)
-   - Write generation script skeleton
+2. Create `config_schema.yaml` at project root
+   - Start with current config values from existing code
+   - Define schema structure (name, type, layer, takes_tileset)
 
-2. **Phase 2:** Generate one file end-to-end
-   - Template for `DomainConfig`
-   - Test generation works
-   - Integrate with CMake
-   - Verify builds correctly
+3. Create `templates/` directory at project root
+   - Will hold all `.jinja2` template files
 
-3. **Phase 3:** Expand to all files
-   - Add templates for all layer configs
-   - Add templates for ConfigProvider
-   - Add templates for LazyLayeredConfig declarations
+4. Add `.venv/` to `.gitignore`
 
-4. **Phase 4:** Handle special cases
-   - Derived/computed methods (keep hand-written)
-   - Complex validation logic
-   - Provider-specific logic
+### Phase 2: First Template End-to-End (2-3 hours)
+1. Create `templates/domain_config.hpp.jinja2`
+   - Port existing `DomainConfig` structure
+   - Add Jinja2 loops for config values
+   - Keep derived/computed methods as hand-written section
 
-5. **Phase 5:** Documentation
-   - Generate Doxygen comments
-   - Generate config documentation
-   - Update build instructions
+2. Write `Scripts/generate_config.py` skeleton
+   - Load YAML schema
+   - Setup Jinja2 environment
+   - Generate single file (DomainConfig)
 
-## Example Directory Structure
+3. Test generation manually
+   ```bash
+   python Scripts/generate_config.py
+   ```
+
+4. Verify generated code compiles
+
+### Phase 3: CMake Integration (1 hour)
+1. Add CMake generation commands to `Porytiles2/CMakeLists.txt`
+   - `find_package(Python3)`
+   - `add_custom_command` for generation
+   - `add_custom_target` for dependency tracking
+   - `add_dependencies` to link with library
+
+2. Test full build process
+   ```bash
+   cmake -B build -DCMAKE_BUILD_TYPE=Debug
+   cmake --build build
+   ```
+
+3. Verify regeneration triggers work
+
+### Phase 4: Expand to All Config Files (3-4 hours)
+1. Create templates for remaining files:
+   - `templates/app_config.hpp.jinja2`
+   - `templates/infra_config.hpp.jinja2`
+   - `templates/config_provider.hpp.jinja2`
+   - `templates/config_provider.cpp.jinja2`
+
+2. Update `Scripts/generate_config.py` with all template mappings
+
+3. Generate all files and verify compilation
+
+4. Run tests to ensure behavior unchanged
+
+### Phase 5: Handle Special Cases (2-3 hours)
+1. Preserve hand-written derived/computed methods
+   - Add special sections in templates for manual code
+   - Document which methods are auto-generated vs manual
+
+2. Handle provider-specific overrides
+   - YamlFileProvider will need custom implementations
+   - Keep these in separate hand-written files
+
+3. Add validation to generation script
+   - Check for duplicate config names
+   - Validate type names
+   - Ensure layer values are valid
+
+### Phase 6: Documentation & Polish (1-2 hours)
+1. Add generation header comments to templates
+   - "DO NOT EDIT - Generated from config_schema.yaml"
+   - Link to schema file and generation script
+
+2. Generate Doxygen comments in templates
+
+3. Update build documentation (README/wiki)
+   - Python environment setup instructions
+   - How to add new config values
+   - How to regenerate manually
+
+4. Consider adding pre-commit hook to check generated files are up-to-date
+
+### Total Estimated Time: 10-15 hours
+
+## Directory Structure
+
+After implementation, the project structure will look like:
 
 ```
-Porytiles2/
-├── config_schema.yaml           # Single source of truth
-├── templates/
+porytiles/
+├── .venv/                                  # Python virtual environment (gitignored)
+├── config_schema.yaml                      # Single source of truth for config
+├── templates/                              # Jinja2 templates
 │   ├── domain_config.hpp.jinja2
 │   ├── app_config.hpp.jinja2
 │   ├── infra_config.hpp.jinja2
 │   ├── config_provider.hpp.jinja2
-│   ├── config_provider.cpp.jinja2
-│   └── lazy_layered_config.hpp.jinja2
+│   └── config_provider.cpp.jinja2
 ├── Scripts/
-│   └── generate_config.py
-└── include/porytiles2/
-    ├── domain/config/
-    │   └── domain_config.hpp        # GENERATED
-    ├── app/config/
-    │   └── app_config.hpp           # GENERATED
-    └── infra/config/
-        ├── infra_config.hpp         # GENERATED
-        └── config_provider.hpp      # GENERATED
+│   ├── generate_config.py                  # Generation script
+│   └── requirements.txt                    # Python dependencies
+└── Porytiles2/
+    ├── CMakeLists.txt                      # Updated with generation commands
+    ├── include/porytiles2/
+    │   ├── domain/config/
+    │   │   └── domain_config.hpp           # GENERATED - committed to repo
+    │   ├── app/config/
+    │   │   └── app_config.hpp              # GENERATED - committed to repo
+    │   └── infra/config/
+    │       ├── infra_config.hpp            # GENERATED - committed to repo
+    │       └── config_provider.hpp         # GENERATED - committed to repo
+    └── lib/infra/config/
+        └── config_provider.cpp             # GENERATED - committed to repo
 ```
 
-## Next Steps
+## Adding New Config Values
 
-1. Decide which approach fits your workflow best
-2. Create a proof-of-concept with 2-3 config values
-3. Validate it generates correct code
-4. Expand to full config system
-5. Update documentation
+Once the system is in place, adding a new config value is simple:
+
+1. **Edit `config_schema.yaml`:**
+   ```yaml
+   config_values:
+     - name: my_new_setting
+       type: int
+       layer: domain
+       takes_tileset: false
+   ```
+
+2. **Regenerate code:**
+   ```bash
+   python Scripts/generate_config.py
+   # Or just rebuild (CMake will regenerate automatically)
+   cmake --build build
+   ```
+
+3. **Implement provider logic** (if needed):
+   - Add override in YamlFileProvider to read from YAML
+   - Add default value in DefaultProvider if applicable
+
+4. **Done!** No need to manually edit 5+ files.
 
 ## References
 
-- **X-Macros:** https://en.wikipedia.org/wiki/X_Macro
-- **Jinja2:** https://jinja.palletsprojects.com/
-- **Cog:** https://nedbatchelder.com/code/cog/
-- **CMake Code Generation:** https://cmake.org/cmake/help/latest/command/add_custom_command.html
+- **Jinja2 Documentation:** https://jinja.palletsprojects.com/
+- **Jinja2 Template Designer:** https://jinja.palletsprojects.com/en/3.1.x/templates/
+- **PyYAML Documentation:** https://pyyaml.org/wiki/PyYAMLDocumentation
+- **CMake add_custom_command:** https://cmake.org/cmake/help/latest/command/add_custom_command.html
+- **Python venv Guide:** https://docs.python.org/3/library/venv.html
