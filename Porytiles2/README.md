@@ -12,3 +12,33 @@ This should make it much easier for other developers
 to integrate with their own tooling.
 Our long-term goal is to integrate the core Porytiles functionality
 directly into Porymap.
+
+## Configuration System Setup
+
+Porytiles2 uses a code generation system for configuration classes based on Python and Jinja2.
+Configuration values are defined in `config_templates/config_schema.yaml` and C++ code is auto-generated.
+
+### Setting up the Python environment
+
+On a new workstation, you'll need to set up the Python virtual environment:
+
+```bash
+# From the project root directory
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -r Scripts/requirements.txt
+```
+
+### Regenerating configuration code
+
+The CMake build system automatically regenerates configuration code when needed.
+If you modify `config_templates/config_schema.yaml` or any template files,
+the next build will regenerate the affected C++ headers and implementation files.
+
+To manually regenerate configuration code:
+
+```bash
+# From the project root directory
+source .venv/bin/activate
+python Scripts/generate_config.py
+```
