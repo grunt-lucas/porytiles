@@ -87,7 +87,7 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  * @return Vector of formatted strings showing the contextual view
  */
 std::vector<std::string>
-make_source_details(const std::string &file_path, const YAML::Mark &mark, std::size_t window_size = 5)
+make_source_details(const std::string &file_path, const YAML::Mark &mark, std::size_t window_size = 7)
 {
     std::vector<std::string> details;
 
