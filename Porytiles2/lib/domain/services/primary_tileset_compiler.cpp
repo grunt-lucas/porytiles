@@ -242,22 +242,30 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
                 "too many unique colors ({}) in Porytiles component for tileset '{}'",
                 FormatParam{color_count, Style::bold},
                 FormatParam{tileset.name(), Style::bold}));
-        std::vector note_text = {
-            format_->format(
-                "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}),
-            format_->format(
-                "{} = {}",
-                FormatParam{num_pals_primary.name(), Style::bold},
-                FormatParam{num_pals_primary.value(), Style::bold}),
-            format_->format("Source: {}", num_pals_primary.source()),
-            std::string{""},
-            format_->format(
-                "Color limit definition: {} * {}: {} * {}: {}",
-                FormatParam{num_pals_primary.name(), Style::bold},
-                FormatParam{"nontransparent_colors_per_pal", Style::bold},
-                FormatParam{num_pals_primary.value(), Style::bold},
-                FormatParam{(pal::max_size - 1), Style::bold},
-                FormatParam{color_count_limit, Style::bold})};
+
+        std::vector<std::string> note_text;
+        note_text.push_back(format_->format(
+            "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
+        note_text.push_back(format_->format(
+            "{} = {}",
+            FormatParam{num_pals_primary.name(), Style::bold},
+            FormatParam{num_pals_primary.value(), Style::bold}));
+        note_text.push_back(format_->format("Source: {}", num_pals_primary.source()));
+
+        // Add source details if available
+        if (!num_pals_primary.source_details().empty()) {
+            note_text.push_back(std::string{""});
+            std::ranges::copy(num_pals_primary.source_details(), std::back_inserter(note_text));
+        }
+
+        note_text.push_back(std::string{""});
+        note_text.push_back(format_->format(
+            "Color limit definition: {} * {}: {} * {}: {}",
+            FormatParam{num_pals_primary.name(), Style::bold},
+            FormatParam{"nontransparent_colors_per_pal", Style::bold},
+            FormatParam{num_pals_primary.value(), Style::bold},
+            FormatParam{(pal::max_size - 1), Style::bold},
+            FormatParam{color_count_limit, Style::bold}));
         diag_->note("color-limit-exceeded", note_text);
     }
 

@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -35,19 +36,8 @@ enum class ValidationState {
 template <typename T>
 struct LayerValue {
     std::optional<T> value;
-    /*
-     * TODO: how easy would it be to make source_info a vector? Would be nice to be able to display multi-line source
-     * info. E.g. for YAML files we could show something like:
-     *
-     * ...
-     * fieldmap:
-     *   num_pals_primary: 2
-     * >  num_pals_total: 4 < (this line bolded)
-     *   num_tiles_primary: 512
-     * ...
-     *
-     */
     std::string source_info;
+    std::vector<std::string> source_details;
     ValidationState state = ValidationState::not_provided;
     std::string error_message;
 
@@ -60,7 +50,21 @@ struct LayerValue {
      */
     static LayerValue valid(T val, std::string source_info)
     {
-        return LayerValue{std::move(val), std::move(source_info), ValidationState::valid, ""};
+        return LayerValue{std::move(val), std::move(source_info), {}, ValidationState::valid, ""};
+    }
+
+    /**
+     * @brief Creates a LayerValue representing a valid configuration value with detailed source context.
+     *
+     * @param val The valid configuration value
+     * @param source_info String describing the source of this value
+     * @param source_details Vector of strings showing contextual lines around the source
+     * @return A LayerValue in the valid state
+     */
+    static LayerValue valid(T val, std::string source_info, std::vector<std::string> source_details)
+    {
+        return LayerValue{
+            std::move(val), std::move(source_info), std::move(source_details), ValidationState::valid, ""};
     }
 
     /**
@@ -72,7 +76,25 @@ struct LayerValue {
      */
     static LayerValue invalid(std::string error, std::string source_info)
     {
-        return LayerValue{std::nullopt, std::move(source_info), ValidationState::invalid, std::move(error)};
+        return LayerValue{std::nullopt, std::move(source_info), {}, ValidationState::invalid, std::move(error)};
+    }
+
+    /**
+     * @brief Creates a LayerValue representing an invalid configuration value with detailed source context.
+     *
+     * @param error Error message describing why the value is invalid
+     * @param source_info String describing the source that attempted to provide this value
+     * @param source_details Vector of strings showing contextual lines around the source
+     * @return A LayerValue in the invalid state
+     */
+    static LayerValue invalid(std::string error, std::string source_info, std::vector<std::string> source_details)
+    {
+        return LayerValue{
+            std::nullopt,
+            std::move(source_info),
+            std::move(source_details),
+            ValidationState::invalid,
+            std::move(error)};
     }
 
     /**
@@ -82,7 +104,7 @@ struct LayerValue {
      */
     static LayerValue not_provided()
     {
-        return LayerValue{std::nullopt, "", ValidationState::not_provided, ""};
+        return LayerValue{std::nullopt, "", {}, ValidationState::not_provided, ""};
     }
 };
 

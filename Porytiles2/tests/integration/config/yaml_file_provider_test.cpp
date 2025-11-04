@@ -404,7 +404,7 @@ fieldmap:
 )";
 
     create_yaml_file(test_root_ / "porytiles.yaml", project_config);
-    create_yaml_file(tileset_dir_ / "config.yaml", tileset_config);
+    create_yaml_file(tileset_dir_ / "porytiles.yaml", tileset_config);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
@@ -413,7 +413,7 @@ fieldmap:
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 768); // Should use tileset config value
-    EXPECT_TRUE(result.source_info.find("config.yaml") != std::string::npos);
+    EXPECT_TRUE(result.source_info.find("porytiles.yaml") != std::string::npos);
 }
 
 TEST_F(YamlFileProviderTest, TilesetLocalConfigHasHighestPriority)
@@ -437,8 +437,8 @@ fieldmap:
 
     create_yaml_file(test_root_ / "porytiles.yaml", project_config);
     create_yaml_file(test_root_ / "porytiles.local.yaml", project_local_config);
-    create_yaml_file(tileset_dir_ / "config.yaml", tileset_config);
-    create_yaml_file(tileset_dir_ / "config.local.yaml", tileset_local_config);
+    create_yaml_file(tileset_dir_ / "porytiles.yaml", tileset_config);
+    create_yaml_file(tileset_dir_ / "porytiles.local.yaml", tileset_local_config);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
@@ -447,7 +447,7 @@ fieldmap:
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 2048); // Should use tileset local config value
-    EXPECT_TRUE(result.source_info.find("config.local.yaml") != std::string::npos);
+    EXPECT_TRUE(result.source_info.find("porytiles.local.yaml") != std::string::npos);
 }
 
 TEST_F(YamlFileProviderTest, InvalidValueReturnsError)
