@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -97,9 +98,9 @@ class ConfigValue {
      *
      * @details
      * The source string describes where this value originated, such as:
-     * - "Default Provider: default value"
-     * - "Mock Toml Provider: from toml file"
-     * - "Derived: num_tiles_total (Provider: X) - num_tiles_primary (Provider: Y)"
+     * - "default value"
+     * - "./porytiles.yaml:12"
+     * - "$PORYTILES_FIELDMAP_NUM_TILES_PRIMARY"
      *
      * @return A const reference to the source string
      */
@@ -108,10 +109,25 @@ class ConfigValue {
         return source_;
     }
 
+    /**
+     * @brief Gets the source details for this configuration value.
+     *
+     * @details
+     * The source details supplement the source string with additional context. For example, the YAML file provider may
+     * use the details string to supplement the file name and line number with a contextual view of the YAML file.
+     *
+     * @return A const reference to the source details vector
+     */
+    [[nodiscard]] const std::vector<std::string> &source_details() const
+    {
+        return source_details_;
+    }
+
   private:
     T value_;
     std::string name_;
     std::string source_;
+    std::vector<std::string> source_details_;
 };
 
 } // namespace porytiles2
