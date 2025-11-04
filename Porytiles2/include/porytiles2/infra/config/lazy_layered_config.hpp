@@ -155,6 +155,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     std::vector<std::unique_ptr<ConfigProvider>> providers_;
 
     mutable std::unordered_map<std::string, std::string> provenance_;
+    mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
     mutable std::map<std::string, std::any> cache_;
     mutable std::unordered_map<std::string, std::string> cache_value_strings_;
 

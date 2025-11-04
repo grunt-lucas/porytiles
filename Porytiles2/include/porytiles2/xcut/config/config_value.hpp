@@ -25,9 +25,10 @@ class ConfigValue {
      * @param value The configuration value
      * @param name The name of the configuration value (e.g., "num_tiles_primary")
      * @param source A string describing where this value came from
+     * @param source_details A vector of strings with the optional source details
      */
-    ConfigValue(T value, std::string name, std::string source)
-        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}
+    ConfigValue(T value, std::string name, std::string source, const std::vector<std::string> &source_details)
+        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}, source_details_{source_details}
     {
     }
 

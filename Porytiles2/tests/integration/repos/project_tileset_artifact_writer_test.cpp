@@ -31,7 +31,7 @@ class MockInfraConfig : public InfraConfig {
   public:
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &) const override
     {
-        return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock"};
+        return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }
 
     void test_root(const std::filesystem::path &path)

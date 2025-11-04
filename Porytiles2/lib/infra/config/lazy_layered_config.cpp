@@ -33,7 +33,8 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         // TODO: catch bad_any_cast here and panic
         T cached_value = std::any_cast<T>(cache_.at(cache_key));
         std::string source = provenance_.at(cache_key);
-        return ConfigValue<T>{cached_value, cache_key, source};
+        std::vector<std::string> source_details = source_details_.at(cache_key);
+        return ConfigValue<T>{cached_value, cache_key, source, source_details};
     }
 
     // Search through providers in priority order
@@ -53,7 +54,8 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             cache_value_strings_[cache_key] = to_string(resolved_value);
             std::string source = fmt::format("{}", layer_value.source_info);
             provenance_[cache_key] = source;
-            return ConfigValue<T>{resolved_value, cache_key, source};
+            source_details_[cache_key] = layer_value.source_details;
+            return ConfigValue<T>{resolved_value, cache_key, source, layer_value.source_details};
         }
 
         // Otherwise, state is not_provided - continue to next provider
