@@ -31,6 +31,11 @@ namespace porytiles2 {
  * agnostic of input format e.g. num_tiles_primary <= num_tiles_total.
  */
 
+ /*
+  * TODO: integrate this class into the config generation system. We should follow the example of YamlFileProvider and
+  * put some of the extra boilerplate code in a .ipp file to keep the template size minimal.
+  */
+
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
  * \link ConfigProvider ConfigProviders \endlink.
