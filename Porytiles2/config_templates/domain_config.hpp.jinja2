@@ -107,7 +107,7 @@ class DomainConfig {
         const std::size_t result = total.value() - primary.value();
         const auto source = formatter.format(
             "Derived: {} ({}) - {} ({})", total.name(), total.source(), primary.name(), primary.source());
-        return ConfigValue{result, name, source};
+        return ConfigValue{result, name, source, {}};
     }
 };
 
