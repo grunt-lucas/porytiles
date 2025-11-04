@@ -309,16 +309,16 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
     const auto tileset_config_key = key_provider->key_for(tileset, TilesetArtifact{config});
 
     // Priority order (highest to lowest):
-    // 1. tileset_folder/config.local.yaml
+    // 1. tileset_folder/porytiles.local.yaml
     paths.push_back(std::filesystem::path{tileset_local_config_key.key()});
 
-    // 2. tileset_folder/config.yaml
+    // 2. tileset_folder/porytiles.yaml
     paths.push_back(std::filesystem::path{tileset_config_key.key()});
 
-    // 3. project_root/config.local.yaml
+    // 3. project_root/porytiles.local.yaml
     paths.push_back(project_root / "porytiles.local.yaml");
 
-    // 4. project_root/config.yaml
+    // 4. project_root/porytiles.yaml
     paths.push_back(project_root / "porytiles.yaml");
 
     return paths;

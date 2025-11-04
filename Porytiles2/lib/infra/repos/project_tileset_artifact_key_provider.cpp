@@ -36,8 +36,8 @@ const std::filesystem::path metatiles_bin{"metatiles.bin"};
 const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
 const std::filesystem::path palettes{"palettes"};
-const std::filesystem::path config{"config.yaml"};
-const std::filesystem::path local_config{"config.local.yaml"};
+const std::filesystem::path config{"porytiles.yaml"};
+const std::filesystem::path local_config{"porytiles.local.yaml"};
 
 } // namespace
 
