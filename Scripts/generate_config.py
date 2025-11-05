@@ -8,10 +8,9 @@ CMake during the build process.
 """
 
 import sys
-from pathlib import Path
-
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pathlib import Path
 
 
 def generate_config_files():
@@ -61,6 +60,15 @@ def generate_config_files():
         (
             "infra_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/infra_config.hpp",
+        ),
+        # LazyLayeredConfig
+        (
+            "lazy_layered_config.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/lazy_layered_config.hpp",
+        ),
+        (
+            "lazy_layered_config.cpp.jinja2",
+            "Porytiles2/lib/infra/config/lazy_layered_config.cpp",
         ),
         # ConfigProvider base class
         (
@@ -117,5 +125,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error generating config files: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
