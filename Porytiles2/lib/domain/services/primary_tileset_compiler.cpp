@@ -204,22 +204,24 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         // TODO: better error message
         return FormattableError{"too many input metatiles in Porytiles component"};
     }
-    std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles =
-        transform<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
+    std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
+        transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
 
     // Leaf step to throw errors if:
     // - any tiles contain an invalid alpha value
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(porytiles_tiles), "tile validation error", std::unique_ptr<Tileset>);
+        validator.validate_alpha_channels(porytiles_pixel_rgba), "tile validation error", std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(porytiles_tiles, extrinsic_transparency.value()),
+        validator.validate_unique_color_count(porytiles_pixel_rgba, extrinsic_transparency.value()),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(porytiles_tiles), "tile validation error", std::unique_ptr<Tileset>);
+        validator.generate_precision_loss_warnings(porytiles_pixel_rgba),
+        "tile validation error",
+        std::unique_ptr<Tileset>);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -238,9 +240,9 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
      * size of the final tilemap entry vector. Patch builds don't need to preserve tilemap entries since those cannot be
      * referenced by other tilesets.
      */
-    std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles =
-        transform<CanonicalPixelTile<Rgba32>>(porymap_tiles);
+    std::vector<PixelTile<Rgba32>> porymap_pixel_rgba = metatile::decompose(porymap_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba =
+        transform<CanonicalPixelTile<Rgba32>>(porymap_pixel_rgba);
 
     /*
      * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
@@ -248,7 +250,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
      * guaranteed to fail again at a later step if this is triggered. But we'll use this opportunity to emit an error
      * early and then continue.
      */
-    ColorIndexMap color_index_map{porytiles_tiles, extrinsic_transparency.value()};
+    ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
     std::size_t color_count = color_index_map.size();
     std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
     if (color_count > color_count_limit) {
@@ -284,15 +286,19 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         diag_->note("color-limit-exceeded", note_text);
     }
 
-    // Create canonical tile vectors from porytiles input
-    std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
-        transform(porytiles_tiles, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
-            return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
-        });
-    std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
-        porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
-            return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
-        });
+    // Create canonical ShapeTile vectors from porytiles input
+    // We don't actually need this for tiles:fixed pals:fixed builds.
+    // But if we were going to do pal assignment, we'd need std::vector<CanonicalShapeTile<ColorIndex>>.
+    // If pals weren't fixed, here we'd want to do bin packing to get new colors into the pals with the Porymap pals
+    // used as overrides in the packing process.
+    // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
+    //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
+    //         return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
+    //     });
+    // std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
+    //     porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
+    //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
+    //     });
 
     std::vector<unsigned int> pal_indexes;
     std::vector<Palette<Rgba32>> porymap_pals{};
