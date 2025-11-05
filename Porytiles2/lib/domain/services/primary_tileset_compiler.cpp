@@ -283,6 +283,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
     std::vector<unsigned int> pal_indexes;
     std::vector<Palette<Rgba32>> porymap_pals{};
+    porymap_pals.reserve(num_pals_primary.value());
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
         porymap_pals.push_back(tileset.porymap_component().pals()[i]);
     }
