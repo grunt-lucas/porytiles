@@ -6,11 +6,13 @@
 #include <vector>
 
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tile_converters.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
@@ -255,11 +257,11 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
         // Add source details if available
         if (!num_pals_primary.source_details().empty()) {
-            note_text.push_back(std::string{""});
+            note_text.emplace_back("");
             std::ranges::copy(num_pals_primary.source_details(), std::back_inserter(note_text));
         }
 
-        note_text.push_back(std::string{""});
+        note_text.emplace_back("");
         note_text.push_back(format_->format(
             "Color limit definition: {} * {}: {} * {}: {}",
             FormatParam{num_pals_primary.name(), Style::bold},
@@ -269,6 +271,16 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             FormatParam{color_count_limit, Style::bold}));
         diag_->note("color-limit-exceeded", note_text);
     }
+
+    std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
+        transform(porytiles_tiles, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
+            return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
+        });
+
+    std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
+        porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
+            return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
+        });
 
     panic("TODO: finish implementation");
 }

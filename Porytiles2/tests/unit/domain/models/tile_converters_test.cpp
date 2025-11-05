@@ -379,6 +379,136 @@ TEST(TileConvertersTests, FromShapeTilePanicsOnOverlappingMasks)
 }
 
 // ==================================================
+// shape_tile_to_pixel_colors tests
+// ==================================================
+
+TEST(TileConvertersTests, ShapeTileToPixelColorsSimpleConversion)
+{
+    // Create a ShapeTile with one mask and one color index
+    ShapeTile<ColorIndex> shape_tile;
+    ShapeMask mask;
+    mask.set(0, 0);
+    mask.set(1, 1);
+    mask.set(2, 2);
+    shape_tile.set(mask, ColorIndex{0});
+
+    // Create ColorIndexMap
+    PixelTile<Rgba32> pixel_tile;
+    pixel_tile.set(0, 0, rgba_red);
+    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+
+    // Convert to ShapeTile<Rgba32>
+    auto result = shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map);
+
+    // Should have one mask with the red color
+    EXPECT_EQ(result.colors().size(), 1);
+
+    const auto &[result_mask, result_color] = *result.colors().begin();
+    EXPECT_EQ(result_mask, mask);
+    EXPECT_EQ(result_color, rgba_red);
+}
+
+TEST(TileConvertersTests, ShapeTileToPixelColorsWithMultipleColors)
+{
+    // Create a ShapeTile with multiple masks and color indices
+    ShapeTile<ColorIndex> shape_tile;
+
+    ShapeMask red_mask;
+    red_mask.set(0, 0);
+    red_mask.set(0, 1);
+
+    ShapeMask blue_mask;
+    blue_mask.set(1, 0);
+    blue_mask.set(1, 1);
+
+    ShapeMask green_mask;
+    green_mask.set(2, 0);
+
+    // Create ColorIndexMap
+    PixelTile<Rgba32> pixel_tile;
+    pixel_tile.set(0, 0, rgba_red);
+    pixel_tile.set(1, 0, rgba_blue);
+    pixel_tile.set(2, 0, rgba_green);
+    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+
+    // Get indices
+    auto red_index = *color_map.index_at_color(rgba_red);
+    auto blue_index = *color_map.index_at_color(rgba_blue);
+    auto green_index = *color_map.index_at_color(rgba_green);
+
+    // Set up ShapeTile
+    shape_tile.set(red_mask, red_index);
+    shape_tile.set(blue_mask, blue_index);
+    shape_tile.set(green_mask, green_index);
+
+    // Convert to ShapeTile<Rgba32>
+    auto result = shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map);
+
+    // Should have three masks
+    EXPECT_EQ(result.colors().size(), 3);
+
+    // Verify each mask and color
+    bool found_red = false, found_blue = false, found_green = false;
+
+    for (const auto &[mask, color] : result.colors()) {
+        if (color == rgba_red) {
+            found_red = true;
+            EXPECT_EQ(mask, red_mask);
+        }
+        else if (color == rgba_blue) {
+            found_blue = true;
+            EXPECT_EQ(mask, blue_mask);
+        }
+        else if (color == rgba_green) {
+            found_green = true;
+            EXPECT_EQ(mask, green_mask);
+        }
+    }
+
+    EXPECT_TRUE(found_red);
+    EXPECT_TRUE(found_blue);
+    EXPECT_TRUE(found_green);
+}
+
+TEST(TileConvertersTests, ShapeTileToPixelColorsEmptyProducesEmptyShapeTile)
+{
+    // Create an empty ShapeTile
+    ShapeTile<ColorIndex> shape_tile;
+
+    // Create ColorIndexMap (can be empty)
+    std::vector<PixelTile<Rgba32>> tiles;
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+
+    // Convert to ShapeTile<Rgba32>
+    auto result = shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map);
+
+    // Should be empty
+    EXPECT_TRUE(result.colors().empty());
+    EXPECT_TRUE(result.is_transparent());
+}
+
+TEST(TileConvertersTests, ShapeTileToPixelColorsPanicsWhenIndexNotInMap)
+{
+    // Create a ShapeTile with a ColorIndex that won't be in the map
+    ShapeTile<ColorIndex> shape_tile;
+    ShapeMask mask;
+    mask.set(0, 0);
+    shape_tile.set(mask, ColorIndex{99}); // Index 99 won't exist
+
+    // Create ColorIndexMap with only one color
+    PixelTile<Rgba32> pixel_tile;
+    pixel_tile.set(0, 0, rgba_red);
+    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+
+    // Should panic when trying to convert
+    EXPECT_DEATH(
+        { (void)shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map); }, "ColorIndex not found in ColorIndexMap");
+}
+
+// ==================================================
 // Round-trip conversion tests
 // ==================================================
 
