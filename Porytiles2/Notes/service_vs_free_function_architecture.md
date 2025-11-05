@@ -130,9 +130,9 @@ ClassA convert_b_to_a(const ClassB &b);
 - Accessors and mutators
 - Operations that don't change the type
 
-## Real-World Example: tile_converters.hpp
+## Real-World Example: domain/algorithms/tile_converters.hpp
 
-The `tile_converters.hpp` file exemplifies the correct pattern:
+The `domain/algorithms/tile_converters.hpp` file exemplifies the correct pattern:
 - Pure transformations between tile types
 - No external dependencies beyond the data being transformed
 - Template-based for type flexibility

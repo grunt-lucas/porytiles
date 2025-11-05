@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/color_set.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -7,7 +8,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/shape_mask.hpp"
 #include "porytiles2/domain/models/shape_tile.hpp"
-#include "porytiles2/domain/models/tile_converters.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
 using namespace porytiles2;

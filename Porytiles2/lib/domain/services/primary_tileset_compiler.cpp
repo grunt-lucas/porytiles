@@ -5,6 +5,7 @@
 #include <ranges>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
@@ -12,7 +13,6 @@
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tile_converters.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
