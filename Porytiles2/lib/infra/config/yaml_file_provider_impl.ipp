@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef YAML_FILE_PROVIDER_CPP_COMPILING
-#error "This header should only be included by yaml_file_provider.cpp"
-#endif
-
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -14,10 +10,13 @@
 
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
-namespace porytiles2 {
+// The anonymous namespace ensures internal linkage per translation unit
+// This file is intentionally included only in yaml_file_provider.cpp
+namespace {
+
+using namespace porytiles2;
 
 // Static caches shared across all YamlFileProvider instances
 std::map<std::filesystem::path, YAML::Node> yaml_cache;
@@ -456,4 +455,4 @@ LayerValue<T> search_config_files(
     return LayerValue<T>::not_provided();
 }
 
-} // namespace porytiles2
+} // namespace
