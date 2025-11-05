@@ -32,7 +32,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     if (cache_.contains(cache_key)) {
         // TODO: catch bad_any_cast here and panic
         T cached_value = std::any_cast<T>(cache_.at(cache_key));
-        std::string source = provenance_.at(cache_key);
+        std::string source = source_.at(cache_key);
         std::vector<std::string> source_details = source_details_.at(cache_key);
         return ConfigValue<T>{cached_value, cache_key, source, source_details};
     }
@@ -63,7 +63,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
             std::string source = fmt::format("{}", layer_value.source_info);
-            provenance_[cache_key] = source;
+            source_[cache_key] = source;
             source_details_[cache_key] = layer_value.source_details;
             return ConfigValue<T>{resolved_value, cache_key, source, layer_value.source_details};
         }
@@ -171,9 +171,9 @@ std::string LazyLayeredConfig::dump() const
 
     std::string result = "LazyLayeredConfig {\n";
     for (const auto &key : cache_ | std::views::keys) {
-        const auto provenance_it = provenance_.find(key);
+        const auto provenance_it = source_.find(key);
         const std::string provenance_info =
-            (provenance_it != provenance_.end()) ? provenance_it->second : "<unknown source>";
+            (provenance_it != source_.end()) ? provenance_it->second : "<unknown source>";
 
         const auto value_it = cache_value_strings_.find(key);
         const std::string value_str = (value_it != cache_value_strings_.end()) ? value_it->second : "<unknown value>";

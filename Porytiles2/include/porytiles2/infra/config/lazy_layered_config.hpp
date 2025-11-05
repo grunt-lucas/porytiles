@@ -26,9 +26,9 @@ namespace porytiles2 {
  * TODO: implement a better system for configuration validation. Right now, we rely on each ConfigProvider
  * implementation to provide validation internally before returning LayerValue::invalid. However, this means certain
  * config validations will have to be repeated multiple times in every single ConfigProvider impl. This is fine for some
- * validation. E.g. CommandLineProvider and YamlProvider might have some different format validation needs. However, we
- * should have some kind of general one-time validation that can run at startup, to check general validations that are
- * agnostic of input format e.g. num_tiles_primary <= num_tiles_total.
+ * validation. E.g. CommandLineProvider and YamlProvider might have different format validation needs when parsing from
+ * source. Hence they may have different parse_x implementations. However, some values need generic validation, e.g.
+ * num_pals_primary must be less than num_pals_total.
  */
 
 /*
@@ -159,10 +159,14 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     // Providers in priority order (highest first)
     std::vector<std::unique_ptr<ConfigProvider>> providers_;
 
-    mutable std::unordered_map<std::string, std::string> provenance_;
-    mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
+    // Config value cache
     mutable std::map<std::string, std::any> cache_;
+    // Config value as string for debug printing
     mutable std::unordered_map<std::string, std::string> cache_value_strings_;
+
+    // Config source and source_details
+    mutable std::unordered_map<std::string, std::string> source_;
+    mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
 
     /**
      * @brief Resolves config values using the common caching and provider iteration pattern.
