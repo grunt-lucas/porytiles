@@ -208,6 +208,19 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles =
         transform<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
 
+    // Leaf step to throw errors if:
+    // - any tiles contain an invalid alpha value
+    // - any tiles have more than 15+1 colors
+    // - generate precision loss warnings if some colors collapse to the same 5-bit color
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_alpha_channels(porytiles_tiles), "tile validation error", std::unique_ptr<Tileset>);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_unique_color_count(porytiles_tiles, extrinsic_transparency.value()),
+        "tile validation error",
+        std::unique_ptr<Tileset>);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.generate_precision_loss_warnings(porytiles_tiles), "tile validation error", std::unique_ptr<Tileset>);
+
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,

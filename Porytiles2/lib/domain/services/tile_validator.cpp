@@ -3,6 +3,7 @@
 #include <unordered_set>
 
 #include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
@@ -17,7 +18,6 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<P
             for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                 const auto &pixel = tile.at(row, col);
                 if (pixel.alpha() != Rgba32::alpha_opaque && pixel.alpha() != Rgba32::alpha_transparent) {
-                    // if (pixel == Rgba32{65, 90, 189}) {
                     hit_error = true;
                     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
                     std::vector errors = {format_->format(
@@ -53,15 +53,14 @@ TileValidator::validate_unique_color_count(const std::vector<PixelTile<Rgba32>> 
                 if (pixel.alpha() != Rgba32::alpha_transparent && pixel != extrinsic) {
                     unique_colors.insert(pixel);
                 }
-                // TODO: don't hardcode 15 here
-                if (unique_colors.size() > 15) {
-                    // if (unique_colors.size() > 7) {
+
+                if (unique_colors.size() > pal::max_size - 1) {
                     hit_error = true;
                     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
-                    // TODO: don't hardcode 16 here
                     std::vector errors = {format_->format(
-                        "{}: found 16th unique color: {}",
+                        "{}: found {}th unique color: {}",
                         FormatParam{metatile::message_header(metatile_index, layer, subtile, row, col, *format_)},
+                        FormatParam{pal::max_size},
                         FormatParam{pixel.to_jasc_str(), Style::bold})};
                     std::vector highlight = tile_printer_->print_metatile_highlight(subtile, row, col, Style::red);
                     std::ranges::copy(highlight, std::back_inserter(errors));
@@ -76,7 +75,8 @@ TileValidator::validate_unique_color_count(const std::vector<PixelTile<Rgba32>> 
 
     if (hit_error) {
         return FormattableError{
-            "unique color constraint violation: tile had more than 15 unique non-transparent pixels"};
+            "unique color constraint violation: tile had more than {} unique non-transparent pixels",
+            FormatParam{pal::max_size - 1}};
     }
 
     return {};
