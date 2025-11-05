@@ -378,7 +378,7 @@ TEST(ShapeTileTests, FromPixelTileSimpleConversion)
     ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
 
     // Convert to ShapeTile
-    auto shape_tile = ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
+    auto shape_tile = ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
 
     // Should have one ShapeMask mapping to color index 0 (rgba_red should map to index 0)
     EXPECT_EQ(shape_tile.colors().size(), 1);
@@ -418,7 +418,7 @@ TEST(ShapeTileTests, FromPixelTileWithMultipleColors)
     ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
 
     // Convert to ShapeTile
-    auto shape_tile = ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
+    auto shape_tile = ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
 
     // Should have three ShapeMasks (one for each color)
     EXPECT_EQ(shape_tile.colors().size(), 3);
@@ -480,7 +480,7 @@ TEST(ShapeTileTests, FromPixelTileSkipsTransparentPixels)
     ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
 
     // Convert to ShapeTile
-    auto shape_tile = ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
+    auto shape_tile = ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
 
     // Should have one ShapeMask (transparent pixels should be skipped)
     EXPECT_EQ(shape_tile.colors().size(), 1);
@@ -503,7 +503,7 @@ TEST(ShapeTileTests, FromPixelTileAllTransparentProducesEmptyShapeTile)
     ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
 
     // Convert to ShapeTile
-    auto shape_tile = ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
+    auto shape_tile = ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
 
     // Should have no ShapeMasks
     EXPECT_TRUE(shape_tile.colors().empty());
@@ -526,7 +526,7 @@ TEST(ShapeTileTests, FromPixelTilePanicsWhenPixelNotInMap)
 
     // Should panic when trying to convert (rgba_yellow not in map)
     EXPECT_DEATH(
-        { (void)ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta); },
+        { (void)ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta); },
         "Pixel not found in ColorIndexMap");
 }
 
@@ -545,7 +545,7 @@ TEST(ShapeTileTests, FromPixelTileMixedTransparencyTypes)
     ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
 
     // Convert to ShapeTile with extrinsic transparency
-    auto shape_tile = ShapeTile<unsigned int>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
+    auto shape_tile = ShapeTile<ColorIndex>::from_pixel_tile(pixel_tile, color_map, rgba_magenta);
 
     // Should have two ShapeMasks (red and blue; magenta and alpha=0 are transparent)
     EXPECT_EQ(shape_tile.colors().size(), 2);

@@ -21,7 +21,7 @@ namespace porytiles2 {
  * @return A new vector containing the transformed elements
  */
 template <typename T, typename F>
-[[nodiscard]] auto map(const std::vector<T> &input, F &&func) -> std::vector<std::invoke_result_t<F, const T &>>
+[[nodiscard]] auto transform(const std::vector<T> &input, F &&func) -> std::vector<std::invoke_result_t<F, const T &>>
 {
     return input | std::views::transform(std::forward<F>(func)) | std::ranges::to<std::vector>();
 }
@@ -41,7 +41,7 @@ template <typename T, typename F>
  */
 template <typename U, typename T>
     requires std::constructible_from<U, T>
-[[nodiscard]] auto map(const std::vector<T> &input) -> std::vector<U>
+[[nodiscard]] auto transform(const std::vector<T> &input) -> std::vector<U>
 {
     return input | std::views::transform([](const T &val) { return U(val); }) | std::ranges::to<std::vector>();
 }

@@ -55,8 +55,7 @@ class DomainConfig {
     [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency(const std::string &tileset) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    patch_build_enabled(const std::string &tileset) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>> patch_build_enabled(const std::string &tileset) const = 0;
 
     // ========================================
     // HAND-WRITTEN DERIVED METHODS BELOW

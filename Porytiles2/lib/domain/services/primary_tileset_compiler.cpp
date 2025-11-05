@@ -204,7 +204,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     }
     std::vector<PixelTile<Rgba32>> porytiles_tiles = metatile::decompose(porytiles_metatiles);
     std::vector<CanonicalPixelTile<Rgba32>> canonical_porytiles_tiles =
-        map<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
+        transform<CanonicalPixelTile<Rgba32>>(porytiles_tiles);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -224,7 +224,8 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
      * referenced by other tilesets.
      */
     std::vector<PixelTile<Rgba32>> porymap_tiles = metatile::decompose(porymap_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles = map<CanonicalPixelTile<Rgba32>>(porymap_tiles);
+    std::vector<CanonicalPixelTile<Rgba32>> canonical_porymap_tiles =
+        transform<CanonicalPixelTile<Rgba32>>(porymap_tiles);
 
     /*
      * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
