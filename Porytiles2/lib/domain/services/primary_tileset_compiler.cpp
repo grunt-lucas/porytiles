@@ -254,13 +254,11 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             FormatParam{num_pals_primary.name(), Style::bold},
             FormatParam{num_pals_primary.value(), Style::bold}));
         note_text.push_back(format_->format("Source: {}", num_pals_primary.source()));
-
         // Add source details if available
         if (!num_pals_primary.source_details().empty()) {
             note_text.emplace_back("");
             std::ranges::copy(num_pals_primary.source_details(), std::back_inserter(note_text));
         }
-
         note_text.emplace_back("");
         note_text.push_back(format_->format(
             "Color limit definition: {} * {}: {} * {}: {}",
@@ -269,18 +267,25 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             FormatParam{num_pals_primary.value(), Style::bold},
             FormatParam{(pal::max_size - 1), Style::bold},
             FormatParam{color_count_limit, Style::bold}));
+
         diag_->note("color-limit-exceeded", note_text);
     }
 
+    // Create canonical tile vectors from porytiles input
     std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
         transform(porytiles_tiles, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
             return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
         });
-
     std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
         porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
             return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
         });
+
+    std::vector<unsigned int> pal_indexes;
+    std::vector<Palette<Rgba32>> porymap_pals{};
+    for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
+        porymap_pals.push_back(tileset.porymap_component().pals()[i]);
+    }
 
     panic("TODO: finish implementation");
 }
