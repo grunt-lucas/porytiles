@@ -85,6 +85,19 @@ class ShapeMask {
     void unset(int row, int col);
 
     /**
+     * @brief Gets the bit value at the specified row and column.
+     *
+     * @details
+     * Returns true if the pixel at the given position is marked as non-transparent (bit is 1), false otherwise. Column
+     * 0 is the leftmost pixel (bit 7) and column 7 is the rightmost pixel (bit 0).
+     *
+     * @param row The row index (0-7)
+     * @param col The column index (0-7)
+     * @return True if the bit is set, false otherwise
+     */
+    [[nodiscard]] bool get(int row, int col) const;
+
+    /**
      * @brief Checks if this entire ShapeMask is transparent.
      *
      * @details
