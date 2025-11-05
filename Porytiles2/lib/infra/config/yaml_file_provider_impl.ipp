@@ -86,8 +86,8 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  * @param window_size The total number of lines to show in the contextual view (default: 5)
  * @return Vector of formatted strings showing the contextual view
  */
-std::vector<std::string>
-make_source_details(const std::string &file_path, const YAML::Mark &mark, std::size_t window_size = 7)
+std::vector<std::string> make_source_details(
+    const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark, std::size_t window_size = 7)
 {
     std::vector<std::string> details;
 
@@ -111,8 +111,20 @@ make_source_details(const std::string &file_path, const YAML::Mark &mark, std::s
 
     // Build contextual view
     for (std::size_t i = start; i < end; ++i) {
-        const std::string prefix = (i == line_num) ? "> " : "  ";
-        details.push_back(prefix + std::to_string(i + 1) + ": " + lines[i]);
+        const auto formatted_arrow =
+            format->format("{}", FormatParam{"-> ", Style::bold | Style::italic | Style::yellow});
+        const std::string prefix = (i == line_num) ? formatted_arrow : "   ";
+
+        if (i == line_num) {
+            // TODO: the spaces after the line number ":" are hardcoded
+            // If a user supplies a YAML file with 1000+ lines, it will mess up the formatting.
+            const auto highlight_line =
+                format->format("{}", FormatParam{lines[i], Style::bold | Style::italic | Style::yellow});
+            details.push_back(prefix + std::to_string(i + 1) + ":   " + highlight_line);
+        }
+        else {
+            details.push_back(prefix + std::to_string(i + 1) + ":   " + lines[i]);
+        }
     }
 
     return details;
@@ -138,7 +150,7 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto value = node.as<std::size_t>();
         const auto mark = node.Mark();
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::size_t>::valid(value, source, details);
     }
     catch (const YAML::Exception &e) {
@@ -146,7 +158,7 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto error =
             format->format("failed to parse '{}' as std::size_t: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::size_t>::invalid(error, source, details);
     }
 }
@@ -171,14 +183,14 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
         const auto value = node.as<bool>();
         const auto mark = node.Mark();
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<bool>::valid(value, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format("failed to parse '{}' as bool: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<bool>::invalid(error, source, details);
     }
 }
@@ -205,7 +217,7 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
 
     try {
         const auto mark = node.Mark();
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
 
         if (!node.IsSequence()) {
             const auto error =
@@ -237,7 +249,7 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto error =
             format->format("failed to parse '{}' as Rgba32: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<Rgba32>::invalid(error, source, details);
     }
 }
@@ -263,7 +275,7 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
 
     try {
         const auto mark = node.Mark();
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         const auto str = node.as<std::string>();
         const auto mode_opt = tiles_pal_mode_from_str(str);
 
@@ -284,7 +296,7 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
         const auto error =
             format->format("failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
-        const auto details = make_source_details(file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
         return LayerValue<TilesPalMode>::invalid(error, source, details);
     }
 }
