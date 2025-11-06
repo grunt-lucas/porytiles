@@ -19,6 +19,7 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
+#include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -26,7 +27,6 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
-#include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -57,7 +57,7 @@ class DebugPrimaryCompileCommand final : public Command {
 
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
-        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<StderrAsciiTilePrinter>(text_formatter);
+        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<AsciiTilePrinter>(text_formatter);
 
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{"."};

@@ -3,7 +3,7 @@
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
-#include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
@@ -34,7 +34,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    StderrAsciiTilePrinter tile_printer{&formatter};
+    AsciiTilePrinter tile_printer{&formatter};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(tiles);
@@ -74,7 +74,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    StderrAsciiTilePrinter tile_printer{&formatter};
+    AsciiTilePrinter tile_printer{&formatter};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(tiles);

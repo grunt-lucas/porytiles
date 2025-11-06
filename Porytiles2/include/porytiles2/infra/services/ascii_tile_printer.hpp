@@ -12,11 +12,12 @@
 namespace porytiles2 {
 
 /**
- * @brief A TilePrinter implementation that prints ASCII art tiles to stderr.
+ * @brief A TilePrinter implementation that generates ASCII art tiles with formatting based on the provided
+ * TextFormatter.
  */
-class StderrAsciiTilePrinter final : public TilePrinter {
+class AsciiTilePrinter final : public TilePrinter {
   public:
-    explicit StderrAsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
+    explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     [[nodiscard]] std::vector<std::string>
     print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col, Style color) const override;

@@ -5,7 +5,7 @@
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
-#include "porytiles2/infra/services/stderr_ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 
@@ -59,13 +59,13 @@ class LayerModeConverterTests : public ::testing::Test {
     {
         format_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<StderrStyledUserDiagnostics>(format_.get());
-        tile_printer_ = std::make_unique<StderrAsciiTilePrinter>(format_.get());
+        tile_printer_ = std::make_unique<AsciiTilePrinter>(format_.get());
         converter_ = std::make_unique<LayerModeConverter>(format_.get(), diag_.get(), tile_printer_.get());
     }
 
     std::unique_ptr<PlainTextFormatter> format_;
     std::unique_ptr<StderrStyledUserDiagnostics> diag_;
-    std::unique_ptr<StderrAsciiTilePrinter> tile_printer_;
+    std::unique_ptr<AsciiTilePrinter> tile_printer_;
     std::unique_ptr<LayerModeConverter> converter_;
 };
 
