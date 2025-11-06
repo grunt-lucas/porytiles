@@ -32,10 +32,7 @@ cmake --build vscode-build -j7
 ```
 
 ## Testing
-- Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
-- GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
-- GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
-- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests
+- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests`
 
 Prefer to simply run all tests using the all test runner.
 
@@ -64,7 +61,7 @@ Uses `clang-format` with project-specific style configuration.
 - `Resources/` - Test assets and example files
 - `Documentation/` - Doxygen configuration
 - `Scripts/` - Build and quality scripts
-- `build/` - CMake build artifacts
+- `vscode-build/` - CMake build artifacts
 
 ## Driver Programs
 - `./build/Porytiles1/tools/driver/porytiles` - Legacy CLI tool
@@ -73,8 +70,8 @@ Uses `clang-format` with project-specific style configuration.
 ## Key Design Patterns
 Porytiles2 implements:
 - Domain-driven design with clear separation of concerns
-- Library-based architecture inspired by clang
-- Template-based utilities in `Porytiles2/templates/`
+- Utilities in `Porytiles2/utilities/` and `Porytiles2/xcut/`
+- Fruit DI code in `Porytiles2/di/`
 
 ## 7 Claude rules
 1. First think through the problem, read the codebase for relevant files, and write a plan to `Porytiles2/claudetasks/TODO.md`.
@@ -82,7 +79,7 @@ Porytiles2 implements:
 3. Before you begin working, check in with me and I will verify the plan.
 4. Then, begin working on the todo items, marking them as complete as you go.
 5. Every step of the way, give me a high-level explanation of what changes you made.
-6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity. Run the format script, unit, and integration tests after you make a code change.
+6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity. Run the format script and full test suite after you make a code change.
 7. Finally, add a review section to the `Porytiles2/claudetasks/TODO.md` file with a summary of the changes you made and any other relevant information.
 
 ## Development Workflow Tools
