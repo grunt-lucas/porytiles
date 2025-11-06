@@ -8,7 +8,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/shape_mask.hpp"
 #include "porytiles2/domain/models/shape_tile.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 
 using namespace porytiles2;
 
