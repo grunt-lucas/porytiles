@@ -26,7 +26,7 @@ namespace porytiles2 {
  * @details
  * PaletteMatchResult encapsulates the outcome of matching a PixelTile against a Palette. It indicates whether the
  * palette completely covers all non-transparent colors in the tile, and if not, which colors are missing and which
- * are present.
+ * are present. It also tracks the specific pixel positions that are not covered by the palette.
  *
  * @tparam ColorType The color type of the palette and tile
  */
@@ -46,6 +46,16 @@ struct PaletteMatchResult {
      * @brief The set of non-transparent colors from the tile that ARE present in the palette.
      */
     std::set<ColorType> covered_colors;
+
+    /**
+     * @brief The linear indices of tile pixels whose colors are not covered by the palette.
+     *
+     * @details
+     * This vector contains the indices [0, 64) of pixels in the tile that have non-transparent colors not present
+     * in the palette. These indices can be converted to (row, col) coordinates using tile::index_to_row_col() if
+     * needed. Empty if all non-transparent pixels are covered by the palette.
+     */
+    std::vector<std::size_t> uncovered_pixel_indices;
 
     /**
      * @brief The palette index of the match, useful in batch operations.
@@ -82,18 +92,23 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
 {
     PaletteMatchResult<ColorType> result;
 
-    // Extract all unique non-transparent colors from the tile
+    // Get the palette colors as a set for efficient lookup
+    const auto &palette_colors_vec = palette.colors();
+    std::set<ColorType> palette_colors_set{palette_colors_vec.begin(), palette_colors_vec.end()};
+
+    // Extract all unique non-transparent colors from the tile and track uncovered pixels
     std::set<ColorType> tile_colors;
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
         const auto &pixel = tile.at(i);
         if (!is_transparent_pred(pixel)) {
             tile_colors.insert(pixel);
+
+            // If this pixel's color is not in the palette, record its index
+            if (!palette_colors_set.contains(pixel)) {
+                result.uncovered_pixel_indices.push_back(i);
+            }
         }
     }
-
-    // Get the palette colors as a set for efficient lookup
-    const auto &palette_colors_vec = palette.colors();
-    std::set<ColorType> palette_colors_set{palette_colors_vec.begin(), palette_colors_vec.end()};
 
     // Categorize each tile color as covered or missing
     for (const auto &color : tile_colors) {
