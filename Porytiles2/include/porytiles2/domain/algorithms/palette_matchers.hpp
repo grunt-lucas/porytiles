@@ -35,7 +35,7 @@ struct PaletteMatchResult {
     /**
      * @brief True if the palette covers all non-transparent colors in the tile, false otherwise.
      */
-    bool is_covered;
+    bool is_covered = false;
 
     /**
      * @brief The set of non-transparent colors from the tile that are NOT present in the palette.
@@ -46,6 +46,11 @@ struct PaletteMatchResult {
      * @brief The set of non-transparent colors from the tile that ARE present in the palette.
      */
     std::set<ColorType> covered_colors;
+
+    /**
+     * @brief The palette index of the match, useful in batch operations.
+     */
+    unsigned int pal_index = 0;
 };
 
 namespace details {
@@ -54,9 +59,9 @@ namespace details {
  * @brief Helper function implementing the core palette matching logic.
  *
  * @details
- * This private helper contains the common matching logic shared by both match_tile_to_palette() overloads. It
- * accepts a transparency predicate (function/lambda) that determines whether a pixel is transparent, allowing the
- * same implementation to work with both intrinsic and extrinsic transparency checking.
+ * This private helper contains the common matching logic shared by both match_tile_to_palette() overloads. It accepts a
+ * transparency predicate (function/lambda) that determines whether a pixel is transparent, allowing the same
+ * implementation to work with both intrinsic and extrinsic transparency checking.
  *
  * The algorithm:
  * 1. Extracts all unique non-transparent colors from the tile
@@ -112,8 +117,8 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
  * @brief Matches a PixelTile against a Palette (intrinsic transparency only).
  *
  * @details
- * This function determines whether the provided palette contains all non-transparent colors present in the tile.
- * Only intrinsically transparent pixels (those reporting true from parameterless is_transparent()) are treated as
+ * This function determines whether the provided palette contains all non-transparent colors present in the tile. Only
+ * intrinsically transparent pixels (those reporting true from parameterless is_transparent()) are treated as
  * transparent.
  *
  * This overload is only available for color types that support intrinsic transparency.
@@ -141,56 +146,36 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * @brief Matches a PixelTile against a Palette (extrinsic transparency).
  *
  * @details
- * This function determines whether the provided palette contains all non-transparent colors present in the tile.
- * Both intrinsically transparent pixels (alpha=0) and extrinsically transparent pixels (matching the extrinsic
- * parameter) are treated as transparent.
+ * This function determines whether the provided palette contains all non-transparent colors present in the tile. Both
+ * intrinsically transparent pixels (alpha=0) and extrinsically transparent pixels (matching the extrinsic parameter)
+ * are treated as transparent.
  *
  * This overload is only available for color types that support extrinsic transparency.
- *
- * IMPORTANT: If the tile contains any extrinsically transparent pixels, palette slot 0 MUST match the extrinsic
- * transparency color. If not, this function will panic.
- *
- * The matching process:
- * 1. Checks if the tile contains any extrinsically transparent pixels
- * 2. If yes, verifies that palette slot 0 matches the extrinsic transparency color (panics if not)
- * 3. Extracts all unique non-transparent colors from the tile
- * 4. For each color, checks if it exists in the palette
- * 5. Categorizes colors as either "covered" or "missing"
- * 6. Returns a result indicating coverage status and the color sets
  *
  * @tparam ColorType The color type of the palette and tile, must support extrinsic transparency
  * @param tile The PixelTile to match against the palette
  * @param palette The Palette to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
  * @return A PaletteMatchResult indicating whether the palette covers the tile and which colors are covered/missing
- * @throws Panics if the tile contains extrinsic transparency that does not match palette slot 0
+ * @precondition The Palette is not empty
+ * @precondition The extrinsic transparency must match the color in slot 0 of the Palette
  */
 template <SupportsTransparency ColorType>
 [[nodiscard]] PaletteMatchResult<ColorType>
 match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
-    // Check if the tile contains any extrinsically transparent pixels
-    bool has_extrinsic_transparency = false;
-    for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        const auto &pixel = tile.at(i);
-        // Check if pixel is extrinsically transparent but NOT intrinsically transparent
-        // (We care about pixels that match the extrinsic color specifically)
-        if (!pixel.is_transparent(ColorType{}) && pixel.is_transparent(extrinsic)) {
-            has_extrinsic_transparency = true;
-            break;
-        }
+    if (palette.size() == 0) {
+        panic("palette is empty");
     }
 
-    // If the tile has extrinsic transparency, verify palette slot 0 matches
-    if (has_extrinsic_transparency) {
-        if (palette.size() == 0 || palette.colors().at(0) != extrinsic) {
-            // TODO: this should be noted as a precondition instead of a throws
-            // TODO: we should have an earlier compilation step that normalizes transpareny in Porymap pals, since their
-            // default slot 0 transparency doesn't matter. When you import a vanilla set to Porytiles, all transparent
-            // pixels get normalized to the configured extrinsic transparency.
-            panic("Tile contains extrinsic transparency that does not match palette slot 0");
-        }
+    if (palette.colors().at(0) != extrinsic) {
+        // TODO: we should have an earlier compilation step that normalizes transparency in Porymap pals, since
+        // their default slot 0 transparency doesn't matter. When you import a vanilla set to Porytiles, all
+        // transparent pixels get normalized to the configured extrinsic transparency. During this earlier step, we can
+        // warn the user that the slot 0 of their Porymap pal will be overwritten. We can explain in a note that this
+        // should not be an issue.
+        panic("Tile contains extrinsic transparency that does not match palette slot 0");
     }
 
     return details::match_tile_to_palette_impl(

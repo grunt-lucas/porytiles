@@ -291,6 +291,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // But if we were going to do pal assignment, we'd need std::vector<CanonicalShapeTile<ColorIndex>>.
     // If pals weren't fixed, here we'd want to do bin packing to get new colors into the pals with the Porymap pals
     // used as overrides in the packing process.
+    //
     // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
     //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
     //         return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
@@ -300,6 +301,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
+    // TODO: Copy in the Porymap pals then normalize transparency
     std::vector<unsigned int> pal_indexes;
     std::vector<Palette<Rgba32>> porymap_pals{};
     porymap_pals.reserve(num_pals_primary.value());
