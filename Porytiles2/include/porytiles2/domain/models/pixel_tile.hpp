@@ -14,6 +14,37 @@ namespace tile {
 inline constexpr std::size_t side_length_pix = 8;
 inline constexpr std::size_t size_pix = side_length_pix * side_length_pix;
 
+/**
+ * @brief Converts a linear index to row and column coordinates.
+ *
+ * @details
+ * Takes a linear index in the range [0, size_pix) and returns the corresponding row and column coordinates in an 8x8
+ * tile grid. The row is the first element of the returned pair, and the column is the second element.
+ *
+ * @param index The linear index to convert
+ * @return A pair containing (row, col) coordinates
+ */
+[[nodiscard]] constexpr std::pair<std::size_t, std::size_t> index_to_row_col(std::size_t index)
+{
+    return {index / side_length_pix, index % side_length_pix};
+}
+
+/**
+ * @brief Converts row and column coordinates to a linear index.
+ *
+ * @details
+ * Takes row and column coordinates in an 8x8 tile grid and returns the corresponding linear index in the range [0,
+ * size_pix).
+ *
+ * @param row The row coordinate
+ * @param col The column coordinate
+ * @return The linear index
+ */
+[[nodiscard]] constexpr std::size_t row_col_to_index(std::size_t row, std::size_t col)
+{
+    return row * side_length_pix + col;
+}
+
 } // namespace tile
 
 /**
