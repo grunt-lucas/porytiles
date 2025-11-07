@@ -186,4 +186,83 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
         tile, palette, [&extrinsic](const ColorType &c) { return c.is_transparent(extrinsic); });
 }
 
+/**
+ * @brief Finds the best palette match(es) for a tile (extrinsic transparency).
+ *
+ * @details
+ * This function matches a tile against a vector of palettes and returns the best match(es):
+ * - If any palettes completely cover the tile, returns ALL complete matches (ignoring top_n)
+ * - If no palettes completely cover the tile, returns up to top_n best matches sorted by quality
+ *
+ * Quality is determined by the number of missing_colors (fewer is better). If multiple palettes have the same number of
+ * missing colors, they maintain their original order in the palettes vector.
+ *
+ * This overload supports both intrinsic (alpha=0) and extrinsic transparency checking. This overload is only available
+ * for color types that support extrinsic transparency.
+ *
+ * @tparam ColorType The color type of the palette and tile, must support extrinsic transparency
+ * @param tile The PixelTile to match against the palettes
+ * @param palettes The vector of Palettes to check for color coverage
+ * @param extrinsic The extrinsic transparency value to check pixels against
+ * @param top_n Maximum number of results to return when no complete match exists (ignored if complete matches found)
+ * @return A vector of PaletteMatchResult, either all complete matches or top_n best non-matches
+ * @precondition palettes is not empty
+ * @precondition top_n > 0
+ * @precondition All palettes are not empty
+ * @precondition All palettes have extrinsic color in slot 0
+ * @invariant The returned vector is non-empty and exhibits coverage homogeneity: all PaletteMatchResult elements
+ * possess identical is_covered values. This property enables deterministic match classification via examination of any
+ * single element, conventionally the first: `results.at(0).is_covered`. The function partitions the result space into
+ * two mutually exclusive sets—complete matches (is_covered = true) or partial matches (is_covered = false)—never
+ * returning a heterogeneous mixture.
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] std::vector<PaletteMatchResult<ColorType>> match_or_best(
+    const PixelTile<ColorType> &tile,
+    const std::vector<Palette<ColorType>> &palettes,
+    const ColorType &extrinsic,
+    std::size_t top_n)
+    requires requires(const ColorType &c) { c.is_transparent(c); }
+{
+    if (palettes.empty()) {
+        panic("palettes vector is empty");
+    }
+    if (top_n == 0) {
+        panic("top_n must be greater than 0");
+    }
+
+    // Match tile against all palettes
+    std::vector<PaletteMatchResult<ColorType>> complete_matches;
+    std::vector<PaletteMatchResult<ColorType>> incomplete_matches;
+
+    for (std::size_t i = 0; i < palettes.size(); ++i) {
+        auto result = match_tile_to_palette(tile, palettes[i], extrinsic);
+        result.pal_index = static_cast<unsigned int>(i);
+
+        if (result.is_covered) {
+            complete_matches.push_back(result);
+        }
+        else {
+            incomplete_matches.push_back(result);
+        }
+    }
+
+    // If we found any complete matches, return all of them (ignore top_n)
+    if (!complete_matches.empty()) {
+        return complete_matches;
+    }
+
+    // No complete matches found, sort incomplete matches by quality (fewer missing_colors is better)
+    std::sort(incomplete_matches.begin(), incomplete_matches.end(), [](const auto &a, const auto &b) {
+        return a.missing_colors.size() < b.missing_colors.size();
+    });
+
+    // Return top_n results (or all if fewer than top_n)
+    if (incomplete_matches.size() > top_n) {
+        incomplete_matches.resize(top_n);
+    }
+
+    return incomplete_matches;
+}
+
 } // namespace porytiles2
