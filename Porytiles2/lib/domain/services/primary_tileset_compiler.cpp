@@ -23,6 +23,7 @@
 #include "porytiles2/utilities/unwrap_config.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_validators.hpp"
 
 #include <unordered_set>
 
@@ -185,6 +186,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     TileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
+
+    // Showcase how config validation can work
+    // ConfigValue<std::size_t> test{0, "foo", "bar", std::vector<std::string>{}};
+    // PT_TRY_CALL_CHAIN_ERR(size_t_val_greater_than_zero(test), "config validation failed", std::unique_ptr<Tileset>);
 
     // Grab configuration values we'll need
     PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
