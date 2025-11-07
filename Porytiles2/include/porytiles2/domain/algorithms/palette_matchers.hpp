@@ -9,17 +9,6 @@
 
 namespace porytiles2 {
 
-/*
- * TODO: this needs testing.
- *
- * TODO: Let's make a PalettePrinter class like TilePrinter
- *
- * TODO: It might also be useful to save which tile pixels weren't covered by a given palette, so we can display to the
- * user?
- *
- * TODO: should this be a service class? Or is it fine as a free function
- */
-
 /**
  * @brief Result type for palette matching operations.
  *
@@ -190,7 +179,7 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
         // transparent pixels get normalized to the configured extrinsic transparency. During this earlier step, we can
         // warn the user that the slot 0 of their Porymap pal will be overwritten. We can explain in a note that this
         // should not be an issue.
-        panic("Tile contains extrinsic transparency that does not match palette slot 0");
+        panic("palette slot 0 did not match provided extrinsic transparency value");
     }
 
     return details::match_tile_to_palette_impl(
