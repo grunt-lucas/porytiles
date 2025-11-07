@@ -94,41 +94,6 @@ That way these guarantees can be made.
 I am not sure if this is something that can be done entirely computationally,
 without user intervention.
 
-## Tileset/Layout Configuration File
-Porytiles2 allows users to configure tileset/layout compilation options using a TOML/YAML file.
-This will save tons of annoying typing at the CLI. I am still deciding if I'd prefer to use TOML or YAML.
-
-```toml
-# my_secondary_tileset.toml
-
-[tileset]
-# This field is required for secondary sets, users won't have to specify paired primary at CLI
-partner_primaries = [ "my_cool_primary" ]
-
-[fieldmap_overrides]
-num_pals_primary = 7
-num_metatiles_primary = 2048
-num_metatiles_total = 4096
-
-[palette_assignment]
-force_smart_prune = true
-```
-
-```yaml
-# my_secondary_tileset.yaml
-tileset:
-  # This field is required for secondary sets, users won't have to specify paired primary at CLI
-  partner_primaries: my_cool_primary
-
-fieldmap_overrides:
-  num_pals_primary: 7
-  num_metatiles_primary: 2048
-  num_metatiles_total: 4096
-
-palette_assignment:
-  force_smart_prune: true
-```
-
 ## Tileset Compilation
 TODO: detailed overview of tileset compilation in Porytiles2.
 
