@@ -160,9 +160,9 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * @param tile The PixelTile to match against the palette
  * @param palette The Palette to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
+ * @pre The Palette is not empty
+ * @pre The extrinsic transparency must match the color in slot 0 of the Palette
  * @return A PaletteMatchResult indicating whether the palette covers the tile and which colors are covered/missing
- * @precondition The Palette is not empty
- * @precondition The extrinsic transparency must match the color in slot 0 of the Palette
  */
 template <SupportsTransparency ColorType>
 [[nodiscard]] PaletteMatchResult<ColorType>
@@ -205,12 +205,12 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * @param palettes The vector of Palettes to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
  * @param top_n Maximum number of results to return when no complete match exists (ignored if complete matches found)
+ * @pre palettes is not empty
+ * @pre top_n > 0
+ * @pre All palettes are not empty
+ * @pre All palettes have extrinsic color in slot 0
  * @return A vector of PaletteMatchResult, either all complete matches or top_n best non-matches
- * @precondition palettes is not empty
- * @precondition top_n > 0
- * @precondition All palettes are not empty
- * @precondition All palettes have extrinsic color in slot 0
- * @invariant The returned vector is non-empty and exhibits coverage homogeneity: all PaletteMatchResult elements
+ * @post The returned vector is non-empty and exhibits coverage homogeneity: all PaletteMatchResult elements
  * possess identical is_covered values. This property enables deterministic match classification via examination of any
  * single element, conventionally the first: `results.at(0).is_covered`. The function partitions the result space into
  * two mutually exclusive sets—complete matches (is_covered = true) or partial matches (is_covered = false)—never

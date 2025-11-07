@@ -48,9 +48,8 @@ class LayerModeConverter {
      * @details
      * TODO
      *
-     * @pre asd
-     *
      * @param component TODO
+     * @pre asd
      * @return A dual-layerized TilemapEntry vector
      */
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> dual_layerize(const PorymapTilesetComponent &component);

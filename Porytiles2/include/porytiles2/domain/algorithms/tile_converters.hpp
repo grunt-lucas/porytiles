@@ -26,8 +26,8 @@ namespace details {
  * @param pixel_tile The PixelTile to convert
  * @param color_index_map The ColorIndexMap providing color-to-index mappings
  * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+ * @pre All non-transparent pixels in pixel_tile must be present in color_index_map
  * @return A ShapeTile<ColorIndex> with ShapeMasks mapped to color indices
- * @throws Panics if any non-transparent pixel is not found in the ColorIndexMap
  */
 template <SupportsTransparency PixelType, typename TransparencyPredicate>
 [[nodiscard]] ShapeTile<ColorIndex> from_pixel_tile_impl(
@@ -98,8 +98,8 @@ template <SupportsTransparency PixelType, typename TransparencyPredicate>
  * @tparam PixelType The pixel type of the input tile, must support intrinsic transparency
  * @param pixel_tile The PixelTile to convert
  * @param color_index_map The ColorIndexMap providing color-to-index mappings
+ * @pre All non-transparent pixels in pixel_tile must be present in color_index_map
  * @return A ShapeTile<ColorIndex> with ShapeMasks mapped to color indices
- * @throws Panics if any non-transparent pixel in pixel_tile is not found in color_index_map
  */
 template <SupportsTransparency PixelType>
 [[nodiscard]] ShapeTile<ColorIndex>
@@ -133,8 +133,8 @@ from_pixel_tile(const PixelTile<PixelType> &pixel_tile, const ColorIndexMap<Pixe
  * @param pixel_tile The PixelTile to convert
  * @param color_index_map The ColorIndexMap providing color-to-index mappings
  * @param extrinsic The extrinsic transparency value to check pixels against
+ * @pre All non-transparent pixels in pixel_tile must be present in color_index_map
  * @return A ShapeTile<ColorIndex> with ShapeMasks mapped to color indices
- * @throws Panics if any non-transparent pixel in pixel_tile is not found in color_index_map
  */
 template <SupportsTransparency PixelType>
 [[nodiscard]] ShapeTile<ColorIndex> from_pixel_tile(
@@ -164,9 +164,9 @@ template <SupportsTransparency PixelType>
  * @tparam PixelType The pixel type of the output tile, must support transparency
  * @param shape_tile The ShapeTile<ColorIndex> to convert
  * @param color_index_map The ColorIndexMap providing index-to-color mappings
+ * @pre All ColorIndex values in shape_tile must be present in color_index_map
+ * @pre ShapeMasks in shape_tile must not overlap
  * @return A PixelTile<PixelType> with pixels set according to the ShapeTile's masks and colors
- * @throws Panics if any ColorIndex in shape_tile is not found in color_index_map
- * @throws Panics if masks overlap (indicates invalid ShapeTile)
  */
 template <SupportsTransparency PixelType>
 [[nodiscard]] PixelTile<PixelType>
@@ -228,8 +228,8 @@ from_shape_tile(const ShapeTile<ColorIndex> &shape_tile, const ColorIndexMap<Pix
  * @tparam PixelType The pixel type of the output tile, must support transparency
  * @param shape_tile The ShapeTile<ColorIndex> to convert
  * @param color_index_map The ColorIndexMap providing index-to-color mappings
+ * @pre All ColorIndex values in shape_tile must be present in color_index_map
  * @return A ShapeTile<PixelType> with the same masks but pixel colors instead of color indices
- * @throws Panics if any ColorIndex in shape_tile is not found in color_index_map
  */
 template <SupportsTransparency PixelType>
 [[nodiscard]] ShapeTile<PixelType>

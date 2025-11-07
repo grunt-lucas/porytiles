@@ -19,8 +19,8 @@ namespace porytiles2 {
  *
  * @param str The string to match against the pattern
  * @param pattern The regular expression pattern
+ * @pre pattern must be a valid regular expression
  * @return True if the entire string matches the pattern, false otherwise
- * @throws std::runtime_error If the pattern is an invalid regular expression
  */
 inline bool check_full_string_match(const std::string &str, const std::string &pattern)
 {

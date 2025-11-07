@@ -59,8 +59,8 @@ class OperandBundle {
      *
      * @tparam T The expected type of the operand
      * @param key The string key identifying the operand
+     * @pre If key exists, the stored type must match T
      * @return std::optional<T> containing the cast value if found and type matches
-     * @throws panic if key exists but type T does not match the stored type
      */
     template <typename T>
     [[nodiscard]] std::optional<T> get_unwrapped(const std::string &key) const

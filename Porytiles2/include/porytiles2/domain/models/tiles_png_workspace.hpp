@@ -156,9 +156,8 @@ class TilesPngWorkspace {
      * workspace size.
      *
      * @param index The zero-based index of the tile to retrieve; must be < capacity
+     * @pre index must be less than tiles_.size()
      * @return A copy of the CanonicalPixelTile at the specified index
-     *
-     * @throws Panics if index >= tiles_.size()
      */
     [[nodiscard]] CanonicalPixelTile<IndexPixel> tile_at(std::size_t index) const;
 

@@ -88,31 +88,69 @@ int MyClass::compute_something(int accum_value) const {
  *
  * @details
  * The Foo class assumes that your foos are all like bars, but different.
+ *
+ * @tparam T The type parameter for the foo
+ * @invariant Some note would go here
  */
+template <typename T>
 class Foo {
   public:
    // NOTICE:
    // a blank line between @brief and @details
    // a blank line between @details and the other doc tags
+   //
+   // IDIOMATIC TAG ORDER:
+   // 1. @brief
+   // 2. @details
+   // 3. @tparam (for templates)
+   // 4. @invariant (only relevant for structs/classes, condition that is true at all times in object lifecycle)
+   // 5. @param (for parameters)
+   // 6. @pre (preconditions - what must be true BEFORE calling)
+   // 7. @return (what the function returns)
+   // 8. @post (postconditions - what is guaranteed AFTER calling)
+   // 9. @note/@warning/@see (if applicable)
+   // 10. @todo (for formal documentation of possible upcoming changes)
+   //
+   // IMPORTANT: Do NOT use @throws/@exception tags
+   // This codebase uses panic/abort for unrecoverable errors (like precondition
+   // violations) rather than C++ exceptions. Precondition violations should be
+   // documented with @pre tags. Panics are not exceptions - they terminate the
+   // program and are not catchable/recoverable.
+
    /**
-    * @brief Computes a bar with a given factor.
+    * @brief Computes a bar value by applying a factor to a base value.
     *
     * @details
-    * The factor is used to compute the bar.
+    * This function performs a computation using the provided factor and base value.
+    * The function panics if the factor is negative, exceeds the maximum safe value,
+    * or if the base is zero. The computation is optimized for positive integers.
     *
-    * @param factor The factor to use
-    * @return The computed bar
+    * @tparam ResultType The type to cast the result to (must be numeric)
+    * @param factor The factor to use in the computation
+    * @param base The base value to multiply with the factor
+    * @pre factor must be non-negative
+    * @pre factor must be less than MAX_SAFE_FACTOR
+    * @pre base must not be zero
+    * @return The computed bar value cast to ResultType
+    * @post The returned value is always positive
+    * @post The returned value is less than MAX_BAR_VALUE
+    * @note This function is thread-safe
+    * @warning This function may lose precision when casting to smaller numeric types
+    * @see compute_baz() for a related computation
+    * @see apply_factor() for a simpler version without base parameter
+    * @todo Handle MAX_SAFE_FACTOR more elegantly
     */
-    int compute_bar(int factor); 
+    template <typename ResultType>
+    ResultType compute_bar(int factor, int base);
 };
 ```
 
 Note about markdown code blocks: when writing multiline C++ code blocks,
-use "C++" after the triple backticks. E.g.,
-```C++
+use "c++" after the triple backticks. E.g.,
+```c++
 int main() {
-    // This is a multiline C++ code block
-    // Notice that the triple backticks are followed by "C++"
+    // This is a multiline c++ code block
+    // Notice that the triple backticks are followed by "c++"
     return 0;
 }
 ```
