@@ -12,8 +12,3 @@ runs:
         sudo apt-get install -y cmake
         sudo apt-get install -y doxygen
         sudo apt-get install -y graphviz
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-        sudo apt update
-        sudo apt install gcc-15 g++-15 -y
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 100
