@@ -162,15 +162,20 @@ class ConfigValue {
         std::vector<std::vector<FormatParam>> params{};
 
         err_text.emplace_back("{} = {}");
-        params.push_back(std::vector{FormatParam{name(), Style::bold}, FormatParam{value(), Style::bold}});
+        params.push_back(
+            std::vector{
+                FormatParam{name(), Style::bold}, FormatParam{value(), Style::bold | Style::italic | Style::yellow}});
         err_text.emplace_back("Source: {}");
-        params.push_back(std::vector{FormatParam{source(), Style::bold}});
+        params.push_back(std::vector{FormatParam{source(), Style::italic}});
 
         // Add source details if available
         if (!source_details().empty()) {
             err_text.emplace_back("");
             params.emplace_back();
             std::ranges::copy(source_details(), std::back_inserter(err_text));
+            for (const auto &_ : source_details()) {
+                params.emplace_back();
+            }
         }
 
         return {err_text, params};

@@ -57,7 +57,7 @@ std::string get_line_content(const std::filesystem::path &path, std::size_t line
  */
 std::string make_source_string(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
-    return format->format("{}:{}", FormatParam{file_path, Style::bold}, FormatParam{mark.line + 1, Style::bold});
+    return format->format("{}:{}", FormatParam{file_path}, FormatParam{mark.line + 1});
 }
 
 /**

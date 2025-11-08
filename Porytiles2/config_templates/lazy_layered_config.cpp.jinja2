@@ -57,7 +57,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             error_lines.push_back(format_->format("{}: invalid: {}", source_info, layer_value.error_message));
 
             if (!layer_value.source_details.empty()) {
-                error_lines.push_back(""); // Blank line separator
+                error_lines.emplace_back(""); // Blank line separator
                 for (const auto &detail : layer_value.source_details) {
                     error_lines.push_back(detail);
                 }
@@ -71,7 +71,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
-            std::string source = fmt::format("{}", layer_value.source_info);
+            std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;
             source_details_[cache_key] = layer_value.source_details;
             return ConfigValue<T>{resolved_value, cache_key, source, layer_value.source_details};
@@ -81,7 +81,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     }
 
     // No value found in any layer - this is a programmer error
-    panic(fmt::format("no value found for '{}' in any config layer", cache_key));
+    panic(format_->format("no value found for '{}' in any config layer", cache_key));
 }
 {% for value in config_values %}
 
@@ -111,7 +111,7 @@ std::string LazyLayeredConfig::dump() const
         const auto value_it = cache_value_strings_.find(key);
         const std::string value_str = (value_it != cache_value_strings_.end()) ? value_it->second : "<unknown value>";
 
-        result += fmt::format("  {} = {} [{}]\n", key, value_str, provenance_info);
+        result += format_->format("  {} = {} [{}]\n", key, value_str, provenance_info);
     }
     result += "}\n";
 

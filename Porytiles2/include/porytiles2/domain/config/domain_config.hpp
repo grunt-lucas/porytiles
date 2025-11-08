@@ -48,6 +48,15 @@ class DomainConfig {
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
         }
+        // Apply cross-field validators
+        if (raw_val.has_value()) {
+            raw_val = compare_greater_equal<std::size_t>(
+                raw_val.value(),
+                *this,
+                tileset,
+                "num_tiles_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_tiles_primary(ts); });
+        }
         return raw_val;
     }
 
@@ -70,6 +79,15 @@ class DomainConfig {
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
         }
+        // Apply cross-field validators
+        if (raw_val.has_value()) {
+            raw_val = compare_greater_equal<std::size_t>(
+                raw_val.value(),
+                *this,
+                tileset,
+                "num_metatiles_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_metatiles_primary(ts); });
+        }
         return raw_val;
     }
 
@@ -91,6 +109,15 @@ class DomainConfig {
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
+        }
+        // Apply cross-field validators
+        if (raw_val.has_value()) {
+            raw_val = compare_greater_equal<std::size_t>(
+                raw_val.value(),
+                *this,
+                tileset,
+                "num_pals_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_pals_primary(ts); });
         }
         return raw_val;
     }

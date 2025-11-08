@@ -35,10 +35,12 @@ def generate_config_files():
         print("Error: Schema must contain 'config_values' key", file=sys.stderr)
         sys.exit(1)
 
-    # Validate that all config values have a validators field
+    # Validate that all config values have required fields
     for idx, config_value in enumerate(schema["config_values"]):
+        name = config_value.get("name", f"<unnamed config value at index {idx}>")
+
+        # Check for validators field
         if "validators" not in config_value:
-            name = config_value.get("name", f"<unnamed config value at index {idx}>")
             print(
                 f"Error: Config value '{name}' is missing required 'validators' field",
                 file=sys.stderr,
@@ -48,6 +50,73 @@ def generate_config_files():
                 file=sys.stderr,
             )
             sys.exit(1)
+
+        # Check for cross_field_validators field
+        if "cross_field_validators" not in config_value:
+            print(
+                f"Error: Config value '{name}' is missing required 'cross_field_validators' field",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Add 'cross_field_validators: []' if no cross-field validators are needed",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        # Validate cross-field validator references
+        for cross_validator in config_value.get("cross_field_validators", []):
+            # Check if it's a comparison validator
+            if cross_validator.startswith("compare_") and ":" in cross_validator:
+                parts = cross_validator.split(":")
+                if len(parts) != 2:
+                    print(
+                        f"Error: Invalid cross-field validator '{cross_validator}' in config value '{name}'",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "  Hint: Comparison validators must be in format 'compare_<op>:<field_name>'",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+
+                operator_name, other_field_name = parts
+                valid_operators = [
+                    "compare_greater_than",
+                    "compare_less_than",
+                    "compare_greater_equal",
+                    "compare_less_equal",
+                    "compare_equal",
+                    "compare_not_equal",
+                ]
+                if operator_name not in valid_operators:
+                    print(
+                        f"Error: Unknown comparison operator '{operator_name}' in config value '{name}'",
+                        file=sys.stderr,
+                    )
+                    print(
+                        f"  Hint: Valid operators are: {', '.join(valid_operators)}",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+
+                # Check that the referenced field exists in the same layer
+                current_layer = config_value.get("layer")
+                other_field_exists = False
+                for other_config in schema["config_values"]:
+                    if other_config.get("name") == other_field_name and other_config.get("layer") == current_layer:
+                        other_field_exists = True
+                        break
+
+                if not other_field_exists:
+                    print(
+                        f"Error: Cross-field validator in '{name}' references unknown field '{other_field_name}' in layer '{current_layer}'",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "  Hint: Cross-field validators can only reference fields in the same layer",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
 
     print(f"Loaded {len(schema['config_values'])} config values from schema")
 

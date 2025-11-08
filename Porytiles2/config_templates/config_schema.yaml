@@ -16,6 +16,12 @@
 #     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
 #     - Applied in sequence after fetching from provider, before returning to caller
 #     - Example: [size_t_val_greater_than_zero]
+#   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
+#     - Applied after regular validators, have access to config object and can fetch other values
+#     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
+#       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
+#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, std::string) signature
+#     - Example: ["compare_greater_than:num_tiles_primary", "my_custom_cross_field_validator"]
 
 config_values:
   # Domain Layer Configuration Values
@@ -28,6 +34,7 @@ config_values:
     yaml:
       path: fieldmap.num_tiles_primary
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
 
   - name: num_tiles_total
     type: std::size_t
@@ -38,6 +45,7 @@ config_values:
     yaml:
       path: fieldmap.num_tiles_total
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_tiles_primary" ]
 
   - name: num_metatiles_primary
     type: std::size_t
@@ -48,6 +56,7 @@ config_values:
     yaml:
       path: fieldmap.num_metatiles_primary
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
 
   - name: num_metatiles_total
     type: std::size_t
@@ -58,6 +67,7 @@ config_values:
     yaml:
       path: fieldmap.num_metatiles_total
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_metatiles_primary" ]
 
   - name: num_pals_primary
     type: std::size_t
@@ -68,6 +78,7 @@ config_values:
     yaml:
       path: fieldmap.num_pals_primary
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
 
   - name: num_pals_total
     type: std::size_t
@@ -78,6 +89,7 @@ config_values:
     yaml:
       path: fieldmap.num_pals_total
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_pals_primary" ]
 
   - name: max_map_data_size
     type: std::size_t
@@ -88,6 +100,7 @@ config_values:
     yaml:
       path: fieldmap.max_map_data_size
     validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
 
   - name: num_tiles_per_metatile
     type: std::size_t
@@ -98,6 +111,7 @@ config_values:
     yaml:
       path: fieldmap.num_tiles_per_metatile
     validators: [ ]
+    cross_field_validators: [ ]
 
   - name: extrinsic_transparency
     type: Rgba32
@@ -108,6 +122,7 @@ config_values:
     yaml:
       path: extrinsic_transparency
     validators: [ ]
+    cross_field_validators: [ ]
 
   - name: patch_build_enabled
     type: bool
@@ -118,6 +133,7 @@ config_values:
     yaml:
       path: patch.enabled
     validators: [ ]
+    cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
   - name: tiles_pal_mode
@@ -129,3 +145,4 @@ config_values:
     yaml:
       path: tiles_pal_mode
     validators: [ ]
+    cross_field_validators: [ ]
