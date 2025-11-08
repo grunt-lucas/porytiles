@@ -317,7 +317,10 @@ template <typename T>
     std::vector<PixelTile<T>> tiles;
     tiles.reserve(metatiles.size() * tiles_per_metatile);
     for (const auto &mt : metatiles) {
-        tiles.append_range(mt.decompose());
+        // TODO: Use append_range once GitHub Linux runner supports this C++23 feature
+        // tiles.append_range(mt.decompose());
+        auto decomposed = mt.decompose();
+        tiles.insert(tiles.end(), decomposed.begin(), decomposed.end());
     }
     return tiles;
 
