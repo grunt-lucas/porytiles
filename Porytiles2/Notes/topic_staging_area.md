@@ -11,53 +11,48 @@ each time the user performs an operation.
 This will help users prevent accidental asset clobbering
 if they make edits in Porymap or another external tool.
 
-## Incremental Build Support
-User can specify an incremental tileset build by specifying `--incremental` at the CLI
-or by setting `incremental: <MODE` in the tileset YAML config.
+## Patch Build Support
+User can specify a patch tileset build by specifying `--patch` at the CLI
+or by setting `patch.enabled:true` in the tileset YAML config.
 
-### Incremental Mode Fixed
-`incremental=fixed` is the default, will error if any Porytiles component tiles aren't compatible with assets as-is.
-
-### Incremental Mode Keep Unused
-When `incremental=keep-unused` is set,
+When a patch build is set,
 compilation will not disturb currently existing Porymap assets.
 That is, existing palettes will be fixed,
 and existing tiles will be left undisturbed (but reused if possible).
-We can throw very specific, helpful error messages if users add tiles/colors
+Porytiles can throw very specific, helpful error messages if users add tiles/colors
 that aren't covered by existing assets.
-The compilation pipeline for this type of incremental build
+The compilation pipeline for this type of patch build
 can be a simplified version of the full compilation pipeline,
-but with the palette assignment step completely removed. 
+but with the palette assignment step completely removed.
 
 Optionally, users can specify additional flags or configurations
-if they would like incremental builds to attempt to use available transparent tiles
+if they would like patch builds to attempt to use available transparent tiles
 or "open" palette slots, where "open" is user-defined
 (e.g. user could specify that any palette with color '0 0 0' should be considered wildcarded).
 
 It should be noted:
-since incremental builds don't disturb existing assets,
+since patch builds don't disturb existing assets,
 that means they also won't remove output assets that aren't used.
 That is, if you remove all instances of a given tile from the metatile sheets,
-an incremental build will still leave that tile in `tiles.png`.
-This is so that incremental builds can be used as a method for editing tilesets
+an patch build will still leave that tile in `tiles.png`.
+This is so that patch builds can be used as a method for editing tilesets
 without disturbing anyone who might depend on that tileset.
 
-### Incremental Mode Remove Unused
-We could provide `incremental=remove-unused` to modify this behavior.
-When `incremental=remove-unused` is set, we leave existing tiles undisturbed like before.
-But we sweep the tiles/pals at the end and remove any that are no longer in use by the Porytiles assets.
-That means we'll need some kind of usage counter mechanism.
-Users should be aware that this may result in the breakage of any dependent tilesets.
+### Settings
+Patch builds can configure the `tiles` and `pals` assets to be either `fixed` or `free`.
 
-One problem we need to solve:
-if we pre-populate the final `tiles.png` representation,
-we'll need some way to provide a normalized view of the pre-populated tiles.
-Consider the case where we do an incremental build on a vanilla tileset.
-The tiles in a vanilla `tiles.png` are not normalized,
-so in order for Porytiles to successfully avoid duplicating assets
-we'll need some kind of normalized view that is also aware of the underlying "true" tile configuration.
+When marked `fixed`, an asset will be considered immutable and cannot be modified by the patch build.
+If one of the Porytiles input assets generates any change, the patch build will fail.
 
-- Note from the future: we now have the above! See TilesPngWorkspace class.
+When marked `free`, an asset will be considered mutable and could be modified by the patch build,
+but only in such a way that won't break dependent assets.
+
+```yaml
+patch:
+  enabled: true
+  tiles: fixed
+  pals: fixed
+```
 
 ## Layout Metatile Generation
 Layout compilation runs with default: `--unknown-metatile-policy=reject`.
@@ -98,41 +93,6 @@ This means we must provide some way for users to massage the output ordering of 
 That way these guarantees can be made.
 I am not sure if this is something that can be done entirely computationally,
 without user intervention.
-
-## Tileset/Layout Configuration File
-Porytiles2 allows users to configure tileset/layout compilation options using a TOML/YAML file.
-This will save tons of annoying typing at the CLI. I am still deciding if I'd prefer to use TOML or YAML.
-
-```toml
-# my_secondary_tileset.toml
-
-[tileset]
-# This field is required for secondary sets, users won't have to specify paired primary at CLI
-partner_primaries = [ "my_cool_primary" ]
-
-[fieldmap_overrides]
-num_pals_primary = 7
-num_metatiles_primary = 2048
-num_metatiles_total = 4096
-
-[palette_assignment]
-force_smart_prune = true
-```
-
-```yaml
-# my_secondary_tileset.yaml
-tileset:
-  # This field is required for secondary sets, users won't have to specify paired primary at CLI
-  partner_primaries: my_cool_primary
-
-fieldmap_overrides:
-  num_pals_primary: 7
-  num_metatiles_primary: 2048
-  num_metatiles_total: 4096
-
-palette_assignment:
-  force_smart_prune: true
-```
 
 ## Tileset Compilation
 TODO: detailed overview of tileset compilation in Porytiles2.

@@ -2,6 +2,9 @@
 
 #include <string>
 #include <utility>
+#include <vector>
+
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -24,9 +27,10 @@ class ConfigValue {
      * @param value The configuration value
      * @param name The name of the configuration value (e.g., "num_tiles_primary")
      * @param source A string describing where this value came from
+     * @param source_details A vector of strings with the optional source details
      */
-    ConfigValue(T value, std::string name, std::string source)
-        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}
+    ConfigValue(T value, std::string name, std::string source, const std::vector<std::string> &source_details)
+        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}, source_details_{source_details}
     {
     }
 
@@ -97,9 +101,9 @@ class ConfigValue {
      *
      * @details
      * The source string describes where this value originated, such as:
-     * - "Default Provider: default value"
-     * - "Mock Toml Provider: from toml file"
-     * - "Derived: num_tiles_total (Provider: X) - num_tiles_primary (Provider: Y)"
+     * - "default value"
+     * - "./porytiles.yaml:12"
+     * - "$PORYTILES_FIELDMAP_NUM_TILES_PRIMARY"
      *
      * @return A const reference to the source string
      */
@@ -108,10 +112,80 @@ class ConfigValue {
         return source_;
     }
 
+    /**
+     * @brief Gets the source details for this configuration value.
+     *
+     * @details
+     * The source details supplement the source string with additional context. For example, the YAML file provider may
+     * use the details string to supplement the file name and line number with a contextual view of the YAML file.
+     *
+     * @return A const reference to the source details vector
+     */
+    [[nodiscard]] const std::vector<std::string> &source_details() const
+    {
+        return source_details_;
+    }
+
+    /**
+     * @brief Generates formatted text data for displaying this configuration value.
+     *
+     * @details
+     * Creates a structured representation of the configuration value suitable for formatted output or error messages.
+     * The output includes the value name, its actual value, the source information, and any additional source details
+     * if available. The format follows the pattern:
+     *
+     * ```
+     * name = value
+     * Source: source_string
+     * [optional source details lines]
+     * ```
+     *
+     * Each format string in the returned pair contains placeholders ({}) that correspond to the FormatParam objects in
+     * the parallel vector, which provide both the text to insert and styling information.
+     *
+     * @return A pair containing:
+     *         - first: Vector of format strings with placeholders
+     *         - second: Vector of FormatParam vectors, where each inner vector contains the parameters for the
+     *           corresponding format string at the same index
+     * @post The returned vectors in the pair have matching sizes (excluding source_details entries which have no
+     *       parameters)
+     * @post The first format string is always "{} = {}" for name and value
+     * @post The second format string is always "Source: {}" for source information
+     */
+    [[nodiscard]] std::pair<std::vector<std::string>, std::vector<std::vector<FormatParam>>> format_data() const
+    {
+        // foo = 3
+        // Source: ./porytiles.yaml:12
+        // ... details here
+
+        std::vector<std::string> err_text{};
+        std::vector<std::vector<FormatParam>> params{};
+
+        err_text.emplace_back("{} = {}");
+        params.push_back(
+            std::vector{
+                FormatParam{name(), Style::bold}, FormatParam{value(), Style::bold | Style::italic | Style::yellow}});
+        err_text.emplace_back("Source: {}");
+        params.push_back(std::vector{FormatParam{source(), Style::italic}});
+
+        // Add source details if available
+        if (!source_details().empty()) {
+            err_text.emplace_back("");
+            params.emplace_back();
+            std::ranges::copy(source_details(), std::back_inserter(err_text));
+            for (const auto &_ : source_details()) {
+                params.emplace_back();
+            }
+        }
+
+        return {err_text, params};
+    }
+
   private:
     T value_;
     std::string name_;
     std::string source_;
+    std::vector<std::string> source_details_;
 };
 
 } // namespace porytiles2

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "porytiles2/domain/models/color_set.hpp"
+#include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/shape_mask.hpp"
 #include "porytiles2/domain/models/shape_tile.hpp"

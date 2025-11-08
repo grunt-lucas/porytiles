@@ -1,0 +1,32 @@
+{#
+  Template for generating default_provider.cpp
+
+  This template generates the DefaultProvider implementations with default values
+  from config_schema.yaml.
+#}
+{% import '_macros.jinja2' as macros %}
+#include "porytiles2/infra/config/default_provider.hpp"
+
+{{ macros.autogen_warning() }}
+
+namespace {
+
+const std::string source_info = "default value";
+
+}
+
+namespace porytiles2 {
+
+std::string DefaultProvider::name() const
+{
+    return "DefaultProvider";
+}
+{% for value in config_values %}
+
+LayerValue<{{ value.type }}> DefaultProvider::{{ value.name }}({% if value.scope_type == 'tileset' %}[[maybe_unused]] const std::string &tileset{% elif value.scope_type == 'layout' %}[[maybe_unused]] const std::string &layout{% endif %}) const
+{
+    return LayerValue<{{ value.type }}>::valid({{ value.default_value }}, source_info);
+}
+{% endfor %}
+
+} // namespace porytiles2

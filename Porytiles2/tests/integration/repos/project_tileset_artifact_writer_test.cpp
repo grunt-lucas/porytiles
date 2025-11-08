@@ -8,10 +8,10 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/rgba_pal.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
@@ -28,12 +28,13 @@ using namespace porytiles2;
 namespace {
 
 class MockInfraConfig : public InfraConfig {
-  public:
-    [[nodiscard]] ConfigValue<TilesPalMode> tiles_pal_mode(const std::string &) const override
+  protected:
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode_raw(const std::string &) const override
     {
-        return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock"};
+        return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }
 
+  public:
     void test_root(const std::filesystem::path &path)
     {
         test_root_ = path;
@@ -72,7 +73,8 @@ class MockPngIndexedImageSaver : public PngIndexedImageSaver {
 
 class MockFilePalSaver : public FilePalSaver {
   public:
-    [[nodiscard]] ChainableResult<void> save(const RgbaPal &pal, const std::filesystem::path &path) const override
+    [[nodiscard]] ChainableResult<void>
+    save(const Palette<Rgba32> &pal, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};
         out << "mock_palette";
@@ -105,7 +107,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(RgbaPal{}, i);
+        porymap_component->set_pal(Palette<Rgba32>{}, i);
     }
 
     // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come
@@ -191,7 +193,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
     ArtifactKey key{expected_file.string()};
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
-    ASSERT_TRUE(write_result.has_value()) << "Write error: " << write_result.error().details(PlainTextFormatter{});
+    if (!write_result.has_value()) {
+        FAIL() << "Write error: " << write_result.error().join(PlainTextFormatter{});
+    }
 
     auto commit_result = writer_->commit();
     ASSERT_TRUE(commit_result.has_value());
@@ -303,7 +307,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
 
     auto commit_result = writer_->commit();
     ASSERT_FALSE(commit_result.has_value());
-    EXPECT_EQ(commit_result.error().details(PlainTextFormatter{}), "no transaction in progress");
+    auto commit_error_lines = commit_result.error().details(PlainTextFormatter{});
+    ASSERT_EQ(commit_error_lines.size(), 1);
+    EXPECT_EQ(commit_error_lines[0], "no transaction in progress");
 
     auto rollback_result = writer_->rollback();
     ASSERT_FALSE(rollback_result.has_value());
@@ -313,7 +319,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
     auto write_result = writer_->write(key, artifact, tileset);
     ASSERT_FALSE(write_result.has_value());
-    EXPECT_EQ(write_result.error().details(PlainTextFormatter{}), "no transaction in progress");
+    auto error_lines = write_result.error().details(PlainTextFormatter{});
+    ASSERT_EQ(error_lines.size(), 1);
+    EXPECT_EQ(error_lines[0], "no transaction in progress");
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)

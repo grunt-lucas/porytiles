@@ -8,7 +8,7 @@
 
 namespace porytiles2 {
 
-ChainableResult<void> JascPalSaver::save(const RgbaPal &pal, const std::filesystem::path &path) const
+ChainableResult<void> JascPalSaver::save(const Palette<Rgba32> &pal, const std::filesystem::path &path) const
 {
     // Open in binary so "\r\n" are explicitly written as CRLF on all platforms
     std::ofstream stream{path, std::ios::binary};

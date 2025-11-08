@@ -1,0 +1,73 @@
+{#
+  Template for generating yaml_file_provider.cpp
+
+  This template generates the YamlFileProvider implementations with YAML path
+  extraction logic from config_schema.yaml.
+#}
+{% import '_macros.jinja2' as macros %}
+#include "porytiles2/infra/config/yaml_file_provider.hpp"
+
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <sstream>
+
+#include "yaml-cpp/yaml.h"
+
+#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
+
+#define YAML_FILE_PROVIDER_CPP_COMPILING
+#include "./yaml_file_provider_impl.ipp"
+#undef YAML_FILE_PROVIDER_CPP_COMPILING
+
+namespace porytiles2 {
+
+{{ macros.autogen_warning() }}
+
+YamlFileProvider::YamlFileProvider(
+    gsl::not_null<TextFormatter *> format,
+    const std::filesystem::path &project_root,
+    const TilesetArtifactKeyProvider &tileset_key_provider)
+    : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
+{
+    // Config files are loaded lazily when first accessed via the anonymous namespace functions
+}
+
+YamlFileProvider::YamlFileProvider(
+    const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider)
+    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
+      tileset_key_provider_{&tileset_key_provider}
+{
+    // Config files are loaded lazily when first accessed via the anonymous namespace functions
+}
+
+std::string YamlFileProvider::name() const
+{
+    return "YamlFileProvider";
+}
+{% for value in config_values %}
+
+LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+{
+{% if value.scope_type == 'tileset' %}
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+{% elif value.scope_type == 'layout' %}
+    // TODO: Implement get_layout_config_path_chain once layout support is added
+    // const auto paths = get_layout_config_path_chain(project_root_, layout_key_provider_, layout);
+    // For now, just use the tileset chain so things compile
+    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+{% endif %}
+    return search_config_files<{{ value.type }}>(
+        format_,
+        paths,
+        load_yaml_file,
+        [](const YAML::Node &doc) { return doc{% set path_parts = value.yaml.path.split('.') %}{% for part in path_parts %}["{{ part }}"]{% endfor %}; },
+        {{ value.parser }},
+        "{{ value.name }}");
+}
+{% endfor %}
+
+} // namespace porytiles2

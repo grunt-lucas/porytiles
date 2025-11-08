@@ -34,6 +34,11 @@ void ShapeMask::unset(int row, int col)
     rows_[row] &= ~(1 << (7 - col));
 }
 
+bool ShapeMask::get(int row, int col) const
+{
+    return (rows_[row] & (1 << (7 - col))) != 0;
+}
+
 bool ShapeMask::is_transparent() const
 {
     return std::ranges::all_of(rows_, [](uint8_t byte) { return byte == 0; });

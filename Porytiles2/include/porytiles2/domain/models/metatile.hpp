@@ -14,6 +14,8 @@ inline constexpr std::size_t tiles_per_side = 2;
 inline constexpr std::size_t tiles_per_metatile_layer = tiles_per_side * tiles_per_side;
 inline constexpr std::size_t tiles_per_metatile = tiles_per_metatile_layer * 3;
 inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_length_pix;
+inline constexpr std::size_t entries_per_metatile_dual = 8;
+inline constexpr std::size_t entries_per_metatile_triple = 12;
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 
@@ -83,10 +85,13 @@ inline std::string to_string(Subtile layer)
  * @details
  * Like its component PixelTile objects, the pixel type of Metatile is arbitrary.
  *
+ * @invariant Default-constructed Metatile is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `Metatile<PixelType>{}` produces a metatile where all PixelTile objects in all three layers are default-constructed
+ * (and thus transparent, assuming PixelTile and PixelType satisfy the invariant).
+ *
  * @tparam PixelType The pixel type of this Metatile's PixelTile objects
  */
-template <typename PixelType>
-    requires SupportsTransparency<PixelType>
+template <SupportsTransparency PixelType>
 class Metatile {
   public:
     Metatile() : id_{} {}
@@ -303,5 +308,30 @@ class Metatile {
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
     unsigned int id_;
 };
+
+namespace metatile {
+
+template <typename T>
+[[nodiscard]] std::vector<PixelTile<T>> decompose(const std::vector<Metatile<T>> &metatiles)
+{
+    std::vector<PixelTile<T>> tiles;
+    tiles.reserve(metatiles.size() * tiles_per_metatile);
+    for (const auto &mt : metatiles) {
+        tiles.append_range(mt.decompose());
+    }
+    return tiles;
+
+    // This is a less performant version that uses std::ranges
+    //
+    // auto tiles = metatiles
+    //     | std::views::transform([](const auto& mt) { return mt.decompose(); })
+    //     | std::views::join
+    //     | std::ranges::to<std::vector>();
+    //
+    // This transforms each Metatile to a vector<Tile>, flattens (joins) all the vectors together, and collects into a
+    // final vector<Tile>.
+}
+
+} // namespace metatile
 
 } // namespace porytiles2

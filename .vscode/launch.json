@@ -5,15 +5,15 @@
             "name": "LLDB - Porytiles2 Driver Debug Command",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Porytiles2/tools/driver/porytiles2",
-            "args": ["debug", "porytiles2_test"],
+            "program": "${workspaceFolder}/vscode-build/Porytiles2/tools/driver/porytiles2",
+            "args": ["debug-compile-primary", "porytiles2_test_simple"],
             "cwd": "${workspaceFolder}/../pokeemerald-expansion"
         },
         {
             "name": "LLDB - Porytiles2AllTests",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Porytiles2/tests/Porytiles2AllTests",
+            "program": "${workspaceFolder}/vscode-build/Porytiles2/tests/Porytiles2AllTests",
             "args": [],
             "cwd": "${workspaceFolder}"
         }

@@ -8,24 +8,28 @@
 
 namespace porytiles2 {
 
-void BufferedUserDiagnostics::note(const std::vector<std::string> &lines) const
+void BufferedUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     notes_.push_back(lines);
+    note_tag_counts_[tag]++;
 }
 
 void BufferedUserDiagnostics::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     warn_notes_.push_back(lines);
+    warn_note_tag_counts_[tag]++;
 }
 
 void BufferedUserDiagnostics::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
     warnings_.push_back(lines);
+    warning_tag_counts_[tag]++;
 }
 
-void BufferedUserDiagnostics::err(const std::vector<std::string> &lines) const
+void BufferedUserDiagnostics::err(const std::string &tag, const std::vector<std::string> &lines) const
 {
     errors_.push_back(lines);
+    error_tag_counts_[tag]++;
 }
 
 void BufferedUserDiagnostics::emit_fatal_proximate(const Error &err) const

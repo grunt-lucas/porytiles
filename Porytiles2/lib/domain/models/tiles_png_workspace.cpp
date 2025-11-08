@@ -5,6 +5,75 @@
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 
+namespace {
+
+using namespace porytiles2;
+
+/**
+ * @brief Helper function to export workspace tiles with optional flip transformations.
+ *
+ * @param workspace The TilesPngWorkspace to export from
+ * @param apply_flips If true, applies h_flip/v_flip transformations to restore original forms;
+ *                    if false, exports canonical forms as-is
+ * @return An Image<IndexPixel> in the standard tiles.png format
+ */
+Image<IndexPixel> export_image_helper(const TilesPngWorkspace &workspace, bool apply_flips)
+{
+    // Standard tiles.png format: 16 tiles per row (128 pixels wide)
+    const std::size_t tiles_per_row = 16;
+
+    // Calculate number of tile rows needed (ceiling division)
+    const std::size_t tiles_per_col = (workspace.capacity() + tiles_per_row - 1) / tiles_per_row;
+
+    // Calculate image dimensions
+    const std::size_t image_width = tiles_per_row * tile::side_length_pix;
+    const std::size_t image_height = tiles_per_col * tile::side_length_pix;
+
+    // Create output image
+    Image<IndexPixel> img{image_width, image_height};
+
+    // Copy each tile's pixels into the image
+    for (std::size_t tile_idx = 0; tile_idx < workspace.capacity(); ++tile_idx) {
+        // Calculate tile position in the grid
+        const std::size_t tile_row = tile_idx / tiles_per_row;
+        const std::size_t tile_col = tile_idx % tiles_per_row;
+
+        // Calculate pixel offsets for this tile
+        const std::size_t pixel_row_offset = tile_row * tile::side_length_pix;
+        const std::size_t pixel_col_offset = tile_col * tile::side_length_pix;
+
+        // Get the tile at this index
+        const auto &canonical_tile = workspace.tile_at(tile_idx);
+
+        // Determine which tile form to use
+        // Get base class reference to avoid implicit slicing
+        const PixelTile<IndexPixel> &canonical_base = canonical_tile;
+
+        PixelTile<IndexPixel> tile_to_export;
+        if (apply_flips) {
+            // Apply flip transformations to restore original form
+            tile_to_export = canonical_base.flip(canonical_tile.h_flip(), canonical_tile.v_flip());
+        }
+        else {
+            // Use canonical form as-is (explicit base class assignment)
+            tile_to_export = canonical_base;
+        }
+
+        // Copy all pixels from the tile to the image
+        for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
+            for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
+                const std::size_t dest_row = pixel_row_offset + pixel_row;
+                const std::size_t dest_col = pixel_col_offset + pixel_col;
+                img.set(dest_row, dest_col, tile_to_export.at(pixel_row, pixel_col));
+            }
+        }
+    }
+
+    return img;
+}
+
+} // namespace
+
 namespace porytiles2 {
 
 TilesPngWorkspace::TilesPngWorkspace(std::size_t capacity) : cursor_{1}, capacity_{capacity}
@@ -122,11 +191,6 @@ bool TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
     return true;
 }
 
-bool TilesPngWorkspace::at_capacity() const
-{
-    return cursor_ == capacity_;
-}
-
 std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of(const CanonicalPixelTile<IndexPixel> &tile) const
 {
     const PixelTile<IndexPixel> &base_tile = tile;
@@ -143,6 +207,21 @@ CanonicalPixelTile<IndexPixel> TilesPngWorkspace::tile_at(std::size_t index) con
         panic("index " + std::to_string(index) + " >= size " + std::to_string(tiles_.size()));
     }
     return tiles_.at(index);
+}
+
+Image<IndexPixel> TilesPngWorkspace::export_canonical_image() const
+{
+    return export_image_helper(*this, false);
+}
+
+Image<IndexPixel> TilesPngWorkspace::export_original_image() const
+{
+    return export_image_helper(*this, true);
+}
+
+bool TilesPngWorkspace::at_capacity() const
+{
+    return cursor_ == capacity_;
 }
 
 } // namespace porytiles2

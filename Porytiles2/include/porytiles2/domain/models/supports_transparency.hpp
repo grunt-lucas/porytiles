@@ -15,6 +15,11 @@ namespace porytiles2 {
  *   transparency value)
  *
  * Tile and container types use requires clauses to provide only the appropriate overload(s) based on the pixel type.
+ *
+ * **Design Invariant:** Types implementing this concept should default-construct to their transparent representation.
+ * That is, `T{}` should produce a transparent pixel value. This enables generic code to create transparent pixels
+ * without knowing the specific pixel type (e.g., `Rgba32{0,0,0,0}` and `IndexPixel{0}` both default-construct to
+ * transparent values).
  */
 template <typename T>
 concept SupportsTransparency = requires(const T &t) {

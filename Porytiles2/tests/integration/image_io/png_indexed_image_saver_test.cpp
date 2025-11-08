@@ -102,7 +102,15 @@ TEST_F(PngIndexedImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
 
     auto result = saver_->save_to_file(image, invalid_path, TilesPalMode::true_color);
     ASSERT_FALSE(result.has_value());
-    EXPECT_TRUE(result.error().details(PlainTextFormatter{}).contains("save failed"));
+    auto details = result.error().details(PlainTextFormatter{});
+    bool found = false;
+    for (const auto &line : details) {
+        if (line.contains("save failed")) {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);
 }
 
 TEST_F(PngIndexedImageSaverTests, ShouldSaveValidPngFileInTrueColorMode)

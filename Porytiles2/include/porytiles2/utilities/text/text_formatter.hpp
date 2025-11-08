@@ -25,12 +25,13 @@ namespace porytiles2 {
 enum class Style : std::uint32_t {
     none = 0,        ///< No styling applied
     bold = 1 << 0,   ///< Bold text formatting
-    red = 1 << 1,    ///< Red text color
-    green = 1 << 2,  ///< Green text color
-    blue = 1 << 3,   ///< Blue text color
-    yellow = 1 << 4, ///< Yellow text color
-    cyan = 1 << 5,   ///< Cyan text color
-    magenta = 1 << 6 ///< Magenta text color
+    italic = 1 << 1, ///< Italic text formatting
+    red = 1 << 2,    ///< Red text color
+    green = 1 << 3,  ///< Green text color
+    blue = 1 << 4,   ///< Blue text color
+    yellow = 1 << 5, ///< Yellow text color
+    cyan = 1 << 6,   ///< Cyan text color
+    magenta = 1 << 7 ///< Magenta text color
 };
 
 /**

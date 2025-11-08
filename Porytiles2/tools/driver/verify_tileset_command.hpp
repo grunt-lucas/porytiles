@@ -46,7 +46,7 @@ class VerifyTilesetCommand final : public Command {
         auto verify_result = verify_use_case.verify(tileset_name_);
         if (!verify_result.has_value()) {
             for (const auto &err : verify_result.chain()) {
-                std::cerr << err->details(formatter) << std::endl;
+                std::cerr << err->join(formatter) << std::endl;
             }
         }
     }

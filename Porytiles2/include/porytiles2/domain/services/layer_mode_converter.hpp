@@ -1,0 +1,63 @@
+#pragma once
+
+#include <vector>
+
+#include "gsl/pointers"
+
+#include "porytiles2/domain/models/metatile_attribute.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/tilemap_entry.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
+
+namespace porytiles2 {
+
+class LayerModeConverter {
+  public:
+    explicit LayerModeConverter(
+        gsl::not_null<TextFormatter *> format,
+        gsl::not_null<UserDiagnostics *> diag,
+        gsl::not_null<TilePrinter *> tile_printer)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}
+    {
+    }
+
+    /**
+     * @brief Converts a tileset component to triple-layer format.
+     *
+     * @details
+     * Converts dual-layer metatiles (8 entries per metatile) to triple-layer metatiles (12 entries per metatile) by
+     * inserting transparent tilemap entries based on each metatile's LayerType attribute. If the component is already
+     * in triple-layer format, it is returned unchanged.
+     *
+     * The conversion strategy depends on the metatile's LayerType:
+     * - normal: Inserts 4 transparent entries at the beginning, followed by the 8 original entries
+     * - covered: Copies the 8 original entries first, then appends 4 transparent entries at the end
+     * - split: Copies the first 4 entries, inserts 4 transparent entries in the middle, then copies the last 4 entries
+     *
+     * @param component The tileset component to convert
+     * @return A triple-layerized TilemapEntry vector
+     */
+    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> triple_layerize(const PorymapTilesetComponent &component);
+
+    /**
+     * @brief TODO
+     *
+     * @details
+     * TODO
+     *
+     * @param component TODO
+     * @pre asd
+     * @return A dual-layerized TilemapEntry vector
+     */
+    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> dual_layerize(const PorymapTilesetComponent &component);
+
+  private:
+    TextFormatter *format_;
+    UserDiagnostics *diag_;
+    TilePrinter *tile_printer_;
+};
+
+} // namespace porytiles2

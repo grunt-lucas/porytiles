@@ -2,7 +2,7 @@
 
 ## Summary
 Detailed overview of animation handling.
-Since decompilation-recompilation and incremental compilation
+Since decompilation-recompilation and patch compilation
 are such a big piece of the Porytiles2 flow,
 animation handling needs to be transparently symmetrical.
 

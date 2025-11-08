@@ -34,8 +34,7 @@ namespace porytiles2 {
  *
  * @tparam PixelType The pixel type of this tile; must satisfy SupportsTransparency concept
  */
-template <typename PixelType>
-    requires SupportsTransparency<PixelType>
+template <SupportsTransparency PixelType>
 class CanonicalPixelTile : public PixelTile<PixelType> {
   public:
     /**

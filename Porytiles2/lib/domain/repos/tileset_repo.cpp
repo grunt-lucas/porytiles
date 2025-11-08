@@ -5,7 +5,8 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/domain/models/rgba_pal.hpp"
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
@@ -94,7 +95,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     // TODO: don't hardcode 16 here
-    for (int i = 0; i < pal::num_pals; i++) {
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset.name(), TilesetArtifact{pal_n, i});
         if (auto result = writer_->write(pal_key, TilesetArtifact{pal_n, i}, tileset); !result.has_value()) {
             std::ignore = writer_->rollback();
@@ -185,7 +186,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // TODO: emit warning to user about missing attr csv
     }
 
-    for (int i = 0; i < pal::num_pals; i++) {
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
         const auto override_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_override_n, i});
         if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read(*tileset, override_key, TilesetArtifact{pal_override_n, i});
@@ -267,7 +268,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             FormattableError{"failed to read tiles.png"}, tiles_png_result};
     }
 
-    for (int i = 0; i < pal::num_pals; i++) {
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
         if (!key_provider_->artifact_exists(pal_key)) {
             // TODO: emit validation error: missing required artifact {:02}.pal

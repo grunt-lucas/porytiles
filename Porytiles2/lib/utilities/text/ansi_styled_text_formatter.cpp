@@ -11,8 +11,9 @@ using namespace porytiles2;
 const std::string ansi_reset = "\033[0m";
 
 // Ordered list of style flags to check (bold first, then colors)
-const std::array<std::pair<Style, std::string>, 7> style_mappings = {
+const std::array<std::pair<Style, std::string>, 8> style_mappings = {
     {{Style::bold, "\033[1m"},
+     {Style::italic, "\033[3m"},
      {Style::red, "\033[31m"},
      {Style::green, "\033[32m"},
      {Style::blue, "\033[34m"},

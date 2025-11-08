@@ -56,23 +56,28 @@ class ImageLoadError final : public Error {
         return params_;
     }
 
-    [[nodiscard]] std::string details(const TextFormatter &formatter) const override
+    [[nodiscard]] std::vector<std::string> details(const TextFormatter &formatter) const override
     {
+        std::string message;
         switch (type_) {
         case Type::file_not_found:
-            return formatter.style(filename_ + ":", Style::bold) + " file not found";
+            message = formatter.style(filename_ + ":", Style::bold) + " file not found";
+            break;
         case Type::unsupported_channel_count: {
             auto channel_count = std::get<ChannelCount>(params_).channel_count_;
-            return formatter.style(filename_ + ":", Style::bold) +
-                   " unsupported channel count: " + formatter.style(std::to_string(channel_count), Style::bold);
+            message = formatter.style(filename_ + ":", Style::bold) +
+                      " unsupported channel count: " + formatter.style(std::to_string(channel_count), Style::bold);
+            break;
         }
         case Type::other_load_error: {
             auto load_error = std::get<OtherLoadError>(params_).load_error_;
-            return formatter.style(filename_ + ":", Style::bold) + " could not be loaded: '" + load_error + "'";
+            message = formatter.style(filename_ + ":", Style::bold) + " could not be loaded: '" + load_error + "'";
+            break;
         }
         default:
             panic("unhandled ImageLoadError type");
         }
+        return {message};
     }
 
     [[nodiscard]] std::unique_ptr<Error> clone() const override

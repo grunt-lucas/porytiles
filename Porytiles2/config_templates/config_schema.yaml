@@ -1,0 +1,148 @@
+# Configuration Schema for Porytiles2
+# This file defines all configuration values that will be auto-generated
+#
+# Fields:
+#   name: Method name for the config value
+#   type: C++ type for the value
+#   parser: Parser function name (e.g., "parse_size_t") - shared across all providers (if relevant)
+#   layer: Configuration layer (domain/app/infra)
+#   scope_type: Method parameter scope (tileset/layout)
+#     - tileset: Takes const std::string &tileset parameter
+#     - layout: Takes const std::string &layout parameter
+#   default_value: Default value for DefaultProvider (C++ expression as string)
+#   yaml: YAML configuration for YamlFileProvider
+#     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
+#   validators: List of validator function names to apply (required, use empty list [] if none)
+#     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
+#     - Applied in sequence after fetching from provider, before returning to caller
+#     - Example: [size_t_val_greater_than_zero]
+#   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
+#     - Applied after regular validators, have access to config object and can fetch other values
+#     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
+#       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
+#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, std::string) signature
+#     - Example: ["compare_greater_than:num_tiles_primary", "my_custom_cross_field_validator"]
+
+config_values:
+  # Domain Layer Configuration Values
+  - name: num_tiles_primary
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "512"
+    yaml:
+      path: fieldmap.num_tiles_primary
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
+
+  - name: num_tiles_total
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "1024"
+    yaml:
+      path: fieldmap.num_tiles_total
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_tiles_primary" ]
+
+  - name: num_metatiles_primary
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "512"
+    yaml:
+      path: fieldmap.num_metatiles_primary
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
+
+  - name: num_metatiles_total
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "1024"
+    yaml:
+      path: fieldmap.num_metatiles_total
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_metatiles_primary" ]
+
+  - name: num_pals_primary
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "6"
+    yaml:
+      path: fieldmap.num_pals_primary
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
+
+  - name: num_pals_total
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "13"
+    yaml:
+      path: fieldmap.num_pals_total
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ "compare_greater_equal:num_pals_primary" ]
+
+  - name: max_map_data_size
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "10240"
+    yaml:
+      path: fieldmap.max_map_data_size
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
+
+  - name: num_tiles_per_metatile
+    type: std::size_t
+    parser: parse_size_t
+    layer: domain
+    scope_type: tileset
+    default_value: "8"
+    yaml:
+      path: fieldmap.num_tiles_per_metatile
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: extrinsic_transparency
+    type: Rgba32
+    parser: parse_rgba32
+    layer: domain
+    scope_type: tileset
+    default_value: "rgba_magenta"
+    yaml:
+      path: extrinsic_transparency
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: patch_build_enabled
+    type: bool
+    parser: parse_bool
+    layer: domain
+    scope_type: tileset
+    default_value: "false"
+    yaml:
+      path: patch.enabled
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  # Infrastructure Layer Configuration Values
+  - name: tiles_pal_mode
+    type: TilesPalMode
+    parser: parse_tiles_pal_mode
+    layer: infra
+    scope_type: tileset
+    default_value: "TilesPalMode::true_color"
+    yaml:
+      path: tiles_pal_mode
+    validators: [ ]
+    cross_field_validators: [ ]

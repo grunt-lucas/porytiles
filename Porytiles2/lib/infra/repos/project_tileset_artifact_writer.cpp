@@ -70,21 +70,12 @@ ChainableResult<void> save_tiles_png(
 
 ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entries, const std::filesystem::path &path)
 {
-    /*
-     * TODO: here, we need to check if dual-layer output is enabled. If so, then we can assume the compilation code
-     * already set the correct LayerType attribute for each metatile. We can also assume that the compiler has validated
-     * the tilemap entries to guarantee that at least one layer is completely transparent. So here, if dual layer is on,
-     * we can simply filter out one of the groups of four entries if it is entirely transparent. It doesn't actually
-     * matter which, as long as we filter on a multiple-of-four boundary. Since the attribute layer type is already set,
-     * we just need to get rid of the first transparent layer we find. If the next layer after is also transparent, it
-     * will still work correctly.
-     */
     std::ofstream out{path};
     for (const auto &entry : entries) {
         // TODO: does this code work as expected on a big-endian machine?
         const auto tile_value = static_cast<uint16_t>(
-            (entry.tile_index() & 0x3FF) | ((entry.hflip() & 1) << 10) | ((entry.vflip() & 1) << 11) |
-            ((entry.pal_index() & 0xF) << 12));
+            (entry.tile_index() & 0x3ff) | ((entry.hflip() & 1) << 10) | ((entry.vflip() & 1) << 11) |
+            ((entry.pal_index() & 0xf) << 12));
         out << static_cast<std::uint8_t>(tile_value);
         out << static_cast<std::uint8_t>(tile_value >> 8);
     }
@@ -100,6 +91,7 @@ save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, c
     for (const auto &attribute : attributes) {
         const std::uint16_t behavior = attribute.behavior();
         const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
+        // TODO: does this code work as expected on a big-endian machine?
         const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
         out << static_cast<std::uint8_t>(attribute_value);
         out << static_cast<std::uint8_t>(attribute_value >> 8);
@@ -108,7 +100,8 @@ save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, c
     return {};
 }
 
-ChainableResult<void> save_palette(const RgbaPal &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+ChainableResult<void>
+save_palette(const Palette<Rgba32> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
@@ -282,13 +275,16 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
     case TilesetArtifact::Type::metatiles_bin:
         return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
     case TilesetArtifact::Type::metatile_attributes_bin:
-        return save_metatile_attributes_bin(src.porymap_component().metatile_attributes(), transaction_dest_path);
-    case TilesetArtifact::Type::tiles_png:
+        return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+    case TilesetArtifact::Type::tiles_png: {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            tiles_pal_mode_config, config_->tiles_pal_mode(src.name()), "failed to get tiles_pal_mode config", void);
         return save_tiles_png(
             *png_indexed_saver_,
             src.porymap_component().tiles_png(),
             transaction_dest_path,
-            config_->tiles_pal_mode(src.name()));
+            tiles_pal_mode_config.value());
+    }
     case TilesetArtifact::Type::porymap_anim_frame:
         // TODO: implement
         return {};

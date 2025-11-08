@@ -31,6 +31,13 @@ namespace porytiles2 {
  *   canonical orientation finding
  * - Flipping operations transform all masks while preserving color mappings
  *
+ * @invariant Default-constructed ShapeTile is transparent (satisfies SupportsTransparency design invariant). That is,
+ * `ShapeTile{}` produces a transparent tile with an empty colors_ map, and an empty map is considered fully transparent
+ * by is_transparent().
+ *
+ * @invariant Shape masks in a ShapeTile must not overlap. Each pixel position in the tile should be covered by at most
+ * one ShapeMask. Overlapping masks indicate a programmer error and will cause tile conversion operations to panic.
+ *
  * @tparam PixelType The pixel type stored for each shape region
  */
 template <typename PixelType>
@@ -108,7 +115,7 @@ class ShapeTile {
 
         ShapeTile result;
         for (const auto &[mask, color] : colors_) {
-            result.colors_[mask.flip(h, v)] = color;
+            result.colors_.insert_or_assign(mask.flip(h, v), color);
         }
         return result;
     }
@@ -139,7 +146,7 @@ class ShapeTile {
      */
     void set(const ShapeMask &mask, const PixelType &color)
     {
-        colors_[mask] = color;
+        colors_.insert_or_assign(mask, color);
     }
 
   private:

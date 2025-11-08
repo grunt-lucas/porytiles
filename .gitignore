@@ -30,3 +30,4 @@ bar/**
 
 # Ignore Python venv
 venv/**
+.venv/**

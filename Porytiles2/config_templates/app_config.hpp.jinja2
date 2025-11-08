@@ -1,0 +1,80 @@
+{#
+  Template for generating app_config.hpp
+
+  This template generates the AppConfig interface with virtual methods for
+  configuration values defined in config_schema.yaml.
+#}
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+#include <string>
+
+#include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/result/chainable_result.hpp"
+
+namespace porytiles2 {
+
+{{ macros.autogen_warning() }}
+
+/**
+ * @brief Interface that defines a complete app layer configuration.
+ *
+ * @details
+ * The app layer operates with this interface - it doesn't need to worry about implementation. Every config value is
+ * either virtual (i.e., comes from the user) or defined in terms of other virtual values.
+ */
+class AppConfig {
+  public:
+    virtual ~AppConfig() = default;
+{% for value in config_values if value.layer == 'app' %}
+
+    // Public method with validation
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+    {
+        auto raw_val = {{ value.name }}_raw({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+{% if value.validators %}
+        // Apply validators in sequence
+{%   for validator in value.validators %}
+        if (raw_val.has_value()) {
+            raw_val = {{ validator }}(raw_val.value());
+        }
+{%   endfor %}
+{% endif %}
+{% if value.cross_field_validators %}
+        // Apply cross-field validators
+{%   for cross_validator in value.cross_field_validators %}
+{%     if cross_validator.startswith('compare_') and ':' in cross_validator %}
+{%       set validator_parts = cross_validator.split(':') %}
+{%       set operator_name = validator_parts[0] %}
+{%       set other_field_name = validator_parts[1] %}
+        if (raw_val.has_value()) {
+            raw_val = {{ operator_name }}<{{ value.type }}>(
+                raw_val.value(), *this, {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}, "{{ other_field_name }}",
+                [](const AppConfig &cfg, const std::string &{% if value.scope_type == 'tileset' %}ts{% elif value.scope_type == 'layout' %}ly{% endif %}) { return cfg.{{ other_field_name }}({% if value.scope_type == 'tileset' %}ts{% elif value.scope_type == 'layout' %}ly{% endif %}); }
+            );
+        }
+{%     else %}
+        // Custom cross-field validator
+        if (raw_val.has_value()) {
+            raw_val = {{ cross_validator }}(raw_val.value(), *this, {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+        }
+{%     endif %}
+{%   endfor %}
+{% endif %}
+        return raw_val;
+    }
+{% endfor %}
+
+  protected:
+{% for value in config_values if value.layer == 'app' %}
+
+    // Protected virtual method that fetches raw value from provider
+    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
+{% endfor %}
+};
+
+} // namespace porytiles2

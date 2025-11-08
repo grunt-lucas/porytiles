@@ -21,29 +21,26 @@ Uses CMake with C++23 standard. The build system requires:
 ### Build Commands
 ```bash
 # Configure debug build
-cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -B vscode-build -DCMAKE_BUILD_TYPE=Debug
 
 # Configure debug build with coverage
-cmake -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
-
-# Configure release build
-cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake -B vscode-build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
 # Build project
-cmake --build build -j7
+cmake --build vscode-build -j7
+# Note: build folder may also be called `clion-build-debug`
 ```
-Alternatively, if there is a build directory called `clion-build-debug`, use that instead of `build`.
 
 ## Testing
-- Doctests for legacy version at `./build/Porytiles1/tests/Porytiles1Tests`
-- GoogleTest unit tests at `./build/Porytiles2/tests/Porytiles2UnitTests`
-- GoogleTest integration tests at `./build/Porytiles2/tests/Porytiles2IntegrationTests`
-- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests
+- GoogleTest all test runner at `./build/Porytiles2/tests/Porytiles2AllTests`
 
 Prefer to simply run all tests using the all test runner.
 
 Run all tests:
 ```bash
+# WHEN RUNNING TESTS, ALWAYS SEND OUTPUT TO A TEMPORARY FILE SO YOU DON'T POLLUTE YOUR CONTEXT.
+# You can then check if the build succeeded by looking at the exit code.
+# If non-zero, inspect the file and see what went wrong.
 ./build/Porytiles2/tests/Porytiles2AllTests # this runs both Porytiles2UnitTests and Porytiles2IntegrationTests
 ```
 
@@ -58,13 +55,49 @@ Located in `Scripts/` directory:
 ```
 Uses `clang-format` with project-specific style configuration.
 
+## Python Environment and Config Generation
+
+### Python Virtual Environment Setup
+The project uses a Python virtual environment (`.venv`) for running code generation scripts.
+
+**CRITICAL: ALWAYS use `.venv` when running Python scripts!**
+
+If `.venv` does not exist, create it:
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate and install dependencies
+source .venv/bin/activate
+pip install Jinja2 PyYAML
+```
+
+### Config Generation Script
+The configuration system is auto-generated from `Porytiles2/config_templates/config_schema.yaml` using Jinja2 templates.
+
+**To regenerate config files:**
+```bash
+# ALWAYS use the virtual environment!
+source .venv/bin/activate && python Scripts/generate_config.py
+```
+
+The script generates C++ configuration files including:
+- Layer config interfaces (DomainConfig, AppConfig, InfraConfig)
+- LazyLayeredConfig implementation
+- ConfigProvider base class
+- DefaultProvider and YamlFileProvider implementations
+
+**When to regenerate:**
+- After modifying `config_schema.yaml`
+- After updating any `.jinja2` template in `Porytiles2/config_templates/`
+
 ## Project Structure
 - `Porytiles1/` - Legacy version codebase, ignore this code unless otherwise instructed
 - `Porytiles2/` - Next-generation version with domain-driven design
 - `Resources/` - Test assets and example files
 - `Documentation/` - Doxygen configuration
 - `Scripts/` - Build and quality scripts
-- `build/` - CMake build artifacts
+- `vscode-build/` - CMake build artifacts
 
 ## Driver Programs
 - `./build/Porytiles1/tools/driver/porytiles` - Legacy CLI tool
@@ -73,8 +106,8 @@ Uses `clang-format` with project-specific style configuration.
 ## Key Design Patterns
 Porytiles2 implements:
 - Domain-driven design with clear separation of concerns
-- Library-based architecture inspired by clang
-- Template-based utilities in `Porytiles2/templates/`
+- Utilities in `Porytiles2/utilities/` and `Porytiles2/xcut/`
+- Fruit DI code in `Porytiles2/di/`
 
 ## 7 Claude rules
 1. First think through the problem, read the codebase for relevant files, and write a plan to `Porytiles2/claudetasks/TODO.md`.
@@ -82,7 +115,7 @@ Porytiles2 implements:
 3. Before you begin working, check in with me and I will verify the plan.
 4. Then, begin working on the todo items, marking them as complete as you go.
 5. Every step of the way, give me a high-level explanation of what changes you made.
-6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity. Run the format script, unit, and integration tests after you make a code change.
+6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity. Run the format script and full test suite after you make a code change.
 7. Finally, add a review section to the `Porytiles2/claudetasks/TODO.md` file with a summary of the changes you made and any other relevant information.
 
 ## Development Workflow Tools
@@ -90,6 +123,7 @@ Porytiles2 implements:
 2. Build: `cmake --build build -j7`
 3. Unit Tests: `./build/Porytiles2/tests/Porytiles2UnitTests`
 4. Integration Tests: `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+5. Generate config files: `source .venv/bin/activate && python Scripts/generate_config.py`
 
 ## C++ Code Style
 Use the following example snippet as a guide for code style.
@@ -97,6 +131,7 @@ Use the following example snippet as a guide for code style.
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
 - **ALWAYS use the code style outlined in the C++ Code Style section above**
+- **ALWAYS use `.venv` when running Python scripts** - Never use system Python for Scripts/generate_config.py or other Python scripts
 - **Ignore contents of `Porytiles1/` directory** unless I explicitly tell you to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to do so
 - **NEVER replace existing complex components with simplified versions** - always fix the actual problem

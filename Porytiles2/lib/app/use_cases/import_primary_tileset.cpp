@@ -53,12 +53,20 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
     // component. So we'll need to pull them from the original component and inject them into this one before
     // persisting.
 
-    // 7. Perform an incremental compilation.
+    // 7. Perform a patch build.
     // TODO: add this
 
     // 8. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
-        return std::unexpected{save_result.error().details(PlainTextFormatter{})};
+        auto error_lines = save_result.error().details(PlainTextFormatter{});
+        std::string joined_error;
+        for (std::size_t i = 0; i < error_lines.size(); ++i) {
+            if (i > 0) {
+                joined_error += "\n";
+            }
+            joined_error += error_lines[i];
+        }
+        return std::unexpected{joined_error};
     }
 
     return {};

@@ -1,34 +1,37 @@
 {
-    "configurations": [
-        {
-            "name": "Mac",
-            "includePath": [
-                "${workspaceFolder}/Porytiles1/include/**",
-                "${workspaceFolder}/Porytiles1/lib/**",
-                "${workspaceFolder}/Porytiles1/tools/**",
-                "${workspaceFolder}/Porytiles1/vendor/**",
-                "${workspaceFolder}/Porytiles2/include/**",
-                "${workspaceFolder}/Porytiles2/lib/**",
-                "${workspaceFolder}/Porytiles2/tools/**",
-                "${workspaceFolder}/build/_deps/fmt-src/include/**",
-                "${workspaceFolder}/build/_deps/cli11_proj-src/include/**",
-                "${workspaceFolder}/build/_deps/gsl-src/include/**",
-                "${workspaceFolder}/build/_deps/cimg-src/**",
-                "${workspaceFolder}/build/_deps/googletest-src/googletest/include/**",
-                "${workspaceFolder}/build/_deps/pngpp-src/include/**",
-                "${workspaceFolder}/build/_deps/json-src/include/**",
-                "/opt/homebrew/opt/libpng/include/**"
-            ],
-            "defines": [
-                "cimg_display=0"
-            ],
-            "macFrameworkPath": [
-                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
-            ],
-            "cppStandard": "c++23",
-            "intelliSenseMode": "macos-clang-arm64",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        }
-    ],
-    "version": 4
+  "configurations": [
+    {
+      "name": "Mac",
+      "includePath": [
+        "${workspaceFolder}/Porytiles1/include/**",
+        "${workspaceFolder}/Porytiles1/lib/**",
+        "${workspaceFolder}/Porytiles1/tools/**",
+        "${workspaceFolder}/Porytiles1/vendor/**",
+        "${workspaceFolder}/Porytiles2/include/**",
+        "${workspaceFolder}/Porytiles2/lib/**",
+        "${workspaceFolder}/Porytiles2/tools/**",
+        "${workspaceFolder}/vscode-build/_deps/fmt-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/cli11_proj-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/gsl-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/cimg-src/**",
+        "${workspaceFolder}/vscode-build/_deps/googletest-src/googletest/include/**",
+        "${workspaceFolder}/vscode-build/_deps/pngpp-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/json-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/yaml-cpp-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/fruit-src/include/**",
+        "${workspaceFolder}/vscode-build/_deps/fruit-build/include/**",
+        "/opt/homebrew/opt/libpng/include/**"
+      ],
+      "defines": [
+        "cimg_display=0"
+      ],
+      "macFrameworkPath": [
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+      ],
+      "cppStandard": "c++23",
+      "intelliSenseMode": "macos-clang-arm64",
+      "configurationProvider": "ms-vscode.makefile-tools"
+    }
+  ],
+  "version": 4
 }

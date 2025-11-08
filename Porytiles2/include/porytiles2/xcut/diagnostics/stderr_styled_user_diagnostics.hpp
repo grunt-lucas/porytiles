@@ -11,6 +11,14 @@
 
 namespace porytiles2 {
 
+/*
+ * TODO: change this class to ConfigurableUserDiagnostics. We should expose for configuration:
+ * 1. Where the diagnostics go: stderr, stdout, a file?
+ * 2. Colors on or off
+ * 3. Diagnostic tag include and exclude filters
+ * 4. Diagnostic tag settable limits: stop showing diagnostics with a given tag when a limit is hit
+ */
+
 /**
  * @brief Concrete implementation of UserDiagnostics that outputs structured messages to stderr, optionally with colored
  * formatting.
@@ -19,7 +27,7 @@ namespace porytiles2 {
  * StderrStyledUserDiagnostics provides a terminal-based implementation of the UserDiagnostics interface. It outputs all
  * diagnostic messages to stderr with some additional pretty-print structuring. If provided with an
  * AnsiStyledTextFormatter, it will additionally use canonical diagnostic coloring and styling (canonical, i.e. magenta
- * for warnings, red for errors, boldin where appropriate, etc.) via ANSI terminal codes. The implementation includes:
+ * for warnings, red for errors, bolding where appropriate, etc.) via ANSI terminal codes. The implementation includes:
  *
  * - **Colored Output**: Uses ANSI codes for terminal colors (cyan for notes, magenta for warnings, red for errors)
  * - **Multi-line Support**: First line gets the appropriate prefix, subsequent lines are indented with visual
@@ -32,15 +40,16 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     /**
-     * @brief Display a multi-line informational note to stderr.
+     * @brief Display a multi-line tagged informational note to stderr.
      *
      * @details
-     * Outputs informational messages with cyan "note:" prefix on the first line and appropriate indentation for
-     * subsequent lines.
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines.
      *
+     * @param tag Categorization tag for the note
      * @param lines Vector of strings representing each line of the note
      */
-    void note(const std::vector<std::string> &lines) const override;
+    void note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged warning note to stderr.
@@ -67,15 +76,16 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
-     * @brief Display a multi-line error message to stderr.
+     * @brief Display a multi-line tagged error message to stderr.
      *
      * @details
-     * Outputs error messages with red "error:" prefix on the first line and appropriate indentation for subsequent
-     * lines.
+     * Outputs error messages with red "error:" prefix and tag suffix on the first line, formatted as "error: <message>
+     * [<tag>]" with appropriate indentation for subsequent lines.
      *
+     * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    void err(const std::vector<std::string> &lines) const override;
+    void err(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain to stderr.
