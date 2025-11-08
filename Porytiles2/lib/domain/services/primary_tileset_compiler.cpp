@@ -21,9 +21,9 @@
 #include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/utilities/transform.hpp"
 #include "porytiles2/utilities/unwrap_config.hpp"
+#include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/config/config_validators.hpp"
 
 #include <unordered_set>
 
@@ -79,17 +79,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
                 FormatParam{num_tiles_primary.name() + ":", Style::bold},
                 FormatParam{num_tiles_primary, Style::bold}),
             format_->format("({})", num_tiles_primary.source()),
-            std::string{"foo"},
-            std::string{"bar"}});
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_secondary, tileset.name(), std::unique_ptr<Tileset>);
-    diag_->note(
-        "config-info",
-        std::vector{
-            format_->format(
-                "{} {}",
-                FormatParam{num_tiles_secondary.name() + ":", Style::bold},
-                FormatParam{num_tiles_secondary, Style::bold}),
-            format_->format("({})", num_tiles_secondary.source()),
             std::string{"foo"},
             std::string{"bar"}});
     diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
@@ -188,7 +177,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
 
     // Showcase how config validation can work
-    // ConfigValue<std::size_t> test{0, "foo", "bar", std::vector<std::string>{}};
+    // ConfigValue<std::size_t> test{0, "foo", "bar", std::vector<std::string>{"baz", "bat", "cat", "mat"}};
     // PT_TRY_CALL_CHAIN_ERR(size_t_val_greater_than_zero(test), "config validation failed", std::unique_ptr<Tileset>);
 
     // Grab configuration values we'll need

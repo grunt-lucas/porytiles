@@ -95,7 +95,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_tiles_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_total(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_total(const std::string &tileset) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_metatiles_primary(const std::string &tileset) const override;
@@ -103,9 +104,11 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_metatiles_total(const std::string &tileset) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_primary(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_primary(const std::string &tileset) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_total(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_total(const std::string &tileset) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     max_map_data_size(const std::string &tileset) const override;
@@ -116,7 +119,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency(const std::string &tileset) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    patch_build_enabled(const std::string &tileset) const override;
 
     /*
      * App Config

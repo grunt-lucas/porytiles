@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles2/utilities/text/text_formatter.hpp"
+
 namespace porytiles2 {
 
 /**
@@ -122,6 +124,30 @@ class ConfigValue {
     [[nodiscard]] const std::vector<std::string> &source_details() const
     {
         return source_details_;
+    }
+
+    [[nodiscard]] std::pair<std::vector<std::string>, std::vector<std::vector<FormatParam>>> format_data() const
+    {
+        // foo = 3
+        // Source: ./porytiles.yaml:12
+        // ... details here
+
+        std::vector<std::string> err_text{};
+        std::vector<std::vector<FormatParam>> params{};
+
+        err_text.emplace_back("{} = {}");
+        params.push_back(std::vector{FormatParam{name(), Style::bold}, FormatParam{value(), Style::bold}});
+        err_text.emplace_back("Source: {}");
+        params.push_back(std::vector{FormatParam{source(), Style::bold}});
+
+        // Add source details if available
+        if (!source_details().empty()) {
+            err_text.emplace_back("");
+            params.emplace_back();
+            std::ranges::copy(source_details(), std::back_inserter(err_text));
+        }
+
+        return {err_text, params};
     }
 
   private:
