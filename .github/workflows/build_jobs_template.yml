@@ -28,24 +28,26 @@ jobs:
       - name: Run the test suite
         uses: ./.github/workflows/run_test_suite
 
-  build-linux-amd64-gcc:
-    name: Build on linux-amd64 with gcc
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Porytiles repository
-        uses: actions/checkout@v4
-
-      - name: Install Porytiles build dependencies
-        uses: ./.github/workflows/install_dependencies_linux
-
-      - name: Install gcc
-        uses: ./.github/workflows/install_gcc_linux
-
-      - name: Build the project
-        uses: ./.github/workflows/build_linux_gcc
-
-      - name: Run the test suite
-        uses: ./.github/workflows/run_test_suite
+  # Using some C++23 features that are supported by GCC 15, need to wait for
+  # GitHub to update the Ubuntu version used in the GitHub Actions runners.
+  #  build-linux-amd64-gcc:
+  #    name: Build on linux-amd64 with gcc
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: Checkout Porytiles repository
+  #        uses: actions/checkout@v4
+  #
+  #      - name: Install Porytiles build dependencies
+  #        uses: ./.github/workflows/install_dependencies_linux
+  #
+  #      - name: Install gcc
+  #        uses: ./.github/workflows/install_gcc_linux
+  #
+  #      - name: Build the project
+  #        uses: ./.github/workflows/build_linux_gcc
+  #
+  #      - name: Run the test suite
+  #        uses: ./.github/workflows/run_test_suite
 
   build-linux-arm64-clang:
     name: Build on linux-arm64 with clang
