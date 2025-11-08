@@ -126,6 +126,32 @@ class ConfigValue {
         return source_details_;
     }
 
+    /**
+     * @brief Generates formatted text data for displaying this configuration value.
+     *
+     * @details
+     * Creates a structured representation of the configuration value suitable for formatted output or error messages.
+     * The output includes the value name, its actual value, the source information, and any additional source details
+     * if available. The format follows the pattern:
+     *
+     * ```
+     * name = value
+     * Source: source_string
+     * [optional source details lines]
+     * ```
+     *
+     * Each format string in the returned pair contains placeholders ({}) that correspond to the FormatParam objects in
+     * the parallel vector, which provide both the text to insert and styling information.
+     *
+     * @return A pair containing:
+     *         - first: Vector of format strings with placeholders
+     *         - second: Vector of FormatParam vectors, where each inner vector contains the parameters for the
+     *           corresponding format string at the same index
+     * @post The returned vectors in the pair have matching sizes (excluding source_details entries which have no
+     *       parameters)
+     * @post The first format string is always "{} = {}" for name and value
+     * @post The second format string is always "Source: {}" for source information
+     */
     [[nodiscard]] std::pair<std::vector<std::string>, std::vector<std::vector<FormatParam>>> format_data() const
     {
         // foo = 3

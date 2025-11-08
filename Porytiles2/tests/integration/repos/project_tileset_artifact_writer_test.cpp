@@ -28,12 +28,13 @@ using namespace porytiles2;
 namespace {
 
 class MockInfraConfig : public InfraConfig {
-  public:
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &) const override
+  protected:
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode_raw(const std::string &) const override
     {
         return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }
 
+  public:
     void test_root(const std::filesystem::path &path)
     {
         test_root_ = path;

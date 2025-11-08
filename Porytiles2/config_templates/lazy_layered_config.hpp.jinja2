@@ -94,30 +94,33 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     {
     }
 
+  protected:
     /*
-     * Domain Config
+     * Domain Config Raw Methods
      */
 {% for value in config_values if value.layer == 'domain' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
 {% endfor %}
 
     /*
-     * App Config
+     * App Config Raw Methods
      */
 {% for value in config_values if value.layer == 'app' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
 {% endfor %}
 
     /*
-     * Infra Config
+     * Infra Config Raw Methods
      */
 {% for value in config_values if value.layer == 'infra' %}
-    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
 {% endfor %}
+
+  public:
 
     /*
      * LazyLayeredConfig Specific Functionality

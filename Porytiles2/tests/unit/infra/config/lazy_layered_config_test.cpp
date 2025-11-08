@@ -71,14 +71,12 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
 
     auto tiles_primary_result = config.num_tiles_primary(tileset_name);
     auto tiles_total_result = config.num_tiles_total(tileset_name);
-    auto tiles_secondary_result = config.num_tiles_secondary(tileset_name);
     auto max_map_size_result = config.max_map_data_size(tileset_name);
     auto test_tileset_mode_result = config.patch_build_enabled("test_tileset");
     auto another_tileset_mode_result = config.patch_build_enabled("another_tileset");
 
     ASSERT_TRUE(tiles_primary_result.has_value());
     ASSERT_TRUE(tiles_total_result.has_value());
-    ASSERT_TRUE(tiles_secondary_result.has_value());
     ASSERT_TRUE(max_map_size_result.has_value());
     ASSERT_TRUE(test_tileset_mode_result.has_value());
     ASSERT_TRUE(another_tileset_mode_result.has_value());
@@ -86,7 +84,6 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     // The second value() call is unnecessary since ConfigValue provides implicit unwrapping
     EXPECT_EQ(tiles_primary_result.value().value(), 2000);
     EXPECT_EQ(tiles_total_result.value(), 4000);
-    EXPECT_EQ(tiles_secondary_result.value(), 2000);
     EXPECT_EQ(max_map_size_result.value(), 10240);
     EXPECT_EQ(test_tileset_mode_result.value(), true);
     EXPECT_EQ(another_tileset_mode_result.value(), false);

@@ -12,23 +12,10 @@
 #   default_value: Default value for DefaultProvider (C++ expression as string)
 #   yaml: YAML configuration for YamlFileProvider
 #     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
-
-# TODO: config validation
-# We need a more robust system for logical config validation.
-# The parser functions can obviously validate that the literal provided config value is valid.
-# However, some config values may need additional source-independent validation.
-# E.g. imagine we have a future "select_top_n_results" config setting.
-# Here, the type and parser will be std::size_t, which will prevent users from supplying strings, negative values, etc.
-# However, even within the valid size_t range, we still want to restrict the value from being 0,
-# since 0 makes no sense in a top_n selector. So we'd need additional validation that forces the value to be at least 1.
-#
-# One idea I had for this: we have two versions of each config fetching function.
-# In the layer config file, one protected virtual version called select_top_n_results_provider()
-# which grabs the raw value from the provider.
-# Then, the actual user-facing version called select_top_n_results() which calls the virtual version
-# and also does the validation. Kinda like how num_x_secondary currently work in DomainConfig.
-# Since we have a templating system, it should be easy to auto-generate both via the templates.
-# Is there some way to provide value constraints in YAML that we can translate directly to cpp code?
+#   validators: List of validator function names to apply (required, use empty list [] if none)
+#     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
+#     - Applied in sequence after fetching from provider, before returning to caller
+#     - Example: [size_t_val_greater_than_zero]
 
 config_values:
   # Domain Layer Configuration Values
@@ -40,6 +27,7 @@ config_values:
     default_value: "512"
     yaml:
       path: fieldmap.num_tiles_primary
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_tiles_total
     type: std::size_t
@@ -49,6 +37,7 @@ config_values:
     default_value: "1024"
     yaml:
       path: fieldmap.num_tiles_total
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_metatiles_primary
     type: std::size_t
@@ -58,6 +47,7 @@ config_values:
     default_value: "512"
     yaml:
       path: fieldmap.num_metatiles_primary
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_metatiles_total
     type: std::size_t
@@ -67,6 +57,7 @@ config_values:
     default_value: "1024"
     yaml:
       path: fieldmap.num_metatiles_total
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_pals_primary
     type: std::size_t
@@ -76,6 +67,7 @@ config_values:
     default_value: "6"
     yaml:
       path: fieldmap.num_pals_primary
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_pals_total
     type: std::size_t
@@ -85,6 +77,7 @@ config_values:
     default_value: "13"
     yaml:
       path: fieldmap.num_pals_total
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: max_map_data_size
     type: std::size_t
@@ -94,6 +87,7 @@ config_values:
     default_value: "10240"
     yaml:
       path: fieldmap.max_map_data_size
+    validators: [ size_t_val_greater_than_zero ]
 
   - name: num_tiles_per_metatile
     type: std::size_t
@@ -103,6 +97,7 @@ config_values:
     default_value: "8"
     yaml:
       path: fieldmap.num_tiles_per_metatile
+    validators: [ ]
 
   - name: extrinsic_transparency
     type: Rgba32
@@ -112,6 +107,7 @@ config_values:
     default_value: "rgba_magenta"
     yaml:
       path: extrinsic_transparency
+    validators: [ ]
 
   - name: patch_build_enabled
     type: bool
@@ -121,6 +117,7 @@ config_values:
     default_value: "false"
     yaml:
       path: patch.enabled
+    validators: [ ]
 
   # Infrastructure Layer Configuration Values
   - name: tiles_pal_mode
@@ -131,3 +128,4 @@ config_values:
     default_value: "TilesPalMode::true_color"
     yaml:
       path: tiles_pal_mode
+    validators: [ ]

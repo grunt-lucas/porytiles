@@ -10,6 +10,7 @@
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -32,8 +33,29 @@ class InfraConfig {
     virtual ~InfraConfig() = default;
 {% for value in config_values if value.layer == 'infra' %}
 
+    // Public method with validation
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+    {
+        auto raw_val = {{ value.name }}_raw({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+{% if value.validators %}
+        // Apply validators in sequence
+{%   for validator in value.validators %}
+        if (raw_val.has_value()) {
+            raw_val = {{ validator }}(raw_val.value());
+        }
+{%   endfor %}
+{% endif %}
+        return raw_val;
+    }
+{% endfor %}
+
+  protected:
+{% for value in config_values if value.layer == 'infra' %}
+
+    // Protected virtual method that fetches raw value from provider
     [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
+    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
 {% endfor %}
 };
 

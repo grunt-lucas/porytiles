@@ -35,6 +35,20 @@ def generate_config_files():
         print("Error: Schema must contain 'config_values' key", file=sys.stderr)
         sys.exit(1)
 
+    # Validate that all config values have a validators field
+    for idx, config_value in enumerate(schema["config_values"]):
+        if "validators" not in config_value:
+            name = config_value.get("name", f"<unnamed config value at index {idx}>")
+            print(
+                f"Error: Config value '{name}' is missing required 'validators' field",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Add 'validators: []' if no validators are needed",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     print(f"Loaded {len(schema['config_values'])} config values from schema")
 
     # Setup Jinja2 environment with new template directory
