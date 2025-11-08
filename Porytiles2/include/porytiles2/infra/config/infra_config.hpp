@@ -3,8 +3,8 @@
 #include <string>
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -27,15 +27,13 @@ class InfraConfig {
     virtual ~InfraConfig() = default;
 
     // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode(const std::string &tileset) const
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &tileset) const
     {
         auto raw_val = tiles_pal_mode_raw(tileset);
         return raw_val;
     }
 
   protected:
-
     // Protected virtual method that fetches raw value from provider
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(const std::string &tileset) const = 0;

@@ -3,8 +3,8 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

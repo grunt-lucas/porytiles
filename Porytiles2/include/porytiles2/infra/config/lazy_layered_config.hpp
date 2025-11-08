@@ -120,8 +120,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(const std::string &tileset) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    patch_build_enabled_raw(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled_raw(const std::string &tileset) const override;
 
     /*
      * App Config Raw Methods
@@ -130,10 +129,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /*
      * Infra Config Raw Methods
      */
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode_raw(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_raw(const std::string &tileset) const override;
 
   public:
-
     /*
      * LazyLayeredConfig Specific Functionality
      */

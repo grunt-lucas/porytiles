@@ -55,6 +55,42 @@ Located in `Scripts/` directory:
 ```
 Uses `clang-format` with project-specific style configuration.
 
+## Python Environment and Config Generation
+
+### Python Virtual Environment Setup
+The project uses a Python virtual environment (`.venv`) for running code generation scripts.
+
+**CRITICAL: ALWAYS use `.venv` when running Python scripts!**
+
+If `.venv` does not exist, create it:
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate and install dependencies
+source .venv/bin/activate
+pip install Jinja2 PyYAML
+```
+
+### Config Generation Script
+The configuration system is auto-generated from `Porytiles2/config_templates/config_schema.yaml` using Jinja2 templates.
+
+**To regenerate config files:**
+```bash
+# ALWAYS use the virtual environment!
+source .venv/bin/activate && python Scripts/generate_config.py
+```
+
+The script generates C++ configuration files including:
+- Layer config interfaces (DomainConfig, AppConfig, InfraConfig)
+- LazyLayeredConfig implementation
+- ConfigProvider base class
+- DefaultProvider and YamlFileProvider implementations
+
+**When to regenerate:**
+- After modifying `config_schema.yaml`
+- After updating any `.jinja2` template in `Porytiles2/config_templates/`
+
 ## Project Structure
 - `Porytiles1/` - Legacy version codebase, ignore this code unless otherwise instructed
 - `Porytiles2/` - Next-generation version with domain-driven design
@@ -87,6 +123,7 @@ Porytiles2 implements:
 2. Build: `cmake --build build -j7`
 3. Unit Tests: `./build/Porytiles2/tests/Porytiles2UnitTests`
 4. Integration Tests: `./build/Porytiles2/tests/Porytiles2IntegrationTests`
+5. Generate config files: `source .venv/bin/activate && python Scripts/generate_config.py`
 
 ## C++ Code Style
 Use the following example snippet as a guide for code style.
@@ -94,6 +131,7 @@ Use the following example snippet as a guide for code style.
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
 - **ALWAYS use the code style outlined in the C++ Code Style section above**
+- **ALWAYS use `.venv` when running Python scripts** - Never use system Python for Scripts/generate_config.py or other Python scripts
 - **Ignore contents of `Porytiles1/` directory** unless I explicitly tell you to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to do so
 - **NEVER replace existing complex components with simplified versions** - always fix the actual problem

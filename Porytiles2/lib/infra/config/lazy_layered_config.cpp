@@ -151,7 +151,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::max_map_data_size_r
         key, [&tileset](const ConfigProvider &provider) { return provider.max_map_data_size(tileset); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_per_metatile_raw(const std::string &tileset) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_tiles_per_metatile_raw(const std::string &tileset) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
