@@ -1,3 +1,46 @@
+/**
+ * @file
+ * @brief Cross-cutting configuration validators shared across all architectural layers.
+ *
+ * @details
+ * This file provides layer-agnostic configuration validators that can be used by DomainConfig, AppConfig, and
+ * InfraConfig without introducing circular dependencies. The validators are organized into two categories:
+ *
+ * **Validator Categories**
+ *
+ * 1. **Single-Value Validators**: Validate a single config value in isolation (e.g., size_t_val_greater_than_zero)
+ * 2. **Cross-Field Validators**: Validate a config value by comparing it against other config values within the same
+ *    layer (e.g., compare_greater_than, compare_less_than). These validators accept a ConfigInterface and can fetch
+ *    other values for comparison.
+ *
+ * **Design Rationale: Why xcut Layer for Common Validators?**
+ *
+ * The xcut (cross-cutting) layer sits above the domain, app, and infra layers in the architectural hierarchy. By
+ * placing common validators here, we achieve several benefits:
+ *
+ * 1. **Dependency Inversion**: Lower layers (domain, app, infra) can depend on xcut without creating cycles
+ * 2. **Code Reuse**: Validators that don't depend on layer-specific types can be shared across all layers
+ * 3. **Separation of Concerns**: Generic validation logic is separated from domain/app/infra-specific logic
+ *
+ * **Layer-Specific Validators: When and Why?**
+ *
+ * When a validator needs to reference layer-specific types (e.g., TilesPalMode from the infra layer), it cannot be
+ * defined here in xcut because that would require xcut to depend on a lower-level layer, creating a circular
+ * dependency. In these cases, the validator should be defined in a layer-specific header such as
+ * `app_config_validators.hpp`, `domain_config_validators.hpp`, or `infra_config_validators.hpp`.
+ *
+ * The config generation system supports this pattern seamlessly because validators are referenced by name as strings
+ * in the YAML schema. During code generation, these validator function names are copy-pasted into the generated
+ * layer config files. The generation process is agnostic to where the validators are defined - it only cares that the
+ * function name matches. This allows each layer's config header to include both the common xcut validators and its
+ * own layer-specific validators without any dependency issues.
+ *
+ *
+ * @note All validators return ChainableResult<ConfigValue<T>> to support composable validation chains
+ * @see config_value.hpp for the ConfigValue type
+ * @see chainable_result.hpp for the ChainableResult monadic error handling type
+ */
+
 #pragma once
 
 #include <cstddef>
@@ -11,10 +54,6 @@
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
-
-/*
- * Regular (single-value) validators
- */
 
 /**
  * @brief Validates that a size_t config value is greater than zero.
@@ -46,11 +85,6 @@ size_t_val_greater_than_zero(const ConfigValue<std::size_t> &val)
     }
     return val;
 }
-
-/*
- * Cross-field validators
- * These validators can access other config values for validation
- */
 
 namespace details {
 
