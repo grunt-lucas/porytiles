@@ -6,7 +6,7 @@
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/asset_generator.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -37,7 +37,7 @@ class CreatePrimaryTileset {
      * @param tileset_name The name of the primary Tileset to create.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] Result<void> create(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<void> create(const std::string &tileset_name) const;
 
   private:
     std::unique_ptr<TilesetRepo> tileset_repo_;

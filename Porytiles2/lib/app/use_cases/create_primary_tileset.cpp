@@ -4,23 +4,22 @@
 #include <string>
 
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/templates/result.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 namespace porytiles2 {
 
-Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
+ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
 {
     // 1. Check if the primary tileset already exists. If so, abort with an error message.
     if (tileset_repo_->exists(tileset_name)) {
-        return std::unexpected{"tileset already exists"};
+        return FormattableError{"tileset already exists"};
     }
 
     // 2. Initialize a `PorytilesTilesetComponent` with default assets.
     auto maybe_porytiles_component = asset_generator_->generate();
     if (!maybe_porytiles_component.has_value()) {
-        return std::unexpected{maybe_porytiles_component.error()};
+        return FormattableError{maybe_porytiles_component.error()};
     }
     auto porytiles_component = std::move(maybe_porytiles_component.value());
 
@@ -41,7 +40,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
             }
             joined_error += error_lines[i];
         }
-        return std::unexpected{joined_error};
+        return FormattableError{joined_error};
     }
     const auto new_tileset = std::move(maybe_new_tileset.value());
 
@@ -62,7 +61,7 @@ Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
             }
             joined_error += error_lines[i];
         }
-        return std::unexpected{joined_error};
+        return FormattableError{joined_error};
     }
 
     return {};

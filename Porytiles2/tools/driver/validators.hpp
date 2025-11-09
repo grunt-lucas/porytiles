@@ -8,7 +8,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/templates/parse_int.hpp"
+#include "porytiles2/utilities/parse_int.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 class TilesPalModeValidator final : public CLI::Validator {

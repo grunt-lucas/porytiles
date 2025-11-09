@@ -5,7 +5,6 @@
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact.hpp"
-#include "porytiles2/templates/result.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -33,9 +32,9 @@ class TilesetArtifactWriter {
      * Starts a transaction that buffers all subsequent write operations until a commit() call. If a transaction is
      * already active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error description
      */
-    [[nodiscard]] virtual Result<void> begin_transaction() = 0;
+    [[nodiscard]] virtual ChainableResult<void> begin_transaction() = 0;
 
     /**
      * @brief Commits all buffered write operations in the current transaction.
@@ -57,9 +56,9 @@ class TilesetArtifactWriter {
      * transaction is closed and a new one must be started for further transactional writes. If no transaction is
      * active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error description
      */
-    [[nodiscard]] virtual Result<void> rollback() = 0;
+    [[nodiscard]] virtual ChainableResult<void> rollback() = 0;
 
     /**
      * @brief Writes an artifact from a Tileset to the backing store.

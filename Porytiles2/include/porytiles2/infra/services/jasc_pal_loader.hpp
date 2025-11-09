@@ -1,6 +1,7 @@
 #pragma once
 
 #include "porytiles2/infra/services/file_pal_loader.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -11,7 +12,7 @@ class JascPalLoader final : public FilePalLoader {
   public:
     JascPalLoader() = default;
 
-    [[nodiscard]] Result<Palette<Rgba32>> load(const std::filesystem::path &path) const override;
+    [[nodiscard]] ChainableResult<Palette<Rgba32>> load(const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles2

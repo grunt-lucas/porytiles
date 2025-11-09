@@ -8,7 +8,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/templates/result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 using namespace porytiles2;

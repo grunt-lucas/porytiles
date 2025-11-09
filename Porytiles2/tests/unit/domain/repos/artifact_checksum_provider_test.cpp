@@ -7,6 +7,7 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 using namespace porytiles2;
 using namespace ::testing;
@@ -24,7 +25,7 @@ class MockArtifactChecksumProvider : public ArtifactChecksumProvider {
         (const std::string &tileset_name),
         (const, override));
     MOCK_METHOD(
-        (Result<void>),
+        (ChainableResult<void>),
         cache_tileset_checksums,
         ((const std::string &tileset_name), (const std::unordered_map<ArtifactKey, std::string> &checksums)),
         (const, override));

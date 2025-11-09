@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -20,7 +20,7 @@ NoopArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &t
     return {};
 }
 
-Result<void> NoopArtifactChecksumProvider::cache_tileset_checksums(
+ChainableResult<void> NoopArtifactChecksumProvider::cache_tileset_checksums(
     const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
 {
     return {};

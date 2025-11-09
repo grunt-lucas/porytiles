@@ -151,7 +151,7 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
-        return FormattableError{fmt::format("failed to load tiles.png: {}", image_result.error())};
+        return ChainableResult<void>{FormattableError{"failed to load tiles.png"}, image_result};
     }
     dest.porymap_component().tiles_png(*image_result.value());
     return {};
@@ -166,7 +166,7 @@ ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, 
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return FormattableError{fmt::format("failed to load: {}", pal_result.error())};
+        return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
     }
     dest.porymap_component().set_pal(pal_result.value(), index);
 

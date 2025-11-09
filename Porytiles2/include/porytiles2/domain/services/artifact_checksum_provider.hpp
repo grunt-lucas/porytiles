@@ -5,7 +5,7 @@
 
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -47,9 +47,9 @@ class ArtifactChecksumProvider {
      *
      * @param tileset_name The name of the Tileset for which to cache checksums
      * @param checksums A mapping of artifact keys to their checksums to be cached
-     * @return Result indicating success or failure of the cache operation
+     * @return ChainableResult indicating success or failure of the cache operation
      */
-    [[nodiscard]] virtual Result<void> cache_tileset_checksums(
+    [[nodiscard]] virtual ChainableResult<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
 
     /**

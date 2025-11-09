@@ -5,6 +5,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -26,7 +27,7 @@ class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
     load_cached_tileset_checksums(const std::string &tileset_name) const override;
 
-    [[nodiscard]] Result<void> cache_tileset_checksums(
+    [[nodiscard]] ChainableResult<void> cache_tileset_checksums(
         const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
 
   private:

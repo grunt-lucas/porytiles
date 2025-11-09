@@ -5,7 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 

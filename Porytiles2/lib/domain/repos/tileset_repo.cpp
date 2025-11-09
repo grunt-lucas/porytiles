@@ -12,7 +12,6 @@
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
-#include "porytiles2/templates/result.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -26,8 +25,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     using enum TilesetArtifact::Type;
 
     // Begin transaction for atomic writes
-    if (auto result = writer_->begin_transaction(); !result) {
-        return FormattableError{result.error()};
+    if (auto result = writer_->begin_transaction(); !result.has_value()) {
+        return ChainableResult<void>{FormattableError{"tileset begin transaction failed"}, result};
     }
 
     // Perform all write operations within the transaction

@@ -1,20 +1,18 @@
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 
-#include <expected>
-
 #include "fmt/format.h"
 #include "png++/png.hpp"
 
 #include "porytiles2/domain/models/index_pixel.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
-Result<std::unique_ptr<Image<IndexPixel>>>
+ChainableResult<std::unique_ptr<Image<IndexPixel>>>
 PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
-        return std::unexpected{fmt::format("file does not exist: {}", path.string())};
+        return FormattableError{fmt::format("file does not exist: {}", path.string())};
     }
 
     try {
@@ -22,7 +20,7 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
         png::image<png::index_pixel> test{path};
     }
     catch (std::exception &) {
-        return std::unexpected{fmt::format("file not a valid indexed PNG: {}", path.string())};
+        return FormattableError{fmt::format("file not a valid indexed PNG: {}", path.string())};
     }
 
     png::image<png::index_pixel> tilesheet_png{path};

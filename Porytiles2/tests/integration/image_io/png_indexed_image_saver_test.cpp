@@ -9,7 +9,7 @@
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 using namespace porytiles2;

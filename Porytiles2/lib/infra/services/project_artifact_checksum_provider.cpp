@@ -9,6 +9,7 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/stream_digest.hpp"
 
 namespace porytiles2 {
@@ -40,7 +41,7 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
     // If checksum file doesn't exist, create it
     if (!exists(artifact_checksum_file)) {
         const auto new_checksums = compute_tileset_artifact_checksums(tileset_name);
-        if (const auto result = cache_tileset_checksums(tileset_name, new_checksums); !result) {
+        if (const auto result = cache_tileset_checksums(tileset_name, new_checksums); !result.has_value()) {
             panic(fmt::format("failed to initialize checksum cache for '{}'", tileset_name));
         }
     }
@@ -58,7 +59,7 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
     return checksums;
 }
 
-Result<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
+ChainableResult<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
     const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
 {
     // TODO: tileset checksum file location should be configurable?

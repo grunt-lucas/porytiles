@@ -4,7 +4,7 @@
 
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -19,7 +19,7 @@ class FilePalLoader {
   public:
     virtual ~FilePalLoader() = default;
 
-    [[nodiscard]] virtual Result<Palette<Rgba32>> load(const std::filesystem::path &path) const = 0;
+    [[nodiscard]] virtual ChainableResult<Palette<Rgba32>> load(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

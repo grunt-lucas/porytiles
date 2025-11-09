@@ -16,6 +16,7 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/error.hpp"
 
 namespace {
 
@@ -114,10 +115,10 @@ save_palette(const Palette<Rgba32> &pal, const std::filesystem::path &path, cons
 
 namespace porytiles2 {
 
-Result<void> ProjectTilesetArtifactWriter::begin_transaction()
+ChainableResult<void> ProjectTilesetArtifactWriter::begin_transaction()
 {
     if (!transaction_root_.empty()) {
-        return std::unexpected{"transaction already in progress"};
+        return FormattableError{"transaction already in progress"};
     }
     transaction_root_ = create_tmpdir();
 
@@ -219,10 +220,10 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
     }
 }
 
-Result<void> ProjectTilesetArtifactWriter::rollback()
+ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
 {
     if (transaction_root_.empty()) {
-        return std::unexpected{"no transaction in progress"};
+        return FormattableError{"no transaction in progress"};
     }
 
     try {
@@ -234,7 +235,7 @@ Result<void> ProjectTilesetArtifactWriter::rollback()
     }
     catch (const std::filesystem::filesystem_error &e) {
         transaction_root_.clear();
-        return std::unexpected{fmt::format("failed to rollback transaction: {}", e.what())};
+        return FormattableError{"failed to rollback transaction: {}", FormatParam{e.what()}};
     }
 }
 

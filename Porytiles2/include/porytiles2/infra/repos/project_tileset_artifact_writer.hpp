@@ -31,11 +31,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     {
     }
 
-    [[nodiscard]] Result<void> begin_transaction() override;
+    [[nodiscard]] ChainableResult<void> begin_transaction() override;
 
     [[nodiscard]] ChainableResult<void> commit() override;
 
-    [[nodiscard]] Result<void> rollback() override;
+    [[nodiscard]] ChainableResult<void> rollback() override;
 
     [[nodiscard]] ChainableResult<void>
     write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) override;

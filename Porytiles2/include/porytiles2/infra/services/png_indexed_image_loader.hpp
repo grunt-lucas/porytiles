@@ -6,7 +6,7 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -20,7 +20,8 @@ class PngIndexedImageLoader final {
   public:
     PngIndexedImageLoader() = default;
 
-    [[nodiscard]] Result<std::unique_ptr<Image<IndexPixel>>> load_from_file(const std::filesystem::path &path) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Image<IndexPixel>>>
+    load_from_file(const std::filesystem::path &path) const;
 };
 
 } // namespace porytiles2

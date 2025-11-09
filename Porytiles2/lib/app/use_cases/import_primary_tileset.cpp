@@ -3,29 +3,29 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 namespace porytiles2 {
 
-Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
+ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
-        return std::unexpected{fmt::format("tileset {} does not exist", tileset_name)};
+        return FormattableError{fmt::format("tileset {} does not exist", tileset_name)};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
         // TODO: hook up ChainableError here
-        return std::unexpected{"failed to load tileset"};
+        return FormattableError{"failed to load tileset"};
     }
     const auto tileset = std::move(maybe_tileset.value());
 
     // 3. If `PorymapTilesetComponent` is empty, bail with error.
     if (tileset->porymap_component().is_empty()) {
-        return std::unexpected{"PorymapTilesetComponent was empty"};
+        return FormattableError{"PorymapTilesetComponent was empty"};
     }
 
     // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
@@ -35,7 +35,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
         const auto mismatched_keys =
             tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
         if (!mismatched_keys.empty()) {
-            return std::unexpected{"uncompiled changes present in Porytiles assets: TODO keys here"};
+            return FormattableError{"uncompiled changes present in Porytiles assets: TODO keys here"};
         }
     }
 
@@ -66,7 +66,7 @@ Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
             }
             joined_error += error_lines[i];
         }
-        return std::unexpected{joined_error};
+        return FormattableError{joined_error};
     }
 
     return {};
