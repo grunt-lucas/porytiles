@@ -599,7 +599,6 @@ If recompiling: run full pipeline
 ### Composability
 
 - Small, focused operations that do one thing well
-- Pipeline system for combining operations
 - Services with single responsibility
 - Dependency injection for flexibility
 
@@ -608,7 +607,6 @@ If recompiling: run full pipeline
 - Add ConfigProvider for new config sources
 - Implement TilesetArtifactReader/Writer for new formats
 - Implement UserDiagnostics for new output targets
-- Add Operation subclasses for new pipeline steps
 - Implement TileValidator subclasses for new constraints
 
 ### Testability
@@ -622,18 +620,14 @@ If recompiling: run full pipeline
 
 ### Unit Tests (`tests/unit/`)
 
-- Test domain models (PixelTile, Metatile, Image)
-- Test domain services (ImageTileizer, LayerModeConverter)
-- Test utilities (panic, formatting)
-- Fast, isolated, no I/O
+Each unit test evaluates a single component in complete isolation. All dependencies, if any, are mocked.
+There are no external system dependencies, including the filesystem.
 
 ### Integration Tests (`tests/integration/`)
 
-- Test complete workflows (CreatePrimaryTileset, CompilePrimaryTileset)
-- Test configuration loading and resolution
-- Test error chain formatting and display
-- Use real file I/O with temporary directories
-- Slower but complete coverage
+Each integration test evaluates one or more components together.
+Dependencies may be mocked or stubbed, or they may be injected using real components.
+Integration tests may make use of the external network or filesystem.
 
 ## Entry Points
 
