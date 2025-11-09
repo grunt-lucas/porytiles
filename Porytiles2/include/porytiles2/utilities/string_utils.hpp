@@ -4,8 +4,6 @@
 #include <regex>
 #include <string>
 
-#include "fmt/format.h"
-
 #include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -29,7 +27,7 @@ inline bool check_full_string_match(const std::string &str, const std::string &p
         return std::regex_match(str, re);
     }
     catch (const std::regex_error &e) {
-        panic(fmt::format("regex error: {}", e.what()));
+        panic(std::string{"regex error: "} + std::string{e.what()});
     }
 }
 

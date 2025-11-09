@@ -9,6 +9,8 @@
 
 namespace porytiles2 {
 
+// TODO: this should be in the utilities tree, it's a true utility
+
 /**
  * @brief A wrapper for std::string_view with a taggable std::source_location.
  *
