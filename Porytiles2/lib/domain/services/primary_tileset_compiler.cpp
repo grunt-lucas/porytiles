@@ -20,8 +20,8 @@
 #include "porytiles2/domain/services/pack_set_generator.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/utilities/transform.hpp"
-#include "porytiles2/utilities/unwrap_config.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 #include "porytiles2/xcut/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
