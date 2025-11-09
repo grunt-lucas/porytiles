@@ -9,7 +9,7 @@
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/domain/orchestration/operation.hpp"
 #include "porytiles2/domain/orchestration/pipeline.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 using namespace porytiles2;
 

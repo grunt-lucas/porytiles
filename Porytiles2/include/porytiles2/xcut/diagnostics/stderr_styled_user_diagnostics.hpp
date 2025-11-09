@@ -5,9 +5,9 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/result/error.hpp"
 
 namespace porytiles2 {
 

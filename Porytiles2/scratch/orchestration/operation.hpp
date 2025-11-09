@@ -6,8 +6,8 @@
 #include "porytiles2/domain/orchestration/operand_bundle.hpp"
 #include "porytiles2/domain/orchestration/operand_declaration.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/error.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/error.hpp"
 
 namespace porytiles2 {
 

@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #include "porytiles2/utilities/panic/panic.hpp"
-#include "porytiles2/xcut/result/error.hpp"
+#include "porytiles2/utilities/result/error.hpp"
 
 namespace porytiles2 {
 

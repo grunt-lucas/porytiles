@@ -346,7 +346,7 @@ Infrastructure layer implements concrete I/O and system integration.
 
 Cross-cutting concerns that don't fit neatly into layers.
 
-#### `xcut/result/` - Error Handling
+#### `utilities/result/` - Error Handling
 
 - `Error`: Abstract interface for all error types
   - `details(formatter)`: Get formatted error lines

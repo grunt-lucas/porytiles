@@ -4,9 +4,9 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
 
 using namespace porytiles2;
 

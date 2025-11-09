@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/result/error.hpp"
 
 namespace porytiles2 {
 
