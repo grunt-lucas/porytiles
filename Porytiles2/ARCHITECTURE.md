@@ -37,9 +37,8 @@ If you want to familiarize yourself with the code base, you are just in the righ
     - [Configuration System](#configuration-system)
     - [Diagnostics Integration](#diagnostics-integration)
   - [Data Flow](#data-flow)
-    - [End-to-End Compilation](#end-to-end-compilation)
-    - [Incremental Build Detection](#incremental-build-detection)
   - [Design Principles](#design-principles)
+    - [Runtime Safety](#runtime-safety)
     - [Type Safety](#type-safety)
     - [Separation of Concerns](#separation-of-concerns)
     - [Composability](#composability)
@@ -133,11 +132,47 @@ provide the meat for template aggregates like PixelTile, Metatile, and Image.
 
 #### `domain/repos/` - Persistence Abstractions
 
-TODO
+Repositories abstract away persistence details for domain aggregate roots using the **Repository Pattern**.
+
+The centerpiece is `TilesetRepo`, which coordinates all persistence operations for the Tileset aggregate.
+Rather than implementing storage directly, it delegates to specialized interfaces:
+
+- `TilesetArtifactKeyProvider`: Discovers and generates artifact identities in the backing store
+- `TilesetArtifactReader`: Loads artifacts from storage
+- `TilesetArtifactWriter`: Saves artifacts to storage
+- `ArtifactChecksumProvider`: Computes checksums for incremental builds
+
+This separation enables different storage backends (filesystem, database, in-memory) without changing domain logic.
+The `TilesetArtifact` value type represents individual artifacts (metatiles.bin, tiles.png, etc.) with optional metadata,
+while `ArtifactKey` identifies an artifact's location in the backing store.
+
+Example usage:
+```c++
+auto tileset_result = tileset_repo.read_tileset(tileset_id);
+// Work with tileset...
+tileset_repo.write_tileset(tileset_id, modified_tileset);
+```
 
 #### `domain/services/` - Orchestrated Operations
 
-TODO
+Services encapsulate **complex domain operations** that require multiple dependencies or stateful coordination.
+Unlike pure algorithms, services are classes injected via constructors following the Dependency Inversion Principle.
+
+Key services include:
+
+- `PrimaryTilesetCompiler`: Orchestrates the complete compilation pipeline from Porytiles format to Porymap format
+- `ImageTileizer`: Converts layer images into tile data structures
+- `LayerImageMetatileizer`: Transforms layer images into metatile assemblies
+- `ColorSetBuilder`: Builds optimized color palettes from image data
+- `PackSetGenerator`: Generates packed tile and palette data structures
+- `MetatileDecompiler`: Decomposes metatile data for analysis or reverse compilation
+- `LayerModeConverter`: Converts between different color modes (RGBA, indexed)
+
+Services return `ChainableResult<T, E>` to propagate rich error chains through the domain.
+Most services define virtual interfaces to enable polymorphic behavior and dependency injection.
+
+When should logic be a service vs. a free function? Services require I/O, state, or orchestrate multiple dependencies.
+Pure transformations stay as free functions in `domain/algorithms/`.
 
 ### `app/` - Use Cases
 
@@ -145,11 +180,38 @@ Application layer implements user-facing workflows.
 
 #### `app/config/` - Application Configuration
 
-TODO
+Defines the **application-level configuration contract** through the auto-generated `AppConfig` interface.
+
+This interface declares all configuration values needed at the application layer, generated from `config_schema.yaml`.
+Currently minimal, as most configuration lives in domain and infrastructure layers.
+The `IncrementalBuildMode` enum defines strategies for detecting when recompilation is necessary.
+
+Like `DomainConfig` and `InfraConfig`, this interface is implemented by `LazyLayeredConfig`,
+which resolves values through a chain of `ConfigProvider` instances.
 
 #### `app/use_cases/` - Workflows
 
-TODO
+Use cases represent **complete user-facing workflows**, orchestrating domain services and repositories to accomplish application goals.
+Each use case is a focused class following the Single Responsibility Principle.
+
+The four primary use cases are:
+
+- `CompilePrimaryTileset`: Orchestrates compilation from Porytiles RGBA assets to Porymap binary format. Coordinates `TilesetRepo` for I/O and `PrimaryTilesetCompiler` for transformation logic.
+- `CreatePrimaryTileset`: Scaffolds a new tileset project with default structure and assets.
+- `ImportPrimaryTileset`: Imports external tilesets into Porytiles format for editing.
+- `VerifyPrimaryTileset`: Validates tileset integrity and configuration correctness.
+
+Use cases receive dependencies via constructor injection and return `ChainableResult<T, E>` to propagate errors.
+They focus purely on orchestration - the actual business logic lives in domain services.
+
+Example pattern:
+```c++
+class CompilePrimaryTileset {
+  public:
+    CompilePrimaryTileset(TilesetRepo &repo, PrimaryTilesetCompiler &compiler);
+    ChainableResult<void, FormattableError> execute(const TilesetId &id);
+};
+```
 
 ### `infra/` - I/O and External Systems
 
@@ -157,15 +219,73 @@ Infrastructure layer implements concrete I/O and system integration.
 
 #### `infra/config/` - Configuration System
 
-TODO
+Implements the **concrete configuration loading and resolution system** that powers the entire application.
+
+The core is `LazyLayeredConfig`, which implements all three config interfaces (`DomainConfig`, `AppConfig`, `InfraConfig`).
+It resolves configuration values through a priority-ordered chain of `ConfigProvider` instances:
+
+1. Command-line provider (highest priority, if implemented)
+2. Tileset-specific YAML provider
+3. Global YAML provider
+4. Default provider (always succeeds, lowest priority)
+
+Values are **lazily evaluated** on first access, then cached for performance.
+The system tracks **provenance** - remembering which provider supplied each value for debugging.
+
+Concrete providers include:
+- `DefaultProvider`: Hard-coded fallback values, auto-generated from `config_schema.yaml`
+- `YamlFileProvider`: Loads configuration from YAML files using a YAML parsing library
+
+The `LayerValue<T>` wrapper indicates whether a provider supplied a value (similar to `std::optional`).
+All interfaces and providers are **auto-generated** from a single source of truth: `config_schema.yaml`.
+
+Example resolution:
+```c++
+// User requests config.tile_size()
+// System checks providers in order, returns first non-empty LayerValue
+// Caches result for future calls
+```
 
 #### `infra/repos/` - Concrete Persistence
 
-TODO
+Provides **filesystem-based implementations** of the repository interfaces defined in `domain/repos/`.
+
+These adapters translate between domain abstractions and concrete file I/O:
+
+- `ProjectTilesetArtifactReader`: Implements `TilesetArtifactReader` using filesystem paths and delegates to PNG/PAL loaders
+- `ProjectTilesetArtifactWriter`: Implements `TilesetArtifactWriter` using filesystem paths and delegates to PNG/PAL savers
+- `ProjectTilesetArtifactKeyProvider`: Implements `TilesetArtifactKeyProvider` by discovering artifacts in the project directory hierarchy
+
+These classes bridge the domain's persistence abstractions with the infrastructure's I/O services.
+They depend on services from `infra/services/` (PNG loaders, palette handlers) to perform actual file operations.
+
+The "Project" prefix indicates these implementations assume a Pokémon decompilation project's directory structure.
+Alternative implementations (e.g., `DatabaseTilesetArtifactReader`) could be swapped in via dependency injection.
 
 #### `infra/services/` - I/O Implementations
 
-TODO
+Contains **low-level file I/O and data format implementations** that handle actual reading and writing of binary data.
+
+These services specialize in specific file formats:
+
+**PNG Handlers**:
+- `PngRgbaImageLoader` / `PngRgbaImageSaver`: Load and save RGBA PNG files
+- `PngIndexedImageLoader` / `PngIndexedImageSaver`: Load and save indexed (palettized) PNG files
+
+**Palette Handlers**:
+- `FilePalLoader` / `FilePalSaver`: Handle binary .pal palette files
+- `JascPalLoader` / `JascPalSaver`: Handle JASC-PAL text format palette files
+
+**Checksum Providers**:
+- `ProjectArtifactChecksumProvider`: Computes file checksums for incremental build detection
+- `NoopArtifactChecksumProvider`: No-op implementation for testing or when checksums aren't needed
+
+**Output Services**:
+- `AsciiTilePrinter`: Renders tiles as ASCII art for debugging
+
+These services interact directly with libpng, file streams, and other external libraries.
+They return `ChainableResult<T, E>` with infrastructure-specific error types like `ImageLoadError`.
+All external dependencies (libpng, filesystem) are isolated to this layer.
 
 ### `xcut/` - Cross-Cutting Concerns
 
@@ -173,15 +293,67 @@ Cross-cutting concerns that don't fit neatly into a specific layer.
 
 #### `xcut/diagnostics/` - User Communication
 
-TODO
+Provides a **structured diagnostic system** for user-facing error reporting and informational messages.
+
+The `UserDiagnostics` abstract interface defines methods for different message severities:
+- `note()`: Informational messages (tagged for categorization)
+- `warning()`: Non-fatal issues that need attention (tagged)
+- `error()`: Serious problems (tagged)
+- `fatal()`: Unrecoverable failures with full error chains
+
+All methods support single-line and multi-line messages for formatting flexibility.
+The `fatal()` method integrates with `ChainableResult` to visualize complete error chains.
+
+Concrete implementations:
+- `StderrStyledUserDiagnostics`: Outputs to stderr with ANSI color codes or plain text based on TTY detection
+- `BufferedUserDiagnostics`: Buffers messages in memory for unit testing and verification
+
+This pattern enables:
+- **Testability**: Inject buffered diagnostics in tests to verify error messages
+- **Flexibility**: Switch output destinations without changing business logic
+- **Rich context**: Error chains show the full path from root cause to user-facing error
 
 #### `xcut/config/` - Configuration Utilities
 
-TODO
+Provides **shared configuration infrastructure** used across all layers.
+
+Key components:
+
+- `ConfigValue<T>`: Template wrapper around configuration values that tracks the value's name and provenance (which provider supplied it). Supports implicit conversion to `T` for transparent usage while preserving metadata for debugging.
+
+- `config_validators.hpp`: Reusable validation functions for common config constraints (ranges, allowed values, format checks). These validators ensure configuration correctness before the system begins processing.
+
+- `unwrap_config.hpp`: Utility functions for extracting raw values from `ConfigValue<T>` wrappers when metadata isn't needed.
+
+These utilities enable the configuration system's core features:
+- **Transparency**: `ConfigValue<T>` allows natural usage like `int size = config.tile_size();`
+- **Debuggability**: Provenance tracking helps diagnose configuration issues
+- **Validation**: Centralized validators ensure consistency across config sources
 
 #### `xcut/di/` - Dependency Injection
 
-TODO
+Contains **dependency injection components** using the Fruit DI framework.
+
+The `components.hpp` file defines DI component factory functions that wire up the application's object graph.
+These components handle conditional binding based on runtime parameters.
+
+Example component:
+```c++
+fruit::Component<TextFormatter> get_formatter_component(bool no_color) {
+    if (no_color) {
+        return fruit::createComponent()
+            .bind<TextFormatter, PlainTextFormatter>();
+    }
+    return fruit::createComponent()
+            .bind<TextFormatter, AnsiStyledTextFormatter>();
+}
+```
+
+Components are composed at the application entry point to create an injector that provides fully-wired dependencies.
+This enables:
+- **Testability**: Swap implementations for testing (e.g., mock services)
+- **Flexibility**: Runtime binding decisions (e.g., TTY detection for formatter selection)
+- **Decoupling**: Classes depend on interfaces, concrete types bound at composition root
 
 ### `utilities/` - Low-Level Helpers
 
@@ -189,19 +361,100 @@ Zero dependencies, reusable utilities.
 
 #### `utilities/functional/` - Functional Programming
 
-TODO
+Provides **higher-order operations** on containers using modern C++23 features.
+
+The `transform.hpp` header offers two overloads for transforming vectors:
+
+1. **Range-based transform**: Takes a `vector<T>` and a transformation function, returns `vector<U>` using C++23 ranges and views.
+2. **Direct construction**: Transforms a `vector<T>` to `vector<U>` via direct element-by-element construction.
+
+These utilities enable functional programming patterns without external dependencies.
+
+Example usage:
+```c++
+std::vector<int> values = {1, 2, 3, 4};
+auto doubled = transform(values, [](int x) { return x * 2; });
+// doubled = {2, 4, 6, 8}
+```
 
 #### `utilities/panic/` - Termination
 
-TODO
+Implements **unrecoverable error handling** through program termination rather than exceptions.
+
+The `panic.hpp` header provides:
+- `panic(message)`: Immediately terminates with an error message
+- `assert_or_panic(condition, message)`: Asserts a condition or terminates if false
+
+Both functions automatically capture source location (file, line, function) and format diagnostic output before calling `std::abort()`.
+
+**Why panic instead of exceptions?**
+- Used for **programmer errors** and precondition violations, not recoverable runtime errors
+- Avoids exception overhead and complexity
+- Makes unrecoverable failures explicit in the API
+- Precondition violations indicate bugs that must be fixed, not handled
+
+Panics print formatted diagnostics to stderr:
+```
+PANIC at src/domain/models.cpp:42 in calculate_index():
+  Index out of bounds: got 16, max 15
+```
+
+For recoverable errors, use `ChainableResult<T, E>` from `utilities/result/` instead.
 
 #### `utilities/result/` - Error Handling
 
-TODO
+Provides **type-safe error propagation** without exceptions using the Result monad pattern.
+
+**Core types**:
+
+- `ChainableResult<T, E>`: Either a success value `T` or an error chain. Move-only semantics ensure efficient transfers. Supports chaining errors with the constructor `ChainableResult(error, cause_result)` to preserve the full propagation path from root cause to proximate error.
+
+- `Error`: Polymorphic error interface with `details()` for messages, `join()` for multi-error aggregation, and `clone()` for copying.
+
+- `FormattableError`: Concrete implementation supporting plain strings and formatted messages with styled parameters for rich terminal output.
+
+**Why not exceptions?**
+- Explicit error paths in function signatures
+- Zero overhead when successful
+- Compiler-enforced error handling (no silent failures)
+- Better debugging through error chains
+
+Example error chain:
+```c++
+// Layer 1: File not found
+// Layer 2: Failed to load image
+// Layer 3: Tileset compilation failed
+```
+
+Each layer adds context. Users see the complete story, not just "compilation failed".
+The diagnostic system uses these chains to produce detailed, user-friendly error messages.
 
 #### `utilities/text/` - Text Formatting
 
-TODO
+Provides **TTY-aware styled text output** for terminal applications.
+
+**Core abstractions**:
+
+- `TextFormatter`: Abstract interface with `style()` (apply style flags to text) and `format()` (substitute styled parameters into format strings). The `Style` enum uses bitmask flags for composable styles (bold, italic, colors).
+
+- `AnsiStyledTextFormatter`: Applies ANSI escape codes for terminal styling (colors, bold, italic, etc.)
+
+- `PlainTextFormatter`: Returns unstyled text for non-TTY output or when colors are disabled
+
+- `FormatParam`: Pairs text with `Style` flags for parameter substitution in format strings
+
+The system integrates with fmtlib for printf-style formatting while adding styled parameter support.
+TTY detection happens at the application layer, which selects the appropriate formatter via dependency injection.
+
+Example usage:
+```c++
+formatter.format("Found {0} errors in {1}",
+    FormatParam{"5", Style::Bold | Style::Red},
+    FormatParam{"tileset.png", Style::Italic});
+// Output: "Found **5** errors in *tileset.png*" (with ANSI codes in terminals)
+```
+
+This enables rich, user-friendly diagnostic output while maintaining plain text compatibility for logging and CI environments.
 
 #### Other Utilities
 
