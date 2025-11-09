@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/utilities/transform.hpp"
+#include "porytiles2/utilities/functional/transform.hpp"
 
 using namespace porytiles2;
 
