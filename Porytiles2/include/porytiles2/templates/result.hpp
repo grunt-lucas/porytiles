@@ -5,7 +5,7 @@
 #include <string>
 #include <type_traits>
 
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 

@@ -10,7 +10,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

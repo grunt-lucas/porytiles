@@ -8,8 +8,8 @@
 #include "nlohmann/json.hpp"
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/stream_digest.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 

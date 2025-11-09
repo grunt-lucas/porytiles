@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 

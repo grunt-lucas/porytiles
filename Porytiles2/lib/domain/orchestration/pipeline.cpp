@@ -3,7 +3,7 @@
 #include <queue>
 
 #include "porytiles2/domain/orchestration/operation.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {

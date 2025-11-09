@@ -6,7 +6,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 

@@ -2,8 +2,8 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace {
 

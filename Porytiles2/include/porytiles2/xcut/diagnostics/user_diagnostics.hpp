@@ -3,7 +3,7 @@
 #include <ranges>
 #include <string>
 
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/xcut/result/chainable_result.hpp"
 #include "porytiles2/xcut/result/error.hpp"
 

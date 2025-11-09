@@ -12,7 +12,7 @@
 #include "porytiles2/domain/model/normalized_pal.hpp"
 #include "porytiles2/domain/model/supports_transparency.hpp"
 #include "porytiles2/domain/model/tile.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 

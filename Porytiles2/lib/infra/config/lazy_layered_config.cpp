@@ -9,9 +9,9 @@
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
 
 namespace porytiles2 {
 
