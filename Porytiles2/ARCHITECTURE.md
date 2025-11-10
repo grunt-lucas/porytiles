@@ -149,7 +149,7 @@ Example usage:
 ```c++
 // Load MyTileset from disk
 auto tileset_load_result = tileset_repo.load("MyTileset");
-if (tileset_load_result.has_error()) {
+if (!tileset_load_result.has_value()) {
     // Handle error
 }
 
