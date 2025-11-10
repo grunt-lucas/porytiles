@@ -33,10 +33,12 @@ If you want to familiarize yourself with the code base, you are just in the righ
       - [`utilities/text/` - Text Formatting](#utilitiestext---text-formatting)
       - [Other Utilities](#other-utilities)
   - [Cross-Cutting Concerns](#cross-cutting-concerns)
-    - [Error Handling Strategy](#error-handling-strategy)
     - [Configuration System](#configuration-system)
+    - [Dependency Injection](#dependency-injection)
     - [Diagnostics Integration](#diagnostics-integration)
-  - [Data Flow](#data-flow)
+    - [Testing Strategy](#testing-strategy)
+      - [Unit Tests (`tests/unit/`)](#unit-tests-testsunit)
+      - [Integration Tests (`tests/integration/`)](#integration-tests-testsintegration)
   - [Design Principles](#design-principles)
     - [Runtime Safety](#runtime-safety)
     - [Type Safety](#type-safety)
@@ -44,9 +46,6 @@ If you want to familiarize yourself with the code base, you are just in the righ
     - [Composability](#composability)
     - [Extensibility](#extensibility)
     - [Testability](#testability)
-  - [Testing Strategy](#testing-strategy)
-    - [Unit Tests (`tests/unit/`)](#unit-tests-testsunit)
-    - [Integration Tests (`tests/integration/`)](#integration-tests-testsintegration)
   - [Entry Points](#entry-points)
     - [Driver Program (`tools/driver/`)](#driver-program-toolsdriver)
     - [Extension Points](#extension-points)
@@ -60,11 +59,11 @@ Porytiles2 is a C++ tileset compiler that transforms RGBA image assets into Pory
 The system is organized around a **layered architecture** inspired by domain-driven design.
 
 ```
-    domain/       -- Pure business logic, no I/O dependencies
+    infra/        -- I/O and external system/library integration
       │
     app/          -- User-facing use cases and workflows
       │
-    infra/        -- I/O and external system/library integration
+    domain/       -- Pure business logic, no I/O dependencies
       │
     xcut/         -- Cross-cutting concerns (errors, diagnostics, config, di, etc)
       │
@@ -75,11 +74,11 @@ The system is organized around a **layered architecture** inspired by domain-dri
 
 The dependency flow is strictly one-way:
 
-- **utilities** can depend on: nothing
-- **xcut** can depend on: utilities only
-- **domain** can depend on: utilities, xcut only
-- **app** can depend on: utilities, xcut, domain only
 - **infra** can depend on: everything (utilities, xcut, domain, app)
+- **app** can depend on: utilities, xcut, domain only
+- **domain** can depend on: utilities, xcut only
+- **xcut** can depend on: utilities only
+- **utilities** can depend on: nothing
 
 This strict layering ensures:
 - Domain logic remains testable and independent
@@ -112,7 +111,7 @@ The algorithms are loosely organized into headers so that similar operations on 
 The algorithms here have clean signatures - more complex operations that require multiple dependencies are implemented as services.
 
 ##### Why Free Functions?
-- Keep domain types decoupled (e.g. two-way conversion between PixelTile → ShapeTile without causing circular dependencies)
+- Keep domain types decoupled (e.g. two-way conversion between `PixelTile` ↔ `ShapeTile` without causing circular dependencies)
 - Enable generic programming through templates
 - Pure functions are trivial to test and reason about
 - Clean call sites: `auto shape = from_pixel_tile(pixel, map);`
@@ -121,7 +120,7 @@ See `Porytiles2/Notes/service_vs_free_function_architecture.md` for the complete
 
 #### `domain/config/` - Configuration Interfaces
 
-In addition to the generated DomainConfig layer configuration interface,
+In addition to the generated `DomainConfig` layer configuration interface,
 additional domain-layer configuration helpers are defined here.
 
 #### `domain/models/` - Core Data Types
@@ -140,7 +139,7 @@ Rather than implementing storage directly, it delegates to specialized interface
 - `TilesetArtifactKeyProvider`: Discovers and generates artifact identities in the backing store
 - `TilesetArtifactReader`: Loads artifacts from storage
 - `TilesetArtifactWriter`: Saves artifacts to storage
-- `ArtifactChecksumProvider`: Computes checksums for incremental builds
+- `ArtifactChecksumProvider`: Computes/verifies checksums for build artifacts
 
 This separation enables different storage backends (filesystem, database, in-memory) without changing domain logic.
 The `TilesetArtifact` value type represents individual artifacts (metatiles.bin, tiles.png, etc.) with optional metadata,
@@ -148,9 +147,17 @@ while `ArtifactKey` identifies an artifact's location in the backing store.
 
 Example usage:
 ```c++
-auto tileset_result = tileset_repo.read_tileset(tileset_id);
-// Work with tileset...
-tileset_repo.write_tileset(tileset_id, modified_tileset);
+// Load MyTileset from disk
+auto tileset_load_result = tileset_repo.load("MyTileset");
+if (tileset_load_result.has_error()) {
+    // Handle error
+}
+
+auto tileset = tileset_result.value();;
+// Do some stuff with the tileset...
+
+// Save it back to disk
+tileset_repo.save(tileset);
 ```
 
 #### `domain/services/` - Orchestrated Operations
@@ -158,21 +165,21 @@ tileset_repo.write_tileset(tileset_id, modified_tileset);
 Services encapsulate **complex domain operations** that require multiple dependencies or stateful coordination.
 Unlike pure algorithms, services are classes injected via constructors following the Dependency Inversion Principle.
 
-Key services include:
+Examples include:
 
 - `PrimaryTilesetCompiler`: Orchestrates the complete compilation pipeline from Porytiles format to Porymap format
 - `ImageTileizer`: Converts layer images into tile data structures
 - `LayerImageMetatileizer`: Transforms layer images into metatile assemblies
-- `ColorSetBuilder`: Builds optimized color palettes from image data
-- `PackSetGenerator`: Generates packed tile and palette data structures
-- `MetatileDecompiler`: Decomposes metatile data for analysis or reverse compilation
-- `LayerModeConverter`: Converts between different color modes (RGBA, indexed)
+- `MetatileDecompiler`: Decompiles Porymap metatile data back into RGBA layer images
+- `LayerModeConverter`: Converts `metatiles.bin` entry vectors between [dual and triple layer formats](https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles)
 
-Services return `ChainableResult<T, E>` to propagate rich error chains through the domain.
-Most services define virtual interfaces to enable polymorphic behavior and dependency injection.
+Services usually return `ChainableResult<T, E>` to propagate rich error chains through the domain.
+Some services define virtual interfaces to enable polymorphic behavior and dependency injection.
 
 When should logic be a service vs. a free function? Services require I/O, state, or orchestrate multiple dependencies.
 Pure transformations stay as free functions in `domain/algorithms/`.
+
+See `Porytiles2/Notes/service_vs_free_function_architecture.md` for the complete decision framework.
 
 ### `app/` - Use Cases
 
@@ -183,8 +190,6 @@ Application layer implements user-facing workflows.
 Defines the **application-level configuration contract** through the auto-generated `AppConfig` interface.
 
 This interface declares all configuration values needed at the application layer, generated from `config_schema.yaml`.
-Currently minimal, as most configuration lives in domain and infrastructure layers.
-The `IncrementalBuildMode` enum defines strategies for detecting when recompilation is necessary.
 
 Like `DomainConfig` and `InfraConfig`, this interface is implemented by `LazyLayeredConfig`,
 which resolves values through a chain of `ConfigProvider` instances.
@@ -194,24 +199,16 @@ which resolves values through a chain of `ConfigProvider` instances.
 Use cases represent **complete user-facing workflows**, orchestrating domain services and repositories to accomplish application goals.
 Each use case is a focused class following the Single Responsibility Principle.
 
-The four primary use cases are:
+Some example use cases include:
 
-- `CompilePrimaryTileset`: Orchestrates compilation from Porytiles RGBA assets to Porymap binary format. Coordinates `TilesetRepo` for I/O and `PrimaryTilesetCompiler` for transformation logic.
-- `CreatePrimaryTileset`: Scaffolds a new tileset project with default structure and assets.
-- `ImportPrimaryTileset`: Imports external tilesets into Porytiles format for editing.
+- `CreatePrimaryTileset`: Scaffolds a new tileset with default structure and assets.
+- `ImportPrimaryTileset`: Imports Porymap tilesets into Porytiles format (first time only).
+- `CompilePrimaryTileset`: Orchestrates compilation of a primary tileset from Porytiles RGBA assets to Porymap binary format.
+- `DecompilePrimaryTileset`: Orchestrates decompilation of a primary tileset from Porymap binary format to RGBA assets.
 - `VerifyPrimaryTileset`: Validates tileset integrity and configuration correctness.
 
 Use cases receive dependencies via constructor injection and return `ChainableResult<T, E>` to propagate errors.
-They focus purely on orchestration - the actual business logic lives in domain services.
-
-Example pattern:
-```c++
-class CompilePrimaryTileset {
-  public:
-    CompilePrimaryTileset(TilesetRepo &repo, PrimaryTilesetCompiler &compiler);
-    ChainableResult<void, FormattableError> execute(const TilesetId &id);
-};
-```
+They focus purely on use case orchestration - the actual business logic lives in the various domain services.
 
 ### `infra/` - I/O and External Systems
 
@@ -224,10 +221,10 @@ Implements the **concrete configuration loading and resolution system** that pow
 The core is `LazyLayeredConfig`, which implements all three config interfaces (`DomainConfig`, `AppConfig`, `InfraConfig`).
 It resolves configuration values through a priority-ordered chain of `ConfigProvider` instances:
 
-1. Command-line provider (highest priority, if implemented)
-2. Tileset-specific YAML provider
-3. Global YAML provider
-4. Default provider (always succeeds, lowest priority)
+1. YAML config file provider
+2. Default provider (always succeeds, lowest priority)
+
+(More provider implementations coming soon.)
 
 Values are **lazily evaluated** on first access, then cached for performance.
 The system tracks **provenance** - remembering which provider supplied each value for debugging.
@@ -237,7 +234,6 @@ Concrete providers include:
 - `YamlFileProvider`: Loads configuration from YAML files using a YAML parsing library
 
 The `LayerValue<T>` wrapper indicates whether a provider supplied a value (similar to `std::optional`).
-All interfaces and providers are **auto-generated** from a single source of truth: `config_schema.yaml`.
 
 Example resolution:
 ```c++
@@ -277,7 +273,7 @@ These services specialize in specific file formats:
 - `JascPalLoader` / `JascPalSaver`: Handle JASC-PAL text format palette files
 
 **Checksum Providers**:
-- `ProjectArtifactChecksumProvider`: Computes file checksums for incremental build detection
+- `ProjectArtifactChecksumProvider`: Computes file checksums for projects in the default project format
 - `NoopArtifactChecksumProvider`: No-op implementation for testing or when checksums aren't needed
 
 **Output Services**:
@@ -395,8 +391,7 @@ Both functions automatically capture source location (file, line, function) and 
 
 Panics print formatted diagnostics to stderr:
 ```
-PANIC at src/domain/models.cpp:42 in calculate_index():
-  Index out of bounds: got 16, max 15
+Porytiles2/lib/domain/services/primary_tileset_compiler.cpp:307 panic: index 12 out of bounds, size 8
 ```
 
 For recoverable errors, use `ChainableResult<T, E>` from `utilities/result/` instead.
@@ -419,15 +414,29 @@ Provides **type-safe error propagation** without exceptions using the Result mon
 - Compiler-enforced error handling (no silent failures)
 - Better debugging through error chains
 
-Example error chain:
-```c++
-// Layer 1: File not found
-// Layer 2: Failed to load image
-// Layer 3: Tileset compilation failed
-```
-
-Each layer adds context. Users see the complete story, not just "compilation failed".
+Each layer adds context. Users see the complete story, not just "compilation failed."
 The diagnostic system uses these chains to produce detailed, user-friendly error messages.
+
+Example error chain printout:
+```c++
+fatal: failed to compile tileset 'MyTileset'
+│
+├ caused by:
+│
+│ failed to get config value 'MyTileset:num_pals_total'
+│
+├ root cause:
+│
+│ 'MyTileset:num_pals_primary' must be greater than '0'
+│
+│ MyTileset:num_pals_primary = 0
+│ Source: ./data/tilesets/primary/MyTileset/porytiles.local.yaml:4
+│
+│    1:   foo:
+│    2:     bar: baz
+│    3:   fieldmap:
+│ -> 4:     num_pals_primary: 0
+```
 
 #### `utilities/text/` - Text Formatting
 
@@ -448,10 +457,10 @@ TTY detection happens at the application layer, which selects the appropriate fo
 
 Example usage:
 ```c++
-formatter.format("Found {0} errors in {1}",
-    FormatParam{"5", Style::Bold | Style::Red},
-    FormatParam{"tileset.png", Style::Italic});
-// Output: "Found **5** errors in *tileset.png*" (with ANSI codes in terminals)
+formatter.format("Found {} errors in {}",
+    FormatParam{"5", Style::bold | Style::red},
+    FormatParam{"tiles.png", Style::italic});
+// Output: "Found **5** errors in *tiles.png*" (with ANSI codes in terminals)
 ```
 
 This enables rich, user-friendly diagnostic output while maintaining plain text compatibility for logging and CI environments.
@@ -465,27 +474,6 @@ This enables rich, user-friendly diagnostic output while maintaining plain text 
 - `string_utils.hpp`: String manipulation
 
 ## Cross-Cutting Concerns
-
-### Error Handling Strategy
-
-**No Exceptions**: Porytiles2 uses error-as-value approach with ChainableResult<T, E>.
-
-**Why not exceptions:**
-- Deterministic error handling
-- Easier to trace error paths
-- Better for performance-critical code
-- Clearer documentation of failure modes
-
-**Error Chains**: Full path from root cause to proximate cause preserved.
-
-Example chain for "failed to compile tileset":
-```
-1. (proximate) file not found
-2. (step) failed to load image
-3. (root) tileset not readable
-```
-
-Users see full context, not just "failed to compile".
 
 ### Configuration System
 
@@ -502,6 +490,12 @@ Users see full context, not just "failed to compile".
 
 **Type-safe**: ConfigValue<T> ensures type correctness.
 
+All interfaces and providers are **auto-generated** from a single source of truth: `config_schema.yaml`.
+
+### Dependency Injection
+
+TODO: fill in section
+
 ### Diagnostics Integration
 
 **Structured output** through UserDiagnostics interface:
@@ -515,9 +509,19 @@ Users see full context, not just "failed to compile".
 
 **Testable**: BufferedUserDiagnostics for unit tests.
 
-## Data Flow
+### Testing Strategy
 
-???
+#### Unit Tests (`tests/unit/`)
+
+Each unit test evaluates a single component in complete isolation.
+All dependencies, if any, are mocked.
+There are no external system dependencies, including the filesystem.
+
+#### Integration Tests (`tests/integration/`)
+
+Each integration test evaluates one or more components together.
+Dependencies may be mocked or stubbed, or they may be injected using real components.
+Integration tests may make use of the external network or filesystem.
 
 ## Design Principles
 
@@ -559,20 +563,6 @@ Users see full context, not just "failed to compile".
 - Services can be tested with mock implementations
 - BufferedUserDiagnostics for capturing output
 - No global state, pure functions where possible
-
-## Testing Strategy
-
-### Unit Tests (`tests/unit/`)
-
-Each unit test evaluates a single component in complete isolation.
-All dependencies, if any, are mocked.
-There are no external system dependencies, including the filesystem.
-
-### Integration Tests (`tests/integration/`)
-
-Each integration test evaluates one or more components together.
-Dependencies may be mocked or stubbed, or they may be injected using real components.
-Integration tests may make use of the external network or filesystem.
 
 ## Entry Points
 
