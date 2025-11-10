@@ -153,7 +153,7 @@ if (!tileset_load_result.has_value()) {
     // Handle error
 }
 
-auto tileset = tileset_result.value();;
+auto tileset = std::move(tileset_load_result).value();
 // Do some stuff with the tileset...
 
 // Save it back to disk
