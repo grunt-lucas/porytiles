@@ -23,11 +23,28 @@
 #     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, std::string) signature
 #     - Example: ["compare_greater_than:num_tiles_primary", "my_custom_cross_field_validator"]
 
-# TODO: update config layer templates so that the cross-field validator 'FetchFunc fetch_other' uses the raw version
-# of the fetch function. That way, you avoid infinite recursive call chains if
+# TODO: update config layer templates so that the cross-field validator 'FetchFunc fetch_other' use a different
+# fetch function. That way, you avoid infinite recursive call chains if
 # e.g. num_tiles_primary <--> num_tiles_total have a mutual validation dependency, i.e. num_tiles_primary validates that
 # it is less than num_tiles_total, and vice versa.
-# We tried to do this previously and caused an infinite recursive loop. Using the raw fetcher will fix this issue.
+# We tried to do this previously and caused an infinite recursive loop.
+# To fix this, we should have three "tiers" of fetchers:
+# 1. protected virtual raw fetching function which just gets the value from the provider as-is
+# 2. protected fetch function which calls raw fetch and then does all non-cross-field validation
+# 3. public fetch function which calls the protected validated fetch function and then does all cross-field validation
+# This way, we aren't performing cross-field validation on values which are invalid or nonsensical.
+# We at least allow for internal validation, but guarantee that we won't throw an infinite loop.
+
+# TODO: overhaul the scope_type. Let's remove it entirely from the schema.
+# Instead, each config method will take two parameters:
+#   num_tiles_primary(ConfigScopeType type, std::string scope)
+# which would be called like e.g.
+#   num_tiles_primary(ConfigScopeType::tileset, "my_tileset")
+# The provider implementations could then decide to use these values or not.
+# E.g. the YAML provider could use the values to decide which YAML files to check.
+# This technique would help us avoid having to enforce globally unique names.
+# It's also intuitive, since different code segments can decide if they want
+# to try to load tileset or layout versions of a config setting.
 
 config_values:
   # Domain Layer Configuration Values
