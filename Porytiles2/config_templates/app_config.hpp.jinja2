@@ -25,54 +25,10 @@ namespace porytiles2 {
 class AppConfig {
   public:
     virtual ~AppConfig() = default;
-{% for value in config_values if value.layer == 'app' %}
-
-    // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}(ConfigScopeType type, const std::string &scope) const
-    {
-        auto validated_val = {{ value.name }}_validated(type, scope);
-{% if value.cross_field_validators %}
-        // Apply cross-field validators
-{%   for cross_validator in value.cross_field_validators %}
-{%     set validator_parts = cross_validator.split(':') %}
-{%     set operator_name = validator_parts[0] %}
-{%     set other_field_name = validator_parts[1] %}
-        if (validated_val.has_value()) {
-            validated_val = {{ operator_name }}<{{ value.type }}>(
-                validated_val.value(), *this, type, scope, "{{ other_field_name }}",
-                [](const AppConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.{{ other_field_name }}_validated(t, s); }
-            );
-        }
-{%   endfor %}
-{% endif %}
-        return validated_val;
-    }
-{% endfor %}
+{{ macros.public_config_methods(config_values, 'app', 'AppConfig') }}
 
   protected:
-{% for value in config_values if value.layer == 'app' %}
-
-    // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_validated(ConfigScopeType type, const std::string &scope) const
-    {
-        auto raw_val = {{ value.name }}_raw(type, scope);
-{% if value.validators %}
-        // Apply validators in sequence
-{%   for validator in value.validators %}
-        if (raw_val.has_value()) {
-            raw_val = {{ validator }}(raw_val.value());
-        }
-{%   endfor %}
-{% endif %}
-        return raw_val;
-    }
-
-    // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const = 0;
-{% endfor %}
+{{ macros.protected_config_methods(config_values, 'app') }}
 };
 
 } // namespace porytiles2

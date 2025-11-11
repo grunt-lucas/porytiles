@@ -12,3 +12,82 @@
  * Scripts/generate_config.py.
  */
 {%- endmacro %}
+
+{#
+  Macro for generating public config methods with cross-field validation (Tier 3)
+
+  Parameters:
+    - config_values: List of all config values from schema
+    - layer: The layer name to filter by ('domain', 'app', 'infra')
+    - class_name: The class name for lambda captures ('DomainConfig', 'AppConfig', 'InfraConfig')
+#}
+{% macro public_config_methods(config_values, layer, class_name) -%}
+{% for value in config_values if value.layer == layer %}
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = {{ value.name }}_validated(type, scope);
+{% if value.cross_field_validators %}
+        // Apply cross-field validators
+{%   for cross_validator in value.cross_field_validators %}
+{%     set validator_parts = cross_validator.split(':') %}
+{%     set operator_name = validator_parts[0] %}
+{%     set other_field_name = validator_parts[1] %}
+        if (validated_val.has_value()) {
+            validated_val = {{ operator_name }}<{{ value.type }}>(
+                validated_val.value(), *this, type, scope, "{{ other_field_name }}",
+                [](const {{ class_name }} &cfg, ConfigScopeType t, const std::string &s) { return cfg.{{ other_field_name }}_validated(t, s); }
+            );
+        }
+{%   endfor %}
+{% endif %}
+        return validated_val;
+    }
+{% endfor %}
+{%- endmacro %}
+
+{#
+  Macro for generating protected config methods with single-value validation (Tier 2) and raw methods (Tier 1)
+
+  Parameters:
+    - config_values: List of all config values from schema
+    - layer: The layer name to filter by ('domain', 'app', 'infra')
+#}
+{% macro protected_config_methods(config_values, layer) -%}
+{% for value in config_values if value.layer == layer %}
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = {{ value.name }}_raw(type, scope);
+{% if value.validators %}
+        // Apply validators in sequence
+{%   for validator in value.validators %}
+        if (raw_val.has_value()) {
+            raw_val = {{ validator }}(raw_val.value());
+        }
+{%   endfor %}
+{% endif %}
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const = 0;
+{% endfor %}
+{%- endmacro %}
+
+{#
+  Macro for building YAML path accessor chain from dot-separated path
+
+  Parameters:
+    - path: Dot-separated YAML path (e.g., "foo.bar.baz")
+
+  Returns: Chain of bracket accessors (e.g., ["foo"]["bar"]["baz"])
+#}
+{% macro yaml_path(path) -%}
+{% set path_parts = path.split('.') %}{% for part in path_parts %}["{{ part }}"]{% endfor %}
+{%- endmacro %}

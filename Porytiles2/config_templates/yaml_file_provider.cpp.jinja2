@@ -57,7 +57,7 @@ LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType 
         format_,
         paths,
         load_yaml_file,
-        [](const YAML::Node &doc) { return doc{% set path_parts = value.yaml.path.split('.') %}{% for part in path_parts %}["{{ part }}"]{% endfor %}; },
+        [](const YAML::Node &doc) { return doc{{ macros.yaml_path(value.yaml.path) }}; },
         {{ value.parser }},
         "{{ value.name }}");
 }
