@@ -9,9 +9,9 @@
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 
@@ -81,7 +81,8 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     panic(format_->format("no value found for '{}' in any config layer", cache_key));
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_tiles_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -91,7 +92,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_primary_r
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -101,7 +103,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_total_raw
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_metatiles_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -111,7 +114,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_prima
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -121,7 +125,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_total
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_pals_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -131,7 +136,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_primary_ra
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -141,7 +147,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_total_raw(
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -151,7 +158,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::max_map_data_size_r
         key, [&type, &scope](const ConfigProvider &provider) { return provider.max_map_data_size(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_per_metatile_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>>
+LazyLayeredConfig::num_tiles_per_metatile_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -161,7 +169,8 @@ ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_per_metat
         key, [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(type, scope); });
 }
 
-ChainableResult<ConfigValue<Rgba32>> LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<Rgba32>>
+LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -171,7 +180,8 @@ ChainableResult<ConfigValue<Rgba32>> LazyLayeredConfig::extrinsic_transparency_r
         key, [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
 }
 
-ChainableResult<ConfigValue<bool>> LazyLayeredConfig::patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -181,7 +191,8 @@ ChainableResult<ConfigValue<bool>> LazyLayeredConfig::patch_build_enabled_raw(Co
         key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_build_enabled(type, scope); });
 }
 
-ChainableResult<ConfigValue<TilesPalMode>> LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<TilesPalMode>>
+LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key

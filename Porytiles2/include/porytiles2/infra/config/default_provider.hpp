@@ -26,27 +26,36 @@ class DefaultProvider final : public ConfigProvider {
      */
     [[nodiscard]] std::string name() const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_tiles_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_tiles_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_pals_primary(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<Rgba32>
+    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TilesPalMode>
+    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 };
 
 } // namespace porytiles2

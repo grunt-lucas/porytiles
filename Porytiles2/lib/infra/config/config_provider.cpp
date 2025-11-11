@@ -8,57 +8,68 @@
 
 namespace porytiles2 {
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t>
+ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t>
+ConfigProvider::num_pals_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t>
+ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::max_map_data_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::max_map_data_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<Rgba32> ConfigProvider::extrinsic_transparency([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<Rgba32>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::patch_build_enabled([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::patch_build_enabled(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<TilesPalMode> ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TilesPalMode>
+ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TilesPalMode>::not_provided();
 }

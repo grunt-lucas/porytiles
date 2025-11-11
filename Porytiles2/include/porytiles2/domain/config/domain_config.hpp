@@ -3,13 +3,13 @@
 #include <string>
 
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
-#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
@@ -34,9 +34,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_tiles_total",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_tiles_total_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_tiles_total",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_tiles_total_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -49,9 +54,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_greater_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_tiles_primary",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_tiles_primary_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_tiles_primary",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_tiles_primary_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -64,9 +74,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_metatiles_total",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_metatiles_total_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_metatiles_total",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_metatiles_total_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -79,9 +94,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_greater_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_metatiles_primary",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_metatiles_primary_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_metatiles_primary",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_metatiles_primary_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -94,9 +114,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_pals_total",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_pals_total_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_pals_total",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_pals_total_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -109,9 +134,14 @@ class DomainConfig {
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_greater_equal<std::size_t>(
-                validated_val.value(), *this, type, scope, "num_pals_primary",
-                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.num_pals_primary_validated(t, s); }
-            );
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "num_pals_primary",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.num_pals_primary_validated(t, s);
+                });
         }
         return validated_val;
     }
@@ -300,7 +330,6 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const = 0;
-
 };
 
 } // namespace porytiles2
