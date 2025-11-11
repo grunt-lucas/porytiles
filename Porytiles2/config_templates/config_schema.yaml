@@ -24,8 +24,7 @@
 #     - Applied after regular validators, have access to config object and can fetch other values
 #     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
 #       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
-#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, ConfigScopeType, std::string) signature
-#     - Example: [compare_greater_than:num_tiles_primary, my_custom_cross_field_validator]
+#     - Example: [compare_greater_than:num_tiles_primary]
 
 config_values:
   # Domain Layer Configuration Values

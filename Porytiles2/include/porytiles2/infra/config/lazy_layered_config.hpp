@@ -15,10 +15,10 @@
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -133,10 +133,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Infra Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
   public:
+
     /*
      * LazyLayeredConfig Specific Functionality
      */

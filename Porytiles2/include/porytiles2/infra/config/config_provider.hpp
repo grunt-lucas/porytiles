@@ -40,30 +40,23 @@ class ConfigProvider {
      * Domain Config
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    num_tiles_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    num_pals_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    max_map_data_size(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<Rgba32>
-    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
 

@@ -35,22 +35,15 @@ class AppConfig {
 {% if value.cross_field_validators %}
         // Apply cross-field validators
 {%   for cross_validator in value.cross_field_validators %}
-{%     if cross_validator.startswith('compare_') and ':' in cross_validator %}
-{%       set validator_parts = cross_validator.split(':') %}
-{%       set operator_name = validator_parts[0] %}
-{%       set other_field_name = validator_parts[1] %}
+{%     set validator_parts = cross_validator.split(':') %}
+{%     set operator_name = validator_parts[0] %}
+{%     set other_field_name = validator_parts[1] %}
         if (validated_val.has_value()) {
             validated_val = {{ operator_name }}<{{ value.type }}>(
                 validated_val.value(), *this, type, scope, "{{ other_field_name }}",
                 [](const AppConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.{{ other_field_name }}_validated(t, s); }
             );
         }
-{%     else %}
-        // Custom cross-field validator
-        if (validated_val.has_value()) {
-            validated_val = {{ cross_validator }}(validated_val.value(), *this, type, scope);
-        }
-{%     endif %}
 {%   endfor %}
 {% endif %}
         return validated_val;
