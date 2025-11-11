@@ -17,24 +17,28 @@ namespace porytiles2 {
 
 /**
  * @brief Interface that defines a complete infra layer configuration.
- *
- * @details
- * The infra layer operates with this interface - it doesn't need to worry about implementation. Every config value is
- * either virtual (i.e., comes from the user) or defined in terms of other virtual values.
  */
 class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
 
-    // Public method with validation
+    // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &tileset) const
+    {
+        auto validated_val = tiles_pal_mode_validated(tileset);
+        return validated_val;
+    }
+
+  protected:
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_validated(const std::string &tileset) const
     {
         auto raw_val = tiles_pal_mode_raw(tileset);
         return raw_val;
     }
 
-  protected:
-    // Protected virtual method that fetches raw value from provider
+    // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(const std::string &tileset) const = 0;
 };

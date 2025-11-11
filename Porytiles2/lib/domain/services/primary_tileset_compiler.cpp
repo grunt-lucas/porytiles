@@ -182,8 +182,8 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
     // Grab configuration values we'll need
     PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
 
     // Read Porytiles layer images and decompose into tile vectors

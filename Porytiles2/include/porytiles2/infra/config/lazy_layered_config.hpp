@@ -90,7 +90,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
   protected:
     /*
-     * Domain Config Raw Methods
+     * Domain Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from DomainConfig and not overridden
      */
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -123,11 +124,13 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled_raw(const std::string &tileset) const override;
 
     /*
-     * App Config Raw Methods
+     * App Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
      */
 
     /*
-     * Infra Config Raw Methods
+     * Infra Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(const std::string &tileset) const override;

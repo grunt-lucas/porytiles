@@ -93,7 +93,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
   protected:
     /*
-     * Domain Config Raw Methods
+     * Domain Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from DomainConfig and not overridden
      */
 {% for value in config_values if value.layer == 'domain' %}
 
@@ -102,7 +103,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% endfor %}
 
     /*
-     * App Config Raw Methods
+     * App Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
      */
 {% for value in config_values if value.layer == 'app' %}
 
@@ -111,7 +113,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% endfor %}
 
     /*
-     * Infra Config Raw Methods
+     * Infra Config Raw Methods (Tier 1)
+     * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
 {% for value in config_values if value.layer == 'infra' %}
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;

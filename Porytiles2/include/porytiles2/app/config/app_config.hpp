@@ -17,10 +17,6 @@ namespace porytiles2 {
 
 /**
  * @brief Interface that defines a complete app layer configuration.
- *
- * @details
- * The app layer operates with this interface - it doesn't need to worry about implementation. Every config value is
- * either virtual (i.e., comes from the user) or defined in terms of other virtual values.
  */
 class AppConfig {
   public:

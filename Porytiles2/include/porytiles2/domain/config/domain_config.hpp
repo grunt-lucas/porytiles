@@ -20,17 +20,139 @@ namespace porytiles2 {
 
 /**
  * @brief Interface that defines a complete domain layer configuration.
- *
- * @details
- * The domain layer operates with this interface - it doesn't need to worry about implementation. Every config value is
- * either virtual (i.e., comes from the user) or defined in terms of other virtual values (derived).
  */
 class DomainConfig {
   public:
     virtual ~DomainConfig() = default;
 
-    // Public method with validation
+    // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_primary(const std::string &tileset) const
+    {
+        auto validated_val = num_tiles_primary_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_less_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_tiles_total",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_tiles_total_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_total(const std::string &tileset) const
+    {
+        auto validated_val = num_tiles_total_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_greater_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_tiles_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_tiles_primary_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_metatiles_primary(const std::string &tileset) const
+    {
+        auto validated_val = num_metatiles_primary_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_less_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_metatiles_total",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_metatiles_total_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_metatiles_total(const std::string &tileset) const
+    {
+        auto validated_val = num_metatiles_total_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_greater_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_metatiles_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_metatiles_primary_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_primary(const std::string &tileset) const
+    {
+        auto validated_val = num_pals_primary_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_less_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_pals_total",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_pals_total_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_total(const std::string &tileset) const
+    {
+        auto validated_val = num_pals_total_validated(tileset);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = compare_greater_equal<std::size_t>(
+                validated_val.value(),
+                *this,
+                tileset,
+                "num_pals_primary",
+                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_pals_primary_validated(ts); });
+        }
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> max_map_data_size(const std::string &tileset) const
+    {
+        auto validated_val = max_map_data_size_validated(tileset);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_per_metatile(const std::string &tileset) const
+    {
+        auto validated_val = num_tiles_per_metatile_validated(tileset);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<Rgba32>> extrinsic_transparency(const std::string &tileset) const
+    {
+        auto validated_val = extrinsic_transparency_validated(tileset);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled(const std::string &tileset) const
+    {
+        auto validated_val = patch_build_enabled_validated(tileset);
+        return validated_val;
+    }
+
+  protected:
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_primary_validated(const std::string &tileset) const
     {
         auto raw_val = num_tiles_primary_raw(tileset);
         // Apply validators in sequence
@@ -40,28 +162,29 @@ class DomainConfig {
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_total(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_primary_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_total_validated(const std::string &tileset) const
     {
         auto raw_val = num_tiles_total_raw(tileset);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
         }
-        // Apply cross-field validators
-        if (raw_val.has_value()) {
-            raw_val = compare_greater_equal<std::size_t>(
-                raw_val.value(),
-                *this,
-                tileset,
-                "num_tiles_primary",
-                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_tiles_primary(ts); });
-        }
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_metatiles_primary(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_total_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_primary_validated(const std::string &tileset) const
     {
         auto raw_val = num_metatiles_primary_raw(tileset);
         // Apply validators in sequence
@@ -71,28 +194,29 @@ class DomainConfig {
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_metatiles_total(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_primary_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_total_validated(const std::string &tileset) const
     {
         auto raw_val = num_metatiles_total_raw(tileset);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
         }
-        // Apply cross-field validators
-        if (raw_val.has_value()) {
-            raw_val = compare_greater_equal<std::size_t>(
-                raw_val.value(),
-                *this,
-                tileset,
-                "num_metatiles_primary",
-                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_metatiles_primary(ts); });
-        }
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_primary(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_total_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_pals_primary_validated(const std::string &tileset) const
     {
         auto raw_val = num_pals_primary_raw(tileset);
         // Apply validators in sequence
@@ -102,28 +226,29 @@ class DomainConfig {
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_pals_total(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_pals_primary_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_pals_total_validated(const std::string &tileset) const
     {
         auto raw_val = num_pals_total_raw(tileset);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
         }
-        // Apply cross-field validators
-        if (raw_val.has_value()) {
-            raw_val = compare_greater_equal<std::size_t>(
-                raw_val.value(),
-                *this,
-                tileset,
-                "num_pals_primary",
-                [](const DomainConfig &cfg, const std::string &ts) { return cfg.num_pals_primary(ts); });
-        }
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> max_map_data_size(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_pals_total_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    max_map_data_size_validated(const std::string &tileset) const
     {
         auto raw_val = max_map_data_size_raw(tileset);
         // Apply validators in sequence
@@ -133,65 +258,47 @@ class DomainConfig {
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> num_tiles_per_metatile(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    max_map_data_size_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_per_metatile_validated(const std::string &tileset) const
     {
         auto raw_val = num_tiles_per_metatile_raw(tileset);
+        // Apply validators in sequence
+        if (raw_val.has_value()) {
+            raw_val = size_t_val_eight_or_twelve(raw_val.value());
+        }
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<Rgba32>> extrinsic_transparency(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_per_metatile_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
+    extrinsic_transparency_validated(const std::string &tileset) const
     {
         auto raw_val = extrinsic_transparency_raw(tileset);
         return raw_val;
     }
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled(const std::string &tileset) const
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
+    extrinsic_transparency_raw(const std::string &tileset) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    patch_build_enabled_validated(const std::string &tileset) const
     {
         auto raw_val = patch_build_enabled_raw(tileset);
         return raw_val;
     }
 
-  protected:
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_total_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_total_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    max_map_data_size_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_per_metatile_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
-    extrinsic_transparency_raw(const std::string &tileset) const = 0;
-
-    // Protected virtual method that fetches raw value from provider
+    // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     patch_build_enabled_raw(const std::string &tileset) const = 0;
 };
