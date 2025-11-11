@@ -17,13 +17,14 @@
 #
 #   validators: List of validator function names to apply (required, use empty list [] if none)
 #     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
 #     - Applied in sequence after fetching from provider, before returning to caller
 #     - Example: [size_t_val_greater_than_zero]
 #
 #   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
 #     - Applied after regular validators, have access to config object and can fetch other values
-#     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
-#       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
+#     - Reference syntax: "<validator_func_name>:<field_name>"
 #     - Example: [compare_greater_than:num_tiles_primary]
 
 config_values:
