@@ -85,14 +85,14 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 }
 {% for value in config_values %}
 
-ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %} + ":" + base_name;
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<{{ value.type }}>(
-        key, [&{% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}](const ConfigProvider &provider) { return provider.{{ value.name }}({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}); });
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
 }
 {% endfor %}
 

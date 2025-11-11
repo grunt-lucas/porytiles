@@ -37,7 +37,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Grab configuration values we'll need
-    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -70,7 +70,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
 
     // TODO: remove these, just here to test config/diagnostic stuff
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     diag_->note(
         "config-info",
         std::vector{
@@ -86,7 +86,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     diag_->err("test-error", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
 
     // Leaf step to throw error if there are too many metatiles.
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     if (metatiles.size() > num_metatiles_primary.value()) {
         return FormattableError{
             "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
@@ -181,10 +181,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // PT_TRY_CALL_CHAIN_ERR(size_t_val_greater_than_zero(test), "config validation failed", std::unique_ptr<Tileset>);
 
     // Grab configuration values we'll need
-    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
 
     // Read Porytiles layer images and decompose into tile vectors
     PT_TRY_ASSIGN_CHAIN_ERR(

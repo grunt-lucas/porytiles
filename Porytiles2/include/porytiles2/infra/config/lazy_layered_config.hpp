@@ -95,33 +95,34 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_raw(const std::string &tileset) const override;
+    num_tiles_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_total_raw(const std::string &tileset) const override;
+    num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_raw(const std::string &tileset) const override;
+    num_metatiles_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_total_raw(const std::string &tileset) const override;
+    num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_raw(const std::string &tileset) const override;
+    num_pals_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(const std::string &tileset) const override;
+    num_pals_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    max_map_data_size_raw(const std::string &tileset) const override;
+    max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_per_metatile_raw(const std::string &tileset) const override;
+    num_tiles_per_metatile_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
-    extrinsic_transparency_raw(const std::string &tileset) const override;
+    extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<bool>> patch_build_enabled_raw(const std::string &tileset) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * App Config Raw Methods (Tier 1)
@@ -133,7 +134,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(const std::string &tileset) const override;
+    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
   public:
     /*

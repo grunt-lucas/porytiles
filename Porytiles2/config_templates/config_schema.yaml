@@ -3,36 +3,29 @@
 #
 # Fields:
 #   name: Method name for the config value
+#
 #   type: C++ type for the value
+#
 #   parser: Parser function name (e.g., "parse_size_t") - shared across all providers (if relevant)
+#
 #   layer: Configuration layer (domain/app/infra)
-#   scope_type: Method parameter scope (tileset/layout)
-#     - tileset: Takes const std::string &tileset parameter
-#     - layout: Takes const std::string &layout parameter
+#
 #   default_value: Default value for DefaultProvider (C++ expression as string)
+#
 #   yaml: YAML configuration for YamlFileProvider
 #     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
+#
 #   validators: List of validator function names to apply (required, use empty list [] if none)
 #     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
 #     - Applied in sequence after fetching from provider, before returning to caller
 #     - Example: [size_t_val_greater_than_zero]
+#
 #   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
 #     - Applied after regular validators, have access to config object and can fetch other values
 #     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
 #       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
-#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, std::string) signature
-#     - Example: ["compare_greater_than:num_tiles_primary", "my_custom_cross_field_validator"]
-
-# TODO: overhaul the scope_type. Let's remove it entirely from the schema.
-# Instead, each config method will take two parameters:
-#   num_tiles_primary(ConfigScopeType type, std::string scope)
-# which would be called like e.g.
-#   num_tiles_primary(ConfigScopeType::tileset, "my_tileset")
-# The provider implementations could then decide to use these values or not.
-# E.g. the YAML provider could use the values to decide which YAML files to check.
-# This technique would help us avoid having to enforce globally unique names.
-# It's also intuitive, since different code segments can decide if they want
-# to try to load tileset or layout versions of a config setting.
+#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, ConfigScopeType, std::string) signature
+#     - Example: [compare_greater_than:num_tiles_primary, my_custom_cross_field_validator]
 
 config_values:
   # Domain Layer Configuration Values
@@ -40,7 +33,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "512"
     yaml:
       path: fieldmap.num_tiles_primary
@@ -51,7 +43,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "1024"
     yaml:
       path: fieldmap.num_tiles_total
@@ -62,7 +53,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "512"
     yaml:
       path: fieldmap.num_metatiles_primary
@@ -73,7 +63,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "1024"
     yaml:
       path: fieldmap.num_metatiles_total
@@ -84,7 +73,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "6"
     yaml:
       path: fieldmap.num_pals_primary
@@ -95,7 +83,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "13"
     yaml:
       path: fieldmap.num_pals_total
@@ -106,7 +93,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "10240"
     yaml:
       path: fieldmap.max_map_data_size
@@ -117,7 +103,6 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "8"
     yaml:
       path: fieldmap.num_tiles_per_metatile
@@ -128,7 +113,6 @@ config_values:
     type: Rgba32
     parser: parse_rgba32
     layer: domain
-    scope_type: tileset
     default_value: "rgba_magenta"
     yaml:
       path: extrinsic_transparency
@@ -139,7 +123,6 @@ config_values:
     type: bool
     parser: parse_bool
     layer: domain
-    scope_type: tileset
     default_value: "false"
     yaml:
       path: patch.enabled
@@ -151,7 +134,6 @@ config_values:
     type: TilesPalMode
     parser: parse_tiles_pal_mode
     layer: infra
-    scope_type: tileset
     default_value: "TilesPalMode::true_color"
     yaml:
       path: tiles_pal_mode

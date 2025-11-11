@@ -99,7 +99,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% for value in config_values if value.layer == 'domain' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
     /*
@@ -109,7 +109,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% for value in config_values if value.layer == 'app' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
     /*
@@ -117,7 +117,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
 {% for value in config_values if value.layer == 'infra' %}
-    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
   public:

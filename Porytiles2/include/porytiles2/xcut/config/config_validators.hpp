@@ -51,6 +51,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
@@ -132,7 +133,8 @@ namespace details {
  * @tparam Comparator Callable type that performs the comparison (e.g., std::greater<>, std::less<>)
  * @param val The config value being validated
  * @param config The config interface to fetch other values from
- * @param scope_param The scope parameter (tileset or layout name)
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
  * @param other_field_name The name of the other field to compare against
  * @param fetch_other Callable that fetches the other config value
  * @param comp Comparator that performs the comparison operation
@@ -143,13 +145,14 @@ template <typename T, typename ConfigInterface, typename FetchFunc, typename Com
 [[nodiscard]] ChainableResult<ConfigValue<T>> compare_values(
     const ConfigValue<T> &val,
     const ConfigInterface &config,
-    const std::string &scope_param,
+    ConfigScopeType type,
+    const std::string &scope,
     const std::string &other_field_name,
     FetchFunc fetch_other,
     Comparator comp,
     std::string_view error_message)
 {
-    auto other_result = fetch_other(config, scope_param);
+    auto other_result = fetch_other(config, type, scope);
 
     // If fetching the other value failed, propagate that error
     if (!other_result.has_value()) {
@@ -208,7 +211,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc, typename Com
  * @tparam FetchFunc Callable type that fetches the other config value
  * @param val The config value being validated
  * @param config The config interface to fetch other values from
- * @param scope_param The scope parameter (tileset or layout name)
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
  * @param other_field_name The name of the other field to compare against
  * @param fetch_other Callable that fetches the other config value
  * @return ChainableResult containing either the original value or an error
@@ -217,12 +221,13 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
 [[nodiscard]] ChainableResult<ConfigValue<T>> compare_greater_than(
     const ConfigValue<T> &val,
     const ConfigInterface &config,
-    const std::string &scope_param,
+    ConfigScopeType type,
+    const std::string &scope,
     const std::string &other_field_name,
     FetchFunc fetch_other)
 {
     return details::compare_values(
-        val, config, scope_param, other_field_name, fetch_other, std::greater<>{}, "must be greater than");
+        val, config, type, scope, other_field_name, fetch_other, std::greater<>{}, "must be greater than");
 }
 
 /**
@@ -233,7 +238,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
  * @tparam FetchFunc Callable type that fetches the other config value
  * @param val The config value being validated
  * @param config The config interface to fetch other values from
- * @param scope_param The scope parameter (tileset or layout name)
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
  * @param other_field_name The name of the other field to compare against
  * @param fetch_other Callable that fetches the other config value
  * @return ChainableResult containing either the original value or an error
@@ -242,12 +248,13 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
 [[nodiscard]] ChainableResult<ConfigValue<T>> compare_less_than(
     const ConfigValue<T> &val,
     const ConfigInterface &config,
-    const std::string &scope_param,
+    ConfigScopeType type,
+    const std::string &scope,
     const std::string &other_field_name,
     FetchFunc fetch_other)
 {
     return details::compare_values(
-        val, config, scope_param, other_field_name, fetch_other, std::less<>{}, "must be less than");
+        val, config, type, scope, other_field_name, fetch_other, std::less<>{}, "must be less than");
 }
 
 /**
@@ -258,7 +265,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
  * @tparam FetchFunc Callable type that fetches the other config value
  * @param val The config value being validated
  * @param config The config interface to fetch other values from
- * @param scope_param The scope parameter (tileset or layout name)
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
  * @param other_field_name The name of the other field to compare against
  * @param fetch_other Callable that fetches the other config value
  * @return ChainableResult containing either the original value or an error
@@ -267,14 +275,16 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
 [[nodiscard]] ChainableResult<ConfigValue<T>> compare_greater_equal(
     const ConfigValue<T> &val,
     const ConfigInterface &config,
-    const std::string &scope_param,
+    ConfigScopeType type,
+    const std::string &scope,
     const std::string &other_field_name,
     FetchFunc fetch_other)
 {
     return details::compare_values(
         val,
         config,
-        scope_param,
+        type,
+        scope,
         other_field_name,
         fetch_other,
         std::greater_equal<>{},
@@ -289,7 +299,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
  * @tparam FetchFunc Callable type that fetches the other config value
  * @param val The config value being validated
  * @param config The config interface to fetch other values from
- * @param scope_param The scope parameter (tileset or layout name)
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
  * @param other_field_name The name of the other field to compare against
  * @param fetch_other Callable that fetches the other config value
  * @return ChainableResult containing either the original value or an error
@@ -298,12 +309,13 @@ template <typename T, typename ConfigInterface, typename FetchFunc>
 [[nodiscard]] ChainableResult<ConfigValue<T>> compare_less_equal(
     const ConfigValue<T> &val,
     const ConfigInterface &config,
-    const std::string &scope_param,
+    ConfigScopeType type,
+    const std::string &scope,
     const std::string &other_field_name,
     FetchFunc fetch_other)
 {
     return details::compare_values(
-        val, config, scope_param, other_field_name, fetch_other, std::less_equal<>{}, "must be less than or equal to");
+        val, config, type, scope, other_field_name, fetch_other, std::less_equal<>{}, "must be less than or equal to");
 }
 
 /**

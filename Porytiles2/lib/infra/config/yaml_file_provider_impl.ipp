@@ -11,6 +11,7 @@
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 // The anonymous namespace ensures internal linkage per translation unit
 // This file is intentionally included only in yaml_file_provider.cpp
@@ -379,10 +380,10 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
 
     // Priority order (highest to lowest):
     // 1. tileset_folder/porytiles.local.yaml
-    paths.push_back(std::filesystem::path{tileset_local_config_key.key()});
+    paths.emplace_back(tileset_local_config_key.key());
 
     // 2. tileset_folder/porytiles.yaml
-    paths.push_back(std::filesystem::path{tileset_config_key.key()});
+    paths.emplace_back(tileset_config_key.key());
 
     // 3. project_root/porytiles.local.yaml
     paths.push_back(project_root / "porytiles.local.yaml");
@@ -391,6 +392,35 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
     paths.push_back(project_root / "porytiles.yaml");
 
     return paths;
+}
+
+/**
+ * @brief Gets the config file path chain for a specific scope in priority order.
+ *
+ * @details
+ * Returns a vector of config file paths that should be searched for config values in priority order from highest to
+ * lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
+ *
+ * @param project_root The root directory of the project
+ * @param key_provider Provider for generating tileset artifact keys and paths
+ * @param type The configuration scope type (tileset or layout)
+ * @param scope The scope name (tileset name or layout name)
+ * @return Vector of config file paths in priority order
+ */
+std::vector<std::filesystem::path> get_config_path_chain(
+    const std::filesystem::path &project_root,
+    const TilesetArtifactKeyProvider *key_provider,
+    ConfigScopeType type,
+    const std::string &scope)
+{
+    switch (type) {
+    case ConfigScopeType::tileset:
+        return get_tileset_config_path_chain(project_root, key_provider, scope);
+    case ConfigScopeType::layout:
+        panic("TODO: implement layout config path chain resolution");
+    }
+    // Should never reach here
+    panic("Invalid ConfigScopeType");
 }
 
 /**

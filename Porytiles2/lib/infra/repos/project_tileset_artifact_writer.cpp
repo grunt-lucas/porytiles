@@ -17,6 +17,7 @@
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace {
 
@@ -279,7 +280,10 @@ ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetAr
         return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
     case TilesetArtifact::Type::tiles_png: {
         PT_TRY_ASSIGN_CHAIN_ERR(
-            tiles_pal_mode_config, config_->tiles_pal_mode(src.name()), "failed to get tiles_pal_mode config", void);
+            tiles_pal_mode_config,
+            config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+            "failed to get tiles_pal_mode config",
+            void);
         return save_tiles_png(
             *png_indexed_saver_,
             src.porymap_component().tiles_png(),

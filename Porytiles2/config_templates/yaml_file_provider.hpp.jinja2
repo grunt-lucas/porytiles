@@ -75,7 +75,7 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] std::string name() const override;
 {% for value in config_values %}
 
-    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const override;
+    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
   private:

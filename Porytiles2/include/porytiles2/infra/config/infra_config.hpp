@@ -4,6 +4,7 @@
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
@@ -23,24 +24,25 @@ class InfraConfig {
     virtual ~InfraConfig() = default;
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &tileset) const
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = tiles_pal_mode_validated(tileset);
+        auto validated_val = tiles_pal_mode_validated(type, scope);
         return validated_val;
     }
 
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_validated(const std::string &tileset) const
+    tiles_pal_mode_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = tiles_pal_mode_raw(tileset);
+        auto raw_val = tiles_pal_mode_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(const std::string &tileset) const = 0;
+    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

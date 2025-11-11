@@ -21,6 +21,7 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 using namespace porytiles2;
@@ -29,7 +30,8 @@ namespace {
 
 class MockInfraConfig : public InfraConfig {
   protected:
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode_raw(const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override
     {
         return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }

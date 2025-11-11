@@ -12,6 +12,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -31,9 +32,9 @@ class DomainConfig {
 {% for value in config_values if value.layer == 'domain' %}
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+    {{ value.name }}(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = {{ value.name }}_validated({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+        auto validated_val = {{ value.name }}_validated(type, scope);
 {% if value.cross_field_validators %}
         // Apply cross-field validators
 {%   for cross_validator in value.cross_field_validators %}
@@ -43,14 +44,14 @@ class DomainConfig {
 {%       set other_field_name = validator_parts[1] %}
         if (validated_val.has_value()) {
             validated_val = {{ operator_name }}<{{ value.type }}>(
-                validated_val.value(), *this, {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}, "{{ other_field_name }}",
-                [](const DomainConfig &cfg, const std::string &{% if value.scope_type == 'tileset' %}ts{% elif value.scope_type == 'layout' %}ly{% endif %}) { return cfg.{{ other_field_name }}_validated({% if value.scope_type == 'tileset' %}ts{% elif value.scope_type == 'layout' %}ly{% endif %}); }
+                validated_val.value(), *this, type, scope, "{{ other_field_name }}",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) { return cfg.{{ other_field_name }}_validated(t, s); }
             );
         }
 {%     else %}
         // Custom cross-field validator
         if (validated_val.has_value()) {
-            validated_val = {{ cross_validator }}(validated_val.value(), *this, {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+            validated_val = {{ cross_validator }}(validated_val.value(), *this, type, scope);
         }
 {%     endif %}
 {%   endfor %}
@@ -63,9 +64,9 @@ class DomainConfig {
 {% for value in config_values if value.layer == 'domain' %}
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_validated({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+    {{ value.name }}_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = {{ value.name }}_raw({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %});
+        auto raw_val = {{ value.name }}_raw(type, scope);
 {% if value.validators %}
         // Apply validators in sequence
 {%   for validator in value.validators %}
@@ -79,7 +80,7 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const = 0;
+    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
 {% endfor %}
 };

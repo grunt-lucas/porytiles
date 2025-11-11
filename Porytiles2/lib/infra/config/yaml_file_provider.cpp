@@ -46,9 +46,9 @@ std::string YamlFileProvider::name() const
     return "YamlFileProvider";
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -58,9 +58,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(const std::string &t
         "num_tiles_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -70,9 +70,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(const std::string &til
         "num_tiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -82,9 +82,9 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(const std::strin
         "num_metatiles_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -94,9 +94,9 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(const std::string 
         "num_metatiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_pals_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -106,9 +106,9 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_primary(const std::string &ti
         "num_pals_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -118,9 +118,9 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(const std::string &tile
         "num_pals_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::max_map_data_size(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -130,9 +130,9 @@ LayerValue<std::size_t> YamlFileProvider::max_map_data_size(const std::string &t
         "max_map_data_size");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
@@ -142,9 +142,9 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(const std::stri
         "num_tiles_per_metatile");
 }
 
-LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(const std::string &tileset) const
+LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<Rgba32>(
         format_,
         paths,
@@ -154,9 +154,9 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(const std::string &t
         "extrinsic_transparency");
 }
 
-LayerValue<bool> YamlFileProvider::patch_build_enabled(const std::string &tileset) const
+LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<bool>(
         format_,
         paths,
@@ -166,9 +166,9 @@ LayerValue<bool> YamlFileProvider::patch_build_enabled(const std::string &tilese
         "patch_build_enabled");
 }
 
-LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(const std::string &tileset) const
+LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<TilesPalMode>(
         format_,
         paths,

@@ -6,6 +6,7 @@
 
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 using namespace porytiles2;
 
@@ -61,7 +62,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 512);
@@ -80,7 +81,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_total("test_tileset");
+    auto result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 1024);
@@ -98,7 +99,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_metatiles_primary("test_tileset");
+    auto result = provider.num_metatiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 256);
@@ -115,7 +116,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_metatiles_total("test_tileset");
+    auto result = provider.num_metatiles_total(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 512);
@@ -132,7 +133,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_pals_primary("test_tileset");
+    auto result = provider.num_pals_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 6);
@@ -149,7 +150,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_pals_total("test_tileset");
+    auto result = provider.num_pals_total(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 13);
@@ -166,7 +167,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.max_map_data_size("test_tileset");
+    auto result = provider.max_map_data_size(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 10240);
@@ -183,7 +184,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_per_metatile("test_tileset");
+    auto result = provider.num_tiles_per_metatile(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 8);
@@ -199,7 +200,7 @@ extrinsic_transparency: [255, 0, 255]
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.extrinsic_transparency("test_tileset");
+    auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value().red(), 255);
@@ -218,7 +219,7 @@ extrinsic_transparency: [128, 64, 32, 200]
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.extrinsic_transparency("test_tileset");
+    auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value().red(), 128);
@@ -237,7 +238,7 @@ extrinsic_transparency: [255, 0]
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.extrinsic_transparency("test_tileset");
+    auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
     EXPECT_TRUE(result.error_message.find("must have 3 or 4 elements") != std::string::npos);
@@ -253,7 +254,7 @@ extrinsic_transparency: 255
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.extrinsic_transparency("test_tileset");
+    auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
     EXPECT_TRUE(result.error_message.find("must be a sequence") != std::string::npos);
@@ -270,7 +271,7 @@ patch:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.patch_build_enabled("test_tileset");
+    auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), true);
@@ -287,7 +288,7 @@ patch:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.patch_build_enabled("test_tileset");
+    auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), false);
@@ -303,7 +304,7 @@ tiles_pal_mode: true-color
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.tiles_pal_mode("test_tileset");
+    auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), TilesPalMode::true_color);
@@ -319,7 +320,7 @@ tiles_pal_mode: greyscale
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.tiles_pal_mode("test_tileset");
+    auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), TilesPalMode::greyscale);
@@ -335,7 +336,7 @@ tiles_pal_mode: invalid-mode
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.tiles_pal_mode("test_tileset");
+    auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
     EXPECT_TRUE(result.error_message.find("invalid value") != std::string::npos);
@@ -347,7 +348,7 @@ TEST_F(YamlFileProviderTest, ReturnsNotProvidedWhenFileDoesNotExist)
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -363,7 +364,7 @@ some_other_config:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -385,7 +386,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 1024); // Should use local config value
@@ -409,7 +410,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 768); // Should use tileset config value
@@ -443,7 +444,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 2048); // Should use tileset local config value
@@ -461,7 +462,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary("test_tileset");
+    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
     EXPECT_TRUE(result.error_message.find("failed to parse") != std::string::npos);
@@ -481,8 +482,8 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto primary_result = provider.num_tiles_primary("test_tileset");
-    auto total_result = provider.num_tiles_total("test_tileset");
+    auto primary_result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto total_result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(primary_result.state, ValidationState::valid);
     ASSERT_EQ(total_result.state, ValidationState::valid);

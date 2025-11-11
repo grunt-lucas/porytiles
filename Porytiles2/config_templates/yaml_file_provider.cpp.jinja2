@@ -50,16 +50,9 @@ std::string YamlFileProvider::name() const
 }
 {% for value in config_values %}
 
-LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType type, const std::string &scope) const
 {
-{% if value.scope_type == 'tileset' %}
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
-{% elif value.scope_type == 'layout' %}
-    // TODO: Implement get_layout_config_path_chain once layout support is added
-    // const auto paths = get_layout_config_path_chain(project_root_, layout_key_provider_, layout);
-    // For now, just use the tileset chain so things compile
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
-{% endif %}
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<{{ value.type }}>(
         format_,
         paths,

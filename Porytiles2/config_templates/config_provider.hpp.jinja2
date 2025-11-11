@@ -13,6 +13,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace porytiles2 {
 
@@ -43,7 +44,7 @@ class ConfigProvider {
      */
 {% for value in config_values if value.layer == 'domain' %}
 
-    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const;
 {% endfor %}
 
     /*
@@ -51,14 +52,14 @@ class ConfigProvider {
      */
 {% for value in config_values if value.layer == 'app' %}
 
-    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const;
 {% endfor %}
 
     /*
      * Infra Config
      */
 {% for value in config_values if value.layer == 'infra' %}
-    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const;
+    [[nodiscard]] virtual LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const;
 {% endfor %}
 };
 

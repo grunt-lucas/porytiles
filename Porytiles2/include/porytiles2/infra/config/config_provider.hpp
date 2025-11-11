@@ -6,6 +6,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace porytiles2 {
 
@@ -39,25 +40,32 @@ class ConfigProvider {
      * Domain Config
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_pals_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    max_map_data_size(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<Rgba32>
+    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config
@@ -66,7 +74,7 @@ class ConfigProvider {
     /*
      * Infra Config
      */
-    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
 };
 
 } // namespace porytiles2
