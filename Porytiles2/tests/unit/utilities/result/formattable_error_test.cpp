@@ -146,3 +146,158 @@ TEST(FormattableErrorTests, CloneShouldPreserveMultiLineErrors)
     EXPECT_EQ(details[0], "line 1");
     EXPECT_EQ(details[1], "line 2");
 }
+
+// Style Tests - Foreground and Background Color Combinations
+
+TEST(StyleTests, ForegroundOnlyShouldWork)
+{
+    const Style fg_red = Style::red;
+    EXPECT_TRUE(fg_red.has_fg_color());
+    EXPECT_FALSE(fg_red.has_bg_color());
+    EXPECT_FALSE(fg_red.is_fg_rgb());
+    EXPECT_EQ(fg_red.fg_predefined(), PredefinedColor::red);
+}
+
+TEST(StyleTests, BackgroundOnlyShouldWork)
+{
+    const Style bg_blue = Style::bg_blue;
+    EXPECT_FALSE(bg_blue.has_fg_color());
+    EXPECT_TRUE(bg_blue.has_bg_color());
+    EXPECT_FALSE(bg_blue.is_bg_rgb());
+    EXPECT_EQ(bg_blue.bg_predefined(), PredefinedColor::blue);
+}
+
+TEST(StyleTests, ForegroundAndBackgroundCombinationShouldWork)
+{
+    const Style combined = Style::red | Style::bg_blue;
+    EXPECT_TRUE(combined.has_fg_color());
+    EXPECT_TRUE(combined.has_bg_color());
+    EXPECT_FALSE(combined.is_fg_rgb());
+    EXPECT_FALSE(combined.is_bg_rgb());
+    EXPECT_EQ(combined.fg_predefined(), PredefinedColor::red);
+    EXPECT_EQ(combined.bg_predefined(), PredefinedColor::blue);
+}
+
+TEST(StyleTests, BoldWithForegroundAndBackgroundShouldWork)
+{
+    const Style styled = Style::bold | Style::red | Style::bg_yellow;
+    EXPECT_TRUE(styled.has_bold());
+    EXPECT_TRUE(styled.has_fg_color());
+    EXPECT_TRUE(styled.has_bg_color());
+    EXPECT_FALSE(styled.is_fg_rgb());
+    EXPECT_FALSE(styled.is_bg_rgb());
+    EXPECT_EQ(styled.fg_predefined(), PredefinedColor::red);
+    EXPECT_EQ(styled.bg_predefined(), PredefinedColor::yellow);
+}
+
+TEST(StyleTests, RgbForegroundWithPredefinedBackgroundShouldWork)
+{
+    const Style combined = rgb_fg_style(255, 128, 0) | Style::bg_black;
+    EXPECT_TRUE(combined.has_fg_color());
+    EXPECT_TRUE(combined.has_bg_color());
+    EXPECT_TRUE(combined.is_fg_rgb());
+    EXPECT_FALSE(combined.is_bg_rgb());
+    const RgbColor fg = combined.fg_rgb();
+    EXPECT_EQ(fg.r, 255);
+    EXPECT_EQ(fg.g, 128);
+    EXPECT_EQ(fg.b, 0);
+    EXPECT_EQ(combined.bg_predefined(), PredefinedColor::black);
+}
+
+TEST(StyleTests, PredefinedForegroundWithRgbBackgroundShouldWork)
+{
+    const Style combined = Style::green | rgb_bg_style(64, 64, 64);
+    EXPECT_TRUE(combined.has_fg_color());
+    EXPECT_TRUE(combined.has_bg_color());
+    EXPECT_FALSE(combined.is_fg_rgb());
+    EXPECT_TRUE(combined.is_bg_rgb());
+    EXPECT_EQ(combined.fg_predefined(), PredefinedColor::green);
+    const RgbColor bg = combined.bg_rgb();
+    EXPECT_EQ(bg.r, 64);
+    EXPECT_EQ(bg.g, 64);
+    EXPECT_EQ(bg.b, 64);
+}
+
+TEST(StyleTests, RgbForegroundAndRgbBackgroundShouldWork)
+{
+    const Style combined = rgb_fg_style(255, 0, 0) | rgb_bg_style(0, 0, 255);
+    EXPECT_TRUE(combined.has_fg_color());
+    EXPECT_TRUE(combined.has_bg_color());
+    EXPECT_TRUE(combined.is_fg_rgb());
+    EXPECT_TRUE(combined.is_bg_rgb());
+    const RgbColor fg = combined.fg_rgb();
+    EXPECT_EQ(fg.r, 255);
+    EXPECT_EQ(fg.g, 0);
+    EXPECT_EQ(fg.b, 0);
+    const RgbColor bg = combined.bg_rgb();
+    EXPECT_EQ(bg.r, 0);
+    EXPECT_EQ(bg.g, 0);
+    EXPECT_EQ(bg.b, 255);
+}
+
+TEST(StyleTests, RgbStyleAliasCreatesRgbForeground)
+{
+    const Style style1 = rgb_style(100, 150, 200);
+    const Style style2 = rgb_fg_style(100, 150, 200);
+    EXPECT_TRUE(style1.is_fg_rgb());
+    EXPECT_FALSE(style1.is_bg_rgb());
+    EXPECT_TRUE(style2.is_fg_rgb());
+    EXPECT_FALSE(style2.is_bg_rgb());
+    const RgbColor rgb1 = style1.fg_rgb();
+    const RgbColor rgb2 = style2.fg_rgb();
+    EXPECT_EQ(rgb1.r, rgb2.r);
+    EXPECT_EQ(rgb1.g, rgb2.g);
+    EXPECT_EQ(rgb1.b, rgb2.b);
+}
+
+// AnsiStyledTextFormatter Tests - Foreground and Background
+
+TEST(AnsiStyledTextFormatterTests, ForegroundOnlyProducesCorrectAnsiCode)
+{
+    AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
+    const std::string result = formatter.style("test", Style::red);
+    EXPECT_NE(result.find("\033[31m"), std::string::npos); // Foreground red ANSI code
+    EXPECT_NE(result.find("test"), std::string::npos);
+    EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
+}
+
+TEST(AnsiStyledTextFormatterTests, BackgroundOnlyProducesCorrectAnsiCode)
+{
+    AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
+    const std::string result = formatter.style("test", Style::bg_blue);
+    EXPECT_NE(result.find("\033[44m"), std::string::npos); // Background blue ANSI code
+    EXPECT_NE(result.find("test"), std::string::npos);
+    EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
+}
+
+TEST(AnsiStyledTextFormatterTests, ForegroundAndBackgroundProducesBothAnsiCodes)
+{
+    AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
+    const std::string result = formatter.style("test", Style::red | Style::bg_blue);
+    EXPECT_NE(result.find("\033[31m"), std::string::npos); // Foreground red ANSI code
+    EXPECT_NE(result.find("\033[44m"), std::string::npos); // Background blue ANSI code
+    EXPECT_NE(result.find("test"), std::string::npos);
+    EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
+}
+
+TEST(AnsiStyledTextFormatterTests, Rgb24BitForegroundAndBackgroundProducesCorrectCodes)
+{
+    AnsiStyledTextFormatter formatter{AnsiColorMode::colors_24_bit};
+    const Style combined = rgb_fg_style(255, 128, 0) | rgb_bg_style(64, 64, 64);
+    const std::string result = formatter.style("test", combined);
+    EXPECT_NE(result.find("\033[38;2;255;128;0m"), std::string::npos); // 24-bit foreground
+    EXPECT_NE(result.find("\033[48;2;64;64;64m"), std::string::npos);  // 24-bit background
+    EXPECT_NE(result.find("test"), std::string::npos);
+    EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
+}
+
+TEST(AnsiStyledTextFormatterTests, BoldWithForegroundAndBackgroundProducesAllCodes)
+{
+    AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
+    const std::string result = formatter.style("test", Style::bold | Style::green | Style::bg_yellow);
+    EXPECT_NE(result.find("\033[32m"), std::string::npos); // Foreground green ANSI code
+    EXPECT_NE(result.find("\033[43m"), std::string::npos); // Background yellow ANSI code
+    EXPECT_NE(result.find("\033[1m"), std::string::npos);  // Bold ANSI code
+    EXPECT_NE(result.find("test"), std::string::npos);
+    EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
+}

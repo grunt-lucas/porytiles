@@ -24,6 +24,7 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<P
                         "{}: invalid alpha channel: {}",
                         FormatParam{metatile::message_header(metatile_index, layer, subtile, row, col, *format_)},
                         FormatParam{std::to_string(pixel.alpha()), Style::bold})};
+                    errors.emplace_back("");
                     std::vector highlight = tile_printer_->print_tile_highlight(tile, row, col);
                     std::ranges::copy(highlight, std::back_inserter(errors));
                     diag_->err("alpha-channel-validation", errors);
@@ -62,6 +63,7 @@ TileValidator::validate_unique_color_count(const std::vector<PixelTile<Rgba32>> 
                         FormatParam{metatile::message_header(metatile_index, layer, subtile, row, col, *format_)},
                         FormatParam{pal::max_size},
                         FormatParam{pixel.to_jasc_str(), Style::bold})};
+                    errors.emplace_back("");
                     std::vector highlight = tile_printer_->print_tile_highlight(tile, row, col);
                     std::ranges::copy(highlight, std::back_inserter(errors));
                     diag_->err("color-count-validation", errors);

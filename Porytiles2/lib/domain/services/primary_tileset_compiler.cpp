@@ -207,6 +207,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // print first three middle layer metatiles
     std::vector<std::string> note_text;
     note_text.emplace_back("debug");
+    note_text.emplace_back("");
     std::ranges::copy(
         tile_printer_->print_metatile_highlight(
             porytiles_metatiles.at(0), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
@@ -214,16 +215,18 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     diag_->note("debug", note_text);
     note_text.clear();
     note_text.emplace_back("debug");
+    note_text.emplace_back("");
     std::ranges::copy(
         tile_printer_->print_metatile_highlight(
-            porytiles_metatiles.at(1), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
+            porytiles_metatiles.at(1), metatile::Layer::middle, metatile::Subtile::northeast, 4, 5),
         std::back_inserter(note_text));
     diag_->note("debug", note_text);
     note_text.clear();
     note_text.emplace_back("debug");
+    note_text.emplace_back("");
     std::ranges::copy(
         tile_printer_->print_metatile_highlight(
-            porytiles_metatiles.at(2), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
+            porytiles_metatiles.at(2), metatile::Layer::middle, metatile::Subtile::northeast, 2, 6),
         std::back_inserter(note_text));
     diag_->note("debug", note_text);
 

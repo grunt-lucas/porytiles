@@ -65,23 +65,23 @@ int rgb_to_ansi256(std::uint8_t r, std::uint8_t g, std::uint8_t b)
  * @param r Red component (0-255)
  * @param g Green component (0-255)
  * @param b Blue component (0-255)
- * @return Style enum value for the closest plain color
+ * @return PredefinedColor enum value for the closest plain color
  */
-Style find_closest_plain_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
+PredefinedColor find_closest_plain_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
 {
     // Standard ANSI color RGB values
-    const std::array<std::pair<Style, std::array<int, 3>>, 8> plain_colors = {{
-        {Style::black, {0, 0, 0}},
-        {Style::red, {255, 0, 0}},
-        {Style::green, {0, 255, 0}},
-        {Style::yellow, {255, 255, 0}},
-        {Style::blue, {0, 0, 255}},
-        {Style::magenta, {255, 0, 255}},
-        {Style::cyan, {0, 255, 255}},
-        {Style::white, {255, 255, 255}},
+    const std::array<std::pair<PredefinedColor, std::array<int, 3>>, 8> plain_colors = {{
+        {PredefinedColor::black, {0, 0, 0}},
+        {PredefinedColor::red, {255, 0, 0}},
+        {PredefinedColor::green, {0, 255, 0}},
+        {PredefinedColor::yellow, {255, 255, 0}},
+        {PredefinedColor::blue, {0, 0, 255}},
+        {PredefinedColor::magenta, {255, 0, 255}},
+        {PredefinedColor::cyan, {0, 255, 255}},
+        {PredefinedColor::white, {255, 255, 255}},
     }};
 
-    Style closest = Style::white;
+    PredefinedColor closest = PredefinedColor::white;
     double min_distance = std::numeric_limits<double>::max();
 
     for (const auto &[color, rgb] : plain_colors) {
@@ -104,18 +104,28 @@ Style find_closest_plain_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
 // ANSI reset code
 const std::string ansi_reset = "\033[0m";
 
-// Ordered list of style flags to check (bold first, then colors)
-const std::array<std::pair<Style, std::string>, 10> style_mappings = {{
-    {Style::bold, "\033[1m"},
-    {Style::italic, "\033[3m"},
-    {Style::black, "\033[30m"},
-    {Style::red, "\033[31m"},
-    {Style::green, "\033[32m"},
-    {Style::yellow, "\033[33m"},
-    {Style::blue, "\033[34m"},
-    {Style::magenta, "\033[35m"},
-    {Style::cyan, "\033[36m"},
-    {Style::white, "\033[37m"},
+// Mapping from PredefinedColor to ANSI foreground codes
+const std::array<std::pair<PredefinedColor, std::string>, 8> fg_color_mappings = {{
+    {PredefinedColor::black, "\033[30m"},
+    {PredefinedColor::red, "\033[31m"},
+    {PredefinedColor::green, "\033[32m"},
+    {PredefinedColor::yellow, "\033[33m"},
+    {PredefinedColor::blue, "\033[34m"},
+    {PredefinedColor::magenta, "\033[35m"},
+    {PredefinedColor::cyan, "\033[36m"},
+    {PredefinedColor::white, "\033[37m"},
+}};
+
+// Mapping from PredefinedColor to ANSI background codes
+const std::array<std::pair<PredefinedColor, std::string>, 8> bg_color_mappings = {{
+    {PredefinedColor::black, "\033[40m"},
+    {PredefinedColor::red, "\033[41m"},
+    {PredefinedColor::green, "\033[42m"},
+    {PredefinedColor::yellow, "\033[43m"},
+    {PredefinedColor::blue, "\033[44m"},
+    {PredefinedColor::magenta, "\033[45m"},
+    {PredefinedColor::cyan, "\033[46m"},
+    {PredefinedColor::white, "\033[47m"},
 }};
 
 } // namespace
@@ -124,59 +134,105 @@ namespace porytiles2 {
 
 std::string AnsiStyledTextFormatter::style(const std::string &text, Style styles) const
 {
-    // If no styles are set, return text unchanged
-    if (styles == Style::none) {
-        return text;
-    }
-
     std::string prefix;
 
-    // Handle RGB colors if in RGB mode
-    if (is_rgb(styles)) {
-        const RgbColor rgb = get_rgb(styles);
+    // Handle foreground color
+    if (styles.has_fg_color()) {
+        if (styles.is_fg_rgb()) {
+            const RgbColor rgb = styles.fg_rgb();
 
-        switch (mode_) {
-        case AnsiColorMode::plain: {
-            // Find closest plain color and use its standard ANSI code
-            const Style closest = find_closest_plain_color(rgb.r, rgb.g, rgb.b);
-            for (const auto &[flag, ansi_code] : style_mappings) {
-                if (flag == closest) {
+            switch (mode_) {
+            case AnsiColorMode::plain: {
+                // Find closest plain color and use its standard ANSI code
+                const PredefinedColor closest = find_closest_plain_color(rgb.r, rgb.g, rgb.b);
+                for (const auto &[color, ansi_code] : fg_color_mappings) {
+                    if (color == closest) {
+                        prefix += ansi_code;
+                        break;
+                    }
+                }
+                break;
+            }
+            case AnsiColorMode::colors_256: {
+                // Convert to ANSI-256 and emit \033[38;5;<code>m
+                const int color_code = rgb_to_ansi256(rgb.r, rgb.g, rgb.b);
+                prefix += "\033[38;5;" + std::to_string(color_code) + "m";
+                break;
+            }
+            case AnsiColorMode::colors_24_bit: {
+                // Emit 24-bit RGB ANSI code \033[38;2;<r>;<g>;<b>m
+                prefix += "\033[38;2;" + std::to_string(rgb.r) + ";" + std::to_string(rgb.g) + ";" +
+                          std::to_string(rgb.b) + "m";
+                break;
+            }
+            }
+        }
+        else {
+            // Handle predefined foreground colors using standard ANSI codes
+            const PredefinedColor fg = styles.fg_predefined();
+            for (const auto &[color, ansi_code] : fg_color_mappings) {
+                if (color == fg) {
                     prefix += ansi_code;
                     break;
                 }
             }
-            break;
-        }
-        case AnsiColorMode::colors_256: {
-            // Convert to ANSI-256 and emit \033[38;5;<code>m
-            const int color_code = rgb_to_ansi256(rgb.r, rgb.g, rgb.b);
-            prefix += "\033[38;5;" + std::to_string(color_code) + "m";
-            break;
-        }
-        case AnsiColorMode::colors_24_bit: {
-            // Emit 24-bit RGB ANSI code \033[38;2;<r>;<g>;<b>m
-            prefix +=
-                "\033[38;2;" + std::to_string(rgb.r) + ";" + std::to_string(rgb.g) + ";" + std::to_string(rgb.b) + "m";
-            break;
-        }
         }
     }
-    else {
-        // Handle predefined colors using standard ANSI codes
-        for (const auto &[flag, ansi_code] : style_mappings) {
-            // Only check color flags (skip bold and italic for now)
-            if (flag != Style::bold && flag != Style::italic && has_style(styles, flag)) {
-                prefix += ansi_code;
+
+    // Handle background color
+    if (styles.has_bg_color()) {
+        if (styles.is_bg_rgb()) {
+            const RgbColor rgb = styles.bg_rgb();
+
+            switch (mode_) {
+            case AnsiColorMode::plain: {
+                // Find closest plain color and use its standard ANSI code
+                const PredefinedColor closest = find_closest_plain_color(rgb.r, rgb.g, rgb.b);
+                for (const auto &[color, ansi_code] : bg_color_mappings) {
+                    if (color == closest) {
+                        prefix += ansi_code;
+                        break;
+                    }
+                }
+                break;
+            }
+            case AnsiColorMode::colors_256: {
+                // Convert to ANSI-256 and emit \033[48;5;<code>m
+                const int color_code = rgb_to_ansi256(rgb.r, rgb.g, rgb.b);
+                prefix += "\033[48;5;" + std::to_string(color_code) + "m";
+                break;
+            }
+            case AnsiColorMode::colors_24_bit: {
+                // Emit 24-bit RGB ANSI code \033[48;2;<r>;<g>;<b>m
+                prefix += "\033[48;2;" + std::to_string(rgb.r) + ";" + std::to_string(rgb.g) + ";" +
+                          std::to_string(rgb.b) + "m";
+                break;
+            }
+            }
+        }
+        else {
+            // Handle predefined background colors using standard ANSI codes
+            const PredefinedColor bg = styles.bg_predefined();
+            for (const auto &[color, ansi_code] : bg_color_mappings) {
+                if (color == bg) {
+                    prefix += ansi_code;
+                    break;
+                }
             }
         }
     }
 
     // Apply formatting flags (bold, italic) - these work independently of color mode
-    if (has_style(styles, Style::bold)) {
+    if (styles.has_bold()) {
         prefix += "\033[1m";
     }
-    if (has_style(styles, Style::italic)) {
+    if (styles.has_italic()) {
         prefix += "\033[3m";
+    }
+
+    // Only add prefix and reset if we actually have styling to apply
+    if (prefix.empty()) {
+        return text;
     }
 
     return prefix + text + ansi_reset;

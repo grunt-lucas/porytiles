@@ -25,18 +25,14 @@ void reset_stream(std::stringstream &ss)
     ss.str(std::string{});
 }
 
-/**
- * @brief Converts an Rgba32 color to a Style for text formatting.
- *
- * @details
- * Extracts the RGB components from the Rgba32 color and creates a Style using rgb_style().
- *
- * @param color The Rgba32 color to convert
- * @return A Style with the corresponding RGB color
- */
-porytiles2::Style rgba_to_style(const porytiles2::Rgba32 &color)
+porytiles2::Style rgba_to_fg_style(const porytiles2::Rgba32 &color)
 {
-    return porytiles2::rgb_style(color.red(), color.green(), color.blue());
+    return porytiles2::rgb_fg_style(color.red(), color.green(), color.blue());
+}
+
+porytiles2::Style rgba_to_bg_style(const porytiles2::Rgba32 &color)
+{
+    return porytiles2::rgb_bg_style(color.red(), color.green(), color.blue());
 }
 
 /**
@@ -62,18 +58,17 @@ std::vector<std::string> render_tile_with_highlights(
 
     for (std::size_t row = 0; row < porytiles2::tile::side_length_pix; row++) {
         for (std::size_t col = 0; col < porytiles2::tile::side_length_pix; col++) {
+            const auto pixel_color = tile.at(row, col);
+            const auto color_style_bg = rgba_to_bg_style(pixel_color);
+            const auto color_style_fg = rgba_to_fg_style(pixel_color);
             if (highlight_coords.contains({row, col})) {
-                const auto pixel_color = tile.at(row, col);
-                const auto color_style = rgba_to_style(pixel_color);
                 const auto styled_x =
-                    format->format(" {} ", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style});
+                    format->format("{}", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style_fg});
                 ss << styled_x;
             }
             else {
-                const auto pixel_color = tile.at(row, col);
-                const auto color_style = rgba_to_style(pixel_color);
                 const auto styled_star =
-                    format->format(" {} ", porytiles2::FormatParam{"*", porytiles2::Style::bold | color_style});
+                    format->format("{}", porytiles2::FormatParam{" ", porytiles2::Style::bold | color_style_bg});
                 ss << styled_star;
             }
         }
@@ -169,24 +164,25 @@ std::vector<std::string> render_metatile_with_highlights(
             const bool is_in_target_subtile = (current_subtile == subtile);
             const auto &current_tile = get_tile_from_metatile(metatile, layer, current_subtile);
             const auto pixel_color = current_tile.at(subtile_row, subtile_col);
-            const auto color_style = rgba_to_style(pixel_color);
+            const auto color_style_bg = rgba_to_bg_style(pixel_color);
+            const auto color_style_fg = rgba_to_fg_style(pixel_color);
 
             if (is_in_target_subtile) {
                 // In target subtile: show X for highlights, * for others (both bold)
                 if (highlight_coords.contains({subtile_row, subtile_col})) {
                     const auto styled_x =
-                        format->format(" {} ", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style});
+                        format->format("{}", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style_fg});
                     ss << styled_x;
                 }
                 else {
                     const auto styled_star =
-                        format->format(" {} ", porytiles2::FormatParam{"*", porytiles2::Style::bold | color_style});
+                        format->format("{}", porytiles2::FormatParam{" ", porytiles2::Style::bold | color_style_bg});
                     ss << styled_star;
                 }
             }
             else {
                 // In non-target subtile: show . styled with the pixel's RGB color (non-bold)
-                const auto styled_star = format->format(" {} ", porytiles2::FormatParam{"*", color_style});
+                const auto styled_star = format->format("{}", porytiles2::FormatParam{" ", color_style_bg});
                 ss << styled_star;
             }
 
