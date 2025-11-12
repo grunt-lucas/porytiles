@@ -136,6 +136,8 @@ std::string AnsiStyledTextFormatter::style(const std::string &text, Style styles
 {
     std::string prefix;
 
+    // TODO: refactor this method so there isn't so much code dupe between FG and BG handling
+
     // Handle foreground color
     if (styles.has_fg_color()) {
         if (styles.is_fg_rgb()) {
