@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -49,6 +50,23 @@ inline std::string to_string(Subtile layer)
     panic("unhandled Subtile value");
 }
 
+/**
+ * @brief Decomposes a global tile index into its metatile index, layer, and subtile position.
+ *
+ * @details
+ * Converts a linear tile index from the global tileset into three components:
+ * - The metatile index (which metatile this tile belongs to)
+ * - The layer within that metatile (bottom, middle, or top)
+ * - The subtile position within that layer (northwest, northeast, southwest, or southeast)
+ *
+ * Tiles are indexed in metatile-major order: all tiles of metatile 0 come first (bottom layer, then middle layer, then
+ * top layer), followed by all tiles of metatile 1, and so on.
+ *
+ * @param tile_index The global tile index to decompose
+ * @return A tuple containing (metatile_index, layer, subtile)
+ *
+ * @see from_internal_tile_index() for decomposing indices within a single metatile
+ */
 [[nodiscard]] inline std::tuple<std::size_t, Layer, Subtile> from_tile_index(std::size_t tile_index)
 {
     const std::size_t metatile_index = tile_index / tiles_per_metatile;
@@ -57,6 +75,36 @@ inline std::string to_string(Subtile layer)
     const auto subtile = static_cast<Subtile>(local_index % tiles_per_metatile_layer);
 
     return {metatile_index, layer, subtile};
+}
+
+/**
+ * @brief Decomposes an internal tile index into its layer and subtile position within a metatile.
+ *
+ * @details
+ * Converts a tile index local to a single metatile (range 0-11) into two components:
+ * - The layer within the metatile (bottom, middle, or top)
+ * - The subtile position within that layer (northwest, northeast, southwest, or southeast)
+ *
+ * Tiles within a metatile are indexed in layer-major order: bottom layer tiles (0-3), followed by middle layer tiles
+ * (4-7), then top layer tiles (8-11).
+ *
+ * @param tile_index The internal tile index to decompose (must be in range [0, tiles_per_metatile))
+ * @pre tile_index < tiles_per_metatile (i.e., tile_index must be in range [0, 11])
+ * @return A tuple containing (layer, subtile)
+ *
+ * @see from_tile_index() for decomposing global tile indices
+ */
+[[nodiscard]] inline std::tuple<Layer, Subtile> from_internal_tile_index(std::size_t tile_index)
+{
+    if (tile_index >= tiles_per_metatile) {
+        panic("tile_index (" + std::to_string(tile_index) + ") >= tiles_per_metatile");
+    }
+
+    const std::size_t local_index = tile_index % tiles_per_metatile;
+    const auto layer = static_cast<Layer>(local_index / tiles_per_metatile_layer);
+    const auto subtile = static_cast<Subtile>(local_index % tiles_per_metatile_layer);
+
+    return {layer, subtile};
 }
 
 [[nodiscard]] inline std::string message_header(

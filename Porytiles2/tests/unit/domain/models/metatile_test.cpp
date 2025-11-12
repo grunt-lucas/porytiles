@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <tuple>
+
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -7,7 +9,7 @@
 using namespace porytiles2;
 using namespace porytiles2::metatile;
 
-TEST(TileConstantsTests, ComputeMetatileBottomLayer)
+TEST(MetatileNamespaceTests, FromTileBottomLayer)
 {
     // Tile 0: metatile 0, bottom layer, northwest
     auto [mt0, layer0, subtile0] = from_tile_index(0);
@@ -34,7 +36,7 @@ TEST(TileConstantsTests, ComputeMetatileBottomLayer)
     EXPECT_EQ(subtile3, Subtile::southeast);
 }
 
-TEST(TileConstantsTests, ComputeMetatileMiddleLayer)
+TEST(MetatileNamespaceTests, FromTileMiddleLayer)
 {
     // Tile 4: metatile 0, middle layer, northwest
     auto [mt0, layer0, subtile0] = from_tile_index(4);
@@ -49,7 +51,7 @@ TEST(TileConstantsTests, ComputeMetatileMiddleLayer)
     EXPECT_EQ(subtile1, Subtile::southeast);
 }
 
-TEST(TileConstantsTests, ComputeMetatileTopLayer)
+TEST(MetatileNamespaceTests, FromTileTopLayer)
 {
     // Tile 8: metatile 0, top layer, northwest
     auto [mt0, layer0, subtile0] = from_tile_index(8);
@@ -64,7 +66,7 @@ TEST(TileConstantsTests, ComputeMetatileTopLayer)
     EXPECT_EQ(subtile1, Subtile::southeast);
 }
 
-TEST(TileConstantsTests, ComputeMetatileSecondMetatile)
+TEST(MetatileNamespaceTests, FromTileSecondMetatile)
 {
     // Tile 12: metatile 1, bottom layer, northwest
     auto [mt0, layer0, subtile0] = from_tile_index(12);
@@ -85,7 +87,7 @@ TEST(TileConstantsTests, ComputeMetatileSecondMetatile)
     EXPECT_EQ(subtile2, Subtile::southeast);
 }
 
-TEST(TileConstantsTests, ComputeMetatileHigherIndices)
+TEST(MetatileNamespaceTests, FromTileHigherIndices)
 {
     // Tile 36: metatile 3, bottom layer, northwest
     auto [mt0, layer0, subtile0] = from_tile_index(36);
@@ -98,6 +100,84 @@ TEST(TileConstantsTests, ComputeMetatileHigherIndices)
     EXPECT_EQ(mt1, 8);
     EXPECT_EQ(layer1, Layer::middle);
     EXPECT_EQ(subtile1, Subtile::southwest);
+}
+
+TEST(MetatileNamespaceTests, FromInternalTileBottomLayer)
+{
+    // Tile 0: bottom layer, northwest
+    auto [layer0, subtile0] = from_internal_tile_index(0);
+    EXPECT_EQ(layer0, Layer::bottom);
+    EXPECT_EQ(subtile0, Subtile::northwest);
+
+    // Tile 1: bottom layer, northeast
+    auto [layer1, subtile1] = from_internal_tile_index(1);
+    EXPECT_EQ(layer1, Layer::bottom);
+    EXPECT_EQ(subtile1, Subtile::northeast);
+
+    // Tile 2: bottom layer, southwest
+    auto [layer2, subtile2] = from_internal_tile_index(2);
+    EXPECT_EQ(layer2, Layer::bottom);
+    EXPECT_EQ(subtile2, Subtile::southwest);
+
+    // Tile 3: bottom layer, southeast
+    auto [layer3, subtile3] = from_internal_tile_index(3);
+    EXPECT_EQ(layer3, Layer::bottom);
+    EXPECT_EQ(subtile3, Subtile::southeast);
+}
+
+TEST(MetatileNamespaceTests, FromInternalTileMiddleLayer)
+{
+    // Tile 4: middle layer, northwest
+    auto [layer0, subtile0] = from_internal_tile_index(4);
+    EXPECT_EQ(layer0, Layer::middle);
+    EXPECT_EQ(subtile0, Subtile::northwest);
+
+    // Tile 5: middle layer, northeast
+    auto [layer1, subtile1] = from_internal_tile_index(5);
+    EXPECT_EQ(layer1, Layer::middle);
+    EXPECT_EQ(subtile1, Subtile::northeast);
+
+    // Tile 6: middle layer, southwest
+    auto [layer2, subtile2] = from_internal_tile_index(6);
+    EXPECT_EQ(layer2, Layer::middle);
+    EXPECT_EQ(subtile2, Subtile::southwest);
+
+    // Tile 7: middle layer, southeast
+    auto [layer3, subtile3] = from_internal_tile_index(7);
+    EXPECT_EQ(layer3, Layer::middle);
+    EXPECT_EQ(subtile3, Subtile::southeast);
+}
+
+TEST(MetatileNamespaceTests, FromInternalTileTopLayer)
+{
+    // Tile 8: top layer, northwest
+    auto [layer0, subtile0] = from_internal_tile_index(8);
+    EXPECT_EQ(layer0, Layer::top);
+    EXPECT_EQ(subtile0, Subtile::northwest);
+
+    // Tile 9: top layer, northeast
+    auto [layer1, subtile1] = from_internal_tile_index(9);
+    EXPECT_EQ(layer1, Layer::top);
+    EXPECT_EQ(subtile1, Subtile::northeast);
+
+    // Tile 10: top layer, southwest
+    auto [layer2, subtile2] = from_internal_tile_index(10);
+    EXPECT_EQ(layer2, Layer::top);
+    EXPECT_EQ(subtile2, Subtile::southwest);
+
+    // Tile 11: top layer, southeast
+    auto [layer3, subtile3] = from_internal_tile_index(11);
+    EXPECT_EQ(layer3, Layer::top);
+    EXPECT_EQ(subtile3, Subtile::southeast);
+}
+
+TEST(MetatileNamespaceTests, FromInternalTilePanicsOnOutOfBounds)
+{
+    // Should panic when tile_index == tiles_per_metatile (12)
+    EXPECT_DEATH({ std::ignore = from_internal_tile_index(tiles_per_metatile); }, "tile_index.*>=.*tiles_per_metatile");
+
+    // Should also panic for higher values
+    EXPECT_DEATH({ std::ignore = from_internal_tile_index(100); }, "tile_index.*>=.*tiles_per_metatile");
 }
 
 TEST(MetatileTests, DefaultConstructedValueShouldBeTransparent)
