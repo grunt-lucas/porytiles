@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -179,6 +180,47 @@ class ConfigValue {
         }
 
         return {err_text, params};
+    }
+
+    /**
+     * @brief Generates a prettified, styled readout of this configuration value.
+     *
+     * @details
+     * Convenience method that combines format_data() with a TextFormatter to produce styled text output ready for
+     * display. This method internally calls format_data() and applies the formatter to each format string with its
+     * corresponding parameters, returning a vector of fully formatted lines.
+     *
+     * The output includes the value name, its actual value, the source information, and any additional source details
+     * if available, all with appropriate styling applied (or not, depending on the formatter implementation).
+     *
+     * Example output (when displayed):
+     * ```
+     * num_tiles_primary = 512
+     * Source: ./porytiles.yaml:12
+     *
+     *    1:   foo:
+     *    2:     bar: baz
+     *    3:   fieldmap:
+     * -> 4:     num_tiles_primary: 512
+     * ```
+     *
+     * @param formatter The TextFormatter to use for applying styles to the text
+     * @return A vector of formatted strings, each representing a line of the prettified output
+     * @post The returned vector has at least 2 elements (name/value line and source line)
+     * @post Additional lines may be present if source details are available
+     */
+    [[nodiscard]] std::vector<std::string> prettify(const TextFormatter &formatter) const
+    {
+        const auto [format_strings, param_vectors] = format_data();
+
+        std::vector<std::string> result;
+        result.reserve(format_strings.size());
+
+        for (const auto &[text, params] : std::views::zip(format_strings, param_vectors)) {
+            result.push_back(formatter.format(text, params));
+        }
+
+        return result;
     }
 
   private:
