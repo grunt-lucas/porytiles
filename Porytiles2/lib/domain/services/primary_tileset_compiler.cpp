@@ -250,6 +250,12 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
 
     // Global color limit handling
+    /*
+     * TODO: we could handle this in a separate service-based step, kinda like the TileValidator service. It would be
+     * nice to give users very detailed information about their global color count when they go over. Example, we could
+     * print out a list of colors with their pixel counts, the first location of colors that went over the limit, etc.
+     * This will really help users narrow down issues when they exceed color count.
+     */
     if (color_count > color_count_limit) {
         // Emit error
         diag_->err(
