@@ -108,7 +108,7 @@ ChainableResult<Palette<Rgba32>> JascPalLoader::load(const std::filesystem::path
         if (!color_result.has_value()) {
             return ChainableResult<Palette<Rgba32>>{
                 FormattableError{
-                    "{}: error parsing color on line {}: {}", FormatParam{path.c_str()}, FormatParam{color_index + 4}},
+                    "{}: error parsing color on line {}", FormatParam{path.c_str()}, FormatParam{color_index + 4}},
                 color_result};
         }
         pal.add(color_result.value());
