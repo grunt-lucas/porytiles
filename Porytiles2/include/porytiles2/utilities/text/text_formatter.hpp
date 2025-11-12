@@ -20,18 +20,22 @@ namespace porytiles2 {
  * Styles can be combined using the bitwise OR operator (|) to apply multiple attributes simultaneously. For example,
  * `Style::bold | Style::red` creates a style with both bold formatting and red color.
  *
- * The enum uses an explicit uint32_t underlying type to ensure consistent bitmask behavior across platforms.
+ * The enum uses an explicit uint64_t underlying type to support both predefined color flags (bits 0-38) and
+ * custom RGB colors (bits 39-63). Bit 63 indicates RGB mode: when set, bits 62-39 contain an RGB color value
+ * (8 bits per channel: R, G, B).
  */
-enum class Style : std::uint32_t {
-    none = 0,        ///< No styling applied
-    bold = 1 << 0,   ///< Bold text formatting
-    italic = 1 << 1, ///< Italic text formatting
-    red = 1 << 2,    ///< Red text color
-    green = 1 << 3,  ///< Green text color
-    blue = 1 << 4,   ///< Blue text color
-    yellow = 1 << 5, ///< Yellow text color
-    cyan = 1 << 6,   ///< Cyan text color
-    magenta = 1 << 7 ///< Magenta text color
+enum class Style : std::uint64_t {
+    none = 0,         ///< No styling applied
+    bold = 1 << 0,    ///< Bold text formatting
+    italic = 1 << 1,  ///< Italic text formatting
+    black = 1 << 2,   ///< Black text color
+    red = 1 << 3,     ///< Red text color
+    green = 1 << 4,   ///< Green text color
+    yellow = 1 << 5,  ///< Yellow text color
+    blue = 1 << 6,    ///< Blue text color
+    magenta = 1 << 7, ///< Magenta text color
+    cyan = 1 << 8,    ///< Cyan text color
+    white = 1 << 9    ///< White text color
 };
 
 /**
@@ -47,7 +51,7 @@ enum class Style : std::uint32_t {
  */
 [[nodiscard]] constexpr Style operator|(Style lhs, Style rhs)
 {
-    return static_cast<Style>(static_cast<std::uint32_t>(lhs) | static_cast<std::uint32_t>(rhs));
+    return static_cast<Style>(static_cast<std::uint64_t>(lhs) | static_cast<std::uint64_t>(rhs));
 }
 
 /**
@@ -63,7 +67,7 @@ enum class Style : std::uint32_t {
  */
 [[nodiscard]] constexpr Style operator&(Style lhs, Style rhs)
 {
-    return static_cast<Style>(static_cast<std::uint32_t>(lhs) & static_cast<std::uint32_t>(rhs));
+    return static_cast<Style>(static_cast<std::uint64_t>(lhs) & static_cast<std::uint64_t>(rhs));
 }
 
 /**
@@ -112,6 +116,101 @@ constexpr Style &operator&=(Style &lhs, Style rhs)
 [[nodiscard]] constexpr bool has_style(Style styles, Style flag)
 {
     return (styles & flag) != Style::none;
+}
+
+/**
+ * @brief RGB color representation for extracting color components from Style values.
+ *
+ * @details
+ * RgbColor holds the red, green, and blue components of a color extracted from a Style value in RGB mode.
+ * This struct is returned by get_rgb() to provide convenient access to individual color channels.
+ */
+struct RgbColor {
+    std::uint8_t r; ///< Red channel (0-255)
+    std::uint8_t g; ///< Green channel (0-255)
+    std::uint8_t b; ///< Blue channel (0-255)
+};
+
+/**
+ * @brief Creates a Style value with a custom RGB color.
+ *
+ * @details
+ * Constructs a Style value in RGB mode by encoding the provided color channels in the upper bits of the uint64_t.
+ * The RGB mode flag (bit 63) is set, and the color channels are packed into bits 62-39 (8 bits per channel).
+ *
+ * The resulting Style can be combined with formatting flags like Style::bold using the | operator:
+ * ```c++
+ * Style custom = make_rgb(255, 128, 0) | Style::bold;
+ * ```
+ *
+ * @param r Red channel value (0-255)
+ * @param g Green channel value (0-255)
+ * @param b Blue channel value (0-255)
+ * @return A Style value in RGB mode with the specified color
+ */
+[[nodiscard]] constexpr Style rgb_style(std::uint8_t r, std::uint8_t g, std::uint8_t b)
+{
+    constexpr std::uint64_t rgb_mode_flag = 1ULL << 63;
+    const std::uint64_t red_bits = static_cast<std::uint64_t>(r) << 55;
+    const std::uint64_t green_bits = static_cast<std::uint64_t>(g) << 47;
+    const std::uint64_t blue_bits = static_cast<std::uint64_t>(b) << 39;
+    return static_cast<Style>(rgb_mode_flag | red_bits | green_bits | blue_bits);
+}
+
+/**
+ * @brief Checks if a Style value is in RGB mode.
+ *
+ * @details
+ * Tests whether the RGB mode flag (bit 63) is set, indicating that the Style contains a custom RGB color
+ * rather than predefined color flags.
+ *
+ * @param s The Style value to check
+ * @return True if the Style is in RGB mode, false otherwise
+ */
+[[nodiscard]] constexpr bool is_rgb(Style s)
+{
+    constexpr std::uint64_t rgb_mode_flag = 1ULL << 63;
+    return (static_cast<std::uint64_t>(s) & rgb_mode_flag) != 0;
+}
+
+/**
+ * @brief Extracts RGB color components from a Style value.
+ *
+ * @details
+ * Returns the red, green, and blue color channels from a Style value in RGB mode. The function extracts
+ * the color data from bits 62-39 and returns it as an RgbColor struct.
+ *
+ * @param s The Style value to extract colors from
+ * @pre s must be in RGB mode (is_rgb(s) must be true)
+ * @return An RgbColor struct containing the R, G, B components
+ */
+[[nodiscard]] constexpr RgbColor get_rgb(Style s)
+{
+    const auto value = static_cast<std::uint64_t>(s);
+    return RgbColor{
+        static_cast<std::uint8_t>((value >> 55) & 0xFF),
+        static_cast<std::uint8_t>((value >> 47) & 0xFF),
+        static_cast<std::uint8_t>((value >> 39) & 0xFF),
+    };
+}
+
+/**
+ * @brief Safely combines a color Style with formatting Style flags.
+ *
+ * @details
+ * Provides a convenient way to combine color (either predefined or RGB) with formatting flags like bold or italic.
+ * This function is equivalent to using the | operator but makes the intent clearer:
+ * ```c++
+ * Style styled = with_formatting(make_rgb(255, 0, 0), Style::bold | Style::italic);
+ * ```
+ *
+ * @param color The color Style (predefined or RGB)
+ * @param format The formatting flags to apply
+ * @return A Style value combining both color and formatting
+ */
+[[nodiscard]] constexpr Style with_formatting(Style color, Style format)
+{
+    return color | format;
 }
 
 /**

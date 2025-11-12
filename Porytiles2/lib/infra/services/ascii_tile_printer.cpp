@@ -29,10 +29,9 @@ void reset_stream(std::stringstream &ss)
  * @brief Helper function to render a metatile with highlighted pixels.
  *
  * @details
- * This function renders a 16x16 metatile grid with highlighted pixels based on the provided
- * set of (row, col) coordinates. Pixels at the highlighted coordinates are marked with "X",
- * other pixels in the same subtile are marked with "*", and pixels in other subtiles are
- * marked with "-".
+ * This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of (row, col)
+ * coordinates. Pixels at the highlighted coordinates are marked with "X", other pixels in the same subtile are marked
+ * with "*", and pixels in other subtiles are marked with "-".
  *
  * @param subtile The subtile being highlighted
  * @param highlight_coords Set of (row, col) coordinates within the subtile to highlight with "X"
@@ -44,7 +43,7 @@ std::vector<std::string> render_metatile_with_highlights(
     porytiles2::metatile::Subtile subtile,
     const std::set<std::pair<std::size_t, std::size_t>> &highlight_coords,
     porytiles2::Style color,
-    porytiles2::TextFormatter *format)
+    const porytiles2::TextFormatter *format)
 {
     std::vector<std::string> highlight{};
     std::stringstream ss{};

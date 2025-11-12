@@ -14,9 +14,8 @@ fruit::Component<TextFormatter> get_formatter_component(bool no_color)
             .bind<TextFormatter, PlainTextFormatter>()
             .registerConstructor<PlainTextFormatter()>();
     }
-    return fruit::createComponent()
-        .bind<TextFormatter, AnsiStyledTextFormatter>()
-        .registerConstructor<AnsiStyledTextFormatter()>();
+    return fruit::createComponent().bind<TextFormatter, AnsiStyledTextFormatter>().registerProvider(
+        [] { return AnsiStyledTextFormatter{AnsiColorMode::colors_24_bit}; });
 }
 
 } // namespace porytiles2::di
