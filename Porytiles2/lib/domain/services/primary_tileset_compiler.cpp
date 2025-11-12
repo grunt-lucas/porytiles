@@ -203,6 +203,30 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
         transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
 
+    // TODO: remove debug
+    // print first three middle layer metatiles
+    std::vector<std::string> note_text;
+    note_text.emplace_back("debug");
+    std::ranges::copy(
+        tile_printer_->print_metatile_highlight(
+            porytiles_metatiles.at(0), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
+        std::back_inserter(note_text));
+    diag_->note("debug", note_text);
+    note_text.clear();
+    note_text.emplace_back("debug");
+    std::ranges::copy(
+        tile_printer_->print_metatile_highlight(
+            porytiles_metatiles.at(1), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
+        std::back_inserter(note_text));
+    diag_->note("debug", note_text);
+    note_text.clear();
+    note_text.emplace_back("debug");
+    std::ranges::copy(
+        tile_printer_->print_metatile_highlight(
+            porytiles_metatiles.at(2), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
+        std::back_inserter(note_text));
+    diag_->note("debug", note_text);
+
     // Leaf step to throw errors if:
     // - any tiles contain an invalid alpha value
     // - any tiles have more than 15+1 colors

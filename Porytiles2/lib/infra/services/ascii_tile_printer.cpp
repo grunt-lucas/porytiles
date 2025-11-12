@@ -26,70 +26,168 @@ void reset_stream(std::stringstream &ss)
 }
 
 /**
+ * @brief Converts an Rgba32 color to a Style for text formatting.
+ *
+ * @details
+ * Extracts the RGB components from the Rgba32 color and creates a Style using rgb_style().
+ *
+ * @param color The Rgba32 color to convert
+ * @return A Style with the corresponding RGB color
+ */
+porytiles2::Style rgba_to_style(const porytiles2::Rgba32 &color)
+{
+    return porytiles2::rgb_style(color.red(), color.green(), color.blue());
+}
+
+/**
+ * @brief Helper function to render an 8x8 tile with highlighted pixels.
+ *
+ * @details
+ * This function renders an 8x8 tile grid with highlighted pixels based on the provided set of (row, col) coordinates.
+ * Pixels at the highlighted coordinates are marked with "X" and styled with the pixel's actual RGB color. Other pixels
+ * are shown as " . ".
+ *
+ * @param tile The PixelTile to render
+ * @param highlight_coords Set of (row, col) coordinates to highlight with "X"
+ * @param format The text formatter to use for styling
+ * @return A vector of strings representing the rendered tile
+ */
+std::vector<std::string> render_tile_with_highlights(
+    const porytiles2::PixelTile<porytiles2::Rgba32> &tile,
+    const std::set<std::pair<std::size_t, std::size_t>> &highlight_coords,
+    const porytiles2::TextFormatter *format)
+{
+    std::vector<std::string> result{};
+    std::stringstream ss{};
+
+    for (std::size_t row = 0; row < porytiles2::tile::side_length_pix; row++) {
+        for (std::size_t col = 0; col < porytiles2::tile::side_length_pix; col++) {
+            if (highlight_coords.contains({row, col})) {
+                const auto pixel_color = tile.at(row, col);
+                const auto color_style = rgba_to_style(pixel_color);
+                const auto styled_x =
+                    format->format(" {} ", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style});
+                ss << styled_x;
+            }
+            else {
+                const auto pixel_color = tile.at(row, col);
+                const auto color_style = rgba_to_style(pixel_color);
+                const auto styled_star =
+                    format->format(" {} ", porytiles2::FormatParam{"*", porytiles2::Style::bold | color_style});
+                ss << styled_star;
+            }
+        }
+        result.push_back(ss.str());
+        reset_stream(ss);
+    }
+
+    return result;
+}
+
+/**
+ * @brief Helper function to extract the correct tile from a metatile.
+ *
+ * @details
+ * Extracts the PixelTile at the specified layer and subtile position within a metatile.
+ *
+ * @param metatile The metatile to extract from
+ * @param layer The layer to extract from (bottom, middle, top)
+ * @param subtile The subtile position (northwest, northeast, southwest, southeast)
+ * @return Reference to the PixelTile at the specified position
+ */
+const porytiles2::PixelTile<porytiles2::Rgba32> &get_tile_from_metatile(
+    const porytiles2::Metatile<porytiles2::Rgba32> &metatile,
+    porytiles2::metatile::Layer layer,
+    porytiles2::metatile::Subtile subtile)
+{
+    const auto subtile_index = static_cast<std::size_t>(subtile);
+    switch (layer) {
+    case porytiles2::metatile::Layer::bottom:
+        return metatile.bottom(subtile_index);
+    case porytiles2::metatile::Layer::middle:
+        return metatile.middle(subtile_index);
+    case porytiles2::metatile::Layer::top:
+        return metatile.top(subtile_index);
+    }
+    porytiles2::panic("invalid layer value");
+}
+
+/**
  * @brief Helper function to render a metatile with highlighted pixels.
  *
  * @details
  * This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of (row, col)
- * coordinates. Pixels at the highlighted coordinates are marked with "X", other pixels in the same subtile are marked
- * with "*", and pixels in other subtiles are marked with "-".
+ * coordinates. Pixels at the highlighted coordinates are marked with "X" styled with their actual RGB color (bold),
+ * other pixels in the target subtile are marked with "*" styled with their actual RGB color (bold), and pixels in
+ * non-target subtiles are marked with "." styled with their actual RGB color (non-bold).
  *
+ * @param metatile The metatile to render
+ * @param layer The layer of the metatile to render
  * @param subtile The subtile being highlighted
  * @param highlight_coords Set of (row, col) coordinates within the subtile to highlight with "X"
- * @param color The color style to apply to the "X" markers
  * @param format The text formatter to use for styling
  * @return A vector of strings representing the rendered metatile
  */
 std::vector<std::string> render_metatile_with_highlights(
+    const porytiles2::Metatile<porytiles2::Rgba32> &metatile,
+    porytiles2::metatile::Layer layer,
     porytiles2::metatile::Subtile subtile,
     const std::set<std::pair<std::size_t, std::size_t>> &highlight_coords,
-    porytiles2::Style color,
     const porytiles2::TextFormatter *format)
 {
-    std::vector<std::string> highlight{};
+    std::vector<std::string> result{};
     std::stringstream ss{};
-
-    auto styled_x = format->format(" {} ", porytiles2::FormatParam{"X", porytiles2::Style::bold | color});
-    auto styled_star = format->format(" {} ", porytiles2::FormatParam{"*", porytiles2::Style::bold});
 
     for (std::size_t i = 0; i < porytiles2::metatile::side_length_pix; i++) {
         for (std::size_t j = 0; j < porytiles2::metatile::side_length_pix; j++) {
-            bool is_in_subtile = false;
+            // Determine which subtile (i, j) is in and compute subtile-local coordinates
+            porytiles2::metatile::Subtile current_subtile{};
             std::size_t subtile_row = 0;
             std::size_t subtile_col = 0;
 
-            // Determine if (i, j) is in the target subtile and compute subtile-local coordinates
-            if (subtile == porytiles2::metatile::Subtile::northwest && i < 8 && j < 8) {
-                is_in_subtile = true;
+            if (i < 8 && j < 8) {
+                current_subtile = porytiles2::metatile::Subtile::northwest;
                 subtile_row = i;
                 subtile_col = j;
             }
-            else if (subtile == porytiles2::metatile::Subtile::northeast && i < 8 && j >= 8) {
-                is_in_subtile = true;
+            else if (i < 8 && j >= 8) {
+                current_subtile = porytiles2::metatile::Subtile::northeast;
                 subtile_row = i;
                 subtile_col = j - 8;
             }
-            else if (subtile == porytiles2::metatile::Subtile::southwest && i >= 8 && j < 8) {
-                is_in_subtile = true;
+            else if (i >= 8 && j < 8) {
+                current_subtile = porytiles2::metatile::Subtile::southwest;
                 subtile_row = i - 8;
                 subtile_col = j;
             }
-            else if (subtile == porytiles2::metatile::Subtile::southeast && i >= 8 && j >= 8) {
-                is_in_subtile = true;
+            else {
+                current_subtile = porytiles2::metatile::Subtile::southeast;
                 subtile_row = i - 8;
                 subtile_col = j - 8;
             }
 
-            if (is_in_subtile) {
-                // Check if this coordinate should be highlighted
+            const bool is_in_target_subtile = (current_subtile == subtile);
+            const auto &current_tile = get_tile_from_metatile(metatile, layer, current_subtile);
+            const auto pixel_color = current_tile.at(subtile_row, subtile_col);
+            const auto color_style = rgba_to_style(pixel_color);
+
+            if (is_in_target_subtile) {
+                // In target subtile: show X for highlights, * for others (both bold)
                 if (highlight_coords.contains({subtile_row, subtile_col})) {
-                    ss << format->format("{}", porytiles2::FormatParam{styled_x});
+                    const auto styled_x =
+                        format->format(" {} ", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style});
+                    ss << styled_x;
                 }
                 else {
-                    ss << format->format("{}", porytiles2::FormatParam{styled_star});
+                    const auto styled_star =
+                        format->format(" {} ", porytiles2::FormatParam{"*", porytiles2::Style::bold | color_style});
+                    ss << styled_star;
                 }
             }
             else {
-                ss << " - ";
+                // In non-target subtile: show . styled with the pixel's RGB color (non-bold)
+                const auto styled_star = format->format(" {} ", porytiles2::FormatParam{"*", color_style});
+                ss << styled_star;
             }
 
             // If we're at the midpoint cell, add an extra space.
@@ -99,19 +197,19 @@ std::vector<std::string> render_metatile_with_highlights(
 
             // Reset once this row is exhausted
             if (j == 15) {
-                highlight.push_back(ss.str());
+                result.push_back(ss.str());
                 reset_stream(ss);
             }
         }
 
         // Insert a spacer line between top and bottom tiles
         if (i == 7) {
-            highlight.push_back(ss.str());
+            result.push_back(ss.str());
             reset_stream(ss);
         }
     }
 
-    return highlight;
+    return result;
 }
 
 } // namespace
@@ -119,22 +217,44 @@ std::vector<std::string> render_metatile_with_highlights(
 namespace porytiles2 {
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_highlight(
-    metatile::Subtile subtile, std::size_t row, std::size_t col, Style color) const
+    const Metatile<Rgba32> &metatile,
+    metatile::Layer layer,
+    metatile::Subtile subtile,
+    std::size_t row,
+    std::size_t col) const
 {
-    std::set<std::pair<std::size_t, std::size_t>> highlight_coords{};
-    highlight_coords.insert({row, col});
-    return render_metatile_with_highlights(subtile, highlight_coords, color, format_);
+    std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
+    return render_metatile_with_highlights(metatile, layer, subtile, coords, format_);
 }
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_highlights(
-    metatile::Subtile subtile, const std::vector<std::size_t> &indexes, Style color) const
+    const Metatile<Rgba32> &metatile,
+    metatile::Layer layer,
+    metatile::Subtile subtile,
+    const std::vector<std::size_t> &indexes) const
 {
-    std::set<std::pair<std::size_t, std::size_t>> highlight_coords{};
-    for (std::size_t index : indexes) {
-        auto [row, col] = tile::index_to_row_col(index);
-        highlight_coords.insert({row, col});
+    std::set<std::pair<std::size_t, std::size_t>> coords{};
+    for (const auto index : indexes) {
+        coords.insert(tile::index_to_row_col(index));
     }
-    return render_metatile_with_highlights(subtile, highlight_coords, color, format_);
+    return render_metatile_with_highlights(metatile, layer, subtile, coords, format_);
+}
+
+std::vector<std::string>
+AsciiTilePrinter::print_tile_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const
+{
+    std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
+    return render_tile_with_highlights(tile, coords, format_);
+}
+
+std::vector<std::string>
+AsciiTilePrinter::print_tile_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const
+{
+    std::set<std::pair<std::size_t, std::size_t>> coords{};
+    for (const auto index : indexes) {
+        coords.insert(tile::index_to_row_col(index));
+    }
+    return render_tile_with_highlights(tile, coords, format_);
 }
 
 } // namespace porytiles2

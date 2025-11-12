@@ -19,11 +19,24 @@ class AsciiTilePrinter final : public TilePrinter {
   public:
     explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
 
-    [[nodiscard]] std::vector<std::string>
-    print_metatile_highlight(metatile::Subtile subtile, std::size_t row, std::size_t col, Style color) const override;
+    [[nodiscard]] std::vector<std::string> print_metatile_highlight(
+        const Metatile<Rgba32> &metatile,
+        metatile::Layer layer,
+        metatile::Subtile subtile,
+        std::size_t row,
+        std::size_t col) const override;
 
     [[nodiscard]] std::vector<std::string> print_metatile_highlights(
-        metatile::Subtile subtile, const std::vector<std::size_t> &indexes, Style color) const override;
+        const Metatile<Rgba32> &metatile,
+        metatile::Layer layer,
+        metatile::Subtile subtile,
+        const std::vector<std::size_t> &indexes) const override;
+
+    [[nodiscard]] std::vector<std::string>
+    print_tile_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const override;
+
+    [[nodiscard]] std::vector<std::string>
+    print_tile_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const override;
 
   private:
     TextFormatter *format_;
