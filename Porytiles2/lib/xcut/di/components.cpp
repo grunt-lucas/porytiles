@@ -14,6 +14,7 @@ fruit::Component<TextFormatter> get_formatter_component(bool no_color)
             .bind<TextFormatter, PlainTextFormatter>()
             .registerConstructor<PlainTextFormatter()>();
     }
+    // TODO: make this mode configurable, macOS default Terminal.app only works with colors_256
     return fruit::createComponent().bind<TextFormatter, AnsiStyledTextFormatter>().registerProvider(
         [] { return AnsiStyledTextFormatter{AnsiColorMode::colors_24_bit}; });
 }
