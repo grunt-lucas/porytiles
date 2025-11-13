@@ -94,27 +94,18 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             FormatParam{num_metatiles_primary, Style::bold}};
     }
 
-    // Decompose vector<RgbaMetatile> into vector<PixelTile<Rgba32>>
-    std::vector<PixelTile<Rgba32>> tiles{};
-    tiles.reserve(metatiles.size() * metatile::tiles_per_metatile);
-    for (const auto &metatile : metatiles) {
-        const auto decomposed = metatile.decompose();
-        for (const auto &pixel_tile : decomposed) {
-            tiles.push_back(pixel_tile);
-        }
-    }
-
     // Leaf step to throw errors if:
     // - any tiles contain an invalid alpha value
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
-    PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles, extrinsic_transparency.value()),
+        validator.validate_alpha_channels(metatiles), "tile validation error", std::unique_ptr<Tileset>);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_unique_color_count(metatiles, extrinsic_transparency.value()),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(tiles), "tile validation error", std::unique_ptr<Tileset>);
+        validator.generate_precision_loss_warnings(metatiles), "tile validation error", std::unique_ptr<Tileset>);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -199,51 +190,25 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         // TODO: better error message
         return FormattableError{"too many input metatiles in Porytiles component"};
     }
-    std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
-        transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
-
-    // TODO: remove debug
-    // print first three middle layer metatiles
-    std::vector<std::string> note_text;
-    note_text.emplace_back("debug");
-    note_text.emplace_back("");
-    std::ranges::copy(
-        tile_printer_->print_metatile_highlight(
-            porytiles_metatiles.at(0), metatile::Layer::middle, metatile::Subtile::northeast, 0, 0),
-        std::back_inserter(note_text));
-    diag_->note("debug", note_text);
-    note_text.clear();
-    note_text.emplace_back("debug");
-    note_text.emplace_back("");
-    std::ranges::copy(
-        tile_printer_->print_metatile_highlight(
-            porytiles_metatiles.at(1), metatile::Layer::middle, metatile::Subtile::northeast, 4, 5),
-        std::back_inserter(note_text));
-    diag_->note("debug", note_text);
-    note_text.clear();
-    note_text.emplace_back("debug");
-    note_text.emplace_back("");
-    std::ranges::copy(
-        tile_printer_->print_metatile_highlight(
-            porytiles_metatiles.at(2), metatile::Layer::middle, metatile::Subtile::northeast, 2, 6),
-        std::back_inserter(note_text));
-    diag_->note("debug", note_text);
 
     // Leaf step to throw errors if:
     // - any tiles contain an invalid alpha value
     // - any tiles have more than 15+1 colors
     // - generate precision loss warnings if some colors collapse to the same 5-bit color
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(porytiles_pixel_rgba), "tile validation error", std::unique_ptr<Tileset>);
+        validator.validate_alpha_channels(porytiles_metatiles), "tile validation error", std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(porytiles_pixel_rgba, extrinsic_transparency.value()),
+        validator.validate_unique_color_count(porytiles_metatiles, extrinsic_transparency.value()),
         "tile validation error",
         std::unique_ptr<Tileset>);
     PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(porytiles_pixel_rgba),
+        validator.generate_precision_loss_warnings(porytiles_metatiles),
         "tile validation error",
         std::unique_ptr<Tileset>);
+
+    std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
+    std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
+        transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(

@@ -4,7 +4,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -26,13 +26,13 @@ class TileValidator {
     {
     }
 
-    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<PixelTile<Rgba32>> &tiles) const;
+    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
     [[nodiscard]] ChainableResult<void>
-    validate_unique_color_count(const std::vector<PixelTile<Rgba32>> &tiles, const Rgba32 &extrinsic) const;
+    validate_unique_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const;
 
     [[nodiscard]] ChainableResult<void>
-    generate_precision_loss_warnings(const std::vector<PixelTile<Rgba32>> &tiles) const;
+    generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
   private:
     TextFormatter *format_;

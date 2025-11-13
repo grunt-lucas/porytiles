@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/tile_validator.hpp"
@@ -30,14 +31,19 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
         tile2.set(i, Rgba32{200, 100, 50, Rgba32::alpha_opaque});
     }
 
-    std::vector tiles = {tile1, tile2};
+    // Create a metatile and set the tiles into it
+    Metatile<Rgba32> metatile{};
+    metatile.set_bottom(0, tile1);
+    metatile.set_bottom(1, tile2);
+
+    std::vector metatiles = {metatile};
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
-    auto result = validator.validate_alpha_channels(tiles);
+    auto result = validator.validate_alpha_channels(metatiles);
 
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag.errors().empty());
@@ -70,14 +76,19 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
         }
     }
 
-    std::vector<PixelTile<Rgba32>> tiles = {tile1, tile2};
+    // Create a metatile and set the tiles into it
+    Metatile<Rgba32> metatile{};
+    metatile.set_bottom(0, tile1);
+    metatile.set_bottom(1, tile2);
+
+    std::vector<Metatile<Rgba32>> metatiles = {metatile};
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
-    auto result = validator.validate_alpha_channels(tiles);
+    auto result = validator.validate_alpha_channels(metatiles);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag.errors().empty());
