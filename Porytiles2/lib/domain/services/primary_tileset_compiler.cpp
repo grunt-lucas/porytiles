@@ -27,6 +27,36 @@
 
 #include <unordered_set>
 
+namespace {
+
+using namespace porytiles2;
+
+ChainableResult<void> validate_porytiles_metatiles(
+    const TileValidator &validator,
+    const std::vector<Metatile<Rgba32>> &metatiles,
+    const Rgba32 &extrinsic_transparency)
+{
+    PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(metatiles), "alpha channel validation failed", void);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_unique_color_count(metatiles, extrinsic_transparency),
+        "unique tile color count validation failed",
+        void);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.generate_precision_loss_warnings(metatiles), "precision loss validation failed", void);
+
+    // Global color limit handling
+    /*
+     * TODO: handle this in a separate service-based step in the TileValidator service. It would be nice to give users
+     * very detailed information about their global color count when they go over. Example, we could print out a list of
+     * colors with their pixel counts, the first location of colors that went over the limit, etc. This will really help
+     * users narrow down issues when they exceed color count.
+     */
+
+    return {};
+}
+
+} // namespace
+
 namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
@@ -47,6 +77,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             tileset.porytiles_component().middle(),
             tileset.porytiles_component().top()),
         "failed to metatileize input layer images for " + tileset.name(),
+        std::unique_ptr<Tileset>);
+
+    // Run validation on Porytiles metatiles
+    PT_TRY_CALL_CHAIN_ERR(
+        validate_porytiles_metatiles(validator, metatiles, extrinsic_transparency.value()),
+        "encountered error while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
     /*
@@ -93,19 +129,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
             FormatParam{metatiles.size(), Style::bold},
             FormatParam{num_metatiles_primary, Style::bold}};
     }
-
-    // Leaf step to throw errors if:
-    // - any tiles contain an invalid alpha value
-    // - any tiles have more than 15+1 colors
-    // - generate precision loss warnings if some colors collapse to the same 5-bit color
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(metatiles), "tile validation error", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(metatiles, extrinsic_transparency.value()),
-        "tile validation error",
-        std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(metatiles), "tile validation error", std::unique_ptr<Tileset>);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -191,19 +214,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         return FormattableError{"too many input metatiles in Porytiles component"};
     }
 
-    // Leaf step to throw errors if:
-    // - any tiles contain an invalid alpha value
-    // - any tiles have more than 15+1 colors
-    // - generate precision loss warnings if some colors collapse to the same 5-bit color
+    // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(porytiles_metatiles), "tile validation error", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(porytiles_metatiles, extrinsic_transparency.value()),
-        "tile validation error",
-        std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(porytiles_metatiles),
-        "tile validation error",
+        validate_porytiles_metatiles(validator, porytiles_metatiles, extrinsic_transparency.value()),
+        "encountered error while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
     std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
