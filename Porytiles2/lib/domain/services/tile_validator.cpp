@@ -81,8 +81,8 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<M
     return {};
 }
 
-ChainableResult<void> TileValidator::validate_unique_color_count(
-    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
+ChainableResult<void>
+TileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
 {
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -134,6 +134,13 @@ ChainableResult<void> TileValidator::validate_unique_color_count(
             FormatParam{pal::max_size - 1}};
     }
 
+    return {};
+}
+
+ChainableResult<void> TileValidator::validate_global_color_count(
+    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
+{
+    // TODO: implement
     return {};
 }
 

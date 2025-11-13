@@ -32,15 +32,33 @@ namespace {
 using namespace porytiles2;
 
 ChainableResult<void> validate_porytiles_metatiles(
+    const DomainConfig *config,
+    const std::string &tileset_name,
     const TileValidator &validator,
-    const std::vector<Metatile<Rgba32>> &metatiles,
-    const Rgba32 &extrinsic_transparency)
+    const std::vector<Metatile<Rgba32>> &metatiles)
 {
+    // Unwrap configs we need
+    PT_UNWRAP_TILESET_CONFIG(config, extrinsic_transparency, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG(config, num_metatiles_primary, tileset_name, void);
+
+    // Throw error if there are too many metatiles.
+    if (metatiles.size() > num_metatiles_primary.value()) {
+        return FormattableError{
+            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
+            FormatParam{metatiles.size(), Style::bold},
+            FormatParam{num_metatiles_primary, Style::bold}};
+    }
+
+    // Run alpha channel validation
     PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(metatiles), "alpha channel validation failed", void);
+
+    // Run tile color count validation
     PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(metatiles, extrinsic_transparency),
+        validator.validate_tile_color_count(metatiles, extrinsic_transparency),
         "unique tile color count validation failed",
         void);
+
+    // Run precision loss warning generation
     PT_TRY_CALL_CHAIN_ERR(
         validator.generate_precision_loss_warnings(metatiles), "precision loss validation failed", void);
 
@@ -81,7 +99,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
-        validate_porytiles_metatiles(validator, metatiles, extrinsic_transparency.value()),
+        validate_porytiles_metatiles(config_, tileset.name(), validator, metatiles),
         "encountered error while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
@@ -104,31 +122,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // TODO: remove, here for testing
     PT_TRY_CALL_CHAIN_ERR(
         tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-
-    // TODO: remove these, just here to test config/diagnostic stuff
-    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
-    diag_->note(
-        "config-info",
-        std::vector{
-            format_->format(
-                "{} {}",
-                FormatParam{num_tiles_primary.name() + ":", Style::bold},
-                FormatParam{num_tiles_primary, Style::bold}),
-            format_->format("({})", num_tiles_primary.source()),
-            std::string{"foo"},
-            std::string{"bar"}});
-    diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-    diag_->warn_note("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-    diag_->err("test-error", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-
-    // Leaf step to throw error if there are too many metatiles.
-    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
-    if (metatiles.size() > num_metatiles_primary.value()) {
-        return FormattableError{
-            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
-            FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}};
-    }
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -216,7 +209,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
-        validate_porytiles_metatiles(validator, porytiles_metatiles, extrinsic_transparency.value()),
+        validate_porytiles_metatiles(config_, tileset.name(), validator, porytiles_metatiles),
         "encountered error while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
