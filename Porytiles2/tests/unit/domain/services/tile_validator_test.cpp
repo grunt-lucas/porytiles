@@ -40,7 +40,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    AsciiTilePrinter tile_printer{&formatter};
+    AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(metatiles);
@@ -85,7 +85,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    AsciiTilePrinter tile_printer{&formatter};
+    AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
     TileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(metatiles);

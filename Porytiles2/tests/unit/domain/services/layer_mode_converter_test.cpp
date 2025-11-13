@@ -3,6 +3,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
@@ -59,7 +60,7 @@ class LayerModeConverterTests : public ::testing::Test {
     {
         format_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<StderrStyledUserDiagnostics>(format_.get());
-        tile_printer_ = std::make_unique<AsciiTilePrinter>(format_.get());
+        tile_printer_ = std::make_unique<AsciiTilePrinter>(format_.get(), rgba_magenta);
         converter_ = std::make_unique<LayerModeConverter>(format_.get(), diag_.get(), tile_printer_.get());
     }
 
