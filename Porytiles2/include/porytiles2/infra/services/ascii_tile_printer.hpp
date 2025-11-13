@@ -17,7 +17,10 @@ namespace porytiles2 {
  */
 class AsciiTilePrinter final : public TilePrinter {
   public:
-    explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
+    explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format, Rgba32 extrinsic_transparency)
+        : format_{format}, extrinsic_transparency_{extrinsic_transparency}
+    {
+    }
 
     [[nodiscard]] std::vector<std::string> print_metatile_highlight(
         const Metatile<Rgba32> &metatile,
@@ -40,6 +43,7 @@ class AsciiTilePrinter final : public TilePrinter {
 
   private:
     TextFormatter *format_;
+    Rgba32 extrinsic_transparency_;
 };
 
 } // namespace porytiles2

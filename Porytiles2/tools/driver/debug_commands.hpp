@@ -27,6 +27,7 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -57,7 +58,6 @@ class DebugPrimaryCompileCommand final : public Command {
 
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
-        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<AsciiTilePrinter>(text_formatter);
 
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{"."};
@@ -65,6 +65,15 @@ class DebugPrimaryCompileCommand final : public Command {
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
+
+        auto extrinsic_transparency_result = config.extrinsic_transparency(ConfigScopeType::tileset, tileset_name_);
+        if (!extrinsic_transparency_result.has_value()) {
+            diag->fatal(extrinsic_transparency_result);
+            return;
+        }
+        auto extrinsic_transparency = std::move(extrinsic_transparency_result).value();
+        std::unique_ptr<TilePrinter> tile_printer =
+            std::make_unique<AsciiTilePrinter>(text_formatter, extrinsic_transparency);
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};

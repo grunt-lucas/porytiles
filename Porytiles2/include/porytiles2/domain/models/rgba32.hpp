@@ -35,6 +35,28 @@ class Rgba32 {
     bool operator==(const Rgba32 &rgba) const = default;
 
     /**
+     * @brief Checks if this color is intrinsically transparent based on its alpha channel.
+     *
+     * @details
+     * A color is intrinsically transparent if its alpha value is 0.
+     *
+     * @return True if alpha == alpha_transparent, false otherwise
+     */
+    [[nodiscard]] bool is_intrinsically_transparent() const;
+
+    /**
+     * @brief Checks if this color matches the extrinsic transparency color.
+     *
+     * @details
+     * A color is extrinsically transparent if its RGB components match the extrinsic transparency color, regardless of
+     * alpha values.
+     *
+     * @param extrinsic The extrinsic transparency color to check against
+     * @return True if this color's RGB components match the extrinsic color, false otherwise
+     */
+    [[nodiscard]] bool is_extrinsically_transparent(const Rgba32 &extrinsic) const;
+
+    /**
      * @brief Checks if this color should be treated as transparent.
      *
      * @details

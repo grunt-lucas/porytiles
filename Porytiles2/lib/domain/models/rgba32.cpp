@@ -6,13 +6,19 @@
 
 namespace porytiles2 {
 
+[[nodiscard]] bool Rgba32::is_intrinsically_transparent() const
+{
+    return alpha_ == alpha_transparent;
+}
+
+[[nodiscard]] bool Rgba32::is_extrinsically_transparent(const Rgba32 &extrinsic) const
+{
+    return extrinsic.equals_ignoring_alpha(*this);
+}
+
 [[nodiscard]] bool Rgba32::is_transparent(const Rgba32 &extrinsic) const
 {
-    if (alpha_ == alpha_transparent) {
-        return true;
-    }
-
-    return extrinsic.equals_ignoring_alpha(*this);
+    return is_intrinsically_transparent() || is_extrinsically_transparent(extrinsic);
 }
 
 std::string Rgba32::to_jasc_str() const
