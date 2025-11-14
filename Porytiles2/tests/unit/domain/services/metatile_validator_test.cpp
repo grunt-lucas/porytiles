@@ -3,7 +3,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/services/tile_validator.hpp"
+#include "porytiles2/domain/services/metatile_validator.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -41,7 +41,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
-    TileValidator validator{&formatter, &diag, &tile_printer};
+    MetatileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(metatiles);
 
@@ -86,7 +86,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
-    TileValidator validator{&formatter, &diag, &tile_printer};
+    MetatileValidator validator{&formatter, &diag, &tile_printer};
 
     auto result = validator.validate_alpha_channels(metatiles);
 

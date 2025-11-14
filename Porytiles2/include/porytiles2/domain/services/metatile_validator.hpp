@@ -16,9 +16,9 @@ namespace porytiles2 {
 /**
  * @brief A collection of tile validation functions for compilation operations.
  */
-class TileValidator {
+class MetatileValidator {
   public:
-    explicit TileValidator(
+    explicit MetatileValidator(
         gsl::not_null<TextFormatter *> format,
         gsl::not_null<UserDiagnostics *> diag,
         gsl::not_null<TilePrinter *> tile_printer)
@@ -36,6 +36,8 @@ class TileValidator {
 
     [[nodiscard]] ChainableResult<void>
     generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
+
+    [[nodiscard]] ChainableResult<void> validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
   private:
     TextFormatter *format_;

@@ -17,8 +17,8 @@
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
+#include "porytiles2/domain/services/metatile_validator.hpp"
 #include "porytiles2/domain/services/pack_set_generator.hpp"
-#include "porytiles2/domain/services/tile_validator.hpp"
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -34,7 +34,7 @@ using namespace porytiles2;
 ChainableResult<void> validate_porytiles_metatiles(
     const DomainConfig *config,
     const std::string &tileset_name,
-    const TileValidator &validator,
+    const MetatileValidator &validator,
     const std::vector<Metatile<Rgba32>> &metatiles)
 {
     // Unwrap configs we need
@@ -81,7 +81,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    TileValidator validator{format_, diag_, tile_printer_};
+    MetatileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Grab configuration values we'll need
@@ -178,7 +178,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    TileValidator validator{format_, diag_, tile_printer_};
+    MetatileValidator validator{format_, diag_, tile_printer_};
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
 

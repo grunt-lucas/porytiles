@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/tile_validator.hpp"
+#include "porytiles2/domain/services/metatile_validator.hpp"
 
 #include <unordered_set>
 
@@ -37,7 +37,7 @@ void report_validation_error(
 
 namespace porytiles2 {
 
-ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const
+ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -81,8 +81,8 @@ ChainableResult<void> TileValidator::validate_alpha_channels(const std::vector<M
     return {};
 }
 
-ChainableResult<void>
-TileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
+ChainableResult<void> MetatileValidator::validate_tile_color_count(
+    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
 {
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -137,7 +137,7 @@ TileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &me
     return {};
 }
 
-ChainableResult<void> TileValidator::validate_global_color_count(
+ChainableResult<void> MetatileValidator::validate_global_color_count(
     const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic, std::size_t color_count_limit) const
 {
     std::size_t metatile_index = 0;
@@ -158,11 +158,17 @@ ChainableResult<void> TileValidator::validate_global_color_count(
 }
 
 ChainableResult<void>
-TileValidator::generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const
+MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
     // TODO: implement
     (void)metatiles.size();
-    // When implemented, decompose metatiles: std::vector<PixelTile<Rgba32>> tiles = metatile::decompose(metatiles);
+    return {};
+}
+
+ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const
+{
+    // TODO: implement
+    (void)metatiles.size();
     return {};
 }
 
