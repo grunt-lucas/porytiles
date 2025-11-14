@@ -27,8 +27,8 @@ class MetatileValidator {
         gsl::not_null<UserDiagnostics *> diag,
         gsl::not_null<TilePrinter *> tile_printer,
         gsl::not_null<DomainConfig *> config,
-        const std::string &scope)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, config_{config}, scope_{scope}
+        const std::string &tileset_scope)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, config_{config}, tileset_scope_{tileset_scope}
     {
     }
 
@@ -40,7 +40,7 @@ class MetatileValidator {
     [[nodiscard]] ChainableResult<void> validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
     [[nodiscard]] ChainableResult<void>
-    validate_global_color_count(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t color_count_limit) const;
+    validate_global_color_count(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t count_limit) const;
 
     [[nodiscard]] ChainableResult<void>
     generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
@@ -49,7 +49,7 @@ class MetatileValidator {
     UserDiagnostics *diag_;
     TilePrinter *tile_printer_;
     DomainConfig *config_;
-    std::string scope_;
+    std::string tileset_scope_;
 };
 
 } // namespace porytiles2

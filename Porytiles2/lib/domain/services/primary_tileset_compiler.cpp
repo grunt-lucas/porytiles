@@ -56,14 +56,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
 
-    // Check metatile count
-    if (metatiles.size() > num_metatiles_primary.value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{
-            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
-            FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}}};
-    }
-
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
         validator.validate_primary(metatiles),
@@ -164,14 +156,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             tileset.porytiles_component().top()),
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
-
-    // Check metatile count
-    if (porytiles_metatiles.size() > num_metatiles_primary.value()) {
-        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{
-            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
-            FormatParam{porytiles_metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}}};
-    }
 
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(

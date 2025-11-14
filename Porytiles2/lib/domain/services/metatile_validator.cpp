@@ -85,7 +85,7 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
 
 ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, scope_, void);
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
 
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -141,9 +141,9 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
 }
 
 ChainableResult<void> MetatileValidator::validate_global_color_count(
-    const std::vector<Metatile<Rgba32>> &metatiles, std::size_t color_count_limit) const
+    const std::vector<Metatile<Rgba32>> &metatiles, std::size_t count_limit) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, scope_, void);
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
 
     std::size_t metatile_index = 0;
     for (const auto &metatile : metatiles) {
@@ -159,7 +159,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
      * Example, we could print out a list of colors with their pixel counts, the first location of colors that went over
      * the limit, etc. This will really help users narrow down issues when they exceed color count.
      */
-    std::ignore = color_count_limit;
+    std::ignore = count_limit;
     return {};
 }
 
@@ -173,9 +173,36 @@ MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<R
 
 ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, scope_, void);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset_scope_, void);
 
     std::vector<std::string> error_messages;
+
+    // Run metatile count validation
+    if (metatiles.size() > num_metatiles_primary) {
+        diag_->err(
+            "metatile-limit-exceeded",
+            format_->format(
+                "too many metatiles ({}) in Porytiles component for tileset '{}'",
+                FormatParam{metatiles.size(), Style::bold},
+                FormatParam{tileset_scope_, Style::bold}));
+
+        // Construct note text
+        std::vector<std::string> note_text;
+        note_text.push_back(format_->format(
+            "metatile limit is '{}' due to configuration", FormatParam{num_metatiles_primary, Style::bold}));
+        note_text.emplace_back("");
+        std::ranges::copy(num_metatiles_primary.prettify(*format_), std::back_inserter(note_text));
+
+        // Emit note
+        diag_->note("metatile-limit-exceeded", note_text);
+
+        // Push back error message to fatal chain
+        error_messages.push_back(format_->format(
+            "too many input metatiles: found '{}', limit is '{}'",
+            FormatParam{metatiles.size(), Style::bold},
+            FormatParam{num_metatiles_primary, Style::bold}));
+    }
 
     // Run alpha channel validation
     auto alpha_result = validate_alpha_channels(metatiles);
