@@ -31,6 +31,12 @@ class UserDiagnostics {
   public:
     virtual ~UserDiagnostics() = default;
 
+    /*
+     * TODO: add configurable tag filtering handling here. Probably needs to be an abstract class? Or handle it in one
+     * of the implementations? We want to have an include-list and exclude-list of tags. Make them regex-able? Lots of
+     * questions to answer.
+     */
+
     /**
      * @brief Display a tagged informational note message.
      *

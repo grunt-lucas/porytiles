@@ -13,10 +13,6 @@ namespace porytiles2 {
 void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector was empty");
-    /*
-     * TODO: instead of hardcoding AnsiStyledTextFormatter here, we should have this class detect if stderr is a TTY and
-     * select a text formatter accordingly.
-     */
     std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
@@ -60,7 +56,7 @@ void StderrStyledUserDiagnostics::err(const std::string &tag, const std::vector<
 
 void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
 {
-    // TODO: emit some kind of cool ascii art for start of fatal chain
+    // TODO: emit some kind of cool ascii art for start of fatal chain?
     // something like:
     // |-------- FATAL ERROR CHAIN --------|
     // |-----------------------------------|
