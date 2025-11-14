@@ -1,9 +1,11 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -17,32 +19,37 @@ namespace porytiles2 {
  * @brief A collection of tile validation functions for compilation operations.
  */
 class MetatileValidator {
+    friend class MetatileValidatorTestAccess;
+
   public:
     explicit MetatileValidator(
         gsl::not_null<TextFormatter *> format,
         gsl::not_null<UserDiagnostics *> diag,
-        gsl::not_null<TilePrinter *> tile_printer)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}
+        gsl::not_null<TilePrinter *> tile_printer,
+        gsl::not_null<DomainConfig *> config,
+        const std::string &scope)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, config_{config}, scope_{scope}
     {
     }
-
-    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const;
-
-    [[nodiscard]] ChainableResult<void>
-    validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const;
-
-    [[nodiscard]] ChainableResult<void> validate_global_color_count(
-        const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic, std::size_t color_count_limit) const;
-
-    [[nodiscard]] ChainableResult<void>
-    generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
     [[nodiscard]] ChainableResult<void> validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
   private:
+    [[nodiscard]] ChainableResult<void> validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const;
+
+    [[nodiscard]] ChainableResult<void> validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles) const;
+
+    [[nodiscard]] ChainableResult<void>
+    validate_global_color_count(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t color_count_limit) const;
+
+    [[nodiscard]] ChainableResult<void>
+    generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
+
     TextFormatter *format_;
     UserDiagnostics *diag_;
     TilePrinter *tile_printer_;
+    DomainConfig *config_;
+    std::string scope_;
 };
 
 } // namespace porytiles2

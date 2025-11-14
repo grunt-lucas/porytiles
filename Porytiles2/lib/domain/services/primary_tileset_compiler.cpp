@@ -31,48 +31,6 @@ namespace {
 
 using namespace porytiles2;
 
-ChainableResult<void> validate_porytiles_metatiles(
-    const DomainConfig *config,
-    const std::string &tileset_name,
-    const MetatileValidator &validator,
-    const std::vector<Metatile<Rgba32>> &metatiles)
-{
-    // Unwrap configs we need
-    PT_UNWRAP_TILESET_CONFIG(config, extrinsic_transparency, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG(config, num_metatiles_primary, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG(config, num_pals_primary, tileset_name, void);
-
-    // Throw error if there are too many metatiles.
-    if (metatiles.size() > num_metatiles_primary.value()) {
-        return FormattableError{
-            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
-            FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}};
-    }
-
-    // Run alpha channel validation
-    PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(metatiles), "alpha channel validation failed", void);
-
-    // Run tile color count validation
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_tile_color_count(metatiles, extrinsic_transparency),
-        "unique tile color count validation failed",
-        void);
-
-    // Run precision loss warning generation
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(metatiles), "precision loss validation failed", void);
-
-    // Run global color count validation
-    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_global_color_count(metatiles, extrinsic_transparency, color_count_limit),
-        "unique global color count validation failed",
-        void);
-
-    return {};
-}
-
 } // namespace
 
 namespace porytiles2 {
@@ -81,11 +39,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_};
+    MetatileValidator validator{format_, diag_, tile_printer_, config_, tileset.name()};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -97,10 +56,18 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
 
+    // Check metatile count
+    if (metatiles.size() > num_metatiles_primary.value()) {
+        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{
+            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
+            FormatParam{metatiles.size(), Style::bold},
+            FormatParam{num_metatiles_primary, Style::bold}}};
+    }
+
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
-        validate_porytiles_metatiles(config_, tileset.name(), validator, metatiles),
-        "encountered error while validating Porytiles metatiles",
+        validator.validate_primary(metatiles),
+        "encountered error(s) while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
     /*
@@ -178,7 +145,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_};
+    MetatileValidator validator{format_, diag_, tile_printer_, config_, tileset.name()};
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
 
@@ -198,10 +165,18 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
 
+    // Check metatile count
+    if (porytiles_metatiles.size() > num_metatiles_primary.value()) {
+        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{
+            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
+            FormatParam{porytiles_metatiles.size(), Style::bold},
+            FormatParam{num_metatiles_primary, Style::bold}}};
+    }
+
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
-        validate_porytiles_metatiles(config_, tileset.name(), validator, porytiles_metatiles),
-        "encountered error while validating Porytiles metatiles",
+        validator.validate_primary(porytiles_metatiles),
+        "encountered error(s) while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
     // Decompose Porytiles metatiles and generate canonical versions

@@ -6,6 +6,8 @@
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace {
 
@@ -62,7 +64,7 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
                             internal_tile_index,
                             row,
                             col,
-                            "alpha-channel-validation",
+                            "alpha-channel-violation",
                             error_message,
                             format_,
                             diag_,
@@ -81,9 +83,10 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
     return {};
 }
 
-ChainableResult<void> MetatileValidator::validate_tile_color_count(
-    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
+ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, scope_, void);
+
     bool hit_error = false;
     std::size_t metatile_index = 0;
     for (const auto &metatile : metatiles) {
@@ -98,7 +101,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(
             for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
                 for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                     const auto &pixel = tile.at(row, col);
-                    if (pixel.alpha() != Rgba32::alpha_transparent && pixel != extrinsic) {
+                    if (pixel.alpha() != Rgba32::alpha_transparent && pixel != extrinsic_transparency.value()) {
                         unique_colors.insert(pixel);
                     }
 
@@ -114,7 +117,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(
                             internal_tile_index,
                             row,
                             col,
-                            "color-count-validation",
+                            "tile-color-count-violation",
                             error_message,
                             format_,
                             diag_,
@@ -130,7 +133,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(
 
     if (hit_error) {
         return FormattableError{
-            "color constraint violation: found tile(s) with more than {} unique non-transparent pixels",
+            "tile color count violation: found tile(s) with more than {} unique non-transparent pixels",
             FormatParam{pal::max_size - 1}};
     }
 
@@ -138,15 +141,17 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(
 }
 
 ChainableResult<void> MetatileValidator::validate_global_color_count(
-    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic, std::size_t color_count_limit) const
+    const std::vector<Metatile<Rgba32>> &metatiles, std::size_t color_count_limit) const
 {
+    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, scope_, void);
+
     std::size_t metatile_index = 0;
     for (const auto &metatile : metatiles) {
         const auto tiles = metatile.decompose();
         for (std::size_t internal_tile_index = 0; internal_tile_index < tiles.size(); ++internal_tile_index) {
             const auto &tile = tiles[internal_tile_index];
             // TODO: implement
-            std::ignore = tile.unique_nontransparent_colors(extrinsic);
+            std::ignore = tile.unique_nontransparent_colors(extrinsic_transparency.value());
         }
     }
     /*
@@ -154,6 +159,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
      * Example, we could print out a list of colors with their pixel counts, the first location of colors that went over
      * the limit, etc. This will really help users narrow down issues when they exceed color count.
      */
+    std::ignore = color_count_limit;
     return {};
 }
 
@@ -167,8 +173,45 @@ MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<R
 
 ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    // TODO: implement
-    (void)metatiles.size();
+    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, scope_, void);
+
+    std::vector<std::string> error_messages;
+
+    // Run alpha channel validation
+    auto alpha_result = validate_alpha_channels(metatiles);
+    if (!alpha_result.has_value()) {
+        error_messages.push_back(alpha_result.error().join(*format_));
+    }
+
+    // Run tile color count validation
+    auto tile_color_result = validate_tile_color_count(metatiles);
+    if (!tile_color_result.has_value()) {
+        error_messages.push_back(tile_color_result.error().join(*format_));
+    }
+
+    // Run precision loss warning generation
+    auto precision_result = generate_precision_loss_warnings(metatiles);
+    if (!precision_result.has_value()) {
+        error_messages.push_back(precision_result.error().join(*format_));
+    }
+
+    // Run global color count validation
+    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
+    auto global_color_result = validate_global_color_count(metatiles, color_count_limit);
+    if (!global_color_result.has_value()) {
+        error_messages.push_back(global_color_result.error().join(*format_));
+    }
+
+    // If any validation failed, return all error messages
+    if (!error_messages.empty()) {
+        std::vector<std::string> combined_message{};
+        combined_message.emplace_back("validation failed with the following errors:");
+        for (const auto &msg : error_messages) {
+            combined_message.emplace_back("  - " + msg);
+        }
+        return FormattableError{combined_message};
+    }
+
     return {};
 }
 

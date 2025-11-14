@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -7,7 +8,86 @@
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
+
+namespace porytiles2 {
+
+class MockDomainConfig : public DomainConfig {
+  protected:
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{512, "num_tiles_primary", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{1024, "num_tiles_total", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{512, "num_metatiles_primary", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{1024, "num_metatiles_total", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{6, "num_pals_primary", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{13, "num_pals_total", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    max_map_data_size_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{10240, "max_map_data_size", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_per_metatile_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::size_t>{8, "num_tiles_per_metatile", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
+    extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<Rgba32>{rgba_magenta, "extrinsic_transparency", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    patch_build_enabled_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<bool>{false, "patch_build_enabled", "default value", {}};
+    }
+};
+
+// Friend test class to allow testing private methods
+class MetatileValidatorTestAccess {
+  public:
+    static ChainableResult<void>
+    validate_alpha_channels(const MetatileValidator &validator, const std::vector<Metatile<Rgba32>> &metatiles)
+    {
+        return validator.validate_alpha_channels(metatiles);
+    }
+};
+
+} // namespace porytiles2
 
 using namespace porytiles2;
 
@@ -41,9 +121,10 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
-    MetatileValidator validator{&formatter, &diag, &tile_printer};
+    MockDomainConfig config{};
+    MetatileValidator validator{&formatter, &diag, &tile_printer, &config, "test_tileset"};
 
-    auto result = validator.validate_alpha_channels(metatiles);
+    auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);
 
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag.errors().empty());
@@ -86,9 +167,10 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
-    MetatileValidator validator{&formatter, &diag, &tile_printer};
+    MockDomainConfig config{};
+    MetatileValidator validator{&formatter, &diag, &tile_printer, &config, "test_tileset"};
 
-    auto result = validator.validate_alpha_channels(metatiles);
+    auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag.errors().empty());
