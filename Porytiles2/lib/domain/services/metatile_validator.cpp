@@ -122,6 +122,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
                             format_,
                             diag_,
                             tile_printer_);
+                        // TODO: add a printout that shows the tile's colors and color counts
                         goto next_tile;
                     }
                 }
