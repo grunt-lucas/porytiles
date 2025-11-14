@@ -40,6 +40,7 @@ ChainableResult<void> validate_porytiles_metatiles(
     // Unwrap configs we need
     PT_UNWRAP_TILESET_CONFIG(config, extrinsic_transparency, tileset_name, void);
     PT_UNWRAP_TILESET_CONFIG(config, num_metatiles_primary, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG(config, num_pals_primary, tileset_name, void);
 
     // Throw error if there are too many metatiles.
     if (metatiles.size() > num_metatiles_primary.value()) {
@@ -62,13 +63,12 @@ ChainableResult<void> validate_porytiles_metatiles(
     PT_TRY_CALL_CHAIN_ERR(
         validator.generate_precision_loss_warnings(metatiles), "precision loss validation failed", void);
 
-    // Global color limit handling
-    /*
-     * TODO: handle this in a separate service-based step in the TileValidator service. It would be nice to give users
-     * very detailed information about their global color count when they go over. Example, we could print out a list of
-     * colors with their pixel counts, the first location of colors that went over the limit, etc. This will really help
-     * users narrow down issues when they exceed color count.
-     */
+    // Run global color count validation
+    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_global_color_count(metatiles, extrinsic_transparency, color_count_limit),
+        "unique global color count validation failed",
+        void);
 
     return {};
 }
@@ -118,10 +118,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
      * warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the decompilation operations
      * this is an error condition.)
      */
-
     // TODO: remove, here for testing
-    PT_TRY_CALL_CHAIN_ERR(
-        tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
+    // PT_TRY_CALL_CHAIN_ERR(
+    //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -183,10 +182,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
 
-    // Showcase how config validation can work
-    // ConfigValue<std::size_t> test{0, "foo", "bar", std::vector<std::string>{"baz", "bat", "cat", "mat"}};
-    // PT_TRY_CALL_CHAIN_ERR(size_t_val_greater_than_zero(test), "config validation failed", std::unique_ptr<Tileset>);
-
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
@@ -202,10 +197,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             tileset.porytiles_component().top()),
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
-    if (porytiles_metatiles.size() > num_metatiles_primary) {
-        // TODO: better error message
-        return FormattableError{"too many input metatiles in Porytiles component"};
-    }
 
     // Run validation on Porytiles metatiles
     PT_TRY_CALL_CHAIN_ERR(
@@ -213,6 +204,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         "encountered error while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
+    // Decompose Porytiles metatiles and generate canonical versions
     std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
     std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
         transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
@@ -234,15 +226,14 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
      * size of the final tilemap entry vector. Patch builds don't need to preserve tilemap entries since those cannot be
      * referenced by other tilesets.
      */
+
+    // Decompose Porymap metatiles and generate canonical versions
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba = metatile::decompose(porymap_metatiles);
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba =
         transform<CanonicalPixelTile<Rgba32>>(porymap_pixel_rgba);
 
     /*
      * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
-     * However, we build one so that we can throw if the user specified too many unique colors in the input. We're
-     * guaranteed to fail again at a later step if this is triggered. But we'll use this opportunity to emit an error
-     * early and then continue.
      */
     ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
     std::size_t color_count = color_index_map.size();

@@ -31,8 +31,8 @@ class TileValidator {
     [[nodiscard]] ChainableResult<void>
     validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const;
 
-    [[nodiscard]] ChainableResult<void>
-    validate_global_color_count(const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const;
+    [[nodiscard]] ChainableResult<void> validate_global_color_count(
+        const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic, std::size_t color_count_limit) const;
 
     [[nodiscard]] ChainableResult<void>
     generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;

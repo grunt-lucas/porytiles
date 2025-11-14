@@ -138,9 +138,22 @@ TileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &me
 }
 
 ChainableResult<void> TileValidator::validate_global_color_count(
-    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic) const
+    const std::vector<Metatile<Rgba32>> &metatiles, const Rgba32 &extrinsic, std::size_t color_count_limit) const
 {
-    // TODO: implement
+    std::size_t metatile_index = 0;
+    for (const auto &metatile : metatiles) {
+        const auto tiles = metatile.decompose();
+        for (std::size_t internal_tile_index = 0; internal_tile_index < tiles.size(); ++internal_tile_index) {
+            const auto &tile = tiles[internal_tile_index];
+            // TODO: implement
+            std::ignore = tile.unique_nontransparent_colors(extrinsic);
+        }
+    }
+    /*
+     * TODO: It would be nice to give users very detailed information about their global color count when they go over.
+     * Example, we could print out a list of colors with their pixel counts, the first location of colors that went over
+     * the limit, etc. This will really help users narrow down issues when they exceed color count.
+     */
     return {};
 }
 
