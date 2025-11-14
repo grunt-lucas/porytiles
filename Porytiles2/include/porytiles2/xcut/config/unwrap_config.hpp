@@ -23,7 +23,7 @@ namespace porytiles2 {
     if (!config##_result.has_value()) {                                                                                \
         return ChainableResult<return_type>{                                                                           \
             FormattableError{                                                                                          \
-                "failed to get config value '{}:{}'",                                                                  \
+                "failed to get config value 'tileset:{}:{}'",                                                          \
                 FormatParam{tileset_name, Style::bold},                                                                \
                 FormatParam{#config, Style::bold}},                                                                    \
             config##_result};                                                                                          \
@@ -49,7 +49,7 @@ namespace porytiles2 {
     if (!config##_result.has_value()) {                                                                                \
         return ChainableResult<return_type>{                                                                           \
             FormattableError{                                                                                          \
-                "failed to get config value '{}:{}'",                                                                  \
+                "failed to get config value 'layout:{}:{}'",                                                           \
                 FormatParam{layout_name, Style::bold},                                                                 \
                 FormatParam{#config, Style::bold}},                                                                    \
             config##_result};                                                                                          \
