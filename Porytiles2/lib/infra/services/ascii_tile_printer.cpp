@@ -178,21 +178,21 @@ std::vector<std::string> render_metatile_with_highlights(
             const auto color_style_fg = rgba_to_fg_style(pixel_color);
 
             if (is_in_target_subtile) {
-                // In target subtile: show X for highlights, * for others (both bold)
+                // In target subtile: show X for highlights,blank* for others (both bold)
                 if (highlight_coords.contains({subtile_row, subtile_col})) {
                     const auto styled_x =
-                        format->format("{}", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style_fg});
+                        format->format("{}", porytiles2::FormatParam{"◢◣", porytiles2::Style::bold | color_style_fg});
                     ss << styled_x;
                 }
                 else {
                     const auto styled_star =
-                        format->format("{}", porytiles2::FormatParam{" ", porytiles2::Style::bold | color_style_bg});
+                        format->format("{}", porytiles2::FormatParam{"  ", porytiles2::Style::bold | color_style_bg});
                     ss << styled_star;
                 }
             }
             else {
-                // In non-target subtile: show . styled with the pixel's RGB color (non-bold)
-                const auto styled_star = format->format("{}", porytiles2::FormatParam{" ", color_style_bg});
+                // In non-target subtile: show styled blank with the pixel's RGB color (non-bold)
+                const auto styled_star = format->format("{}", porytiles2::FormatParam{"  ", color_style_bg});
                 ss << styled_star;
             }
 
@@ -221,6 +221,12 @@ std::vector<std::string> render_metatile_with_highlights(
 } // namespace
 
 namespace porytiles2 {
+
+std::vector<std::string> AsciiTilePrinter::print_metatile(
+    const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile) const
+{
+    return render_metatile_with_highlights(metatile, layer, subtile, {}, extrinsic_transparency_, format_);
+}
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_highlight(
     const Metatile<Rgba32> &metatile,

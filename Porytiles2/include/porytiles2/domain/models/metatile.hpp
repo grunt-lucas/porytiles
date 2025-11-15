@@ -33,6 +33,12 @@ inline std::string to_string(Layer layer)
     panic("unhandled Layer value");
 }
 
+inline std::ostream &operator<<(std::ostream &os, const Layer &layer)
+{
+    os << to_string(layer);
+    return os;
+}
+
 enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
 
 inline std::string to_string(Subtile layer)
@@ -48,6 +54,12 @@ inline std::string to_string(Subtile layer)
         return "southeast(" + std::to_string(static_cast<std::uint8_t>(layer)) + ")";
     }
     panic("unhandled Subtile value");
+}
+
+inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
+{
+    os << to_string(subtile);
+    return os;
 }
 
 /**

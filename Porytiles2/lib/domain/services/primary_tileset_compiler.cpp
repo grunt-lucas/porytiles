@@ -25,6 +25,7 @@
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
+#include <iostream>
 #include <unordered_set>
 
 namespace {
@@ -221,6 +222,58 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     porymap_pals.reserve(num_pals_primary.value());
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
         porymap_pals.push_back(tileset.porymap_component().pals()[i]);
+    }
+
+    // Precondition: all these decomposed tile vectors have the same size
+    assert_or_panic(
+        porytiles_pixel_rgba.size() == porymap_pixel_rgba.size(),
+        "porytiles_pixel_rgba.size() != porymap_pixel_rgba.size()");
+    assert_or_panic(
+        porytiles_pixel_rgba.size() == porytiles_canonical_pixel_rgba.size(),
+        "porytiles_pixel_rgba.size() != porytiles_canonical_pixel_rgba.size()");
+    assert_or_panic(
+        porymap_pixel_rgba.size() == porymap_canonical_pixel_rgba.size(),
+        "porymap_pixel_rgba.size() != porymap_canonical_pixel_rgba.size()");
+
+    for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
+        const auto &porytiles_tile = porytiles_pixel_rgba[i];
+        const auto &porymap_tile = porymap_pixel_rgba[i];
+        const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba[i];
+        const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba[i];
+
+        // Porytiles component tile exactly matches Porymap component, emit original metatile entry
+        if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency)) {
+            auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
+            std::vector<std::string> pt_note{};
+            pt_note.emplace_back(
+                format_->format("EXACT MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            diag_->note("debug-porytiles", pt_note);
+        }
+        // Porytiles component tile matches Porymap component under flip transformation
+        else if (canonical_porytiles_tile.equals_ignoring_transparency(
+                     canonical_porymap_tile, extrinsic_transparency)) {
+            panic("TODO: implement canonical emit case");
+        }
+        else {
+            // TODO: for tiles:fixed pals:fixed, here we need to try computing which existing tile+pal we can use.
+
+            // Right now, we're hitting it because our Porymap assets have downconverted colors
+            // Should we have a special branch that detects this? I think not. Porytiles works with Rgba,
+            // so two diff Rgba are truly diff.
+            auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
+            std::vector<std::string> pt_note{};
+            pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            std::vector<std::string> pm_note{};
+            pm_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            std::ranges::copy(
+                tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
+                std::back_inserter(pt_note));
+            std::ranges::copy(
+                tile_printer_->print_metatile(porymap_metatiles.at(metatile_index), layer, subtile),
+                std::back_inserter(pm_note));
+            diag_->note("debug-porytiles", pt_note);
+            diag_->note("debug-porymap", pm_note);
+        }
     }
 
     panic("TODO: finish implementation");

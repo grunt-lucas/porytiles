@@ -22,6 +22,9 @@ class AsciiTilePrinter final : public TilePrinter {
     {
     }
 
+    [[nodiscard]] std::vector<std::string>
+    print_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile) const override;
+
     [[nodiscard]] std::vector<std::string> print_metatile_highlight(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
