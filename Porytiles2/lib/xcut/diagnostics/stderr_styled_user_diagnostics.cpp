@@ -12,7 +12,14 @@ namespace porytiles2 {
 
 void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
-    assert_or_panic(!lines.empty(), "lines vector was empty");
+    assert_or_panic(!lines.empty(), "lines vector is empty");
+    assert_or_panic(!tag.empty(), "tag is empty");
+
+    // print blank line if the diagnostic tag is changing
+    if (!last_seen_tag_.empty() && last_seen_tag_ != tag) {
+        std::cerr << std::endl;
+    }
+    last_seen_tag_ = tag;
     std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
@@ -23,7 +30,14 @@ void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector
 
 void StderrStyledUserDiagnostics::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
-    assert_or_panic(!lines.empty(), "lines vector was empty");
+    assert_or_panic(!lines.empty(), "lines vector is empty");
+    assert_or_panic(!tag.empty(), "tag is empty");
+
+    // print blank line if the diagnostic tag is changing
+    if (!last_seen_tag_.empty() && last_seen_tag_ != tag) {
+        std::cerr << std::endl;
+    }
+    last_seen_tag_ = tag;
     std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
@@ -34,7 +48,14 @@ void StderrStyledUserDiagnostics::warn_note(const std::string &tag, const std::v
 
 void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
-    assert_or_panic(!lines.empty(), "lines vector was empty");
+    assert_or_panic(!lines.empty(), "lines vector is empty");
+    assert_or_panic(!tag.empty(), "tag is empty");
+
+    // print blank line if the diagnostic tag is changing
+    if (!last_seen_tag_.empty() && last_seen_tag_ != tag) {
+        std::cerr << std::endl;
+    }
+    last_seen_tag_ = tag;
     std::cerr << format_->style("warning:", Style::bold | Style::magenta) << " ";
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::magenta) << "]" << std::endl;
@@ -45,7 +66,14 @@ void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector
 
 void StderrStyledUserDiagnostics::err(const std::string &tag, const std::vector<std::string> &lines) const
 {
-    assert_or_panic(!lines.empty(), "lines vector was empty");
+    assert_or_panic(!lines.empty(), "lines vector is empty");
+    assert_or_panic(!tag.empty(), "tag is empty");
+
+    // print blank line if the diagnostic tag is changing
+    if (!last_seen_tag_.empty() && last_seen_tag_ != tag) {
+        std::cerr << std::endl;
+    }
+    last_seen_tag_ = tag;
     std::cerr << format_->style("error:", Style::bold | Style::red) << " ";
     std::cerr << lines.at(0);
     std::cerr << " [" << format_->style(tag, Style::bold | Style::red) << "]" << std::endl;
@@ -61,6 +89,12 @@ void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
     // |-------- FATAL ERROR CHAIN --------|
     // |-----------------------------------|
     // or something similar
+
+    // print blank line if other errors preceded
+    if (!last_seen_tag_.empty()) {
+        std::cerr << std::endl;
+    }
+
     auto lines = err.details(*format_);
     if (!lines.empty()) {
         std::cerr << format_->style("fatal:", Style::bold | Style::red) << " ";

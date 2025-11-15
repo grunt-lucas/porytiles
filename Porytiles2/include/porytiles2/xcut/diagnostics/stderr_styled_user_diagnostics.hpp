@@ -129,6 +129,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
 
   private:
     TextFormatter *format_;
+    mutable std::string last_seen_tag_;
 };
 
 } // namespace porytiles2
