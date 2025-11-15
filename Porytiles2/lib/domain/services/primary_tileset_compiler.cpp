@@ -195,43 +195,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
      * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
      */
     ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
-    std::size_t color_count = color_index_map.size();
-    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
-
-    // Global color limit handling
-    /*
-     * TODO: we could handle this in a separate service-based step, kinda like the TileValidator service. It would be
-     * nice to give users very detailed information about their global color count when they go over. Example, we could
-     * print out a list of colors with their pixel counts, the first location of colors that went over the limit, etc.
-     * This will really help users narrow down issues when they exceed color count.
-     */
-    if (color_count > color_count_limit) {
-        // Emit error
-        diag_->err(
-            "color-limit-exceeded",
-            format_->format(
-                "too many unique colors ({}) in Porytiles component for tileset '{}'",
-                FormatParam{color_count, Style::bold},
-                FormatParam{tileset.name(), Style::bold}));
-
-        // Construct note text
-        std::vector<std::string> note_text;
-        note_text.push_back(format_->format(
-            "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
-        note_text.emplace_back("");
-        std::ranges::copy(num_pals_primary.prettify(*format_), std::back_inserter(note_text));
-        note_text.emplace_back("");
-        note_text.push_back(format_->format(
-            "Color limit definition: {} * {}: {} * {}: {}",
-            FormatParam{num_pals_primary.name(), Style::bold},
-            FormatParam{"nontransparent_colors_per_pal", Style::bold},
-            FormatParam{num_pals_primary.value(), Style::bold},
-            FormatParam{(pal::max_size - 1), Style::bold},
-            FormatParam{color_count_limit, Style::bold}));
-
-        // Emit note
-        diag_->note("color-limit-exceeded", note_text);
-    }
 
     // Create canonical ShapeTile vectors from porytiles input
     // We don't actually need this for tiles:fixed pals:fixed builds.

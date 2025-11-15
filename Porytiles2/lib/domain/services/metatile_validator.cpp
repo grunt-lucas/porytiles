@@ -14,6 +14,11 @@ namespace {
 
 using namespace porytiles2;
 
+constexpr auto metatile_limit_exceeded = "metatile-limit-exceeded";
+constexpr auto alpha_channel_violation = "alpha-channel-violation";
+constexpr auto tile_color_count_violation = "tile-color-count-violation";
+constexpr auto global_color_count_violation = "global-color-count-violation";
+
 void report_validation_error(
     const Metatile<Rgba32> &metatile,
     std::size_t metatile_index,
@@ -41,13 +46,14 @@ void report_color_counts(
     const std::map<Rgba32, unsigned int> &color_counts,
     const TextFormatter *format,
     const UserDiagnostics *diag,
+    const std::string &tag,
     const PalettePrinter *pal_printer)
 {
     std::vector<std::string> color_lines;
     color_lines.emplace_back("color counts:");
     auto counts = pal_printer->print_rgba_palette_counts(color_counts);
     std::ranges::copy(counts, std::back_inserter(color_lines));
-    diag->note("tile-color-count-violation", color_lines);
+    diag->note(tag, color_lines);
 }
 
 } // namespace
@@ -79,7 +85,7 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
                             internal_tile_index,
                             row,
                             col,
-                            "alpha-channel-violation",
+                            alpha_channel_violation,
                             error_message,
                             format_,
                             diag_,
@@ -132,12 +138,12 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
                             internal_tile_index,
                             row,
                             col,
-                            "tile-color-count-violation",
+                            tile_color_count_violation,
                             error_message,
                             format_,
                             diag_,
                             tile_printer_);
-                        report_color_counts(color_counts, format_, diag_, pal_printer_);
+                        report_color_counts(color_counts, format_, diag_, tile_color_count_violation, pal_printer_);
                         goto next_tile;
                     }
                 }
@@ -161,21 +167,28 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
 {
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
 
-    std::size_t metatile_index = 0;
+    std::map<Rgba32, unsigned int> color_counts;
     for (const auto &metatile : metatiles) {
-        const auto tiles = metatile.decompose();
-        for (std::size_t internal_tile_index = 0; internal_tile_index < tiles.size(); ++internal_tile_index) {
-            const auto &tile = tiles[internal_tile_index];
-            // TODO: implement
-            std::ignore = tile.unique_nontransparent_colors(extrinsic_transparency.value());
+        for (const auto tiles = metatile.decompose(); const auto &tile : tiles) {
+            auto tile_colors = tile.unique_nontransparent_colors(extrinsic_transparency.value());
+            for (const auto &color : tile_colors) {
+                color_counts[color]++;
+            }
         }
     }
-    /*
-     * TODO: It would be nice to give users very detailed information about their global color count when they go over.
-     * Example, we could print out a list of colors with their pixel counts, the first location of colors that went over
-     * the limit, etc. This will really help users narrow down issues when they exceed color count.
-     */
-    std::ignore = count_limit;
+    if (color_counts.size() > count_limit) {
+        diag_->err(
+            global_color_count_violation,
+            format_->format(
+                "global color count violation: found '{}' unique colors, limit is '{}'",
+                FormatParam{color_counts.size(), Style::bold},
+                FormatParam{count_limit, Style::bold}));
+        report_color_counts(color_counts, format_, diag_, global_color_count_violation, pal_printer_);
+        return FormattableError{
+            "global color count violation: found '{}' unique colors, limit is '{}'",
+            FormatParam{color_counts.size(), Style::bold},
+            FormatParam{count_limit, Style::bold}};
+    }
     return {};
 }
 
@@ -197,7 +210,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     // Run metatile count validation
     if (metatiles.size() > num_metatiles_primary) {
         diag_->err(
-            "metatile-limit-exceeded",
+            metatile_limit_exceeded,
             format_->format(
                 "too many metatiles ({}) in Porytiles component for tileset '{}'",
                 FormatParam{metatiles.size(), Style::bold},
@@ -211,7 +224,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
         std::ranges::copy(num_metatiles_primary.prettify(*format_), std::back_inserter(note_text));
 
         // Emit note
-        diag_->note("metatile-limit-exceeded", note_text);
+        diag_->note(metatile_limit_exceeded, note_text);
 
         // Push back error message to fatal chain
         error_messages.push_back(format_->format(
@@ -242,6 +255,23 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
     auto global_color_result = validate_global_color_count(metatiles, color_count_limit);
     if (!global_color_result.has_value()) {
+        // Construct note text
+        std::vector<std::string> note_text;
+        note_text.push_back(format_->format(
+            "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
+        note_text.emplace_back("");
+        std::ranges::copy(num_pals_primary.prettify(*format_), std::back_inserter(note_text));
+        note_text.emplace_back("");
+        note_text.push_back(format_->format(
+            "Color limit definition: {} * {}: {} * {}: {}",
+            FormatParam{num_pals_primary.name(), Style::bold},
+            FormatParam{"nontransparent_colors_per_pal", Style::bold},
+            FormatParam{num_pals_primary.value(), Style::bold},
+            FormatParam{(pal::max_size - 1), Style::bold},
+            FormatParam{color_count_limit, Style::bold}));
+
+        // Emit note
+        diag_->note(global_color_count_violation, note_text);
         error_messages.push_back(global_color_result.error().join(*format_));
     }
 
