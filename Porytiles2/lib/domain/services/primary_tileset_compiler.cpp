@@ -194,14 +194,15 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     /*
      * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
      */
-    ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
+    // ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
 
-    // Create canonical ShapeTile vectors from porytiles input
-    // We don't actually need this for tiles:fixed pals:fixed builds.
-    // But if we were going to do pal assignment, we'd need std::vector<CanonicalShapeTile<ColorIndex>>.
-    // If pals weren't fixed, here we'd want to do bin packing to get new colors into the pals with the Porymap pals
-    // used as overrides in the packing process.
-    //
+    /*
+     * Create canonical ShapeTile vectors from porytiles input. Create canonical ShapeTile vectors from porytiles input.
+     * We don't actually need this for tiles:fixed pals:fixed builds. We don't actually need this for tiles:fixed
+     * pals:fixed builds. But if we were going to do pal assignment, we'd need
+     * std::vector<CanonicalShapeTile<ColorIndex>>. If pals weren't fixed, here we'd want to do bin packing to get new
+     * colors into the pals with the Porymap pals used as overrides in the packing process.
+     */
     // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
     //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
     //         return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
@@ -211,7 +212,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    // TODO: Copy in the Porymap pals then normalize transparency
+    // TODO: Copy in the Porymap pals
+    // TODO: import command should have already normalized transparency in slot 0 to extrinsic_transparency
+    // TODO: need a PaletteValidator that throws warning if slot 0 doesn't match current extrinsic_transparency
+    // TODO: after throwing warning, if slot 0 isn't extrinsic_transparency, overwrite it
     std::vector<unsigned int> pal_indexes;
     std::vector<Palette<Rgba32>> porymap_pals{};
     porymap_pals.reserve(num_pals_primary.value());

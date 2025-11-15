@@ -343,6 +343,22 @@ JSON example:
 }
 ```
 
+## Find Tileset Color
+Given a color, print all locations of that color in a tileset.
+
+This command will be really useful for debugging purposes,
+allowing users to quickly locate stray pixels or iterate on compilation error messages.
+
+### CLI Invocation
+```sh
+porytiles2 find-tileset-color MyPrimaryTileset 234,21,97
+```
+
+### Outputs
+Print out fancy metatile ASCII art with X-marks-the-spot on all locations of the given color.
+Porytiles will do one printout for each metatile containing the color.
+Limit the output to 10 metatiles, configurable.
+
 ## Create Layout
 TODO
 
