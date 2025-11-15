@@ -18,6 +18,11 @@ namespace porytiles2 {
  * 3. Diagnostic tag include and exclude filters
  * 4. Diagnostic tag settable limits: stop showing diagnostics with a given tag when a limit is hit
  */
+/*
+ * TODO: add configurable tag filtering handling here. Handle in the UserDiagnostics interface? Or handle it here
+ * in the implementation? We want to have an include-list and exclude-list of tags. Make them regex-able? Lots of
+ * questions to answer.
+ */
 
 /**
  * @brief Concrete implementation of UserDiagnostics that outputs structured messages to stderr, optionally with colored

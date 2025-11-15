@@ -10,6 +10,7 @@
 
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
@@ -19,6 +20,7 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -33,6 +35,7 @@
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
+#include "porytiles2/infra/services/color_palette_printer.hpp"
 
 class DebugPrimaryCompileCommand final : public Command {
   public:
@@ -74,6 +77,7 @@ class DebugPrimaryCompileCommand final : public Command {
         auto extrinsic_transparency = std::move(extrinsic_transparency_result).value();
         std::unique_ptr<TilePrinter> tile_printer =
             std::make_unique<AsciiTilePrinter>(text_formatter, extrinsic_transparency);
+        std::unique_ptr<PalettePrinter> pal_printer = std::make_unique<ColorPalettePrinter>(text_formatter);
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
@@ -84,7 +88,7 @@ class DebugPrimaryCompileCommand final : public Command {
         JascPalSaver jasc_saver{};
 
         // Setup primary compiler
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get()};
+        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};

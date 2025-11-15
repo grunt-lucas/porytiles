@@ -39,7 +39,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_, config_, tileset.name()};
+    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
     // Grab configuration values we'll need
@@ -137,7 +137,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_, config_, tileset.name()};
+    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
 

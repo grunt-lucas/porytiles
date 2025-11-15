@@ -1,38 +1,53 @@
 #include "porytiles2/domain/services/metatile_validator.hpp"
 
-#include <unordered_set>
+#include <map>
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/utilities/count_map_to_list.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace {
 
+using namespace porytiles2;
+
 void report_validation_error(
-    const porytiles2::Metatile<porytiles2::Rgba32> &metatile,
+    const Metatile<Rgba32> &metatile,
     std::size_t metatile_index,
     std::size_t internal_tile_index,
     std::size_t row,
     std::size_t col,
     const std::string &diagnostic_code,
     const std::string &error_message,
-    const porytiles2::TextFormatter *format,
-    const porytiles2::UserDiagnostics *diag,
-    const porytiles2::TilePrinter *tile_printer)
+    const TextFormatter *format,
+    const UserDiagnostics *diag,
+    const TilePrinter *tile_printer)
 {
-    auto [layer, subtile] = porytiles2::metatile::from_internal_tile_index(internal_tile_index);
+    auto [layer, subtile] = metatile::from_internal_tile_index(internal_tile_index);
     std::vector errors = {format->format(
         "{}: {}",
-        porytiles2::FormatParam{
-            porytiles2::metatile::message_header(metatile_index, layer, subtile, row, col, *format)},
-        porytiles2::FormatParam{error_message})};
+        FormatParam{porytiles2::metatile::message_header(metatile_index, layer, subtile, row, col, *format)},
+        FormatParam{error_message})};
     errors.emplace_back("");
     std::vector highlight = tile_printer->print_metatile_highlight(metatile, layer, subtile, row, col);
     std::ranges::copy(highlight, std::back_inserter(errors));
     diag->err(diagnostic_code, errors);
+}
+
+void report_color_counts(
+    const std::map<Rgba32, unsigned int> &color_counts,
+    const TextFormatter *format,
+    const UserDiagnostics *diag,
+    const PalettePrinter *pal_printer)
+{
+    std::vector<std::string> color_lines;
+    color_lines.emplace_back("color counts:");
+    auto counts = pal_printer->print_rgba_palette_counts(color_counts);
+    std::ranges::copy(counts, std::back_inserter(color_lines));
+    diag->note("tile-color-count-violation", color_lines);
 }
 
 } // namespace
@@ -95,17 +110,17 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
         // Iterate over each internal tile
         for (std::size_t internal_tile_index = 0; internal_tile_index < tiles.size(); ++internal_tile_index) {
             const auto &tile = tiles[internal_tile_index];
-            std::unordered_set<Rgba32> unique_colors;
+            std::map<Rgba32, unsigned int> color_counts;
 
             // Iterate over each pixel in the current internal tile
             for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
                 for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
                     const auto &pixel = tile.at(row, col);
                     if (pixel.alpha() != Rgba32::alpha_transparent && pixel != extrinsic_transparency.value()) {
-                        unique_colors.insert(pixel);
+                        color_counts[pixel]++;
                     }
 
-                    if (unique_colors.size() > pal::max_size - 1) {
+                    if (color_counts.size() > pal::max_size - 1) {
                         hit_error = true;
                         std::string error_message = format_->format(
                             "found {}th unique color: {}",
@@ -122,7 +137,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
                             format_,
                             diag_,
                             tile_printer_);
-                        // TODO: add a printout that shows the tile's colors and color counts
+                        report_color_counts(color_counts, format_, diag_, pal_printer_);
                         goto next_tile;
                     }
                 }

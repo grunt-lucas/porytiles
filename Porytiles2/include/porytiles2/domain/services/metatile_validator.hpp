@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gsl/pointers"
@@ -8,6 +9,7 @@
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -26,9 +28,11 @@ class MetatileValidator {
         gsl::not_null<TextFormatter *> format,
         gsl::not_null<UserDiagnostics *> diag,
         gsl::not_null<TilePrinter *> tile_printer,
+        gsl::not_null<PalettePrinter *> pal_printer,
         gsl::not_null<DomainConfig *> config,
-        const std::string &tileset_scope)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, config_{config}, tileset_scope_{tileset_scope}
+        std::string tileset_scope)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config},
+          tileset_scope_{std::move(tileset_scope)}
     {
     }
 
@@ -48,6 +52,7 @@ class MetatileValidator {
     TextFormatter *format_;
     UserDiagnostics *diag_;
     TilePrinter *tile_printer_;
+    PalettePrinter *pal_printer_;
     DomainConfig *config_;
     std::string tileset_scope_;
 };

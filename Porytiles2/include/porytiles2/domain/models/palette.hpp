@@ -33,10 +33,19 @@ inline constexpr std::size_t num_pals = 16;
 template <SupportsTransparency ColorType>
 class Palette {
   public:
+    /**
+     * @brief Default constructs an empty Palette.
+     */
     Palette() = default;
 
     /**
-     * @brief Constructs a palette filled with a single color.
+     * @brief Construct this palette with a given color vector.
+     * @param colors The color vector
+     */
+    explicit Palette(std::vector<ColorType> colors) : colors_(std::move(colors)) {}
+
+    /**
+     * @brief Constructs a Palette filled with a single color.
      *
      * @details
      * Creates a palette containing 16 copies of the provided color. This is useful for creating uniform palettes or
