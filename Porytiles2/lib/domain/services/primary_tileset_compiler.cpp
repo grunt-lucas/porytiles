@@ -265,12 +265,14 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             std::vector<std::string> pm_note{};
             pm_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            std::ranges::copy(
-                tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
-                std::back_inserter(pt_note));
-            std::ranges::copy(
-                tile_printer_->print_metatile(porymap_metatiles.at(metatile_index), layer, subtile),
-                std::back_inserter(pm_note));
+            // std::ranges::copy(
+            //     tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
+            //     std::back_inserter(pt_note));
+            // std::ranges::copy(
+            //     tile_printer_->print_metatile(porymap_metatiles.at(metatile_index), layer, subtile),
+            //     std::back_inserter(pm_note));
+            std::ranges::copy(tile_printer_->print_tile(canonical_porytiles_tile), std::back_inserter(pt_note));
+            std::ranges::copy(tile_printer_->print_tile(canonical_porymap_tile), std::back_inserter(pm_note));
             diag_->note("debug-porytiles", pt_note);
             diag_->note("debug-porymap", pm_note);
         }

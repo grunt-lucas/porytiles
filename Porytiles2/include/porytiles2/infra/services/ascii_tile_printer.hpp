@@ -38,6 +38,8 @@ class AsciiTilePrinter final : public TilePrinter {
         metatile::Subtile subtile,
         const std::vector<std::size_t> &indexes) const override;
 
+    [[nodiscard]] std::vector<std::string> print_tile(const PixelTile<Rgba32> &tile) const override;
+
     [[nodiscard]] std::vector<std::string>
     print_tile_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const override;
 

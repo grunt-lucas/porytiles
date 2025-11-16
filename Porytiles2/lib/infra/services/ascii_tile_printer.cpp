@@ -68,12 +68,12 @@ std::vector<std::string> render_tile_with_highlights(
             const auto color_style_fg = rgba_to_fg_style(pixel_color);
             if (highlight_coords.contains({row, col})) {
                 const auto styled_x =
-                    format->format("{}", porytiles2::FormatParam{"X", porytiles2::Style::bold | color_style_fg});
+                    format->format("{}", porytiles2::FormatParam{"◢◣", porytiles2::Style::bold | color_style_fg});
                 ss << styled_x;
             }
             else {
                 const auto styled_star =
-                    format->format("{}", porytiles2::FormatParam{" ", porytiles2::Style::bold | color_style_bg});
+                    format->format("{}", porytiles2::FormatParam{"  ", porytiles2::Style::bold | color_style_bg});
                 ss << styled_star;
             }
         }
@@ -250,6 +250,11 @@ std::vector<std::string> AsciiTilePrinter::print_metatile_highlights(
         coords.insert(tile::index_to_row_col(index));
     }
     return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency_, format_);
+}
+
+std::vector<std::string> AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &tile) const
+{
+    return render_tile_with_highlights(tile, {}, extrinsic_transparency_, format_);
 }
 
 std::vector<std::string>
