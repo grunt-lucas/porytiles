@@ -217,15 +217,15 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    // TODO: Copy in the Porymap pals
     // TODO: import command should have already normalized transparency in slot 0 to extrinsic_transparency
-    // TODO: need a PaletteValidator that throws warning if slot 0 doesn't match current extrinsic_transparency
-    // TODO: after throwing warning, if slot 0 isn't extrinsic_transparency, overwrite it
-    std::vector<unsigned int> pal_indexes;
+    // TODO: PaletteValidator: throw error if pal isn't size 16
+    // TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency
     std::vector<Palette<Rgba32>> porymap_pals{};
     porymap_pals.reserve(num_pals_primary.value());
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
-        porymap_pals.push_back(tileset.porymap_component().pals()[i]);
+        auto pal_copy = tileset.porymap_component().pals()[i];
+        pal_copy.set(extrinsic_transparency, 0);
+        porymap_pals.push_back(pal_copy);
     }
 
     // Precondition: all these decomposed tile vectors have the same size
@@ -240,19 +240,13 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         "porymap_pixel_rgba.size() != porymap_canonical_pixel_rgba.size()");
 
     TilesPngWorkspace tiles_workspace{tileset.porymap_component().tiles_png(), num_tiles_primary};
-    std::vector<std::string> test_note{};
-    test_note.emplace_back("");
-    std::ranges::copy(
-        tile_printer_->print_tile(index_tile_to_color_tile(tiles_workspace.tile_at(9), porymap_pals.at(5))),
-        std::back_inserter(test_note));
-    diag_->note("debug-note", test_note);
     for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba[i];
         const auto &porymap_tile = porymap_pixel_rgba[i];
         const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba[i];
         const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba[i];
 
-        // Porytiles component tile exactly matches Porymap component, emit original metatile entry
+        // CASE: Porytiles component tile exactly matches Porymap component, emit original metatile entry
         if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency)) {
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
             std::vector<std::string> pt_note{};
@@ -260,17 +254,18 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
                 format_->format("EXACT MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             diag_->note("debug-porytiles", pt_note);
         }
-        // Porytiles component tile matches Porymap component under flip transformation
+        // CASE: Porytiles component tile matches Porymap component under flip transformation
         else if (canonical_porytiles_tile.equals_ignoring_transparency(
                      canonical_porymap_tile, extrinsic_transparency)) {
-            panic("TODO: implement canonical emit case");
+            auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
+            std::vector<std::string> pt_note{};
+            pt_note.emplace_back(
+                format_->format("FLIP-ISO MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            diag_->note("debug-porytiles", pt_note);
         }
+        // CASE: New tile, compute which pal to use, compute (or create) tile to use
         else {
             // TODO: for tiles:fixed pals:fixed, here we need to try computing which existing tile+pal we can use.
-
-            // Right now, we're hitting it because our Porymap assets have downconverted colors
-            // Should we have a special branch that detects this? I think not. Porytiles works with Rgba,
-            // so two diff Rgba are truly diff.
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
             std::vector<std::string> pt_note{};
             pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
@@ -290,6 +285,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     }
 
     panic("TODO: finish implementation");
+
+    // TODO: create output pals:
+    // - pal 0 to (num_pals_primary - 1) copied in from our porymap_pals vec
+    // - pal num_pals_primary to (num_pals_total - 1) copied over from the original component pals
 }
 
 } // namespace porytiles2
