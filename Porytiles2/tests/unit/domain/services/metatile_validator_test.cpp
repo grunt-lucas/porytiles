@@ -6,6 +6,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/metatile_validator.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
@@ -121,8 +122,9 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
+    ColorPalettePrinter palette_printer{&formatter};
     MockDomainConfig config{};
-    MetatileValidator validator{&formatter, &diag, &tile_printer, &config, "test_tileset"};
+    MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
 
     auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);
 
@@ -167,8 +169,9 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
+    ColorPalettePrinter palette_printer{&formatter};
     MockDomainConfig config{};
-    MetatileValidator validator{&formatter, &diag, &tile_printer, &config, "test_tileset"};
+    MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
 
     auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);
 

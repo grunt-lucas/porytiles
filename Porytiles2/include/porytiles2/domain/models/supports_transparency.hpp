@@ -18,8 +18,8 @@ namespace porytiles2 {
  *
  * **Design Invariant:** Types implementing this concept should default-construct to their transparent representation.
  * That is, `T{}` should produce a transparent pixel value. This enables generic code to create transparent pixels
- * without knowing the specific pixel type (e.g., `Rgba32{0,0,0,0}` and `IndexPixel{0}` both default-construct to
- * transparent values).
+ * without knowing the specific pixel type (e.g., `Rgba32{}` and `IndexPixel{}` both default-construct to transparent
+ * values).
  */
 template <typename T>
 concept SupportsTransparency = requires(const T &t) {

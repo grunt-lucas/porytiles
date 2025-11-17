@@ -68,7 +68,7 @@ std::vector<std::string> render_tile_with_highlights(
             const auto color_style_fg = rgba_to_fg_style(pixel_color);
             if (highlight_coords.contains({row, col})) {
                 const auto styled_x =
-                    format->format("{}", porytiles2::FormatParam{"◢◣", porytiles2::Style::bold | color_style_fg});
+                    format->format("{}", porytiles2::FormatParam{"◀▶", porytiles2::Style::bold | color_style_fg});
                 ss << styled_x;
             }
             else {
@@ -181,7 +181,7 @@ std::vector<std::string> render_metatile_with_highlights(
                 // In target subtile: show X for highlights,blank* for others (both bold)
                 if (highlight_coords.contains({subtile_row, subtile_col})) {
                     const auto styled_x =
-                        format->format("{}", porytiles2::FormatParam{"◢◣", porytiles2::Style::bold | color_style_fg});
+                        format->format("{}", porytiles2::FormatParam{"◀▶", porytiles2::Style::bold | color_style_fg});
                     ss << styled_x;
                 }
                 else {

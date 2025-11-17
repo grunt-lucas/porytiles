@@ -1,5 +1,7 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
+#include "porytiles2/domain/algorithms/palette_matchers.hpp"
+
 #include <array>
 #include <memory>
 #include <ranges>
@@ -13,6 +15,7 @@
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
@@ -147,6 +150,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
 
     // Read Porytiles layer images and decompose into tile vectors
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -235,6 +239,13 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         porymap_pixel_rgba.size() == porymap_canonical_pixel_rgba.size(),
         "porymap_pixel_rgba.size() != porymap_canonical_pixel_rgba.size()");
 
+    TilesPngWorkspace tiles_workspace{tileset.porymap_component().tiles_png(), num_tiles_primary};
+    std::vector<std::string> test_note{};
+    test_note.emplace_back("");
+    std::ranges::copy(
+        tile_printer_->print_tile(index_tile_to_color_tile(tiles_workspace.tile_at(9), porymap_pals.at(5))),
+        std::back_inserter(test_note));
+    diag_->note("debug-note", test_note);
     for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba[i];
         const auto &porymap_tile = porymap_pixel_rgba[i];

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <set>
 
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -184,6 +185,48 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
 
     return details::match_tile_to_palette_impl(
         tile, palette, [&extrinsic](const ColorType &c) { return c.is_transparent(extrinsic); });
+}
+
+/**
+ * @brief Converts a PixelTile<IndexPixel> to a PixelTile<ColorType> using a palette.
+ *
+ * @details
+ * This function takes an indexed tile (where each pixel contains a palette index) and converts it to a color tile by
+ * looking up the actual color for each index in the provided palette. Each pixel's index value is used to retrieve the
+ * corresponding color from the palette's color vector.
+ *
+ * @tparam ColorType The color type of the palette and output tile
+ * @param index_tile The PixelTile containing IndexPixel values to convert
+ * @param palette The Palette containing the colors to look up
+ * @pre palette is not empty
+ * @pre All indices in index_tile are within the bounds of the palette [0, palette.size())
+ * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index in index_tile
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] PixelTile<ColorType>
+index_tile_to_color_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette)
+{
+    if (palette.size() == 0) {
+        panic("palette is empty");
+    }
+
+    const auto &palette_colors = palette.colors();
+    std::array<ColorType, tile::size_pix> color_pixels;
+
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        const auto &index_pixel = index_tile.at(i);
+        const unsigned int index = index_pixel.index();
+
+        if (index >= palette_colors.size()) {
+            panic(
+                "index " + std::to_string(index) + " out of palette bounds [0, " +
+                std::to_string(palette_colors.size()) + ")");
+        }
+
+        color_pixels[i] = palette_colors.at(index);
+    }
+
+    return PixelTile<ColorType>{color_pixels};
 }
 
 /**

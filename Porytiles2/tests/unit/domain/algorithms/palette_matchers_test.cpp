@@ -728,3 +728,251 @@ TEST(MatchOrBestTest, InvariantCheck_FirstElementIndicatesAllElements)
         EXPECT_FALSE(result.is_covered);
     }
 }
+
+// ===========================
+// index_tile_to_color_tile Tests
+// ===========================
+
+TEST(IndexTileToColorTileTest, BasicConversion)
+{
+    // Arrange: Create a simple indexed tile and palette
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{0}); // Maps to rgba_magenta
+    index_tile.set(0, 1, IndexPixel{1}); // Maps to rgba_red
+    index_tile.set(0, 2, IndexPixel{2}); // Maps to rgba_green
+    index_tile.set(1, 0, IndexPixel{3}); // Maps to rgba_blue
+
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta);
+    palette.add(rgba_red);
+    palette.add(rgba_green);
+    palette.add(rgba_blue);
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify colors are correctly mapped
+    EXPECT_EQ(color_tile.at(0, 0), rgba_magenta);
+    EXPECT_EQ(color_tile.at(0, 1), rgba_red);
+    EXPECT_EQ(color_tile.at(0, 2), rgba_green);
+    EXPECT_EQ(color_tile.at(1, 0), rgba_blue);
+}
+
+TEST(IndexTileToColorTileTest, MultipleDifferentColors)
+{
+    // Arrange: Create a tile with various colors from palette
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, IndexPixel{1});  // Linear index 0
+    index_tile.set(5, IndexPixel{2});  // Linear index 5
+    index_tile.set(10, IndexPixel{3}); // Linear index 10
+    index_tile.set(63, IndexPixel{4}); // Linear index 63 (last pixel)
+
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta);
+    palette.add(rgba_red);
+    palette.add(rgba_green);
+    palette.add(rgba_blue);
+    palette.add(rgba_yellow);
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify specific positions have correct colors
+    EXPECT_EQ(color_tile.at(0), rgba_red);
+    EXPECT_EQ(color_tile.at(5), rgba_green);
+    EXPECT_EQ(color_tile.at(10), rgba_blue);
+    EXPECT_EQ(color_tile.at(63), rgba_yellow);
+}
+
+TEST(IndexTileToColorTileTest, DuplicateIndices)
+{
+    // Arrange: Create a tile where the same index is used multiple times
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{1}); // red
+    index_tile.set(0, 1, IndexPixel{1}); // red
+    index_tile.set(0, 2, IndexPixel{1}); // red
+    index_tile.set(1, 0, IndexPixel{2}); // green
+    index_tile.set(1, 1, IndexPixel{2}); // green
+    index_tile.set(2, 0, IndexPixel{1}); // red
+
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta);
+    palette.add(rgba_red);
+    palette.add(rgba_green);
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify all duplicate indices map to the same color
+    EXPECT_EQ(color_tile.at(0, 0), rgba_red);
+    EXPECT_EQ(color_tile.at(0, 1), rgba_red);
+    EXPECT_EQ(color_tile.at(0, 2), rgba_red);
+    EXPECT_EQ(color_tile.at(1, 0), rgba_green);
+    EXPECT_EQ(color_tile.at(1, 1), rgba_green);
+    EXPECT_EQ(color_tile.at(2, 0), rgba_red);
+}
+
+TEST(IndexTileToColorTileTest, CorrectColorMappingAllPixels)
+{
+    // Arrange: Create a tile with a pattern across all 64 pixels
+    PixelTile<IndexPixel> index_tile{};
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta); // Index 0
+    palette.add(rgba_red);     // Index 1
+    palette.add(rgba_green);   // Index 2
+    palette.add(rgba_blue);    // Index 3
+
+    // Fill tile with repeating pattern: 0, 1, 2, 3, 0, 1, 2, 3, ...
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        index_tile.set(i, IndexPixel{static_cast<unsigned int>(i % 4)});
+    }
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify the pattern is correctly mapped
+    const std::array<Rgba32, 4> expected_colors = {rgba_magenta, rgba_red, rgba_green, rgba_blue};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        EXPECT_EQ(color_tile.at(i), expected_colors[i % 4]);
+    }
+}
+
+TEST(IndexTileToColorTileTest, EmptyPalette_Panics)
+{
+    // Arrange: Create an indexed tile and an empty palette
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{0});
+
+    Palette<Rgba32> palette{}; // Empty palette
+
+    // Act & Assert: Should panic when palette is empty
+    EXPECT_DEATH({ std::ignore = index_tile_to_color_tile(index_tile, palette); }, "palette is empty");
+}
+
+TEST(IndexTileToColorTileTest, OutOfBoundsIndex_Panics)
+{
+    // Arrange: Create a tile with an index that exceeds palette size
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{0});
+    index_tile.set(0, 1, IndexPixel{5}); // Out of bounds!
+
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta);
+    palette.add(rgba_red);
+    palette.add(rgba_green);
+    // Palette size is 3, but we're trying to access index 5
+
+    // Act & Assert: Should panic when index is out of bounds
+    EXPECT_DEATH({ std::ignore = index_tile_to_color_tile(index_tile, palette); }, "index 5 out of palette bounds");
+}
+
+TEST(IndexTileToColorTileTest, FullyPopulatedPalette)
+{
+    // Arrange: Create a palette with all 16 color slots filled
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta); // Index 0
+    palette.add(rgba_red);     // Index 1
+    palette.add(rgba_green);   // Index 2
+    palette.add(rgba_blue);    // Index 3
+    palette.add(rgba_yellow);  // Index 4
+
+    // Fill remaining slots with generated colors
+    for (std::size_t i = 5; i < pal::max_size; ++i) {
+        palette.add(
+            Rgba32{
+                static_cast<std::uint8_t>(i * 10),
+                static_cast<std::uint8_t>(i * 15),
+                static_cast<std::uint8_t>(i * 20)});
+    }
+
+    // Create a tile using all palette indices
+    PixelTile<IndexPixel> index_tile{};
+    for (std::size_t i = 0; i < pal::max_size; ++i) {
+        index_tile.set(i, IndexPixel{static_cast<unsigned int>(i)});
+    }
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify all 16 colors are correctly mapped
+    EXPECT_EQ(color_tile.at(0), rgba_magenta);
+    EXPECT_EQ(color_tile.at(1), rgba_red);
+    EXPECT_EQ(color_tile.at(2), rgba_green);
+    EXPECT_EQ(color_tile.at(3), rgba_blue);
+    EXPECT_EQ(color_tile.at(4), rgba_yellow);
+
+    // Check a generated color
+    EXPECT_EQ(color_tile.at(5), (Rgba32{50, 75, 100}));
+}
+
+TEST(IndexTileToColorTileTest, TransparencyAtIndex0)
+{
+    // Arrange: Create a palette with transparency at index 0 (standard pattern)
+    Palette<Rgba32> palette{};
+    palette.add(rgba_magenta); // Index 0 - extrinsic transparency
+    palette.add(rgba_red);     // Index 1
+    palette.add(rgba_green);   // Index 2
+
+    // Create a tile with some pixels using index 0 (transparent)
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{0}); // Transparent pixel
+    index_tile.set(0, 1, IndexPixel{1}); // Red pixel
+    index_tile.set(0, 2, IndexPixel{0}); // Transparent pixel
+    index_tile.set(1, 0, IndexPixel{2}); // Green pixel
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify transparency color is correctly mapped
+    EXPECT_EQ(color_tile.at(0, 0), rgba_magenta);
+    EXPECT_EQ(color_tile.at(0, 1), rgba_red);
+    EXPECT_EQ(color_tile.at(0, 2), rgba_magenta);
+    EXPECT_EQ(color_tile.at(1, 0), rgba_green);
+}
+
+TEST(IndexTileToColorTileTest, SingleColorPalette)
+{
+    // Arrange: Create a palette with only one color
+    Palette<Rgba32> palette{};
+    palette.add(rgba_red);
+
+    // Create a tile where all used pixels have index 0
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, 0, IndexPixel{0});
+    index_tile.set(1, 1, IndexPixel{0});
+    index_tile.set(2, 2, IndexPixel{0});
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: All pixels should map to the single palette color
+    EXPECT_EQ(color_tile.at(0, 0), rgba_red);
+    EXPECT_EQ(color_tile.at(1, 1), rgba_red);
+    EXPECT_EQ(color_tile.at(2, 2), rgba_red);
+}
+
+TEST(IndexTileToColorTileTest, BoundaryIndexValues)
+{
+    // Arrange: Test with boundary index values (0 and max_size-1)
+    Palette<Rgba32> palette{};
+    for (std::size_t i = 0; i < pal::max_size; ++i) {
+        palette.add(
+            Rgba32{
+                static_cast<std::uint8_t>(i * 16),
+                static_cast<std::uint8_t>(i * 16),
+                static_cast<std::uint8_t>(i * 16)});
+    }
+
+    PixelTile<IndexPixel> index_tile{};
+    index_tile.set(0, IndexPixel{0});                 // Minimum valid index
+    index_tile.set(1, IndexPixel{pal::max_size - 1}); // Maximum valid index
+    index_tile.set(2, IndexPixel{pal::max_size / 2}); // Middle index
+
+    // Act: Convert index tile to color tile
+    auto color_tile = index_tile_to_color_tile(index_tile, palette);
+
+    // Assert: Verify boundary values are handled correctly
+    EXPECT_EQ(color_tile.at(0), (Rgba32{0, 0, 0}));
+    EXPECT_EQ(color_tile.at(1), (Rgba32{240, 240, 240}));
+    EXPECT_EQ(color_tile.at(2), (Rgba32{128, 128, 128}));
+}
