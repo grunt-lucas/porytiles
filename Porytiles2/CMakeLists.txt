@@ -44,18 +44,9 @@ set(CONFIG_SCHEMA
         ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_schema.yaml
 )
 
-set(CONFIG_TEMPLATES
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/domain_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/app_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/infra_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/lazy_layered_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/lazy_layered_config.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.cpp.jinja2
+# Glob all template files in the config_templates directory
+file(GLOB CONFIG_TEMPLATES
+        "${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/*.jinja2"
 )
 
 # Generate config files before building
