@@ -260,15 +260,18 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
         note_text.push_back(format_->format(
             "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(num_pals_primary.prettify(*format_), std::back_inserter(note_text));
-        note_text.emplace_back("");
+        note_text.push_back("Color limit definition:");
         note_text.push_back(format_->format(
-            "Color limit definition: {} * {}: {} * {}: {}",
-            FormatParam{num_pals_primary.name(), Style::bold},
-            FormatParam{"nontransparent_colors_per_pal", Style::bold},
-            FormatParam{num_pals_primary.value(), Style::bold},
+            "{} * {}:",
+            FormatParam{num_pals_primary.name(), Style::bold | Style::yellow},
+            FormatParam{"nontransparent_colors_per_pal", Style::bold}));
+        note_text.push_back(format_->format(
+            "{} * {} = {}",
+            FormatParam{num_pals_primary.value(), Style::bold | Style::yellow},
             FormatParam{(pal::max_size - 1), Style::bold},
             FormatParam{color_count_limit, Style::bold}));
+        note_text.emplace_back("");
+        std::ranges::copy(num_pals_primary.prettify(*format_), std::back_inserter(note_text));
 
         // Emit note
         diag_->note(global_color_count_violation, note_text);

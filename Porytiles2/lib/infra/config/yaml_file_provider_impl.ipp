@@ -112,7 +112,7 @@ std::vector<std::string> make_source_details(
     // Build contextual view
     for (std::size_t i = start; i < end; ++i) {
         const auto formatted_arrow =
-            format->format("{}", FormatParam{"-> ", Style::bold | Style::italic | Style::yellow});
+            format->format("{}", FormatParam{"➞  ", Style::bold | Style::italic | Style::yellow});
         const std::string prefix = (i == line_num) ? formatted_arrow : "   ";
 
         if (i == line_num) {
