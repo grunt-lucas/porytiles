@@ -233,6 +233,78 @@ class Metatile {
     }
 
     /**
+     * @brief Infers the layer mode (dual or triple) based on metatile content (intrinsic transparency only).
+     *
+     * @details
+     * A metatile uses triple-layer mode if all three layers contain at least one non-transparent pixel.
+     * Otherwise, it uses dual-layer mode. This overload uses intrinsic transparency checking.
+     *
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    [[nodiscard]] LayerMode infer_layer_mode() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        return infer_layer_mode_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
+    }
+
+    /**
+     * @brief Infers the layer mode (dual or triple) based on metatile content.
+     *
+     * @details
+     * A metatile uses triple-layer mode if all three layers contain at least one non-transparent pixel.
+     * Otherwise, it uses dual-layer mode. This overload uses both intrinsic and extrinsic transparency checking.
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    [[nodiscard]] LayerMode infer_layer_mode(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        return infer_layer_mode_impl([&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
+    }
+
+    /**
+     * @brief Infers the layer type based on which layers contain content (intrinsic transparency only).
+     *
+     * @details
+     * Determines which layers (bottom, middle, top) are active for rendering based on content:
+     * - Triple-layer mode always returns LayerType::normal
+     * - For dual-layer mode, determines the layer type based on which layers have content:
+     *   - Bottom only → covered
+     *   - Bottom + middle → covered
+     *   - Bottom + top → split
+     *   - All other combinations → normal
+     *
+     * @return The inferred LayerType
+     */
+    [[nodiscard]] LayerType infer_layer_type() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        return infer_layer_type_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
+    }
+
+    /**
+     * @brief Infers the layer type based on which layers contain content.
+     *
+     * @details
+     * Determines which layers (bottom, middle, top) are active for rendering based on content:
+     * - Triple-layer mode always returns LayerType::normal
+     * - For dual-layer mode, determines the layer type based on which layers have content:
+     *   - Bottom only → covered
+     *   - Bottom + middle → covered
+     *   - Bottom + top → split
+     *   - All other combinations → normal
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return The inferred LayerType
+     */
+    [[nodiscard]] LayerType infer_layer_type(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        return infer_layer_type_impl([&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
+    }
+
+    /**
      * @brief Get a constant reference to a PixelTile from the bottom layer.
      *
      * @details
@@ -374,6 +446,93 @@ class Metatile {
     }
 
   private:
+    /**
+     * @brief Helper method to check if a layer has any non-transparent content.
+     *
+     * @details
+     * Checks if at least one tile in the given layer array contains at least one non-transparent pixel.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param layer The layer array to check
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return True if the layer has any non-transparent content, false otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] bool layer_has_content(
+        const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &layer,
+        TransparencyPredicate is_transparent_pred) const
+    {
+        return std::ranges::any_of(layer, [&is_transparent_pred](const auto &tile) {
+            return std::ranges::any_of(
+                tile.pix(), [&is_transparent_pred](const auto &pixel) { return !is_transparent_pred(pixel); });
+        });
+    }
+
+    /**
+     * @brief Implementation helper for infer_layer_mode().
+     *
+     * @details
+     * Contains the core layer mode inference logic that works with any transparency predicate.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] LayerMode infer_layer_mode_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        const bool bottom_has_content = layer_has_content(bottom_, is_transparent_pred);
+        const bool middle_has_content = layer_has_content(middle_, is_transparent_pred);
+        const bool top_has_content = layer_has_content(top_, is_transparent_pred);
+
+        if (bottom_has_content && middle_has_content && top_has_content) {
+            return LayerMode::triple;
+        }
+        return LayerMode::dual;
+    }
+
+    /**
+     * @brief Implementation helper for infer_layer_type().
+     *
+     * @details
+     * Contains the core layer type inference logic that works with any transparency predicate.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return The inferred LayerType
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] LayerType infer_layer_type_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        // If triple-layer mode, always return normal
+        const LayerMode mode = infer_layer_mode_impl(is_transparent_pred);
+        if (mode == LayerMode::triple) {
+            return LayerType::normal;
+        }
+
+        // For dual-layer mode, determine which layers have content
+        const bool bottom_has_content = layer_has_content(bottom_, is_transparent_pred);
+        const bool middle_has_content = layer_has_content(middle_, is_transparent_pred);
+        const bool top_has_content = layer_has_content(top_, is_transparent_pred);
+
+        // Apply the case logic
+        if (bottom_has_content && !middle_has_content && top_has_content) {
+            // Case 6: bottom/top content -> split
+            return LayerType::split;
+        }
+        if (bottom_has_content && (middle_has_content || !top_has_content)) {
+            // Case 1: bottom only -> covered
+            // Case 5: bottom/middle content -> covered
+            return LayerType::covered;
+        }
+        // All other cases (including no content) -> normal
+        // Case 0: completely transparent -> normal
+        // Case 2: middle only -> normal
+        // Case 3: top only -> normal
+        // Case 4: middle/top content -> normal
+        return LayerType::normal;
+    }
+
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> bottom_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> middle_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
