@@ -191,14 +191,14 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tilemap_entries,
+        porymap_tilemap_entries,
         layer_mode_converter.triple_layerize(tileset.porymap_component()),
         "failed to triple-layerize Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
     PT_TRY_ASSIGN_CHAIN_ERR(
         porymap_metatiles,
         metatile_decompiler.decompile_metatiles(
-            tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
+            porymap_tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
         "failed to decompile Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
     /*
@@ -244,6 +244,19 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         porymap_pals.push_back(pal_copy);
     }
 
+    // TODO: set up this components correctly, for now we just use some dummy values
+    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
+
+    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
+    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
+    // component. So we'll need to pull them from the original component and inject them into this one before
+    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
+    // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
+    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
+    // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
+    // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
+    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
+
     // Precondition: all these decomposed tile vectors have the same size
     assert_or_panic(
         porytiles_pixel_rgba.size() == porymap_pixel_rgba.size(),
@@ -254,6 +267,9 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     assert_or_panic(
         porymap_pixel_rgba.size() == porymap_canonical_pixel_rgba.size(),
         "porymap_pixel_rgba.size() != porymap_canonical_pixel_rgba.size()");
+    assert_or_panic(
+        porymap_tilemap_entries.size() == porymap_pixel_rgba.size(),
+        "porymap_tilemap_entries.size() == porymap_pixel_rgba.size()");
 
     TilesPngWorkspace tiles_workspace{tileset.porymap_component().tiles_png(), num_tiles_primary};
     for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
@@ -261,6 +277,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         const auto &porymap_tile = porymap_pixel_rgba[i];
         const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba[i];
         const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba[i];
+        const auto &porymap_tilemap_entry = porymap_tilemap_entries[i];
 
         // CASE: Porytiles component tile exactly matches Porymap component, emit original metatile entry
         if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency)) {
@@ -269,6 +286,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             pt_note.emplace_back(
                 format_->format("EXACT MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             diag_->note("debug-porytiles", pt_note);
+            new_porymap_component->push_back_tilemap_entry(porymap_tilemap_entry);
         }
         // CASE: Porytiles component tile matches Porymap component under flip transformation
         else if (canonical_porytiles_tile.equals_ignoring_transparency(
@@ -300,11 +318,23 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         }
     }
 
-    panic("TODO: finish implementation");
+    // Don't need to create metatile entries here, we already set them up earlier
+
+    // TODO: write attributes for real, for now just write back what we read
+    for (const auto &attr : tileset.porymap_component().metatile_attributes_bin()) {
+        new_porymap_component->push_back_attribute(attr);
+    }
+
+    new_porymap_component->tiles_png(tiles_workspace.export_original_image());
 
     // TODO: create output pals:
     // - pal 0 to (num_pals_primary - 1) copied in from our porymap_pals vec
     // - pal num_pals_primary to (num_pals_total - 1) copied over from the original component pals
+
+    auto new_tileset =
+        std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
+
+    return new_tileset;
 }
 
 } // namespace porytiles2
