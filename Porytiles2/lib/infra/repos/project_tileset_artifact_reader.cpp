@@ -106,7 +106,7 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
         std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
         std::uint16_t attribute = (byte1 << 8) | byte0;
 
-        auto layer_type_result = attr::layer_type_from_int(attribute >> 12 & 0x000F);
+        auto layer_type_result = layer_type_from_int(attribute >> 12 & 0x000F);
         if (!layer_type_result.has_value()) {
             return ChainableResult<void>{
                 FormattableError{"invalid layer type for metatile '{}'", FormatParam{metatile_index, Style::bold}},

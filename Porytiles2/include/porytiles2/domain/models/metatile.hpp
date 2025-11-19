@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "porytiles2/domain/models/layer.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -65,46 +66,6 @@ inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
 {
     os << to_string(subtile);
     return os;
-}
-
-enum class LayerMode { dual, triple };
-
-[[nodiscard]] inline LayerMode layer_mode_from_val(std::size_t s)
-{
-    if (s == 8) {
-        return LayerMode::dual;
-    }
-    if (s == 12) {
-        return LayerMode::triple;
-    }
-    panic("invalid LayerMode integer: " + std::to_string(s));
-}
-
-[[nodiscard]] inline std::optional<LayerMode> layer_mode_from_str(const std::string &s)
-{
-    if (s == "dual") {
-        return LayerMode::dual;
-    }
-    if (s == "triple") {
-        return LayerMode::triple;
-    }
-    return std::nullopt;
-}
-
-[[nodiscard]] inline std::string to_string(LayerMode mode)
-{
-    switch (mode) {
-    case LayerMode::dual:
-        return "dual";
-    case LayerMode::triple:
-        return "triple";
-    }
-    panic("unhandled LayerMode value");
-}
-
-inline std::ostream &operator<<(std::ostream &os, const LayerMode mode)
-{
-    return os << to_string(mode);
 }
 
 /**

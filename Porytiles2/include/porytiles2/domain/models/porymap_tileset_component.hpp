@@ -43,7 +43,7 @@ class PorymapTilesetComponent {
 
     [[nodiscard]] bool is_empty() const;
 
-    [[nodiscard]] ChainableResult<metatile::LayerMode> detect_layer_mode() const;
+    [[nodiscard]] ChainableResult<LayerMode> detect_layer_mode() const;
 
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
     {

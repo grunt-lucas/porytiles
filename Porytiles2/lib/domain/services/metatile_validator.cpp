@@ -205,7 +205,7 @@ MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<R
 }
 
 ChainableResult<void>
-MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &metatiles, metatile::LayerMode mode) const
+MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &metatiles, LayerMode mode) const
 {
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
 
@@ -233,11 +233,10 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                 found_triple_layer_region = true;
             }
 
-            const metatile::LayerMode implied_mode =
-                found_triple_layer_region ? metatile::LayerMode::triple : metatile::LayerMode::dual;
+            const LayerMode implied_mode = found_triple_layer_region ? LayerMode::triple : LayerMode::dual;
 
             // Error condition if implied mode is triple for a dual-layer compilation
-            if (implied_mode == metatile::LayerMode::triple && mode == metatile::LayerMode::dual) {
+            if (implied_mode == LayerMode::triple && mode == LayerMode::dual) {
                 hit_error = true;
                 std::vector errors = {format_->format(
                     "{}: {}",
@@ -273,7 +272,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset_scope_, void);
     PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_per_metatile, tileset_scope_, void);
 
-    auto configured_layer_mode = metatile::layer_mode_from_val(num_tiles_per_metatile);
+    auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 
     std::vector<std::string> error_messages;
 
@@ -346,20 +345,19 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     }
 
     // Run layer mode validation if we're dual-layer
-    if (configured_layer_mode == metatile::LayerMode::dual) {
+    if (configured_layer_mode == LayerMode::dual) {
         const auto layer_mode_result = validate_layer_mode(metatiles, configured_layer_mode);
         if (!layer_mode_result.has_value()) {
             // Construct note text
             std::vector<std::string> note_text;
             note_text.push_back(format_->format(
-                "implied layer mode is '{}' due to configuration",
-                FormatParam{metatile::LayerMode::dual, Style::bold}));
+                "implied layer mode is '{}' due to configuration", FormatParam{LayerMode::dual, Style::bold}));
             note_text.emplace_back("");
             std::ranges::copy(num_tiles_per_metatile.prettify(*format_), std::back_inserter(note_text));
             note_text.emplace_back("");
             note_text.emplace_back("Consider enabling triple-layer metatiles.");
             note_text.push_back(format_->format(
-                "To enable layer mode '{}' for your project:", FormatParam{metatile::LayerMode::triple, Style::bold}));
+                "To enable layer mode '{}' for your project:", FormatParam{LayerMode::triple, Style::bold}));
             note_text.push_back(format_->format(
                 "   - set '{}' = '{}'",
                 FormatParam{num_tiles_per_metatile.name(), Style::bold},

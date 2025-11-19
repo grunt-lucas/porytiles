@@ -21,7 +21,7 @@ TilemapEntry create_test_entry(unsigned int tile_index, unsigned int pal_index =
 }
 
 // Helper function to create a dual-layer component with one metatile
-PorymapTilesetComponent create_dual_layer_component_single_metatile(attr::LayerType layer_type)
+PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType layer_type)
 {
     PorymapTilesetComponent component;
 
@@ -37,7 +37,7 @@ PorymapTilesetComponent create_dual_layer_component_single_metatile(attr::LayerT
 }
 
 // Helper function to create a triple-layer component with one metatile
-PorymapTilesetComponent create_triple_layer_component_single_metatile(attr::LayerType layer_type)
+PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType layer_type)
 {
     PorymapTilesetComponent component;
 
@@ -73,7 +73,7 @@ class LayerModeConverterTests : public ::testing::Test {
 TEST_F(LayerModeConverterTests, TripleLayerizeNoOpForTripleLayerComponent)
 {
     // Create a component that's already in triple layer mode
-    auto component = create_triple_layer_component_single_metatile(attr::LayerType::normal);
+    auto component = create_triple_layer_component_single_metatile(LayerType::normal);
 
     // Triple layerize should be a no-op
     auto result = converter_->triple_layerize(component);
@@ -88,7 +88,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizeNoOpForTripleLayerComponent)
 TEST_F(LayerModeConverterTests, TripleLayerizeNormalLayerTypeInsertsTransparentAtStart)
 {
     // Create a dual-layer component with LayerType::normal
-    auto component = create_dual_layer_component_single_metatile(attr::LayerType::normal);
+    auto component = create_dual_layer_component_single_metatile(LayerType::normal);
 
     auto result = converter_->triple_layerize(component);
 
@@ -112,7 +112,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizeNormalLayerTypeInsertsTransparentA
 TEST_F(LayerModeConverterTests, TripleLayerizeCoveredLayerTypeInsertsTransparentAtEnd)
 {
     // Create a dual-layer component with LayerType::covered
-    auto component = create_dual_layer_component_single_metatile(attr::LayerType::covered);
+    auto component = create_dual_layer_component_single_metatile(LayerType::covered);
 
     auto result = converter_->triple_layerize(component);
 
@@ -136,7 +136,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizeCoveredLayerTypeInsertsTransparent
 TEST_F(LayerModeConverterTests, TripleLayerizeSplitLayerTypeInsertsTransparentInMiddle)
 {
     // Create a dual-layer component with LayerType::split
-    auto component = create_dual_layer_component_single_metatile(attr::LayerType::split);
+    auto component = create_dual_layer_component_single_metatile(LayerType::split);
 
     auto result = converter_->triple_layerize(component);
 
@@ -170,19 +170,19 @@ TEST_F(LayerModeConverterTests, TripleLayerizeMultipleMetatilesWithDifferentLaye
     for (unsigned int i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{attr::LayerType::normal, 0});
+    component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
 
     // Add second metatile with LayerType::covered (tile indices 9-16)
     for (unsigned int i = 9; i <= 16; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{attr::LayerType::covered, 0});
+    component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
 
     // Add third metatile with LayerType::split (tile indices 17-24)
     for (unsigned int i = 17; i <= 24; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{attr::LayerType::split, 0});
+    component.push_back_attribute(MetatileAttribute{LayerType::split, 0});
 
     auto result = converter_->triple_layerize(component);
 
@@ -228,7 +228,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPalIndex)
     for (unsigned int i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i, i % 4)); // Use different pal indices
     }
-    component.push_back_attribute(MetatileAttribute{attr::LayerType::normal, 0});
+    component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
 
     auto result = converter_->triple_layerize(component);
 
@@ -251,7 +251,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
         bool vflip = (i % 3 == 0);
         component.push_back_tilemap_entry(TilemapEntry{i, 0, hflip, vflip});
     }
-    component.push_back_attribute(MetatileAttribute{attr::LayerType::covered, 0});
+    component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
 
     auto result = converter_->triple_layerize(component);
 

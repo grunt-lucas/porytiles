@@ -13,7 +13,7 @@ class PorytilesTilesetComponent {
 
     [[nodiscard]] bool is_empty() const;
 
-    [[nodiscard]] ChainableResult<metatile::LayerMode> detect_layer_mode(const Rgba32 &extrinsic) const;
+    [[nodiscard]] ChainableResult<LayerMode> detect_layer_mode(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] const Image<Rgba32> &bottom() const
     {

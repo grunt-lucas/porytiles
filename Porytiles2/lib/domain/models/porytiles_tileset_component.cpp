@@ -15,7 +15,7 @@ bool PorytilesTilesetComponent::is_empty() const
     return bottom_.size() == 0 && middle_.size() == 0 && top_.size() == 0;
 }
 
-ChainableResult<metatile::LayerMode> PorytilesTilesetComponent::detect_layer_mode(const Rgba32 &extrinsic) const
+ChainableResult<LayerMode> PorytilesTilesetComponent::detect_layer_mode(const Rgba32 &extrinsic) const
 {
     // Pre-check: all three images must have identical dimensions
     if (bottom_.width() != middle_.width() || bottom_.width() != top_.width() || bottom_.height() != middle_.height() ||
@@ -56,7 +56,7 @@ ChainableResult<metatile::LayerMode> PorytilesTilesetComponent::detect_layer_mod
 
                     // Early exit if all three layers have opaque pixels in this region
                     if (bottom_has_opaque && middle_has_opaque && top_has_opaque) {
-                        return metatile::LayerMode::triple;
+                        return LayerMode::triple;
                     }
                 }
             }
@@ -64,7 +64,7 @@ ChainableResult<metatile::LayerMode> PorytilesTilesetComponent::detect_layer_mod
     }
 
     // If no region had opaque pixels on all three layers, it's dual mode
-    return metatile::LayerMode::dual;
+    return LayerMode::dual;
 }
 
 } // namespace porytiles2

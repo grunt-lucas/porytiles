@@ -81,7 +81,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // TODO: remove, here for testing
     // PT_TRY_CALL_CHAIN_ERR(
     //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-    auto configured_layer_mode = metatile::layer_mode_from_val(num_tiles_per_metatile);
+    auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -182,7 +182,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // TODO: remove, here for testing
     // PT_TRY_CALL_CHAIN_ERR(
     //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-    auto configured_layer_mode = metatile::layer_mode_from_val(num_tiles_per_metatile);
+    auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 
     // Decompose Porytiles metatiles and generate canonical versions
     std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);

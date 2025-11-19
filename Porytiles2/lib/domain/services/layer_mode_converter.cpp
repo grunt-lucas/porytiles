@@ -11,25 +11,25 @@
 
 namespace porytiles2 {
 
-std::vector<attr::LayerType> LayerModeConverter::infer_layer_types(const std::vector<Metatile<Rgba32>> &metatiles)
+std::vector<LayerType> LayerModeConverter::infer_layer_types(const std::vector<Metatile<Rgba32>> &metatiles)
 {
-    std::vector<attr::LayerType> result{};
+    std::vector<LayerType> result{};
     result.reserve(metatiles.size());
 
     /*
      * TODO:
      * 1. Loop over each metatile
-     * 2. 
+     * 2.
      */
 
-     return result;
+    return result;
 }
 
 ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(const PorymapTilesetComponent &component)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == metatile::LayerMode::triple) {
+    if (layer_mode == LayerMode::triple) {
         // No-op case
         return component.metatiles_bin();
     }
@@ -52,7 +52,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
         const std::size_t input_offset = i * metatile::entries_per_metatile_dual;
 
         switch (attribute.layer_type()) {
-        case attr::LayerType::normal:
+        case LayerType::normal:
             // Insert 4 transparent entries at the start
             for (std::size_t j = 0; j < transparent_entries; ++j) {
                 result.push_back(transparent);
@@ -63,7 +63,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             }
             break;
 
-        case attr::LayerType::covered:
+        case LayerType::covered:
             // Copy the 8 original entries
             for (std::size_t j = 0; j < metatile::entries_per_metatile_dual; ++j) {
                 result.push_back(metatiles_bin[input_offset + j]);
@@ -74,7 +74,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             }
             break;
 
-        case attr::LayerType::split:
+        case LayerType::split:
             // Copy the first 4 entries
             for (std::size_t j = 0; j < transparent_entries; ++j) {
                 result.push_back(metatiles_bin[input_offset + j]);
@@ -98,7 +98,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::dual_layerize(con
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == metatile::LayerMode::dual) {
+    if (layer_mode == LayerMode::dual) {
         // No-op case
         return component.metatiles_bin();
     }
