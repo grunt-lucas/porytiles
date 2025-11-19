@@ -244,9 +244,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         porymap_pals.push_back(pal_copy);
     }
 
-    // TODO: set up this components correctly, for now we just use some dummy values
-    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
-
     // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
     // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
     // component. So we'll need to pull them from the original component and inject them into this one before
@@ -281,11 +278,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
 
         // CASE: Porytiles component tile exactly matches Porymap component, emit original metatile entry
         if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency)) {
-            auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
-            std::vector<std::string> pt_note{};
-            pt_note.emplace_back(
-                format_->format("EXACT MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            diag_->note("debug-porytiles", pt_note);
             new_porymap_component->push_back_tilemap_entry(porymap_tilemap_entry);
         }
         // CASE: Porytiles component tile matches Porymap component under flip transformation
@@ -293,8 +285,8 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
                      canonical_porymap_tile, extrinsic_transparency)) {
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
             std::vector<std::string> pt_note{};
-            pt_note.emplace_back(
-                format_->format("FLIP-ISO MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            pt_note.emplace_back(format_->format(
+                "TODO: FLIP-ISO MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             diag_->note("debug-porytiles", pt_note);
         }
         // CASE: New tile, compute which pal to use, compute (or create) tile to use
@@ -302,9 +294,10 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             // TODO: for tiles:fixed pals:fixed, here we need to try computing which existing tile+pal we can use.
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
             std::vector<std::string> pt_note{};
+            pt_note.emplace_back(format_->format(
+                "TODO: HANDLE NEW TILE CASE: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            std::vector<std::string> pm_note{};
-            pm_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
+            pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
             // std::ranges::copy(
             //     tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
             //     std::back_inserter(pt_note));
@@ -312,25 +305,55 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
             //     tile_printer_->print_metatile(porymap_metatiles.at(metatile_index), layer, subtile),
             //     std::back_inserter(pm_note));
             std::ranges::copy(tile_printer_->print_tile(canonical_porytiles_tile), std::back_inserter(pt_note));
-            std::ranges::copy(tile_printer_->print_tile(canonical_porymap_tile), std::back_inserter(pm_note));
+            pt_note.emplace_back();
+            std::ranges::copy(tile_printer_->print_tile(canonical_porymap_tile), std::back_inserter(pt_note));
             diag_->note("debug-porytiles", pt_note);
-            diag_->note("debug-porymap", pm_note);
         }
     }
 
-    // Don't need to create metatile entries here, we already set them up earlier
+    // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
+    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
+
+    /*
+     * TODO: use inferred LayerType vector and populated new_porymap_component tilemap_entries to compute modified
+     * entries if user is requesting dual layer. We'll need to trim the irrelevant blank layer. We can use
+     * LayerModeConverter::dual_layerize. This function will need to be modified to take a vector of target LayerTypes
+     * in order to work properly.
+     */
 
     // TODO: write attributes for real, for now just write back what we read
     for (const auto &attr : tileset.porymap_component().metatile_attributes_bin()) {
         new_porymap_component->push_back_attribute(attr);
     }
 
+    // TODO: do we want export_*_image to trim itself so there isn't a bunch of blank padding at the end?
     new_porymap_component->tiles_png(tiles_workspace.export_original_image());
 
-    // TODO: create output pals:
-    // - pal 0 to (num_pals_primary - 1) copied in from our porymap_pals vec
-    // - pal num_pals_primary to (num_pals_total - 1) copied over from the original component pals
+    // Copy primary palettes from our processed porymap_pals vector
+    for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
+        new_porymap_component->set_pal(porymap_pals[i], i);
+    }
 
+    /*
+     * Copy remaining secondary palettes from the original component. The "secondary" pals in a primary tileset's folder
+     * won't be actually loaded by the game engine. Porymap also doesn't show them -- it will grab pals from the
+     * relevant secondary set folder. However, we copy them here for consistency. If for some reason the user had edited
+     * them, we don't want to clobber their edits. Porytiles should be surgical where possible.
+     */
+    for (unsigned int i = num_pals_primary.value(); i < num_pals_total.value(); i++) {
+        new_porymap_component->set_pal(tileset.porymap_component().pals()[i], i);
+    }
+
+    /*
+     * Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
+     * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited them, let's
+     * not clobber anything unnecessarily.
+     */
+    for (unsigned int i = num_pals_total.value(); i < pal::num_pals; i++) {
+        new_porymap_component->set_pal(tileset.porymap_component().pals()[i], i);
+    }
+
+    // Create the full Tileset and return
     auto new_tileset =
         std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
 
