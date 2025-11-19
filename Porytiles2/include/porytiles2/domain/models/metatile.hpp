@@ -20,7 +20,7 @@ inline constexpr std::size_t entries_per_metatile_triple = 12;
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 
-inline std::string to_string(Layer layer)
+[[nodiscard]] inline std::string to_string(Layer layer)
 {
     switch (layer) {
     case Layer::bottom:
@@ -41,7 +41,12 @@ inline std::ostream &operator<<(std::ostream &os, const Layer &layer)
 
 enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
 
-inline std::string to_string(Subtile layer)
+[[nodiscard]] inline Subtile subtile_from_index(std::size_t i)
+{
+    return static_cast<Subtile>(i);
+}
+
+[[nodiscard]] inline std::string to_string(Subtile layer)
 {
     switch (layer) {
     case Subtile::northwest:
@@ -60,6 +65,46 @@ inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
 {
     os << to_string(subtile);
     return os;
+}
+
+enum class LayerMode { dual, triple };
+
+[[nodiscard]] inline LayerMode layer_mode_from_val(std::size_t s)
+{
+    if (s == 8) {
+        return LayerMode::dual;
+    }
+    if (s == 12) {
+        return LayerMode::triple;
+    }
+    panic("invalid LayerMode integer: " + std::to_string(s));
+}
+
+[[nodiscard]] inline std::optional<LayerMode> layer_mode_from_str(const std::string &s)
+{
+    if (s == "dual") {
+        return LayerMode::dual;
+    }
+    if (s == "triple") {
+        return LayerMode::triple;
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] inline std::string to_string(LayerMode mode)
+{
+    switch (mode) {
+    case LayerMode::dual:
+        return "dual";
+    case LayerMode::triple:
+        return "triple";
+    }
+    panic("unhandled LayerMode value");
+}
+
+inline std::ostream &operator<<(std::ostream &os, const LayerMode mode)
+{
+    return os << to_string(mode);
 }
 
 /**
@@ -129,12 +174,17 @@ inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
 {
     return format.format(
         "{} {}|{}|{}|{},{}",
-        FormatParam{"metatile", Style::bold},
-        FormatParam{index, Style::bold},
-        FormatParam{to_string(layer), Style::bold},
-        FormatParam{to_string(subtile), Style::bold},
-        FormatParam{std::to_string(subtile_row), Style::bold},
-        FormatParam{std::to_string(subtile_col), Style::bold});
+        FormatParam{"metatile"},
+        FormatParam{index},
+        FormatParam{to_string(layer)},
+        FormatParam{to_string(subtile)},
+        FormatParam{std::to_string(subtile_row)},
+        FormatParam{std::to_string(subtile_col)});
+}
+
+[[nodiscard]] inline std::string message_header(std::size_t index, Subtile subtile, const TextFormatter &format)
+{
+    return format.format("{} {}|{}", FormatParam{"metatile"}, FormatParam{index}, FormatParam{to_string(subtile)});
 }
 
 } // namespace metatile

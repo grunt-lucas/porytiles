@@ -10,7 +10,6 @@
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
-#include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -49,6 +48,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -67,11 +67,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         std::unique_ptr<Tileset>);
 
     /*
-     * TODO: our first step in any compilation operation should validate the LayerMode. First, we need to check the
-     * num_tiles_per_metatile configuration setting. If it's set to 8, the user is requesting dual-layer compilation. If
-     * it's 12, triple. Any other value will have been caught earlier by config validation. If it's 8, then we need to
-     * check the input metatiles and throw an error for all metatiles that have non-transparent content on all three
-     * layers. While doing this, we can also compute the inferred layer type and save it into a vector for later.
+     * TODO: compute the inferred layer type and save it into a vector for later. Above, we already validated that all
+     * metatiles satisfy the layer type constraint.
      *
      * If it's 12, then we're good, just move on. No need to validate or do anything special for the inferred layer type
      * vector. Just set it to LayerType::normal and move on.
@@ -84,6 +81,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     // TODO: remove, here for testing
     // PT_TRY_CALL_CHAIN_ERR(
     //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
+    auto configured_layer_mode = metatile::layer_mode_from_val(num_tiles_per_metatile);
 
     // Create color index map from vector<RgbaTile>
     // TODO: impl
@@ -151,8 +149,9 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     PT_UNWRAP_TILESET_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
 
-    // Read Porytiles layer images and decompose into tile vectors
+    // Read Porytiles layer images into metatile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
         porytiles_metatiles,
         metatileizer.metatileize(
@@ -162,12 +161,15 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         "failed to metatileize input layer images for " + tileset.name(),
         std::unique_ptr<Tileset>);
 
+    // Run validation on Porytiles metatiles
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_primary(porytiles_metatiles),
+        "encountered error(s) while validating Porytiles metatiles",
+        std::unique_ptr<Tileset>);
+
     /*
-     * TODO: our first step in any compilation operation should validate the LayerMode. First, we need to check the
-     * num_tiles_per_metatile configuration setting. If it's set to 8, the user is requesting dual-layer compilation. If
-     * it's 12, triple. Any other value will have been caught earlier by config validation. If it's 8, then we need to
-     * check the input metatiles and throw an error for all metatiles that have non-transparent content on all three
-     * layers. While doing this, we can also compute the inferred layer type and save it into a vector for later.
+     * TODO: compute the inferred layer type and save it into a vector for later. Above, we already validated that all
+     * metatiles satisfy the layer type constraint.
      *
      * If it's 12, then we're good, just move on. No need to validate or do anything special for the inferred layer type
      * vector. Just set it to LayerType::normal and move on.
@@ -180,12 +182,7 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // TODO: remove, here for testing
     // PT_TRY_CALL_CHAIN_ERR(
     //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-
-    // Run validation on Porytiles metatiles
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_primary(porytiles_metatiles),
-        "encountered error(s) while validating Porytiles metatiles",
-        std::unique_ptr<Tileset>);
+    auto configured_layer_mode = metatile::layer_mode_from_val(num_tiles_per_metatile);
 
     // Decompose Porytiles metatiles and generate canonical versions
     std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);

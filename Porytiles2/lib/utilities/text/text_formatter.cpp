@@ -12,6 +12,7 @@ namespace porytiles2 {
 const Style Style::none{};
 const Style Style::bold{Style::FormatFlagTag::bold};
 const Style Style::italic{Style::FormatFlagTag::italic};
+const Style Style::underline{Style::FormatFlagTag::underline};
 
 // Style static constants - Foreground colors
 const Style Style::black{Style::FgColorTag::predefined, PredefinedColor::black};

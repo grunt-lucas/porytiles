@@ -47,6 +47,9 @@ class MetatileValidator {
     validate_global_color_count(const std::vector<Metatile<Rgba32>> &metatiles, std::size_t count_limit) const;
 
     [[nodiscard]] ChainableResult<void>
+    validate_layer_mode(const std::vector<Metatile<Rgba32>> &metatiles, metatile::LayerMode mode) const;
+
+    [[nodiscard]] ChainableResult<void>
     generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
     TextFormatter *format_;

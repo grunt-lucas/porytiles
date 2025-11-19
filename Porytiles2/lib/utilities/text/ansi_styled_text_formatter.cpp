@@ -231,6 +231,9 @@ std::string AnsiStyledTextFormatter::style(const std::string &text, Style styles
     if (styles.has_italic()) {
         prefix += "\033[3m";
     }
+    if (styles.has_underline()) {
+        prefix += "\033[4m";
+    }
 
     // Only add prefix and reset if we actually have styling to apply
     if (prefix.empty()) {

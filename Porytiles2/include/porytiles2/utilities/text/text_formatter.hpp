@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles2/utilities/panic/panic.hpp"
+
 namespace porytiles2 {
 
 /**
@@ -64,9 +66,10 @@ struct RgbColor {
 class Style {
   public:
     // Formatting constants
-    static const Style none;   ///< No styling applied
-    static const Style bold;   ///< Bold text formatting
-    static const Style italic; ///< Italic text formatting
+    static const Style none;      ///< No styling applied
+    static const Style bold;      ///< Bold text formatting
+    static const Style italic;    ///< Italic text formatting
+    static const Style underline; ///< Underline text formatting
 
     // Foreground color constants
     static const Style black;   ///< Black foreground color
@@ -160,6 +163,16 @@ class Style {
     }
 
     /**
+     * @brief Checks if this Style has underline formatting.
+     *
+     * @return True if underline formatting is set
+     */
+    [[nodiscard]] constexpr bool has_underline() const
+    {
+        return (format_flags_ & underline_flag) != 0;
+    }
+
+    /**
      * @brief Checks if this Style has a foreground color set.
      *
      * @return True if a foreground color (predefined or RGB) is set
@@ -246,6 +259,7 @@ class Style {
   private:
     static constexpr std::uint8_t bold_flag = 1 << 0;
     static constexpr std::uint8_t italic_flag = 1 << 1;
+    static constexpr std::uint8_t underline_flag = 1 << 2;
 
     std::uint8_t format_flags_{0};
     PredefinedColor fg_predefined_{PredefinedColor::none};
@@ -256,17 +270,24 @@ class Style {
     bool has_bg_rgb_{false};
 
     // Private constructors for creating specific style types
-    enum class FormatFlagTag { bold, italic };
+    enum class FormatFlagTag { bold, italic, underline };
     enum class FgColorTag { predefined, rgb };
     enum class BgColorTag { predefined, rgb };
 
     constexpr explicit Style(FormatFlagTag tag)
     {
-        if (tag == FormatFlagTag::bold) {
+        switch (tag) {
+        case FormatFlagTag::bold:
             format_flags_ = bold_flag;
-        }
-        else {
+            break;
+        case FormatFlagTag::italic:
             format_flags_ = italic_flag;
+            break;
+        case FormatFlagTag::underline:
+            format_flags_ = underline_flag;
+            break;
+        default:
+            panic("unhandled FormatFlagTag value");
         }
     }
 

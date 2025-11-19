@@ -1,9 +1,9 @@
 #pragma once
 
-#include <memory>
-
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -12,6 +12,8 @@ class PorytilesTilesetComponent {
     PorytilesTilesetComponent() = default;
 
     [[nodiscard]] bool is_empty() const;
+
+    [[nodiscard]] ChainableResult<metatile::LayerMode> detect_layer_mode(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] const Image<Rgba32> &bottom() const
     {

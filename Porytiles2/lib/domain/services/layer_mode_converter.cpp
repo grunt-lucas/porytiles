@@ -15,7 +15,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == tileset::LayerMode::triple) {
+    if (layer_mode == metatile::LayerMode::triple) {
         // No-op case
         return component.metatiles_bin();
     }
@@ -84,7 +84,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::dual_layerize(con
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == tileset::LayerMode::dual) {
+    if (layer_mode == metatile::LayerMode::dual) {
         // No-op case
         return component.metatiles_bin();
     }

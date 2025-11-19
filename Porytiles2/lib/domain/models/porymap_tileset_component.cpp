@@ -48,7 +48,7 @@ bool PorymapTilesetComponent::is_empty() const
     return metatiles_bin_.empty();
 }
 
-ChainableResult<tileset::LayerMode> PorymapTilesetComponent::detect_layer_mode() const
+ChainableResult<metatile::LayerMode> PorymapTilesetComponent::detect_layer_mode() const
 {
     const auto &entries = metatiles_bin();
     const auto &attributes = metatile_attributes_bin();
@@ -56,11 +56,11 @@ ChainableResult<tileset::LayerMode> PorymapTilesetComponent::detect_layer_mode()
 
     if (entries.size() % metatile::entries_per_metatile_triple == 0 &&
         entries.size() / metatile::entries_per_metatile_triple == metatile_count) {
-        return tileset::LayerMode::triple;
+        return metatile::LayerMode::triple;
     }
     if (entries.size() % metatile::entries_per_metatile_dual == 0 &&
         entries.size() / metatile::entries_per_metatile_dual == metatile_count) {
-        return tileset::LayerMode::dual;
+        return metatile::LayerMode::dual;
     }
 
     // TODO: only expectation message associated with configured layer type?

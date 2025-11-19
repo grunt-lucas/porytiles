@@ -5,29 +5,13 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 
 namespace porytiles2 {
-
-namespace tileset {
-
-enum class LayerMode { dual, triple };
-
-inline std::string to_string(LayerMode mode)
-{
-    switch (mode) {
-    case LayerMode::dual:
-        return "dual";
-    case LayerMode::triple:
-        return "triple";
-    }
-    panic("unhandled LayerMode value");
-}
-
-} // namespace tileset
 
 class PorymapTilesetComponent {
   public:
@@ -59,7 +43,7 @@ class PorymapTilesetComponent {
 
     [[nodiscard]] bool is_empty() const;
 
-    [[nodiscard]] ChainableResult<tileset::LayerMode> detect_layer_mode() const;
+    [[nodiscard]] ChainableResult<metatile::LayerMode> detect_layer_mode() const;
 
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
     {
