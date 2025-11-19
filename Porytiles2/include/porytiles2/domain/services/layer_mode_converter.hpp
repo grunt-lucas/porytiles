@@ -25,6 +25,18 @@ class LayerModeConverter {
     }
 
     /**
+     * @brief TODO
+     *
+     * @details
+     * TODO
+     *
+     * @param metatiles TODO
+     * @pre TODO
+     * @return A vector containing the inferred LayerType for each input Metatile
+     */
+    [[nodiscard]] std::vector<attr::LayerType> infer_layer_types(const std::vector<Metatile<Rgba32>> &metatiles);
+
+    /**
      * @brief Converts a tileset component to triple-layer format.
      *
      * @details
@@ -49,7 +61,7 @@ class LayerModeConverter {
      * TODO
      *
      * @param component TODO
-     * @pre asd
+     * @pre TODO
      * @return A dual-layerized TilemapEntry vector
      */
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> dual_layerize(const PorymapTilesetComponent &component);

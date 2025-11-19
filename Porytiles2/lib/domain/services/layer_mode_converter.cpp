@@ -11,6 +11,20 @@
 
 namespace porytiles2 {
 
+std::vector<attr::LayerType> LayerModeConverter::infer_layer_types(const std::vector<Metatile<Rgba32>> &metatiles)
+{
+    std::vector<attr::LayerType> result{};
+    result.reserve(metatiles.size());
+
+    /*
+     * TODO:
+     * 1. Loop over each metatile
+     * 2. 
+     */
+
+     return result;
+}
+
 ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(const PorymapTilesetComponent &component)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
