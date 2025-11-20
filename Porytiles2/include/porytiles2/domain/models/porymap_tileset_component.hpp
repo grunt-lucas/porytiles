@@ -50,6 +50,11 @@ class PorymapTilesetComponent {
         return metatiles_bin_;
     }
 
+    void metatiles_bin(const std::vector<TilemapEntry> &new_entries)
+    {
+        metatiles_bin_ = new_entries;
+    }
+
     [[nodiscard]] const std::vector<MetatileAttribute> &metatile_attributes_bin() const
     {
         return metatile_attributes_;

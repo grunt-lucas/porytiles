@@ -167,23 +167,6 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         "encountered error(s) while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
 
-    /*
-     * TODO: compute the inferred layer type and save it into a vector for later. Above, we already validated that all
-     * metatiles satisfy the layer type constraint.
-     *
-     * If it's 12, then we're good, just move on. No need to validate or do anything special for the inferred layer type
-     * vector. Just set it to LayerType::normal and move on.
-     *
-     * Since we'll be overwriting the output tilemap entries and attributes as part of the compilation operation, no
-     * need to validate them via detect_layer_mode at this point. (Let's really think through this. Would we want to
-     * warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the decompilation operations
-     * this is an error condition.)
-     */
-    // TODO: remove, here for testing
-    // PT_TRY_CALL_CHAIN_ERR(
-    //     tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-    auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
-
     // Decompose Porytiles metatiles and generate canonical versions
     std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
     std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
@@ -314,13 +297,16 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 
+    /*
+     * If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
+     * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
+     * validated in an earlier step as dual-layer compatible.
+     */
+    const auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
     if (configured_layer_mode == LayerMode::dual) {
-        /*
-         * TODO: use inferred LayerType vector and populated new_porymap_component tilemap_entries to compute modified
-         * entries if user is requesting dual layer. We'll need to trim the irrelevant blank layer. We can use
-         * LayerModeConverter::dual_layerize. This function will need to be modified to take a vector of target
-         * LayerTypes in order to work properly.
-         */
+        const auto &dual_layerized =
+            layer_mode_converter.dual_layerize(new_porymap_component->metatiles_bin(), porytiles_metatiles);
+        new_porymap_component->metatiles_bin(dual_layerized);
     }
 
     // TODO: write attributes for real, for now just write back what we read

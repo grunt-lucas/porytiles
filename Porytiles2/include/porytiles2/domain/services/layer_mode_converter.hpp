@@ -61,7 +61,7 @@ class LayerModeConverter {
      * @pre No metatile in source_metatiles has implied LayerMode::triple
      * @return A dual-layerized TilemapEntry vector
      */
-    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>>
+    [[nodiscard]] std::vector<TilemapEntry>
     dual_layerize(const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles);
 
   private:

@@ -80,7 +80,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
     return result;
 }
 
-[[nodiscard]] ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::dual_layerize(
+[[nodiscard]] std::vector<TilemapEntry> LayerModeConverter::dual_layerize(
     const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles)
 {
     const std::size_t expected_entries_size = source_metatiles.size() * metatile::entries_per_metatile_triple;
