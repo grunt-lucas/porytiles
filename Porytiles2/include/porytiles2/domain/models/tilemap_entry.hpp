@@ -16,10 +16,10 @@ namespace porytiles2 {
  */
 class TilemapEntry {
   public:
-    TilemapEntry() : tile_index_{0}, pal_index_{0}, hflip_{false}, vflip_{false} {}
+    TilemapEntry() : tile_index_{0}, pal_index_{0}, h_flip_{false}, v_flip_{false} {}
 
     TilemapEntry(unsigned int tile_index, unsigned int pal_index, bool hflip, bool vflip)
-        : tile_index_{tile_index}, pal_index_{pal_index}, hflip_{hflip}, vflip_{vflip}
+        : tile_index_{tile_index}, pal_index_{pal_index}, h_flip_{hflip}, v_flip_{vflip}
     {
     }
 
@@ -56,31 +56,31 @@ class TilemapEntry {
         pal_index_ = pal_index;
     }
 
-    [[nodiscard]] bool hflip() const
+    [[nodiscard]] bool h_flip() const
     {
-        return hflip_;
+        return h_flip_;
     }
 
-    void hflip(bool hflip)
+    void h_flip(bool hflip)
     {
-        hflip_ = hflip;
+        h_flip_ = hflip;
     }
 
-    [[nodiscard]] bool vflip() const
+    [[nodiscard]] bool v_flip() const
     {
-        return vflip_;
+        return v_flip_;
     }
 
-    void vflip(bool vflip)
+    void v_flip(bool vflip)
     {
-        vflip_ = vflip;
+        v_flip_ = vflip;
     }
 
   private:
     unsigned int tile_index_;
     unsigned int pal_index_;
-    bool hflip_;
-    bool vflip_;
+    bool h_flip_;
+    bool v_flip_;
 };
 
 } // namespace porytiles2

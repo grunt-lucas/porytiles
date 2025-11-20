@@ -76,7 +76,7 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
     for (const auto &entry : entries) {
         // TODO: does this code work as expected on a big-endian machine?
         const auto tile_value = static_cast<uint16_t>(
-            (entry.tile_index() & 0x3ff) | ((entry.hflip() & 1) << 10) | ((entry.vflip() & 1) << 11) |
+            (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
             ((entry.pal_index() & 0xf) << 12));
         out << static_cast<std::uint8_t>(tile_value);
         out << static_cast<std::uint8_t>(tile_value >> 8);

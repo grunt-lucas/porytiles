@@ -301,8 +301,8 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
     for (std::size_t i = 0; i < 8; ++i) {
         bool expected_hflip = ((i + 1) % 2 == 0);
         bool expected_vflip = ((i + 1) % 3 == 0);
-        EXPECT_EQ(entries[i].hflip(), expected_hflip) << "hflip mismatch at index " << i;
-        EXPECT_EQ(entries[i].vflip(), expected_vflip) << "vflip mismatch at index " << i;
+        EXPECT_EQ(entries[i].h_flip(), expected_hflip) << "hflip mismatch at index " << i;
+        EXPECT_EQ(entries[i].v_flip(), expected_vflip) << "vflip mismatch at index " << i;
     }
 }
 
@@ -472,8 +472,8 @@ TEST_F(LayerModeConverterTests, RoundTripNormalLayerType)
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
 }
 
@@ -500,8 +500,8 @@ TEST_F(LayerModeConverterTests, RoundTripCoveredLayerType)
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
 }
 
@@ -528,8 +528,8 @@ TEST_F(LayerModeConverterTests, RoundTripSplitLayerType)
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
 }
 
@@ -576,7 +576,7 @@ TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
 }

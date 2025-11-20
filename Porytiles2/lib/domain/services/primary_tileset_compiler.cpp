@@ -267,11 +267,48 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
         // CASE: Porytiles component tile matches Porymap component under flip transformation
         else if (canonical_porytiles_tile.equals_ignoring_transparency(
                      canonical_porymap_tile, extrinsic_transparency)) {
-            auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
-            std::vector<std::string> pt_note{};
-            pt_note.emplace_back(format_->format(
-                "TODO: FLIP-ISO MATCH: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            diag_->note("debug-porytiles", pt_note);
+            // TODO: this is bugged, we need to consult the TilesPngWorkspace here, not the canonical_porymap_tile
+            /*
+             * Both tiles have the same canonical form, but may require different flip bits to reconstruct the
+             * original. We compute the relative flip transformation needed using XOR of the canonical flip flags.
+             */
+            const bool result_h_flip = canonical_porytiles_tile.h_flip() ^ canonical_porymap_tile.h_flip();
+            const bool result_v_flip = canonical_porytiles_tile.v_flip() ^ canonical_porymap_tile.v_flip();
+
+            // Reuse the existing Porymap tile with the computed flip bits
+            TilemapEntry new_entry{
+                porymap_tilemap_entry.tile_index(), porymap_tilemap_entry.pal_index(), result_h_flip, result_v_flip};
+            new_porymap_component->push_back_tilemap_entry(new_entry);
+
+            diag_->note("debug-porytiles", "canonical flip case for tile " + std::to_string(i));
+            diag_->note(
+                "debug-porytiles",
+                format_->format(
+                    "canonical_porytiles_flips: [{}, {}]",
+                    FormatParam{canonical_porytiles_tile.h_flip()},
+                    FormatParam{canonical_porytiles_tile.v_flip()}));
+            diag_->note(
+                "debug-porytiles",
+                format_->format(
+                    "canonical_porymap_flips: [{}, {}]",
+                    FormatParam{canonical_porymap_tile.h_flip()},
+                    FormatParam{canonical_porymap_tile.v_flip()}));
+            diag_->note(
+                "debug-porytiles",
+                format_->format(
+                    "original: [{}, {}, {}, {}]",
+                    FormatParam{porymap_tilemap_entry.tile_index()},
+                    FormatParam{porymap_tilemap_entry.pal_index()},
+                    FormatParam{porymap_tilemap_entry.h_flip()},
+                    FormatParam{porymap_tilemap_entry.v_flip()}));
+            diag_->note(
+                "debug-porytiles",
+                format_->format(
+                    "emitting: [{}, {}, {}, {}]",
+                    FormatParam{porymap_tilemap_entry.tile_index()},
+                    FormatParam{porymap_tilemap_entry.pal_index()},
+                    FormatParam{result_h_flip},
+                    FormatParam{result_v_flip}));
         }
         // CASE: New tile, compute which pal to use, compute (or create) tile to use
         else {

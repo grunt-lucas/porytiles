@@ -79,8 +79,8 @@ ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src
         // top 4 bits are pal index
 
         entry.tile_index(entry_bits & 0x03FF);
-        entry.hflip((entry_bits >> 10) & 0x0001);
-        entry.vflip((entry_bits >> 11) & 0x0001);
+        entry.h_flip((entry_bits >> 10) & 0x0001);
+        entry.v_flip((entry_bits >> 11) & 0x0001);
         entry.pal_index((entry_bits >> 12) & 0x000F);
 
         dest.porymap_component().push_back_tilemap_entry(entry);

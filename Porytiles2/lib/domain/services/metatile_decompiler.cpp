@@ -75,7 +75,7 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
             auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
             metatile.set_bottom(i, std::move(rgba_tile));
         }
@@ -84,7 +84,7 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + metatile::tiles_per_metatile_layer + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
             auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
             metatile.set_middle(i, std::move(rgba_tile));
         }
@@ -93,7 +93,7 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + 2 * metatile::tiles_per_metatile_layer + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
             auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
             metatile.set_top(i, std::move(rgba_tile));
         }
