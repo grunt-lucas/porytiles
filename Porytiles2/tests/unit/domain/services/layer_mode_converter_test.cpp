@@ -2,6 +2,7 @@
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
@@ -50,6 +51,44 @@ PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType 
     component.push_back_attribute(MetatileAttribute{layer_type, 0});
 
     return component;
+}
+
+// Helper function to create a non-transparent RGBA tile
+PixelTile<Rgba32> create_nontransparent_rgba_tile()
+{
+    PixelTile<Rgba32> tile{};
+    constexpr Rgba32 red{255, 0, 0, 255};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, red);
+    }
+    return tile;
+}
+
+// Helper function to create a Metatile<Rgba32> with specified LayerType
+// Uses magenta as extrinsic transparency (matches the converter's behavior)
+Metatile<Rgba32> create_metatile_with_layer_type(LayerType layer_type)
+{
+    Metatile<Rgba32> metatile{};
+
+    switch (layer_type) {
+    case LayerType::normal:
+        // Content in middle and/or top layers only
+        metatile.set_middle(0, create_nontransparent_rgba_tile());
+        break;
+
+    case LayerType::covered:
+        // Content in bottom and/or middle layers only
+        metatile.set_bottom(0, create_nontransparent_rgba_tile());
+        break;
+
+    case LayerType::split:
+        // Content in bottom and top layers only
+        metatile.set_bottom(0, create_nontransparent_rgba_tile());
+        metatile.set_top(0, create_nontransparent_rgba_tile());
+        break;
+    }
+
+    return metatile;
 }
 
 } // namespace
@@ -264,5 +303,300 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
         bool expected_vflip = ((i + 1) % 3 == 0);
         EXPECT_EQ(entries[i].hflip(), expected_hflip) << "hflip mismatch at index " << i;
         EXPECT_EQ(entries[i].vflip(), expected_vflip) << "vflip mismatch at index " << i;
+    }
+}
+
+// ===== dual_layerize tests =====
+
+TEST_F(LayerModeConverterTests, DualLayerizeNormalLayerTypeRemovesTransparentFromStart)
+{
+    // Create triple-layer entries (12 entries: 4 transparent + 8 non-transparent)
+    std::vector<TilemapEntry> triple_entries;
+    // First 4 transparent
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+    // Next 8 non-transparent (tile indices 1-8)
+    for (unsigned int i = 1; i <= 8; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+
+    // Create source metatile with LayerType::normal
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
+
+    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &dual_entries = result.value();
+
+    // Should have 8 entries (removed first 4 transparent)
+    ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
+
+    // Verify entries are tile indices 1-8
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
+                                                        << (i + 1);
+    }
+}
+
+TEST_F(LayerModeConverterTests, DualLayerizeCoveredLayerTypeRemovesTransparentFromEnd)
+{
+    // Create triple-layer entries (12 entries: 8 non-transparent + 4 transparent)
+    std::vector<TilemapEntry> triple_entries;
+    // First 8 non-transparent (tile indices 1-8)
+    for (unsigned int i = 1; i <= 8; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    // Last 4 transparent
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+
+    // Create source metatile with LayerType::covered
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
+
+    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &dual_entries = result.value();
+
+    // Should have 8 entries (removed last 4 transparent)
+    ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
+
+    // Verify entries are tile indices 1-8
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
+                                                        << (i + 1);
+    }
+}
+
+TEST_F(LayerModeConverterTests, DualLayerizeSplitLayerTypeRemovesTransparentFromMiddle)
+{
+    // Create triple-layer entries (12 entries: 4 non-transparent + 4 transparent + 4 non-transparent)
+    std::vector<TilemapEntry> triple_entries;
+    // First 4 non-transparent (tile indices 1-4)
+    for (unsigned int i = 1; i <= 4; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    // Middle 4 transparent
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+    // Last 4 non-transparent (tile indices 5-8)
+    for (unsigned int i = 5; i <= 8; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+
+    // Create source metatile with LayerType::split
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
+
+    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &dual_entries = result.value();
+
+    // Should have 8 entries (removed middle 4 transparent)
+    ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
+
+    // Verify entries are tile indices 1-8
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
+                                                        << (i + 1);
+    }
+}
+
+TEST_F(LayerModeConverterTests, DualLayerizeMultipleMetatilesWithDifferentLayerTypes)
+{
+    std::vector<TilemapEntry> triple_entries;
+
+    // First metatile (normal): 4 transparent + 8 non-transparent (tile indices 1-8)
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+    for (unsigned int i = 1; i <= 8; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+
+    // Second metatile (covered): 8 non-transparent (tile indices 9-16) + 4 transparent
+    for (unsigned int i = 9; i <= 16; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+
+    // Third metatile (split): 4 non-transparent (17-20) + 4 transparent + 4 non-transparent (21-24)
+    for (unsigned int i = 17; i <= 20; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    for (unsigned int i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+    for (unsigned int i = 21; i <= 24; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+
+    // Create source metatiles
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
+
+    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &dual_entries = result.value();
+
+    // Should have 24 entries total (3 metatiles * 8 entries each)
+    ASSERT_EQ(dual_entries.size(), 24);
+
+    // Verify all entries have correct tile indices (1-24)
+    for (std::size_t i = 0; i < 24; ++i) {
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1);
+    }
+}
+
+// ===== Round-trip tests =====
+
+TEST_F(LayerModeConverterTests, RoundTripNormalLayerType)
+{
+    // Start with dual-layer component
+    auto dual_component = create_dual_layer_component_single_metatile(LayerType::normal);
+    const auto &original_entries = dual_component.metatiles_bin();
+
+    // Triple-layerize
+    auto triple_result = converter_->triple_layerize(dual_component);
+    ASSERT_TRUE(triple_result.has_value());
+    const auto &triple_entries = triple_result.value();
+
+    // Create source metatile for dual-layerize
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
+
+    // Dual-layerize back
+    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
+    ASSERT_TRUE(dual_result.has_value());
+    const auto &final_entries = dual_result.value();
+
+    // Verify round-trip produces identical result
+    ASSERT_EQ(final_entries.size(), original_entries.size());
+    for (std::size_t i = 0; i < original_entries.size(); ++i) {
+        EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+    }
+}
+
+TEST_F(LayerModeConverterTests, RoundTripCoveredLayerType)
+{
+    // Start with dual-layer component
+    auto dual_component = create_dual_layer_component_single_metatile(LayerType::covered);
+    const auto &original_entries = dual_component.metatiles_bin();
+
+    // Triple-layerize
+    auto triple_result = converter_->triple_layerize(dual_component);
+    ASSERT_TRUE(triple_result.has_value());
+    const auto &triple_entries = triple_result.value();
+
+    // Create source metatile for dual-layerize
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
+
+    // Dual-layerize back
+    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
+    ASSERT_TRUE(dual_result.has_value());
+    const auto &final_entries = dual_result.value();
+
+    // Verify round-trip produces identical result
+    ASSERT_EQ(final_entries.size(), original_entries.size());
+    for (std::size_t i = 0; i < original_entries.size(); ++i) {
+        EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+    }
+}
+
+TEST_F(LayerModeConverterTests, RoundTripSplitLayerType)
+{
+    // Start with dual-layer component
+    auto dual_component = create_dual_layer_component_single_metatile(LayerType::split);
+    const auto &original_entries = dual_component.metatiles_bin();
+
+    // Triple-layerize
+    auto triple_result = converter_->triple_layerize(dual_component);
+    ASSERT_TRUE(triple_result.has_value());
+    const auto &triple_entries = triple_result.value();
+
+    // Create source metatile for dual-layerize
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
+
+    // Dual-layerize back
+    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
+    ASSERT_TRUE(dual_result.has_value());
+    const auto &final_entries = dual_result.value();
+
+    // Verify round-trip produces identical result
+    ASSERT_EQ(final_entries.size(), original_entries.size());
+    for (std::size_t i = 0; i < original_entries.size(); ++i) {
+        EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
+    }
+}
+
+TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
+{
+    PorymapTilesetComponent dual_component;
+
+    // Add first metatile with LayerType::normal (tile indices 1-8)
+    for (unsigned int i = 1; i <= 8; ++i) {
+        dual_component.push_back_tilemap_entry(create_test_entry(i));
+    }
+    dual_component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
+
+    // Add second metatile with LayerType::covered (tile indices 9-16)
+    for (unsigned int i = 9; i <= 16; ++i) {
+        dual_component.push_back_tilemap_entry(create_test_entry(i));
+    }
+    dual_component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
+
+    // Add third metatile with LayerType::split (tile indices 17-24)
+    for (unsigned int i = 17; i <= 24; ++i) {
+        dual_component.push_back_tilemap_entry(create_test_entry(i));
+    }
+    dual_component.push_back_attribute(MetatileAttribute{LayerType::split, 0});
+
+    const auto &original_entries = dual_component.metatiles_bin();
+
+    // Triple-layerize
+    auto triple_result = converter_->triple_layerize(dual_component);
+    ASSERT_TRUE(triple_result.has_value());
+    const auto &triple_entries = triple_result.value();
+
+    // Create source metatiles for dual-layerize
+    std::vector<Metatile<Rgba32>> source_metatiles;
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
+    source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
+
+    // Dual-layerize back
+    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
+    ASSERT_TRUE(dual_result.has_value());
+    const auto &final_entries = dual_result.value();
+
+    // Verify round-trip produces identical result
+    ASSERT_EQ(final_entries.size(), original_entries.size());
+    for (std::size_t i = 0; i < original_entries.size(); ++i) {
+        EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].hflip(), original_entries[i].hflip()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].vflip(), original_entries[i].vflip()) << "Mismatch at index " << i;
     }
 }

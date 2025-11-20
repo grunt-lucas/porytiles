@@ -43,16 +43,26 @@ class LayerModeConverter {
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> triple_layerize(const PorymapTilesetComponent &component);
 
     /**
-     * @brief TODO
+     * @brief Converts a tileset from triple-layer format to dual-layer format.
      *
      * @details
-     * TODO
+     * Converts triple-layer metatiles (12 entries per metatile) to dual-layer metatiles (8 entries per metatile) by
+     * removing transparent tilemap entries based on each metatile's inferred LayerType. This is the inverse operation
+     * of triple_layerize().
      *
-     * @param component TODO
-     * @pre TODO
+     * The conversion strategy depends on the metatile's inferred LayerType:
+     * - normal: Removes the first 4 transparent entries, keeps the last 8 entries
+     * - covered: Keeps the first 8 entries, removes the last 4 transparent entries
+     * - split: Keeps the first 4 entries, removes the middle 4 transparent entries, keeps the last 4 entries
+     *
+     * @param entries The triple-layer tilemap entries to convert
+     * @param source_metatiles The source metatiles used to infer layer types
+     * @pre The entries vector contains triple-layer entries (size must equal source_metatiles.size() * 12)
+     * @pre No metatile in source_metatiles has implied LayerMode::triple
      * @return A dual-layerized TilemapEntry vector
      */
-    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> dual_layerize(const PorymapTilesetComponent &component);
+    [[nodiscard]] ChainableResult<std::vector<TilemapEntry>>
+    dual_layerize(const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles);
 
   private:
     TextFormatter *format_;

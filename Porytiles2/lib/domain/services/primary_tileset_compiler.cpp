@@ -314,12 +314,14 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 
-    /*
-     * TODO: use inferred LayerType vector and populated new_porymap_component tilemap_entries to compute modified
-     * entries if user is requesting dual layer. We'll need to trim the irrelevant blank layer. We can use
-     * LayerModeConverter::dual_layerize. This function will need to be modified to take a vector of target LayerTypes
-     * in order to work properly.
-     */
+    if (configured_layer_mode == LayerMode::dual) {
+        /*
+         * TODO: use inferred LayerType vector and populated new_porymap_component tilemap_entries to compute modified
+         * entries if user is requesting dual layer. We'll need to trim the irrelevant blank layer. We can use
+         * LayerModeConverter::dual_layerize. This function will need to be modified to take a vector of target
+         * LayerTypes in order to work properly.
+         */
+    }
 
     // TODO: write attributes for real, for now just write back what we read
     for (const auto &attr : tileset.porymap_component().metatile_attributes_bin()) {
