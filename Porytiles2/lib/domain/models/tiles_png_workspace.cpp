@@ -10,20 +10,38 @@ namespace {
 using namespace porytiles2;
 
 /**
- * @brief Helper function to export workspace tiles with optional flip transformations.
+ * @brief Helper function to export workspace tiles with optional flip transformations and trimming.
  *
  * @param workspace The TilesPngWorkspace to export from
- * @param apply_flips If true, applies h_flip/v_flip transformations to restore original forms;
- *                    if false, exports canonical forms as-is
+ * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
+ * @param trim_mode Controls whether trailing transparent tiles are included or trimmed
  * @return An Image<IndexPixel> in the standard tiles.png format
  */
-Image<IndexPixel> export_image_helper(const TilesPngWorkspace &workspace, bool apply_flips)
+Image<IndexPixel>
+export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode, ExportTrimMode trim_mode)
 {
     // Standard tiles.png format: 16 tiles per row (128 pixels wide)
-    const std::size_t tiles_per_row = 16;
+    constexpr std::size_t tiles_per_row = 16;
+
+    // Determine the effective tile count based on export mode
+    std::size_t effective_tile_count = workspace.capacity();
+    if (trim_mode == ExportTrimMode::trim_trailing_transparent) {
+        // Find the last non-transparent tile
+        // Start from capacity-1 and work backwards
+        std::size_t last_non_transparent = 0; // Default to tile 0 (which is always present)
+        for (std::size_t i = workspace.capacity(); i > 0; --i) {
+            const std::size_t idx = i - 1;
+            if (!workspace.tile_at(idx).is_transparent()) {
+                last_non_transparent = idx;
+                break;
+            }
+        }
+        // Include tiles from 0 to last_non_transparent (inclusive)
+        effective_tile_count = last_non_transparent + 1;
+    }
 
     // Calculate number of tile rows needed (ceiling division)
-    const std::size_t tiles_per_col = (workspace.capacity() + tiles_per_row - 1) / tiles_per_row;
+    const std::size_t tiles_per_col = (effective_tile_count + tiles_per_row - 1) / tiles_per_row;
 
     // Calculate image dimensions
     const std::size_t image_width = tiles_per_row * tile::side_length_pix;
@@ -33,7 +51,7 @@ Image<IndexPixel> export_image_helper(const TilesPngWorkspace &workspace, bool a
     Image<IndexPixel> img{image_width, image_height};
 
     // Copy each tile's pixels into the image
-    for (std::size_t tile_idx = 0; tile_idx < workspace.capacity(); ++tile_idx) {
+    for (std::size_t tile_idx = 0; tile_idx < effective_tile_count; ++tile_idx) {
         // Calculate tile position in the grid
         const std::size_t tile_row = tile_idx / tiles_per_row;
         const std::size_t tile_col = tile_idx % tiles_per_row;
@@ -50,7 +68,7 @@ Image<IndexPixel> export_image_helper(const TilesPngWorkspace &workspace, bool a
         const PixelTile<IndexPixel> &canonical_base = canonical_tile;
 
         PixelTile<IndexPixel> tile_to_export;
-        if (apply_flips) {
+        if (flip_mode == ExportFlipMode::original) {
             // Apply flip transformations to restore original form
             tile_to_export = canonical_base.flip(canonical_tile.h_flip(), canonical_tile.v_flip());
         }
@@ -209,14 +227,9 @@ CanonicalPixelTile<IndexPixel> TilesPngWorkspace::tile_at(std::size_t index) con
     return tiles_.at(index);
 }
 
-Image<IndexPixel> TilesPngWorkspace::export_canonical_image() const
+Image<IndexPixel> TilesPngWorkspace::export_image(ExportFlipMode flip_mode, ExportTrimMode trim_mode) const
 {
-    return export_image_helper(*this, false);
-}
-
-Image<IndexPixel> TilesPngWorkspace::export_original_image() const
-{
-    return export_image_helper(*this, true);
+    return export_image_helper(*this, flip_mode, trim_mode);
 }
 
 bool TilesPngWorkspace::at_capacity() const

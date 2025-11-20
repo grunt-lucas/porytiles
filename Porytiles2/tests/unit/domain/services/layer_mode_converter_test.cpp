@@ -325,18 +325,15 @@ TEST_F(LayerModeConverterTests, DualLayerizeNormalLayerTypeRemovesTransparentFro
     std::vector<Metatile<Rgba32>> source_metatiles;
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
 
-    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &dual_entries = result.value();
+    auto dual_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Should have 8 entries (removed first 4 transparent)
     ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
 
     // Verify entries are tile indices 1-8
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
-                                                        << (i + 1);
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1)
+            << "Entry at index " << i << " should have tile_index " << (i + 1);
     }
 }
 
@@ -357,18 +354,15 @@ TEST_F(LayerModeConverterTests, DualLayerizeCoveredLayerTypeRemovesTransparentFr
     std::vector<Metatile<Rgba32>> source_metatiles;
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
 
-    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &dual_entries = result.value();
+    auto dual_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Should have 8 entries (removed last 4 transparent)
     ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
 
     // Verify entries are tile indices 1-8
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
-                                                        << (i + 1);
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1)
+            << "Entry at index " << i << " should have tile_index " << (i + 1);
     }
 }
 
@@ -393,18 +387,15 @@ TEST_F(LayerModeConverterTests, DualLayerizeSplitLayerTypeRemovesTransparentFrom
     std::vector<Metatile<Rgba32>> source_metatiles;
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
 
-    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &dual_entries = result.value();
+    auto dual_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Should have 8 entries (removed middle 4 transparent)
     ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
 
     // Verify entries are tile indices 1-8
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index "
-                                                        << (i + 1);
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1)
+            << "Entry at index " << i << " should have tile_index " << (i + 1);
     }
 }
 
@@ -445,10 +436,7 @@ TEST_F(LayerModeConverterTests, DualLayerizeMultipleMetatilesWithDifferentLayerT
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
 
-    auto result = converter_->dual_layerize(triple_entries, source_metatiles);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &dual_entries = result.value();
+    auto dual_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Should have 24 entries total (3 metatiles * 8 entries each)
     ASSERT_EQ(dual_entries.size(), 24);
@@ -477,9 +465,7 @@ TEST_F(LayerModeConverterTests, RoundTripNormalLayerType)
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::normal));
 
     // Dual-layerize back
-    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
-    ASSERT_TRUE(dual_result.has_value());
-    const auto &final_entries = dual_result.value();
+    auto final_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Verify round-trip produces identical result
     ASSERT_EQ(final_entries.size(), original_entries.size());
@@ -507,9 +493,7 @@ TEST_F(LayerModeConverterTests, RoundTripCoveredLayerType)
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::covered));
 
     // Dual-layerize back
-    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
-    ASSERT_TRUE(dual_result.has_value());
-    const auto &final_entries = dual_result.value();
+    auto final_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Verify round-trip produces identical result
     ASSERT_EQ(final_entries.size(), original_entries.size());
@@ -537,9 +521,7 @@ TEST_F(LayerModeConverterTests, RoundTripSplitLayerType)
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
 
     // Dual-layerize back
-    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
-    ASSERT_TRUE(dual_result.has_value());
-    const auto &final_entries = dual_result.value();
+    auto final_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Verify round-trip produces identical result
     ASSERT_EQ(final_entries.size(), original_entries.size());
@@ -587,9 +569,7 @@ TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
     source_metatiles.push_back(create_metatile_with_layer_type(LayerType::split));
 
     // Dual-layerize back
-    auto dual_result = converter_->dual_layerize(triple_entries, source_metatiles);
-    ASSERT_TRUE(dual_result.has_value());
-    const auto &final_entries = dual_result.value();
+    auto final_entries = converter_->dual_layerize(triple_entries, source_metatiles);
 
     // Verify round-trip produces identical result
     ASSERT_EQ(final_entries.size(), original_entries.size());

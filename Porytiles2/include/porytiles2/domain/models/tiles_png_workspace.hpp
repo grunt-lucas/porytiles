@@ -12,6 +12,62 @@
 namespace porytiles2 {
 
 /**
+ * @brief Defines whether flip transformations should be applied during image export.
+ *
+ * @details
+ * This enum controls whether tiles are exported in their canonical (lexicographically minimal) form
+ * or with flip transformations applied to restore their original orientations.
+ */
+enum class ExportFlipMode {
+    /**
+     * @brief Export tiles in canonical form without applying flip transformations.
+     *
+     * @details
+     * Tiles are exported exactly as stored in the workspace - in their canonical (lexicographically minimal)
+     * orientation. This is appropriate for fresh compilations where there is no "original" tile orientation to
+     * preserve.
+     */
+    canonical,
+
+    /**
+     * @brief Export tiles in original form by applying stored flip transformations.
+     *
+     * @details
+     * Tiles are exported with h_flip and v_flip transformations applied to restore their original pixel arrangements as
+     * they were before canonicalization. This enables round-trip preservation of tile orientations, which is
+     * particularly useful in patch builds.
+     */
+    original
+};
+
+/**
+ * @brief Defines how trailing transparent tiles should be handled during image export.
+ *
+ * @details
+ * This enum controls whether the exported image should include all tiles up to the workspace capacity or trim trailing
+ * transparent tiles to produce a more compact output.
+ */
+enum class ExportTrimMode {
+    /**
+     * @brief Include all tiles up to workspace capacity, even if trailing tiles are transparent.
+     *
+     * @details
+     * This mode exports a full image with dimensions calculated to accommodate all tiles in the workspace, including
+     * any transparent tiles at the end. This is the default behavior and maintains compatibility with existing code.
+     */
+    include_trailing_transparent,
+
+    /**
+     * @brief Trim trailing transparent tiles from the exported image.
+     *
+     * @details
+     * This mode finds the last non-transparent tile and exports only tiles up to and including that tile, producing a
+     * more compact image. If all tiles are transparent, the image will contain only tile 0.
+     */
+    trim_trailing_transparent
+};
+
+/**
  * @brief A workspace for managing canonical IndexPixel tiles destined for tiles.png output.
  *
  * @details
@@ -162,49 +218,36 @@ class TilesPngWorkspace {
     [[nodiscard]] CanonicalPixelTile<IndexPixel> tile_at(std::size_t index) const;
 
     /**
-     * @brief Exports the workspace tiles to an Image<IndexPixel> in canonical form (tiles.png format).
+     * @brief Exports the workspace tiles to an Image<IndexPixel> in tiles.png format.
      *
      * @details
-     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
-     * tiles per row (128 pixels wide). This method exports tiles in their canonical (lexicographically minimal) form
-     * as stored in the workspace, without applying any flip transformations.
+     * Creates an Image<IndexPixel> representation of tiles in the workspace, arranged in row-major order with 16
+     * tiles per row (128 pixels wide). This method provides flexible control over both flip transformation
+     * application and trailing transparent tile trimming via enum parameters.
      *
      * Image Layout:
      * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
-     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
+     * - Height: Calculated based on the trim_mode parameter
      * - Tile arrangement: Row-major order, matching the extraction order from the constructor
      *
-     * Canonical Form:
-     * Each tile is exported exactly as stored in the workspace - in its canonical (lexicographically minimal)
-     * orientation among all flip variants. Flip flags are not applied during export. This is the appropriate format
-     * for tiles.png output in fresh compilations, where there is no "original" tile orientation to preserve.
+     * Flip Mode:
+     * - ExportFlipMode::canonical: Exports tiles in their canonical (lexicographically minimal) form as stored,
+     *   without applying flip transformations. Appropriate for fresh compilations.
+     * - ExportFlipMode::original: Applies h_flip/v_flip transformations to restore original pixel arrangements,
+     *   enabling round-trip preservation useful in patch builds.
      *
-     * @return An Image<IndexPixel> containing all workspace tiles in canonical form (tiles.png format)
+     * Trim Mode:
+     * - ExportTrimMode::include_trailing_transparent: Exports all tiles up to workspace capacity.
+     * - ExportTrimMode::trim_trailing_transparent: Exports only tiles up to and including the last non-transparent
+     *   tile, producing a more compact image.
+     *
+     * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
+     * @param trim_mode Controls whether trailing transparent tiles are included or trimmed
+     * @return An Image<IndexPixel> containing workspace tiles in the specified format (tiles.png format)
      */
-    [[nodiscard]] Image<IndexPixel> export_canonical_image() const;
-
-    /**
-     * @brief Exports the workspace tiles to an Image<IndexPixel> in original (pre-canonicalization) form.
-     *
-     * @details
-     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
-     * tiles per row (128 pixels wide). This method applies flip transformations to restore tiles to their original
-     * orientations as they were before canonicalization.
-     *
-     * Image Layout:
-     * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
-     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
-     * - Tile arrangement: Row-major order, matching the extraction order from the constructor
-     *
-     * Original Form Restoration:
-     * Each tile is exported with flip transformations applied based on its stored h_flip and v_flip flags. This
-     * reverses the canonicalization process, restoring tiles to their original pixel arrangements. This enables
-     * round-trip preservation: original image → workspace → exported original image, which is particularly useful in
-     * patch builds.
-     *
-     * @return An Image<IndexPixel> containing all workspace tiles in original (flipped) form
-     */
-    [[nodiscard]] Image<IndexPixel> export_original_image() const;
+    [[nodiscard]] Image<IndexPixel> export_image(
+        ExportFlipMode flip_mode = ExportFlipMode::canonical,
+        ExportTrimMode trim_mode = ExportTrimMode::trim_trailing_transparent) const;
 
     /**
      * @brief Checks if the workspace has reached capacity and can no longer accept new tile insertions.

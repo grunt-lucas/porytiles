@@ -467,7 +467,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldHaveCorrectDimensions)
 {
     TilesPngWorkspace workspace{256};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -479,7 +479,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldCalculateHeightForNonSquareCapacit
 {
     TilesPngWorkspace workspace{32};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -491,7 +491,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldHandleNonEvenCapacity)
 {
     TilesPngWorkspace workspace{20};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -503,7 +503,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldBeAllTransparentForEmptyWorkspace)
 {
     TilesPngWorkspace workspace{16};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // All pixels should be transparent (IndexPixel(0))
     for (std::size_t row = 0; row < img.height(); ++row) {
@@ -526,9 +526,9 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldContainInsertedTiles)
     }
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    workspace.insert_tile(tile);
+    std::ignore = workspace.insert_tile(tile);
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image();
 
     // Tile 1 should be at pixel position (0, 8) since tile 0 is transparent
     // Tile 1 starts at pixel column 8 (second tile in first row)
@@ -561,7 +561,7 @@ TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveImageContents)
     TilesPngWorkspace workspace{original, 10};
 
     // Export back to image
-    auto exported = workspace.export_canonical_image();
+    auto exported = workspace.export_image();
 
     // Verify the tiles are preserved - check a few pixels from each tile
     EXPECT_EQ(exported.at(0, 0).index(), 1);
@@ -611,7 +611,7 @@ TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveComplexImage)
     TilesPngWorkspace workspace{original, 256};
 
     // Export back to image
-    auto exported = workspace.export_canonical_image();
+    auto exported = workspace.export_image();
 
     // Verify dimensions match (workspace capacity may be larger)
     EXPECT_EQ(exported.width(), 128); // Standard width
@@ -639,7 +639,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldPlaceTilesInCorrectPositions)
         pixel_tile1.set(i, IndexPixel{100});
     }
     CanonicalPixelTile<IndexPixel> tile1{pixel_tile1};
-    workspace.insert_tile(tile1);
+    std::ignore = workspace.insert_tile(tile1);
 
     // Create and insert another tile
     PixelTile<IndexPixel> pixel_tile2;
@@ -647,9 +647,9 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldPlaceTilesInCorrectPositions)
         pixel_tile2.set(i, IndexPixel{200});
     }
     CanonicalPixelTile<IndexPixel> tile2{pixel_tile2};
-    workspace.insert_tile(tile2);
+    std::ignore = workspace.insert_tile(tile2);
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image();
 
     // Tile 0 should be transparent
     EXPECT_EQ(img.at(0, 0).index(), 0);
@@ -678,7 +678,7 @@ TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldPreserveOriginalPixelArran
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported_original = workspace.export_original_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // The original pixel arrangement should be preserved
     EXPECT_EQ(exported_original.at(0, 0).index(), 42);
@@ -705,8 +705,8 @@ TEST(TilesPngWorkspaceTests, ExportOriginalVsCanonicalShouldDifferForNonCanonica
     TilesPngWorkspace workspace{original, 10};
 
     // Export both forms
-    auto exported_canonical = workspace.export_canonical_image();
-    auto exported_original = workspace.export_original_image();
+    auto exported_canonical = workspace.export_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // Canonical form should have the pixel at (7,7) due to HV flip being lex-minimal
     EXPECT_EQ(exported_canonical.at(7, 7).index(), 99);
@@ -736,7 +736,7 @@ TEST(TilesPngWorkspaceTests, RoundTripWithExportOriginalShouldPreserveAllPixels)
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported = workspace.export_original_image();
+    auto exported = workspace.export_image(ExportFlipMode::original);
 
     // Verify all specific pixels are preserved
     EXPECT_EQ(exported.at(0, 0).index(), 10);
@@ -762,7 +762,7 @@ TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldHandleComplexPatterns)
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported = workspace.export_original_image();
+    auto exported = workspace.export_image(ExportFlipMode::original);
 
     // Verify the diagonal pattern is preserved
     for (std::size_t i = 0; i < 8; ++i) {
@@ -789,8 +789,8 @@ TEST(TilesPngWorkspaceTests, ExportCanonicalShouldMatchForSymmetricTiles)
     TilesPngWorkspace workspace{original, 10};
 
     // Export both forms
-    auto exported_canonical = workspace.export_canonical_image();
-    auto exported_original = workspace.export_original_image();
+    auto exported_canonical = workspace.export_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // For symmetric tiles, both exports should be identical
     for (std::size_t row = 0; row < 8; ++row) {

@@ -314,8 +314,8 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
         new_porymap_component->push_back_attribute(attr);
     }
 
-    // TODO: do we want export_*_image to trim itself so there isn't a bunch of blank padding at the end?
-    new_porymap_component->tiles_png(tiles_workspace.export_original_image());
+    // Export tiles in original form; could use ExportTrimMode::trim_trailing_transparent to remove padding
+    new_porymap_component->tiles_png(tiles_workspace.export_image(ExportFlipMode::original));
 
     // Copy primary palettes from our processed porymap_pals vector
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
