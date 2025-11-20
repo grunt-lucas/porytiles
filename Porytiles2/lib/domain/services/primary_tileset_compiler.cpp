@@ -138,12 +138,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 ChainableResult<std::unique_ptr<Tileset>>
 PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode)
 {
-    // Initialize all the compilation services
-    LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
-    LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
-    MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
-
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
@@ -151,6 +145,12 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
     PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
+
+    // Initialize all the compilation services
+    LayerImageMetatileizer<Rgba32> metatileizer{};
+    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
+    LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
+    MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
 
     // Read Porytiles layer images into metatile vector
     PT_TRY_ASSIGN_CHAIN_ERR(

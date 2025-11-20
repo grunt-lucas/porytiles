@@ -23,8 +23,9 @@ class MetatileDecompiler {
     explicit MetatileDecompiler(
         gsl::not_null<TextFormatter *> format,
         gsl::not_null<UserDiagnostics *> diag,
-        gsl::not_null<TilePrinter *> tile_printer)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}
+        gsl::not_null<TilePrinter *> tile_printer,
+        const Rgba32 &extrinsic_transparency)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, extrinsic_transparency_{extrinsic_transparency}
     {
     }
 
@@ -37,6 +38,7 @@ class MetatileDecompiler {
     TextFormatter *format_;
     UserDiagnostics *diag_;
     TilePrinter *tile_printer_;
+    Rgba32 extrinsic_transparency_;
 };
 
 } // namespace porytiles2
