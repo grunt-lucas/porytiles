@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
@@ -135,7 +136,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 }
 
 ChainableResult<std::unique_ptr<Tileset>>
-PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tileset)
+PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode)
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};

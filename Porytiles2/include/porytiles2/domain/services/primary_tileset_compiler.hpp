@@ -5,6 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -32,7 +33,7 @@ class PrimaryTilesetCompiler {
     [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset);
 
     [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
-    compile_patch_tiles_fixed_pals_fixed(const Tileset &tileset);
+    compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode);
 
   private:
     DomainConfig *config_;

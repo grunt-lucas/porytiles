@@ -2,12 +2,12 @@
 
 #include <memory>
 #include <string>
-
 #include <unistd.h>
 
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
@@ -35,7 +35,6 @@
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
-#include "porytiles2/infra/services/color_palette_printer.hpp"
 
 class DebugPrimaryCompileCommand final : public Command {
   public:
@@ -107,7 +106,7 @@ class DebugPrimaryCompileCommand final : public Command {
         const auto tileset = std::move(maybe_tileset.value());
 
         // Compile the tileset
-        auto compile_result = compiler.compile_patch_tiles_fixed_pals_fixed(*tileset);
+        auto compile_result = compiler.compile_patch(*tileset, PatchTilesMode::tiles_fixed, PatchPalMode::pals_fixed);
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
@@ -116,18 +115,6 @@ class DebugPrimaryCompileCommand final : public Command {
             return;
         }
         const auto new_tileset = std::move(compile_result.value());
-
-        // Multi-line fatal print demo
-        // FormattableError proximate{std::vector<std::string>{
-        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
-        // FormattableError middle{std::vector<std::string>{
-        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
-        // FormattableError root{std::vector<std::string>{
-        //     "this is line 1 of the error", "this is line 2 of the error", "this is line 3 of the error"}};
-        // ChainableResult<void> root_result{root};
-        // ChainableResult<void> middle_result{middle, root_result};
-        // ChainableResult<void> prox_result{proximate, middle_result};
-        // diag->fatal(prox_result);
 
         // Save the tileset back
         const auto new_tileset_save_result = repo.save(*new_tileset);

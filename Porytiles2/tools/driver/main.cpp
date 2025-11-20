@@ -5,7 +5,7 @@
 
 #include "command.hpp"
 #include "create_tileset_command.hpp"
-#include "debug_commands.hpp"
+#include "tmp_debug_commands.hpp"
 #include "verify_tileset_command.hpp"
 
 int main(const int argc, char **argv)
