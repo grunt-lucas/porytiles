@@ -160,16 +160,6 @@ class Palette {
         return result;
     }
 
-    /**
-     * @brief Returns a const reference to the internal color vector.
-     *
-     * @return Const reference to the vector of colors
-     */
-    [[nodiscard]] const std::vector<ColorType> &colors() const
-    {
-        return colors_;
-    }
-
   private:
     std::vector<ColorType> colors_;
 };

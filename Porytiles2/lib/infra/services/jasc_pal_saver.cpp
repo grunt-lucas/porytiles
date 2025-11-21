@@ -1,6 +1,7 @@
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 
 #include <fstream>
+#include <ranges>
 
 #include "fmt/format.h"
 
@@ -20,8 +21,15 @@ ChainableResult<void> JascPalSaver::save(const Palette<Rgba32> &pal, const std::
     stream << "0100\r\n";
     stream << pal.size() << "\r\n";
 
-    for (const auto &color : pal.colors()) {
-        stream << color.to_jasc_str() << "\r\n";
+    if (pal.size() >= 1) {
+        // First, write slot 0 color
+        stream << pal.slot_zero_color().to_jasc_str() << "\r\n";
+
+        // Then write remaining colors (indices 1 through size-1) in order
+        const auto index_to_color = pal.index_to_color_map();
+        for (const auto &color : index_to_color | std::views::values) {
+            stream << color.to_jasc_str() << "\r\n";
+        }
     }
 
     if (stream.fail()) {

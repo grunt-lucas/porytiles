@@ -7,6 +7,7 @@
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/palette_index.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
@@ -38,7 +39,7 @@ PixelTile<Rgba32> convert_tile(
     const Rgba32 &extrinsic_transparency)
 {
     std::array<Rgba32, tile::size_pix> rgba_pixels{};
-    const auto &palette_colors = pals[pal_index].colors();
+    const auto index_to_color = pals[pal_index].index_to_color_map();
 
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
         const unsigned int color_index = index_tile.at(i).index();
@@ -49,7 +50,14 @@ PixelTile<Rgba32> convert_tile(
             rgba_pixels[i] = extrinsic_transparency;
         }
         else {
-            rgba_pixels[i] = palette_colors[color_index];
+            auto it = index_to_color.find(PaletteIndex{color_index});
+            if (it != index_to_color.end()) {
+                rgba_pixels[i] = it->second;
+            }
+            else {
+                // Fallback: should not happen in valid data, use extrinsic_transparency
+                rgba_pixels[i] = extrinsic_transparency;
+            }
         }
     }
 

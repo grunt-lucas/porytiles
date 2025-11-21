@@ -24,7 +24,7 @@ TEST(PaletteMatchersTest, CompleteCoverage)
     tile.set(1, 0, rgba_red); // Duplicate color
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
     palette.add(rgba_blue);
@@ -52,7 +52,7 @@ TEST(PaletteMatchersTest, PartialCoverage)
     tile.set(1, 0, rgba_yellow);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
 
@@ -84,7 +84,7 @@ TEST(PaletteMatchersTest, NoCoverage)
     tile.set(0, 1, rgba_green);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_blue);
     palette.add(rgba_yellow);
 
@@ -106,7 +106,7 @@ TEST(PaletteMatchersTest, AllTransparentTile_IntrinsicTransparency)
     PixelTile<Rgba32> tile{}; // Default constructor creates all transparent pixels
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
 
@@ -129,7 +129,7 @@ TEST(PaletteMatchersTest, AllTransparentTile_ExtrinsicTransparency)
     }
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
 
     // Act: Match the tile to the palette with extrinsic transparency
@@ -153,7 +153,7 @@ TEST(PaletteMatchersTest, MixedIntrinsicAndExtrinsicTransparency)
     tile.set(1, 1, rgba_green);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
 
@@ -179,7 +179,7 @@ TEST(PaletteMatchersTest, UncoveredPixelIndicesCorrect)
     tile.set(20, rgba_red);  // Linear index 20, duplicate color
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
 
     // Act: Match the tile to the palette with extrinsic transparency
@@ -208,22 +208,6 @@ TEST(PaletteMatchersTest, EmptyPalette_Panics)
     EXPECT_DEATH({ std::ignore = match_tile_to_palette(tile, palette, rgba_magenta); }, "palette is empty");
 }
 
-TEST(PaletteMatchersTest, MismatchedExtrinsicInSlot0_Panics)
-{
-    // Arrange: Create a palette where slot 0 does not match extrinsic transparency
-    PixelTile<Rgba32> tile{};
-    tile.set(0, 0, rgba_red);
-
-    Palette<Rgba32> palette{};
-    palette.add(rgba_blue); // Slot 0 is blue, not magenta
-    palette.add(rgba_red);
-
-    // Act & Assert: Should panic when extrinsic doesn't match slot 0
-    EXPECT_DEATH(
-        { std::ignore = match_tile_to_palette(tile, palette, rgba_magenta); },
-        "palette slot 0 did not match provided extrinsic transparency value");
-}
-
 TEST(PaletteMatchersTest, DuplicateColorsInTile)
 {
     // Arrange: Create a tile with many duplicate colors
@@ -236,7 +220,7 @@ TEST(PaletteMatchersTest, DuplicateColorsInTile)
     tile.set(2, 0, rgba_blue);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
     palette.add(rgba_blue);
@@ -257,7 +241,7 @@ TEST(PaletteMatchersTest, SingleNonTransparentPixel)
     tile.set(3, 4, rgba_red);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
 
     // Act: Match the tile to the palette with extrinsic transparency
@@ -277,7 +261,7 @@ TEST(PaletteMatchersTest, SingleUncoveredPixel)
     tile.set(59, rgba_yellow);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
     palette.add(rgba_green);
 
@@ -329,7 +313,7 @@ TEST(PaletteMatchersTest, PaletteIndexField)
     tile.set(0, 0, rgba_red);
 
     Palette<Rgba32> palette{};
-    palette.add(rgba_magenta); // Slot 0 must be extrinsic transparency
+    palette.add(rgba_magenta);
     palette.add(rgba_red);
 
     // Act: Match the tile to the palette
@@ -337,6 +321,34 @@ TEST(PaletteMatchersTest, PaletteIndexField)
 
     // Assert: Verify the pal_index field is initialized (should be 0 by default)
     EXPECT_EQ(result.pal_index, 0);
+}
+
+TEST(PaletteMatchersTest, RepeatSlot0Color)
+{
+    // Arrange: Create a scenario where pal slot 0 color is repeated elsewhere in the pal
+    // This simulates the case of a .pla blend color being used in the pal/tile itself
+    PixelTile<Rgba32> tile{};
+    tile.set(0, 0, rgba_red);
+    tile.set(0, 1, rgba_blue);
+    tile.set(0, 2, rgba_green);
+    tile.set(0, 3, rgba_yellow);
+
+    // Slot 0 set to yellow, slot 4 also yellow
+    Palette<Rgba32> palette{};
+    palette.add(rgba_yellow);
+    palette.add(rgba_red);
+    palette.add(rgba_blue);
+    palette.add(rgba_green);
+    palette.add(rgba_yellow);
+
+    // Act: Match the tile to the palette
+    auto result = match_tile_to_palette(tile, palette, rgba_magenta);
+
+    // Assert: Verify all pixels are covered
+    EXPECT_TRUE(result.is_covered);
+    EXPECT_EQ(result.missing_colors.size(), 0);
+    EXPECT_EQ(result.uncovered_pixel_indices.size(), 0);
+    EXPECT_EQ(result.covered_colors.size(), 4);
 }
 
 // ===========================
