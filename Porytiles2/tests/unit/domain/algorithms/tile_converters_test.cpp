@@ -591,7 +591,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_BasicConversion)
 {
     // Arrange: Create a simple indexed tile and palette
     PixelTile<IndexPixel> index_tile{};
-    index_tile.set(0, 0, IndexPixel{0}); // Maps to rgba_magenta
+    index_tile.set(0, 0, IndexPixel{0}); // Maps to rgba_magenta (extrinsic transparency)
     index_tile.set(0, 1, IndexPixel{1}); // Maps to rgba_red
     index_tile.set(0, 2, IndexPixel{2}); // Maps to rgba_green
     index_tile.set(1, 0, IndexPixel{3}); // Maps to rgba_blue
@@ -602,8 +602,8 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_BasicConversion)
     palette.add(rgba_green);
     palette.add(rgba_blue);
 
-    // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    // Act: Convert index tile to color tile (extrinsic transparency)
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify colors are correctly mapped
     EXPECT_EQ(color_tile.at(0, 0), rgba_magenta);
@@ -628,8 +628,8 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_MultipleDifferentColors)
     palette.add(rgba_blue);
     palette.add(rgba_yellow);
 
-    // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    // Act: Convert index tile to color tile (extrinsic transparency)
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify specific positions have correct colors
     EXPECT_EQ(color_tile.at(0), rgba_red);
@@ -654,8 +654,8 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_DuplicateIndices)
     palette.add(rgba_red);
     palette.add(rgba_green);
 
-    // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    // Act: Convert index tile to color tile (extrinsic transparency)
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify all duplicate indices map to the same color
     EXPECT_EQ(color_tile.at(0, 0), rgba_red);
@@ -681,8 +681,8 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_CorrectColorMappingAllPixels)
         index_tile.set(i, IndexPixel{static_cast<unsigned int>(i % 4)});
     }
 
-    // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    // Act: Convert index tile to color tile (extrinsic transparency)
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify the pattern is correctly mapped
     const std::array<Rgba32, 4> expected_colors = {rgba_magenta, rgba_red, rgba_green, rgba_blue};
@@ -700,7 +700,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_EmptyPalette_Panics)
     Palette<Rgba32> palette{}; // Empty palette
 
     // Act & Assert: Should panic when palette is empty
-    EXPECT_DEATH({ std::ignore = color_tile_from_index_tile(index_tile, palette); }, "palette is empty");
+    EXPECT_DEATH({ std::ignore = color_tile_from_index_tile(index_tile, palette, rgba_magenta); }, "palette is empty");
 }
 
 TEST(TileConvertersTests, ColorTileFromIndexTile_OutOfBoundsIndex_Panics)
@@ -717,7 +717,9 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_OutOfBoundsIndex_Panics)
     // Palette size is 3, but we're trying to access index 5
 
     // Act & Assert: Should panic when index is out of bounds
-    EXPECT_DEATH({ std::ignore = color_tile_from_index_tile(index_tile, palette); }, "index 5 out of palette bounds");
+    EXPECT_DEATH(
+        { std::ignore = color_tile_from_index_tile(index_tile, palette, rgba_magenta); },
+        "index 5 out of palette bounds");
 }
 
 TEST(TileConvertersTests, ColorTileFromIndexTile_FullyPopulatedPalette)
@@ -746,7 +748,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_FullyPopulatedPalette)
     }
 
     // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify all 16 colors are correctly mapped
     EXPECT_EQ(color_tile.at(0), rgba_magenta);
@@ -775,7 +777,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_TransparencyAtIndex0)
     index_tile.set(1, 0, IndexPixel{2}); // Green pixel
 
     // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify transparency color is correctly mapped
     EXPECT_EQ(color_tile.at(0, 0), rgba_magenta);
@@ -797,12 +799,12 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_SingleColorPalette)
     index_tile.set(2, 2, IndexPixel{0});
 
     // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
-    // Assert: All pixels should map to the single palette color
-    EXPECT_EQ(color_tile.at(0, 0), rgba_red);
-    EXPECT_EQ(color_tile.at(1, 1), rgba_red);
-    EXPECT_EQ(color_tile.at(2, 2), rgba_red);
+    // Assert: All pixels should map to the extrinsic transparency color, NOT the pal slot 0 color
+    EXPECT_EQ(color_tile.at(0, 0), rgba_magenta);
+    EXPECT_EQ(color_tile.at(1, 1), rgba_magenta);
+    EXPECT_EQ(color_tile.at(2, 2), rgba_magenta);
 }
 
 TEST(TileConvertersTests, ColorTileFromIndexTile_BoundaryIndexValues)
@@ -823,10 +825,10 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_BoundaryIndexValues)
     index_tile.set(2, IndexPixel{pal::max_size / 2}); // Middle index
 
     // Act: Convert index tile to color tile
-    auto color_tile = color_tile_from_index_tile(index_tile, palette);
+    auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 
     // Assert: Verify boundary values are handled correctly
-    EXPECT_EQ(color_tile.at(0), (Rgba32{0, 0, 0}));
+    EXPECT_EQ(color_tile.at(0), rgba_magenta);
     EXPECT_EQ(color_tile.at(1), (Rgba32{240, 240, 240}));
     EXPECT_EQ(color_tile.at(2), (Rgba32{128, 128, 128}));
 }
@@ -963,7 +965,7 @@ TEST(TileConvertersTests, IndexTileFromColorTile_RoundTrip_IndexToColorToIndex)
     palette.add(rgba_blue);
 
     // Act: Convert index -> color -> index
-    auto color_tile = color_tile_from_index_tile(original_index_tile, palette);
+    auto color_tile = color_tile_from_index_tile(original_index_tile, palette, rgba_magenta);
     auto result_tile = index_tile_from_color_tile(color_tile, palette, rgba_magenta);
 
     // Assert: Round trip should produce identical indices

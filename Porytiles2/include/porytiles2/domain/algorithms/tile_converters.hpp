@@ -142,6 +142,62 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
     return PixelTile{index_pixels};
 }
 
+/**
+ * @brief Helper function implementing the core index-to-color tile conversion logic.
+ *
+ * @details
+ * This private helper converts a PixelTile<IndexPixel> to a PixelTile<ColorType> by mapping each pixel's index to its
+ * corresponding color in the provided palette. It accepts a transparent_color parameter that determines what color to
+ * use for index 0 pixels, allowing the same implementation to work with both intrinsic and extrinsic transparency.
+ *
+ * The algorithm:
+ * 1. For each pixel in the tile:
+ *    - If index is 0, maps to transparent_color
+ *    - Otherwise, looks up the color in the palette's index-to-color map
+ *    - If not found, panics (indicates invalid index)
+ *
+ * @tparam ColorType The color type of the palette and output tile
+ * @param index_tile The PixelTile containing IndexPixel values to convert
+ * @param palette The Palette containing the colors to look up
+ * @param transparent_color The color to use for index 0 (transparent) pixels
+ * @pre palette is not empty
+ * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
+ * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] PixelTile<ColorType> color_tile_from_index_tile_impl(
+    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette, const ColorType &transparent_color)
+{
+    if (palette.size() == 0) {
+        panic("palette is empty");
+    }
+
+    const auto index_to_color = palette.index_to_color_map();
+    std::array<ColorType, tile::size_pix> color_pixels;
+
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        const auto &index_pixel = index_tile.at(i);
+        const unsigned int index = index_pixel.index();
+
+        if (index == 0) {
+            // Index 0 is the transparent slot
+            color_pixels[i] = transparent_color;
+        }
+        else {
+            // Look up in index-to-color map for non-zero indices
+            auto it = index_to_color.find(PaletteIndex{index});
+            if (it == index_to_color.end()) {
+                panic(
+                    "index " + std::to_string(index) + " out of palette bounds [0, " + std::to_string(palette.size()) +
+                    ")");
+            }
+            color_pixels[i] = it->second;
+        }
+    }
+
+    return PixelTile<ColorType>{color_pixels};
+}
+
 } // namespace details
 
 /**
@@ -322,53 +378,54 @@ shape_tile_to_pixel_colors(const ShapeTile<ColorIndex> &shape_tile, const ColorI
 }
 
 /**
- * @brief Converts a PixelTile<IndexPixel> to a PixelTile<ColorType> using a palette.
+ * @brief Converts a PixelTile<IndexPixel> to a PixelTile<ColorType> using a palette (intrinsic transparency).
  *
  * @details
  * This function takes an indexed tile (where each pixel contains a palette index) and converts it to a color tile by
- * looking up the actual color for each index in the provided palette. Each pixel's index value is used to retrieve the
- * corresponding color from the palette's color vector.
+ * looking up the actual color for each index in the provided palette. Index 0 pixels are mapped to the default-
+ * constructed ColorType{} (intrinsic transparency representation).
  *
- * @tparam ColorType The color type of the palette and output tile
+ * This overload is only available for color types that support intrinsic transparency.
+ *
+ * @tparam ColorType The color type of the palette and output tile, must support intrinsic transparency
  * @param index_tile The PixelTile containing IndexPixel values to convert
  * @param palette The Palette containing the colors to look up
  * @pre palette is not empty
- * @pre All indices in index_tile are within the bounds of the palette [0, palette.size())
+ * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
  * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index in index_tile
  */
 template <SupportsTransparency ColorType>
 [[nodiscard]] PixelTile<ColorType>
 color_tile_from_index_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette)
+    requires requires(const ColorType &c) { c.is_transparent(); }
 {
-    if (palette.size() == 0) {
-        panic("palette is empty");
-    }
+    return details::color_tile_from_index_tile_impl(index_tile, palette, ColorType{});
+}
 
-    const ColorType slot_zero = palette.slot_zero_color();
-    const auto index_to_color = palette.index_to_color_map();
-    std::array<ColorType, tile::size_pix> color_pixels;
-
-    for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        const auto &index_pixel = index_tile.at(i);
-        const unsigned int index = index_pixel.index();
-
-        if (index == 0) {
-            // Slot 0 is special (transparent slot)
-            color_pixels[i] = slot_zero;
-        }
-        else {
-            // Look up in index-to-color map for non-zero indices
-            auto it = index_to_color.find(PaletteIndex{index});
-            if (it == index_to_color.end()) {
-                panic(
-                    "index " + std::to_string(index) + " out of palette bounds [0, " + std::to_string(palette.size()) +
-                    ")");
-            }
-            color_pixels[i] = it->second;
-        }
-    }
-
-    return PixelTile<ColorType>{color_pixels};
+/**
+ * @brief Converts a PixelTile<IndexPixel> to a PixelTile<ColorType> using a palette (extrinsic transparency).
+ *
+ * @details
+ * This function takes an indexed tile (where each pixel contains a palette index) and converts it to a color tile by
+ * looking up the actual color for each index in the provided palette. Index 0 pixels are mapped to the provided
+ * extrinsic transparency color.
+ *
+ * This overload is only available for color types that support extrinsic transparency.
+ *
+ * @tparam ColorType The color type of the palette and output tile, must support extrinsic transparency
+ * @param index_tile The PixelTile containing IndexPixel values to convert
+ * @param palette The Palette containing the colors to look up
+ * @param extrinsic The extrinsic transparency color to use for index 0 pixels
+ * @pre palette is not empty
+ * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
+ * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index in index_tile
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] PixelTile<ColorType> color_tile_from_index_tile(
+    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
+    requires requires(const ColorType &c) { c.is_transparent(c); }
+{
+    return details::color_tile_from_index_tile_impl(index_tile, palette, extrinsic);
 }
 
 /**
