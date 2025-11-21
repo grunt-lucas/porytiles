@@ -37,7 +37,7 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(Palette<Rgba32> pal, unsigned int pal_index);
+    void set_pal(unsigned int pal_index, Palette<Rgba32> pal);
 
     [[nodiscard]] const Palette<Rgba32> &pal_at(unsigned int pal_index) const;
 

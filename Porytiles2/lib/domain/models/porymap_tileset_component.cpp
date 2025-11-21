@@ -27,7 +27,7 @@ void PorymapTilesetComponent::push_back_attribute(MetatileAttribute attribute)
     metatile_attributes_.push_back(std::move(attribute));
 }
 
-void PorymapTilesetComponent::set_pal(Palette<Rgba32> pal, unsigned int pal_index)
+void PorymapTilesetComponent::set_pal(unsigned int pal_index, Palette<Rgba32> pal)
 {
     if (pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));

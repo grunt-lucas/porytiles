@@ -114,7 +114,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     new_porymap_component->tiles_png(tiles_png);
     for (unsigned int i = 0; i < pal::num_pals; i++) {
-        new_porymap_component->set_pal(pal, i);
+        new_porymap_component->set_pal(i, pal);
     }
 
     /*
@@ -327,7 +327,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
 
     // Copy primary palettes from our processed porymap_pals vector
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
-        new_porymap_component->set_pal(porymap_pals[i], i);
+        new_porymap_component->set_pal(i, porymap_pals[i]);
     }
 
     /*
@@ -337,7 +337,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
      * them, we don't want to clobber their edits. Porytiles should be surgical where possible.
      */
     for (unsigned int i = num_pals_primary.value(); i < num_pals_total.value(); i++) {
-        new_porymap_component->set_pal(tileset.porymap_component().pals()[i], i);
+        new_porymap_component->set_pal(i, tileset.porymap_component().pals()[i]);
     }
 
     /*
@@ -346,7 +346,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
      * not clobber anything unnecessarily.
      */
     for (unsigned int i = num_pals_total.value(); i < pal::num_pals; i++) {
-        new_porymap_component->set_pal(tileset.porymap_component().pals()[i], i);
+        new_porymap_component->set_pal(i, tileset.porymap_component().pals()[i]);
     }
 
     // Create the full Tileset and return

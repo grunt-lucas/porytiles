@@ -168,7 +168,7 @@ ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, 
     if (!pal_result.has_value()) {
         return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
     }
-    dest.porymap_component().set_pal(pal_result.value(), index);
+    dest.porymap_component().set_pal(index, pal_result.value());
 
     return {};
 }

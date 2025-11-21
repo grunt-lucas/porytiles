@@ -109,7 +109,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(Palette<Rgba32>{}, i);
+        porymap_component->set_pal(i, Palette<Rgba32>{});
     }
 
     // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come
