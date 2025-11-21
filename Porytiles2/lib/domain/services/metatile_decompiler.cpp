@@ -43,6 +43,7 @@ PixelTile<Rgba32> convert_tile(
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
         const unsigned int color_index = index_tile.at(i).index();
 
+        // TODO: decompiler should make this normalization configurable
         // Normalize transparency: palette slot 0 should always use the extrinsic transparency value
         if (color_index == 0) {
             rgba_pixels[i] = extrinsic_transparency;
