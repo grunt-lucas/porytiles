@@ -43,6 +43,7 @@ class ConfigValue {
      *
      * @return A const reference to the stored value
      */
+    // NOLINTNEXTLINE
     operator const T &() const &
     {
         return value_;
@@ -56,6 +57,7 @@ class ConfigValue {
      *
      * @return An rvalue reference to the stored value
      */
+    // NOLINTNEXTLINE
     operator T &&() &&
     {
         return std::move(value_);

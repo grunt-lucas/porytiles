@@ -9,25 +9,28 @@
 
 namespace porytiles2 {
 
+inline constexpr std::size_t colors_per_pal = 16;
+
 /**
- * @brief Represents a color index value for palette operations.
+ * @brief Represents a palette index value within a particular palette.
  *
  * @details
- * ColorIndex is a semantic wrapper around an unsigned integer that represents a unique identifier for a unique color in
- * the global ColorIndexMap construction process. This type provides type safety and semantic clarity when working with
- * color indices, distinguishing them from other integer values in the codebase.
+ * PaletteIndex is a semantic wrapper around an unsigned integer that represents an index into a palette (or
+ * palette-like configuration file).
  *
- * Unlike IndexPixel, ColorIndex does not follow the SupportsTransparency concept, as it is used to represent the
- * sequential indices assigned to non-transparent colors in the ColorIndexMap. A ColorSet is a collection of
- * \link ColorIndex ColorIndexes, \endlink which can be redeemed for their original colors by consulting the
- * ColorIndexMap.
+ * @invariant The underlying index value will always be between 0 and 15.
  */
-class ColorIndex {
+class PaletteIndex {
   public:
     // NOLINTNEXTLINE(google-explicit-constructor)
-    ColorIndex(unsigned int index) : index_{index} {}
+    PaletteIndex(unsigned int value) : value_{value}
+    {
+        if (value >= colors_per_pal) {
+            panic("invalid PaletteIndex value " + std::to_string(value));
+        }
+    }
 
-    auto operator<=>(const ColorIndex &) const = default;
+    auto operator<=>(const PaletteIndex &) const = default;
 
     /**
      * @brief Implicit conversion to const reference of the underlying value.
@@ -40,7 +43,7 @@ class ColorIndex {
     // NOLINTNEXTLINE
     operator const unsigned int &() const &
     {
-        return index_;
+        return value_;
     }
 
     /**
@@ -54,7 +57,7 @@ class ColorIndex {
     // NOLINTNEXTLINE
     operator unsigned int &&() &&
     {
-        return std::move(index_);
+        return std::move(value_);
     }
 
     /**
@@ -64,7 +67,7 @@ class ColorIndex {
      */
     [[nodiscard]] const unsigned int &value() const &
     {
-        return index_;
+        return value_;
     }
 
     /**
@@ -74,7 +77,7 @@ class ColorIndex {
      */
     [[nodiscard]] unsigned int &&value() &&
     {
-        return std::move(index_);
+        return std::move(value_);
     }
 
     /**
@@ -84,11 +87,11 @@ class ColorIndex {
      */
     [[nodiscard]] unsigned int index() const
     {
-        return index_;
+        return value_;
     }
 
   private:
-    unsigned int index_{};
+    unsigned int value_{};
 };
 
 } // namespace porytiles2

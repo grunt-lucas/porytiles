@@ -6,8 +6,14 @@
 #include <string>
 
 #include "porytiles2/domain/models/color_index.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 
 namespace porytiles2 {
+
+/**
+ * @brief Maximum allowable color count for GBA hardware.
+ */
+inline constexpr std::size_t num_colors = pal::max_size * pal::num_pals;
 
 /**
  * @brief A set of colors represented as a bitset.
@@ -77,7 +83,6 @@ class ColorSet {
     [[nodiscard]] bool operator==(const ColorSet &other) const = default;
 
   private:
-    // TODO: define this in terms of num_pals * colors_per_pal (i.e. 16 * 15)
     std::bitset<num_colors> colors_;
 };
 

@@ -218,7 +218,10 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
     //     });
 
     // TODO: PaletteValidator: throw error if pal isn't size 16
-    // TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency
+    // TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
+    // TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a hard
+    // failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should at least
+    // generate a warning in case folks are confused about what slot 0 is for.
     // TODO: we don't want to reset slot 0 here. Why? Because the user might want a custom color in slot 0 for PLA file
     // blending. Again, Porytiles philosophy, especially in patch mode, is surgical. There is no need to clobber the
     // user's slot 0 color, so let's not! That means that other code which uses these pals MUST be aware of the fact

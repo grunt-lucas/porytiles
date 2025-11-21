@@ -38,7 +38,7 @@ TEST(TileConvertersTests, FromPixelTileSimpleConversion)
     ASSERT_EQ(colors_map.size(), 1);
 
     const auto &[mask, index] = *colors_map.begin();
-    EXPECT_EQ(index, 0); // First non-transparent color gets index 0
+    EXPECT_EQ(index, ColorIndex{0}); // First non-transparent color gets index 0
 
     // Check that the mask has the correct pixels set
     // We can verify by creating an expected mask
