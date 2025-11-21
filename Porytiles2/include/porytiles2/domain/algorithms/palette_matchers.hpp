@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <set>
 
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -116,6 +117,83 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
     return result;
 }
 
+/**
+ * @brief Helper function implementing the core color-to-index tile conversion logic.
+ *
+ * @details
+ * This private helper converts a PixelTile<ColorType> to a PixelTile<IndexPixel> by mapping each pixel's color to its
+ * corresponding index in the provided palette. It accepts a transparency predicate that determines whether a pixel is
+ * transparent, allowing the same implementation to work with both intrinsic and extrinsic transparency checking.
+ *
+ * The algorithm:
+ * 1. Builds a color-to-index map from the palette for O(log n) lookup
+ * 2. For each pixel in the tile:
+ *    - If transparent (per predicate), maps to index 0
+ *    - If not transparent, looks up the color in the palette and uses that index
+ *    - If not found, panics (caller should use match_tile_to_palette first to verify coverage)
+ *
+ * @tparam ColorType The color type of the palette and tile
+ * @tparam TransparencyPredicate A callable type that takes a ColorType and returns bool
+ * @param tile The PixelTile to convert to indexed form
+ * @param palette The Palette containing the color-to-index mapping
+ * @param is_transparent_pred A predicate function that returns true if a color is transparent
+ * @pre All non-transparent colors in the tile must exist in the palette
+ * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
+ */
+template <SupportsTransparency ColorType, typename TransparencyPredicate>
+[[nodiscard]] PixelTile<IndexPixel> index_tile_from_color_tile_impl(
+    const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, TransparencyPredicate is_transparent_pred)
+{
+    // Build a color-to-index map for efficient lookup
+    const auto &palette_colors = palette.colors();
+    std::map<ColorType, unsigned int> color_to_index;
+    for (std::size_t i = 0; i < palette_colors.size(); ++i) {
+        // Only store first occurrence of each color (in case of duplicates)
+        if (!color_to_index.contains(palette_colors[i])) {
+            color_to_index[palette_colors[i]] = static_cast<unsigned int>(i);
+        }
+    }
+
+    // Convert each pixel
+    std::array<IndexPixel, tile::size_pix> index_pixels;
+
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        const auto &pixel = tile.at(i);
+
+        if (is_transparent_pred(pixel)) {
+            // Transparent pixels map to index 0
+            index_pixels[i] = IndexPixel{0};
+        }
+        else {
+            /*
+             * If a non-transparent pixel matches palette slot 0, we have an issue. In some cases, pal slot 0 won't
+             * contain the actual extrinsically transparent color. E.g. if this palette has a PLA file for DNS, slot 0
+             * might contain a blending color. We have to panic here because if the user specified a blending color in
+             * their tile, marking it as IndexPixel{0} will make it transparent, which is probably not intended.
+             */
+            // TODO: wouldn't it be possible for users to accidentally hit this case? We'll need to figure this out.
+            // See: https://discord.com/channels/976252009114140682/1023424424713650196/1441433315679801386
+            // Maybe in this case, we can search the palette for another usage of this color, and use that if present.
+            // And if it's not, then we have to fail. This should probably return a Chainable since this is a
+            // user-reachable error condition.
+            if (pixel == palette_colors[0]) {
+                panic("Used non-transparent pixel that matched pal slot 0");
+            }
+
+            // Look up the color in the palette
+            auto it = color_to_index.find(pixel);
+            if (it != color_to_index.end()) {
+                index_pixels[i] = IndexPixel{it->second};
+            }
+            else {
+                panic("color not found in palette");
+            }
+        }
+    }
+
+    return PixelTile{index_pixels};
+}
+
 } // namespace details
 
 /**
@@ -175,11 +253,10 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
     }
 
     if (palette.colors().at(0) != extrinsic) {
-        // TODO: we should have an earlier compilation step that normalizes transparency in Porymap pals, since
-        // their default slot 0 transparency doesn't matter. When you import a vanilla set to Porytiles, all
-        // transparent pixels get normalized to the configured extrinsic transparency. During this earlier step, we can
-        // warn the user that the slot 0 of their Porymap pal will be overwritten. We can explain in a note that this
-        // should not be an issue.
+        // TODO: we need to change this. We have to allow slot 0 of a palette to be anything, since the PLA files allow
+        // users to specify arbitrary colors in slot 0 for blending. We want Porytiles to be surgical. Even though we'll
+        // normalize the transparency color upon import, we don't want to clobber the values in the user's provided pal
+        // files.
         panic("palette slot 0 did not match provided extrinsic transparency value");
     }
 
@@ -204,7 +281,7 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  */
 template <SupportsTransparency ColorType>
 [[nodiscard]] PixelTile<ColorType>
-index_tile_to_color_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette)
+color_tile_from_index_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette)
 {
     if (palette.size() == 0) {
         panic("palette is empty");
@@ -227,6 +304,57 @@ index_tile_to_color_tile(const PixelTile<IndexPixel> &index_tile, const Palette<
     }
 
     return PixelTile<ColorType>{color_pixels};
+}
+
+/**
+ * @brief Converts a PixelTile<ColorType> to indexed form using a palette (intrinsic transparency only).
+ *
+ * @details
+ * This function converts a color tile to an indexed tile by finding each non-transparent pixel's color in the palette
+ * and storing the corresponding palette index. Intrinsically transparent pixels (those reporting true from
+ * parameterless is_transparent()) are mapped to index 0.
+ *
+ * This overload is only available for color types that support intrinsic transparency.
+ *
+ * @tparam ColorType The color type of the tile and palette, must support intrinsic transparency
+ * @param tile The PixelTile to convert to indexed form
+ * @param palette The Palette containing the color-to-index mapping
+ * @pre All non-transparent colors in the tile must exist in the palette
+ * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] PixelTile<IndexPixel>
+index_tile_from_color_tile(const PixelTile<ColorType> &tile, const Palette<ColorType> &palette)
+    requires requires(const ColorType &c) { c.is_transparent(c); }
+{
+    return details::index_tile_from_color_tile_impl(
+        tile, palette, [](const ColorType &c) { return c.is_transparent(); });
+}
+
+/**
+ * @brief Converts a PixelTile<ColorType> to indexed form using a palette (extrinsic transparency).
+ *
+ * @details
+ * This function converts a color tile to an indexed tile by finding each non-transparent pixel's color in the palette
+ * and storing the corresponding palette index. Both intrinsically transparent pixels (alpha=0) and extrinsically
+ * transparent pixels (matching the extrinsic parameter) are mapped to index 0.
+ *
+ * This overload is only available for color types that support extrinsic transparency.
+ *
+ * @tparam ColorType The color type of the tile and palette, must support extrinsic transparency
+ * @param tile The PixelTile to convert to indexed form
+ * @param palette The Palette containing the color-to-index mapping
+ * @param extrinsic The extrinsic transparency value to check pixels against
+ * @pre All non-transparent colors in the tile must exist in the palette
+ * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
+ */
+template <SupportsTransparency ColorType>
+[[nodiscard]] PixelTile<IndexPixel> index_tile_from_color_tile(
+    const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
+    requires requires(const ColorType &c) { c.is_transparent(c); }
+{
+    return details::index_tile_from_color_tile_impl(
+        tile, palette, [&extrinsic](const ColorType &c) { return c.is_transparent(extrinsic); });
 }
 
 /**
