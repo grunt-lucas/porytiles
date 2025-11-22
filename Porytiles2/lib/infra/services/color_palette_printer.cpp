@@ -13,18 +13,20 @@ std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<R
 {
     std::vector<std::string> lines{};
 
-    // First, print slot 0 color
-    const Rgba32 &slot_zero = pal.slot_zero_color();
-    const Style slot_zero_style = rgb_fg_style(slot_zero.red(), slot_zero.green(), slot_zero.blue());
-    const std::string slot_zero_text = format_->style(slot_zero.to_jasc_str(), slot_zero_style);
-    lines.push_back(format_->format("{}", FormatParam{slot_zero_text}));
+    if (pal.size() >= 1) {
+        // First, print slot 0 color
+        const Rgba32 &slot_zero = pal.slot_zero_color();
+        const Style slot_zero_style = rgb_fg_style(slot_zero.red(), slot_zero.green(), slot_zero.blue());
+        const std::string slot_zero_text = format_->style(slot_zero.to_jasc_str(), slot_zero_style);
+        lines.push_back(format_->format("{}", FormatParam{slot_zero_text}));
 
-    // Then iterate over remaining colors (indices 1 through size-1) in order
-    const auto index_to_color = pal.index_to_color_map();
-    for (const auto &color : index_to_color | std::views::values) {
-        const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-        const std::string color_text = format_->style(color.to_jasc_str(), color_style);
-        lines.push_back(format_->format("{}", FormatParam{color_text}));
+        // Then iterate over remaining colors (indices 1 through size-1) in order
+        const auto index_to_color = pal.index_to_color_map();
+        for (const auto &color : index_to_color | std::views::values) {
+            const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
+            const std::string color_text = format_->style(color.to_jasc_str(), color_style);
+            lines.push_back(format_->format("{}", FormatParam{color_text}));
+        }
     }
 
     return lines;

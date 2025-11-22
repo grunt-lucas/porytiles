@@ -38,6 +38,7 @@ class Palette {
     /**
      * @brief Default constructs an empty Palette.
      */
+    // TODO: do we want to force all pals to be defaulted to size 16 and zeroed?
     Palette() = default;
 
     /**
