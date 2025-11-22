@@ -25,14 +25,14 @@ class AsciiTilePrinter final : public TilePrinter {
     [[nodiscard]] std::vector<std::string>
     print_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile) const override;
 
-    [[nodiscard]] std::vector<std::string> print_metatile_highlight(
+    [[nodiscard]] std::vector<std::string> print_metatile_pixel_highlight(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
         metatile::Subtile subtile,
         std::size_t row,
         std::size_t col) const override;
 
-    [[nodiscard]] std::vector<std::string> print_metatile_highlights(
+    [[nodiscard]] std::vector<std::string> print_metatile_pixel_highlights(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
         metatile::Subtile subtile,
@@ -41,10 +41,10 @@ class AsciiTilePrinter final : public TilePrinter {
     [[nodiscard]] std::vector<std::string> print_tile(const PixelTile<Rgba32> &tile) const override;
 
     [[nodiscard]] std::vector<std::string>
-    print_tile_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const override;
+    print_tile_pixel_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const override;
 
     [[nodiscard]] std::vector<std::string>
-    print_tile_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const override;
+    print_tile_pixel_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const override;
 
   private:
     TextFormatter *format_;

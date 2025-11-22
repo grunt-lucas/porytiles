@@ -17,6 +17,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -30,12 +31,6 @@
 
 #include <iostream>
 #include <unordered_set>
-
-namespace {
-
-using namespace porytiles2;
-
-} // namespace
 
 namespace porytiles2 {
 
@@ -256,7 +251,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
     // TODO: in tiles:fixed mode, since we're not adding tiles, the capacity should just be the size of tiles.png
     TilesPngWorkspace tiles_workspace{tileset.porymap_component().tiles_png(), num_tiles_primary};
 
-    bool assigned_all_tiles = true;
+    bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba[i];
         const auto &porymap_tile = porymap_pixel_rgba[i];
@@ -269,6 +264,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
             // Emit original metatile entry
             new_porymap_component->push_back_tilemap_entry(porymap_tilemap_entry);
         }
+
         // CASE: Porytiles component tile matches Porymap component under flip transformation
         else if (canonical_porytiles_tile.equals_ignoring_transparency(
                      canonical_porymap_tile, extrinsic_transparency)) {
@@ -282,39 +278,104 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
                 static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
             new_porymap_component->push_back_tilemap_entry(new_entry);
         }
+
         // CASE: New tile, compute which pal to use, compute (or create) tile to use
         else {
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
-
             // TODO: top_n matches should be configurable
             auto matches = match_or_best(porytiles_tile, porymap_pals, extrinsic_transparency.value(), 1);
             if (matches.at(0).is_covered) {
-                diag_->note("debug-porytiles", format_->format("pal match: {}", FormatParam{matches.at(0).pal_index}));
+                const auto pal_index = matches.at(0).pal_index;
+                const auto &matched_pal = porymap_pals.at(pal_index);
+                const auto index_tile =
+                    index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency.value());
+                CanonicalPixelTile canonical_index_tile{index_tile};
+                // TODO: what if multiple pals match?
+                if (tiles_mode == PatchTilesMode::tiles_fixed) {
+                    const auto maybe_tile_index = tiles_workspace.first_occurrence_of(canonical_index_tile);
+                    if (maybe_tile_index.has_value()) {
+                        // TODO: narrowing size_t to int here
+                        unsigned int tile_index = maybe_tile_index.value();
+                        const auto canonical_tile = tiles_workspace.tile_at(tile_index);
+                        const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ canonical_tile.h_flip();
+                        const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ canonical_tile.v_flip();
+                        TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+                        new_porymap_component->push_back_tilemap_entry(new_entry);
+                    }
+                    else {
+                        matched_all_tiles = false;
+                        std::vector<std::string> no_match_err{};
+                        no_match_err.emplace_back(format_->format(
+                            "{}: no matching tiles found",
+                            FormatParam{
+                                metatile::message_header(*format_, metatile_index, layer, subtile), Style::bold}));
+                        no_match_err.emplace_back();
+                        // TODO: create and use print_metatile_tile_highlight
+                        std::ranges::copy(
+                            tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
+                            std::back_inserter(no_match_err));
+                        diag_->err("no-matching-tiles", no_match_err);
+                        // TODO: add note to print out matching pal and print index_pixel generated
+                    }
+                }
+                else if (tiles_mode == PatchTilesMode::tiles_free) {
+                    panic("implement PatchTilesMode::tiles_free");
+                }
+                else {
+                    panic("unknown PatchTilesMode");
+                }
             }
             else {
-                assigned_all_tiles = false;
-                diag_->err("debug-porytiles", "no pals matched");
-                diag_->note("debug-porytiles", "closest:");
+                matched_all_tiles = false;
+                std::vector<std::string> no_match_err{};
+                no_match_err.emplace_back(format_->format(
+                    "{}: no matching palettes found",
+                    FormatParam{metatile::message_header(*format_, metatile_index, layer, subtile), Style::bold}));
+                no_match_err.emplace_back();
+                // TODO: create and use print_metatile_tile_highlight
+                std::ranges::copy(
+                    tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
+                    std::back_inserter(no_match_err));
+                diag_->err("no-matching-palettes", no_match_err);
+                std::vector<std::string> closest_n_note{};
+                // TODO: substitute configurable top_n for N
+                closest_n_note.emplace_back("closest N match(es):");
+                int match_index = 0;
                 for (const auto &match : matches) {
-                    diag_->note(
-                        "debug-porytiles", format_->format("pal match candidate: {}", FormatParam{match.pal_index}));
-                    diag_->note(
-                        "debug-porytiles",
+                    if (match_index != 0) {
+                        closest_n_note.emplace_back();
+                    }
+                    closest_n_note.push_back(format_->format(
+                        "Palette match candidate: {}",
+                        FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
+                    std::ranges::copy(
                         pal_printer_->print_rgba_palette_covered_missing(
-                            porymap_pals.at(match.pal_index), match.covered_colors, match.missing_colors));
-                    diag_->note(
-                        "debug-porytiles",
-                        tile_printer_->print_metatile_highlights(
-                            porytiles_metatiles.at(metatile_index), layer, subtile, match.uncovered_pixel_indices));
+                            porymap_pals.at(match.pal_index), match.covered_colors, match.missing_colors),
+                        std::back_inserter(closest_n_note));
+                    closest_n_note.emplace_back();
+                    closest_n_note.push_back(format_->format(
+                        "Uncovered pixels with {}:",
+                        FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
+                    closest_n_note.emplace_back();
+                    std::ranges::copy(
+                        tile_printer_->print_tile_pixel_highlights(porytiles_tile, match.uncovered_pixel_indices),
+                        std::back_inserter(closest_n_note));
+                    match_index++;
                 }
+                diag_->note("no-matching-palettes", closest_n_note);
             }
         }
     }
 
-    if (!assigned_all_tiles) {
-        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{"TODO: could not assign all tiles"}};
+    if (!matched_all_tiles) {
+        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{"failed to match all Porytiles tiles"}};
     }
 
+    // TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors
+    // This would be nice for cases where users add some assets and compile with "tiles/pals:free", but then later
+    // decide to remove the assets. We could warn them these assets are unused so that they can optionally remove to
+    // free up space. We could also have a compilation option "force_remove" that forcibly removes unused stuff. This is
+    // obviously less safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries
     // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 

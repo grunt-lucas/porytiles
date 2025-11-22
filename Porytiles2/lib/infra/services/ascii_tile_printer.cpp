@@ -228,7 +228,7 @@ std::vector<std::string> AsciiTilePrinter::print_metatile(
     return render_metatile_with_highlights(metatile, layer, subtile, {}, extrinsic_transparency_, format_);
 }
 
-std::vector<std::string> AsciiTilePrinter::print_metatile_highlight(
+std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlight(
     const Metatile<Rgba32> &metatile,
     metatile::Layer layer,
     metatile::Subtile subtile,
@@ -239,7 +239,7 @@ std::vector<std::string> AsciiTilePrinter::print_metatile_highlight(
     return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency_, format_);
 }
 
-std::vector<std::string> AsciiTilePrinter::print_metatile_highlights(
+std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlights(
     const Metatile<Rgba32> &metatile,
     metatile::Layer layer,
     metatile::Subtile subtile,
@@ -258,14 +258,14 @@ std::vector<std::string> AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &t
 }
 
 std::vector<std::string>
-AsciiTilePrinter::print_tile_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const
+AsciiTilePrinter::print_tile_pixel_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
     return render_tile_with_highlights(tile, coords, extrinsic_transparency_, format_);
 }
 
 std::vector<std::string>
-AsciiTilePrinter::print_tile_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const
+AsciiTilePrinter::print_tile_pixel_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{};
     for (const auto index : indexes) {

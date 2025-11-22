@@ -6,6 +6,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 
@@ -67,7 +68,8 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         }
         const auto anim_name = artifact.name().value();
         const auto frame_num = artifact.index().value();
-        return ArtifactKey{tileset_path / porytiles_directory / anim / anim_name / fmt::format("{:02}.png", frame_num)};
+        return ArtifactKey{
+            tileset_path / porytiles_directory / anim / anim_name / (pad_two_digits(frame_num) + std::string{".png"})};
     }
     case TilesetArtifact::Type::pal_override_n: {
         if (!artifact.index().has_value()) {
@@ -75,7 +77,8 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         }
         const auto override_index = artifact.index().value();
         return ArtifactKey{
-            tileset_path / porytiles_directory / pal_overrides / fmt::format("{:02}.pal", override_index)};
+            tileset_path / porytiles_directory / pal_overrides /
+            (pad_two_digits(override_index) + std::string{".pal"})};
     }
 
     // Porymap artifacts
@@ -94,14 +97,14 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         }
         const auto anim_name = artifact.name().value();
         const auto frame_num = artifact.index().value();
-        return ArtifactKey{tileset_path / anim / anim_name / fmt::format("{:02}.png", frame_num)};
+        return ArtifactKey{tileset_path / anim / anim_name / (pad_two_digits(frame_num) + std::string{".png"})};
     }
     case TilesetArtifact::Type::pal_n: {
         if (!artifact.index().has_value()) {
             panic("missing pal index");
         }
         const auto pal_index = artifact.index().value();
-        return ArtifactKey{tileset_path / palettes / fmt::format("{:02}.pal", pal_index)};
+        return ArtifactKey{tileset_path / palettes / (pad_two_digits(pal_index) + std::string{".pal"})};
     }
     case TilesetArtifact::Type::config: {
         return ArtifactKey{tileset_path / config};

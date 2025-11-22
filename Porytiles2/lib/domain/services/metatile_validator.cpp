@@ -36,10 +36,10 @@ void report_validation_error(
     std::vector errors = {format->format(
         "{}: {}",
         FormatParam{
-            porytiles2::metatile::message_header(metatile_index, layer, subtile, row, col, *format), Style::bold},
+            porytiles2::metatile::message_header(*format, metatile_index, layer, subtile, row, col), Style::bold},
         FormatParam{error_message})};
     errors.emplace_back("");
-    std::vector highlight = tile_printer->print_metatile_highlight(metatile, layer, subtile, row, col);
+    std::vector highlight = tile_printer->print_metatile_pixel_highlight(metatile, layer, subtile, row, col);
     std::ranges::copy(highlight, std::back_inserter(errors));
     diag->err(diagnostic_code, errors);
 }
@@ -240,7 +240,7 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                 hit_error = true;
                 std::vector errors = {format_->format(
                     "{}: {}",
-                    FormatParam{metatile::message_header(metatile_index, subtile, *format_), Style::bold},
+                    FormatParam{metatile::message_header(*format_, metatile_index, subtile), Style::bold},
                     FormatParam{"non-transparent content on all three layers"})};
                 errors.emplace_back("");
                 std::vector bottom_highlight = tile_printer_->print_tile(bottom_tile);

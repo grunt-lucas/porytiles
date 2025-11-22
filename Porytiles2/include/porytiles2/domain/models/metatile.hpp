@@ -6,6 +6,7 @@
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -126,16 +127,17 @@ inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
 }
 
 [[nodiscard]] inline std::string message_header(
+    const TextFormatter &format,
     std::size_t index,
     Layer layer,
     Subtile subtile,
     std::size_t subtile_row,
-    std::size_t subtile_col,
-    const TextFormatter &format)
+    std::size_t subtile_col)
 {
     return format.format(
-        "{} {}|{}|{}|{},{}",
+        "{} {}({})|{}|{}|{},{}",
         FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
         FormatParam{index},
         FormatParam{to_string(layer)},
         FormatParam{to_string(subtile)},
@@ -143,9 +145,26 @@ inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
         FormatParam{std::to_string(subtile_col)});
 }
 
-[[nodiscard]] inline std::string message_header(std::size_t index, Subtile subtile, const TextFormatter &format)
+[[nodiscard]] inline std::string
+message_header(const TextFormatter &format, std::size_t index, Layer layer, Subtile subtile)
 {
-    return format.format("{} {}|{}", FormatParam{"metatile"}, FormatParam{index}, FormatParam{to_string(subtile)});
+    return format.format(
+        "{} {}({})|{}|{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(layer)},
+        FormatParam{to_string(subtile)});
+}
+
+[[nodiscard]] inline std::string message_header(const TextFormatter &format, std::size_t index, Subtile subtile)
+{
+    return format.format(
+        "{} {}({})|{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(subtile)});
 }
 
 } // namespace metatile

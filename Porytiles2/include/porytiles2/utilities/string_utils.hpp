@@ -4,6 +4,8 @@
 #include <regex>
 #include <string>
 
+#include "fmt/format.h"
+
 #include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -112,6 +114,40 @@ inline std::string trim_line_ending(const std::string &line)
         result.pop_back();
     }
     return result;
+}
+
+/**
+ * @brief Converts an integer value to a hexadecimal string with "0x" prefix.
+ *
+ * @details
+ * This function formats the given integer value as a lowercase hexadecimal string prefixed with "0x". For example,
+ * `int_to_hex_str(255)` returns `"0xff"`.
+ *
+ * @tparam T An integral type that can be formatted as hexadecimal
+ * @param t The integer value to convert
+ * @return A string containing the hexadecimal representation with "0x" prefix
+ */
+template <typename T>
+std::string int_to_hex_str(T t)
+{
+    return fmt::format("0x{:x}", t);
+}
+
+/**
+ * @brief Converts an integer value to a minimum two-digit wide string representation.
+ *
+ * @details
+ * For example: `pad_two_digits(3)` returns `"03"`, `pad_two_digits(13)` returns `"13"`, `pad_two_digits(133)` returns
+ * `"133"`.
+ *
+ * @tparam T An integral type to be formatted
+ * @param t The integer value to convert
+ * @return A string containing the padded representation
+ */
+template <typename T>
+std::string pad_two_digits(T t)
+{
+    return fmt::format("{:02}", t);
 }
 
 } // namespace porytiles2
