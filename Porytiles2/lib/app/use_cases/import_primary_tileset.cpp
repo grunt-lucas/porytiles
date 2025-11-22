@@ -48,8 +48,8 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
 
     // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-    // TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified palette
-    // overrides or hints; they will be present on disk. We don't want to clobber them when saving the decompiled
+    // TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified
+    // overrides; they will be present on disk. We don't want to clobber them when saving the decompiled
     // component. So we'll need to pull them from the original component and inject them into this one before
     // persisting.
 

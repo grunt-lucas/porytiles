@@ -48,10 +48,24 @@ When marked `free`, an asset will be considered mutable and could be modified by
 but only in such a way that won't break dependent assets.
 
 ```yaml
-patch:
-  enabled: true
-  tiles: fixed
-  pals: fixed
+compilation:
+  patch:
+    enabled: true
+    tiles: fixed
+    pals: fixed
+```
+
+## Palette Hints
+While palette overrides will remain separate JASC pal files like in Porytiles1,
+palette primers in Porytiles2 will known as palette hints, and will be specified in the tileset YAML config:
+
+```yaml
+compilation:
+  palette_hints:
+    - name: "foliage"
+      colors:
+      - [ 12, 190, 20 ]
+      - [ 40, 210, 10 ]
 ```
 
 ## Layout Metatile Generation

@@ -253,7 +253,10 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
         porymap_tilemap_entries.size() == porymap_pixel_rgba.size(),
         "porymap_tilemap_entries.size() == porymap_pixel_rgba.size()");
 
+    // TODO: in tiles:fixed mode, since we're not adding tiles, the capacity should just be the size of tiles.png
     TilesPngWorkspace tiles_workspace{tileset.porymap_component().tiles_png(), num_tiles_primary};
+
+    bool assigned_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba[i];
         const auto &porymap_tile = porymap_pixel_rgba[i];
@@ -281,24 +284,35 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
         }
         // CASE: New tile, compute which pal to use, compute (or create) tile to use
         else {
-            // TODO: for tiles:fixed pals:fixed, here we need to try computing which existing tile+pal we can use.
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
-            std::vector<std::string> pt_note{};
-            pt_note.emplace_back(format_->format(
-                "TODO: HANDLE NEW TILE CASE: {} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            pt_note.emplace_back(format_->format("{} {} {}", FormatParam{i}, FormatParam{layer}, FormatParam{subtile}));
-            // std::ranges::copy(
-            //     tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
-            //     std::back_inserter(pt_note));
-            // std::ranges::copy(
-            //     tile_printer_->print_metatile(porymap_metatiles.at(metatile_index), layer, subtile),
-            //     std::back_inserter(pm_note));
-            std::ranges::copy(tile_printer_->print_tile(canonical_porytiles_tile), std::back_inserter(pt_note));
-            pt_note.emplace_back();
-            std::ranges::copy(tile_printer_->print_tile(canonical_porymap_tile), std::back_inserter(pt_note));
-            diag_->note("debug-porytiles", pt_note);
+
+            // TODO: top_n matches should be configurable
+            auto matches = match_or_best(porytiles_tile, porymap_pals, extrinsic_transparency.value(), 1);
+            if (matches.at(0).is_covered) {
+                diag_->note("debug-porytiles", format_->format("pal match: {}", FormatParam{matches.at(0).pal_index}));
+            }
+            else {
+                assigned_all_tiles = false;
+                diag_->err("debug-porytiles", "no pals matched");
+                diag_->note("debug-porytiles", "closest:");
+                for (const auto &match : matches) {
+                    diag_->note(
+                        "debug-porytiles", format_->format("pal match candidate: {}", FormatParam{match.pal_index}));
+                    diag_->note(
+                        "debug-porytiles",
+                        pal_printer_->print_rgba_palette_covered_missing(
+                            porymap_pals.at(match.pal_index), match.covered_colors, match.missing_colors));
+                    diag_->note(
+                        "debug-porytiles",
+                        tile_printer_->print_metatile_highlights(
+                            porytiles_metatiles.at(metatile_index), layer, subtile, match.uncovered_pixel_indices));
+                }
+            }
         }
+    }
+
+    if (!assigned_all_tiles) {
+        return ChainableResult<std::unique_ptr<Tileset>>{FormattableError{"TODO: could not assign all tiles"}};
     }
 
     // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
@@ -321,8 +335,10 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
         new_porymap_component->push_back_attribute(attr);
     }
 
-    // Export tiles in original form; could use ExportTrimMode::trim_trailing_transparent to remove padding
-    new_porymap_component->tiles_png(tiles_workspace.export_image(ExportFlipMode::original));
+    // Export tiles in original form
+    // TODO: in tiles:fixed mode, don't ExportTrimMode::trim_trailing_transparent, preserve original exactly as-is
+    new_porymap_component->tiles_png(
+        tiles_workspace.export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
 
     // Copy primary palettes from our processed porymap_pals vector
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {

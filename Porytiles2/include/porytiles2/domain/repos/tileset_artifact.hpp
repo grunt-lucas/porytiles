@@ -46,7 +46,6 @@ class TilesetArtifact {
         pal_n,                   ///< JASC palette data file
         config,                  /// Tileset configuration YAML file
         local_config             /// Local tileset configuration YAML file
-        // pal_hint_n,            // TODO: pal hints could be like Porytiles1's palette primers?
     };
 
     /**
