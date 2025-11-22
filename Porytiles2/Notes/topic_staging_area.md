@@ -108,6 +108,28 @@ That way these guarantees can be made.
 I am not sure if this is something that can be done entirely computationally,
 without user intervention.
 
+## Primary Palette Fixing
+Couldn't think of a better name for this.
+
+But some community users do a clever thing where they steal one of the secondary palettes for use with the primary tileset
+without actually changeing num_pals_primary or any engine palette loading logic.
+The way it works is that for every single secondary tileset paired with a given primary, they fix one of the palettes
+to have identical content (e.g. 12.pal). That way, whenever the primary set is loaded, you're guaranteed to have a secondary set
+loaded with the right pal infor in 12.pal, so primary metatiles that reference pal 12 look normal.
+
+We could support this with some configuration options + palette overrides.
+There are multiple ways it could be done, let's think about which would be the easiest to use.
+
+### Idea 1
+Primary compilation could specify e.g. `--allow-additional-pals=11,12`
+which would generate meaningful content in pals 11 and 12 and also allow metatiles to reference these pal indexes without error.
+Then, when users compile a secondary tileset paired against this one, it would look at the config and automatically pull in 11,12
+as overrides, and error out if the user tries to specify their own overrides.
+
+### See
+https://discord.com/channels/419213663107416084/419213762193522708/1439211965724627017
+https://github.com/TeamAquasHideout/Team-Aquas-Asset-Repo/tree/main/Tilesets/The%20Great%20Tileset%20Exchange/Full%20Tilesets/LeoB%20ORAS/tilesets/secondary
+
 ## Tileset Compilation
 TODO: detailed overview of tileset compilation in Porytiles2.
 
