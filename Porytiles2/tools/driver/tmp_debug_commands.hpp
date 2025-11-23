@@ -106,7 +106,7 @@ class DebugPrimaryCompileCommand final : public Command {
         const auto tileset = std::move(maybe_tileset.value());
 
         // Compile the tileset
-        auto compile_result = compiler.compile_patch(*tileset, PatchTilesMode::tiles_fixed, PatchPalMode::pals_fixed);
+        auto compile_result = compiler.compile_patch(*tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},

@@ -22,6 +22,8 @@ namespace porytiles2 {
 template <typename T>
 class ConfigValue {
   public:
+    ConfigValue() = default;
+
     /**
      * @brief Constructs a ConfigValue with a value, name, and source information.
      *

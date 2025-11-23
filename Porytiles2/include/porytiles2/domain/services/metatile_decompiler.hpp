@@ -21,9 +21,9 @@ namespace porytiles2 {
 class MetatileDecompiler {
   public:
     explicit MetatileDecompiler(
-        gsl::not_null<TextFormatter *> format,
-        gsl::not_null<UserDiagnostics *> diag,
-        gsl::not_null<TilePrinter *> tile_printer,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag,
+        gsl::not_null<const TilePrinter *> tile_printer,
         const Rgba32 &extrinsic_transparency)
         : format_{format}, diag_{diag}, tile_printer_{tile_printer}, extrinsic_transparency_{extrinsic_transparency}
     {
@@ -35,9 +35,9 @@ class MetatileDecompiler {
         const std::array<Palette<Rgba32>, pal::num_pals> &pals);
 
   private:
-    TextFormatter *format_;
-    UserDiagnostics *diag_;
-    TilePrinter *tile_printer_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
     Rgba32 extrinsic_transparency_;
 };
 

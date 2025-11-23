@@ -108,7 +108,7 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
 
 ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
 
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -168,7 +168,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
 ChainableResult<void> MetatileValidator::validate_global_color_count(
     const std::vector<Metatile<Rgba32>> &metatiles, std::size_t count_limit) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
 
     std::map<Rgba32, unsigned int> color_counts;
     for (const auto &metatile : metatiles) {
@@ -207,7 +207,7 @@ MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<R
 ChainableResult<void>
 MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &metatiles, LayerMode mode) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, extrinsic_transparency, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
 
     bool hit_error = false;
     std::size_t metatile_index = 0;
@@ -243,6 +243,7 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                     FormatParam{metatile::message_header(*format_, metatile_index, subtile), Style::bold},
                     FormatParam{"non-transparent content on all three layers"})};
                 errors.emplace_back("");
+                // TODO: create and use print_metatile_tile_highlight
                 std::vector bottom_highlight = tile_printer_->print_tile(bottom_tile);
                 std::vector middle_highlight = tile_printer_->print_tile(middle_tile);
                 std::vector top_highlight = tile_printer_->print_tile(top_tile);
@@ -268,9 +269,9 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
 
 ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    PT_UNWRAP_TILESET_CONFIG(config_, num_pals_primary, tileset_scope_, void);
-    PT_UNWRAP_TILESET_CONFIG(config_, num_metatiles_primary, tileset_scope_, void);
-    PT_UNWRAP_TILESET_CONFIG(config_, num_tiles_per_metatile, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_primary, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_primary, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset_scope_, void);
 
     auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 

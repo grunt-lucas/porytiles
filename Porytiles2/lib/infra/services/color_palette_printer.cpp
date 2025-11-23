@@ -49,7 +49,8 @@ std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<R
         for (const auto &color : index_to_color | std::views::values) {
             if (covered_colors.contains(color)) {
                 const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-                const std::string color_text = format_->style(color.to_jasc_str(), color_style);
+                const std::string color_text =
+                    format_->style(color.to_jasc_str(), Style::bold | Style::italic | color_style);
                 lines.push_back(format_->format(
                     "{} {}", FormatParam{color_text}, FormatParam{"← covered", Style::bold | Style::yellow}));
             }
@@ -60,7 +61,7 @@ std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<R
             }
         }
         if (!missing_colors.empty()) {
-            lines.push_back(format_->format("{}", FormatParam{"------ Missing Colors ------", Style::bold}));
+            lines.push_back(format_->format("{}", FormatParam{"------ Palette Would Need ------", Style::bold}));
             for (const auto &color : missing_colors) {
                 const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
                 const std::string color_text = format_->style(color.to_jasc_str(), color_style);

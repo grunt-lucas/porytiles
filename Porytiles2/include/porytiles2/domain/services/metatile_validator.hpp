@@ -25,11 +25,11 @@ class MetatileValidator {
 
   public:
     explicit MetatileValidator(
-        gsl::not_null<TextFormatter *> format,
-        gsl::not_null<UserDiagnostics *> diag,
-        gsl::not_null<TilePrinter *> tile_printer,
-        gsl::not_null<PalettePrinter *> pal_printer,
-        gsl::not_null<DomainConfig *> config,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag,
+        gsl::not_null<const TilePrinter *> tile_printer,
+        gsl::not_null<const PalettePrinter *> pal_printer,
+        gsl::not_null<const DomainConfig *> config,
         std::string tileset_scope)
         : format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config},
           tileset_scope_{std::move(tileset_scope)}
@@ -52,11 +52,11 @@ class MetatileValidator {
     [[nodiscard]] ChainableResult<void>
     generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const;
 
-    TextFormatter *format_;
-    UserDiagnostics *diag_;
-    TilePrinter *tile_printer_;
-    PalettePrinter *pal_printer_;
-    DomainConfig *config_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
+    const PalettePrinter *pal_printer_;
+    const DomainConfig *config_;
     std::string tileset_scope_;
 };
 

@@ -17,9 +17,9 @@ namespace porytiles2 {
 class LayerModeConverter {
   public:
     explicit LayerModeConverter(
-        gsl::not_null<TextFormatter *> format,
-        gsl::not_null<UserDiagnostics *> diag,
-        gsl::not_null<TilePrinter *> tile_printer)
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag,
+        gsl::not_null<const TilePrinter *> tile_printer)
         : format_{format}, diag_{diag}, tile_printer_{tile_printer}
     {
     }
@@ -65,9 +65,9 @@ class LayerModeConverter {
     dual_layerize(const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles);
 
   private:
-    TextFormatter *format_;
-    UserDiagnostics *diag_;
-    TilePrinter *tile_printer_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
 };
 
 } // namespace porytiles2

@@ -12,9 +12,9 @@ namespace porytiles2 {
  */
 enum class PatchTilesMode {
     /** @brief Tiles cannot be added; must use existing tiles from base tileset */
-    tiles_fixed,
+    fixed,
     /** @brief Tiles can be freely added to open slots during patch compilation */
-    tiles_free
+    free
 };
 
 /**
@@ -27,9 +27,9 @@ enum class PatchTilesMode {
  */
 enum class PatchPalMode {
     /** @brief Palettes cannot be modified; must use existing palettes from base tileset as-is */
-    pals_fixed,
+    fixed,
     /** @brief Unused palette slots can be freely modified during patch compilation */
-    pals_free
+    free
 };
 
 } // namespace porytiles2
