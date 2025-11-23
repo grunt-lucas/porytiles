@@ -220,8 +220,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
     std::vector<Palette<Rgba32>> porymap_pals{};
     porymap_pals.reserve(num_pals_primary.value());
     for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
-        auto pal_copy = tileset.porymap_component().pals()[i];
-        porymap_pals.push_back(pal_copy);
+        porymap_pals.push_back(tileset.porymap_component().pals()[i]);
     }
 
     // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
@@ -283,6 +282,7 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
         else {
             auto [metatile_index, layer, subtile] = metatile::from_tile_index(i);
             // TODO: top_n matches should be configurable
+            // TODO: what if multiple pals match?
             auto matches = match_or_best(porytiles_tile, porymap_pals, extrinsic_transparency.value(), 1);
             if (matches.at(0).is_covered) {
                 const auto pal_index = matches.at(0).pal_index;
@@ -290,39 +290,33 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
                 const auto index_tile =
                     index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency.value());
                 CanonicalPixelTile canonical_index_tile{index_tile};
-                // TODO: what if multiple pals match?
-                if (tiles_mode == PatchTilesMode::tiles_fixed) {
-                    const auto maybe_tile_index = tiles_workspace.first_occurrence_of(canonical_index_tile);
-                    if (maybe_tile_index.has_value()) {
-                        // TODO: narrowing size_t to int here
-                        unsigned int tile_index = maybe_tile_index.value();
-                        const auto canonical_tile = tiles_workspace.tile_at(tile_index);
-                        const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ canonical_tile.h_flip();
-                        const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ canonical_tile.v_flip();
-                        TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
-                        new_porymap_component->push_back_tilemap_entry(new_entry);
-                    }
-                    else {
-                        matched_all_tiles = false;
-                        std::vector<std::string> no_match_err{};
-                        no_match_err.emplace_back(format_->format(
-                            "{}: no matching tiles found",
-                            FormatParam{
-                                metatile::message_header(*format_, metatile_index, layer, subtile), Style::bold}));
-                        no_match_err.emplace_back();
-                        // TODO: create and use print_metatile_tile_highlight
-                        std::ranges::copy(
-                            tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
-                            std::back_inserter(no_match_err));
-                        diag_->err("no-matching-tiles", no_match_err);
-                        // TODO: add note to print out matching pal and print index_pixel generated
-                    }
+                const auto maybe_tile_index = tiles_workspace.first_occurrence_of(canonical_index_tile);
+
+                //
+                if (maybe_tile_index.has_value()) {
+                    const auto tile_index = maybe_tile_index.value();
+                    const auto canonical_tile = tiles_workspace.tile_at(tile_index);
+                    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ canonical_tile.h_flip();
+                    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ canonical_tile.v_flip();
+                    TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+                    new_porymap_component->push_back_tilemap_entry(new_entry);
                 }
-                else if (tiles_mode == PatchTilesMode::tiles_free) {
-                    panic("implement PatchTilesMode::tiles_free");
+                else if (!maybe_tile_index.has_value() && tiles_mode == PatchTilesMode::tiles_fixed) {
+                    matched_all_tiles = false;
+                    std::vector<std::string> no_match_err{};
+                    no_match_err.emplace_back(format_->format(
+                        "{}: no matching tiles found",
+                        FormatParam{metatile::message_header(*format_, metatile_index, layer, subtile), Style::bold}));
+                    no_match_err.emplace_back();
+                    // TODO: create and use print_metatile_tile_highlight
+                    std::ranges::copy(
+                        tile_printer_->print_metatile(porytiles_metatiles.at(metatile_index), layer, subtile),
+                        std::back_inserter(no_match_err));
+                    diag_->err("no-matching-tiles", no_match_err);
+                    // TODO: add note to print out matching pal and print index_pixel generated
                 }
                 else {
-                    panic("unknown PatchTilesMode");
+                    panic("implement PatchTilesMode::tiles_free add tile case");
                 }
             }
             else {
@@ -375,8 +369,9 @@ PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode til
     // This would be nice for cases where users add some assets and compile with "tiles/pals:free", but then later
     // decide to remove the assets. We could warn them these assets are unused so that they can optionally remove to
     // free up space. We could also have a compilation option "force_remove" that forcibly removes unused stuff. This is
-    // obviously less safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries
-    // No changes here, this is a compilation operation and there should be no writebacks into the input assets.
+    // obviously less safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the
+    // secondaries No changes here, this is a compilation operation and there should be no writebacks into the input
+    // assets.
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 
     /*
