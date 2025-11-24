@@ -1,6 +1,5 @@
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 
-#include <expected>
 #include <memory>
 
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"

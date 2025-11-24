@@ -1,8 +1,10 @@
 #pragma once
 
-#include <memory>
 #include <string>
 
+#include "gsl/pointers"
+
+#include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
@@ -20,13 +22,15 @@ class ImportPrimaryTileset {
      *
      * @param tileset_repo A pointer to the TilesetRepo for this use case
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case
-     * @param config A pointer to the Config for this use case
+     * @param domain_config A pointer to the DomainConfig for this use case
+     * @param app_config A pointer to the AppConfig for this use case
      */
     ImportPrimaryTileset(
-        std::unique_ptr<TilesetRepo> tileset_repo,
-        std::unique_ptr<PrimaryTilesetCompiler> compiler,
-        std::unique_ptr<DomainConfig> config)
-        : tileset_repo_{std::move(tileset_repo)}, compiler_{std::move(compiler)}, config_{std::move(config)}
+        gsl::not_null<const TilesetRepo *> tileset_repo,
+        gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const DomainConfig *> domain_config,
+        gsl::not_null<const AppConfig *> app_config)
+        : tileset_repo_{tileset_repo}, compiler_{compiler}, domain_config_{domain_config}, app_config_{app_config}
     {
     }
 
@@ -34,14 +38,15 @@ class ImportPrimaryTileset {
      * @brief Imports the primary Tileset with the given tileset name.
      *
      * @param tileset_name The name of the primary Tileset to import
-     * @return An empty Result on success, otherwise an error description
+     * @return An empty ChainableResult on success, otherwise an error chain
      */
     [[nodiscard]] ChainableResult<void> import(const std::string &tileset_name) const;
 
   private:
-    std::unique_ptr<TilesetRepo> tileset_repo_;
-    std::unique_ptr<PrimaryTilesetCompiler> compiler_;
-    std::unique_ptr<DomainConfig> config_;
+    const TilesetRepo *tileset_repo_;
+    const PrimaryTilesetCompiler *compiler_;
+    const DomainConfig *domain_config_;
+    const AppConfig *app_config_;
 };
 
 } // namespace porytiles2

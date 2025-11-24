@@ -494,7 +494,7 @@ std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
 
 namespace porytiles2 {
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
 {
     // Initialize all the compilation services
     LayerImageMetatileizer<Rgba32> metatileizer{};
@@ -591,7 +591,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 }
 
 ChainableResult<std::unique_ptr<Tileset>>
-PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode)
+PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode) const
 {
     PatchCompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_, tiles_mode, pal_mode};
     return task.run();

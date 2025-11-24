@@ -4,6 +4,8 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/app/config/app_config.hpp"
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -20,9 +22,15 @@ class CompilePrimaryTileset {
      *
      * @param tileset_repo A pointer to the TilesetRepo for this use case.
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
+     * @param domain_config A pointer to the DomainConfig for this use case
+     * @param app_config A pointer to the AppConfig for this use case
      */
-    CompilePrimaryTileset(gsl::not_null<TilesetRepo *> tileset_repo, gsl::not_null<PrimaryTilesetCompiler *> compiler)
-        : tileset_repo_{tileset_repo}, compiler_{compiler}
+    CompilePrimaryTileset(
+        gsl::not_null<const TilesetRepo *> tileset_repo,
+        gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const DomainConfig *> domain_config,
+        gsl::not_null<const AppConfig *> app_config)
+        : tileset_repo_{tileset_repo}, compiler_{compiler}, domain_config_{domain_config}, app_config_{app_config}
     {
     }
 
@@ -40,8 +48,10 @@ class CompilePrimaryTileset {
     [[nodiscard]] ChainableResult<void> compile(const std::string &tileset_name) const;
 
   private:
-    TilesetRepo *tileset_repo_;
-    PrimaryTilesetCompiler *compiler_;
+    const TilesetRepo *tileset_repo_;
+    const PrimaryTilesetCompiler *compiler_;
+    const DomainConfig *domain_config_;
+    const AppConfig *app_config_;
 };
 
 } // namespace porytiles2

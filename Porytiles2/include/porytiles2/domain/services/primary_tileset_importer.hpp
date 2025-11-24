@@ -5,7 +5,6 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/config/domain_config.hpp"
-#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -16,11 +15,11 @@
 namespace porytiles2 {
 
 /**
- * @brief Service that compiles a primary Tileset.
+ * @brief Service that imports a primary Tileset.
  */
-class PrimaryTilesetCompiler {
+class PrimaryTilesetImporter {
   public:
-    explicit PrimaryTilesetCompiler(
+    explicit PrimaryTilesetImporter(
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -30,10 +29,7 @@ class PrimaryTilesetCompiler {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset) const;
-
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
-    compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> import(const Tileset &tileset) const;
 
   private:
     const DomainConfig *config_;
