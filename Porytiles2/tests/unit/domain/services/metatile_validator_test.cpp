@@ -115,7 +115,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
+    AsciiTilePrinter tile_printer{&formatter};
     ColorPalettePrinter palette_printer{&formatter};
     MockDomainConfig config{};
     MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
@@ -162,7 +162,7 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
 
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
-    AsciiTilePrinter tile_printer{&formatter, rgba_magenta};
+    AsciiTilePrinter tile_printer{&formatter};
     ColorPalettePrinter palette_printer{&formatter};
     MockDomainConfig config{};
     MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
