@@ -1,17 +1,86 @@
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
 
+#include <array>
+#include <iostream>
+#include <memory>
+#include <ranges>
+#include <unordered_set>
+#include <vector>
+
+#include "porytiles2/domain/algorithms/palette_matchers.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/repos/tileset_artifact.hpp"
+#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/layer_mode_converter.hpp"
+#include "porytiles2/domain/services/metatile_decompiler.hpp"
+#include "porytiles2/domain/services/metatile_validator.hpp"
+#include "porytiles2/domain/services/pack_set_generator.hpp"
+#include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const Tileset &tileset) const
 {
+    // Unwrap config values
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
+
+    LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
+    MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
+
+    // Decompile Porymap tilemap entries
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tilemap_entries,
+        layer_mode_converter.triple_layerize(tileset.porymap_component()),
+        "failed to triple-layerize Porymap component for tileset " + tileset.name(),
+        std::unique_ptr<Tileset>);
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles,
+        metatile_decompiler.decompile_metatiles(
+            tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
+        "failed to decompile Porymap component for tileset " + tileset.name(),
+        std::unique_ptr<Tileset>);
+
     // TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified
     // overrides; they will be present on disk. We don't want to clobber them when saving the decompiled
     // component. So we'll need to pull them from the original component and inject them into this one before
     // persisting.
+    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
 
-    panic("TODO: implement");
+    // Convert metatiles into three layer images
+    LayerImageMetatileizer<Rgba32> metatileizer{};
+    constexpr std::size_t metatiles_per_row = 8; // Standard width for layer images (128 pixels)
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        layer_images,
+        metatileizer.demetatileize(metatiles, metatiles_per_row),
+        "failed to demetatileize metatiles for tileset " + tileset.name(),
+        std::unique_ptr<Tileset>);
+
+    auto &[bottom_image, middle_image, top_image] = layer_images;
+
+    // Set each porytiles_component layer to the new image
+    new_porytiles_component->bottom(bottom_image);
+    new_porytiles_component->middle(middle_image);
+    new_porytiles_component->top(top_image);
+
+    // No changes here, this is an import operation - no writebacks into input assets
+    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>(tileset.porymap_component());
+
+    auto new_tileset =
+        std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
+
+    return new_tileset;
 }
 
 } // namespace porytiles2

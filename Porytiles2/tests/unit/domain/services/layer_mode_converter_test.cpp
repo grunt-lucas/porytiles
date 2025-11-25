@@ -100,7 +100,8 @@ class LayerModeConverterTests : public ::testing::Test {
         format_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<StderrStyledUserDiagnostics>(format_.get());
         tile_printer_ = std::make_unique<AsciiTilePrinter>(format_.get());
-        converter_ = std::make_unique<LayerModeConverter>(format_.get(), diag_.get(), tile_printer_.get());
+        converter_ =
+            std::make_unique<LayerModeConverter>(format_.get(), diag_.get(), tile_printer_.get(), rgba_magenta);
     }
 
     std::unique_ptr<PlainTextFormatter> format_;

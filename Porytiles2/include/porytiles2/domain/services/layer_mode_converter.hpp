@@ -4,8 +4,8 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -19,8 +19,9 @@ class LayerModeConverter {
     explicit LayerModeConverter(
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
-        gsl::not_null<const TilePrinter *> tile_printer)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}
+        gsl::not_null<const TilePrinter *> tile_printer,
+        const Rgba32 &extrinsic_transparency)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, extrinsic_transparency_{extrinsic_transparency}
     {
     }
 
@@ -68,6 +69,7 @@ class LayerModeConverter {
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
+    const Rgba32 extrinsic_transparency_;
 };
 
 } // namespace porytiles2

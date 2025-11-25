@@ -1,7 +1,5 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
-#include "porytiles2/domain/algorithms/palette_matchers.hpp"
-
 #include <array>
 #include <iostream>
 #include <memory>
@@ -9,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
@@ -170,7 +169,7 @@ ChainableResult<void> PatchCompilerTask::process_porytiles_input()
 
 ChainableResult<void> PatchCompilerTask::process_porymap_input()
 {
-    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_};
+    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
     MetatileDecompiler metatile_decompiler{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
 
     // Decompile Porymap tilemap entries and decompose into tile vector
@@ -249,8 +248,8 @@ void PatchCompilerTask::setup_working_data()
     // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
     // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
     // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
-    // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
-    // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
+    // then here, instead of making a new PorymapComponent, we could invoke the copy ctor. And then we should add
+    // explicit "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values?
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
     // Preconditions: all decomposed tile vectors have the same size
@@ -446,7 +445,7 @@ std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
      * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
      * validated in an earlier step as dual-layer compatible.
      */
-    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_};
+    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
     const auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile_);
     if (configured_layer_mode == LayerMode::dual) {
         const auto &dual_layerized =
@@ -500,15 +499,15 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
 {
-    // Initialize all the compilation services
-    LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
-    LayerModeConverter layer_converter{format_, diag_, tile_printer_};
-
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
+
+    // Initialize all the compilation services
+    LayerImageMetatileizer<Rgba32> metatileizer{};
+    MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
+    LayerModeConverter layer_converter{format_, diag_, tile_printer_, extrinsic_transparency};
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(

@@ -38,7 +38,7 @@ class MetatileDecompiler {
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
-    Rgba32 extrinsic_transparency_;
+    const Rgba32 extrinsic_transparency_;
 };
 
 } // namespace porytiles2

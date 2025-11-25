@@ -98,13 +98,13 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
         const std::size_t input_offset = i * metatile::entries_per_metatile_triple;
 
         // Check precondition: no metatile should have implied LayerMode::triple
-        const LayerMode layer_mode = metatile.infer_layer_mode(rgba_magenta);
+        const LayerMode layer_mode = metatile.infer_layer_mode(extrinsic_transparency_);
         if (layer_mode == LayerMode::triple) {
             panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
         }
 
         // Infer the layer type for this metatile using magenta as extrinsic transparency
-        const LayerType layer_type = metatile.infer_layer_type(rgba_magenta);
+        const LayerType layer_type = metatile.infer_layer_type(extrinsic_transparency_);
 
         switch (layer_type) {
         case LayerType::normal:
