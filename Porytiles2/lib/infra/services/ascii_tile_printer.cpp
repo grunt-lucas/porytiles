@@ -8,6 +8,7 @@
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -223,9 +224,12 @@ std::vector<std::string> render_metatile_with_highlights(
 namespace porytiles2 {
 
 std::vector<std::string> AsciiTilePrinter::print_metatile(
-    const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile) const
+    const Metatile<Rgba32> &metatile,
+    metatile::Layer layer,
+    metatile::Subtile subtile,
+    const Rgba32 &extrinsic_transparency) const
 {
-    return render_metatile_with_highlights(metatile, layer, subtile, {}, extrinsic_transparency_, format_);
+    return render_metatile_with_highlights(metatile, layer, subtile, {}, extrinsic_transparency, format_);
 }
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlight(
@@ -233,45 +237,48 @@ std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlight(
     metatile::Layer layer,
     metatile::Subtile subtile,
     std::size_t row,
-    std::size_t col) const
+    std::size_t col,
+    const Rgba32 &extrinsic_transparency) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
-    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency_, format_);
+    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency, format_);
 }
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlights(
     const Metatile<Rgba32> &metatile,
     metatile::Layer layer,
     metatile::Subtile subtile,
-    const std::vector<std::size_t> &indexes) const
+    const std::vector<std::size_t> &indexes,
+    const Rgba32 &extrinsic_transparency) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{};
     for (const auto index : indexes) {
         coords.insert(tile::index_to_row_col(index));
     }
-    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency_, format_);
-}
-
-std::vector<std::string> AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &tile) const
-{
-    return render_tile_with_highlights(tile, {}, extrinsic_transparency_, format_);
+    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency, format_);
 }
 
 std::vector<std::string>
-AsciiTilePrinter::print_tile_pixel_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const
+AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const
+{
+    return render_tile_with_highlights(tile, {}, extrinsic_transparency, format_);
+}
+
+std::vector<std::string> AsciiTilePrinter::print_tile_pixel_highlight(
+    const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col, const Rgba32 &extrinsic_transparency) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
-    return render_tile_with_highlights(tile, coords, extrinsic_transparency_, format_);
+    return render_tile_with_highlights(tile, coords, extrinsic_transparency, format_);
 }
 
 std::vector<std::string> AsciiTilePrinter::print_tile_pixel_highlights(
-    const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const
+    const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes, const Rgba32 &extrinsic_transparency) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{};
     for (const auto index : indexes) {
         coords.insert(tile::index_to_row_col(index));
     }
-    return render_tile_with_highlights(tile, coords, extrinsic_transparency_, format_);
+    return render_tile_with_highlights(tile, coords, extrinsic_transparency, format_);
 }
 
 } // namespace porytiles2

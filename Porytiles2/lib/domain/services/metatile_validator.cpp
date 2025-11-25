@@ -5,6 +5,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/count_map_to_list.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
@@ -30,7 +31,8 @@ void report_validation_error(
     const std::string &error_message,
     const TextFormatter *format,
     const UserDiagnostics *diag,
-    const TilePrinter *tile_printer)
+    const TilePrinter *tile_printer,
+    const Rgba32 &extrinsic_transparency)
 {
     auto [layer, subtile] = metatile::from_internal_tile_index(internal_tile_index);
     std::vector errors = {format->format(
@@ -39,7 +41,8 @@ void report_validation_error(
             porytiles2::metatile::message_header(*format, metatile_index, layer, subtile, row, col), Style::bold},
         FormatParam{error_message})};
     errors.emplace_back("");
-    std::vector highlight = tile_printer->print_metatile_pixel_highlight(metatile, layer, subtile, row, col);
+    std::vector highlight =
+        tile_printer->print_metatile_pixel_highlight(metatile, layer, subtile, row, col, extrinsic_transparency);
     std::ranges::copy(highlight, std::back_inserter(errors));
     diag->err(diagnostic_code, errors);
 }
@@ -64,6 +67,8 @@ namespace porytiles2 {
 
 ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
+
     bool hit_error = false;
     std::size_t metatile_index = 0;
     for (const auto &metatile : metatiles) {
@@ -91,7 +96,8 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
                             error_message,
                             format_,
                             diag_,
-                            tile_printer_);
+                            tile_printer_,
+                            extrinsic_transparency);
                     }
                 }
             }
@@ -144,7 +150,8 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
                             error_message,
                             format_,
                             diag_,
-                            tile_printer_);
+                            tile_printer_,
+                            extrinsic_transparency);
                         report_color_counts(color_counts, format_, diag_, tile_color_count_violation, pal_printer_);
                         goto next_tile;
                     }
@@ -244,9 +251,9 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                     FormatParam{"non-transparent content on all three layers"})};
                 errors.emplace_back("");
                 // TODO: create and use print_metatile_tile_highlight
-                std::vector bottom_highlight = tile_printer_->print_tile(bottom_tile);
-                std::vector middle_highlight = tile_printer_->print_tile(middle_tile);
-                std::vector top_highlight = tile_printer_->print_tile(top_tile);
+                std::vector bottom_highlight = tile_printer_->print_tile(bottom_tile, extrinsic_transparency);
+                std::vector middle_highlight = tile_printer_->print_tile(middle_tile, extrinsic_transparency);
+                std::vector top_highlight = tile_printer_->print_tile(top_tile, extrinsic_transparency);
                 std::ranges::copy(bottom_highlight, std::back_inserter(errors));
                 errors.emplace_back("");
                 std::ranges::copy(middle_highlight, std::back_inserter(errors));

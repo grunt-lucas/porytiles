@@ -69,14 +69,7 @@ class CompileTilesetCommand final : public Command {
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
-        auto extrinsic_transparency_result = config.extrinsic_transparency(ConfigScopeType::tileset, tileset_name_);
-        if (!extrinsic_transparency_result.has_value()) {
-            diag->fatal(extrinsic_transparency_result);
-            return;
-        }
-        auto extrinsic_transparency = std::move(extrinsic_transparency_result).value();
-        std::unique_ptr<TilePrinter> tile_printer =
-            std::make_unique<AsciiTilePrinter>(text_formatter, extrinsic_transparency);
+        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<AsciiTilePrinter>(text_formatter);
         std::unique_ptr<PalettePrinter> pal_printer = std::make_unique<ColorPalettePrinter>(text_formatter);
 
         // Initialize stateless services

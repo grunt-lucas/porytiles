@@ -368,7 +368,7 @@ void PatchCompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
     no_match_err.emplace_back();
     // TODO: create and use print_metatile_tile_highlight
     std::ranges::copy(
-        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile),
+        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
     diag_.err(tag, no_match_err);
 
@@ -389,7 +389,7 @@ void PatchCompilerTask::emit_no_matching_pal_error(
     no_match_err.emplace_back();
     // TODO: create and use print_metatile_tile_highlight
     std::ranges::copy(
-        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile),
+        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
     diag_.err(tag, no_match_err);
 
@@ -417,7 +417,11 @@ void PatchCompilerTask::emit_no_matching_pal_error(
         closest_n_note.emplace_back();
         std::ranges::copy(
             tile_printer_.print_metatile_pixel_highlights(
-                porytiles_metatiles_.at(metatile_index), layer, subtile, match.uncovered_pixel_indices),
+                porytiles_metatiles_.at(metatile_index),
+                layer,
+                subtile,
+                match.uncovered_pixel_indices,
+                extrinsic_transparency_),
             std::back_inserter(closest_n_note));
         match_index++;
     }

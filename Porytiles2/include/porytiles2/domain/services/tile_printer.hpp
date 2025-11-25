@@ -16,8 +16,11 @@ class TilePrinter {
   public:
     virtual ~TilePrinter() = default;
 
-    [[nodiscard]] virtual std::vector<std::string>
-    print_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile) const = 0;
+    [[nodiscard]] virtual std::vector<std::string> print_metatile(
+        const Metatile<Rgba32> &metatile,
+        metatile::Layer layer,
+        metatile::Subtile subtile,
+        const Rgba32 &extrinsic_transparency) const = 0;
 
     // TODO: create print_metatile_tile_highlight
 
@@ -26,21 +29,29 @@ class TilePrinter {
         metatile::Layer layer,
         metatile::Subtile subtile,
         std::size_t row,
-        std::size_t col) const = 0;
+        std::size_t col,
+        const Rgba32 &extrinsic_transparency) const = 0;
 
     [[nodiscard]] virtual std::vector<std::string> print_metatile_pixel_highlights(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
         metatile::Subtile subtile,
-        const std::vector<std::size_t> &indexes) const = 0;
-
-    [[nodiscard]] virtual std::vector<std::string> print_tile(const PixelTile<Rgba32> &tile) const = 0;
-
-    [[nodiscard]] virtual std::vector<std::string>
-    print_tile_pixel_highlight(const PixelTile<Rgba32> &tile, std::size_t row, std::size_t col) const = 0;
+        const std::vector<std::size_t> &indexes,
+        const Rgba32 &extrinsic_transparency) const = 0;
 
     [[nodiscard]] virtual std::vector<std::string>
-    print_tile_pixel_highlights(const PixelTile<Rgba32> &tile, const std::vector<std::size_t> &indexes) const = 0;
+    print_tile(const PixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const = 0;
+
+    [[nodiscard]] virtual std::vector<std::string> print_tile_pixel_highlight(
+        const PixelTile<Rgba32> &tile,
+        std::size_t row,
+        std::size_t col,
+        const Rgba32 &extrinsic_transparency) const = 0;
+
+    [[nodiscard]] virtual std::vector<std::string> print_tile_pixel_highlights(
+        const PixelTile<Rgba32> &tile,
+        const std::vector<std::size_t> &indexes,
+        const Rgba32 &extrinsic_transparency) const = 0;
 };
 
 } // namespace porytiles2
