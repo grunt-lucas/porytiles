@@ -7,11 +7,11 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
-#include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/import_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
@@ -35,13 +35,12 @@
 
 #include "command.hpp"
 
-class CompileTilesetCommand final : public Command {
+class ImportTilesetCommand final : public Command {
   public:
-    explicit CompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
     }
 
     void Run() override
@@ -78,7 +77,8 @@ class CompileTilesetCommand final : public Command {
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
 
-        // Setup primary compiler
+        // Setup primary importer and compiler
+        PrimaryTilesetImporter importer{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup the tileset repository
@@ -89,22 +89,22 @@ class CompileTilesetCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, diag.get()};
+        ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, diag.get()};
 
         // Run the use case
-        auto compile_result = compile_use_case.compile(tileset_name_);
-        if (!compile_result.has_value()) {
+        auto import_result = import_use_case.import(tileset_name_);
+        if (!import_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
-                compile_result};
+                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                import_result};
             diag->fatal(fail_result);
         }
     }
 
   private:
-    static constexpr auto kCommandName = "compile-tileset";
+    static constexpr auto kCommandName = "import-tileset";
     static constexpr auto kCommandDesc =
-        "Compile a tileset, i.e., update the Porymap assets to match the Porytiles assets.";
+        "Import a tileset, i.e., update the Porytiles assets to match the Porymap assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };

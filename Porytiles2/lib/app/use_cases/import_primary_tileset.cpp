@@ -5,6 +5,7 @@
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
 
@@ -28,37 +29,55 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         return FormattableError{"PorymapTilesetComponent was empty"};
     }
 
-    // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
-    // any differ, bail with the message "uncompiled changes present in Porytiles asset X."
-    if (!tileset->porytiles_component().is_empty()) {
-        const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
-        const auto mismatched_keys =
-            tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
-        if (!mismatched_keys.empty()) {
-            return FormattableError{"uncompiled changes present in Porytiles assets: TODO keys here"};
+    // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
+    if (tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums.value()) {
+        // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`.
+        // If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+        if (!tileset->porytiles_component().is_empty()) {
+            const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
+            const auto mismatched_keys =
+                tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
+            if (!mismatched_keys.empty()) {
+                return FormattableError{"uncompiled changes present in Porytiles assets: TODO keys here"};
+            }
+        }
+
+        // 5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
+        // message "nothing to do."
+        const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
+        if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
+            // TODO: display a nothing_to_do message to the user
+            diag_->warn("nothing-to-do", "nothing to do");
+            return {};
         }
     }
 
-    // 5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
-    // message "nothing to do."
-    const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
-    if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
-        // TODO: display a nothing_to_do message to the user
-        return {};
-    }
-
     // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-    // TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified
-    // overrides; they will be present on disk. We don't want to clobber them when saving the decompiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // persisting.
+    auto maybe_imported_tileset = importer_->import(*tileset);
+    if (!maybe_imported_tileset.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+            maybe_imported_tileset};
+    }
+    const auto imported_tileset = std::move(maybe_imported_tileset.value());
 
     // 7. Perform a patch build.
-    // TODO: add this
-    // compiler_->compile_patch(tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
+    auto maybe_recompiled_tileset =
+        compiler_->compile_patch(*imported_tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
+    if (!maybe_recompiled_tileset.has_value()) {
+        // return ChainableResult<void>{
+        //     FormattableError{"patch compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+        //     maybe_new_tileset};
+        panic("patch re-compilation after import failed: this should never happen right?");
+    }
+    const auto new_tileset = std::move(maybe_recompiled_tileset.value());
 
     // 8. Persist the `Tileset` (which also caches the checksums).
-    PT_TRY_CALL_PASS_ERR(tileset_repo_->save(*tileset), void);
+    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
+    }
 
     return {};
 }

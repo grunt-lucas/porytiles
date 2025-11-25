@@ -25,6 +25,7 @@ class CompilePrimaryTileset {
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
      * @param domain_config A pointer to the DomainConfig for this use case
      * @param app_config A pointer to the AppConfig for this use case
+     * @param diag A pointer to the UserDiagnostics for this use case
      */
     CompilePrimaryTileset(
         gsl::not_null<const TilesetRepo *> tileset_repo,

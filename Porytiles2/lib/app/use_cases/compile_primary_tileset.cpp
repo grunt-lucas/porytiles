@@ -59,19 +59,20 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     // 6. Compile the `Tileset`, generating a new modified `Tileset`.
     // TODO: make PatchTilesMode and PatchPalMode configurable
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_build_enabled, tileset_name, void);
-    auto maybe_new_tileset = patch_build_enabled.value()
-                                 ? compiler_->compile_patch(*tileset, PatchTilesMode::fixed, PatchPalMode::fixed)
-                                 : compiler_->compile(*tileset);
-    if (!maybe_new_tileset.has_value()) {
+    auto maybe_compiled_tileset = patch_build_enabled.value()
+                                      ? compiler_->compile_patch(*tileset, PatchTilesMode::fixed, PatchPalMode::fixed)
+                                      : compiler_->compile(*tileset);
+    if (!maybe_compiled_tileset.has_value()) {
         return ChainableResult<void>{
             FormattableError{"compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
-            maybe_new_tileset};
+            maybe_compiled_tileset};
     }
-    const auto new_tileset = std::move(maybe_new_tileset.value());
+    const auto new_tileset = std::move(maybe_compiled_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return ChainableResult<void>{FormattableError{save_result.error()}};
+        return ChainableResult<void>{
+            FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
     }
 
     return {};
