@@ -65,11 +65,13 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
-
     /*
      * App Config
      */
+
+    [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * Infra Config

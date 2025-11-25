@@ -181,6 +181,17 @@ LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::s
 }
 
 ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
@@ -247,9 +258,10 @@ void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_nam
         // std::ignore = max_map_data_size(tileset_name);
         // std::ignore = num_tiles_per_metatile(tileset_name);
         // std::ignore = extrinsic_transparency(tileset_name);
-        // std::ignore = patch_build_enabled(tileset_name);
 
         // App config
+        // std::ignore = verify_checksums(tileset_name);
+        // std::ignore = patch_build_enabled(tileset_name);
 
         // Infra config
         // std::ignore = tiles_pal_mode(tileset_name);

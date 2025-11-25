@@ -70,12 +70,6 @@ class MockDomainConfig : public DomainConfig {
     {
         return ConfigValue<Rgba32>{rgba_magenta, "extrinsic_transparency", "default value", {}};
     }
-
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    patch_build_enabled_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue<bool>{false, "patch_build_enabled", "default value", {}};
-    }
 };
 
 // Friend test class to allow testing private methods

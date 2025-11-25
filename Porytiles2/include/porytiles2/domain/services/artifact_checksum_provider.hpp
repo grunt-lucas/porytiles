@@ -63,8 +63,16 @@ class ArtifactChecksumProvider {
      * @param artifact_keys The keys of artifacts to check
      * @return Vector of artifact keys that have mismatched checksums
      */
-    [[nodiscard]] virtual std::vector<ArtifactKey> find_unsynced_tileset_artifacts(
+    [[nodiscard]] std::vector<ArtifactKey> find_unsynced_tileset_artifacts(
         const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
+
+    /**
+     * @brief Check if any cached checksums exist for the given tileset.
+     *
+     * @param tileset_name The name of the tileset to check
+     * @return If any cached checksums exist for the given tileset
+     */
+    [[nodiscard]] bool cached_checksums_exist(const std::string &tileset_name) const;
 
     /**
      * @brief Checks if all artifact checksums for the given Tileset match their cached values.
@@ -78,7 +86,7 @@ class ArtifactChecksumProvider {
      * @param artifact_keys The keys of artifacts to check
      * @return True if all checksums match, false if any differ
      */
-    [[nodiscard]] virtual bool
+    [[nodiscard]] bool
     all_checksums_tileset_match(const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const;
 };
 

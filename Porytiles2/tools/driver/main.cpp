@@ -4,9 +4,9 @@
 #include "porytiles2/build_version.h"
 
 #include "command.hpp"
-#include "create_tileset_command.hpp"
-#include "tmp_debug_commands.hpp"
-#include "verify_tileset_command.hpp"
+#include "command_compile_tileset.hpp"
+#include "command_create_tileset.hpp"
+#include "command_verify_tileset.hpp"
 
 int main(const int argc, char **argv)
 {
@@ -49,9 +49,9 @@ https://github.com/huderlem/porymap)");
         "Print version info and exit.");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
+    CompileTilesetCommand compile_tileset{porytiles_app};
     CreateTilesetCommand create_tileset{porytiles_app};
     VerifyTilesetCommand verify_tileset{porytiles_app};
-    DebugPrimaryCompileCommand debug_compile{porytiles_app};
 
     porytiles_app.require_subcommand();
 

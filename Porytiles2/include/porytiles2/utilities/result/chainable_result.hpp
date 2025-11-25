@@ -83,6 +83,27 @@ class ChainableResult {
         add_cause(cause_result);
     }
 
+    /**
+     * @brief Constructs a ChainableResult by chaining an existing error chain with a default-constructed error.
+     *
+     * @details
+     * This constructor creates a new error result that includes a default-constructed FormattableError and the complete
+     * error chain from a cause result. This is useful when the current layer doesn't need to add additional error
+     * context but needs to convert the result to a different success type. The default-constructed error is added to
+     * the beginning of the chain, followed by all errors from the cause result's chain.
+     *
+     * @tparam CauseT The success type of the cause result (unused but required for template matching)
+     * @tparam CauseE The error type of the cause result, must be derived from Error
+     * @param cause_result The ChainableResult containing the error chain to chain
+     */
+    template <typename CauseT, typename CauseE>
+    explicit ChainableResult(const ChainableResult<CauseT, CauseE> &cause_result) : result_{std::unexpected{E{}}}
+    {
+        static_assert(std::is_base_of_v<Error, E>, "ChainableResult error type E must be derived from Error");
+        error_chain_.push_back(std::make_unique<E>(result_.error()));
+        add_cause(cause_result);
+    }
+
     /*
      * Move-only semantics
      */
@@ -265,6 +286,23 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     template <typename CauseT, typename CauseE>
     explicit ChainableResult(const E &error, const ChainableResult<CauseT, CauseE> &cause_result)
         : Base{error, cause_result}
+    {
+    }
+
+    /**
+     * @brief Constructs a ChainableResult by chaining an existing error chain with a default-constructed error.
+     *
+     * @details
+     * This constructor creates a new error result that includes a default-constructed FormattableError and the complete
+     * error chain from a cause result. This is useful when the current layer doesn't need to add additional error
+     * context but needs to convert the result to a different success type.
+     *
+     * @tparam CauseT The success type of the cause result (may be void)
+     * @tparam CauseE The error type of the cause result, must be derived from Error
+     * @param cause_result The ChainableResult containing the error chain to chain
+     */
+    template <typename CauseT, typename CauseE>
+    explicit ChainableResult(const ChainableResult<CauseT, CauseE> &cause_result) : Base{cause_result}
     {
     }
 

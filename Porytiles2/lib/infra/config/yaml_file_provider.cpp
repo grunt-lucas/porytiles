@@ -154,6 +154,18 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         "extrinsic_transparency");
 }
 
+LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<bool>(
+        format_,
+        paths,
+        load_yaml_file,
+        [](const YAML::Node &doc) { return doc["verify_checksums"]; },
+        parse_bool,
+        "verify_checksums");
+}
+
 LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);

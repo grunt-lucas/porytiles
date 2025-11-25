@@ -119,10 +119,21 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  # Application Layer Configuration Values
+  - name: verify_checksums
+    type: bool
+    parser: parse_bool
+    layer: app
+    default_value: "true"
+    yaml:
+      path: verify_checksums
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - name: patch_build_enabled
     type: bool
     parser: parse_bool
-    layer: domain
+    layer: app
     default_value: "false"
     yaml:
       path: patch.enabled

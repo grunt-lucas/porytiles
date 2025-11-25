@@ -38,12 +38,9 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
     // TODO: tileset checksum file location should be configurable?
     const auto artifact_checksum_file = key_provider_->tileset_root(tileset_name) / "artifact_checksums.json";
 
-    // If checksum file doesn't exist, create it
+    // If checksum file doesn't exist, just return nothing
     if (!exists(artifact_checksum_file)) {
-        const auto new_checksums = compute_tileset_artifact_checksums(tileset_name);
-        if (const auto result = cache_tileset_checksums(tileset_name, new_checksums); !result.has_value()) {
-            panic(fmt::format("failed to initialize checksum cache for '{}'", tileset_name));
-        }
+        return {};
     }
 
     std::ifstream file{artifact_checksum_file};

@@ -7,6 +7,7 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
+#include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 #include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
@@ -36,9 +37,9 @@
 
 #include "command.hpp"
 
-class DebugPrimaryCompileCommand final : public Command {
+class CompileTilesetCommand final : public Command {
   public:
-    explicit DebugPrimaryCompileCommand(CLI::App &parent_app)
+    explicit CompileTilesetCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
@@ -97,37 +98,22 @@ class DebugPrimaryCompileCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        // Load the tileset
-        auto maybe_tileset = repo.load(tileset_name_);
-        if (!maybe_tileset.has_value()) {
-            diag->fatal(maybe_tileset);
-            return;
-        }
-        const auto tileset = std::move(maybe_tileset.value());
+        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, diag.get()};
 
-        // Compile the tileset
-        auto compile_result = compiler.compile_patch(*tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
+        // Run the use case
+        auto compile_result = compile_use_case.compile(tileset_name_);
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
                 compile_result};
             diag->fatal(fail_result);
-            return;
-        }
-        const auto new_tileset = std::move(compile_result.value());
-
-        // Save the tileset back
-        const auto new_tileset_save_result = repo.save(*new_tileset);
-        if (!new_tileset_save_result.has_value()) {
-            diag->fatal(new_tileset_save_result);
-            return;
         }
     }
 
   private:
-    static constexpr auto kCommandName = "debug-compile-primary";
+    static constexpr auto kCommandName = "compile-tileset";
     static constexpr auto kCommandDesc =
-        "Load a tileset, run it through the compile-primary service, and write it back.";
+        "Compile a tileset, i.e., update the Porymap assets to match the Porytiles assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };

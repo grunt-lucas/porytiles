@@ -121,13 +121,16 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
-
     /*
      * App Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
      */
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    verify_checksums_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * Infra Config Raw Methods (Tier 1)

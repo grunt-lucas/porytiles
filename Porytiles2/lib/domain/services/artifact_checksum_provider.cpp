@@ -12,6 +12,10 @@ std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_tileset_artifac
     const auto checksums = compute_tileset_artifact_checksums(tileset_name);
     const auto cached_checksums = load_cached_tileset_checksums(tileset_name);
 
+    if (cached_checksums.empty()) {
+        return {};
+    }
+
     std::vector<ArtifactKey> mismatched_keys;
     for (const auto &key : artifact_keys) {
         const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
@@ -22,6 +26,11 @@ std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_tileset_artifac
         }
     }
     return mismatched_keys;
+}
+
+bool ArtifactChecksumProvider::cached_checksums_exist(const std::string &tileset_name) const
+{
+    return !load_cached_tileset_checksums(tileset_name).empty();
 }
 
 bool ArtifactChecksumProvider::all_checksums_tileset_match(
