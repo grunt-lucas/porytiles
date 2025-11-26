@@ -1,5 +1,9 @@
 #pragma once
 
+#include <optional>
+#include <ostream>
+#include <string>
+
 namespace porytiles2 {
 
 /**
@@ -17,6 +21,33 @@ enum class PatchTilesMode {
     free
 };
 
+[[nodiscard]] inline std::optional<PatchTilesMode> patch_tiles_mode_from_str(const std::string &str)
+{
+    if (str == "fixed") {
+        return std::optional{PatchTilesMode::fixed};
+    }
+    if (str == "free") {
+        return std::optional{PatchTilesMode::free};
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] inline std::string to_string(const PatchTilesMode m)
+{
+    switch (m) {
+    case PatchTilesMode::fixed:
+        return "fixed";
+    case PatchTilesMode::free:
+        return "free";
+    }
+    panic("unhandled PatchTilesMode value");
+}
+
+inline std::ostream &operator<<(std::ostream &os, const PatchTilesMode m)
+{
+    return os << to_string(m);
+}
+
 /**
  * @brief Specifies whether palettes can be modified during patch compilation.
  *
@@ -31,5 +62,32 @@ enum class PatchPalMode {
     /** @brief Unused palette slots can be freely modified during patch compilation */
     free
 };
+
+[[nodiscard]] inline std::optional<PatchPalMode> patch_pal_mode_from_str(const std::string &str)
+{
+    if (str == "fixed") {
+        return std::optional{PatchPalMode::fixed};
+    }
+    if (str == "free") {
+        return std::optional{PatchPalMode::free};
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] inline std::string to_string(const PatchPalMode m)
+{
+    switch (m) {
+    case PatchPalMode::fixed:
+        return "fixed";
+    case PatchPalMode::free:
+        return "free";
+    }
+    panic("unhandled PatchPalMode value");
+}
+
+inline std::ostream &operator<<(std::ostream &os, const PatchPalMode m)
+{
+    return os << to_string(m);
+}
 
 } // namespace porytiles2

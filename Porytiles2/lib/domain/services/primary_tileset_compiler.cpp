@@ -72,6 +72,7 @@ class PatchCompilerTask {
     [[nodiscard]] ChainableResult<void> match_tiles();
     void emit_no_matching_tile_error(std::size_t tile_index);
     void emit_no_matching_pal_error(std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
+    void emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit);
     [[nodiscard]] std::unique_ptr<Tileset> assemble_output();
 
     // Dependencies (injected in ctor)
@@ -320,10 +321,10 @@ ChainableResult<void> PatchCompilerTask::match_tiles()
                 // CASE 3a-i: tile already present
                 if (maybe_tile_index.has_value()) {
                     const auto tile_index = maybe_tile_index.value();
-                    const auto canonical_tile = tiles_workspace_->tile_at(tile_index);
-                    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ canonical_tile.h_flip();
-                    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ canonical_tile.v_flip();
-                    TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+                    const auto workspace_tile = tiles_workspace_->tile_at(tile_index);
+                    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+                    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+                    const TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
                     new_porymap_component_->push_back_tilemap_entry(new_entry);
                 }
 
@@ -335,7 +336,19 @@ ChainableResult<void> PatchCompilerTask::match_tiles()
 
                 // CASE 3a-iii: tile not found and PatchTilesMode::free
                 else {
-                    panic("implement PatchTilesMode::free add tile case");
+                    if (tiles_workspace_->at_capacity()) {
+                        matched_all_tiles = false;
+                        emit_tile_limit_error(i, tiles_workspace_->capacity());
+                        break;
+                    }
+                    const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
+                    const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
+                    const TilemapEntry new_entry{
+                        inserted_index,
+                        pal_index,
+                        static_cast<bool>(canonical_index_tile.h_flip() ^ workspace_tile.h_flip()),
+                        static_cast<bool>(canonical_index_tile.v_flip() ^ workspace_tile.v_flip())};
+                    new_porymap_component_->push_back_tilemap_entry(new_entry);
                 }
             }
 
@@ -425,6 +438,33 @@ void PatchCompilerTask::emit_no_matching_pal_error(
         match_index++;
     }
     diag_.note(tag, closest_n_note);
+}
+
+void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit)
+{
+    constexpr auto tag = "tile-limit";
+    auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
+
+    // Emit error
+    std::vector<std::string> tile_limit_error{};
+    tile_limit_error.emplace_back(format_.format(
+        "{}: hit limit of '{}' unique tiles",
+        FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold},
+        FormatParam{tile_limit, Style::bold}));
+    tile_limit_error.emplace_back();
+    // TODO: create and use print_metatile_tile_highlight
+    std::ranges::copy(
+        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        std::back_inserter(tile_limit_error));
+    diag_.err(tag, tile_limit_error);
+
+    // Construct note text
+    std::vector<std::string> note_text;
+    note_text.push_back(
+        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_primary_, Style::bold}));
+    note_text.emplace_back("");
+    std::ranges::copy(num_tiles_primary_.prettify(format_), std::back_inserter(note_text));
+    diag_.note(tag, note_text);
 }
 
 std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()

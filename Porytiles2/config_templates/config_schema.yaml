@@ -140,6 +140,26 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - name: patch_tiles_mode
+    type: PatchTilesMode
+    parser: parse_patch_tiles_mode
+    layer: app
+    default_value: "PatchTilesMode::fixed"
+    yaml:
+      path: patch.tiles
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: patch_pal_mode
+    type: PatchPalMode
+    parser: parse_patch_pal_mode
+    layer: app
+    default_value: "PatchPalMode::fixed"
+    yaml:
+      path: patch.palettes
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Infrastructure Layer Configuration Values
   - name: tiles_pal_mode
     type: TilesPalMode

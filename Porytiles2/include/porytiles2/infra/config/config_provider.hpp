@@ -3,6 +3,7 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
@@ -72,6 +73,11 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<PatchTilesMode>
+    patch_tiles_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<PatchPalMode> patch_pal_mode(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * Infra Config

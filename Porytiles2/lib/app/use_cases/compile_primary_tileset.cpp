@@ -40,9 +40,14 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porymap_keys);
             if (!mismatched_keys.empty()) {
-                // TODO: print a nicer error message that shows which keys have unimported changes
-                return ChainableResult<void>{
-                    FormattableError{"unimported changes present in Porymap assets: TODO keys here"}};
+                // TODO: better message here
+                std::vector<std::string> err_msg{};
+                err_msg.reserve(mismatched_keys.size());
+                err_msg.emplace_back("unimported changes present in Porymap assets:");
+                for (const auto &key : mismatched_keys) {
+                    err_msg.emplace_back("  " + key.key());
+                }
+                return ChainableResult<void>{FormattableError{err_msg}};
             }
         }
 
@@ -50,18 +55,20 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         // the message "nothing to do."
         const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porytiles_keys)) {
-            // TODO: display a nothing_to_do message to the user
-            diag_->warn("nothing-to-do", "nothing to do");
+            // TODO: better message here
+            diag_->warn("nothing-to-do", "Skipping compilation, no changes found, TODO: give better message here");
             return {};
         }
     }
 
     // 6. Compile the `Tileset`, generating a new modified `Tileset`.
-    // TODO: make PatchTilesMode and PatchPalMode configurable
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_build_enabled, tileset_name, void);
-    auto maybe_compiled_tileset = patch_build_enabled.value()
-                                      ? compiler_->compile_patch(*tileset, PatchTilesMode::fixed, PatchPalMode::fixed)
-                                      : compiler_->compile(*tileset);
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_tiles_mode, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_pal_mode, tileset_name, void);
+    auto maybe_compiled_tileset =
+        patch_build_enabled.value()
+            ? compiler_->compile_patch(*tileset, patch_tiles_mode.value(), patch_pal_mode.value())
+            : compiler_->compile(*tileset);
     if (!maybe_compiled_tileset.has_value()) {
         return ChainableResult<void>{
             FormattableError{"compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},

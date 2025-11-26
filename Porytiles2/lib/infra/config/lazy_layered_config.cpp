@@ -202,6 +202,28 @@ LazyLayeredConfig::patch_build_enabled_raw(ConfigScopeType type, const std::stri
         key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_build_enabled(type, scope); });
 }
 
+ChainableResult<ConfigValue<PatchTilesMode>>
+LazyLayeredConfig::patch_tiles_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PatchTilesMode>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_tiles_mode(type, scope); });
+}
+
+ChainableResult<ConfigValue<PatchPalMode>>
+LazyLayeredConfig::patch_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PatchPalMode>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_pal_mode(type, scope); });
+}
+
 ChainableResult<ConfigValue<TilesPalMode>>
 LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -262,6 +284,8 @@ void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_nam
         // App config
         // std::ignore = verify_checksums(tileset_name);
         // std::ignore = patch_build_enabled(tileset_name);
+        // std::ignore = patch_tiles_mode(tileset_name);
+        // std::ignore = patch_pal_mode(tileset_name);
 
         // Infra config
         // std::ignore = tiles_pal_mode(tileset_name);

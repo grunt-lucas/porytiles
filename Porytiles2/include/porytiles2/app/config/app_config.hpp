@@ -3,6 +3,7 @@
 #include <string>
 
 #include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
@@ -39,6 +40,22 @@ class AppConfig {
         return validated_val;
     }
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<PatchTilesMode>>
+    patch_tiles_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = patch_tiles_mode_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<PatchPalMode>>
+    patch_pal_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = patch_pal_mode_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
@@ -63,6 +80,30 @@ class AppConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PatchTilesMode>>
+    patch_tiles_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = patch_tiles_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PatchTilesMode>>
+    patch_tiles_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PatchPalMode>>
+    patch_pal_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = patch_pal_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PatchPalMode>>
+    patch_pal_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

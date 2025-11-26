@@ -1,7 +1,5 @@
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 
-#include "fmt/format.h"
-
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
@@ -181,20 +179,21 @@ TilesPngWorkspace::TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t c
     }
 }
 
-bool TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
+std::size_t TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
 {
     // Check if we're at capacity
     if (cursor_ >= capacity_) {
-        return false;
+        panic("TilesPngWorkspace is at capacity");
     }
 
     // No point inserting a transparent tile
     if (tile.is_transparent()) {
-        return false;
+        return 0;
     }
 
     // Insert tile at cursor position
     tiles_[cursor_] = tile;
+    const std::size_t old_cursor = cursor_;
 
     // Add to canonical_forms_ map
     const PixelTile<IndexPixel> &base_tile = tile;
@@ -206,7 +205,7 @@ bool TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
         cursor_++;
     }
 
-    return true;
+    return old_cursor;
 }
 
 std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of(const CanonicalPixelTile<IndexPixel> &tile) const

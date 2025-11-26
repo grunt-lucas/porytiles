@@ -8,6 +8,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -298,6 +299,76 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<TilesPalMode>::invalid(error, source, details);
+    }
+}
+
+LayerValue<PatchTilesMode> parse_patch_tiles_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PatchTilesMode>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto details = make_source_details(format, file_path, mark);
+        const auto str = node.as<std::string>();
+        const auto mode_opt = patch_tiles_mode_from_str(str);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}', expected 'fixed' or 'free'",
+                FormatParam{key, Style::bold},
+                FormatParam{str, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<PatchTilesMode>::invalid(error, source, details);
+        }
+
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<PatchTilesMode>::valid(mode_opt.value(), source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("failed to parse '{}' as PatchTilesMode: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PatchTilesMode>::invalid(error, source, details);
+    }
+}
+
+LayerValue<PatchPalMode> parse_patch_pal_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PatchPalMode>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto details = make_source_details(format, file_path, mark);
+        const auto str = node.as<std::string>();
+        const auto mode_opt = patch_pal_mode_from_str(str);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}', expected 'fixed' or 'free'",
+                FormatParam{key, Style::bold},
+                FormatParam{str, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<PatchPalMode>::invalid(error, source, details);
+        }
+
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<PatchPalMode>::valid(mode_opt.value(), source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("failed to parse '{}' as PatchPalMode: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PatchPalMode>::invalid(error, source, details);
     }
 }
 

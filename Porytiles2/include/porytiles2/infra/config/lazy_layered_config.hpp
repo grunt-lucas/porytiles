@@ -132,6 +132,12 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<PatchTilesMode>>
+    patch_tiles_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<PatchPalMode>>
+    patch_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+
     /*
      * Infra Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden

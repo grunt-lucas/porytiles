@@ -39,7 +39,14 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
             if (!mismatched_keys.empty()) {
-                return FormattableError{"uncompiled changes present in Porytiles assets: TODO keys here"};
+                // TODO: better message here?
+                std::vector<std::string> err_msg{};
+                err_msg.reserve(mismatched_keys.size());
+                err_msg.emplace_back("uncompiled changes present in Porytiles assets:");
+                for (const auto &key : mismatched_keys) {
+                    err_msg.emplace_back("  " + key.key());
+                }
+                return ChainableResult<void>{FormattableError{err_msg}};
             }
         }
 
@@ -47,8 +54,8 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         // message "nothing to do."
         const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
-            // TODO: display a nothing_to_do message to the user
-            diag_->warn("nothing-to-do", "nothing to do");
+            // TODO: better message here
+            diag_->warn("nothing-to-do", "Skipping import, no changes found, TODO: give better message here");
             return {};
         }
     }
@@ -57,7 +64,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     auto maybe_imported_tileset = importer_->import(*tileset);
     if (!maybe_imported_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"import job failed for '{}'", FormatParam{tileset_name, Style::bold}},
             maybe_imported_tileset};
     }
     const auto imported_tileset = std::move(maybe_imported_tileset.value());

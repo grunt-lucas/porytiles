@@ -74,6 +74,18 @@ LayerValue<bool> ConfigProvider::patch_build_enabled(
     return LayerValue<bool>::not_provided();
 }
 
+LayerValue<PatchTilesMode>
+ConfigProvider::patch_tiles_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PatchTilesMode>::not_provided();
+}
+
+LayerValue<PatchPalMode>
+ConfigProvider::patch_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PatchPalMode>::not_provided();
+}
+
 LayerValue<TilesPalMode>
 ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

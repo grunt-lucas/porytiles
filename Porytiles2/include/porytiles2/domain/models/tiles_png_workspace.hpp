@@ -152,12 +152,12 @@ class TilesPngWorkspace {
      * @details
      * Inserts the given canonical tile at the cursor position, replacing the transparent tile that was there. After
      * insertion, the cursor is advanced to the next available transparent tile slot. The inserted tile is added to the
-     * canonical_forms_ map for deduplication support.
+     * canonical_forms_ map for deduplication support. The function then returns the index of the inserted tile.
      *
      * Insertion Criteria:
-     * - Returns false if the workspace is at capacity (cursor >= capacity)
-     * - Returns false if the tile is transparent (no point inserting transparent tiles)
-     * - Returns true if the tile was successfully inserted
+     * - Panics if the workspace is at capacity (cursor >= capacity)
+     * - Returns 0 if the tile is transparent (index 0 is standard location for transparent tile)
+     * - Returns index if the tile was successfully inserted
      *
      * Post-insertion State:
      * - The tile replaces the transparent tile at the cursor position
@@ -171,10 +171,10 @@ class TilesPngWorkspace {
      * in the common case.
      *
      * @param tile The canonical pixel tile to insert; must be non-transparent for successful insertion
-     * @return true if the tile was successfully inserted, false if the workspace is at capacity or the tile is
-     * transparent
+     * @pre Workspace cursor is less than capacity, i.e., there is room in the workspace for new tiles
+     * @return The index of the inserted tile
      */
-    [[nodiscard]] bool insert_tile(const CanonicalPixelTile<IndexPixel> &tile);
+    [[nodiscard]] std::size_t insert_tile(const CanonicalPixelTile<IndexPixel> &tile);
 
     /**
      * @brief Finds the first occurrence index of a given canonical tile in the workspace.

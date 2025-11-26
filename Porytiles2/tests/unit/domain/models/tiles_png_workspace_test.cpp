@@ -177,13 +177,14 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldInsertNonTransparentTile)
     pixel_tile.set(0, 0, IndexPixel{1});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
+    std::size_t result = workspace.insert_tile(tile);
 
-    EXPECT_TRUE(result);
+    // Should return index 1 (first slot after reserved tile 0)
+    EXPECT_EQ(result, 1);
     EXPECT_FALSE(workspace.tile_at(1).is_transparent());
 }
 
-TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseForTransparentTile)
+TEST(TilesPngWorkspaceTests, InsertTileShouldReturnZeroForTransparentTile)
 {
     TilesPngWorkspace workspace{10};
 
@@ -191,12 +192,13 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseForTransparentTile)
     PixelTile<IndexPixel> pixel_tile;
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
+    std::size_t result = workspace.insert_tile(tile);
 
-    EXPECT_FALSE(result);
+    // Transparent tiles return 0 (the standard transparent tile index)
+    EXPECT_EQ(result, 0);
 }
 
-TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseWhenAtCapacity)
+TEST(TilesPngWorkspaceTests, InsertTileShouldPanicWhenAtCapacity)
 {
     TilesPngWorkspace workspace{1};
 
@@ -208,9 +210,8 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseWhenAtCapacity)
     // Workspace with capacity 1 should be at capacity initially (tile 0 is reserved)
     EXPECT_TRUE(workspace.at_capacity());
 
-    bool result = workspace.insert_tile(tile);
-
-    EXPECT_FALSE(result);
+    // Attempting to insert when at capacity should panic
+    ASSERT_DEATH(std::ignore = workspace.insert_tile(tile), "TilesPngWorkspace is at capacity");
 }
 
 TEST(TilesPngWorkspaceTests, InsertTileShouldFillCapacityProperly)
@@ -224,20 +225,20 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldFillCapacityProperly)
         pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i)});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-        bool result = workspace.insert_tile(tile);
-        EXPECT_TRUE(result);
+        std::size_t result = workspace.insert_tile(tile);
+        // Each tile should be inserted at its expected index
+        EXPECT_EQ(result, i);
     }
 
     // Now should be at capacity
     EXPECT_TRUE(workspace.at_capacity());
 
-    // Try to insert one more
+    // Try to insert one more - should panic
     PixelTile<IndexPixel> pixel_tile;
     pixel_tile.set(0, 0, IndexPixel{99});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
-    EXPECT_FALSE(result);
+    ASSERT_DEATH(std::ignore = workspace.insert_tile(tile), "TilesPngWorkspace is at capacity");
 }
 
 TEST(TilesPngWorkspaceTests, InsertTileShouldFastForwardCursorCorrectly)
@@ -426,10 +427,11 @@ TEST(TilesPngWorkspaceTests, ShouldHandleComplexWorkflow)
     pixel_tile.set(0, 0, IndexPixel{3});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
-    EXPECT_TRUE(result);
+    std::size_t result = workspace.insert_tile(tile);
+    // Should be inserted at index 2 (after the two tiles loaded from image)
+    EXPECT_EQ(result, 2);
 
-    // Verify the inserted tile
+    // Verify the inserted tile via first_occurrence_of
     auto occurrence = workspace.first_occurrence_of(tile);
     EXPECT_TRUE(occurrence.has_value());
     EXPECT_EQ(occurrence.value(), 2);

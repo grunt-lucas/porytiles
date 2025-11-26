@@ -196,7 +196,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
         report_color_counts(color_counts, format_, diag_, global_color_count_violation, pal_printer_);
         return FormattableError{
             "{}: found '{}' unique colors, limit is '{}'",
-            FormatParam{alpha_channel_violation, Style::bold},
+            FormatParam{global_color_count_violation, Style::bold},
             FormatParam{color_counts.size(), Style::bold},
             FormatParam{count_limit, Style::bold}};
     }

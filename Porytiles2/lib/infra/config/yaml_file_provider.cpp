@@ -178,6 +178,30 @@ LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, con
         "patch_build_enabled");
 }
 
+LayerValue<PatchTilesMode> YamlFileProvider::patch_tiles_mode(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<PatchTilesMode>(
+        format_,
+        paths,
+        load_yaml_file,
+        [](const YAML::Node &doc) { return doc["patch"]["tiles"]; },
+        parse_patch_tiles_mode,
+        "patch_tiles_mode");
+}
+
+LayerValue<PatchPalMode> YamlFileProvider::patch_pal_mode(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<PatchPalMode>(
+        format_,
+        paths,
+        load_yaml_file,
+        [](const YAML::Node &doc) { return doc["patch"]["palettes"]; },
+        parse_patch_pal_mode,
+        "patch_pal_mode");
+}
+
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
