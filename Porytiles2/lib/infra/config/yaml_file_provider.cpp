@@ -23,7 +23,7 @@ namespace porytiles2 {
  */
 
 YamlFileProvider::YamlFileProvider(
-    gsl::not_null<TextFormatter *> format,
+    gsl::not_null<const TextFormatter *> format,
     const std::filesystem::path &project_root,
     const TilesetArtifactKeyProvider &tileset_key_provider)
     : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}

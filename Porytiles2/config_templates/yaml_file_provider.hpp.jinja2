@@ -49,7 +49,7 @@ class YamlFileProvider final : public ConfigProvider {
      * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
     explicit YamlFileProvider(
-        gsl::not_null<TextFormatter *> format,
+        gsl::not_null<const TextFormatter *> format,
         const std::filesystem::path &project_root,
         const TilesetArtifactKeyProvider &tileset_key_provider);
 
@@ -80,7 +80,7 @@ class YamlFileProvider final : public ConfigProvider {
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
-    TextFormatter *format_;                       // Non-owning pointer to formatter
+    const TextFormatter *format_;                 // Non-owning pointer to formatter
     std::filesystem::path project_root_;
     const TilesetArtifactKeyProvider *tileset_key_provider_;
     // const LayoutArtifactKeyProvider *layout_key_provider_;
