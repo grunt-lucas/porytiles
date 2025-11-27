@@ -61,7 +61,9 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
     };
 
     png::palette png_pal{0};
-    png::image<png::index_pixel> out{image.width(), image.height()};
+    // TODO: this is currently hardcoded to 4-bit pal
+    // once we support different TilesPalModes, we'll need to dynamically adjust this
+    png::image<png::index_pixel_4> out{image.width(), image.height()};
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
