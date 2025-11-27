@@ -180,6 +180,15 @@ def generate_config_files():
             "yaml_file_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/yaml_file_provider.cpp",
         ),
+        # HeaderDefineProvider
+        (
+            "header_define_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/header_define_provider.hpp",
+        ),
+        (
+            "header_define_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/header_define_provider.cpp",
+        ),
     ]
 
     # Generate each file

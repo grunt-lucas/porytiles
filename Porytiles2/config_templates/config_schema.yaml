@@ -15,6 +15,10 @@
 #   yaml: YAML configuration for YamlFileProvider
 #     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
 #
+#   header_define: (optional) Name of the #define macro in header files for HeaderDefineProvider
+#     - Only supported for std::size_t types
+#     - Example: "NUM_TILES_IN_PRIMARY" to match "#define NUM_TILES_IN_PRIMARY 512"
+#
 #   validators: List of validator function names to apply (required, use empty list [] if none)
 #     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
 #     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
@@ -36,6 +40,7 @@ config_values:
     default_value: "512"
     yaml:
       path: fieldmap.num_tiles_primary
+    header_define: NUM_TILES_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_less_equal:num_tiles_total ]
 
@@ -46,6 +51,7 @@ config_values:
     default_value: "1024"
     yaml:
       path: fieldmap.num_tiles_total
+    header_define: NUM_TILES_TOTAL
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_greater_equal:num_tiles_primary ]
 
@@ -56,6 +62,7 @@ config_values:
     default_value: "512"
     yaml:
       path: fieldmap.num_metatiles_primary
+    header_define: NUM_METATILES_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_less_equal:num_metatiles_total ]
 
@@ -66,6 +73,7 @@ config_values:
     default_value: "1024"
     yaml:
       path: fieldmap.num_metatiles_total
+    header_define: NUM_METATILES_TOTAL
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_greater_equal:num_metatiles_primary ]
 
@@ -76,6 +84,7 @@ config_values:
     default_value: "6"
     yaml:
       path: fieldmap.num_pals_primary
+    header_define: NUM_PALS_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_less_equal:num_pals_total ]
 
@@ -86,6 +95,7 @@ config_values:
     default_value: "13"
     yaml:
       path: fieldmap.num_pals_total
+    header_define: NUM_PALS_TOTAL
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ compare_greater_equal:num_pals_primary ]
 
@@ -96,6 +106,7 @@ config_values:
     default_value: "10240"
     yaml:
       path: fieldmap.max_map_data_size
+    header_define: MAX_MAP_DATA_SIZE
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ ]
 
@@ -106,6 +117,7 @@ config_values:
     default_value: "8"
     yaml:
       path: fieldmap.num_tiles_per_metatile
+    header_define: NUM_TILES_PER_METATILE
     validators: [ size_t_val_eight_or_twelve ]
     cross_field_validators: [ ]
 

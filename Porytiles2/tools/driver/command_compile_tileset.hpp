@@ -14,6 +14,7 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
+#include "porytiles2/infra/config/header_define_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -64,6 +65,7 @@ class CompileTilesetCommand final : public Command {
         ProjectTilesetArtifactKeyProvider key_provider{"."};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
+        providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
