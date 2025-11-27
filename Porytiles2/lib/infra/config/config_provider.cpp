@@ -8,7 +8,7 @@
 
 namespace porytiles2 {
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_primary(
+LayerValue<std::size_t> ConfigProvider::num_tiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
@@ -20,7 +20,7 @@ ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_u
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_primary(
+LayerValue<std::size_t> ConfigProvider::num_metatiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
@@ -32,8 +32,8 @@ LayerValue<std::size_t> ConfigProvider::num_metatiles_total(
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t>
-ConfigProvider::num_pals_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_pals_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }

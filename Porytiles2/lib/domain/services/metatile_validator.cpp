@@ -276,8 +276,8 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
 
 ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_primary, tileset_scope_, void);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_primary, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_in_primary, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset_scope_, void);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset_scope_, void);
 
     auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
@@ -285,7 +285,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     std::vector<std::string> error_messages;
 
     // Run metatile count validation
-    if (metatiles.size() > num_metatiles_primary) {
+    if (metatiles.size() > num_metatiles_in_primary) {
         diag_->err(
             metatile_limit_exceeded,
             format_->format(
@@ -296,9 +296,9 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
         // Construct note text
         std::vector<std::string> note_text;
         note_text.push_back(format_->format(
-            "metatile limit is '{}' due to configuration", FormatParam{num_metatiles_primary, Style::bold}));
+            "metatile limit is '{}' due to configuration", FormatParam{num_metatiles_in_primary, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(num_metatiles_primary.prettify(*format_), std::back_inserter(note_text));
+        std::ranges::copy(num_metatiles_in_primary.prettify(*format_), std::back_inserter(note_text));
 
         // Emit note
         diag_->note(metatile_limit_exceeded, note_text);
@@ -308,7 +308,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
             "{}: found '{}', limit is '{}'",
             FormatParam{metatile_limit_exceeded, Style::bold},
             FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}));
+            FormatParam{num_metatiles_in_primary, Style::bold}));
     }
 
     // Run alpha channel validation
@@ -324,7 +324,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     }
 
     // Run global color count validation
-    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
+    std::size_t color_count_limit = num_pals_in_primary.value() * (pal::max_size - 1);
     const auto global_color_result = validate_global_color_count(metatiles, color_count_limit);
     if (!global_color_result.has_value()) {
         // Construct note text
@@ -335,15 +335,15 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
         note_text.emplace_back("Color limit definition:");
         note_text.push_back(format_->format(
             "{} * {}:",
-            FormatParam{num_pals_primary.name(), Style::bold | Style::yellow},
+            FormatParam{num_pals_in_primary.name(), Style::bold | Style::yellow},
             FormatParam{"nontransparent_colors_per_pal", Style::bold}));
         note_text.push_back(format_->format(
             "{} * {} = {}",
-            FormatParam{num_pals_primary.value(), Style::bold | Style::yellow},
+            FormatParam{num_pals_in_primary.value(), Style::bold | Style::yellow},
             FormatParam{(pal::max_size - 1), Style::bold},
             FormatParam{color_count_limit, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(num_pals_primary.prettify(*format_), std::back_inserter(note_text));
+        std::ranges::copy(num_pals_in_primary.prettify(*format_), std::back_inserter(note_text));
 
         // Emit note
         diag_->note(global_color_count_violation, note_text);

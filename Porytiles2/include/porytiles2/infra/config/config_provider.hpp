@@ -42,18 +42,18 @@ class ConfigProvider {
      */
 
     [[nodiscard]] virtual LayerValue<std::size_t>
-    num_tiles_primary(ConfigScopeType type, const std::string &scope) const;
+    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t>
-    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const;
+    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t>
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t>
-    num_pals_primary(ConfigScopeType type, const std::string &scope) const;
+    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
 

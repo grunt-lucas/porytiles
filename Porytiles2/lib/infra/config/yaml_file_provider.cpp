@@ -44,16 +44,16 @@ std::string YamlFileProvider::name() const
     return "YamlFileProvider";
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
         load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_primary"]; },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_in_primary"]; },
         parse_size_t,
-        "num_tiles_primary");
+        "num_tiles_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
@@ -68,16 +68,16 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, 
         "num_tiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
         load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_primary"]; },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_in_primary"]; },
         parse_size_t,
-        "num_metatiles_primary");
+        "num_metatiles_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType type, const std::string &scope) const
@@ -92,16 +92,16 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType ty
         "num_metatiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_primary(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
     return search_config_files<std::size_t>(
         format_,
         paths,
         load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_primary"]; },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_in_primary"]; },
         parse_size_t,
-        "num_pals_primary");
+        "num_pals_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const

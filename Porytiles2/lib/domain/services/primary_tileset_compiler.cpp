@@ -57,8 +57,9 @@ class PatchCompilerTask {
         const PatchTilesMode tiles_mode,
         const PatchPalMode pal_mode)
         : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
-          config_{config}, tiles_mode_{tiles_mode}, pal_mode_{pal_mode}, extrinsic_transparency_{}, num_pals_primary_{},
-          num_pals_total_{}, num_metatiles_primary_{}, num_tiles_primary_{}, num_tiles_per_metatile_{}
+          config_{config}, tiles_mode_{tiles_mode}, pal_mode_{pal_mode}, extrinsic_transparency_{},
+          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
+          num_tiles_per_metatile_{}
     {
     }
 
@@ -87,10 +88,10 @@ class PatchCompilerTask {
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
-    ConfigValue<std::size_t> num_pals_primary_;
+    ConfigValue<std::size_t> num_pals_in_primary_;
     ConfigValue<std::size_t> num_pals_total_;
-    ConfigValue<std::size_t> num_metatiles_primary_;
-    ConfigValue<std::size_t> num_tiles_primary_;
+    ConfigValue<std::size_t> num_metatiles_in_primary_;
+    ConfigValue<std::size_t> num_tiles_in_primary_;
     ConfigValue<std::size_t> num_tiles_per_metatile_;
 
     // Intermediate state - Porytiles
@@ -114,17 +115,17 @@ ChainableResult<std::unique_ptr<Tileset>> PatchCompilerTask::run()
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_primary, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
-    num_pals_primary_ = num_pals_primary;
+    num_pals_in_primary_ = num_pals_in_primary;
     num_pals_total_ = num_pals_total;
-    num_metatiles_primary_ = num_metatiles_primary;
-    num_tiles_primary_ = num_tiles_primary;
+    num_metatiles_in_primary_ = num_metatiles_in_primary;
+    num_tiles_in_primary_ = num_tiles_in_primary;
     num_tiles_per_metatile_ = num_tiles_per_metatile;
 
     // Execute subtasks
@@ -237,8 +238,8 @@ void PatchCompilerTask::setup_working_data()
     // failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should at least
     // generate a warning in case folks are confused about what slot 0 is for.
     // Collect primary palettes from existing Porymap component
-    porymap_pals_.reserve(num_pals_primary_);
-    for (unsigned int i = 0; i < num_pals_primary_; i++) {
+    porymap_pals_.reserve(num_pals_in_primary_);
+    for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
         porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
     }
 
@@ -270,7 +271,7 @@ void PatchCompilerTask::setup_working_data()
     // TODO: in tiles:fixed mode, since we're not adding tiles, the capacity should just be the size of tiles.png
     // Create tiles workspace
     tiles_workspace_ =
-        std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), num_tiles_primary_);
+        std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), num_tiles_in_primary_);
 }
 
 ChainableResult<void> PatchCompilerTask::match_tiles()
@@ -461,9 +462,9 @@ void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_
     // Construct note text
     std::vector<std::string> note_text;
     note_text.push_back(
-        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_primary_, Style::bold}));
+        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
     note_text.emplace_back("");
-    std::ranges::copy(num_tiles_primary_.prettify(format_), std::back_inserter(note_text));
+    std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
     diag_.note(tag, note_text);
 }
 
@@ -505,7 +506,7 @@ std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
         tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
 
     // Copy primary palettes from our processed porymap_pals vector
-    for (unsigned int i = 0; i < num_pals_primary_; i++) {
+    for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
         new_porymap_component_->set_pal(i, porymap_pals_[i]);
     }
 
@@ -515,7 +516,7 @@ std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
      * relevant secondary set folder. However, we copy them here for consistency. If for some reason the user had edited
      * them, we don't want to clobber their edits. Porytiles should be surgical where possible.
      */
-    for (unsigned int i = num_pals_primary_; i < num_pals_total_; i++) {
+    for (unsigned int i = num_pals_in_primary_; i < num_pals_total_; i++) {
         new_porymap_component_->set_pal(i, tileset_.porymap_component().pals()[i]);
     }
 
@@ -541,7 +542,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 {
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
 
     // Initialize all the compilation services

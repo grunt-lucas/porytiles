@@ -25,9 +25,9 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary(ConfigScopeType type, const std::string &scope) const
+    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = num_tiles_primary_validated(type, scope);
+        auto validated_val = num_tiles_in_primary_validated(type, scope);
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
@@ -55,9 +55,9 @@ class DomainConfig {
                 *this,
                 type,
                 scope,
-                "num_tiles_primary",
+                "num_tiles_in_primary",
                 [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
-                    return cfg.num_tiles_primary_validated(t, s);
+                    return cfg.num_tiles_in_primary_validated(t, s);
                 });
         }
         return validated_val;
@@ -65,9 +65,9 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const
+    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = num_metatiles_primary_validated(type, scope);
+        auto validated_val = num_metatiles_in_primary_validated(type, scope);
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
@@ -95,9 +95,9 @@ class DomainConfig {
                 *this,
                 type,
                 scope,
-                "num_metatiles_primary",
+                "num_metatiles_in_primary",
                 [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
-                    return cfg.num_metatiles_primary_validated(t, s);
+                    return cfg.num_metatiles_in_primary_validated(t, s);
                 });
         }
         return validated_val;
@@ -105,9 +105,9 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary(ConfigScopeType type, const std::string &scope) const
+    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = num_pals_primary_validated(type, scope);
+        auto validated_val = num_pals_in_primary_validated(type, scope);
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
@@ -135,9 +135,9 @@ class DomainConfig {
                 *this,
                 type,
                 scope,
-                "num_pals_primary",
+                "num_pals_in_primary",
                 [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
-                    return cfg.num_pals_primary_validated(t, s);
+                    return cfg.num_pals_in_primary_validated(t, s);
                 });
         }
         return validated_val;
@@ -170,9 +170,9 @@ class DomainConfig {
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_validated(ConfigScopeType type, const std::string &scope) const
+    num_tiles_in_primary_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = num_tiles_primary_raw(type, scope);
+        auto raw_val = num_tiles_in_primary_raw(type, scope);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
@@ -182,7 +182,7 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    num_tiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
@@ -202,9 +202,9 @@ class DomainConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_validated(ConfigScopeType type, const std::string &scope) const
+    num_metatiles_in_primary_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = num_metatiles_primary_raw(type, scope);
+        auto raw_val = num_metatiles_in_primary_raw(type, scope);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
@@ -214,7 +214,7 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    num_metatiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
@@ -234,9 +234,9 @@ class DomainConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_validated(ConfigScopeType type, const std::string &scope) const
+    num_pals_in_primary_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = num_pals_primary_raw(type, scope);
+        auto raw_val = num_pals_in_primary_raw(type, scope);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
@@ -246,7 +246,7 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>

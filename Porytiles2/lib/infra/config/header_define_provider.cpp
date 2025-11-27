@@ -44,11 +44,11 @@ std::string HeaderDefineProvider::name() const
 }
 
 LayerValue<std::size_t>
-HeaderDefineProvider::num_tiles_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_TILES_IN_PRIMARY", parse_size_t, "num_tiles_primary");
+        format_, header_path, "NUM_TILES_IN_PRIMARY", parse_size_t, "num_tiles_in_primary");
 }
 
 LayerValue<std::size_t>
@@ -59,11 +59,11 @@ HeaderDefineProvider::num_tiles_total(ConfigScopeType /*type*/, const std::strin
 }
 
 LayerValue<std::size_t>
-HeaderDefineProvider::num_metatiles_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_METATILES_IN_PRIMARY", parse_size_t, "num_metatiles_primary");
+        format_, header_path, "NUM_METATILES_IN_PRIMARY", parse_size_t, "num_metatiles_in_primary");
 }
 
 LayerValue<std::size_t>
@@ -75,11 +75,11 @@ HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::s
 }
 
 LayerValue<std::size_t>
-HeaderDefineProvider::num_pals_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_PALS_IN_PRIMARY", parse_size_t, "num_pals_primary");
+        format_, header_path, "NUM_PALS_IN_PRIMARY", parse_size_t, "num_pals_in_primary");
 }
 
 LayerValue<std::size_t>

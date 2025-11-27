@@ -27,19 +27,19 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] std::string name() const override;
 
     [[nodiscard]] LayerValue<std::size_t>
-    num_tiles_primary(ConfigScopeType type, const std::string &scope) const override;
+    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
     num_tiles_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
-    num_metatiles_primary(ConfigScopeType type, const std::string &scope) const override;
+    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
-    num_pals_primary(ConfigScopeType type, const std::string &scope) const override;
+    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
 

@@ -19,7 +19,7 @@ std::string DefaultProvider::name() const
     return "DefaultProvider";
 }
 
-LayerValue<std::size_t> DefaultProvider::num_tiles_primary(
+LayerValue<std::size_t> DefaultProvider::num_tiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::valid(512, source_info);
@@ -31,7 +31,7 @@ DefaultProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_
     return LayerValue<std::size_t>::valid(1024, source_info);
 }
 
-LayerValue<std::size_t> DefaultProvider::num_metatiles_primary(
+LayerValue<std::size_t> DefaultProvider::num_metatiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::valid(512, source_info);
@@ -43,7 +43,7 @@ LayerValue<std::size_t> DefaultProvider::num_metatiles_total(
     return LayerValue<std::size_t>::valid(1024, source_info);
 }
 
-LayerValue<std::size_t> DefaultProvider::num_pals_primary(
+LayerValue<std::size_t> DefaultProvider::num_pals_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::valid(6, source_info);

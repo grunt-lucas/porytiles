@@ -95,19 +95,19 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_raw(ConfigScopeType type, const std::string &scope) const override;
+    num_tiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_raw(ConfigScopeType type, const std::string &scope) const override;
+    num_metatiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_raw(ConfigScopeType type, const std::string &scope) const override;
+    num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_pals_total_raw(ConfigScopeType type, const std::string &scope) const override;
