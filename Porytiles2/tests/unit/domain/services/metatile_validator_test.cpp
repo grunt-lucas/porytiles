@@ -18,7 +18,7 @@ namespace porytiles2 {
 class MockDomainConfig : public DomainConfig {
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_primary_raw(ConfigScopeType, const std::string &) const override
+    num_tiles_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue<std::size_t>{512, "num_tiles_primary", "default value", {}};
     }
@@ -30,7 +30,7 @@ class MockDomainConfig : public DomainConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_primary_raw(ConfigScopeType, const std::string &) const override
+    num_metatiles_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue<std::size_t>{512, "num_metatiles_primary", "default value", {}};
     }
@@ -42,7 +42,7 @@ class MockDomainConfig : public DomainConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_primary_raw(ConfigScopeType, const std::string &) const override
+    num_pals_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue<std::size_t>{6, "num_pals_primary", "default value", {}};
     }

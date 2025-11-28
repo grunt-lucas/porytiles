@@ -55,14 +55,14 @@ TEST_F(YamlFileProviderTest, NumTilesPrimaryParsesValidValue)
 {
     const std::string yaml_content = R"(
 fieldmap:
-  num_tiles_primary: 512
+  num_tiles_in_primary: 512
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 512);
@@ -92,14 +92,14 @@ TEST_F(YamlFileProviderTest, NumMetatilesPrimaryParsesValidValue)
 {
     const std::string yaml_content = R"(
 fieldmap:
-  num_metatiles_primary: 256
+  num_metatiles_in_primary: 256
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_metatiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_metatiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 256);
@@ -126,14 +126,14 @@ TEST_F(YamlFileProviderTest, NumPalsPrimaryParsesValidValue)
 {
     const std::string yaml_content = R"(
 fieldmap:
-  num_pals_primary: 6
+  num_pals_in_primary: 6
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_pals_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_pals_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 6);
@@ -348,7 +348,7 @@ TEST_F(YamlFileProviderTest, ReturnsNotProvidedWhenFileDoesNotExist)
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -364,7 +364,7 @@ some_other_config:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -373,11 +373,11 @@ TEST_F(YamlFileProviderTest, LocalConfigHasHigherPriorityThanNormalConfig)
 {
     const std::string normal_config = R"(
 fieldmap:
-  num_tiles_primary: 512
+  num_tiles_in_primary: 512
 )";
     const std::string local_config = R"(
 fieldmap:
-  num_tiles_primary: 1024
+  num_tiles_in_primary: 1024
 )";
 
     create_yaml_file(test_root_ / "porytiles.yaml", normal_config);
@@ -386,7 +386,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 1024); // Should use local config value
@@ -397,11 +397,11 @@ TEST_F(YamlFileProviderTest, TilesetConfigHasHigherPriorityThanProjectConfig)
 {
     const std::string project_config = R"(
 fieldmap:
-  num_tiles_primary: 512
+  num_tiles_in_primary: 512
 )";
     const std::string tileset_config = R"(
 fieldmap:
-  num_tiles_primary: 768
+  num_tiles_in_primary: 768
 )";
 
     create_yaml_file(test_root_ / "porytiles.yaml", project_config);
@@ -410,7 +410,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 768); // Should use tileset config value
@@ -429,11 +429,11 @@ fieldmap:
 )";
     const std::string tileset_config = R"(
 fieldmap:
-  num_tiles_primary: 1024
+  num_tiles_in_primary: 1024
 )";
     const std::string tileset_local_config = R"(
 fieldmap:
-  num_tiles_primary: 2048
+  num_tiles_in_primary: 2048
 )";
 
     create_yaml_file(test_root_ / "porytiles.yaml", project_config);
@@ -444,7 +444,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::valid);
     EXPECT_EQ(result.value.value(), 2048); // Should use tileset local config value
@@ -455,14 +455,14 @@ TEST_F(YamlFileProviderTest, InvalidValueReturnsError)
 {
     const std::string yaml_content = R"(
 fieldmap:
-  num_tiles_primary: not_a_number
+  num_tiles_in_primary: not_a_number
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
     EXPECT_TRUE(result.error_message.find("failed to parse") != std::string::npos);
@@ -474,7 +474,7 @@ TEST_F(YamlFileProviderTest, LineNumberIsIncludedInSource)
 # Comment line
 fieldmap:
   # Another comment
-  num_tiles_primary: 512
+  num_tiles_in_primary: 512
   num_tiles_total: 1024
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
@@ -482,7 +482,7 @@ fieldmap:
     ProjectTilesetArtifactKeyProvider key_provider{test_root_};
     YamlFileProvider provider{test_root_, key_provider};
 
-    auto primary_result = provider.num_tiles_primary(ConfigScopeType::tileset, "test_tileset");
+    auto primary_result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
     auto total_result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(primary_result.state, ValidationState::valid);

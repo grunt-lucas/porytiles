@@ -1,6 +1,5 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 
-#include <array>
 #include <filesystem>
 
 #include "fmt/format.h"
@@ -19,28 +18,28 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
     using enum TilesPalMode;
 
     /*
-     * TODO: make this configurable. Current pal has black as index 0, which matches OG porytiles as well as vanilla
-     * game tilesets. But users might want to use this greyscale pal. Or they might want to use the true-color mode.
+     * TODO: make this configurable. Current pal has pure white as index 0 and pure black as index 15, which matches
+     * vanilla game tilesets. OG porytiles used a slightly different greyscale pal, with pure black as index 0 and
+     * different step intervals between colors.
      */
-    // const std::vector greyscale_pal = {
-    //     Rgba32{255, 255, 255, 255},
-    //     Rgba32{238, 238, 238, 255},
-    //     Rgba32{222, 222, 222, 255},
-    //     Rgba32{205, 205, 205, 255},
-    //     Rgba32{189, 189, 189, 255},
-    //     Rgba32{172, 172, 172, 255},
-    //     Rgba32{156, 156, 156, 255},
-    //     Rgba32{139, 139, 139, 255},
-    //     Rgba32{115, 115, 115, 255},
-    //     Rgba32{98, 98, 98, 255},
-    //     Rgba32{82, 82, 82, 255},
-    //     Rgba32{65, 65, 65, 255},
-    //     Rgba32{49, 49, 49, 255},
-    //     Rgba32{32, 32, 32, 255},
-    //     Rgba32{16, 16, 16, 255},
+    // const std::vector og_porytiles_greyscale_pal = {
     //     Rgba32{0, 0, 0, 255},
+    //     Rgba32{16, 16, 16, 255},
+    //     Rgba32{32, 32, 32, 255},
+    //     Rgba32{48, 48, 48, 255},
+    //     Rgba32{64, 64, 64, 255},
+    //     Rgba32{80, 80, 80, 255},
+    //     Rgba32{96, 96, 96, 255},
+    //     Rgba32{112, 112, 112, 255},
+    //     Rgba32{128, 128, 128, 255},
+    //     Rgba32{144, 144, 144, 255},
+    //     Rgba32{160, 160, 160, 255},
+    //     Rgba32{176, 176, 176, 255},
+    //     Rgba32{192, 192, 192, 255},
+    //     Rgba32{208, 208, 208, 255},
+    //     Rgba32{224, 224, 224, 255},
+    //     Rgba32{240, 240, 240, 255},
     // };
-
     const std::vector greyscale_pal = {
         Rgba32{255, 255, 255, 255},
         Rgba32{238, 238, 238, 255},
@@ -60,11 +59,6 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
         Rgba32{0, 0, 0, 255},
     };
 
-    png::palette png_pal{0};
-    // TODO: this is currently hardcoded to 4-bit pal
-    // once we support different TilesPalModes, we'll need to dynamically adjust this
-    png::image<png::index_pixel_4> out{image.width(), image.height()};
-
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
         return FormattableError{fmt::format("{}: exists but is not a file", path.filename().c_str())};
@@ -81,21 +75,32 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
     }
 
     // Set up PNG palette
+    png::palette png_pal{0};
     for (const auto &color : palette_to_use) {
         png_pal.emplace_back(color.red(), color.green(), color.blue());
     }
-    out.set_palette(png_pal);
 
-    // Write data to PNG buffer
-    for (unsigned int pixel_index = 0; pixel_index < image.size(); pixel_index++) {
-        const auto row = pixel_index / image.width();
-        const auto col = pixel_index % image.width();
-        out[row][col] = image.at(pixel_index).index();
-    }
+    // Generic lambda to write indexed PNG with any pixel type
+    auto write_image = [&]<typename PixelType>(png::image<PixelType> &img) {
+        img.set_palette(png_pal);
+        for (unsigned int pixel_index = 0; pixel_index < image.size(); pixel_index++) {
+            const auto row = pixel_index / image.width();
+            const auto col = pixel_index % image.width();
+            img[row][col] = image.at(pixel_index).index();
+        }
+        img.write(path);
+    };
 
-    // Write PNG to filesystem
+    // Write PNG to filesystem using the appropriate pixel type for mode
     try {
-        out.write(path);
+        if (mode == greyscale) {
+            png::image<png::index_pixel_4> out{image.width(), image.height()};
+            write_image(out);
+        }
+        else {
+            png::image<png::index_pixel> out{image.width(), image.height()};
+            write_image(out);
+        }
     }
     catch (const std::exception &e) {
         return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
