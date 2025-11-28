@@ -90,9 +90,8 @@ class ConfigValue {
      *
      * @details
      * The name identifies the configuration value, such as:
-     * - "num_tiles_primary"
-     * - "num_tiles_secondary"
-     * - "incremental_build_mode"
+     * - "num_tiles_in_primary"
+     * - "extrinsic_transparency"
      *
      * @return A const reference to the name string
      */

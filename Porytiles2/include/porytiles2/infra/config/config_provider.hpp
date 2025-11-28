@@ -2,7 +2,6 @@
 
 #include <string>
 
-#include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"

@@ -147,31 +147,220 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
   public:
     /*
-     * LazyLayeredConfig Specific Functionality
+     * Provenance Chain Methods
+     * These methods return the full provenance chain for each config value,
+     * showing what each provider in the chain would return.
      */
 
     /**
-     * @brief Dumps the current state of the config for debugging purposes.
+     * @brief Gets the full provenance chain for num_tiles_in_primary.
      *
      * @details
-     * Returns a string showing each cached config key, actual value, and source layer name with metadata. Only cached
-     * values are shown (values that have been requested at least once).
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
      *
-     * @return A formatted string representation of the config state
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
      */
-    [[nodiscard]] std::string dump() const;
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_tiles_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
-     * @brief Forces all configuration values to be cached immediately for all known tilesets.
+     * @brief Gets the full provenance chain for num_tiles_total.
      *
      * @details
-     * This function eagerly evaluates and caches all configuration values by calling each config method. This is useful
-     * for warming up the cache before performance-critical operations or for validating all config values at startup.
-     * The function requires a list of tileset names to evaluate tileset-specific configuration values.
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
      *
-     * @param tileset_names List of tileset names for which to evaluate the configuration
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
      */
-    void warmup_cache(const std::vector<std::string> &tileset_names) const;
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_tiles_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for num_metatiles_in_primary.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_metatiles_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for num_metatiles_total.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_metatiles_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for num_pals_in_primary.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_pals_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for num_pals_total.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_pals_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for max_map_data_size.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    max_map_data_size_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for num_tiles_per_metatile.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    num_tiles_per_metatile_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for extrinsic_transparency.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<Rgba32>>
+    extrinsic_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for verify_checksums.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for patch_build_enabled.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    patch_build_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for patch_tiles_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PatchTilesMode>>
+    patch_tiles_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for patch_pal_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PatchPalMode>>
+    patch_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for tiles_pal_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<TilesPalMode>>
+    tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
@@ -199,6 +388,22 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
         const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+
+    /**
+     * @brief Collects the provenance chain by querying all providers.
+     *
+     * @details
+     * Unlike resolve_config_value which stops at first valid/invalid, this method queries ALL providers and collects
+     * their responses for diagnostic purposes. This gives a complete picture of what each provider in the chain would
+     * return for a given config value.
+     *
+     * @tparam T The type of the config value
+     * @param provider_call Function that calls the appropriate method on a ConfigProvider
+     * @return Vector of ProvenanceChainLink entries from all providers
+     */
+    template <typename T>
+    std::vector<ProvenanceChainLink<T>>
+    collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

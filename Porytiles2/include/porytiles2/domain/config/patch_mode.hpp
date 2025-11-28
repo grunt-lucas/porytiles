@@ -4,6 +4,8 @@
 #include <ostream>
 #include <string>
 
+#include "porytiles2/utilities/panic/panic.hpp"
+
 namespace porytiles2 {
 
 /**

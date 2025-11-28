@@ -5,9 +5,6 @@
 #include <ranges>
 #include <string>
 
-#include "fmt/format.h"
-
-#include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
@@ -79,6 +76,21 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 
     // No value found in any layer - this is a programmer error
     panic(format_->format("no value found for '{}' in any config layer", cache_key));
+}
+
+template <typename T>
+std::vector<ProvenanceChainLink<T>>
+LazyLayeredConfig::collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+{
+    std::vector<ProvenanceChainLink<T>> chain;
+    chain.reserve(providers_.size());
+
+    for (const auto &provider : providers_) {
+        LayerValue<T> layer_value = provider_call(*provider);
+        chain.push_back(ProvenanceChainLink<T>{provider->name(), std::move(layer_value)});
+    }
+
+    return chain;
 }
 
 ChainableResult<ConfigValue<std::size_t>>
@@ -234,6 +246,104 @@ LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &s
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<TilesPalMode>(
         key, [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_tiles_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_in_primary(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_tiles_total_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_total(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_metatiles_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_in_primary(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_metatiles_total_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_total(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_pals_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_in_primary(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_pals_total_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_total(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::max_map_data_size_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.max_map_data_size(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::size_t>>
+LazyLayeredConfig::num_tiles_per_metatile_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::size_t>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<Rgba32>>
+LazyLayeredConfig::extrinsic_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<Rgba32>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::patch_build_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.patch_build_enabled(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PatchTilesMode>>
+LazyLayeredConfig::patch_tiles_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PatchTilesMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.patch_tiles_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PatchPalMode>>
+LazyLayeredConfig::patch_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PatchPalMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.patch_pal_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<TilesPalMode>>
+LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<TilesPalMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
 }
 
 } // namespace porytiles2

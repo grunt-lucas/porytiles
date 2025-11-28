@@ -12,9 +12,6 @@
 #include <ranges>
 #include <string>
 
-#include "fmt/format.h"
-
-#include "porytiles2/app/config/incremental_build_mode.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
@@ -83,6 +80,21 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     // No value found in any layer - this is a programmer error
     panic(format_->format("no value found for '{}' in any config layer", cache_key));
 }
+
+template <typename T>
+std::vector<ProvenanceChainLink<T>> LazyLayeredConfig::collect_provenance_chain(
+    std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+{
+    std::vector<ProvenanceChainLink<T>> chain;
+    chain.reserve(providers_.size());
+
+    for (const auto &provider : providers_) {
+        LayerValue<T> layer_value = provider_call(*provider);
+        chain.push_back(ProvenanceChainLink<T>{provider->name(), std::move(layer_value)});
+    }
+
+    return chain;
+}
 {% for value in config_values %}
 
 ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const
@@ -93,6 +105,15 @@ ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name 
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<{{ value.type }}>(
         key, [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
+}
+{% endfor %}
+{% for value in config_values %}
+
+std::vector<ProvenanceChainLink<{{ value.type }}>>
+LazyLayeredConfig::{{ value.name }}_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<{{ value.type }}>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
 }
 {% endfor %}
 

@@ -109,4 +109,20 @@ struct LayerValue {
     }
 };
 
+/**
+ * @brief A container that pairs a provider name with its LayerValue response.
+ *
+ * @details
+ * ProvenanceChainLink is used to represent one link in the provenance chain for a config value. It captures what a
+ * specific provider would return for a given configuration query. The full provenance chain shows what each provider
+ * in the priority-ordered list would return, useful for debugging configuration resolution.
+ *
+ * @tparam T The type of the underlying config value
+ */
+template <typename T>
+struct ProvenanceChainLink {
+    std::string provider_name;
+    LayerValue<T> layer_value;
+};
+
 } // namespace porytiles2
