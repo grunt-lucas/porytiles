@@ -28,6 +28,12 @@ tileset:
 
     pal_match_candidate_top_n: 1
 
+    palette_hints:
+      - name: "foliage"
+        colors:
+          - [ 12, 190, 20 ]
+          - [ 40, 210, 10 ]
+
     # Set palette mode for output 'tiles.png'
     # Allowed values:
     # - greyscale: greyscale palette mapped to index values: [0, 15] -> [[255,255,255], [0,0,0]] [default]
