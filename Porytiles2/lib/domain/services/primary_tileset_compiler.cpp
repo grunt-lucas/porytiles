@@ -378,10 +378,9 @@ void PatchCompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
     no_match_err.emplace_back(format_.format(
         "{}: no matching tiles found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    no_match_err.emplace_back();
-    // TODO: create and use print_metatile_tile_highlight
     std::ranges::copy(
-        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
     diag_.err(tag, no_match_err);
 
@@ -399,10 +398,9 @@ void PatchCompilerTask::emit_no_matching_pal_error(
     no_match_err.emplace_back(format_.format(
         "{}: no matching palettes found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    no_match_err.emplace_back();
-    // TODO: create and use print_metatile_tile_highlight
     std::ranges::copy(
-        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
     diag_.err(tag, no_match_err);
 
@@ -427,7 +425,6 @@ void PatchCompilerTask::emit_no_matching_pal_error(
         closest_n_note.push_back(format_.format(
             "Uncovered pixels with {}:",
             FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
-        closest_n_note.emplace_back();
         std::ranges::copy(
             tile_printer_.print_metatile_pixel_highlights(
                 porytiles_metatiles_.at(metatile_index),
@@ -452,10 +449,9 @@ void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_
         "{}: hit limit of '{}' unique tiles",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold},
         FormatParam{tile_limit, Style::bold}));
-    tile_limit_error.emplace_back();
-    // TODO: create and use print_metatile_tile_highlight
     std::ranges::copy(
-        tile_printer_.print_metatile(porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(tile_limit_error));
     diag_.err(tag, tile_limit_error);
 
@@ -463,7 +459,7 @@ void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_
     std::vector<std::string> note_text;
     note_text.push_back(
         format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
-    note_text.emplace_back("");
+    note_text.emplace_back();
     std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
     diag_.note(tag, note_text);
 }

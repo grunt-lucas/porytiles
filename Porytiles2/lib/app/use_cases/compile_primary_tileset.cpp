@@ -30,6 +30,12 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         return ChainableResult<void>{FormattableError{"PorytilesTilesetComponent was empty"}};
     }
 
+    if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
+        diag_->warn(
+            "missing-checksums",
+            format_->format("no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
+    }
+
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums.value()) {

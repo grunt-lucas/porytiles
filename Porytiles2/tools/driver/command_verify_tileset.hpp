@@ -1,25 +1,74 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <unistd.h>
+
 #include "CLI/CLI.hpp"
+#include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/verify_primary_tileset.hpp"
-#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
+#include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
+#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/infra/config/default_provider.hpp"
+#include "porytiles2/infra/config/header_define_provider.hpp"
+#include "porytiles2/infra/config/lazy_layered_config.hpp"
+#include "porytiles2/infra/config/yaml_file_provider.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
+#include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/color_palette_printer.hpp"
+#include "porytiles2/infra/services/jasc_pal_loader.hpp"
+#include "porytiles2/infra/services/jasc_pal_saver.hpp"
+#include "porytiles2/infra/services/png_indexed_image_loader.hpp"
+#include "porytiles2/infra/services/png_indexed_image_saver.hpp"
+#include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/di/components.hpp"
+#include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
-#include "option_group.hpp"
 
 class VerifyTilesetCommand final : public Command {
   public:
     explicit VerifyTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to load")->required();
-        diagnostics_opts_.RegisterGroup(cmd);
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to verify")->required();
     }
 
     void Run() override
     {
         using namespace porytiles2;
+
+        /*
+         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
+         * Fruit.
+         */
+        // Use Fruit DI to inject TextFormatter based on no_color flag
+        const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
+        fruit::Injector injector{di::get_formatter_component, no_color};
+        auto text_formatter = injector.get<TextFormatter *>();
+
+        // Manually create other services (not yet using DI for these)
+        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
+
+        // Setup layered configuration
+        ProjectTilesetArtifactKeyProvider key_provider{"."};
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
+        providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{text_formatter, std::move(providers)};
+
+        std::unique_ptr<TilePrinter> tile_printer = std::make_unique<AsciiTilePrinter>(text_formatter);
+        std::unique_ptr<PalettePrinter> pal_printer = std::make_unique<ColorPalettePrinter>(text_formatter);
 
         // Initialize stateless services
         PngRgbaImageLoader png_rgba_loader{};
@@ -28,34 +77,33 @@ class VerifyTilesetCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{};
         JascPalSaver jasc_saver{};
-        AnsiStyledTextFormatter formatter{};
 
-        // Setup layered configuration
-        std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<DefaultProvider>());
-        LazyLayeredConfig config{std::move(providers)};
+        // Setup primary compiler
+        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
-        ProjectTilesetArtifactKeyProvider key_provider{"."};
+        // We already set this up earlier for the Yaml config provider
+        // ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        VerifyPrimaryTileset verify_use_case{&repo};
+        VerifyPrimaryTileset verify_use_case{&repo, &compiler, &config, &config, text_formatter, diag.get()};
+
+        // Run the use case
         auto verify_result = verify_use_case.verify(tileset_name_);
         if (!verify_result.has_value()) {
-            for (const auto &err : verify_result.chain()) {
-                std::cerr << err->join(formatter) << std::endl;
-            }
+            const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
+                FormattableError{"failed to verify tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                verify_result};
+            diag->fatal(fail_result);
         }
     }
 
   private:
     static constexpr auto kCommandName = "verify-tileset";
-    static constexpr auto kCommandDesc = "Verify a tileset's contents.";
+    static constexpr auto kCommandDesc = "TODO: fill in description";
     static constexpr auto kCommandGroup = "COMMANDS";
-
     std::string tileset_name_;
-    OptGroupDiagnostics diagnostics_opts_;
 };

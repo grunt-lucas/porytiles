@@ -68,8 +68,10 @@ class Style {
     // Formatting constants
     static const Style none;      ///< No styling applied
     static const Style bold;      ///< Bold text formatting
+    static const Style faint;     ///< Faint text formatting
     static const Style italic;    ///< Italic text formatting
     static const Style underline; ///< Underline text formatting
+    static const Style blink;     ///< Blink text formatting
 
     // Foreground color constants
     static const Style black;   ///< Black foreground color
@@ -153,6 +155,16 @@ class Style {
     }
 
     /**
+     * @brief Checks if this Style has faint formatting.
+     *
+     * @return True if faint formatting is set
+     */
+    [[nodiscard]] constexpr bool has_faint() const
+    {
+        return (format_flags_ & faint_flag) != 0;
+    }
+
+    /**
      * @brief Checks if this Style has italic formatting.
      *
      * @return True if italic formatting is set
@@ -170,6 +182,16 @@ class Style {
     [[nodiscard]] constexpr bool has_underline() const
     {
         return (format_flags_ & underline_flag) != 0;
+    }
+
+    /**
+     * @brief Checks if this Style has blink formatting.
+     *
+     * @return True if blink formatting is set
+     */
+    [[nodiscard]] constexpr bool has_blink() const
+    {
+        return (format_flags_ & blink_flag) != 0;
     }
 
     /**
@@ -258,8 +280,10 @@ class Style {
 
   private:
     static constexpr std::uint8_t bold_flag = 1 << 0;
-    static constexpr std::uint8_t italic_flag = 1 << 1;
-    static constexpr std::uint8_t underline_flag = 1 << 2;
+    static constexpr std::uint8_t faint_flag = 1 << 1;
+    static constexpr std::uint8_t italic_flag = 1 << 2;
+    static constexpr std::uint8_t underline_flag = 1 << 3;
+    static constexpr std::uint8_t blink_flag = 1 << 4;
 
     std::uint8_t format_flags_{0};
     PredefinedColor fg_predefined_{PredefinedColor::none};
@@ -270,7 +294,7 @@ class Style {
     bool has_bg_rgb_{false};
 
     // Private constructors for creating specific style types
-    enum class FormatFlagTag { bold, italic, underline };
+    enum class FormatFlagTag { bold, faint, italic, underline, blink };
     enum class FgColorTag { predefined, rgb };
     enum class BgColorTag { predefined, rgb };
 
@@ -280,11 +304,17 @@ class Style {
         case FormatFlagTag::bold:
             format_flags_ = bold_flag;
             break;
+        case FormatFlagTag::faint:
+            format_flags_ = faint_flag;
+            break;
         case FormatFlagTag::italic:
             format_flags_ = italic_flag;
             break;
         case FormatFlagTag::underline:
             format_flags_ = underline_flag;
+            break;
+        case FormatFlagTag::blink:
+            format_flags_ = blink_flag;
             break;
         default:
             panic("unhandled FormatFlagTag value");

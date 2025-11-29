@@ -120,13 +120,33 @@ std::vector<std::string> make_source_details(
 
     // Build contextual view
     for (std::size_t i = start; i < end; ++i) {
-        const auto formatted_arrow =
-            format->format("{}", FormatParam{"➞  ", Style::bold | Style::italic | Style::yellow});
-        const std::string prefix = (i == line_num) ? formatted_arrow : "   ";
+        std::string prefix;
+        // Value here is minus-1 because we're zero-indexing line number, but then adding one to display
+        if (i < 9) {
+            const auto formatted_arrow =
+                format->format("{}", FormatParam{"➞     ", Style::bold | Style::italic | Style::yellow});
+            prefix = (i == line_num) ? formatted_arrow : "      ";
+        }
+        else if (i < 99) {
+            const auto formatted_arrow =
+                format->format("{}", FormatParam{"➞    ", Style::bold | Style::italic | Style::yellow});
+            prefix = (i == line_num) ? formatted_arrow : "     ";
+        }
+        else if (i < 999) {
+            const auto formatted_arrow =
+                format->format("{}", FormatParam{"➞   ", Style::bold | Style::italic | Style::yellow});
+            prefix = (i == line_num) ? formatted_arrow : "    ";
+        }
+        else if (i < 9999) {
+            const auto formatted_arrow =
+                format->format("{}", FormatParam{"➞  ", Style::bold | Style::italic | Style::yellow});
+            prefix = (i == line_num) ? formatted_arrow : "   ";
+        }
+        else {
+            panic("10000+ line header files not supported, file a bug report");
+        }
 
         if (i == line_num) {
-            // TODO: the spaces after the line number ":" are hardcoded
-            // If a user supplies a header file with 1000+ lines, it will mess up the formatting.
             const auto highlight_line =
                 format->format("{}", FormatParam{lines[i], Style::bold | Style::italic | Style::yellow});
             details.push_back(prefix + std::to_string(i + 1) + ":   " + highlight_line);

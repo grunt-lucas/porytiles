@@ -9,6 +9,7 @@
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -25,6 +26,7 @@ class CompilePrimaryTileset {
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
      * @param domain_config A pointer to the DomainConfig for this use case
      * @param app_config A pointer to the AppConfig for this use case
+     * @param format A pointer to a TextFormatter for this use case
      * @param diag A pointer to the UserDiagnostics for this use case
      */
     CompilePrimaryTileset(
@@ -32,9 +34,10 @@ class CompilePrimaryTileset {
         gsl::not_null<const PrimaryTilesetCompiler *> compiler,
         gsl::not_null<const DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
+        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
         : tileset_repo_{tileset_repo}, compiler_{compiler}, domain_config_{domain_config}, app_config_{app_config},
-          diag_{diag}
+          format_{format}, diag_{diag}
     {
     }
 
@@ -56,6 +59,7 @@ class CompilePrimaryTileset {
     const PrimaryTilesetCompiler *compiler_;
     const DomainConfig *domain_config_;
     const AppConfig *app_config_;
+    const TextFormatter *format_;
     const UserDiagnostics *diag_;
 };
 

@@ -3,6 +3,7 @@
 #include <any>
 #include <functional>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
@@ -33,8 +34,14 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 
     // Check if already cached
     if (cache_.contains(cache_key)) {
-        // TODO: catch bad_any_cast here and panic
-        T cached_value = std::any_cast<T>(cache_.at(cache_key));
+        T cached_value{};
+        try {
+            cached_value = std::any_cast<T>(cache_.at(cache_key));
+        }
+        catch (const std::bad_any_cast &) {
+            panic(format_->format(
+                "bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
+        }
         std::string source = source_.at(cache_key);
         std::vector<std::string> source_details = source_details_.at(cache_key);
         return ConfigValue<T>{cached_value, cache_key, source, source_details};

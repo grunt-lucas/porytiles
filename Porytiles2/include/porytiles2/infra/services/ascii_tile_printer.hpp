@@ -21,6 +21,9 @@ class AsciiTilePrinter final : public TilePrinter {
     explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     [[nodiscard]] std::vector<std::string> print_metatile(
+        const Metatile<Rgba32> &metatile, metatile::Layer layer, const Rgba32 &extrinsic_transparency) const override;
+
+    [[nodiscard]] std::vector<std::string> print_metatile_tile_highlight(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
         metatile::Subtile subtile,

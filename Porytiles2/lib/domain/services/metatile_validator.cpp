@@ -40,7 +40,6 @@ void report_validation_error(
         FormatParam{
             porytiles2::metatile::message_header(*format, metatile_index, layer, subtile, row, col), Style::bold},
         FormatParam{error_message})};
-    errors.emplace_back("");
     std::vector highlight =
         tile_printer->print_metatile_pixel_highlight(metatile, layer, subtile, row, col, extrinsic_transparency);
     std::ranges::copy(highlight, std::back_inserter(errors));
@@ -249,15 +248,14 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                     "{}: {}",
                     FormatParam{metatile::message_header(*format_, metatile_index, subtile), Style::bold},
                     FormatParam{"non-transparent content on all three layers"})};
-                errors.emplace_back("");
-                // TODO: create and use print_metatile_tile_highlight
-                std::vector bottom_highlight = tile_printer_->print_tile(bottom_tile, extrinsic_transparency);
-                std::vector middle_highlight = tile_printer_->print_tile(middle_tile, extrinsic_transparency);
-                std::vector top_highlight = tile_printer_->print_tile(top_tile, extrinsic_transparency);
+                std::vector bottom_highlight = tile_printer_->print_metatile_tile_highlight(
+                    metatile, metatile::Layer::bottom, subtile, extrinsic_transparency);
+                std::vector middle_highlight = tile_printer_->print_metatile_tile_highlight(
+                    metatile, metatile::Layer::middle, subtile, extrinsic_transparency);
+                std::vector top_highlight = tile_printer_->print_metatile_tile_highlight(
+                    metatile, metatile::Layer::top, subtile, extrinsic_transparency);
                 std::ranges::copy(bottom_highlight, std::back_inserter(errors));
-                errors.emplace_back("");
                 std::ranges::copy(middle_highlight, std::back_inserter(errors));
-                errors.emplace_back("");
                 std::ranges::copy(top_highlight, std::back_inserter(errors));
                 diag_->err(layer_mode_violation, errors);
             }

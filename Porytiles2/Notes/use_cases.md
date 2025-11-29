@@ -143,6 +143,23 @@ porytiles2 compile-tileset MyTileset
 7. Persist the `Tileset` (which also caches the checksums).
 
 
+## Verify Primary Tileset
+Verify a tileset in `data/tilesets/primary`, i.e., display asset diffs based on checksums.
+
+Idea: in addition to checksums,
+artifact_checksums.json could store the full dumped tileset data.
+Then, Porytiles could display a diff by comparing on-disk tileset to the cached one.
+We'd need a complete JSON format for tilesets.
+
+Maybe change this command to `diff-tileset`.
+
+### CLI Invocation
+```sh
+porytiles2 verify-tileset MyTileset
+```
+
+### Logic Flow
+
 
 ## Create Secondary Tileset
 Create a new secondary tileset in `data/tilesets/secondary` with [default assets.](#default-assets)
@@ -220,6 +237,7 @@ JSON example:
     "porytiles/attributes.csv"
   ],
   "metatiles.bin": {
+    "checksum": "d2ea66cca67296a861f185fd2e961c5f",
     "entries_count": 24,
     "entries": [
       {
@@ -238,6 +256,7 @@ JSON example:
     ]
   },
   "metatile_attributes.bin": {
+    "checksum": "d2ea66cca67296a861f185fd2e961c5f",
     "attributes_count": 2,
     "attributes": [
       {
@@ -253,16 +272,37 @@ JSON example:
     ]
   },
   "tiles.png": {
+    "checksum": "d2ea66cca67296a861f185fd2e961c5f",
     "tiles_count": 512,
     "non_transparent_tiles_count": 322,
     "tiles": [
       {
         "index": 0,
-        "transparent": true
+        "is_transparent": true,
+        "values": [
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
       },
       {
         "index": 1,
-        "transparent": false
+        "is_transparent": false,
+        "values": [
+          [1, 0, 0, 2, 2, 0, 0, 1],
+          [0, 0, 0, 2, 2, 0, 0, 0],
+          [0, 0, 0, 2, 2, 0, 0, 0],
+          [0, 0, 0, 4, 4, 0, 0, 0],
+          [0, 0, 0, 4, 4, 0, 0, 0],
+          [0, 0, 0, 2, 2, 0, 0, 0],
+          [0, 0, 0, 2, 2, 0, 0, 0],
+          [1, 0, 0, 2, 2, 0, 0, 1]
+        ]
       },
       // ...
     ]
@@ -284,7 +324,12 @@ JSON example:
     "bottom.png": {
       // TODO: what to put here?
     },
-    // middle.png, top.png
+    "middle.png": {
+      // TODO: what to put here?
+    },
+    "top.png": {
+      // TODO: what to put here?
+    },
     "attributes.csv": {
       "attributes_count": 2,
       "attributes": [
@@ -306,6 +351,7 @@ JSON example:
       "tiles": [
         {
           "index": 0,
+          "is_transparent": true,
           "values": [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -319,6 +365,7 @@ JSON example:
         },
         {
           "index": 1,
+          "is_transparent": false,
           "values": [
             [1, 0, 0, 2, 2, 0, 0, 1],
             [0, 0, 0, 2, 2, 0, 0, 0],

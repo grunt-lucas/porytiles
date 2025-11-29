@@ -20,7 +20,6 @@ std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_tileset_artifac
     for (const auto &key : artifact_keys) {
         const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
         const auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
-        // TODO: more specific error message if one of the above is actually empty?
         if (checksum_for_key != cached_checksum_for_key) {
             mismatched_keys.push_back(key);
         }

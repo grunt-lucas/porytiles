@@ -17,12 +17,13 @@ class TilePrinter {
     virtual ~TilePrinter() = default;
 
     [[nodiscard]] virtual std::vector<std::string> print_metatile(
+        const Metatile<Rgba32> &metatile, metatile::Layer layer, const Rgba32 &extrinsic_transparency) const = 0;
+
+    [[nodiscard]] virtual std::vector<std::string> print_metatile_tile_highlight(
         const Metatile<Rgba32> &metatile,
         metatile::Layer layer,
         metatile::Subtile subtile,
         const Rgba32 &extrinsic_transparency) const = 0;
-
-    // TODO: create print_metatile_tile_highlight
 
     [[nodiscard]] virtual std::vector<std::string> print_metatile_pixel_highlight(
         const Metatile<Rgba32> &metatile,

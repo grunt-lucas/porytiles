@@ -2,8 +2,8 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <compare>
-#include <set>
 
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -25,10 +25,9 @@ class IndexPixel {
     // NOLINTNEXTLINE(google-explicit-constructor)
     IndexPixel(unsigned int index) : index_{index}
     {
-        // TODO: don't hardcode 16 here
-        // if (index_ >= 16) {
-        //     panic("invalid IndexPixel value: " + std::to_string(index_));
-        // }
+        if (index_ >= pal::max_size) {
+            panic("invalid IndexPixel value: " + std::to_string(index_));
+        }
     }
 
     bool operator==(const IndexPixel &other) const = default;

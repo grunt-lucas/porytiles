@@ -91,7 +91,7 @@ class ImportTilesetCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, diag.get()};
+        ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto import_result = import_use_case.import(tileset_name_);

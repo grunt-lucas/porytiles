@@ -28,11 +28,20 @@ tileset:
 
     pal_match_candidate_top_n: 1
 
-    palette_hints:
+    pal_packing_hints:
       - name: "foliage"
         colors:
           - [ 12, 190, 20 ]
           - [ 40, 210, 10 ]
+
+    # Set tile sharing optimization mode
+    # Allowed values:
+    # - manual: no automatic optimization, user can use palette overrides and tiles.override.png to create shared tiles [default]
+    # - opportunistic: greedily pack palettes
+    #     - exploit any tile-sharing opportunities during final palette construction
+    #     - may not find all possible optimizations
+    # - aggressive: fail compilation if any color-isomorphic tiles can't be shared
+    tile_sharing: manual
 
     # Set palette mode for output 'tiles.png'
     # Allowed values:

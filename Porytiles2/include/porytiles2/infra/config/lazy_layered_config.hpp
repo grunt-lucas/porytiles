@@ -28,15 +28,6 @@ namespace porytiles2 {
  * Scripts/generate_config.py.
  */
 
-/*
- * TODO: implement a better system for configuration validation. Right now, we rely on each ConfigProvider
- * implementation to provide validation internally before returning LayerValue::invalid. However, this means certain
- * config validations will have to be repeated multiple times in every single ConfigProvider impl. This is fine for some
- * validation. E.g. CommandLineProvider and YamlProvider might have different format validation needs when parsing from
- * source. Hence they may have different parse_x implementations. However, some values need generic validation, e.g.
- * num_pals_primary must be less than num_pals_total.
- */
-
 /**
  * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
  * \link ConfigProvider ConfigProviders \endlink.

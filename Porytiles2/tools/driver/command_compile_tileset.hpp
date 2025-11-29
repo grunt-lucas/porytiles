@@ -91,7 +91,7 @@ class CompileTilesetCommand final : public Command {
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
 
-        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, diag.get()};
+        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto compile_result = compile_use_case.compile(tileset_name_);
