@@ -29,6 +29,11 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         return FormattableError{"PorymapTilesetComponent was empty"};
     }
 
+    /*
+     * TODO: if Porytiles component is empty and no porytiles config files exist, create a porytiles.yaml that sets
+     * tileset.compile.patch.enabled:true
+     */
+
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums.value()) {

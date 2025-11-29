@@ -2,7 +2,6 @@
 A summary of the use cases Porytiles2 must support.
 
 
-
 ## Create Primary Tileset
 Create a new primary tileset in `data/tilesets/primary` with [default assets.](#default-assets)
 
@@ -98,9 +97,8 @@ They could be simple:
 - a simple animated flower
 
 
-
 ## Import Primary Tileset
-Import an existing primary tileset to Porytiles for the first time.
+Import an existing primary tileset to Porytiles for the first time, or update Porytiles assets to match the Porymap assets.
 
 ### CLI Invocation
 ```sh
@@ -109,12 +107,11 @@ porytiles2 import-tileset general
 
 ### Logic Flow
 1. Check if the primary tileset exists. If not, abort with error.
-2. Make sure the primary tileset does not have Porytiles assets. If it does, abort with error (user should use decompile).
-3. Import the tileset into a `Tileset` aggregate using the special "import" operation.
-4. If `PorymapTilesetComponent` is empty, bail with error.
-5. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-6. Perform a patch compilation with all assets set to `fixed`
-7. Persist the `Tileset` (which also caches the checksums).
+2. Import the tileset into a `Tileset` aggregate using the special "import" operation.
+3. If `PorymapTilesetComponent` is empty, bail with error.
+4. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+5. Perform a patch compilation with all assets set to `fixed`
+6. Persist the `Tileset` (which also caches the checksums).
 
 ### Outputs
 Importing a tileset for the first time will set `patch.enabled:true` by default with all assets set to `fixed`.
@@ -126,7 +123,6 @@ patch:
   tiles: fixed
   pals: fixed
 ```
-
 
 
 ## Compile Primary Tileset
@@ -145,19 +141,6 @@ porytiles2 compile-tileset MyTileset
 5. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the message "nothing to do."
 6. Compile the `Tileset`, generating a new modified `Tileset`.
 7. Persist the `Tileset` (which also caches the checksums).
-
-
-
-## Decompile Primary Tileset
-Decompile a tileset in `data/tilesets/primary`, i.e., update the Porytiles assets to match the Porymap assets.
-
-### CLI Invocation
-```sh
-porytiles2 decompile-tileset MyTileset
-```
-
-### Logic Flow
-1. Check if the primary tileset exists. If not, abort with error.
 
 
 
@@ -199,18 +182,11 @@ partner_primaries = [ "*" ]
 ```
 
 
-
 ## Import Secondary Tileset
 TODO
 
 
-
 ## Compile Secondary Tileset
-TODO
-
-
-
-## Decompile Secondary Tileset
 TODO
 
 
@@ -330,11 +306,29 @@ JSON example:
       "tiles": [
         {
           "index": 0,
-          "transparent": true
+          "values": [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+          ]
         },
         {
           "index": 1,
-          "transparent": false
+          "values": [
+            [1, 0, 0, 2, 2, 0, 0, 1],
+            [0, 0, 0, 2, 2, 0, 0, 0],
+            [0, 0, 0, 2, 2, 0, 0, 0],
+            [0, 0, 0, 4, 4, 0, 0, 0],
+            [0, 0, 0, 4, 4, 0, 0, 0],
+            [0, 0, 0, 2, 2, 0, 0, 0],
+            [0, 0, 0, 2, 2, 0, 0, 0],
+            [1, 0, 0, 2, 2, 0, 0, 1]
+          ]
         },
         // ...
       ]
@@ -342,6 +336,22 @@ JSON example:
   }
 }
 ```
+
+
+## Dump Tileset Config
+Dump the full source chain of a tileset config value to the console.
+
+This command will be really useful for debugging purposes,
+allowing users to inspect the full source chain of a config value.
+
+### CLI Invocation
+```sh
+porytiles2 dump-tileset-config MyPrimaryTileset num_tiles_in_primary
+```
+
+### Outputs
+The full source chain of the supplied config value.
+
 
 ## Find Tileset Color
 Given a color, print all locations of that color in a tileset.
@@ -359,19 +369,17 @@ Print out fancy metatile ASCII art with X-marks-the-spot on all locations of the
 Porytiles will do one printout for each metatile containing the color.
 Limit the output to 10 metatiles, configurable.
 
+
 ## Create Layout
 TODO
-
 
 
 ## Import Layout
 TODO
 
 
-
 ## Compile Layout
 TODO
-
 
 
 ## Decompile Layout
