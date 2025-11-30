@@ -21,7 +21,8 @@ namespace porytiles2 {
  *
  * @details
  * The TilesetRepo makes no assumptions about the structure of the backing store for the Tileset. Presumably, this store
- * is the canonical 'data/tilesets' directory, but the details here are implementation-defined.
+ * is the canonical 'data/tilesets' directory, but the implementation details handled by the reader, writer, and key
+ * provider.
  */
 class TilesetRepo {
   public:

@@ -13,9 +13,8 @@ namespace porytiles2 {
  * @brief Abstract service for managing artifact checksums.
  *
  * @details
- * The ArtifactChecksumProvider provides an interface for accessing and managing metadata about both Porymap and
- * Porytiles artifacts. This includes computing and storing checksums for integrity verification, retrieving
- * modification timestamps, and determining temporal relationships between different artifact sets.
+ * The ArtifactChecksumProvider provides an interface for accessing and managing checksums for both Porymap and
+ * Porytiles artifacts.
  *
  * Among other things, this service is essential for the compilation pipeline to determine when assets need to be
  * recompiled based on changes to source files or existing artifacts.
