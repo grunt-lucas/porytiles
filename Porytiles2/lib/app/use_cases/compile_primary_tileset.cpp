@@ -20,7 +20,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{fmt::format("failed to load tileset '{}'", tileset_name)}, maybe_tileset};
+            FormattableError{format_->format("failed to load tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
 

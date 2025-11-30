@@ -60,33 +60,6 @@ class UserDiagnostics {
     virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
     /**
-     * @brief Display a note message with a warning tag.
-     *
-     * @details
-     * Warning notes are note messages that are emitted in concert with a specific warning. They have tags so that like
-     * warnings they can be filtered by the user.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param msg The warning note message to display
-     */
-    void warn_note(const std::string &tag, const std::string &msg) const
-    {
-        warn_note(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a multi-line tagged warning note message.
-     *
-     * @details
-     * Virtual method for displaying multi-line warning notes with categorization. Implementations typically format
-     * these with note-style prefixes but include the tag for categorization purposes.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param lines Vector of strings representing each line of the warning note
-     */
-    virtual void warn_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
-
-    /**
      * @brief Display a tagged warning message.
      *
      * @details

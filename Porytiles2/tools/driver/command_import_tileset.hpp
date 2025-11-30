@@ -61,7 +61,7 @@ class ImportTilesetCommand final : public Command {
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         // Setup layered configuration
-        ProjectTilesetArtifactKeyProvider key_provider{"."};
+        ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
         providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
@@ -89,7 +89,8 @@ class ImportTilesetCommand final : public Command {
         // We already set this up earlier for the Yaml config provider
         // ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
-        TilesetRepo repo{&checksum_provider, &key_provider, &artifact_reader, &artifact_writer};
+        TilesetRepo repo{
+            &checksum_provider, &key_provider, &artifact_reader, &artifact_writer, text_formatter, diag.get()};
 
         ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
 

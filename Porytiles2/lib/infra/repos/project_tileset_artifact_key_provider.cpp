@@ -97,7 +97,7 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         }
         const auto anim_name = artifact.name().value();
         const auto frame_num = artifact.index().value();
-        return ArtifactKey{tileset_path / anim / anim_name / (pad_two_digits(frame_num) + std::string{".png"})};
+        return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_num) + std::string{".png"})};
     }
     case TilesetArtifact::Type::pal_n: {
         if (!artifact.index().has_value()) {
@@ -107,10 +107,10 @@ ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, cons
         return ArtifactKey{tileset_path / palettes / (pad_two_digits(pal_index) + std::string{".pal"})};
     }
     case TilesetArtifact::Type::config: {
-        return ArtifactKey{tileset_path / config};
+        return ArtifactKey{tileset_path / porytiles_directory / config};
     }
     case TilesetArtifact::Type::local_config: {
-        return ArtifactKey{tileset_path / local_config};
+        return ArtifactKey{tileset_path / porytiles_directory / local_config};
     }
 
     // Default case
@@ -227,14 +227,20 @@ std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porymap_anims(
             continue;
         }
 
+        const auto anim_name = entry.path().filename().string();
+
         // Check if 00.png exists (required for Porymap animations)
-        const auto frame_00_path = entry.path() / "00.png";
-        if (!std::filesystem::exists(frame_00_path)) {
-            // TODO: this is an error condition, an anim folder with no 00.png is invalid
+        const auto frame_0_path = entry.path() / "0.png";
+        if (!std::filesystem::exists(frame_0_path)) {
+            diag_->warn(
+                "missing-required-artifact",
+                format_->format("missing required artifact: '{}'", FormatParam{frame_0_path.string(), Style::bold}));
+            diag_->note(
+                "missing-required-artifact",
+                format_->format("skipping registry of Porymap anim '{}'", FormatParam{anim_name, Style::bold}));
             continue;
         }
 
-        const auto anim_name = entry.path().filename().string();
         anim_names.insert(anim_name);
     }
 
@@ -261,19 +267,19 @@ std::set<int> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
 
         const auto filename = entry.path().filename().string();
 
-        if (filename.length() != 6 || !filename.ends_with(".png")) {
+        if (filename.length() != 5 || !filename.ends_with(".png")) {
             // TODO: warn user about stray file in porytiles/anim/anim_name folder
             continue;
         }
 
-        // Skip 00.png (frame 0 is required, not discovered), handled in the main discover_anims method
-        if (filename == "00.png") {
+        // Skip 0.png (frame 0 is required, not discovered), handled in the main discover_anims method
+        if (filename == "0.png") {
             continue;
         }
 
-        // Check if it's a valid two-digit number
-        const auto frame_str = filename.substr(0, 2);
-        if (!std::isdigit(frame_str[0]) || !std::isdigit(frame_str[1])) {
+        // Check if it's a valid one-digit number
+        const auto frame_str = filename.substr(0, 1);
+        if (!std::isdigit(frame_str[0])) {
             // TODO: warn user about stray file in anim/anim_name folder
             continue;
         }

@@ -14,12 +14,6 @@ void BufferedUserDiagnostics::note(const std::string &tag, const std::vector<std
     note_tag_counts_[tag]++;
 }
 
-void BufferedUserDiagnostics::warn_note(const std::string &tag, const std::vector<std::string> &lines) const
-{
-    warn_notes_.push_back(lines);
-    warn_note_tag_counts_[tag]++;
-}
-
 void BufferedUserDiagnostics::warn(const std::string &tag, const std::vector<std::string> &lines) const
 {
     warnings_.push_back(lines);

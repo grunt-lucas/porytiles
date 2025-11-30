@@ -32,8 +32,6 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
   public:
     void note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
-    void warn_note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
     void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     void err(const std::string &tag, const std::vector<std::string> &lines) const override;
@@ -158,34 +156,6 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
     /**
-     * @brief Get the count of warning note messages by tag.
-     *
-     * @details
-     * Returns a reference to a map that tracks how many times each tag was used in calls to warn_note().
-     * The keys are tag strings and the values are the number of times each tag appeared.
-     *
-     * @return Reference to the warning note tag count map
-     */
-    [[nodiscard]] const std::map<std::string, size_t> &warn_note_tag_counts() const
-    {
-        return warn_note_tag_counts_;
-    }
-
-    /**
-     * @brief Get the count of warning messages by tag.
-     *
-     * @details
-     * Returns a reference to a map that tracks how many times each tag was used in calls to warn().
-     * The keys are tag strings and the values are the number of times each tag appeared.
-     *
-     * @return Reference to the warning tag count map
-     */
-    [[nodiscard]] const std::map<std::string, size_t> &warning_tag_counts() const
-    {
-        return warning_tag_counts_;
-    }
-
-    /**
      * @brief Get the count of error messages by tag.
      *
      * @details
@@ -208,7 +178,6 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     mutable std::vector<std::vector<std::string>> fatal_steps_;
     mutable std::vector<std::vector<std::string>> fatal_roots_;
     mutable std::map<std::string, size_t> note_tag_counts_;
-    mutable std::map<std::string, size_t> warn_note_tag_counts_;
     mutable std::map<std::string, size_t> warning_tag_counts_;
     mutable std::map<std::string, size_t> error_tag_counts_;
 };

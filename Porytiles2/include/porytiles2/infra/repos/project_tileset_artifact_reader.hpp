@@ -23,9 +23,9 @@ namespace porytiles2 {
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
-        gsl::not_null<PngRgbaImageLoader *> png_rgba_loader,
-        gsl::not_null<PngIndexedImageLoader *> png_indexed_loader,
-        gsl::not_null<FilePalLoader *> pal_loader)
+        gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
+        gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
+        gsl::not_null<const FilePalLoader *> pal_loader)
         : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader}
     {
     }
@@ -34,9 +34,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;
 
   private:
-    PngRgbaImageLoader *png_rgba_loader_;
-    PngIndexedImageLoader *png_indexed_loader_;
-    FilePalLoader *pal_loader_;
+    const PngRgbaImageLoader *png_rgba_loader_;
+    const PngIndexedImageLoader *png_indexed_loader_;
+    const FilePalLoader *pal_loader_;
 };
 
 } // namespace porytiles2

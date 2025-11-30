@@ -132,6 +132,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 {
     using enum TilesetArtifact::Type;
 
+    constexpr auto missing_required_artifact_tag = "missing-required-artifact";
+    constexpr auto missing_required_artifact_msg = "missing required artifact: '{}'";
+    constexpr auto missing_optional_artifact_tag = "missing-optional-artifact";
+    constexpr auto missing_optional_artifact_msg = "missing optional artifact: '{}'";
+
     // Fail as late as possible
     bool fail_at_exit = false;
 
@@ -182,7 +187,10 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
     else {
-        // TODO: emit warning to user about missing attr csv
+        diag_->warn(
+            missing_optional_artifact_tag,
+            format_->format(missing_optional_artifact_msg, FormatParam{attr_csv_key.key(), Style::bold}));
+        diag_->note(missing_optional_artifact_tag, "all attributes will receive default or inferred values");
     }
 
     for (unsigned int i = 0; i < pal::num_pals; i++) {
@@ -201,7 +209,9 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // Read frame 00.png
         auto frame_00_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porytiles_anim_frame, anim, 0});
         if (!key_provider_->artifact_exists(frame_00_key)) {
-            // TODO: emit validation error: missing required 00.png
+            diag_->err(
+                missing_required_artifact_tag,
+                format_->format(missing_required_artifact_msg, FormatParam{frame_00_key.key(), Style::bold}));
             fail_at_exit = true;
             continue;
         }
@@ -217,7 +227,13 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
-                // TODO: emit validation error: frame {} did not match expected frame {}
+                diag_->err(
+                    "out-of-order-frame-index",
+                    format_->format(
+                        "found frame '{}' but expected '{}'",
+                        FormatParam{frame, Style::bold},
+                        FormatParam{expected_frame, Style::bold}));
+                // TODO: add a note here to explain this more
                 fail_at_exit = true;
             }
             auto frame_n_key =
@@ -237,7 +253,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     const auto metatiles_artifact = TilesetArtifact{metatiles_bin};
     const auto metatiles_key = key_provider_->key_for(tileset->name(), metatiles_artifact);
     if (!key_provider_->artifact_exists(metatiles_key)) {
-        return FormattableError{"missing required porymap artifact metatiles.bin"};
+        return FormattableError{missing_required_artifact_msg, FormatParam{metatiles_key.key(), Style::bold}};
     }
     const auto metatiles_result = reader_->read(*tileset, metatiles_key, metatiles_artifact);
     if (!metatiles_result.has_value()) {
@@ -248,7 +264,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     const auto attr_artifact = TilesetArtifact{metatile_attributes_bin};
     const auto attr_key = key_provider_->key_for(tileset->name(), attr_artifact);
     if (!key_provider_->artifact_exists(attr_key)) {
-        return FormattableError{"missing required porymap artifact metatile_attributes.bin"};
+        return FormattableError{missing_required_artifact_msg, FormatParam{attr_key.key(), Style::bold}};
     }
     const auto attr_result = reader_->read(*tileset, attr_key, attr_artifact);
     if (!attr_result.has_value()) {
@@ -259,7 +275,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     const auto tiles_png_artifact = TilesetArtifact{tiles_png};
     const auto tiles_png_key = key_provider_->key_for(tileset->name(), tiles_png_artifact);
     if (!key_provider_->artifact_exists(tiles_png_key)) {
-        return FormattableError{"missing required porymap artifact tiles.png"};
+        return FormattableError{missing_required_artifact_msg, FormatParam{tiles_png_key.key(), Style::bold}};
     }
     const auto tiles_png_result = reader_->read(*tileset, tiles_png_key, tiles_png_artifact);
     if (!tiles_png_result.has_value()) {
@@ -270,7 +286,9 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     for (unsigned int i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for(tileset->name(), TilesetArtifact{pal_n, i});
         if (!key_provider_->artifact_exists(pal_key)) {
-            // TODO: emit validation error: missing required artifact {:02}.pal
+            diag_->err(
+                missing_required_artifact_tag,
+                format_->format(missing_required_artifact_msg, FormatParam{pal_key.key(), Style::bold}));
             fail_at_exit = true;
             continue;
         }
@@ -283,18 +301,19 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
          const auto &anim : porymap_anims) {
-        // Read frame 00.png
-        auto frame_00_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_frame, anim, 0});
-        if (!key_provider_->artifact_exists(frame_00_key)) {
-            // TODO: emit validation error: missing required 00.png
+        // Read frame 0.png
+        auto frame_0_key = key_provider_->key_for(tileset->name(), TilesetArtifact{porymap_anim_frame, anim, 0});
+        if (!key_provider_->artifact_exists(frame_0_key)) {
+            diag_->err(
+                missing_required_artifact_tag,
+                format_->format(missing_required_artifact_msg, FormatParam{frame_0_key.key(), Style::bold}));
             fail_at_exit = true;
             continue;
         }
-        const auto frame_00_result =
-            reader_->read(*tileset, frame_00_key, TilesetArtifact{porymap_anim_frame, anim, 0});
-        if (!frame_00_result.has_value()) {
+        const auto frame_0_result = reader_->read(*tileset, frame_0_key, TilesetArtifact{porymap_anim_frame, anim, 0});
+        if (!frame_0_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{fmt::format("failed to read {}", frame_00_key.key())}, frame_00_result};
+                FormattableError{fmt::format("failed to read {}", frame_0_key.key())}, frame_0_result};
         }
 
         // Read the rest of the (optional) frames
@@ -302,7 +321,13 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
-                // TODO: emit validation error: frame {} did not match expected frame {}
+                diag_->err(
+                    "out-of-order-frame-index",
+                    format_->format(
+                        "found frame '{}' but expected '{}'",
+                        FormatParam{frame, Style::bold},
+                        FormatParam{expected_frame, Style::bold}));
+                // TODO: add a note here to explain this more
                 fail_at_exit = true;
             }
             auto frame_n_key =
@@ -316,11 +341,6 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             expected_frame++;
         }
     }
-
-    /*
-     * TODO: now that we've loaded the attributes and metatiles, if we're not triple layer then use the loaded
-     * information to pad out tilemap_entry vector with transparent entries for the missing layers.
-     */
 
     if (fail_at_exit) {
         return FormattableError{"errors while loading tileset"};

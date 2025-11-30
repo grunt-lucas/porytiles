@@ -5,8 +5,12 @@
 #include <string>
 #include <utility>
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -23,8 +27,11 @@ namespace porytiles2 {
  */
 class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvider {
   public:
-    explicit ProjectTilesetArtifactKeyProvider(std::filesystem::path project_root)
-        : project_root_{std::move(project_root)}
+    explicit ProjectTilesetArtifactKeyProvider(
+        std::filesystem::path project_root,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag)
+        : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
     {
     }
 
@@ -63,6 +70,9 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     // TODO: implement configurable override paths for users who have changed the pokeemerald project structure
     // std::optional<std::filesystem::path> behaviors_header_override_path_;
     // std::optional<std::string> behaviors_header_override_file_;
+
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
 };
 
 } // namespace porytiles2

@@ -57,18 +57,6 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
-     * @brief Display a multi-line tagged warning note to stderr.
-     *
-     * @details
-     * Outputs warning notes with cyan "note:" prefix and tag suffix on the first line, formatted as "note: <message>
-     * [<tag>]" with appropriate indentation for subsequent lines.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param lines Vector of strings representing each line of the warning note
-     */
-    void warn_note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
-    /**
      * @brief Display a multi-line tagged warning to stderr.
      *
      * @details
