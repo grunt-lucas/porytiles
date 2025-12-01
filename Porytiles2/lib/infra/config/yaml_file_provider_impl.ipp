@@ -465,9 +465,8 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
     std::vector<std::filesystem::path> paths;
 
     // Get tileset-specific config paths using the key provider
-    using enum TilesetArtifact::Type;
-    const auto tileset_local_config_key = key_provider->key_for(tileset, TilesetArtifact{local_config});
-    const auto tileset_config_key = key_provider->key_for(tileset, TilesetArtifact{config});
+    const auto tileset_local_config_key = key_provider->key_for_local_config(tileset);
+    const auto tileset_config_key = key_provider->key_for_config(tileset);
 
     // Priority order (highest to lowest):
     // 1. tileset_folder/porytiles.local.yaml

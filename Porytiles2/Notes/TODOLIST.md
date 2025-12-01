@@ -1,7 +1,6 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
-- Remove TilesetArtifact enum and instead have an explicit save/load method for each artifact type
 - Make Porytiles yaml config a first class type (vector<string> file lines is fine)
 - Make PLA files a first class type in Porymap component (need a domain type for PLA)
 - `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts

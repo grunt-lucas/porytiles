@@ -26,17 +26,18 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
     panic(fmt::format("tileset '{}' does not exist", tileset_name));
 }
 
+const std::filesystem::path metatiles_bin{"metatiles.bin"};
+const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
+const std::filesystem::path tiles_png{"tiles.png"};
+const std::filesystem::path palettes{"palettes"};
+const std::filesystem::path anim{"anim"};
+
 const std::filesystem::path porytiles_directory{"porytiles"};
 const std::filesystem::path bottom_png{"bottom.png"};
 const std::filesystem::path middle_png{"middle.png"};
 const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
-const std::filesystem::path anim{"anim"};
 const std::filesystem::path pal_overrides{"palette-overrides"};
-const std::filesystem::path metatiles_bin{"metatiles.bin"};
-const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
-const std::filesystem::path tiles_png{"tiles.png"};
-const std::filesystem::path palettes{"palettes"};
 const std::filesystem::path config{"porytiles.yaml"};
 const std::filesystem::path local_config{"porytiles.local.yaml"};
 
@@ -44,79 +45,93 @@ const std::filesystem::path local_config{"porytiles.local.yaml"};
 
 namespace porytiles2 {
 
-ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const
+/*
+ * Porymap artifacts
+ */
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / metatiles_bin};
+}
 
-    switch (artifact.type()) {
-    // Porytiles artifacts
-    case TilesetArtifact::Type::bottom_png:
-        return ArtifactKey{tileset_path / porytiles_directory / bottom_png};
-    case TilesetArtifact::Type::middle_png:
-        return ArtifactKey{tileset_path / porytiles_directory / middle_png};
-    case TilesetArtifact::Type::top_png:
-        return ArtifactKey{tileset_path / porytiles_directory / top_png};
-    case TilesetArtifact::Type::attributes_csv:
-        return ArtifactKey{tileset_path / porytiles_directory / attributes_csv};
-    case TilesetArtifact::Type::porytiles_anim_frame: {
-        if (!artifact.name().has_value()) {
-            panic("missing porytiles anim frame name");
-        }
-        if (!artifact.index().has_value()) {
-            panic("missing porytiles anim frame index");
-        }
-        const auto anim_name = artifact.name().value();
-        const auto frame_num = artifact.index().value();
-        return ArtifactKey{
-            tileset_path / porytiles_directory / anim / anim_name / (pad_two_digits(frame_num) + std::string{".png"})};
-    }
-    case TilesetArtifact::Type::pal_override_n: {
-        if (!artifact.index().has_value()) {
-            panic("missing pal override index");
-        }
-        const auto override_index = artifact.index().value();
-        return ArtifactKey{
-            tileset_path / porytiles_directory / pal_overrides /
-            (pad_two_digits(override_index) + std::string{".pal"})};
-    }
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / metatile_attributes_bin};
+}
 
-    // Porymap artifacts
-    case TilesetArtifact::Type::metatiles_bin:
-        return ArtifactKey{tileset_path / metatiles_bin};
-    case TilesetArtifact::Type::metatile_attributes_bin:
-        return ArtifactKey{tileset_path / metatile_attributes_bin};
-    case TilesetArtifact::Type::tiles_png:
-        return ArtifactKey{tileset_path / tiles_png};
-    case TilesetArtifact::Type::porymap_anim_frame: {
-        if (!artifact.name().has_value()) {
-            panic("missing porymap anim frame name");
-        }
-        if (!artifact.index().has_value()) {
-            panic("missing porymap anim frame index");
-        }
-        const auto anim_name = artifact.name().value();
-        const auto frame_num = artifact.index().value();
-        return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_num) + std::string{".png"})};
-    }
-    case TilesetArtifact::Type::pal_n: {
-        if (!artifact.index().has_value()) {
-            panic("missing pal index");
-        }
-        const auto pal_index = artifact.index().value();
-        return ArtifactKey{tileset_path / palettes / (pad_two_digits(pal_index) + std::string{".pal"})};
-    }
-    case TilesetArtifact::Type::config: {
-        return ArtifactKey{tileset_path / porytiles_directory / config};
-    }
-    case TilesetArtifact::Type::local_config: {
-        return ArtifactKey{tileset_path / porytiles_directory / local_config};
-    }
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / tiles_png};
+}
 
-    // Default case
-    default:
-        panic("unhandled TilesetArtifact::Type");
-    }
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_pal_n(const std::string &tileset_name, unsigned int index) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / palettes / (pad_two_digits(index) + std::string{".pal"})};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
+    const std::string &tileset_name, const std::string &anim_name, int frame_index) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
+}
+
+/*
+ * Porytiles artifacts
+ */
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / bottom_png};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / middle_png};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_top_png(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / top_png};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / attributes_csv};
+}
+
+ArtifactKey
+ProjectTilesetArtifactKeyProvider::key_for_pal_override_n(const std::string &tileset_name, unsigned int index) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{
+        tileset_path / porytiles_directory / pal_overrides / (pad_two_digits(index) + std::string{".pal"})};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
+    const std::string &tileset_name, const std::string &anim_name, int frame_index) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{
+        tileset_path / porytiles_directory / anim / anim_name / (pad_two_digits(frame_index) + std::string{".png"})};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_config(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / config};
+}
+
+ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_local_config(const std::string &tileset_name) const
+{
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / local_config};
 }
 
 bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) const

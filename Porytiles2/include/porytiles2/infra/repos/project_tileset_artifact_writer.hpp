@@ -37,8 +37,38 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
 
     [[nodiscard]] ChainableResult<void> rollback() override;
 
+    /*
+     * Porymap artifacts
+     */
+    [[nodiscard]] ChainableResult<void> write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src) override;
+
     [[nodiscard]] ChainableResult<void>
-    write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) override;
+    write_metatile_attributes_bin(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void> write_tiles_png(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void>
+    write_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
+
+    [[nodiscard]] ChainableResult<void> write_porymap_anim_frame(
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) override;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] ChainableResult<void> write_bottom_png(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void> write_middle_png(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void> write_top_png(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void> write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src) override;
+
+    [[nodiscard]] ChainableResult<void>
+    write_pal_override_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
+
+    [[nodiscard]] ChainableResult<void> write_porytiles_anim_frame(
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) override;
 
   private:
     InfraConfig *config_;

@@ -240,71 +240,137 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactWriter::write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src)
+namespace {
+
+ChainableResult<std::filesystem::path> compute_transaction_dest_path(
+    const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    const ArtifactKey &dest_key)
 {
-    if (transaction_root_.empty()) {
+    if (transaction_root.empty()) {
         return FormattableError{"no transaction in progress"};
     }
 
-    // Compute the destination path within the transaction directory
-    const auto relative_path = std::filesystem::path{dest_key.key()}.lexically_relative(project_root_);
-    const auto transaction_dest_path = transaction_root_ / relative_path;
+    const auto relative_path = std::filesystem::path{dest_key.key()}.lexically_relative(project_root);
+    const auto transaction_dest_path = transaction_root / relative_path;
 
-    // Create parent directories if needed
     std::filesystem::create_directories(transaction_dest_path.parent_path());
 
-    // Handle different artifact types
-    switch (artifact.type()) {
-    // Porytiles artifacts
-    case TilesetArtifact::Type::bottom_png:
-        return save_layer_png(*png_rgba_saver_, src.porytiles_component().bottom(), transaction_dest_path);
-    case TilesetArtifact::Type::middle_png:
-        return save_layer_png(*png_rgba_saver_, src.porytiles_component().middle(), transaction_dest_path);
-    case TilesetArtifact::Type::top_png:
-        return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
-    case TilesetArtifact::Type::attributes_csv:
-        // TODO: implement
-        return {};
-    case TilesetArtifact::Type::porytiles_anim_frame:
-        // TODO: implement
-        return {};
-    case TilesetArtifact::Type::pal_override_n:
-        // TODO: implement
-        return {};
+    return transaction_dest_path;
+}
 
-    // Porymap artifacts
-    case TilesetArtifact::Type::metatiles_bin:
-        return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
-    case TilesetArtifact::Type::metatile_attributes_bin:
-        return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
-    case TilesetArtifact::Type::tiles_png: {
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            tiles_pal_mode_config,
-            config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
-            "failed to get tiles_pal_mode config",
-            void);
-        return save_tiles_png(
-            *png_indexed_saver_,
-            src.porymap_component().tiles_png(),
-            transaction_dest_path,
-            tiles_pal_mode_config.value());
-    }
-    case TilesetArtifact::Type::porymap_anim_frame:
-        // TODO: implement
-        return {};
-    case TilesetArtifact::Type::pal_n: {
-        if (!artifact.index().has_value()) {
-            panic("took TilesetArtifact::Type::pal_n branch but missing pal index");
-        }
-        const auto index = artifact.index().value();
-        return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
-    }
+} // namespace
 
-    // Default case
-    default:
-        panic("unhandled TilesetArtifact::Type");
-    }
+/*
+ * Porymap artifacts
+ */
+ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
+}
+
+ChainableResult<void>
+ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_pal_mode_config,
+        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        "failed to get tiles_pal_mode config",
+        void);
+    return save_tiles_png(
+        *png_indexed_saver_, src.porymap_component().tiles_png(), transaction_dest_path, tiles_pal_mode_config.value());
+}
+
+ChainableResult<void>
+ProjectTilesetArtifactWriter::write_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index)
+{
+    // TODO: implement
+    return {};
+}
+
+/*
+ * Porytiles artifacts
+ */
+ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_layer_png(*png_rgba_saver_, src.porytiles_component().bottom(), transaction_dest_path);
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::write_middle_png(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_layer_png(*png_rgba_saver_, src.porytiles_component().middle(), transaction_dest_path);
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::write_top_png(const ArtifactKey &dest_key, const Tileset &src)
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+    return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
+}
+
+ChainableResult<void>
+ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src)
+{
+    // TODO: implement
+    return {};
+}
+
+ChainableResult<void>
+ProjectTilesetArtifactWriter::write_pal_override_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+{
+    // TODO: implement
+    return {};
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index)
+{
+    // TODO: implement
+    return {};
 }
 
 } // namespace porytiles2

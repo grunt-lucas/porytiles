@@ -4,7 +4,6 @@
 
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -30,8 +29,38 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     {
     }
 
+    /*
+     * Porymap artifacts
+     */
+    [[nodiscard]] ChainableResult<void> read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const override;
+
     [[nodiscard]] ChainableResult<void>
-    read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;
+    read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void>
+    read_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
+
+    [[nodiscard]] ChainableResult<void> read_porymap_anim_frame(
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const override;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] ChainableResult<void> read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_middle_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_top_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void>
+    read_pal_override_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
+
+    [[nodiscard]] ChainableResult<void> read_porytiles_anim_frame(
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const override;
 
   private:
     const PngRgbaImageLoader *png_rgba_loader_;

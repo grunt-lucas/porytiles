@@ -3,7 +3,6 @@
 #include <any>
 
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -24,27 +23,39 @@ class TilesetArtifactReader {
   public:
     virtual ~TilesetArtifactReader() = default;
 
-    /**
-     * @brief Reads an artifact from the backing store and updates the target Tileset.
-     *
-     * @details
-     * This method reads the specified artifact from the backing store location identified by the src_key and updates
-     * the appropriate fields or components within the destination Tileset object. The TilesetArtifact parameter
-     * specifies the type and metadata needed to determine how to read and where to store the data. The implementation
-     * should handle parsing the specific artifact format (PNG images, binary data, CSV files, etc.) and updating the
-     * correct Tileset components (Porymap or Porytiles components, palettes, animations, etc.).
-     *
-     * Precondition: the TilesetRepo checks that src_key actually exists before performing a read. Thus, the
-     * TilesetArtifactReader's read method can assume the specified artifact really does exist. If the artifact does not
-     * exist, the result is implementation-defined but will probably panic.
-     *
-     * @param dest The Tileset object to be updated with the read artifact data
-     * @param src_key The ArtifactKey identifying the artifact location in the backing store
-     * @param artifact The TilesetArtifact specification including type and optional metadata
-     * @return Empty Result on success, otherwise an error description
+    /*
+     * Porymap artifacts
      */
+    [[nodiscard]] virtual ChainableResult<void> read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
     [[nodiscard]] virtual ChainableResult<void>
-    read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const = 0;
+    read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    read_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_porymap_anim_frame(
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const = 0;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] virtual ChainableResult<void> read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_middle_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_top_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    read_pal_override_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_porytiles_anim_frame(
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const = 0;
 };
 
 } // namespace porytiles2

@@ -193,8 +193,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
 
     auto expected_file = test_root_ / "tileset_bottom.png";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_bottom_png(key, tileset);
     if (!write_result.has_value()) {
         FAIL() << "Write error: " << write_result.error().join(PlainTextFormatter{});
     }
@@ -215,8 +214,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, RollbackTransaction)
 
     auto expected_file = test_root_ / "rollback_test.png";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto rollback_result = writer_->rollback();
@@ -233,18 +231,15 @@ TEST_F(ProjectTilesetArtifactWriterTests, MultipleWritesInTransaction)
     ASSERT_TRUE(begin_result.has_value());
 
     ArtifactKey key1{(test_root_ / "assets/bottom.png").string()};
-    TilesetArtifact artifact1{TilesetArtifact::Type::bottom_png};
-    auto write_result1 = writer_->write(key1, artifact1, tileset);
+    auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
     ArtifactKey key2{(test_root_ / "assets/middle.png").string()};
-    TilesetArtifact artifact2{TilesetArtifact::Type::middle_png};
-    auto write_result2 = writer_->write(key2, artifact2, tileset);
+    auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
     ArtifactKey key3{(test_root_ / "assets/tiles.png").string()};
-    TilesetArtifact artifact3{TilesetArtifact::Type::tiles_png};
-    auto write_result3 = writer_->write(key3, artifact3, tileset);
+    auto write_result3 = writer_->write_tiles_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
     auto commit_result = writer_->commit();
@@ -273,8 +268,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, OverwriteExistingFiles)
     ASSERT_TRUE(begin_result.has_value());
 
     ArtifactKey key{existing_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -293,8 +287,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NestedDirectoryStructure)
 
     auto expected_file = test_root_ / "deeply/nested/directory/structure/file.png";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::top_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_top_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -318,12 +311,12 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     EXPECT_EQ(rollback_result.error().details(PlainTextFormatter{}).at(0), "no transaction in progress");
 
     ArtifactKey key{(test_root_ / "no_transaction.png").string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_FALSE(write_result.has_value());
     auto error_lines = write_result.error().details(PlainTextFormatter{});
-    ASSERT_EQ(error_lines.size(), 1);
-    EXPECT_EQ(error_lines[0], "no transaction in progress");
+    // The new specific write method chains the error through compute_transaction_dest_path
+    ASSERT_GE(error_lines.size(), 1);
+    EXPECT_EQ(error_lines[0], "failed to compute transaction dest path");
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)
@@ -350,8 +343,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, CommitCleansUpTempDirectory)
     ASSERT_GT(count_temp_dirs(), initial_temp_count);
 
     ArtifactKey key{(test_root_ / "temp_cleanup.png").string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::bottom_png};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -385,8 +377,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatilesBin)
 
     auto expected_file = test_root_ / "metatiles.bin";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::metatiles_bin};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_metatiles_bin(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -404,8 +395,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
 
     auto expected_file = test_root_ / "metatile_attributes.bin";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::metatile_attributes_bin};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_metatile_attributes_bin(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -425,8 +415,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
 
     auto expected_file = test_root_ / "palette_0.pal";
     ArtifactKey key{expected_file.string()};
-    TilesetArtifact artifact{TilesetArtifact::Type::pal_n, 0};
-    auto write_result = writer_->write(key, artifact, tileset);
+    auto write_result = writer_->write_pal_n(key, tileset, 0);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -451,18 +440,15 @@ TEST_F(ProjectTilesetArtifactWriterTests, AtomicCommitAllOrNothing)
     ASSERT_TRUE(begin_result.has_value());
 
     ArtifactKey key1{file1.string()};
-    TilesetArtifact artifact1{TilesetArtifact::Type::bottom_png};
-    auto write_result1 = writer_->write(key1, artifact1, tileset);
+    auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
     ArtifactKey key2{file2.string()};
-    TilesetArtifact artifact2{TilesetArtifact::Type::middle_png};
-    auto write_result2 = writer_->write(key2, artifact2, tileset);
+    auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
     ArtifactKey key3{file3.string()};
-    TilesetArtifact artifact3{TilesetArtifact::Type::top_png};
-    auto write_result3 = writer_->write(key3, artifact3, tileset);
+    auto write_result3 = writer_->write_top_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
     auto commit_result = writer_->commit();
@@ -481,8 +467,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(begin1.has_value());
 
     ArtifactKey key1{(test_root_ / "trans1.png").string()};
-    TilesetArtifact artifact1{TilesetArtifact::Type::bottom_png};
-    auto write_result1 = writer_->write(key1, artifact1, tileset);
+    auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
     auto commit1 = writer_->commit();
@@ -494,8 +479,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(begin2.has_value());
 
     ArtifactKey key2{(test_root_ / "trans2.png").string()};
-    TilesetArtifact artifact2{TilesetArtifact::Type::middle_png};
-    auto write_result2 = writer_->write(key2, artifact2, tileset);
+    auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
     auto rollback2 = writer_->rollback();
@@ -507,8 +491,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(begin3.has_value());
 
     ArtifactKey key3{(test_root_ / "trans3.png").string()};
-    TilesetArtifact artifact3{TilesetArtifact::Type::top_png};
-    auto write_result3 = writer_->write(key3, artifact3, tileset);
+    auto write_result3 = writer_->write_top_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
     auto commit3 = writer_->commit();

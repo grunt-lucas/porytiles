@@ -4,7 +4,6 @@
 #include <string>
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/repos/tileset_artifact.hpp"
 
 namespace porytiles2 {
 
@@ -29,20 +28,40 @@ class TilesetArtifactKeyProvider {
   public:
     virtual ~TilesetArtifactKeyProvider() = default;
 
-    /**
-     * @brief Constructs a key for a given tileset artifact.
-     *
-     * @details
-     * This method should focus primarily on building keys from the provided parameters, not on searching the filesystem
-     * or backing store. The key generation should be fast and deterministic based on the tileset name and artifact
-     * specification.
-     *
-     * @param tileset_name The name of the tileset for the tileset artifact
-     * @param artifact The artifact details specifying type, name, and index as applicable
-     * @return The key for the given tileset artifact
+    /*
+     * Porymap artifacts
      */
+    [[nodiscard]] virtual ArtifactKey key_for_metatiles_bin(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_metatile_attributes_bin(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_tiles_png(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_pal_n(const std::string &tileset_name, unsigned int index) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_porymap_anim_frame(
+        const std::string &tileset_name, const std::string &anim_name, int frame_index) const = 0;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] virtual ArtifactKey key_for_bottom_png(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_middle_png(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_top_png(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_attributes_csv(const std::string &tileset_name) const = 0;
+
     [[nodiscard]] virtual ArtifactKey
-    key_for(const std::string &tileset_name, const TilesetArtifact &artifact) const = 0;
+    key_for_pal_override_n(const std::string &tileset_name, unsigned int index) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_porytiles_anim_frame(
+        const std::string &tileset_name, const std::string &anim_name, int frame_index) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_config(const std::string &tileset_name) const = 0;
+
+    [[nodiscard]] virtual ArtifactKey key_for_local_config(const std::string &tileset_name) const = 0;
 
     /**
      * @brief Checks whether an artifact exists in the backing store for the given key.
@@ -138,25 +157,24 @@ class TilesetArtifactKeyProvider {
          * items are missing?
          */
 
-        using enum TilesetArtifact::Type;
         std::vector<ArtifactKey> result;
 
-        const auto bottom_png_key = key_for(tileset_name, TilesetArtifact{bottom_png});
+        const auto bottom_png_key = key_for_bottom_png(tileset_name);
         if (artifact_exists(bottom_png_key)) {
             result.push_back(bottom_png_key);
         }
 
-        const auto middle_png_key = key_for(tileset_name, TilesetArtifact{middle_png});
+        const auto middle_png_key = key_for_middle_png(tileset_name);
         if (artifact_exists(middle_png_key)) {
             result.push_back(middle_png_key);
         }
 
-        const auto top_png_key = key_for(tileset_name, TilesetArtifact{top_png});
+        const auto top_png_key = key_for_top_png(tileset_name);
         if (artifact_exists(top_png_key)) {
             result.push_back(top_png_key);
         }
 
-        const auto attr_csv_key = key_for(tileset_name, TilesetArtifact{attributes_csv});
+        const auto attr_csv_key = key_for_attributes_csv(tileset_name);
         if (artifact_exists(attr_csv_key)) {
             result.push_back(attr_csv_key);
         }
@@ -165,7 +183,7 @@ class TilesetArtifactKeyProvider {
         // TODO: warn user if we found overrides like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (unsigned int i = 0; i < num_pals; i++) {
-            const auto override_key = key_for(tileset_name, TilesetArtifact{pal_override_n, i});
+            const auto override_key = key_for_pal_override_n(tileset_name, i);
             if (artifact_exists(override_key)) {
                 result.push_back(override_key);
             }
@@ -173,13 +191,14 @@ class TilesetArtifactKeyProvider {
 
         const auto porytiles_anims = discover_porytiles_anims(tileset_name);
         for (const auto &anim : porytiles_anims) {
-            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porytiles_anim_frame, anim, 0});
+            const auto frame_00_key = key_for_porytiles_anim_frame(tileset_name, anim, 0);
             if (artifact_exists(frame_00_key)) {
                 result.push_back(frame_00_key);
             }
             const auto frames = discover_porytiles_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
-                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, frame});
+                // BUG FIX: was previously using porymap_anim_frame here
+                const auto frame_n_key = key_for_porytiles_anim_frame(tileset_name, anim, frame);
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
@@ -201,20 +220,19 @@ class TilesetArtifactKeyProvider {
      */
     [[nodiscard]] virtual std::vector<ArtifactKey> get_porymap_artifact_keys(const std::string &tileset_name) const
     {
-        using enum TilesetArtifact::Type;
         std::vector<ArtifactKey> result;
 
-        const auto metatiles_key = key_for(tileset_name, TilesetArtifact{metatiles_bin});
+        const auto metatiles_key = key_for_metatiles_bin(tileset_name);
         if (artifact_exists(metatiles_key)) {
             result.push_back(metatiles_key);
         }
 
-        const auto attr_key = key_for(tileset_name, TilesetArtifact{metatile_attributes_bin});
+        const auto attr_key = key_for_metatile_attributes_bin(tileset_name);
         if (artifact_exists(attr_key)) {
             result.push_back(attr_key);
         }
 
-        const auto tiles_png_key = key_for(tileset_name, TilesetArtifact{tiles_png});
+        const auto tiles_png_key = key_for_tiles_png(tileset_name);
         if (artifact_exists(tiles_png_key)) {
             result.push_back(tiles_png_key);
         }
@@ -223,7 +241,7 @@ class TilesetArtifactKeyProvider {
         // TODO: warn user if we found pals like 1.pal, these won't work they have to be 01.pal
         constexpr int num_pals = 16;
         for (unsigned int i = 0; i < num_pals; i++) {
-            const auto pal_key = key_for(tileset_name, TilesetArtifact{pal_n, i});
+            const auto pal_key = key_for_pal_n(tileset_name, i);
             if (artifact_exists(pal_key)) {
                 result.push_back(pal_key);
             }
@@ -231,13 +249,13 @@ class TilesetArtifactKeyProvider {
 
         const auto porymap_anims = discover_porymap_anims(tileset_name);
         for (const auto &anim : porymap_anims) {
-            const auto frame_00_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, 0});
+            const auto frame_00_key = key_for_porymap_anim_frame(tileset_name, anim, 0);
             if (artifact_exists(frame_00_key)) {
                 result.push_back(frame_00_key);
             }
             const auto frames = discover_porymap_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
-                const auto frame_n_key = key_for(tileset_name, TilesetArtifact{porymap_anim_frame, anim, frame});
+                const auto frame_n_key = key_for_porymap_anim_frame(tileset_name, anim, frame);
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
