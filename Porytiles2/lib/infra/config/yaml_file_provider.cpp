@@ -24,17 +24,21 @@ namespace porytiles2 {
 
 YamlFileProvider::YamlFileProvider(
     gsl::not_null<const TextFormatter *> format,
+    const UserDiagnostics *diagnostics,
     const std::filesystem::path &project_root,
     const TilesetArtifactKeyProvider &tileset_key_provider)
-    : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
+    : format_{format}, diagnostics_{diagnostics}, project_root_{project_root},
+      tileset_key_provider_{&tileset_key_provider}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
 
 YamlFileProvider::YamlFileProvider(
-    const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider)
-    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
-      tileset_key_provider_{&tileset_key_provider}
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root,
+    const TilesetArtifactKeyProvider &tileset_key_provider)
+    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, diagnostics_{diagnostics},
+      project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
@@ -50,7 +54,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType t
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_in_primary"]; },
         parse_size_t,
         "num_tiles_in_primary");
@@ -62,7 +66,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, 
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_total"]; },
         parse_size_t,
         "num_tiles_total");
@@ -74,7 +78,7 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeTy
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_in_primary"]; },
         parse_size_t,
         "num_metatiles_in_primary");
@@ -86,7 +90,7 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType ty
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_total"]; },
         parse_size_t,
         "num_metatiles_total");
@@ -98,7 +102,7 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType ty
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_in_primary"]; },
         parse_size_t,
         "num_pals_in_primary");
@@ -110,7 +114,7 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, c
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_total"]; },
         parse_size_t,
         "num_pals_total");
@@ -122,7 +126,7 @@ LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["max_map_data_size"]; },
         parse_size_t,
         "max_map_data_size");
@@ -134,7 +138,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType
     return search_config_files<std::size_t>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_per_metatile"]; },
         parse_size_t,
         "num_tiles_per_metatile");
@@ -146,7 +150,7 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
     return search_config_files<Rgba32>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["extrinsic_transparency"]; },
         parse_rgba32,
         "extrinsic_transparency");
@@ -158,7 +162,7 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
     return search_config_files<bool>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["verify_checksums"]; },
         parse_bool,
         "verify_checksums");
@@ -170,7 +174,7 @@ LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, con
     return search_config_files<bool>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["patch"]["enabled"]; },
         parse_bool,
         "patch_build_enabled");
@@ -182,7 +186,7 @@ LayerValue<PatchTilesMode> YamlFileProvider::patch_tiles_mode(ConfigScopeType ty
     return search_config_files<PatchTilesMode>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["patch"]["tiles"]; },
         parse_patch_tiles_mode,
         "patch_tiles_mode");
@@ -194,7 +198,7 @@ LayerValue<PatchPalMode> YamlFileProvider::patch_pal_mode(ConfigScopeType type, 
     return search_config_files<PatchPalMode>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["patch"]["palettes"]; },
         parse_patch_pal_mode,
         "patch_pal_mode");
@@ -206,7 +210,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
     return search_config_files<TilesPalMode>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tiles_pal_mode"]; },
         parse_tiles_pal_mode,
         "tiles_pal_mode");

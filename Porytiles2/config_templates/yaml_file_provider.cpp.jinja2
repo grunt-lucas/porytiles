@@ -27,17 +27,20 @@ namespace porytiles2 {
 
 YamlFileProvider::YamlFileProvider(
     gsl::not_null<const TextFormatter *> format,
+    const UserDiagnostics *diagnostics,
     const std::filesystem::path &project_root,
     const TilesetArtifactKeyProvider &tileset_key_provider)
-    : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
+    : format_{format}, diagnostics_{diagnostics}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
 
 YamlFileProvider::YamlFileProvider(
-    const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider)
-    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
-      tileset_key_provider_{&tileset_key_provider}
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root,
+    const TilesetArtifactKeyProvider &tileset_key_provider)
+    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, diagnostics_{diagnostics},
+      project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
@@ -54,7 +57,7 @@ LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType 
     return search_config_files<{{ value.type }}>(
         format_,
         paths,
-        load_yaml_file,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc{{ macros.yaml_path(value.yaml.path) }}; },
         {{ value.parser }},
         "{{ value.name }}");

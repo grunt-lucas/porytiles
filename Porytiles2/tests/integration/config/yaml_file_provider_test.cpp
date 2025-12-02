@@ -51,7 +51,7 @@ class YamlFileProviderTest : public ::testing::Test {
 TEST_F(YamlFileProviderTest, NameReturnsCorrectProviderName)
 {
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     EXPECT_EQ(provider.name(), "YamlFileProvider");
 }
@@ -65,7 +65,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -84,7 +84,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -102,7 +102,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_metatiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -119,7 +119,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_metatiles_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -136,7 +136,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_pals_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -153,7 +153,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_pals_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -170,7 +170,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.max_map_data_size(ConfigScopeType::tileset, "test_tileset");
 
@@ -187,7 +187,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_per_metatile(ConfigScopeType::tileset, "test_tileset");
 
@@ -203,7 +203,7 @@ extrinsic_transparency: [255, 0, 255]
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -222,7 +222,7 @@ extrinsic_transparency: [128, 64, 32, 200]
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -241,7 +241,7 @@ extrinsic_transparency: [255, 0]
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -257,7 +257,7 @@ extrinsic_transparency: 255
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -274,7 +274,7 @@ patch:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
 
@@ -291,7 +291,7 @@ patch:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
 
@@ -307,7 +307,7 @@ tiles_pal_mode: true-color
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -323,7 +323,7 @@ tiles_pal_mode: greyscale
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -339,7 +339,7 @@ tiles_pal_mode: invalid-mode
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -351,7 +351,7 @@ tiles_pal_mode: invalid-mode
 TEST_F(YamlFileProviderTest, ReturnsNotProvidedWhenFileDoesNotExist)
 {
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -367,7 +367,7 @@ some_other_config:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -389,7 +389,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.local.yaml", local_config);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -413,7 +413,7 @@ fieldmap:
     create_yaml_file(tileset_dir_ / "porytiles" / "porytiles.yaml", tileset_config);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -447,7 +447,7 @@ fieldmap:
     create_yaml_file(tileset_dir_ / "porytiles" / "porytiles.local.yaml", tileset_local_config);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -465,7 +465,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -485,7 +485,7 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{test_root_, key_provider};
+    YamlFileProvider provider{&diag_, test_root_, key_provider};
 
     auto primary_result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
     auto total_result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");

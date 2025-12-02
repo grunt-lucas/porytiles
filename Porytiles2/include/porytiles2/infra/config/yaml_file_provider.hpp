@@ -9,6 +9,7 @@
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -39,14 +40,17 @@ class YamlFileProvider final : public ConfigProvider {
      *
      * @details
      * This constructor sets up the provider to search for configuration values across multiple config files in priority
-     * order. Config files are loaded lazily when first accessed and cached for subsequent lookups.
+     * order. Config files are loaded lazily when first accessed and cached for subsequent lookups. Unknown YAML keys
+     * will be reported as warnings via the diagnostics interface.
      *
      * @param format A pointer to the TextFormatter to use
+     * @param diagnostics A pointer to UserDiagnostics for emitting warnings about unknown keys
      * @param project_root The root directory of the project
      * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
     explicit YamlFileProvider(
         gsl::not_null<const TextFormatter *> format,
+        const UserDiagnostics *diagnostics,
         const std::filesystem::path &project_root,
         const TilesetArtifactKeyProvider &tileset_key_provider);
 
@@ -56,13 +60,17 @@ class YamlFileProvider final : public ConfigProvider {
      * @details
      * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
      * YamlFileProvider will search for configuration values across multiple config files in priority order. Config
-     * files are loaded lazily when first accessed and cached for subsequent lookups.
+     * files are loaded lazily when first accessed and cached for subsequent lookups. Unknown YAML keys will be
+     * reported as warnings via the diagnostics interface.
      *
+     * @param diagnostics A pointer to UserDiagnostics for emitting warnings about unknown keys
      * @param project_root The root directory of the project
      * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
     explicit YamlFileProvider(
-        const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider);
+        const UserDiagnostics *diagnostics,
+        const std::filesystem::path &project_root,
+        const TilesetArtifactKeyProvider &tileset_key_provider);
 
     /**
      * @brief Gets the name of this config layer.
@@ -113,6 +121,7 @@ class YamlFileProvider final : public ConfigProvider {
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
     const TextFormatter *format_;                 // Non-owning pointer to formatter
+    const UserDiagnostics *diagnostics_;          // Non-owning pointer to diagnostics
     std::filesystem::path project_root_;
     const TilesetArtifactKeyProvider *tileset_key_provider_;
     // const LayoutArtifactKeyProvider *layout_key_provider_;

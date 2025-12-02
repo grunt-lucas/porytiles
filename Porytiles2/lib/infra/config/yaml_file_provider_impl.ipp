@@ -11,8 +11,10 @@
 #include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/infra/config/valid_yaml_paths.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 // The anonymous namespace ensures internal linkage per translation unit
 // This file is intentionally included only in yaml_file_provider.cpp
@@ -149,6 +151,83 @@ std::vector<std::string> make_source_details(
     }
 
     return details;
+}
+
+/**
+ * @brief Recursively collects all dot-separated paths from a YAML node.
+ *
+ * @details
+ * Walks the YAML node tree and collects all map keys as dot-separated paths. For each key
+ * encountered, stores the full path and the YAML::Mark for source location reporting.
+ *
+ * @param node The YAML node to traverse
+ * @param prefix Current path prefix (empty for root)
+ * @param paths Output vector of discovered paths with their marks
+ */
+void collect_yaml_paths(
+    const YAML::Node &node, const std::string &prefix, std::vector<std::pair<std::string, YAML::Mark>> &paths)
+{
+    if (!node.IsMap()) {
+        return;
+    }
+
+    for (const auto &kv : node) {
+        const auto key = kv.first.as<std::string>();
+        const auto full_path = prefix.empty() ? key : prefix + "." + key;
+        paths.emplace_back(full_path, kv.first.Mark());
+
+        // Recurse into nested maps
+        if (kv.second.IsMap()) {
+            collect_yaml_paths(kv.second, full_path, paths);
+        }
+    }
+}
+
+/**
+ * @brief Validates YAML paths against the known valid paths set.
+ *
+ * @details
+ * Walks the YAML document tree and compares each path against the set of valid paths
+ * defined in valid_yaml_paths.hpp. For any unknown paths, emits a warning via the
+ * UserDiagnostics interface with source location and context.
+ *
+ * @param format Text formatter for styled output
+ * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
+ * @param file_path Path to the YAML file being validated
+ * @param node The root YAML node to validate
+ */
+void validate_yaml_paths(
+    const TextFormatter *format,
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &file_path,
+    const YAML::Node &node)
+{
+    if (diagnostics == nullptr) {
+        return;
+    }
+
+    std::vector<std::pair<std::string, YAML::Mark>> paths;
+    collect_yaml_paths(node, "", paths);
+
+    for (const auto &[path, mark] : paths) {
+        if (valid_yaml_paths.find(path) == valid_yaml_paths.end()) {
+            const auto source = make_source_string(format, file_path.string(), mark);
+            auto details = make_source_details(format, file_path.string(), mark);
+
+            std::vector<std::string> warning_lines;
+            warning_lines.push_back(format->format("unknown configuration key '{}'", FormatParam{path, Style::bold}));
+            warning_lines.emplace_back();
+            warning_lines.push_back(format->format("Source: {}", FormatParam{source}));
+            warning_lines.emplace_back();
+            for (auto &detail : details) {
+                warning_lines.push_back(std::move(detail));
+            }
+
+            diagnostics->warn("unknown-config-key", warning_lines);
+
+            // TODO: add a "did you mean" message that uses levenshtein distance to find closest match
+        }
+    }
 }
 
 /**
@@ -396,13 +475,19 @@ LayerValue<PatchPalMode> parse_patch_pal_mode(
  * @brief Attempts to load a YAML file and add it to the cache.
  *
  * @details
- * If the file exists and can be parsed, it is added to the cache and returned. If the file doesn't exist or cannot be
- * parsed, returns std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
+ * If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
+ * the YAML paths and emits warnings for unknown keys. If the file doesn't exist or cannot be parsed, returns
+ * std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
  *
  * @param path The path to the YAML file to load
+ * @param format Text formatter for styled output (used for validation)
+ * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
  * @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
  */
-std::optional<YAML::Node> load_yaml_file(const std::filesystem::path &path)
+std::optional<YAML::Node> load_yaml_file(
+    const std::filesystem::path &path,
+    const TextFormatter *format = nullptr,
+    const UserDiagnostics *diagnostics = nullptr)
 {
     // Check cache first
     const auto cache_it = yaml_cache.find(path);
@@ -428,6 +513,11 @@ std::optional<YAML::Node> load_yaml_file(const std::filesystem::path &path)
             lines.push_back(line);
         }
         file_lines_cache[path] = std::move(lines);
+
+        // Validate paths if diagnostics is provided
+        if (format != nullptr && diagnostics != nullptr) {
+            validate_yaml_paths(format, diagnostics, path, node);
+        }
 
         return node;
     }

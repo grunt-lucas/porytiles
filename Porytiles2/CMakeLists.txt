@@ -37,6 +37,7 @@ set(GENERATED_CONFIG_FILES
         # YamlFileProvider
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/yaml_file_provider.cpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp
 )
 
 # Define schema and template files

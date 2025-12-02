@@ -62,7 +62,7 @@ class VerifyTilesetCommand final : public Command {
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, ".", key_provider));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
         providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
