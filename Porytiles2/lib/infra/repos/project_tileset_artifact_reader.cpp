@@ -156,10 +156,10 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
     return {};
 }
 
-ChainableResult<void> import_palette(Tileset &dest, const ArtifactKey &src_key, int index, const FilePalLoader &loader)
+ChainableResult<void>
+import_palette(Tileset &dest, const ArtifactKey &src_key, unsigned int index, const FilePalLoader &loader)
 {
-    // TODO: don't hardcode 16 here
-    if (index < 0 || index >= 16) {
+    if (index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", index));
     }
 
