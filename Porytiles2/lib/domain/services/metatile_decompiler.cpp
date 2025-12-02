@@ -20,7 +20,7 @@ namespace porytiles2 {
 ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_metatiles(
     const std::vector<TilemapEntry> &entries,
     const Image<IndexPixel> &tiles_png,
-    const std::array<Palette<Rgba32>, pal::num_pals> &pals)
+    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals)
 {
     std::vector<Metatile<Rgba32>> decompiled;
 

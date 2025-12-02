@@ -32,7 +32,7 @@ class MetatileDecompiler {
     [[nodiscard]] ChainableResult<std::vector<Metatile<Rgba32>>> decompile_metatiles(
         const std::vector<TilemapEntry> &entries,
         const Image<IndexPixel> &tiles_png,
-        const std::array<Palette<Rgba32>, pal::num_pals> &pals);
+        const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals);
 
   private:
     const TextFormatter *format_;

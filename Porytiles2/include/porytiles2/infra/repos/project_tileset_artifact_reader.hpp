@@ -40,7 +40,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     [[nodiscard]] ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void>
-    read_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
+    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
 
     [[nodiscard]] ChainableResult<void> read_porymap_anim_frame(
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const override;
@@ -57,7 +57,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     [[nodiscard]] ChainableResult<void> read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void>
-    read_pal_override_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
+    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const override;
 
     [[nodiscard]] ChainableResult<void> read_porytiles_anim_frame(
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const override;

@@ -13,7 +13,7 @@ class JascPalSaver final : public FilePalSaver {
     JascPalSaver() = default;
 
     [[nodiscard]] ChainableResult<void>
-    save(const Palette<Rgba32> &pal, const std::filesystem::path &path) const override;
+    save(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles2

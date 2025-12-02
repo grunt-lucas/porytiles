@@ -9,7 +9,7 @@
 
 namespace porytiles2 {
 
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<Rgba32> &pal) const
+std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<Rgba32, pal::max_size> &pal) const
 {
     std::vector<std::string> lines{};
 
@@ -33,7 +33,7 @@ std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<R
 }
 
 [[nodiscard]] std::vector<std::string> ColorPalettePrinter::print_rgba_palette_covered_missing(
-    const Palette<Rgba32> &pal, std::set<Rgba32> covered_colors, std::set<Rgba32> missing_colors) const
+    const Palette<Rgba32, pal::max_size> &pal, std::set<Rgba32> covered_colors, std::set<Rgba32> missing_colors) const
 {
     std::vector<std::string> lines{};
 

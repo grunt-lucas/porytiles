@@ -39,7 +39,7 @@ tileset:
 
     # Set tile sharing optimization mode
     # Allowed values:
-    # - manual: no automatic optimization, use palette overrides (and/or tiles.override.png) to force shared tiles [default]
+    # - manual: no automatic optimization, use Porytiles palettes (and/or tiles.override.png) to force shared tiles [default]
     # - opportunistic:
     #     - greedily pack palettes
     #     - exploit any tile-sharing opportunities during final palette construction

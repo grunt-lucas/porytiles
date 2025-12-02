@@ -103,7 +103,7 @@ save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, c
 }
 
 ChainableResult<void>
-save_palette(const Palette<Rgba32> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
@@ -302,7 +302,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactWriter::write_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -360,7 +360,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactWriter::write_pal_override_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
 {
     // TODO: implement
     return {};

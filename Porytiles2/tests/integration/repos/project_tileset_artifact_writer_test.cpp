@@ -76,7 +76,7 @@ class MockPngIndexedImageSaver : public PngIndexedImageSaver {
 class MockFilePalSaver : public FilePalSaver {
   public:
     [[nodiscard]] ChainableResult<void>
-    save(const Palette<Rgba32> &pal, const std::filesystem::path &path) const override
+    save(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};
         out << "mock_palette";
@@ -109,7 +109,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(i, Palette<Rgba32>{});
+        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{});
     }
 
     // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come
@@ -415,7 +415,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
 
     auto expected_file = test_root_ / "palette_0.pal";
     ArtifactKey key{expected_file.string()};
-    auto write_result = writer_->write_pal_n(key, tileset, 0);
+    auto write_result = writer_->write_porymap_pal_n(key, tileset, 0);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();

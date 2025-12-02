@@ -37,9 +37,9 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(unsigned int pal_index, Palette<Rgba32> pal);
+    void set_pal(unsigned int pal_index, Palette<Rgba32, pal::max_size> pal);
 
-    [[nodiscard]] const Palette<Rgba32> &pal_at(unsigned int pal_index) const;
+    [[nodiscard]] const Palette<Rgba32, pal::max_size> &pal_at(unsigned int pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
@@ -70,7 +70,7 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::array<Palette<Rgba32>, pal::num_pals> &pals() const
+    [[nodiscard]] const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals() const
     {
         return pals_;
     }
@@ -79,7 +79,7 @@ class PorymapTilesetComponent {
     std::vector<TilemapEntry> metatiles_bin_;
     std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
-    std::array<Palette<Rgba32>, pal::num_pals> pals_;
+    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
 };
 
 } // namespace porytiles2

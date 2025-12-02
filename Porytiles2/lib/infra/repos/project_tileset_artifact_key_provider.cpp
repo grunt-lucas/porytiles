@@ -29,7 +29,7 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
 const std::filesystem::path metatiles_bin{"metatiles.bin"};
 const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
-const std::filesystem::path palettes{"palettes"};
+const std::filesystem::path porymap_pals{"palettes"};
 const std::filesystem::path anim{"anim"};
 
 const std::filesystem::path porytiles_directory{"porytiles"};
@@ -37,7 +37,7 @@ const std::filesystem::path bottom_png{"bottom.png"};
 const std::filesystem::path middle_png{"middle.png"};
 const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
-const std::filesystem::path pal_overrides{"palette-overrides"};
+const std::filesystem::path porytiles_pals{"palettes"};
 const std::filesystem::path config{"porytiles.yaml"};
 const std::filesystem::path local_config{"porytiles.local.yaml"};
 
@@ -66,10 +66,11 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::stri
     return ArtifactKey{tileset_path / tiles_png};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_pal_n(const std::string &tileset_name, unsigned int index) const
+ArtifactKey
+ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, unsigned int index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / palettes / (pad_two_digits(index) + std::string{".pal"})};
+    return ArtifactKey{tileset_path / porymap_pals / (pad_two_digits(index) + std::string{".pal"})};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
@@ -107,11 +108,11 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std:
 }
 
 ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_pal_override_n(const std::string &tileset_name, unsigned int index) const
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, unsigned int index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
     return ArtifactKey{
-        tileset_path / porytiles_directory / pal_overrides / (pad_two_digits(index) + std::string{".pal"})};
+        tileset_path / porytiles_directory / porytiles_pals / (pad_two_digits(index) + std::string{".pal"})};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(

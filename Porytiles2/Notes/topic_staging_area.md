@@ -56,7 +56,7 @@ compilation:
 ```
 
 ## Palette Hints
-While palette overrides will remain separate JASC pal files like in Porytiles1,
+While Porytiles palettes will remain separate JASC pal files like Porytiles1 palette overrides,
 palette primers in Porytiles2 will known as palette hints, and will be specified in the tileset YAML config:
 
 ```yaml
@@ -117,7 +117,7 @@ The way it works is that for every single secondary tileset paired with a given 
 to have identical content (e.g. 12.pal). That way, whenever the primary set is loaded, you're guaranteed to have a secondary set
 loaded with the right pal infor in 12.pal, so primary metatiles that reference pal 12 look normal.
 
-We could support this with some configuration options + palette overrides.
+We could support this with some configuration options + Porytiles palettes.
 There are multiple ways it could be done, let's think about which would be the easiest to use.
 
 ### Idea 1

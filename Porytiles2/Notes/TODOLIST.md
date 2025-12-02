@@ -1,9 +1,10 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
+- Implement Porytiles palette loading and saving
 - Make Porytiles yaml config a first class type (vector<string> file lines is fine)
 - Make PLA files a first class type in Porymap component (need a domain type for PLA)
-- `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts
+- `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
   - See various TODOs about stale artifacts and "possibly incomplete" components
   - Switch to the original "atomic move" idea
 - Project Impl
@@ -16,7 +17,7 @@
 - PalettePacker domain service
   - we'll need some basic interface to communicate which pal slots are fixed, which are available, etc
   - maybe a PackablePal type?
-  - input: list of PackablePals built from tileset pals and supplied overrides, list of PaletteHints
+  - input: list of PackablePals built from Porymap and Porytiles pals, list of PaletteHints
   - output: list of packed palettes
   - client code of PalettePacker should never see nor deal with internal types, it should be pals in and pals out
 

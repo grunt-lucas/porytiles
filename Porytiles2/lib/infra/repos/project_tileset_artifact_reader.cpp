@@ -209,7 +209,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
+ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
 {
     const auto result = import_palette(dest, src_key, index, *pal_loader_);
     if (!result.has_value()) {
@@ -269,7 +269,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset 
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_pal_override_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
+ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
 {
     panic("TODO: implement read_pal_override_n");
 }

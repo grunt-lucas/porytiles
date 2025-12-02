@@ -103,7 +103,7 @@ class PatchCompilerTask {
     std::vector<Metatile<Rgba32>> porymap_metatiles_{};
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
-    std::vector<Palette<Rgba32>> porymap_pals_{};
+    std::vector<Palette<Rgba32, pal::max_size>> porymap_pals_{};
 
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
@@ -603,7 +603,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
 
     Image<IndexPixel> tiles_png{128, 128};
-    Palette pal{rgba_red};
+    Palette<Rgba32, pal::max_size> pal{rgba_red};
     pal.set(extrinsic_transparency.value(), 0);
 
     new_porymap_component->tiles_png(tiles_png);

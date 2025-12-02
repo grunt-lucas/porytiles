@@ -101,9 +101,9 @@ template <SupportsTransparency PixelType, typename TransparencyPredicate>
  * @pre If tile contains non-transparent pixels, palette may not be empty
  * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
  */
-template <SupportsTransparency ColorType, typename TransparencyPredicate>
+template <SupportsTransparency ColorType, std::size_t N = 0, typename TransparencyPredicate>
 [[nodiscard]] PixelTile<IndexPixel> index_tile_from_color_tile_impl(
-    const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, TransparencyPredicate is_transparent_pred)
+    const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette, TransparencyPredicate is_transparent_pred)
 {
     // Build a color-to-index map for efficient lookup
     // Note: palette.color_to_index_map() returns PaletteIndex, convert to unsigned int
@@ -164,9 +164,9 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
  * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
  * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PixelTile<ColorType> color_tile_from_index_tile_impl(
-    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette, const ColorType &transparent_color)
+    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType, N> &palette, const ColorType &transparent_color)
 {
     if (palette.size() == 0) {
         panic("palette is empty");
@@ -394,9 +394,9 @@ shape_tile_to_pixel_colors(const ShapeTile<ColorIndex> &shape_tile, const ColorI
  * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
  * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index in index_tile
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PixelTile<ColorType>
-color_tile_from_index_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette)
+color_tile_from_index_tile(const PixelTile<IndexPixel> &index_tile, const Palette<ColorType, N> &palette)
     requires requires(const ColorType &c) { c.is_transparent(); }
 {
     return details::color_tile_from_index_tile_impl(index_tile, palette, ColorType{});
@@ -420,9 +420,9 @@ color_tile_from_index_tile(const PixelTile<IndexPixel> &index_tile, const Palett
  * @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
  * @return A PixelTile<ColorType> where each pixel is the palette color corresponding to the index in index_tile
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PixelTile<ColorType> color_tile_from_index_tile(
-    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
+    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType, N> &palette, const ColorType &extrinsic)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
     return details::color_tile_from_index_tile_impl(index_tile, palette, extrinsic);
@@ -444,9 +444,9 @@ template <SupportsTransparency ColorType>
  * @pre All non-transparent colors in the tile must exist in the palette
  * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PixelTile<IndexPixel>
-index_tile_from_color_tile(const PixelTile<ColorType> &tile, const Palette<ColorType> &palette)
+index_tile_from_color_tile(const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
     return details::index_tile_from_color_tile_impl(
@@ -470,9 +470,9 @@ index_tile_from_color_tile(const PixelTile<ColorType> &tile, const Palette<Color
  * @pre All non-transparent colors in the tile must exist in the palette
  * @return A PixelTile<IndexPixel> where each pixel is the palette index corresponding to the color
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PixelTile<IndexPixel> index_tile_from_color_tile(
-    const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
+    const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette, const ColorType &extrinsic)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
     return details::index_tile_from_color_tile_impl(

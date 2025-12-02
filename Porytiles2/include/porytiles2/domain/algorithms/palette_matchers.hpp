@@ -71,14 +71,15 @@ namespace details {
  *
  * @tparam ColorType The color type of the palette and tile
  * @tparam TransparencyPredicate A callable type that takes a ColorType and returns bool
+ * @tparam N The palette size (0 for dynamic, non-zero for fixed-size)
  * @param tile The PixelTile to match against the palette
  * @param palette The Palette to check for color coverage
  * @param is_transparent_pred A predicate function that returns true if a color is transparent
  * @return A PaletteMatchResult indicating coverage status and color sets
  */
-template <SupportsTransparency ColorType, typename TransparencyPredicate>
+template <SupportsTransparency ColorType, typename TransparencyPredicate, std::size_t N = 0>
 [[nodiscard]] PaletteMatchResult<ColorType> match_tile_to_palette_impl(
-    const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, TransparencyPredicate is_transparent_pred)
+    const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette, TransparencyPredicate is_transparent_pred)
 {
     PaletteMatchResult<ColorType> result;
 
@@ -139,14 +140,15 @@ template <SupportsTransparency ColorType, typename TransparencyPredicate>
  * 4. Returns a result indicating coverage status and the color sets
  *
  * @tparam ColorType The color type of the palette and tile, must support intrinsic transparency
+ * @tparam N The palette size (0 for dynamic, non-zero for fixed-size)
  * @param tile The PixelTile to match against the palette
  * @param palette The Palette to check for color coverage
  * @pre The Palette is not empty
  * @return A PaletteMatchResult indicating whether the palette covers the tile and which colors are covered/missing
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] PaletteMatchResult<ColorType>
-match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType> &palette)
+match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette)
     requires requires(const ColorType &c) { c.is_transparent(); }
 {
     if (palette.size() == 0) {
@@ -166,6 +168,7 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * This overload is only available for color types that support extrinsic transparency.
  *
  * @tparam ColorType The color type of the palette and tile, must support extrinsic transparency
+ * @tparam N The palette size (0 for dynamic, non-zero for fixed-size)
  * @param tile The PixelTile to match against the palette
  * @param palette The Palette to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
@@ -173,9 +176,9 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * @pre The extrinsic transparency must match the color in slot 0 of the Palette
  * @return A PaletteMatchResult indicating whether the palette covers the tile and which colors are covered/missing
  */
-template <SupportsTransparency ColorType>
-[[nodiscard]] PaletteMatchResult<ColorType>
-match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType> &palette, const ColorType &extrinsic)
+template <SupportsTransparency ColorType, std::size_t N = 0>
+[[nodiscard]] PaletteMatchResult<ColorType> match_tile_to_palette(
+    const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette, const ColorType &extrinsic)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
     if (palette.size() == 0) {
@@ -200,6 +203,7 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * for color types that support extrinsic transparency.
  *
  * @tparam ColorType The color type of the palette and tile, must support extrinsic transparency
+ * @tparam N The palette size (0 for dynamic, non-zero for fixed-size)
  * @param tile The PixelTile to match against the palettes
  * @param palettes The vector of Palettes to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
@@ -215,10 +219,10 @@ match_tile_to_palette(const PixelTile<ColorType> &tile, const Palette<ColorType>
  * two mutually exclusive sets—complete matches (is_covered = true) or partial matches (is_covered = false)—never
  * returning a heterogeneous mixture.
  */
-template <SupportsTransparency ColorType>
+template <SupportsTransparency ColorType, std::size_t N = 0>
 [[nodiscard]] std::vector<PaletteMatchResult<ColorType>> match_or_best(
     const PixelTile<ColorType> &tile,
-    const std::vector<Palette<ColorType>> &palettes,
+    const std::vector<Palette<ColorType, N>> &palettes,
     const ColorType &extrinsic,
     std::size_t top_n)
     requires requires(const ColorType &c) { c.is_transparent(c); }

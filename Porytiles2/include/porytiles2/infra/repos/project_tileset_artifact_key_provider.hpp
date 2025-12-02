@@ -41,7 +41,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
 
     [[nodiscard]] ArtifactKey key_for_tiles_png(const std::string &tileset_name) const override;
 
-    [[nodiscard]] ArtifactKey key_for_pal_n(const std::string &tileset_name, unsigned int index) const override;
+    [[nodiscard]] ArtifactKey key_for_porymap_pal_n(const std::string &tileset_name, unsigned int index) const override;
 
     [[nodiscard]] ArtifactKey key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, int frame_index) const override;
@@ -55,7 +55,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ArtifactKey key_for_attributes_csv(const std::string &tileset_name) const override;
 
     [[nodiscard]] ArtifactKey
-    key_for_pal_override_n(const std::string &tileset_name, unsigned int index) const override;
+    key_for_porytiles_pal_n(const std::string &tileset_name, unsigned int index) const override;
 
     [[nodiscard]] ArtifactKey key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, int frame_index) const override;

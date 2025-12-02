@@ -12,7 +12,8 @@ class JascPalLoader final : public FilePalLoader {
   public:
     JascPalLoader() = default;
 
-    [[nodiscard]] ChainableResult<Palette<Rgba32>> load(const std::filesystem::path &path) const override;
+    [[nodiscard]] ChainableResult<Palette<Rgba32, pal::max_size>>
+    load(const std::filesystem::path &path) const override;
 };
 
 } // namespace porytiles2

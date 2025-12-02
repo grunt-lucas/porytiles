@@ -48,7 +48,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     [[nodiscard]] ChainableResult<void> write_tiles_png(const ArtifactKey &dest_key, const Tileset &src) override;
 
     [[nodiscard]] ChainableResult<void>
-    write_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
+    write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
 
     [[nodiscard]] ChainableResult<void> write_porymap_anim_frame(
         const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) override;
@@ -65,7 +65,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     [[nodiscard]] ChainableResult<void> write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src) override;
 
     [[nodiscard]] ChainableResult<void>
-    write_pal_override_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
+    write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) override;
 
     [[nodiscard]] ChainableResult<void> write_porytiles_anim_frame(
         const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) override;

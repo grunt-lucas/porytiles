@@ -64,15 +64,17 @@ ChainableResult<Rgba32> parse_jasc_line(std::string_view line)
 
 namespace porytiles2 {
 
-ChainableResult<Palette<Rgba32>> JascPalLoader::load(const std::filesystem::path &path) const
+ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
         return FormattableError{fmt::format("does not exist: {}", path.string())};
     }
 
-    Palette<Rgba32> pal{};
+    Palette<Rgba32, pal::max_size> pal{};
     std::string line_buf{};
     std::ifstream stream{path};
+
+    // TODO: we should print nice line-highlighted error messages like the YamlFileProvider
 
     // First line of file *must* be "JASC-PAL"
     std::getline(stream, line_buf);
@@ -97,8 +99,9 @@ ChainableResult<Palette<Rgba32>> JascPalLoader::load(const std::filesystem::path
             "{}: expected integral value on line 3: {}", path.c_str(), line_buf, declared_size_result.error())};
     }
     const auto declared_size = declared_size_result.value();
-    if (declared_size < 1) {
-        return FormattableError{fmt::format("{}: expected declared size >= 1, saw '{}'", path.c_str(), declared_size)};
+    if (declared_size != pal::max_size) {
+        return FormattableError{
+            fmt::format("{}: expected declared size == {}, saw '{}'", path.c_str(), pal::max_size, declared_size)};
     }
 
     // Rest of file lines are the colors
@@ -106,12 +109,12 @@ ChainableResult<Palette<Rgba32>> JascPalLoader::load(const std::filesystem::path
     while (std::getline(stream, line_buf)) {
         const auto color_result = parse_jasc_line(trim_line_ending(line_buf));
         if (!color_result.has_value()) {
-            return ChainableResult<Palette<Rgba32>>{
+            return ChainableResult<Palette<Rgba32, pal::max_size>>{
                 FormattableError{
                     "{}: error parsing color on line {}", FormatParam{path.c_str()}, FormatParam{color_index + 4}},
                 color_result};
         }
-        pal.add(color_result.value());
+        pal.set(color_result.value(), color_index);
         color_index++;
     }
 

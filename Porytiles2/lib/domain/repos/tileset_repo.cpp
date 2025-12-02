@@ -55,8 +55,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (unsigned int i = 0; i < pal::num_pals; i++) {
-        const auto pal_key = key_provider_->key_for_pal_n(tileset.name(), i);
-        if (auto result = writer_->write_pal_n(pal_key, tileset, i); !result.has_value()) {
+        const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset.name(), i);
+        if (auto result = writer_->write_porymap_pal_n(pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
             auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
@@ -173,7 +173,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     for (unsigned int i = 0; i < pal::num_pals; i++) {
-        const auto pal_key = key_provider_->key_for_pal_n(tileset->name(), i);
+        const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset->name(), i);
         if (!key_provider_->artifact_exists(pal_key)) {
             diag_->err(
                 missing_required_artifact_tag,
@@ -181,7 +181,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             fail_at_exit = true;
             continue;
         }
-        const auto pal_result = reader_->read_pal_n(*tileset, pal_key, i);
+        const auto pal_result = reader_->read_porymap_pal_n(*tileset, pal_key, i);
         if (!pal_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{fmt::format("failed to read {}", pal_key.key())}, pal_result};
@@ -271,9 +271,9 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     for (unsigned int i = 0; i < pal::num_pals; i++) {
-        const auto override_key = key_provider_->key_for_pal_override_n(tileset->name(), i);
+        const auto override_key = key_provider_->key_for_porytiles_pal_n(tileset->name(), i);
         if (key_provider_->artifact_exists(override_key)) {
-            const auto result = reader_->read_pal_override_n(*tileset, override_key, i);
+            const auto result = reader_->read_porytiles_pal_n(*tileset, override_key, i);
             if (!result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>{
                     FormattableError{fmt::format("failed to read {}", override_key.key())}, result};
