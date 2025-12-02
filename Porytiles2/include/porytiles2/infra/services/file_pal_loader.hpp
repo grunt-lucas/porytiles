@@ -21,6 +21,9 @@ class FilePalLoader {
 
     [[nodiscard]] virtual ChainableResult<Palette<Rgba32, pal::max_size>>
     load(const std::filesystem::path &path) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<Palette<Rgba32, pal::max_size>>
+    load_with_wildcards(const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles2

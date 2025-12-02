@@ -3,6 +3,7 @@
 #include <expected>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 
 #include "fmt/format.h"
 
@@ -14,8 +15,17 @@ namespace {
 
 using namespace porytiles2;
 
-ChainableResult<Rgba32> parse_jasc_line(std::string_view line)
+bool is_wildcard_marker(std::string_view line)
 {
+    return line == "*";
+}
+
+ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line)
+{
+    if (is_wildcard_marker(line)) {
+        return std::optional<Rgba32>{std::nullopt};
+    }
+
     std::vector<std::string> color_components = split(std::string{line}, " ");
 
     if (color_components.size() != 3) {
@@ -53,18 +63,14 @@ ChainableResult<Rgba32> parse_jasc_line(std::string_view line)
         return FormattableError{fmt::format("invalid rgb blue component '{}': range must be 0 <= blue <= 255", blue)};
     }
 
-    return Rgba32{
+    return std::optional{Rgba32{
         static_cast<std::uint8_t>(red),
         static_cast<std::uint8_t>(green),
         static_cast<std::uint8_t>(blue),
-        Rgba32::alpha_opaque};
+        Rgba32::alpha_opaque}};
 }
 
-} // namespace
-
-namespace porytiles2 {
-
-ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::filesystem::path &path) const
+ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(const std::filesystem::path &path, bool allow_wildcards)
 {
     if (!exists(path)) {
         return FormattableError{fmt::format("does not exist: {}", path.string())};
@@ -107,14 +113,30 @@ ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::f
     // Rest of file lines are the colors
     unsigned int color_index = 0;
     while (std::getline(stream, line_buf)) {
-        const auto color_result = parse_jasc_line(trim_line_ending(line_buf));
+        const auto trimmed_line = trim_line_ending(line_buf);
+        const auto color_result = parse_jasc_line(trimmed_line);
         if (!color_result.has_value()) {
             return ChainableResult<Palette<Rgba32, pal::max_size>>{
                 FormattableError{
                     "{}: error parsing color on line {}", FormatParam{path.c_str()}, FormatParam{color_index + 4}},
                 color_result};
         }
-        pal.set(color_result.value(), color_index);
+
+        const auto &maybe_color = color_result.value();
+        if (maybe_color.has_value()) {
+            pal.set(maybe_color.value(), color_index);
+        }
+        else {
+            // Wildcard marker encountered
+            if (!allow_wildcards) {
+                return FormattableError{fmt::format(
+                    "{}: wildcard '{}' not allowed on line {} (use load_with_wildcards to allow)",
+                    path.c_str(),
+                    trimmed_line,
+                    color_index + 4)};
+            }
+            pal.set_wildcard(color_index);
+        }
         color_index++;
     }
 
@@ -124,6 +146,21 @@ ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::f
     }
 
     return pal;
+}
+
+} // namespace
+
+namespace porytiles2 {
+
+ChainableResult<Palette<Rgba32, pal::max_size>>
+JascPalLoader::load_with_wildcards(const std::filesystem::path &path) const
+{
+    return parse_jasc_file(path, true);
+}
+
+ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::filesystem::path &path) const
+{
+    return parse_jasc_file(path, false);
 }
 
 } // namespace porytiles2
