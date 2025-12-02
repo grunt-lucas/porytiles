@@ -1,7 +1,6 @@
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 
 #include <fstream>
-#include <ranges>
 
 #include "fmt/format.h"
 
@@ -24,14 +23,12 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
     stream << "0100\r\n";
     stream << pal.size() << "\r\n";
 
-    if (pal.size() >= 1) {
-        // First, write slot 0 color
-        stream << pal.slot_zero_color().to_jasc_str() << "\r\n";
-
-        // Then write remaining colors (indices 1 through size-1) in order
-        const auto index_to_color = pal.index_to_color_map();
-        for (const auto &color : index_to_color | std::views::values) {
-            stream << color.to_jasc_str() << "\r\n";
+    for (std::size_t i = 0; i < pal.size(); i++) {
+        if (pal.is_wildcard(i)) {
+            stream << "*\r\n";
+        }
+        else {
+            stream << pal.at(i).to_jasc_str() << "\r\n";
         }
     }
 

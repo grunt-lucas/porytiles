@@ -17,18 +17,18 @@ Uses CMake with C++23 standard. The build system requires:
 - CMake 3.20+
 - `zlib` and `libpng` static libraries
 - GoogleTest for unit testing
+- DO NOT, I REPEAT, DO NOT, LOOK FOR A CMAKE BUILD DIRECTORY CALLED `build`, LOOK FOR EITHER `vscode-build` OR `clion-build-debug`
 
 ### Build Commands
 ```bash
 # Configure debug build
-cmake -B vscode-build -DCMAKE_BUILD_TYPE=Debug
+cmake -B clion-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 # Configure debug build with coverage
-cmake -B vscode-build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
+cmake -B clion-build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
 # Build project
-cmake --build vscode-build -j7
-# Note: build folder may also be called `clion-build-debug`
+cmake --build clion-build-debug -j7
 ```
 
 ## Testing
