@@ -362,7 +362,17 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 ChainableResult<void>
 ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
 {
-    // TODO: implement
+    if (src.porytiles_component().pal_at(index).has_value()) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            transaction_dest_path,
+            compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+            "failed to compute transaction dest path",
+            void);
+
+        return save_palette(src.porytiles_component().pal_at(index).value(), transaction_dest_path, *pal_saver_);
+    }
+
+    // No porytiles pal, do nothing
     return {};
 }
 

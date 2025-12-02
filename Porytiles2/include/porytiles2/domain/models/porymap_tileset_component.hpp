@@ -37,9 +37,9 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(unsigned int pal_index, Palette<Rgba32, pal::max_size> pal);
+    void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);
 
-    [[nodiscard]] const Palette<Rgba32, pal::max_size> &pal_at(unsigned int pal_index) const;
+    [[nodiscard]] const Palette<Rgba32, pal::max_size> &pal_at(std::size_t pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 

@@ -10,6 +10,22 @@
 
 namespace porytiles2 {
 
+void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
+{
+    if (pal_index >= pal::num_pals) {
+        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+    }
+    pals_[pal_index] = std::move(pal);
+}
+
+const std::optional<Palette<Rgba32, pal::max_size>> &PorytilesTilesetComponent::pal_at(std::size_t pal_index) const
+{
+    if (pal_index >= pal::num_pals) {
+        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+    }
+    return pals_[pal_index];
+}
+
 bool PorytilesTilesetComponent::is_empty() const
 {
     return bottom_.size() == 0 && middle_.size() == 0 && top_.size() == 0;

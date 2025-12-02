@@ -1,7 +1,6 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
-- Implement Porytiles palette loading and saving
 - Make Porytiles yaml config a first class type (vector<string> file lines is fine)
 - Make PLA files a first class type in Porymap component (need a domain type for PLA)
 - `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
@@ -20,6 +19,11 @@
   - input: list of PackablePals built from Porymap and Porytiles pals, list of PaletteHints
   - output: list of packed palettes
   - client code of PalettePacker should never see nor deal with internal types, it should be pals in and pals out
+
+## Project Structure Refactor
+- domain layer is getting way too crowded
+- break it up into `config`, `core`, `tileset`, `layout`, `packing`
+- each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
 
 ## Start building animation system
 

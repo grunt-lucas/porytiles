@@ -32,10 +32,12 @@ tileset:
       algorithm: bfs
       prune: dynamic
       hints:
-        - name: "foliage"
-          colors:
-            - [ 12, 190, 20 ]
-            - [ 40, 210, 10 ]
+        enabled: true
+        values:
+          - name: "foliage"
+            colors:
+              - [ 12, 190, 20 ]
+              - [ 40, 210, 10 ]
 
     # Set tile sharing optimization mode
     # Allowed values:

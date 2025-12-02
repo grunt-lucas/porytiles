@@ -157,7 +157,7 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
 }
 
 ChainableResult<void>
-import_palette(Tileset &dest, const ArtifactKey &src_key, unsigned int index, const FilePalLoader &loader)
+import_porymap_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
 {
     if (index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", index));
@@ -168,6 +168,22 @@ import_palette(Tileset &dest, const ArtifactKey &src_key, unsigned int index, co
         return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
     }
     dest.porymap_component().set_pal(index, pal_result.value());
+
+    return {};
+}
+
+ChainableResult<void>
+import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
+{
+    if (index >= pal::num_pals) {
+        panic(fmt::format("invalid pal index {}: out of range", index));
+    }
+
+    const auto pal_result = loader.load_with_wildcards(src_key.key());
+    if (!pal_result.has_value()) {
+        return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
+    }
+    dest.porytiles_component().set_pal(index, pal_result.value());
 
     return {};
 }
@@ -211,7 +227,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
 {
-    const auto result = import_palette(dest, src_key, index, *pal_loader_);
+    const auto result = import_porymap_palette(dest, src_key, index, *pal_loader_);
     if (!result.has_value()) {
         return ChainableResult<void>{FormattableError{fmt::format("could not import pal {}", index)}, result};
     }
@@ -271,7 +287,11 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
 {
-    panic("TODO: implement read_pal_override_n");
+    const auto result = import_porytiles_palette(dest, src_key, index, *pal_loader_);
+    if (!result.has_value()) {
+        return ChainableResult<void>{FormattableError{fmt::format("could not import pal {}", index)}, result};
+    }
+    return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(

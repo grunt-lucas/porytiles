@@ -24,10 +24,8 @@ namespace porytiles2 {
  * is the canonical 'data/tilesets' directory, but the implementation details handled by the reader, writer, and key
  * provider.
  */
-class TilesetRepo {
+class TilesetRepo final {
   public:
-    virtual ~TilesetRepo() = default;
-
     /**
      * @brief Constructs a TilesetRepo with the required dependencies.
      *

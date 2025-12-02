@@ -95,6 +95,15 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
+        const auto pal_key = key_provider_->key_for_porytiles_pal_n(tileset.name(), i);
+        if (auto result = writer_->write_porytiles_pal_n(pal_key, tileset, i); !result.has_value()) {
+            std::ignore = writer_->rollback();
+            auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
+            return ChainableResult<void>{failed, result};
+        }
+    }
+
     // Commit all writes atomically
     if (auto result = writer_->commit(); !result.has_value()) {
         // Commit failed, attempt rollback (though it may not be necessary after failed commit)

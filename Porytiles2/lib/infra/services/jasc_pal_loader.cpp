@@ -17,7 +17,8 @@ using namespace porytiles2;
 
 bool is_wildcard_marker(std::string_view line)
 {
-    return line == "*";
+    // allow '-' for backwards compatibility with Porytiles1, when writing pals we'll always use '*'
+    return line == "*" || line == "-";
 }
 
 ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line)
