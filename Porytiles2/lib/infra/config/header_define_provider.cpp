@@ -112,6 +112,19 @@ HeaderDefineProvider::extrinsic_transparency(ConfigScopeType /*type*/, const std
     return LayerValue<Rgba32>::not_provided();
 }
 
+LayerValue<bool> HeaderDefineProvider::pal_hints_enabled(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<bool>::not_provided();
+}
+
+LayerValue<std::vector<PaletteHint>>
+HeaderDefineProvider::pal_hints(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<PaletteHint>>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value

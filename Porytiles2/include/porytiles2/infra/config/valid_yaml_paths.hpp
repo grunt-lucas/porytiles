@@ -21,7 +21,6 @@ namespace porytiles2 {
  * This is auto-generated from config_schema.yaml - do not edit directly.
  */
 inline const std::unordered_set<std::string> valid_yaml_paths = {
-    "extrinsic_transparency",
     "fieldmap",
     "fieldmap.max_map_data_size",
     "fieldmap.num_metatiles_in_primary",
@@ -31,11 +30,18 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.num_tiles_in_primary",
     "fieldmap.num_tiles_per_metatile",
     "fieldmap.num_tiles_total",
-    "patch",
-    "patch.enabled",
-    "patch.palettes",
-    "patch.tiles",
-    "tiles_pal_mode",
+    "tileset",
+    "tileset.compile",
+    "tileset.compile.pal_packing",
+    "tileset.compile.pal_packing.pal_hints",
+    "tileset.compile.pal_packing.pal_hints.enabled",
+    "tileset.compile.pal_packing.pal_hints.hints",
+    "tileset.compile.patch",
+    "tileset.compile.patch.enabled",
+    "tileset.compile.patch.palettes",
+    "tileset.compile.patch.tiles",
+    "tileset.compile.tiles_pal_mode",
+    "tileset.extrinsic_transparency",
     "verify_checksums",
 };
 

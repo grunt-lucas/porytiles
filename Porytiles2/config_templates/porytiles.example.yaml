@@ -16,8 +16,9 @@ diagnostics:
     - "tile-color-count-violation"
   exclude_tags: [ ]
 
+verify_checksums: true
+
 tileset:
-  verify_checksums: true
   extrinsic_transparency: [ 255, 0, 255 ]
 
   compile:
@@ -31,9 +32,9 @@ tileset:
     pal_packing:
       algorithm: bfs
       prune: dynamic
-      hints:
+      pal_hints:
         enabled: true
-        values:
+        hints:
           - name: "foliage"
             colors:
               - [ 12, 190, 20 ]
@@ -72,8 +73,6 @@ tileset:
     transparency: extrinsic
 
 layout:
-  verify_checksums: true
-
   compile:
     foo: bar
 

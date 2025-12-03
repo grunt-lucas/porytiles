@@ -5,6 +5,8 @@
 #include <string>
 
 #include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "fmt/xchar.h"
 
 #include "porytiles2/utilities/panic/panic.hpp"
 
@@ -148,6 +150,31 @@ template <typename T>
 std::string pad_two_digits(T t)
 {
     return fmt::format("{:02}", t);
+}
+
+/**
+ * @brief Converts a vector to a string representation with curly brace delimiters.
+ *
+ * @details
+ * This function formats a vector as a comma-separated list enclosed in curly braces. For example,
+ * `to_string(std::vector<int>{1, 2, 3})` returns `"{1, 2, 3}"`.
+ *
+ * @tparam T The element type of the vector (must be formattable by fmt::format)
+ * @param vec The vector to convert to a string
+ * @return A string representation of the vector in the format "{elem1, elem2, ...}"
+ */
+template <typename T>
+std::string to_string(const std::vector<T> &vec)
+{
+    std::string result = "{";
+    for (std::size_t i = 0; i < vec.size(); ++i) {
+        if (i > 0) {
+            result += ", ";
+        }
+        result += to_string(vec[i]);
+    }
+    result += "}";
+    return result;
 }
 
 } // namespace porytiles2

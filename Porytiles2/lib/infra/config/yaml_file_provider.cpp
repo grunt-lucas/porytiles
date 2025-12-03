@@ -151,9 +151,33 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["extrinsic_transparency"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["extrinsic_transparency"]; },
         parse_rgba32,
         "extrinsic_transparency");
+}
+
+LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<bool>(
+        format_,
+        paths,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pal_packing"]["pal_hints"]["enabled"]; },
+        parse_bool,
+        "pal_hints_enabled");
+}
+
+LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<std::vector<PaletteHint>>(
+        format_,
+        paths,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pal_packing"]["pal_hints"]["hints"]; },
+        parse_pal_hints,
+        "pal_hints");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
@@ -175,7 +199,7 @@ LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, con
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["patch"]["enabled"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["enabled"]; },
         parse_bool,
         "patch_build_enabled");
 }
@@ -187,7 +211,7 @@ LayerValue<PatchTilesMode> YamlFileProvider::patch_tiles_mode(ConfigScopeType ty
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["patch"]["tiles"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["tiles"]; },
         parse_patch_tiles_mode,
         "patch_tiles_mode");
 }
@@ -199,7 +223,7 @@ LayerValue<PatchPalMode> YamlFileProvider::patch_pal_mode(ConfigScopeType type, 
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["patch"]["palettes"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["palettes"]; },
         parse_patch_pal_mode,
         "patch_pal_mode");
 }
@@ -211,7 +235,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tiles_pal_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["tiles_pal_mode"]; },
         parse_tiles_pal_mode,
         "tiles_pal_mode");
 }

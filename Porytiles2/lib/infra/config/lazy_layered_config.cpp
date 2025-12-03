@@ -9,6 +9,7 @@
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
@@ -201,6 +202,28 @@ LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::s
 }
 
 ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints_enabled(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::vector<PaletteHint>>>
+LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<PaletteHint>>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
+}
+
+ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
@@ -316,6 +339,20 @@ LazyLayeredConfig::extrinsic_transparency_provenance_chain(ConfigScopeType type,
 {
     return collect_provenance_chain<Rgba32>(
         [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::pal_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints_enabled(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<PaletteHint>>>
+LazyLayeredConfig::pal_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<PaletteHint>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

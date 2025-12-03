@@ -9,6 +9,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/config/patch_mode.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/valid_yaml_paths.hpp"
@@ -351,6 +352,112 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<Rgba32>::invalid(error, source, details);
+    }
+}
+
+LayerValue<std::vector<PaletteHint>> parse_pal_hints(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::vector<PaletteHint>>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            const auto error =
+                format->format("'{}' must be a sequence of palette hints", FormatParam{key, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<std::vector<PaletteHint>>::invalid(error, source, details);
+        }
+
+        std::vector<PaletteHint> hints;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            const auto &hint_node = node[i];
+
+            if (!hint_node.IsMap()) {
+                const auto hint_mark = hint_node.Mark();
+                const auto error = format->format(
+                    "'{}[{}]' must be a map with 'name' and 'colors' keys",
+                    FormatParam{key, Style::bold},
+                    FormatParam{i, Style::bold});
+                const auto source = make_source_string(format, file_path, hint_mark);
+                const auto hint_details = make_source_details(format, file_path, hint_mark);
+                return LayerValue<std::vector<PaletteHint>>::invalid(error, source, hint_details);
+            }
+
+            // Parse name field
+            const auto name_node = hint_node["name"];
+            if (!name_node.IsDefined()) {
+                const auto hint_mark = hint_node.Mark();
+                const auto error = format->format(
+                    "'{}[{}]' is missing required 'name' field", FormatParam{key, Style::bold}, FormatParam{i});
+                const auto source = make_source_string(format, file_path, hint_mark);
+                const auto hint_details = make_source_details(format, file_path, hint_mark);
+                return LayerValue<std::vector<PaletteHint>>::invalid(error, source, hint_details);
+            }
+            const auto name = name_node.as<std::string>();
+
+            // Parse colors field
+            const auto colors_node = hint_node["colors"];
+            if (!colors_node.IsDefined()) {
+                const auto hint_mark = hint_node.Mark();
+                const auto error = format->format(
+                    "'{}[{}]' is missing required 'colors' field", FormatParam{key, Style::bold}, FormatParam{i});
+                const auto source = make_source_string(format, file_path, hint_mark);
+                const auto hint_details = make_source_details(format, file_path, hint_mark);
+                return LayerValue<std::vector<PaletteHint>>::invalid(error, source, hint_details);
+            }
+
+            if (!colors_node.IsSequence()) {
+                const auto colors_mark = colors_node.Mark();
+                const auto error = format->format(
+                    "'{}[{}].colors' must be a sequence of colors", FormatParam{key, Style::bold}, FormatParam{i});
+                const auto source = make_source_string(format, file_path, colors_mark);
+                const auto colors_details = make_source_details(format, file_path, colors_mark);
+                return LayerValue<std::vector<PaletteHint>>::invalid(error, source, colors_details);
+            }
+
+            // Parse each color
+            std::vector<Rgba32> colors;
+            for (std::size_t j = 0; j < colors_node.size(); ++j) {
+                const auto &color_node = colors_node[j];
+
+                if (!color_node.IsSequence() || color_node.size() < 3 || color_node.size() > 4) {
+                    const auto color_mark = color_node.Mark();
+                    const auto error = format->format(
+                        "'{}[{}].colors[{}]' must be [r, g, b] or [r, g, b, a]",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{j});
+                    const auto source = make_source_string(format, file_path, color_mark);
+                    const auto color_details = make_source_details(format, file_path, color_mark);
+                    return LayerValue<std::vector<PaletteHint>>::invalid(error, source, color_details);
+                }
+
+                const auto r = color_node[0].as<std::uint8_t>();
+                const auto g = color_node[1].as<std::uint8_t>();
+                const auto b = color_node[2].as<std::uint8_t>();
+                const auto a = (color_node.size() == 4) ? color_node[3].as<std::uint8_t>() : Rgba32::alpha_opaque;
+
+                colors.emplace_back(r, g, b, a);
+            }
+
+            hints.emplace_back(name, Palette<Rgba32>{std::move(colors)});
+        }
+
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<std::vector<PaletteHint>>::valid(std::move(hints), source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("failed to parse '{}' as palette hints: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::vector<PaletteHint>>::invalid(error, source, details);
     }
 }
 

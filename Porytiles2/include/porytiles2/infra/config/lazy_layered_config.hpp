@@ -12,6 +12,7 @@
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
@@ -111,6 +112,12 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
+    pal_hints_raw(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * App Config Raw Methods (Tier 1)
@@ -277,6 +284,36 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<Rgba32>>
     extrinsic_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for pal_hints_enabled.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    pal_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for pal_hints.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::vector<PaletteHint>>>
+    pal_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for verify_checksums.

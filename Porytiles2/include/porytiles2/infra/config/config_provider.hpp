@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
@@ -64,6 +65,11 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
+    pal_hints(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config

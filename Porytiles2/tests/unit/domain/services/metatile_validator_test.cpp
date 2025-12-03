@@ -4,6 +4,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/services/metatile_validator.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
@@ -69,6 +70,18 @@ class MockDomainConfig : public DomainConfig {
     extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue<Rgba32>{rgba_magenta, "extrinsic_transparency", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    pal_hints_enabled_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<bool>{false, "pal_hints_enabled", "default value", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
+    pal_hints_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue<std::vector<PaletteHint>>{{}, "pal_hints", "default value", {}};
     }
 };
 

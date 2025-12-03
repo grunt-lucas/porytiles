@@ -127,7 +127,27 @@ config_values:
     layer: domain
     default_value: "rgba_magenta"
     yaml:
-      path: extrinsic_transparency
+      path: tileset.extrinsic_transparency
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pal_hints_enabled
+    type: bool
+    parser: parse_bool
+    layer: domain
+    default_value: "true"
+    yaml:
+      path: tileset.compile.pal_packing.pal_hints.enabled
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pal_hints
+    type: std::vector<PaletteHint>
+    parser: parse_pal_hints
+    layer: domain
+    default_value: "std::vector<PaletteHint>{}"
+    yaml:
+      path: tileset.compile.pal_packing.pal_hints.hints
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -148,7 +168,7 @@ config_values:
     layer: app
     default_value: "false"
     yaml:
-      path: patch.enabled
+      path: tileset.compile.patch.enabled
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -158,7 +178,7 @@ config_values:
     layer: app
     default_value: "PatchTilesMode::fixed"
     yaml:
-      path: patch.tiles
+      path: tileset.compile.patch.tiles
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -168,7 +188,7 @@ config_values:
     layer: app
     default_value: "PatchPalMode::fixed"
     yaml:
-      path: patch.palettes
+      path: tileset.compile.patch.palettes
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -179,6 +199,6 @@ config_values:
     layer: infra
     default_value: "TilesPalMode::true_color"
     yaml:
-      path: tiles_pal_mode
+      path: tileset.compile.tiles_pal_mode
     validators: [ ]
     cross_field_validators: [ ]

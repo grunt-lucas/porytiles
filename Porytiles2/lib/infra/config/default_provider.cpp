@@ -73,6 +73,18 @@ LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::valid(rgba_magenta, source_info);
 }
 
+LayerValue<bool> DefaultProvider::pal_hints_enabled(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(true, source_info);
+}
+
+LayerValue<std::vector<PaletteHint>>
+DefaultProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<PaletteHint>>::valid(std::vector<PaletteHint>{}, source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
