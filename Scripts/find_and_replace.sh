@@ -32,7 +32,9 @@ if [ -f "$TARGET" ]; then
     echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
 elif [ -d "$TARGET" ]; then
     # Directory - process recursively
-    find "$TARGET" -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) -exec sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" {} +
+    find "$TARGET" \
+        -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' -o -name '*.ipp' -o -name '*.cpp.jinja2' -o -name '*.hpp.jinja2' \) \
+        -exec sed "${SED_INPLACE[@]}" "s|$FIND_STRING|$REPLACE_STRING|g" {} +
     echo "Replacement complete: '$FIND_STRING' -> '$REPLACE_STRING' in $TARGET"
 else
     echo "Error: '$TARGET' is neither a file nor a directory"
