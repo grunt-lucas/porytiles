@@ -70,6 +70,10 @@ class PackableTile {
         std::size_t index_;
     };
 
+    /*
+     * TODO: add AnimId once we implement anims
+     */
+
     /**
      * @brief Identifies a regular input tile.
      */
@@ -227,3 +231,28 @@ class PackableTile {
 };
 
 } // namespace porytiles2
+
+// Hash specializations for Id types (enables std::hash<PackableTile::Id>)
+template <>
+struct std::hash<porytiles2::PackableTile::HintId> {
+    std::size_t operator()(const porytiles2::PackableTile::HintId &id) const noexcept
+    {
+        return std::hash<std::string>{}(id.name);
+    }
+};
+
+template <>
+struct std::hash<porytiles2::PackableTile::PrefilledPaletteId> {
+    std::size_t operator()(const porytiles2::PackableTile::PrefilledPaletteId &id) const noexcept
+    {
+        return std::hash<std::size_t>{}(id.index());
+    }
+};
+
+template <>
+struct std::hash<porytiles2::PackableTile::RegularId> {
+    std::size_t operator()(const porytiles2::PackableTile::RegularId &id) const noexcept
+    {
+        return std::hash<std::size_t>{}(id.index);
+    }
+};
