@@ -86,6 +86,103 @@ class ColorSet {
     std::bitset<num_colors> colors_;
 };
 
+// ============================================================================
+// Free functions for ColorSet operations
+// ============================================================================
+
+/**
+ * @brief Computes the union of two ColorSets.
+ *
+ * @details
+ * Returns a new ColorSet containing all colors present in either set.
+ *
+ * @param a The first ColorSet
+ * @param b The second ColorSet
+ * @return A ColorSet containing the union of both sets
+ */
+[[nodiscard]] ColorSet color_set_union(const ColorSet &a, const ColorSet &b);
+
+/**
+ * @brief Computes the intersection of two ColorSets.
+ *
+ * @details
+ * Returns a new ColorSet containing only colors present in both sets.
+ *
+ * @param a The first ColorSet
+ * @param b The second ColorSet
+ * @return A ColorSet containing the intersection of both sets
+ */
+[[nodiscard]] ColorSet color_set_intersection(const ColorSet &a, const ColorSet &b);
+
+/**
+ * @brief Counts the number of colors in a ColorSet.
+ *
+ * @details
+ * Returns the number of bits set to true in the ColorSet.
+ *
+ * @param set The ColorSet to count
+ * @return The number of colors in the set
+ */
+[[nodiscard]] std::size_t color_set_count(const ColorSet &set);
+
+/**
+ * @brief Checks if one ColorSet is a subset of another.
+ *
+ * @details
+ * Returns true if every color in set 'a' is also present in set 'b'. An empty set is a subset of any set.
+ *
+ * @param a The potential subset
+ * @param b The potential superset
+ * @return true if a is a subset of b, false otherwise
+ */
+[[nodiscard]] bool is_subset(const ColorSet &a, const ColorSet &b);
+
+/**
+ * @brief Computes the intersection size between two ColorSets.
+ *
+ * @details
+ * Returns the count of colors present in both sets.
+ *
+ * @param a The first ColorSet
+ * @param b The second ColorSet
+ * @return The number of colors in the intersection
+ */
+[[nodiscard]] std::size_t intersection_size(const ColorSet &a, const ColorSet &b);
+
+/**
+ * @brief Computes the union size of two ColorSets.
+ *
+ * @details
+ * Returns the count of colors present in either set.
+ *
+ * @param a The first ColorSet
+ * @param b The second ColorSet
+ * @return The number of colors in the union
+ */
+[[nodiscard]] std::size_t union_size(const ColorSet &a, const ColorSet &b);
+
+/**
+ * @brief Iterates over each color index in a ColorSet.
+ *
+ * @details
+ * Calls the provided function for each color index that is set in the ColorSet. The function is called with a
+ * std::size_t representing the color index.
+ *
+ * @tparam Func A callable type accepting std::size_t
+ * @param set The ColorSet to iterate over
+ * @param func The function to call for each set color index
+ */
+template <typename Func>
+void for_each_color(const ColorSet &set, Func &&func)
+{
+    const auto &bits = set.colors();
+    for (std::size_t i = 0; i < num_colors; ++i) {
+        if (bits.test(i)) {
+            func(i);
+        }
+    }
+}
+
 } // namespace porytiles2
 
 /**
