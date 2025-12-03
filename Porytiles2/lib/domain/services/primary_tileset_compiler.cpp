@@ -28,6 +28,7 @@
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
+#include "porytiles2/xcut/di/components.hpp"
 
 namespace {
 
@@ -68,7 +69,7 @@ class PatchCompilerTask {
     // Subtasks and helpers
     [[nodiscard]] ChainableResult<void> process_porytiles_input();
     [[nodiscard]] ChainableResult<void> process_porymap_input();
-    void setup_working_data();
+    [[nodiscard]] ChainableResult<void> setup_working_data();
     [[nodiscard]] ChainableResult<void> match_tiles();
     void emit_no_matching_tile_error(std::size_t tile_index);
     void emit_no_matching_pal_error(std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
@@ -92,6 +93,8 @@ class PatchCompilerTask {
     ConfigValue<std::size_t> num_metatiles_in_primary_;
     ConfigValue<std::size_t> num_tiles_in_primary_;
     ConfigValue<std::size_t> num_tiles_per_metatile_;
+    ConfigValue<bool> pal_hints_enabled_;
+    ConfigValue<std::vector<PaletteHint>> pal_hints_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -119,6 +122,8 @@ ChainableResult<std::unique_ptr<Tileset>> PatchCompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -126,13 +131,15 @@ ChainableResult<std::unique_ptr<Tileset>> PatchCompilerTask::run()
     num_metatiles_in_primary_ = num_metatiles_in_primary;
     num_tiles_in_primary_ = num_tiles_in_primary;
     num_tiles_per_metatile_ = num_tiles_per_metatile;
+    pal_hints_enabled_ = pal_hints_enabled;
+    pal_hints_ = pal_hints;
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(process_porytiles_input(), std::unique_ptr<Tileset>);
 
     PT_TRY_CALL_PASS_ERR(process_porymap_input(), std::unique_ptr<Tileset>);
 
-    setup_working_data();
+    PT_TRY_CALL_PASS_ERR(setup_working_data(), std::unique_ptr<Tileset>);
 
     PT_TRY_CALL_PASS_ERR(match_tiles(), std::unique_ptr<Tileset>);
 
@@ -202,21 +209,16 @@ ChainableResult<void> PatchCompilerTask::process_porymap_input()
     return {};
 }
 
-void PatchCompilerTask::setup_working_data()
+ChainableResult<void> PatchCompilerTask::setup_working_data()
 {
     if (pal_mode_ == PatchPalMode::free) {
         /*
-         * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch
-         * build.
+         * Create ColorIndexMap from the Porytiles tiles.
          */
-        // ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
+        ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
 
         /*
-         * Create canonical ShapeTile vectors from porytiles input. Create canonical ShapeTile vectors from porytiles
-         * input. We don't actually need this for tiles:fixed pals:fixed builds. We don't actually need this for
-         * tiles:fixed pals:fixed builds. But if we were going to do pal assignment, we'd need
-         * std::vector<CanonicalShapeTile<ColorIndex>>. If pals weren't fixed, here we'd want to do bin packing to get
-         * new colors into the pals with the Porymap pals used as overrides in the packing process.
+         * TODO: create canonical ShapeTile vectors here once we implement 'tile_sharing:' config option
          */
         // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
         //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32>
@@ -227,7 +229,26 @@ void PatchCompilerTask::setup_working_data()
         //     porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
         //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
         //     });
-        // TODO: do vm packing palette assignment here?
+
+        // ClassicDfsStrategy packing_strategy{};
+        // PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
+        //
+        // std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() :
+        // std::vector<PaletteHint>{};
+        //
+        // PT_TRY_ASSIGN_CHAIN_ERR(
+        //     pal_packing,
+        //     pal_packer.pack_tiles(
+        //         porytiles_pixel_rgba_,
+        //         color_index_map,
+        //         extrinsic_transparency_.value(),
+        //         tileset_.porytiles_component().pals(),
+        //         hints,
+        //         num_pals_in_primary_.value(),
+        //         num_pals_total_.value()),
+        //     "failed to pack palettes for tileset " + tileset_.name(),
+        //     void);
+
         panic("TODO: implement PatchPalMode::pals_free");
     }
 
@@ -271,6 +292,8 @@ void PatchCompilerTask::setup_working_data()
     // Create tiles workspace
     tiles_workspace_ =
         std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), num_tiles_in_primary_);
+
+    return {};
 }
 
 ChainableResult<void> PatchCompilerTask::match_tiles()
@@ -544,6 +567,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     LayerImageMetatileizer<Rgba32> metatileizer{};
     MetatileValidator validator{format_, diag_, tile_printer_, pal_printer_, config_, tileset.name()};
     LayerModeConverter layer_converter{format_, diag_, tile_printer_, extrinsic_transparency};
+    // ClassicDfsStrategy packing_strategy{};
+    // PalettePacker pal_packer{&packing_strategy, format_, diag_};
 
     // Convert layer images into vector<RgbaMetatile>
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -560,6 +585,10 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
         validator.validate_primary(metatiles),
         "encountered error(s) while validating Porytiles metatiles",
         std::unique_ptr<Tileset>);
+
+    // Decompose Porytiles metatiles and generate canonical versions
+    const auto porytiles_pixel_rgba = metatile::decompose(metatiles);
+    const auto porytiles_canonical_pixel_rgba = transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
 
     /*
      * TODO: compute the inferred layer type and save it into a vector for later. Above, we already validated that all
@@ -579,9 +608,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 
     // Create color index map from vector<RgbaTile>
-    // TODO: impl
-
-    // Throw error if ColorIndexMap has too many unique colors
+    ColorIndexMap<Rgba32> color_index_map{porytiles_pixel_rgba, extrinsic_transparency};
 
     // Create PackSets for the bin packing step
     // const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
