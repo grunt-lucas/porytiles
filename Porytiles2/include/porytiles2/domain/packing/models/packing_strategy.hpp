@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
+#include "porytiles2/domain/packing/models/packed_palette.hpp"
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -63,6 +64,28 @@ struct PackingInput {
 };
 
 /**
+ * @brief The final palette assignments after a successful packing operation.
+ */
+struct PackingOutput {
+    /**
+     * @brief The packed palettes with their colors and assigned tiles.
+     *
+     * @details
+     * Each PackedPalette contains the accumulated colors and the map of tile IDs assigned to that palette.
+     */
+    std::vector<PackedPalette> palettes_;
+
+    /**
+     * @brief Maps tile IDs to their assigned hardware palette indices.
+     *
+     * @details
+     * This provides a quick lookup for finding which palette a specific tile was assigned to. The mapped value is the
+     * hardware palette index (i.e., `PackedPalette::hardware_index()`), NOT the index into the `palettes_` vector.
+     */
+    std::map<PackableTile::Id, std::size_t> tile_to_palette_;
+};
+
+/**
  * @brief Abstract interface for palette packing algorithms.
  *
  * @details
@@ -84,10 +107,9 @@ class PackingStrategy {
      * palette's capacity.
      *
      * @param input The packing input containing tiles, hints, fixed slots, and constraints
-     * @return A PackingResult on success, or an error if packing is not possible
+     * @return A PackingOutput on success, or an error if packing is not possible
      */
-    // TODO: this should return our result type and take our input type
-    [[nodiscard]] virtual ChainableResult<void> pack(const PackingInput &input) const = 0;
+    [[nodiscard]] virtual ChainableResult<PackingOutput> pack(const PackingInput &input) const = 0;
 
     /**
      * @brief Returns the human-readable name of this strategy.

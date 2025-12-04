@@ -30,14 +30,24 @@ class PackedPalette {
      */
     explicit PackedPalette(std::size_t hardware_index, std::size_t capacity = pal::max_size - 1);
 
+    [[nodiscard]] bool operator==(const PackedPalette &other) const
+    {
+        return hardware_index_ == other.hardware_index_;
+    }
+
+    [[nodiscard]] std::strong_ordering operator<=>(const PackedPalette &other) const
+    {
+        return hardware_index_ <=> other.hardware_index_;
+    }
+
     /**
      * @brief Gets the palette's hardware index.
      *
      * @return The hardware palette index
      */
-    [[nodiscard]] std::size_t hw_index() const
+    [[nodiscard]] std::size_t hardware_index() const
     {
-        return hw_index_;
+        return hardware_index_;
     }
 
     /**
@@ -120,7 +130,7 @@ class PackedPalette {
     void remove_tile(const PackableTile &tile);
 
   private:
-    std::size_t hw_index_;
+    std::size_t hardware_index_;
     std::size_t capacity_;
     ColorSet color_set_;
     std::vector<PackableTile::Id> assigned_tile_ids_;

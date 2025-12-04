@@ -8,7 +8,7 @@
 namespace porytiles2 {
 
 PackedPalette::PackedPalette(std::size_t hardware_index, std::size_t capacity)
-    : hw_index_{hardware_index}, capacity_{capacity}, color_set_{}, assigned_tile_ids_{}
+    : hardware_index_{hardware_index}, capacity_{capacity}, color_set_{}, assigned_tile_ids_{}
 {
 }
 
