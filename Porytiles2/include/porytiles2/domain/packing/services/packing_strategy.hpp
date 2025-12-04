@@ -7,6 +7,7 @@
 
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 #include "porytiles2/domain/packing/models/packed_palette.hpp"
+#include "porytiles2/domain/packing/models/palette_pool.hpp"
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -55,7 +56,7 @@ struct PackingInput {
      * Fixing" case (see topic_staging_area.md), a technique used in the community to expand available primary tileset
      * colors without modifying fieldmap parameters.
      */
-    std::bitset<pal::num_pals> available_palettes_{};
+    PalettePool pal_pool_;
 
     /**
      * @brief Maximum number of colors per palette.

@@ -138,10 +138,13 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     filled_slots.insert(0); // Slot 0 was filled above
 
     // Preserve non-wildcard slots from prefilled input palette
+    // TODO
 
     // Collect colors from PackedPalette that still need to be placed
+    // TODO
 
     // Place remaining colors in available slots
+    // TODO
 }
 
 } // namespace
@@ -177,9 +180,12 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     }
 
     // === STEP 4: Create PackingInput and call low-level pack() ===
-    // TODO: set up available_pals_ bitset properly
+    // TODO: set up PalettePool properly
     PackingInput packing_input{
-        std::move(regular_tiles), std::move(hint_tiles), std::move(prefilled_palettes), std::bitset<pal::num_pals>{}};
+        std::move(regular_tiles),
+        std::move(hint_tiles),
+        std::move(prefilled_palettes),
+        PalettePool{std::bitset<pal::num_pals>{}}};
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         packing_output, strategy_->pack(packing_input), "low-level palette packing failed", PalettePacking);
@@ -197,6 +203,12 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
         }
         // TODO: use build_output_palette to turn packed_pal into the output pal at hw_index
     }
+
+    /*
+     * TODO: above, we built output pals from all the pals that got explicitly packed. But what about pals that got
+     * filled via Porytiles pal overrides (or primary pals in the secondary case). We need to think about this very
+     * carefully. We'll need to think through how we populate the bitset for the PalettePool above.
+     */
 
     return packing;
 }

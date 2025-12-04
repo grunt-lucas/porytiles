@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <cstdlib>
+#include <filesystem>
 #include <source_location>
 #include <string_view>
 
@@ -54,8 +55,9 @@ struct StringViewSourceLoc {
  */
 [[noreturn]] inline void panic(const StringViewSourceLoc &s)
 {
+    const std::filesystem::path path{s.loc_.file_name()};
     const auto msg =
-        fmt::format("{}:{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.function_name(), s.loc_.line(), s.msg_);
+        fmt::format("{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
     std::fputs(msg.c_str(), stderr);
     std::abort();
 }
@@ -73,8 +75,9 @@ struct StringViewSourceLoc {
 inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s)
 {
     if (!condition) {
-        const auto msg =
-            fmt::format("{}:{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.function_name(), s.loc_.line(), s.msg_);
+        const std::filesystem::path path{s.loc_.file_name()};
+        const auto msg = fmt::format(
+            "{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
         std::fputs(msg.c_str(), stderr);
         std::abort();
     }
