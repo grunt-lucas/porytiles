@@ -137,11 +137,11 @@ TEST(PaletteCommonTests, SetReplacesColorAtIndex)
     Palette<Rgba32> dynamic_pal{};
     dynamic_pal.add(Rgba32{0, 0, 0, 255});
     dynamic_pal.add(Rgba32{0, 0, 0, 255});
-    dynamic_pal.set(Rgba32{255, 0, 0, 255}, 1);
+    dynamic_pal.set(1, Rgba32{255, 0, 0, 255});
     EXPECT_EQ(dynamic_pal.at(1), Rgba32(255, 0, 0, 255));
 
     Palette<Rgba32, 4> fixed_pal{Rgba32{0, 0, 0, 255}};
-    fixed_pal.set(Rgba32{0, 255, 0, 255}, 2);
+    fixed_pal.set(2, Rgba32{0, 255, 0, 255});
     EXPECT_EQ(fixed_pal.at(2), Rgba32(0, 255, 0, 255));
 }
 
@@ -287,10 +287,10 @@ TEST(PaletteMapTests, IndexToColorMapSkipsSlot0AndWildcards)
 TEST(PaletteMapTests, MapsOnFixedPaletteWithWildcards)
 {
     Palette<Rgba32, 4> pal{};
-    pal.set(Rgba32{0, 0, 0, 255}, 0);       // slot 0 - skipped
-    pal.set(Rgba32{100, 100, 100, 255}, 1); // slot 1 - included
+    pal.set(0, Rgba32{0, 0, 0, 255});       // slot 0 - skipped
+    pal.set(1, Rgba32{100, 100, 100, 255}); // slot 1 - included
     // slot 2 remains wildcard - skipped
-    pal.set(Rgba32{200, 200, 200, 255}, 3); // slot 3 - included
+    pal.set(3, Rgba32{200, 200, 200, 255}); // slot 3 - included
 
     auto color_map = pal.color_to_index_map();
     auto index_map = pal.index_to_color_map();
@@ -349,7 +349,7 @@ TEST(PaletteDeathTests, SetPanicsOnOutOfBoundsIndex)
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
 
-    EXPECT_DEATH(pal.set(Rgba32{255, 255, 255, 255}, 1), ">=");
+    EXPECT_DEATH(pal.set(1, Rgba32{255, 255, 255, 255}), ">=");
 }
 
 TEST(PaletteDeathTests, SetWildcardPanicsOnOutOfBoundsIndex)

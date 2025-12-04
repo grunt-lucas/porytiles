@@ -155,11 +155,11 @@ class Palette {
      * Replaces the slot at the given index with the provided color, making it a non-wildcard slot. Panics if the index
      * is out of bounds.
      *
-     * @param color The color to set
      * @param index The index at which to set the color
+     * @param color The color to set
      * @pre index must be less than size()
      */
-    void set(ColorType color, std::size_t index)
+    void set(std::size_t index, ColorType color)
     {
         if (index >= size()) {
             panic("index " + std::to_string(index) + " >= size " + std::to_string(size()));

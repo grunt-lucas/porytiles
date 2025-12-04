@@ -630,7 +630,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
 
     Image<IndexPixel> tiles_png{128, 128};
     Palette<Rgba32, pal::max_size> pal{rgba_red};
-    pal.set(extrinsic_transparency.value(), 0);
+    pal.set(0, extrinsic_transparency.value());
 
     new_porymap_component->tiles_png(tiles_png);
     for (unsigned int i = 0; i < pal::num_pals; i++) {

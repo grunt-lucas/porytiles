@@ -12,6 +12,9 @@
 
 namespace porytiles2 {
 
+/**
+ * @brief Input data aggregate for the low-level palette packing algorithm.
+ */
 struct PackingInput {
     /**
      * @brief Regular tiles to pack into palettes.
@@ -26,8 +29,8 @@ struct PackingInput {
      * @brief Priority "hint" tiles that can be assigned before regular tiles.
      *
      * @details
-     * Hints can optionally be processed first by the packing algorithm. This allows users to ensure certain ColorSets
-     * get priority placement in palettes.
+     * Hints can optionally be processed first by the packing algorithm. This allows users to ensure certain colors
+     * group together during packing.
      */
     std::vector<PackableTile> hints_{};
 
@@ -73,7 +76,7 @@ struct PackingOutput {
      * @details
      * Each PackedPalette contains the accumulated colors and the map of tile IDs assigned to that palette.
      */
-    std::vector<PackedPalette> palettes_;
+    std::vector<PackedPalette> pals_;
 
     /**
      * @brief Maps tile IDs to their assigned hardware palette indices.
@@ -82,7 +85,7 @@ struct PackingOutput {
      * This provides a quick lookup for finding which palette a specific tile was assigned to. The mapped value is the
      * hardware palette index (i.e., `PackedPalette::hardware_index()`), NOT the index into the `palettes_` vector.
      */
-    std::map<PackableTile::Id, std::size_t> tile_to_palette_;
+    std::map<PackableTile::Id, std::size_t> tile_to_pal_;
 };
 
 /**

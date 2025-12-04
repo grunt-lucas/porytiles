@@ -4,6 +4,7 @@
 #include <cstddef>
 
 #include "porytiles2/domain/models/color_set.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 
 namespace porytiles2 {
 
@@ -45,12 +46,12 @@ class PrefilledPalette {
      *
      * @param hardware_index The hardware palette index
      * @param fixed_colors The colors that are already locked in this palette
-     * @param total_capacity The total number of color slots
+     * @param total_capacity The total number of color slots (default pal::max_size - 1)
      * @return A partially locked PrefilledPalette
      * @pre fixed_colors.count() <= total_capacity
      */
     [[nodiscard]] static PrefilledPalette
-    partially_locked(std::size_t hardware_index, ColorSet fixed_colors, std::size_t total_capacity);
+    partially_locked(std::size_t hardware_index, ColorSet fixed_colors, std::size_t total_capacity = pal::max_size - 1);
 
     [[nodiscard]] bool operator==(const PrefilledPalette &other) const
     {

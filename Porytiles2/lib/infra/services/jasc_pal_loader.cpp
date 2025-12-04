@@ -125,7 +125,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(const std::files
 
         const auto &maybe_color = color_result.value();
         if (maybe_color.has_value()) {
-            pal.set(maybe_color.value(), color_index);
+            pal.set(color_index, maybe_color.value());
         }
         else {
             // Wildcard marker encountered
