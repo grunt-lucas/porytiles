@@ -300,7 +300,8 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
      * Porytiles overrides that don't correspond to one of the pals enabled for packing. E.g. if we are compiling
      * primary, so bits 0-5 are set in the PalettePool, but user has supplied 12.pal in the Porytiles palettes, warn
      * user that they've supplied an out-of-band palette due to configuration. Then say that this palette will still be
-     * copied over and all wildcards will receive default values.
+     * copied over and all wildcards will receive default values (or allow user to specify an alternate behavior via
+     * configuration).
      */
 
     return packing;
