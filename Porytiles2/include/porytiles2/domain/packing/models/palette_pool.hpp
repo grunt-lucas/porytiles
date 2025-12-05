@@ -14,7 +14,7 @@ namespace porytiles2 {
  * @details
  * PalettePool tracks which hardware palette slots (0-15) are available for use and which have been "checked out" by the
  * packing algorithm. The pool is initialized with a bitset indicating which slots are available (on bits). Indexes can
- * be checked out via check_out() and returned via check_in() in LIFO (stack) order.
+ * be checked out via check_out() and returned via checkin() in LIFO (stack) order.
  *
  * @invariant checked_out_ is always a subset of available_indexes_
  * @invariant checkout_stack_.size() == checked_out_.count()
@@ -56,7 +56,7 @@ class PalettePool {
      *
      * @details
      * Finds the lowest available index that hasn't been checked out, marks it as checked out, and returns it. The index
-     * is pushed onto an internal stack to support LIFO check_in behavior.
+     * is pushed onto an internal stack to support LIFO checkin behavior.
      *
      * @pre has_available_index() must be true
      * @return The checked-out hardware palette index

@@ -42,7 +42,7 @@ struct PackingInput {
      * These palettes represent hardware palettes that already have some colors assigned. The packer must work around
      * these constraints when assigning tiles.
      */
-    std::set<PrefilledPalette> prefilled_palettes_{};
+    std::set<PrefilledPalette> prefilled_pals_{};
 
     /**
      * @brief A bitset marking which palettes are available for editing.
@@ -64,7 +64,7 @@ struct PackingInput {
      * @details
      * GBA hardware palettes have 16 slots, but slot 0 is transparency, leaving 15 usable color slots. Default is 15.
      */
-    std::size_t palette_capacity_ = pal::max_size - 1;
+    std::size_t pal_capacity_ = pal::max_size - 1;
 };
 
 /**
