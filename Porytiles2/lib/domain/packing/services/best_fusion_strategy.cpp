@@ -106,9 +106,9 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
             PackedPalette pal{prefilled_pal.hardware_index(), input.pal_capacity_};
             ColorSet fixed_colors = prefilled_pal.fixed_colors();
             if (color_set_count(fixed_colors) > 0) {
-                // Pre-populate with fixed colors using a "system" tile with a special ID
-                const auto system_id = std::numeric_limits<std::size_t>::max() - prefilled_pal.hardware_index();
-                PackableTile system_tile{PackableTile::PrefilledPaletteId{system_id}, fixed_colors};
+                // Pre-populate with fixed colors using a "system" tile whose id matches the prefilled's hw index
+                PackableTile system_tile{
+                    PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()}, fixed_colors};
                 pal.add_tile(system_tile);
             }
             output.pals_.push_back(std::move(pal));
