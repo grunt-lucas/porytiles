@@ -23,6 +23,8 @@ namespace porytiles2 {
  * @brief The input parameters for a packing operation.
  */
 struct PackingParams {
+    // TODO: create a required ctor so default is deleted, prevent callers from screwing up
+
     // TODO: could the fields be refs or ptrs?
 
     /**
@@ -64,6 +66,8 @@ struct PackingParams {
  * after a successful packing operation.
  */
 struct PalettePacking {
+    PalettePacking() = default;
+
     /**
      * @brief The final hardware palettes with colors assigned.
      *

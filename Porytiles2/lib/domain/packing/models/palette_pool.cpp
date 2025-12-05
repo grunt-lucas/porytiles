@@ -17,7 +17,7 @@ bool PalettePool::is_available(std::size_t index) const
     return available_indexes_.test(index) && !checked_out_.test(index);
 }
 
-std::size_t PalettePool::check_out()
+std::size_t PalettePool::checkout()
 {
     if (!has_available_index()) {
         panic("called with no available indexes");
@@ -36,7 +36,7 @@ std::size_t PalettePool::check_out()
     panic("unreachable state");
 }
 
-void PalettePool::check_out(std::size_t index)
+void PalettePool::checkout(std::size_t index)
 {
     if (!is_available(index)) {
         panic("index is not available for checkout");
@@ -46,7 +46,7 @@ void PalettePool::check_out(std::size_t index)
     checkout_stack_.push_back(index);
 }
 
-void PalettePool::check_in()
+void PalettePool::checkin()
 {
     if (checkout_stack_.empty()) {
         panic("called with empty checkout stack");

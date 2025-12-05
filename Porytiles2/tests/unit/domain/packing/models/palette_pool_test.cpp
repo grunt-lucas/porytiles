@@ -62,7 +62,7 @@ TEST(PalettePoolHasAvailableTests, ReturnsFalseWhenAllCheckedOut)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
+    std::ignore = pool.checkout();
 
     EXPECT_FALSE(pool.has_available_index());
 }
@@ -74,10 +74,10 @@ TEST(PalettePoolHasAvailableTests, ReturnsTrueAfterCheckIn)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
+    std::ignore = pool.checkout();
     EXPECT_FALSE(pool.has_available_index());
 
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.has_available_index());
 }
 
@@ -117,7 +117,7 @@ TEST(PalettePoolIsAvailableTests, ReturnsFalseForCheckedOutIndex)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out(); // checks out 3
+    std::ignore = pool.checkout(); // checks out 3
     EXPECT_FALSE(pool.is_available(3));
     EXPECT_TRUE(pool.is_available(7));
 }
@@ -129,10 +129,10 @@ TEST(PalettePoolIsAvailableTests, ReturnsTrueAfterCheckIn)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
+    std::ignore = pool.checkout();
     EXPECT_FALSE(pool.is_available(5));
 
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.is_available(5));
 }
 
@@ -160,7 +160,7 @@ TEST(PalettePoolCheckOutTests, ReturnsLowestAvailableIndex)
 
     PalettePool pool{available};
 
-    EXPECT_EQ(pool.check_out(), 5);
+    EXPECT_EQ(pool.checkout(), 5);
 }
 
 TEST(PalettePoolCheckOutTests, ReturnsNextLowestAfterFirstCheckout)
@@ -172,9 +172,9 @@ TEST(PalettePoolCheckOutTests, ReturnsNextLowestAfterFirstCheckout)
 
     PalettePool pool{available};
 
-    EXPECT_EQ(pool.check_out(), 2);
-    EXPECT_EQ(pool.check_out(), 7);
-    EXPECT_EQ(pool.check_out(), 12);
+    EXPECT_EQ(pool.checkout(), 2);
+    EXPECT_EQ(pool.checkout(), 7);
+    EXPECT_EQ(pool.checkout(), 12);
 }
 
 TEST(PalettePoolCheckOutTests, ChecksOutAllAvailableIndexes)
@@ -186,9 +186,9 @@ TEST(PalettePoolCheckOutTests, ChecksOutAllAvailableIndexes)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
-    std::ignore = pool.check_out();
-    std::ignore = pool.check_out();
+    std::ignore = pool.checkout();
+    std::ignore = pool.checkout();
+    std::ignore = pool.checkout();
 
     EXPECT_FALSE(pool.has_available_index());
 }
@@ -204,11 +204,11 @@ TEST(PalettePoolCheckOutTests, OnlyChecksOutAvailableIndexes)
     PalettePool pool{available};
 
     // Should skip 0, 1, 2 and return 3
-    EXPECT_EQ(pool.check_out(), 3);
+    EXPECT_EQ(pool.checkout(), 3);
     // Should skip 4, 5, 6 and return 7
-    EXPECT_EQ(pool.check_out(), 7);
+    EXPECT_EQ(pool.checkout(), 7);
     // Should skip 8, 9, 10 and return 11
-    EXPECT_EQ(pool.check_out(), 11);
+    EXPECT_EQ(pool.checkout(), 11);
 }
 
 TEST(PalettePoolCheckOutTests, PanicsWhenNoAvailableIndexes)
@@ -217,7 +217,7 @@ TEST(PalettePoolCheckOutTests, PanicsWhenNoAvailableIndexes)
 
     PalettePool pool{available};
 
-    EXPECT_DEATH(std::ignore = pool.check_out(), "no available indexes");
+    EXPECT_DEATH(std::ignore = pool.checkout(), "no available indexes");
 }
 
 TEST(PalettePoolCheckOutTests, PanicsWhenAllCheckedOut)
@@ -227,9 +227,9 @@ TEST(PalettePoolCheckOutTests, PanicsWhenAllCheckedOut)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
+    std::ignore = pool.checkout();
 
-    EXPECT_DEATH(std::ignore = pool.check_out(), "no available indexes");
+    EXPECT_DEATH(std::ignore = pool.checkout(), "no available indexes");
 }
 
 // =============================================================================
@@ -246,7 +246,7 @@ TEST(PalettePoolCheckOutIndexTests, ChecksOutSpecificIndex)
     PalettePool pool{available};
 
     // Check out index 7 (not the lowest)
-    pool.check_out(7);
+    pool.checkout(7);
     EXPECT_FALSE(pool.is_available(7));
     EXPECT_TRUE(pool.is_available(3));
     EXPECT_TRUE(pool.is_available(10));
@@ -261,15 +261,15 @@ TEST(PalettePoolCheckOutIndexTests, AddsToCheckoutStack)
     PalettePool pool{available};
 
     // Check out specific indexes in non-sequential order
-    pool.check_out(7);
-    pool.check_out(3);
+    pool.checkout(7);
+    pool.checkout(3);
 
     // Check in follows LIFO - should return 3 first
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.is_available(3));
     EXPECT_FALSE(pool.is_available(7));
 
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.is_available(7));
 }
 
@@ -280,7 +280,7 @@ TEST(PalettePoolCheckOutIndexTests, PanicsForUnavailableIndex)
 
     PalettePool pool{available};
 
-    EXPECT_DEATH(pool.check_out(5), "not available");
+    EXPECT_DEATH(pool.checkout(5), "not available");
 }
 
 TEST(PalettePoolCheckOutIndexTests, PanicsForAlreadyCheckedOutIndex)
@@ -290,9 +290,9 @@ TEST(PalettePoolCheckOutIndexTests, PanicsForAlreadyCheckedOutIndex)
 
     PalettePool pool{available};
 
-    pool.check_out(3);
+    pool.checkout(3);
 
-    EXPECT_DEATH(pool.check_out(3), "not available");
+    EXPECT_DEATH(pool.checkout(3), "not available");
 }
 
 TEST(PalettePoolCheckOutIndexTests, PanicsForOutOfBoundsIndex)
@@ -302,8 +302,8 @@ TEST(PalettePoolCheckOutIndexTests, PanicsForOutOfBoundsIndex)
 
     PalettePool pool{available};
 
-    EXPECT_DEATH(pool.check_out(16), "out of bounds");
-    EXPECT_DEATH(pool.check_out(100), "out of bounds");
+    EXPECT_DEATH(pool.checkout(16), "out of bounds");
+    EXPECT_DEATH(pool.checkout(100), "out of bounds");
 }
 
 TEST(PalettePoolCheckOutIndexTests, MixedAutoAndIndexedCheckouts)
@@ -317,17 +317,17 @@ TEST(PalettePoolCheckOutIndexTests, MixedAutoAndIndexedCheckouts)
     PalettePool pool{available};
 
     // Check out index 8 specifically (skipping lower ones)
-    pool.check_out(8);
+    pool.checkout(8);
     EXPECT_FALSE(pool.is_available(8));
 
     // Auto checkout should get lowest available (2)
-    EXPECT_EQ(pool.check_out(), 2);
+    EXPECT_EQ(pool.checkout(), 2);
 
     // Check out 11 specifically
-    pool.check_out(11);
+    pool.checkout(11);
 
     // Auto checkout should get 5 (only remaining)
-    EXPECT_EQ(pool.check_out(), 5);
+    EXPECT_EQ(pool.checkout(), 5);
 
     EXPECT_FALSE(pool.has_available_index());
 }
@@ -343,11 +343,11 @@ TEST(PalettePoolCheckInTests, ReturnsIndexToPool)
 
     PalettePool pool{available};
 
-    std::size_t index = pool.check_out();
+    std::size_t index = pool.checkout();
     EXPECT_EQ(index, 5);
     EXPECT_FALSE(pool.has_available_index());
 
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.has_available_index());
 }
 
@@ -361,20 +361,20 @@ TEST(PalettePoolCheckInTests, FollowsStackSemantics)
     PalettePool pool{available};
 
     // Check out in order: 1, 5, 10
-    EXPECT_EQ(pool.check_out(), 1);
-    EXPECT_EQ(pool.check_out(), 5);
-    EXPECT_EQ(pool.check_out(), 10);
+    EXPECT_EQ(pool.checkout(), 1);
+    EXPECT_EQ(pool.checkout(), 5);
+    EXPECT_EQ(pool.checkout(), 10);
 
     // Check in (LIFO): 10 is returned first
-    pool.check_in();
+    pool.checkin();
     // Now 10 should be available again, check it out
-    EXPECT_EQ(pool.check_out(), 10);
+    EXPECT_EQ(pool.checkout(), 10);
 
     // Check in 10, then 5
-    pool.check_in();
-    pool.check_in();
+    pool.checkin();
+    pool.checkin();
     // Now both 5 and 10 should be available, lowest (5) is returned
-    EXPECT_EQ(pool.check_out(), 5);
+    EXPECT_EQ(pool.checkout(), 5);
 }
 
 TEST(PalettePoolCheckInTests, CanReuseCheckedInIndex)
@@ -386,8 +386,8 @@ TEST(PalettePoolCheckInTests, CanReuseCheckedInIndex)
 
     // Check out and in multiple times
     for (int i = 0; i < 5; ++i) {
-        EXPECT_EQ(pool.check_out(), 0);
-        pool.check_in();
+        EXPECT_EQ(pool.checkout(), 0);
+        pool.checkin();
     }
 
     EXPECT_TRUE(pool.has_available_index());
@@ -400,7 +400,7 @@ TEST(PalettePoolCheckInTests, PanicsWhenStackEmpty)
 
     PalettePool pool{available};
 
-    EXPECT_DEATH(pool.check_in(), "empty checkout stack");
+    EXPECT_DEATH(pool.checkin(), "empty checkout stack");
 }
 
 TEST(PalettePoolCheckInTests, PanicsAfterAllCheckedIn)
@@ -410,10 +410,10 @@ TEST(PalettePoolCheckInTests, PanicsAfterAllCheckedIn)
 
     PalettePool pool{available};
 
-    std::ignore = pool.check_out();
-    pool.check_in();
+    std::ignore = pool.checkout();
+    pool.checkin();
 
-    EXPECT_DEATH(pool.check_in(), "empty checkout stack");
+    EXPECT_DEATH(pool.checkin(), "empty checkout stack");
 }
 
 // =============================================================================
@@ -431,23 +431,23 @@ TEST(PalettePoolIntegrationTests, FullCheckoutAndCheckinCycle)
     PalettePool pool{available};
 
     // Check out all 4
-    EXPECT_EQ(pool.check_out(), 0);
-    EXPECT_EQ(pool.check_out(), 3);
-    EXPECT_EQ(pool.check_out(), 7);
-    EXPECT_EQ(pool.check_out(), 15);
+    EXPECT_EQ(pool.checkout(), 0);
+    EXPECT_EQ(pool.checkout(), 3);
+    EXPECT_EQ(pool.checkout(), 7);
+    EXPECT_EQ(pool.checkout(), 15);
     EXPECT_FALSE(pool.has_available_index());
 
     // Check in all 4 (LIFO order)
-    pool.check_in(); // returns 15
-    pool.check_in(); // returns 7
-    pool.check_in(); // returns 3
-    pool.check_in(); // returns 0
+    pool.checkin(); // returns 15
+    pool.checkin(); // returns 7
+    pool.checkin(); // returns 3
+    pool.checkin(); // returns 0
 
     // All should be available again
     EXPECT_TRUE(pool.has_available_index());
 
     // Check out should return lowest again
-    EXPECT_EQ(pool.check_out(), 0);
+    EXPECT_EQ(pool.checkout(), 0);
 }
 
 TEST(PalettePoolIntegrationTests, PartialCheckoutAndCheckin)
@@ -461,24 +461,24 @@ TEST(PalettePoolIntegrationTests, PartialCheckoutAndCheckin)
     PalettePool pool{available};
 
     // Check out 2 and 4
-    EXPECT_EQ(pool.check_out(), 2);
-    EXPECT_EQ(pool.check_out(), 4);
+    EXPECT_EQ(pool.checkout(), 2);
+    EXPECT_EQ(pool.checkout(), 4);
 
     // Check in 4
-    pool.check_in();
+    pool.checkin();
 
     // Next checkout should get 4 (lowest available)
-    EXPECT_EQ(pool.check_out(), 4);
+    EXPECT_EQ(pool.checkout(), 4);
 
     // Check out 6
-    EXPECT_EQ(pool.check_out(), 6);
+    EXPECT_EQ(pool.checkout(), 6);
 
     // Check in 6, then 4
-    pool.check_in();
-    pool.check_in();
+    pool.checkin();
+    pool.checkin();
 
     // Lowest available should be 4
-    EXPECT_EQ(pool.check_out(), 4);
+    EXPECT_EQ(pool.checkout(), 4);
 }
 
 TEST(PalettePoolIntegrationTests, SingleIndexPool)
@@ -489,11 +489,11 @@ TEST(PalettePoolIntegrationTests, SingleIndexPool)
     PalettePool pool{available};
 
     EXPECT_TRUE(pool.has_available_index());
-    EXPECT_EQ(pool.check_out(), 7);
+    EXPECT_EQ(pool.checkout(), 7);
     EXPECT_FALSE(pool.has_available_index());
-    pool.check_in();
+    pool.checkin();
     EXPECT_TRUE(pool.has_available_index());
-    EXPECT_EQ(pool.check_out(), 7);
+    EXPECT_EQ(pool.checkout(), 7);
 }
 
 TEST(PalettePoolIntegrationTests, AllSixteenIndexesAvailable)
@@ -506,16 +506,16 @@ TEST(PalettePoolIntegrationTests, AllSixteenIndexesAvailable)
     // Check out all 16
     for (std::size_t i = 0; i < pal::num_pals; ++i) {
         EXPECT_TRUE(pool.has_available_index());
-        EXPECT_EQ(pool.check_out(), i);
+        EXPECT_EQ(pool.checkout(), i);
     }
 
     EXPECT_FALSE(pool.has_available_index());
 
     // Check in all 16
     for (std::size_t i = 0; i < pal::num_pals; ++i) {
-        pool.check_in();
+        pool.checkin();
     }
 
     EXPECT_TRUE(pool.has_available_index());
-    EXPECT_EQ(pool.check_out(), 0);
+    EXPECT_EQ(pool.checkout(), 0);
 }

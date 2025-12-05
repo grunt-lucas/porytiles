@@ -62,7 +62,7 @@ class PalettePool {
      * @return The checked-out hardware palette index
      * @post The returned index is marked as checked out
      */
-    [[nodiscard]] std::size_t check_out();
+    [[nodiscard]] std::size_t checkout();
 
     /**
      * @brief Checks out a specific hardware palette index.
@@ -77,7 +77,7 @@ class PalettePool {
      * @post The index is marked as checked out
      * @post The index is pushed onto the checkout stack
      */
-    void check_out(std::size_t index);
+    void checkout(std::size_t index);
 
     /**
      * @brief Returns the most recently checked-out index to the pool.
@@ -89,7 +89,7 @@ class PalettePool {
      * @pre At least one index must have been checked out (checkout_stack_ not empty)
      * @post The popped index is available for checkout again
      */
-    void check_in();
+    void checkin();
 
   private:
     std::bitset<pal::num_pals> available_indexes_;

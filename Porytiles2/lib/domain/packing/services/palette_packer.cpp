@@ -1,5 +1,6 @@
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 
+#include "porytiles2/domain/packing/models/palette_pool.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -138,13 +139,65 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     filled_slots.insert(0); // Slot 0 was filled above
 
     // Preserve non-wildcard slots from prefilled input palette
-    // TODO
+    if (prefilled_pal != nullptr) {
+        for (std::size_t i = 1; i < pal::max_size; ++i) {
+            if (!prefilled_pal->is_wildcard(i)) {
+                output.set(i, prefilled_pal->at(i));
+                filled_slots.insert(i);
+            }
+        }
+    }
 
     // Collect colors from PackedPalette that still need to be placed
-    // TODO
+    std::vector<Rgba32> rgba32s_to_place;
+    for_each_color(packed_pal.color_set(), [&](const std::size_t color_index) {
+        const auto color_opt = color_map.color_at_index(ColorIndex{color_index});
+        if (!color_opt.has_value()) {
+            panic("color_index " + std::to_string(color_index) + " not found in color map");
+        }
+        const auto &color = color_opt.value();
+        // Check if this color is already placed
+        bool already_placed = false;
+        for (const std::size_t slot : filled_slots) {
+            if (output.at(slot) == color) {
+                already_placed = true;
+                break;
+            }
+        }
+        if (!already_placed) {
+            rgba32s_to_place.push_back(color);
+        }
+    });
+
+    /*
+     * TODO: this is the location where we'll eventually want to implement the logic for:
+     *
+     *   tile_sharing: opportunistic
+     *
+     * wherein we attempt to line up colors so that tiles can be shared. At that point, we'll probably want to have some
+     * kind of OutputPaletteBuilder service instead of just a single method.
+     */
 
     // Place remaining colors in available slots
-    // TODO
+    std::size_t next_slot = 1;
+    std::size_t placed_count = 0;
+    for (const auto &rgba : rgba32s_to_place) {
+        while (next_slot < pal::max_size && filled_slots.contains(next_slot)) {
+            ++next_slot;
+        }
+        if (next_slot < pal::max_size) {
+            output.set(next_slot, rgba);
+            filled_slots.insert(next_slot);
+            ++next_slot;
+            ++placed_count;
+        }
+    }
+
+    if (placed_count != rgba32s_to_place.size()) {
+        panic("failed to place all colors in rgba32s_to_place");
+    }
+
+    return output;
 }
 
 } // namespace
@@ -180,34 +233,74 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     }
 
     // === STEP 4: Create PackingInput and call low-level pack() ===
-    // TODO: set up PalettePool properly
     PackingInput packing_input{
         std::move(regular_tiles),
         std::move(hint_tiles),
         std::move(prefilled_palettes),
-        PalettePool{std::bitset<pal::num_pals>{}}};
+        PalettePool{params.available_pals_}};
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         packing_output, strategy_->pack(packing_input), "low-level palette packing failed", PalettePacking);
 
     // === STEP 5: Convert PackingOutput back to PalettePacking ===
     PalettePacking packing{};
-    // TODO: figure out these statements
-    // packing.tile_to_pal_ = packing_output.tile_to_pal_;
-    // packing.pals_.reserve(packing_output.pals_.size());
 
+    // 5a: build the tile_to_pal maps for PalettePacking
+    for (const auto &[tile_id, pal_index] : packing_output.tile_to_pal_) {
+        std::visit(
+            [&packing, pal_index]<typename IdVariant>(IdVariant &&id) {
+                using Id = std::decay_t<IdVariant>;
+                if constexpr (std::is_same_v<Id, PackableTile::RegularId>) {
+                    // For regular tiles, update the tile index to pal index map
+                    packing.tile_to_pal_[id.index] = pal_index;
+                }
+                // TODO: impl branch + map setup for AnimId once we have it
+                else if constexpr (std::is_same_v<Id, PackableTile::HintId>) {
+                    // We don't currently care to store where hints got assigned
+                }
+                else if constexpr (std::is_same_v<Id, PackableTile::PrefilledPaletteId>) {
+                    // Nothing to do here, we only had these PackableTiles for internal bookkeeping
+                }
+                else {
+                    panic("unimplemented std::visit branch");
+                }
+            },
+            tile_id);
+    }
+
+    // 5b: build the pals array for PalettePacking
     for (const PackedPalette &packed_pal : packing_output.pals_) {
         const std::size_t hardware_index = packed_pal.hardware_index();
         if (hardware_index >= pal::num_pals) {
             panic("invalid hardware index " + std::to_string(hardware_index) + ": out of range");
         }
-        // TODO: use build_output_palette to turn packed_pal into the output pal at hw_index
+        const Palette<Rgba32, pal::max_size> *input_pal_ptr = params.prefilled_pals_[hardware_index].has_value()
+                                                                  ? &params.prefilled_pals_[hardware_index].value()
+                                                                  : nullptr;
+        packing.pals_[hardware_index] =
+            build_output_palette(packed_pal, input_pal_ptr, params.color_map_, params.extrinsic_transparency_);
     }
 
     /*
      * TODO: above, we built output pals from all the pals that got explicitly packed. But what about pals that got
-     * filled via Porytiles pal overrides (or primary pals in the secondary case). We need to think about this very
-     * carefully. We'll need to think through how we populate the bitset for the PalettePool above.
+     * filled via Porytiles pal overrides? We need to think about this very carefully. We'll need to think through how
+     * we populate the bitset for the PalettePool above.
+     *
+     * Here's what I think we should do. PalettePacker should only handle palettes that were explicitly enabled for
+     * packing via PalettePool. Any palette not turned on in PalettePool will get sent back to the caller as a
+     * std::nullopt. The caller can then decide what to do (e.g. fill in with Porytiles override, fill in with default
+     * values, etc).
+     *
+     * Callers MUST explicitly enable all pals they want the packer to access. This means that if the caller is
+     * compiling a secondary set, they should enable bits 0-5 in the available_pals_ bitset in PackingParams, and then
+     * pass the packer the primary palettes via the prefilled_pals_ input param. The prefilled 0-5 will have no
+     * wildcards since they are completely fixed by the primary. The calling code should also probably throw a warning
+     * if the user specified Porytiles overrides for those pals since they will be ignored in favor of the palettes for
+     * paired primary (maybe this can be configurable?). The calling code should also throw a warning when there are
+     * Porytiles overrides that don't correspond to one of the pals enabled for packing. E.g. if we are compiling
+     * primary, so bits 0-5 are set in the PalettePool, but user has supplied 12.pal in the Porytiles palettes, warn
+     * user that they've supplied an out-of-band palette due to configuration. Then say that this palette will still be
+     * copied over and all wildcards will receive default values.
      */
 
     return packing;

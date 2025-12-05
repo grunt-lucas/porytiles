@@ -49,4 +49,10 @@
 
 ## Start designing layout create/import/compile
 
+## Identify unit/integration testing gaps and fill them in
+- Palette packing code is currently untested
+
+## Figure out how to remove fmtlib from random placess all over the codebase
+- Ideally it should be isolated so we could easily swap to a different string formatting library
+
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`
