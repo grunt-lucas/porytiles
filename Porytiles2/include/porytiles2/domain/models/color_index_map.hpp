@@ -2,9 +2,11 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <vector>
 
 #include "porytiles2/domain/models/color_index.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 
@@ -138,6 +140,117 @@ class ColorIndexMap {
     }
 
     /**
+     * @brief Adds colors from a single tile to the mapping using intrinsic transparency.
+     *
+     * @details
+     * Extracts unique non-transparent colors from the provided tile and adds any new colors to the mapping. Colors that
+     * already exist in the mapping are skipped. New colors are assigned sequential indices starting from the current
+     * size of the mapping.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * @param tile The tile to extract colors from
+     */
+    void add_tile(const PixelTile<PixelType> &tile)
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        add_colors_impl(tile.unique_nontransparent_colors());
+    }
+
+    /**
+     * @brief Adds colors from a single tile to the mapping using extrinsic transparency.
+     *
+     * @details
+     * Extracts unique non-transparent colors from the provided tile and adds any new colors to the mapping. Colors that
+     * already exist in the mapping are skipped. New colors are assigned sequential indices starting from the current
+     * size of the mapping.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param tile The tile to extract colors from
+     * @param extrinsic The extrinsic transparency value used for transparency filtering
+     */
+    void add_tile(const PixelTile<PixelType> &tile, const PixelType &extrinsic)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        add_colors_impl(tile.unique_nontransparent_colors(extrinsic));
+    }
+
+    /**
+     * @brief Adds colors from a fixed-size palette to the mapping using intrinsic transparency.
+     *
+     * @details
+     * Extracts non-transparent colors from the provided palette and adds any new colors to the mapping. Wildcards and
+     * transparent colors are skipped. Colors that already exist in the mapping are also skipped. New colors are
+     * assigned sequential indices starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * @param pal The palette to extract colors from
+     */
+    void add_pal(const Palette<PixelType, pal::max_size> &pal)
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        add_colors_from_pal_impl(pal, [](const PixelType &p) { return p.is_transparent(); });
+    }
+
+    /**
+     * @brief Adds colors from a fixed-size palette to the mapping using extrinsic transparency.
+     *
+     * @details
+     * Extracts non-transparent colors from the provided palette and adds any new colors to the mapping. Wildcards and
+     * transparent colors are skipped. Colors that already exist in the mapping are also skipped. New colors are
+     * assigned sequential indices starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param pal The palette to extract colors from
+     * @param extrinsic The extrinsic transparency value used for transparency filtering
+     */
+    void add_pal(const Palette<PixelType, pal::max_size> &pal, const PixelType &extrinsic)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        add_colors_from_pal_impl(pal, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
+    }
+
+    /**
+     * @brief Adds colors from a dynamic palette to the mapping using intrinsic transparency.
+     *
+     * @details
+     * Extracts non-transparent colors from the provided palette and adds any new colors to the mapping. Wildcards and
+     * transparent colors are skipped. Colors that already exist in the mapping are also skipped. New colors are
+     * assigned sequential indices starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * @param pal The palette to extract colors from
+     */
+    void add_pal(const Palette<PixelType> &pal)
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        add_colors_from_pal_impl(pal, [](const PixelType &p) { return p.is_transparent(); });
+    }
+
+    /**
+     * @brief Adds colors from a dynamic palette to the mapping using extrinsic transparency.
+     *
+     * @details
+     * Extracts non-transparent colors from the provided palette and adds any new colors to the mapping. Wildcards and
+     * transparent colors are skipped. Colors that already exist in the mapping are also skipped. New colors are
+     * assigned sequential indices starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param pal The palette to extract colors from
+     * @param extrinsic The extrinsic transparency value used for transparency filtering
+     */
+    void add_pal(const Palette<PixelType> &pal, const PixelType &extrinsic)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        add_colors_from_pal_impl(pal, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
+    }
+
+    /**
      * @brief Retrieves the color associated with a given index.
      *
      * @details
@@ -212,6 +325,58 @@ class ColorIndexMap {
 
         index_map_ = pixel_indexes;
         color_map_ = index_to_color;
+    }
+
+    /**
+     * @brief Helper method to add colors from a set to the mapping.
+     *
+     * @details
+     * Iterates through the provided set of colors and adds any colors not already in the mapping. New colors are
+     * assigned sequential indices starting from the current size of the mapping.
+     *
+     * @param colors The set of colors to add
+     */
+    void add_colors_impl(const std::set<PixelType> &colors)
+    {
+        auto color_index = static_cast<unsigned int>(size());
+        for (const auto &pixel : colors) {
+            if (index_map_.insert({pixel, ColorIndex{color_index}}).second) {
+                color_map_.insert({ColorIndex{color_index}, pixel});
+                ++color_index;
+            }
+        }
+    }
+
+    /**
+     * @brief Helper method to add colors from a palette to the mapping.
+     *
+     * @details
+     * Iterates through all slots in the palette, skipping wildcards and transparent colors. Any new non-transparent
+     * colors are added to the mapping with sequential indices.
+     *
+     * @tparam N The size template parameter of the palette (0 for dynamic, > 0 for fixed)
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param pal The palette to extract colors from
+     * @param is_transparent_pred A predicate function that returns true if a color is transparent
+     */
+    template <std::size_t N, typename TransparencyPredicate>
+    void add_colors_from_pal_impl(const Palette<PixelType, N> &pal, TransparencyPredicate is_transparent_pred)
+    {
+        auto color_index = static_cast<unsigned int>(size());
+        for (std::size_t i = 0; i < pal.size(); i++) {
+            auto color_opt = pal.at_optional(i);
+            if (!color_opt.has_value()) {
+                continue; // Skip wildcards
+            }
+            const auto &color = color_opt.value();
+            if (is_transparent_pred(color)) {
+                continue; // Skip transparent colors
+            }
+            if (index_map_.insert({color, ColorIndex{color_index}}).second) {
+                color_map_.insert({ColorIndex{color_index}, color});
+                ++color_index;
+            }
+        }
     }
 
     std::map<PixelType, ColorIndex> index_map_;

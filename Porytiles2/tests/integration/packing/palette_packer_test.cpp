@@ -61,6 +61,21 @@ namespace {
 }
 
 /**
+ * @brief Returns a bitset with only the specified palette indices marked as available.
+ *
+ * @tparam Indices Variadic pack of integral types
+ * @param indices The palette indices to mark as available
+ * @return A bitset with only the specified bits set
+ */
+template <typename... Indices>
+[[nodiscard]] std::bitset<pal::num_pals> set_palettes_available(Indices... indices)
+{
+    std::bitset<pal::num_pals> available{};
+    (available.set(static_cast<std::size_t>(indices)), ...);
+    return available;
+}
+
+/**
  * @brief Collects all non-wildcard, non-transparency colors from a palette into a set.
  *
  * @param pal The palette to extract colors from
@@ -411,11 +426,6 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     }
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors(tile_colors)};
 
-    // Create ColorIndexMap including BOTH tile colors AND prefilled palette colors
-    std::vector<PixelTile<Rgba32>> all_tiles_for_map = tiles;
-    all_tiles_for_map.push_back(make_tile_with_colors(prefilled_colors));
-    ColorIndexMap<Rgba32> color_map{all_tiles_for_map, rgba_magenta};
-
     // Prefill palette 0 with 13 colors (2 slots remaining after slot 0)
     Palette<Rgba32, pal::max_size> prefilled_pal{};
     prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
@@ -423,6 +433,10 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
         prefilled_pal.set(i + 1, prefilled_colors[i]);
     }
     // Slots 14-15 are wildcards
+
+    // Create ColorIndexMap from tiles, then add prefilled palette colors
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    color_map.add_pal(prefilled_pal, rgba_magenta);
 
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
     prefilled_pals[0] = prefilled_pal;
@@ -469,12 +483,9 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     // Create a tile with some overlapping colors (red, blue) plus new colors (purple, lime)
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
 
-    // Create ColorIndexMap including BOTH tile colors AND prefilled palette colors
-    // We need extra tiles to get all colors into the map
-    std::vector<PixelTile<Rgba32>> all_tiles_for_map = tiles;
-    // Add the prefilled colors that aren't in the tile (green, yellow, cyan)
-    all_tiles_for_map.push_back(make_tile_with_colors({rgba_green, rgba_yellow, rgba_cyan}));
-    ColorIndexMap<Rgba32> color_map{all_tiles_for_map, rgba_magenta};
+    // Create ColorIndexMap from tiles, then add prefilled palette colors
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    color_map.add_pal(prefilled_pal, rgba_magenta);
 
     PackingParams params{};
     params.tiles_ = tiles; // Only pack the actual tile
@@ -509,6 +520,60 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     const auto colors = collect_palette_colors(final_pal, rgba_magenta);
     EXPECT_TRUE(colors.contains(rgba_purple));
     EXPECT_TRUE(colors.contains(rgba_lime));
+}
+
+TEST(PalettePackerIntegration, OutOfBandPrefilledPalette_PrefilledShouldNotBeUsed)
+{
+    PlainTextFormatter formatter{};
+    BufferedUserDiagnostics diag{};
+    BestFusionStrategy strategy{&formatter, &diag};
+    PalettePacker packer{&strategy, &formatter, &diag};
+
+    // Prefill palette 7 with 5 colors (partially locked)
+    // Colors: red, green, blue, yellow, cyan (slots 1-5)
+    Palette<Rgba32, pal::max_size> prefilled_pal{};
+    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
+    prefilled_pal.set(1, rgba_red);
+    prefilled_pal.set(2, rgba_green);
+    prefilled_pal.set(3, rgba_blue);
+    prefilled_pal.set(4, rgba_yellow);
+    prefilled_pal.set(5, rgba_cyan);
+    // Slots 6-15 are wildcards (default)
+
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+    prefilled_pals[7] = prefilled_pal;
+
+    // Create a tile with some overlapping colors (red, blue) plus new colors (purple, lime)
+    std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
+
+    // Create ColorIndexMap from tiles, then add prefilled palette colors
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    color_map.add_pal(prefilled_pal, rgba_magenta);
+
+    PackingParams params{};
+    params.tiles_ = tiles;
+    params.color_map_ = color_map;
+    params.extrinsic_transparency_ = rgba_magenta;
+    params.prefilled_pals_ = prefilled_pals;
+    params.hints_ = {};
+    // Only palettes 0-6 are available (palette 7 is NOT available)
+    params.available_pals_ = set_palettes_available(0, 1, 2, 3, 4, 5, 6);
+
+    auto result = packer.pack_tiles(params);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &packing = result.value();
+
+    // Tile should be assigned
+    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
+    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+
+    // Tile should NOT be assigned to palette 7 (it's not available)
+    EXPECT_NE(assigned_pal, 7) << "Tile should not use unavailable palette 7";
+
+    // Palette 7 should NOT be in the result (it wasn't available for packing)
+    // The packer only includes palettes that are in available_pals
+    EXPECT_FALSE(packing.pals_[7].has_value()) << "Unavailable palette 7 should not appear in result";
 }
 
 // =============================================================================

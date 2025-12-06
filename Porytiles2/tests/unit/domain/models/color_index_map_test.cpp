@@ -2,6 +2,7 @@
 
 #include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 
@@ -254,4 +255,317 @@ TEST(ColorIndexMapTests, SequentialIndicesStartAtZero)
     EXPECT_TRUE(map.color_at_index(ColorIndex{1}).has_value());
     EXPECT_TRUE(map.color_at_index(ColorIndex{2}).has_value());
     EXPECT_FALSE(map.color_at_index(ColorIndex{3}).has_value());
+}
+
+// ============================================================================
+// Constructor equivalence tests
+// ============================================================================
+
+TEST(ColorIndexMapTests, VectorCtorShouldMatchIncrementalAddTile)
+{
+    // Create multiple tiles with various colors
+    std::vector<PixelTile<Rgba32>> tiles;
+
+    PixelTile<Rgba32> tile1{};
+    tile1.set(0, Rgba32{255, 0, 0});   // red
+    tile1.set(1, Rgba32{0, 255, 0});   // green
+    tile1.set(2, Rgba32{255, 0, 255}); // magenta (transparent)
+
+    PixelTile<Rgba32> tile2{};
+    tile2.set(0, Rgba32{0, 0, 255});   // blue
+    tile2.set(1, Rgba32{255, 0, 0});   // red (duplicate from tile1)
+    tile2.set(2, Rgba32{255, 255, 0}); // yellow
+
+    PixelTile<Rgba32> tile3{};
+    tile3.set(0, Rgba32{0, 255, 255});                        // cyan
+    tile3.set(1, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // intrinsically transparent
+
+    tiles.push_back(tile1);
+    tiles.push_back(tile2);
+    tiles.push_back(tile3);
+
+    // Construct using vector constructor
+    ColorIndexMap<Rgba32> ctor_map{tiles, rgba_magenta};
+
+    // Construct incrementally using add_tile
+    ColorIndexMap<Rgba32> incremental_map{};
+    for (const auto &tile : tiles) {
+        incremental_map.add_tile(tile, rgba_magenta);
+    }
+
+    // Both maps should have the same size
+    EXPECT_EQ(ctor_map.size(), incremental_map.size());
+
+    // Expected colors: red, green, blue, yellow, cyan (5 total)
+    // Transparent colors (magenta, alpha=0) should be filtered out
+    EXPECT_EQ(5, ctor_map.size());
+
+    // Verify all colors have consistent mappings in both maps
+    const std::vector<Rgba32> expected_colors = {
+        Rgba32{255, 0, 0},   // red
+        Rgba32{0, 255, 0},   // green
+        Rgba32{0, 0, 255},   // blue
+        Rgba32{255, 255, 0}, // yellow
+        Rgba32{0, 255, 255}  // cyan
+    };
+
+    for (const auto &color : expected_colors) {
+        auto ctor_index = ctor_map.index_at_color(color);
+        auto incr_index = incremental_map.index_at_color(color);
+
+        ASSERT_TRUE(ctor_index.has_value()) << "ctor_map missing color";
+        ASSERT_TRUE(incr_index.has_value()) << "incremental_map missing color";
+
+        // Both should map to the same index
+        EXPECT_EQ(ctor_index.value(), incr_index.value());
+
+        // Reverse lookup should also match
+        auto ctor_color = ctor_map.color_at_index(ctor_index.value());
+        auto incr_color = incremental_map.color_at_index(incr_index.value());
+
+        ASSERT_TRUE(ctor_color.has_value());
+        ASSERT_TRUE(incr_color.has_value());
+        EXPECT_EQ(ctor_color.value(), incr_color.value());
+    }
+}
+
+// ============================================================================
+// add_tile tests
+// ============================================================================
+
+TEST(ColorIndexMapTests, AddTileShouldAddColorsFromTile)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile{};
+    tile.set(0, Rgba32{255, 0, 0}); // red
+    tile.set(1, Rgba32{0, 255, 0}); // green
+
+    map.add_tile(tile, rgba_magenta);
+
+    EXPECT_EQ(2, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddTileShouldDeduplicateColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile1{};
+    tile1.set(0, Rgba32{255, 0, 0}); // red
+
+    PixelTile<Rgba32> tile2{};
+    tile2.set(0, Rgba32{255, 0, 0}); // red (duplicate)
+    tile2.set(1, Rgba32{0, 255, 0}); // green
+
+    map.add_tile(tile1, rgba_magenta);
+    map.add_tile(tile2, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and green, no duplicates
+}
+
+TEST(ColorIndexMapTests, AddTileShouldFilterTransparentColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile{};
+    tile.set(0, Rgba32{255, 0, 0});                          // red (non-transparent)
+    tile.set(1, Rgba32{255, 0, 255});                        // magenta (extrinsically transparent)
+    tile.set(2, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // black with alpha=0 (intrinsically transparent)
+
+    map.add_tile(tile, rgba_magenta);
+
+    EXPECT_EQ(1, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_FALSE(map.index_at_color(Rgba32{255, 0, 255}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddTileShouldAssignSequentialIndices)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile1{};
+    tile1.set(0, Rgba32{255, 0, 0}); // red
+
+    PixelTile<Rgba32> tile2{};
+    tile2.set(0, Rgba32{0, 255, 0}); // green
+
+    map.add_tile(tile1, rgba_magenta);
+    map.add_tile(tile2, rgba_magenta);
+
+    // First tile gets index 0, second gets index 1
+    auto red_index = map.index_at_color(Rgba32{255, 0, 0});
+    auto green_index = map.index_at_color(Rgba32{0, 255, 0});
+
+    ASSERT_TRUE(red_index.has_value());
+    ASSERT_TRUE(green_index.has_value());
+    EXPECT_EQ(0, red_index.value().index());
+    EXPECT_EQ(1, green_index.value().index());
+}
+
+// ============================================================================
+// add_pal tests (fixed-size palette)
+// ============================================================================
+
+TEST(ColorIndexMapTests, AddPalFixedSizeShouldAddColorsFromPalette)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32, pal::max_size> pal{};
+    pal.set(0, Rgba32{255, 0, 255}); // magenta (transparent slot 0)
+    pal.set(1, Rgba32{255, 0, 0});   // red
+    pal.set(2, Rgba32{0, 255, 0});   // green
+
+    map.add_pal(pal, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and green (magenta is transparent)
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddPalFixedSizeShouldSkipWildcards)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32, pal::max_size> pal{};
+    pal.set(0, Rgba32{255, 0, 255}); // magenta (transparent slot 0)
+    pal.set(1, Rgba32{255, 0, 0});   // red
+    // slots 2-15 are wildcards
+
+    map.add_pal(pal, rgba_magenta);
+
+    EXPECT_EQ(1, map.size()); // only red
+}
+
+TEST(ColorIndexMapTests, AddPalFixedSizeShouldDeduplicateColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32, pal::max_size> pal1{};
+    pal1.set(0, Rgba32{255, 0, 255}); // transparent
+    pal1.set(1, Rgba32{255, 0, 0});   // red
+
+    Palette<Rgba32, pal::max_size> pal2{};
+    pal2.set(0, Rgba32{255, 0, 255}); // transparent
+    pal2.set(1, Rgba32{255, 0, 0});   // red (duplicate)
+    pal2.set(2, Rgba32{0, 0, 255});   // blue
+
+    map.add_pal(pal1, rgba_magenta);
+    map.add_pal(pal2, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and blue
+}
+
+// ============================================================================
+// add_pal tests (dynamic palette)
+// ============================================================================
+
+TEST(ColorIndexMapTests, AddPalDynamicShouldAddColorsFromPalette)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32> pal{};
+    pal.add(Rgba32{255, 0, 255}); // magenta (transparent slot 0)
+    pal.add(Rgba32{255, 0, 0});   // red
+    pal.add(Rgba32{0, 255, 0});   // green
+
+    map.add_pal(pal, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and green (magenta is transparent)
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddPalDynamicShouldSkipWildcards)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32> pal{};
+    pal.add(Rgba32{255, 0, 255}); // magenta (transparent)
+    pal.add(Rgba32{255, 0, 0});   // red
+    pal.add_wildcard();           // wildcard
+    pal.add(Rgba32{0, 0, 255});   // blue
+
+    map.add_pal(pal, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and blue
+}
+
+TEST(ColorIndexMapTests, AddPalDynamicShouldDeduplicateColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Palette<Rgba32> pal1{};
+    pal1.add(Rgba32{255, 0, 255}); // transparent
+    pal1.add(Rgba32{255, 0, 0});   // red
+
+    Palette<Rgba32> pal2{};
+    pal2.add(Rgba32{255, 0, 255}); // transparent
+    pal2.add(Rgba32{255, 0, 0});   // red (duplicate)
+    pal2.add(Rgba32{0, 0, 255});   // blue
+
+    map.add_pal(pal1, rgba_magenta);
+    map.add_pal(pal2, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and blue
+}
+
+// ============================================================================
+// Combined add tests
+// ============================================================================
+
+TEST(ColorIndexMapTests, AddTileAndAddPalShouldDeduplicateAcrossBoth)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile{};
+    tile.set(0, Rgba32{255, 0, 0}); // red
+    tile.set(1, Rgba32{0, 255, 0}); // green
+
+    Palette<Rgba32> pal{};
+    pal.add(Rgba32{255, 0, 255}); // transparent
+    pal.add(Rgba32{255, 0, 0});   // red (duplicate from tile)
+    pal.add(Rgba32{0, 0, 255});   // blue
+
+    map.add_tile(tile, rgba_magenta);
+    map.add_pal(pal, rgba_magenta);
+
+    EXPECT_EQ(3, map.size()); // red, green, blue
+}
+
+TEST(ColorIndexMapTests, AddMethodsShouldMaintainBidirectionalConsistency)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    PixelTile<Rgba32> tile{};
+    tile.set(0, Rgba32{255, 0, 0}); // red
+
+    Palette<Rgba32> pal{};
+    pal.add(Rgba32{255, 0, 255}); // transparent
+    pal.add(Rgba32{0, 255, 0});   // green
+
+    map.add_tile(tile, rgba_magenta);
+    map.add_pal(pal, rgba_magenta);
+
+    const Rgba32 red{255, 0, 0};
+    const Rgba32 green{0, 255, 0};
+
+    // Forward lookup
+    auto red_index = map.index_at_color(red);
+    auto green_index = map.index_at_color(green);
+
+    ASSERT_TRUE(red_index.has_value());
+    ASSERT_TRUE(green_index.has_value());
+
+    // Reverse lookup
+    auto color_at_red_index = map.color_at_index(red_index.value());
+    auto color_at_green_index = map.color_at_index(green_index.value());
+
+    ASSERT_TRUE(color_at_red_index.has_value());
+    ASSERT_TRUE(color_at_green_index.has_value());
+
+    // Consistency check
+    EXPECT_EQ(red, color_at_red_index.value());
+    EXPECT_EQ(green, color_at_green_index.value());
 }
