@@ -14,7 +14,7 @@
 ## Palette Packing
 - Implement overload-and-remove
 - Implement classic dfs and bfs
-- Implement a "shotgun" approach strategy
+- Implement a "shotgun approach" strategy that tries different sub-strategies until success
 
 ## Project Structure Refactor
 - domain layer is getting way too crowded
