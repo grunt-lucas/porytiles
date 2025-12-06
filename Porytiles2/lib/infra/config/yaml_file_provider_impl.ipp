@@ -425,10 +425,10 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
             for (std::size_t j = 0; j < colors_node.size(); ++j) {
                 const auto &color_node = colors_node[j];
 
-                if (!color_node.IsSequence() || color_node.size() < 3 || color_node.size() > 4) {
+                if (!color_node.IsSequence() || color_node.size() != 3) {
                     const auto color_mark = color_node.Mark();
                     const auto error = format->format(
-                        "'{}[{}].colors[{}]' must be [r, g, b] or [r, g, b, a]",
+                        "'{}[{}].colors[{}]' must be [r, g, b]",
                         FormatParam{key, Style::bold},
                         FormatParam{i},
                         FormatParam{j});

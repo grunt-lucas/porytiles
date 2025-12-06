@@ -9,6 +9,14 @@ namespace {
 using namespace porytiles2;
 
 /**
+ * @brief Result of extracting colors from a palette, tracking both unique colors and occupied slots.
+ */
+struct ColorSetWithOccupancy {
+    ColorSet color_set;
+    std::size_t occupied_slots;
+};
+
+/**
  * @brief Converts a \link PixelTile PixelTile's\endlink colors to a ColorSet.
  *
  * @details
@@ -30,6 +38,10 @@ using namespace porytiles2;
     for (const auto &color : unique_colors) {
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
+            /*
+             * TODO: this will throw if a hint contains the extrinsic transparency color. We already have a note to fix
+             * this via a PaletteValidator service, see note in CompilerTask::setup_working_data.
+             */
             panic("tile color " + to_string(color) + " not found in color index map");
         }
         color_set.set(index_opt.value());
@@ -43,32 +55,38 @@ using namespace porytiles2;
  *
  * @details
  * Extracts colors from slots 1-15 (skipping slot 0 which is transparency) and looks up each in the ColorIndexMap.
- * Wildcards are skipped.
+ * Wildcards are skipped. Returns both the ColorSet of unique colors and the count of occupied slots.
  *
  * @param pal The palette to convert
  * @param color_map The color-to-index mapping
  * @pre All colors in the pal are present in color_map
- * @return ColorSet containing all non-transparent pal colors
+ * @return ColorSetWithOccupancy containing unique colors and occupied slot count
  */
-[[nodiscard]] ColorSet
+[[nodiscard]] ColorSetWithOccupancy
 build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorIndexMap<Rgba32> &color_map)
 {
     ColorSet color_set{};
+    std::size_t occupied_slots = 0;
 
     // Start from slot 1 (slot 0 is transparency)
     for (std::size_t i = 1; i < pal.size(); ++i) {
         if (pal.is_wildcard(i)) {
             continue;
         }
+        ++occupied_slots;
         const auto color = pal.at(i);
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
+            /*
+             * TODO: this will throw if a prefilled pal contains the extrinsic transparency color. We already have a
+             * note to fix this via a PaletteValidator service, see note in CompilerTask::setup_working_data.
+             */
             panic("pal color " + to_string(color) + " at slot " + std::to_string(i) + " not in color map");
         }
         color_set.set(index_opt.value());
     }
 
-    return color_set;
+    return ColorSetWithOccupancy{color_set, occupied_slots};
 }
 
 /**
@@ -124,6 +142,13 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     const ColorIndexMap<Rgba32> &color_map,
     const Rgba32 &default_slot_zero)
 {
+    /*
+     * TODO: due to this construction, unused wildcard slots will get 0,0,0. Perhaps this should be configurable? If we
+     * default construct the output palette, then any unused slots in any of the palettes (e.g. unsued slots in the
+     * regular packed pals, wildcard slots in the prefilled pals), will be wildcarded in the returned pals. It would be
+     * up to the calling code to fix this. Let's think carefully about whose responsibility it should be to fill in
+     * wildcard slots. The packer, or the one calling the packer.
+     */
     Palette<Rgba32, pal::max_size> output{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
 
     // Set slot 0 (transparency slot)
@@ -194,12 +219,6 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     }
 
     if (placed_count != rgba32s_to_place.size()) {
-        /*
-         * TODO: we have a bug:
-         * Suppose I provide an override palette that is completely full, but it contains duplicate colors. The packing
-         * code is currently unable to see the duplicates. So it thinks there are more available colors than there
-         * actually are. So it will overfill the palette, and then we get to this step and hit the panic condition.
-         */
         panic("failed to place all colors in rgba32s_to_place");
     }
 
@@ -228,14 +247,15 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
         hint_tiles.emplace_back(PackableTile::HintId{hint.name()}, color_set);
     }
 
-    // === STEP 3: Convert input prefilled palettes to PrefilledPalette vector ===
+    // === STEP 3: Convert input prefilled palettes to PrefilledPalette set ===
     std::set<PrefilledPalette> prefilled_palettes;
     for (std::size_t i = 0; i < params.prefilled_pals_.size(); ++i) {
         if (!params.prefilled_pals_[i].has_value()) {
             continue;
         }
-        ColorSet color_set = build_color_set_from_pal(params.prefilled_pals_[i].value(), params.color_map_);
-        prefilled_palettes.insert(PrefilledPalette::partially_locked(i, color_set));
+        auto [color_set, occupied_slots] =
+            build_color_set_from_pal(params.prefilled_pals_[i].value(), params.color_map_);
+        prefilled_palettes.insert(PrefilledPalette::partially_locked(i, color_set, occupied_slots));
     }
 
     // === STEP 4: Create PackingInput and call low-level pack() ===

@@ -33,25 +33,33 @@ class PrefilledPalette {
      *
      * @param hardware_index The hardware palette index
      * @param color_set The fixed colors occupying all slots
+     * @param occupied_slots The number of physical slots occupied in the palette (may differ from unique color count
+     *        if palette contains duplicate colors)
      * @return A fully locked PrefilledPalette
      */
-    [[nodiscard]] static PrefilledPalette fully_locked(std::size_t hardware_index, ColorSet color_set);
+    [[nodiscard]] static PrefilledPalette
+    fully_locked(std::size_t hardware_index, ColorSet color_set, std::size_t occupied_slots);
 
     /**
      * @brief Creates a partially locked palette with available capacity.
      *
      * @details
      * A partially locked palette has some colors fixed but still has room for the packer to add more colors. The
-     * available capacity is computed as total_capacity - fixed_color_count.
+     * available capacity is computed as total_capacity - occupied_slots.
      *
      * @param hardware_index The hardware palette index
      * @param fixed_colors The colors that are already locked in this palette
+     * @param occupied_slots The number of physical slots occupied in the palette (may differ from unique color count
+     *        if palette contains duplicate colors)
      * @param total_capacity The total number of color slots (default pal::max_size - 1)
      * @return A partially locked PrefilledPalette
-     * @pre fixed_colors.count() <= total_capacity
+     * @pre occupied_slots <= total_capacity
      */
-    [[nodiscard]] static PrefilledPalette
-    partially_locked(std::size_t hardware_index, ColorSet fixed_colors, std::size_t total_capacity = pal::max_size - 1);
+    [[nodiscard]] static PrefilledPalette partially_locked(
+        std::size_t hardware_index,
+        ColorSet fixed_colors,
+        std::size_t occupied_slots,
+        std::size_t total_capacity = pal::max_size - 1);
 
     [[nodiscard]] bool operator==(const PrefilledPalette &other) const
     {
@@ -91,6 +99,20 @@ class PrefilledPalette {
     [[nodiscard]] std::size_t fixed_color_count() const;
 
     /**
+     * @brief Gets the number of occupied slots in the original prefilled palette.
+     *
+     * @details
+     * This may differ from fixed_color_count() if the prefilled palette contains duplicate colors. The occupied_slots
+     * value reflects how many physical slots are taken in the hardware palette.
+     *
+     * @return The number of occupied slots
+     */
+    [[nodiscard]] std::size_t occupied_slots() const
+    {
+        return occupied_slots_;
+    }
+
+    /**
      * @brief Gets the number of slots available for the packer to fill.
      *
      * @return The available capacity (0 if fully locked)
@@ -124,11 +146,13 @@ class PrefilledPalette {
     [[nodiscard]] bool can_accommodate(const ColorSet &tile_colors) const;
 
   private:
-    PrefilledPalette(std::size_t hardware_index, ColorSet fixed_colors, std::size_t available_capacity);
+    PrefilledPalette(
+        std::size_t hardware_index, ColorSet fixed_colors, std::size_t available_capacity, std::size_t occupied_slots);
 
     std::size_t hardware_index_;
     ColorSet fixed_colors_;
     std::size_t available_capacity_;
+    std::size_t occupied_slots_;
 };
 
 } // namespace porytiles2

@@ -182,6 +182,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
             auto tile_colors = tile.unique_nontransparent_colors(extrinsic_transparency.value());
             for (const auto &color : tile_colors) {
                 color_counts[color]++;
+                // TODO: track metatile where we hit the limit so we can display it
             }
         }
     }

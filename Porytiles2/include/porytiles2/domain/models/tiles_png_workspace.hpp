@@ -254,11 +254,12 @@ class TilesPngWorkspace {
      *
      * @details
      * Returns true when the cursor has reached or exceeded the capacity, indicating that all available transparent tile
-     * slots have been filled with non-transparent tiles. At this point, insert_tile() will return false for any further
+     * slots have been filled with non-transparent tiles. At this point, insert_tile() will panic for any further
      * insertion attempts.
      *
-     * Note: This method returns true even if there are still transparent tiles in the workspace beyond the cursor
-     * position, as the cursor always advances forward and never backtracks.
+     * Note: This method returns true even if there are still transparent tiles in the workspace behind the cursor
+     * position, as the cursor always advances forward and never backtracks. However, this state shouldn't be reachable
+     * under normal operation conditions.
      *
      * @return true if cursor == capacity, false otherwise
      */

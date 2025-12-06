@@ -98,14 +98,23 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
 
+    // TODO: move this common prefilled palette setup code somewhere shared
     // Initialize output palettes from prefilled palettes
     for (const auto &prefilled_pal : input.prefilled_pals_) {
         // Only set up prefilled palettes for slots that were requested via PalettePool
         if (pal_pool.is_available(prefilled_pal.hardware_index())) {
             pal_pool.checkout(prefilled_pal.hardware_index());
-            PackedPalette pal{prefilled_pal.hardware_index(), input.pal_capacity_};
-            ColorSet fixed_colors = prefilled_pal.fixed_colors();
-            if (color_set_count(fixed_colors) > 0) {
+
+            // Calculate effective capacity accounting for "wasted" slots from duplicate colors.
+            // If a prefilled palette has 15 occupied slots but only 14 unique colors, there's 1 wasted slot.
+            const ColorSet fixed_colors = prefilled_pal.fixed_colors();
+            const std::size_t unique_color_count = color_set_count(fixed_colors);
+            const std::size_t occupied_slot_count = prefilled_pal.occupied_slots();
+            const std::size_t wasted_slot_count = occupied_slot_count - unique_color_count;
+            const std::size_t effective_capacity = input.pal_capacity_ - wasted_slot_count;
+
+            PackedPalette pal{prefilled_pal.hardware_index(), effective_capacity};
+            if (unique_color_count > 0) {
                 // Pre-populate with fixed colors using a "system" tile whose id matches the prefilled's hw index
                 PackableTile system_tile{
                     PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()}, fixed_colors};

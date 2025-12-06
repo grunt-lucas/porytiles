@@ -576,6 +576,60 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPalette_PrefilledShouldNotBeUse
     EXPECT_FALSE(packing.pals_[7].has_value()) << "Unavailable palette 7 should not appear in result";
 }
 
+TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorrectlyCalculated)
+{
+    PlainTextFormatter formatter{};
+    BufferedUserDiagnostics diag{};
+    BestFusionStrategy strategy{&formatter, &diag};
+    PalettePacker packer{&strategy, &formatter, &diag};
+
+    // Create a prefilled palette with 15 slots filled but only 14 unique colors (1 duplicate).
+    // This tests the fix for the bug where duplicate colors caused capacity miscalculation.
+    // Slots 1-14 get distinct colors, slot 15 duplicates slot 1's color.
+    Palette<Rgba32, pal::max_size> prefilled_pal{};
+    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
+
+    const auto distinct_colors = generate_distinct_colors(14);
+    for (std::size_t i = 0; i < 14; ++i) {
+        prefilled_pal.set(i + 1, distinct_colors[i]);
+    }
+    // Slot 15 duplicates slot 1's color, creating 15 occupied slots but only 14 unique colors
+    prefilled_pal.set(15, distinct_colors[0]);
+
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+    prefilled_pals[0] = prefilled_pal;
+
+    // Create a tile with a brand new color not in the prefilled palette
+    Rgba32 new_color{254, 253, 252}; // A color definitely not in generate_distinct_colors
+    std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(new_color)};
+
+    // Create ColorIndexMap from tiles, then add prefilled palette colors
+    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    color_map.add_pal(prefilled_pal, rgba_magenta);
+
+    PackingParams params{};
+    params.tiles_ = tiles;
+    params.color_map_ = color_map;
+    params.extrinsic_transparency_ = rgba_magenta;
+    params.prefilled_pals_ = prefilled_pals;
+    params.hints_ = {};
+    params.available_pals_ = all_palettes_available();
+
+    auto result = packer.pack_tiles(params);
+
+    ASSERT_TRUE(result.has_value()) << "Packing should succeed";
+    const auto &packing = result.value();
+
+    // Tile should be assigned
+    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
+    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+
+    // The tile should be assigned to a palette OTHER than 0
+    // because palette 0 has no room (15 slots occupied, even though only 14 unique colors)
+    EXPECT_NE(assigned_pal, 0)
+        << "Tile should NOT be assigned to palette 0 (no available slots due to duplicates occupying all 15 slots)";
+}
+
 // =============================================================================
 // Transparency Handling Tests
 // =============================================================================

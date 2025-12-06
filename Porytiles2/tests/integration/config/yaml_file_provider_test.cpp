@@ -589,7 +589,7 @@ tileset:
     EXPECT_EQ(result.value.value()[1].pal().at(0).blue(), 200);
 }
 
-TEST_F(YamlFileProviderTest, PalHintsParsesColorsWithAlpha)
+TEST_F(YamlFileProviderTest, PalHintsRejectsColorsWithAlpha)
 {
     const std::string yaml_content = R"(
 tileset:
@@ -609,14 +609,8 @@ tileset:
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
-    ASSERT_EQ(result.state, ValidationState::valid);
-    ASSERT_EQ(result.value.value().size(), 1);
-
-    const auto &color = result.value.value()[0].pal().at(0);
-    EXPECT_EQ(color.red(), 128);
-    EXPECT_EQ(color.green(), 64);
-    EXPECT_EQ(color.blue(), 32);
-    EXPECT_EQ(color.alpha(), 200);
+    ASSERT_EQ(result.state, ValidationState::invalid);
+    EXPECT_TRUE(result.error_message.find("must be [r, g, b]") != std::string::npos);
 }
 
 TEST_F(YamlFileProviderTest, PalHintsRejectsNonSequence)
@@ -751,5 +745,5 @@ tileset:
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
     ASSERT_EQ(result.state, ValidationState::invalid);
-    EXPECT_TRUE(result.error_message.find("must be [r, g, b] or [r, g, b, a]") != std::string::npos);
+    EXPECT_TRUE(result.error_message.find("must be [r, g, b]") != std::string::npos);
 }

@@ -249,6 +249,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
          * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints.
          */
         std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
+        // TODO: we need to validate palette hints. We should disallow duplicate colors or extrinsic transparency.
         ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
         for (const auto &maybe_override_pal : tileset_.porytiles_component().pals()) {
             if (maybe_override_pal.has_value()) {
@@ -281,7 +282,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
         BestFusionStrategy packing_strategy{&format_, &diag_};
         PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
         std::bitset<pal::num_pals> available_pals{0};
-        for (int i = 0; i < num_pals_in_primary_; i++) {
+        for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
             // TODO: support out-of-band primary palettes
             available_pals.set(i, true);
         }
@@ -299,7 +300,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
             "failed to pack palettes for tileset " + tileset_.name(),
             void);
 
-        for (int i = 0; i < pal::num_pals; i++) {
+        for (unsigned int i = 0; i < pal::num_pals; i++) {
             const auto &maybe_packed_pal = pal_packing.pals_.at(i);
             if (maybe_packed_pal.has_value()) {
                 // Copy over the packed palette
@@ -352,15 +353,13 @@ ChainableResult<void> CompilerTask::setup_working_data()
              */
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
         }
-        else if (tiles_edit_mode == ArtifactEditMode::patch) {
+        if (tiles_edit_mode == ArtifactEditMode::patch) {
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
         }
-        else if (tiles_edit_mode == ArtifactEditMode::optimize) {
+        if (tiles_edit_mode == ArtifactEditMode::optimize) {
             return std::make_unique<TilesPngWorkspace>(num_tiles_in_primary);
         }
-        else {
-            panic("unexpected tiles_edit_mode");
-        }
+        panic("unexpected tiles_edit_mode");
     }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
 
     return {};
@@ -374,7 +373,8 @@ ChainableResult<void> CompilerTask::match_tiles_pals_patch_or_locked()
     assert_or_panic(
         pals_edit_mode_ != ArtifactEditMode::optimize, "pals edit mode cannot be 'optimize' in this method");
     /*
-     * TODO: are these even right? E.g. user could be asking for a tiles:locked build but have added new metatiles
+     * TODO: this is wrong. E.g. user could be asking for a tiles:locked build but have added new metatiles. We need to
+     * account for adding or removing metatiles, since that is still allowed during a tiles/pals locked build.
      */
     assert_or_panic(
         porytiles_pixel_rgba_.size() == porymap_pixel_rgba_.size(),
@@ -491,13 +491,7 @@ ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];
-        const auto &porymap_tile = porymap_pixel_rgba_[i];
-        const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba_[i];
-        const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba_[i];
-        const auto &porymap_tilemap_entry = porymap_tilemap_entries_[i];
 
-        // TODO: top_n matches should be configurable
-        // TODO: what if multiple pals match?
         std::vector<PaletteMatchResult<Rgba32>> matches =
             match_or_best(porytiles_tile, porymap_pals_, extrinsic_transparency_.value(), 1);
 
