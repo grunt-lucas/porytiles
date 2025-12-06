@@ -6,6 +6,8 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/services/metatile_validator.hpp"
+#include "porytiles2/infra/config/default_provider.hpp"
+#include "porytiles2/infra/config/lazy_layered_config.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -130,7 +132,9 @@ TEST(TileValidatorTests, ValidateAlphaChannels_AllValidAlphaValues_ReturnsSucces
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter};
     ColorPalettePrinter palette_printer{&formatter};
-    MockDomainConfig config{};
+    std::vector<std::unique_ptr<ConfigProvider>> providers{};
+    providers.push_back(std::make_unique<DefaultProvider>());
+    LazyLayeredConfig config{&formatter, std::move(providers)};
     MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
 
     auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);
@@ -177,7 +181,9 @@ TEST(TileValidatorTests, ValidateAlphaChannels_SomeInvalidAlphaValues_ReturnsFai
     BufferedUserDiagnostics diag{};
     AsciiTilePrinter tile_printer{&formatter};
     ColorPalettePrinter palette_printer{&formatter};
-    MockDomainConfig config{};
+    std::vector<std::unique_ptr<ConfigProvider>> providers{};
+    providers.push_back(std::make_unique<DefaultProvider>());
+    LazyLayeredConfig config{&formatter, std::move(providers)};
     MetatileValidator validator{&formatter, &diag, &tile_printer, &palette_printer, &config, "test_tileset"};
 
     auto result = MetatileValidatorTestAccess::validate_alpha_channels(validator, metatiles);

@@ -40,14 +40,6 @@ class MockConfigurableProvider final : public ConfigProvider {
         return LayerValue<std::size_t>::not_provided();
     }
 
-    [[nodiscard]] LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const override
-    {
-        if (patch_build_enabled_.contains(scope)) {
-            return LayerValue<bool>::valid(patch_build_enabled_.at(scope), metadata_);
-        }
-        return LayerValue<bool>::not_provided();
-    }
-
   private:
     std::string name_;
     std::string metadata_;
@@ -62,7 +54,6 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     auto mock_env = std::make_unique<MockConfigurableProvider>("MockEnvProvider", "from env");
     mock_env->num_tiles_total_[tileset_name] = 4000;
     auto mock_header = std::make_unique<MockConfigurableProvider>("MockHeaderProvider", "from header");
-    mock_header->patch_build_enabled_[tileset_name] = true;
     mock_header->num_tiles_total_[tileset_name] = 0; // this value is overridden by toml layer
     providers.push_back(std::move(mock_toml));
     providers.push_back(std::move(mock_env));
@@ -74,19 +65,13 @@ TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
     auto tiles_primary_result = config.num_tiles_in_primary(ConfigScopeType::tileset, tileset_name);
     auto tiles_total_result = config.num_tiles_total(ConfigScopeType::tileset, tileset_name);
     auto max_map_size_result = config.max_map_data_size(ConfigScopeType::tileset, tileset_name);
-    auto test_tileset_mode_result = config.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
-    auto another_tileset_mode_result = config.patch_build_enabled(ConfigScopeType::tileset, "another_tileset");
 
     ASSERT_TRUE(tiles_primary_result.has_value());
     ASSERT_TRUE(tiles_total_result.has_value());
     ASSERT_TRUE(max_map_size_result.has_value());
-    ASSERT_TRUE(test_tileset_mode_result.has_value());
-    ASSERT_TRUE(another_tileset_mode_result.has_value());
 
     // The second value() call is unnecessary since ConfigValue provides implicit unwrapping
     EXPECT_EQ(tiles_primary_result.value().value(), 2000);
     EXPECT_EQ(tiles_total_result.value(), 4000);
     EXPECT_EQ(max_map_size_result.value(), 10240);
-    EXPECT_EQ(test_tileset_mode_result.value(), true);
-    EXPECT_EQ(another_tileset_mode_result.value(), false);
 }

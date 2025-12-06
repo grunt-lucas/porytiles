@@ -269,44 +269,6 @@ tileset:
     EXPECT_TRUE(result.error_message.find("must be a sequence") != std::string::npos);
 }
 
-TEST_F(YamlFileProviderTest, PatchBuildEnabledParsesTrue)
-{
-    const std::string yaml_content = R"(
-tileset:
-  compile:
-    patch:
-      enabled: true
-)";
-    create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
-
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
-
-    auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
-
-    ASSERT_EQ(result.state, ValidationState::valid);
-    EXPECT_EQ(result.value.value(), true);
-}
-
-TEST_F(YamlFileProviderTest, PatchBuildEnabledParsesFalse)
-{
-    const std::string yaml_content = R"(
-tileset:
-  compile:
-    patch:
-      enabled: false
-)";
-    create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
-
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
-
-    auto result = provider.patch_build_enabled(ConfigScopeType::tileset, "test_tileset");
-
-    ASSERT_EQ(result.state, ValidationState::valid);
-    EXPECT_EQ(result.value.value(), false);
-}
-
 TEST_F(YamlFileProviderTest, TilesPalModeParsesTrueColor)
 {
     const std::string yaml_content = R"(
@@ -518,9 +480,10 @@ TEST_F(YamlFileProviderTest, PalHintsEnabledParsesTrue)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
-        enabled: true
+    pals:
+      packing:
+        hints:
+          enabled: true
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -538,9 +501,10 @@ TEST_F(YamlFileProviderTest, PalHintsEnabledParsesFalse)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
-        enabled: false
+    pals:
+      packing:
+        hints:
+          enabled: false
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -558,8 +522,9 @@ TEST_F(YamlFileProviderTest, PalHintsParsesValidSingleHint)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+     packing:
+      hints:
         hints:
           - name: "foliage"
             colors:
@@ -593,17 +558,18 @@ TEST_F(YamlFileProviderTest, PalHintsParsesMultipleHints)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - name: "foliage"
-            colors:
-              - [12, 190, 20]
-          - name: "water"
-            colors:
-              - [0, 100, 200]
-              - [0, 120, 220]
-              - [0, 80, 180]
+          hints:
+            - name: "foliage"
+              colors:
+                - [12, 190, 20]
+            - name: "water"
+              colors:
+                - [0, 100, 200]
+                - [0, 120, 220]
+                - [0, 80, 180]
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -628,12 +594,13 @@ TEST_F(YamlFileProviderTest, PalHintsParsesColorsWithAlpha)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - name: "transparent_hint"
-            colors:
-              - [128, 64, 32, 200]
+          hints:
+            - name: "transparent_hint"
+              colors:
+                - [128, 64, 32, 200]
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -657,9 +624,10 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsNonSequence)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
-        hints: "not a sequence"
+    pals:
+      packing:
+        hints:
+          hints: "not a sequence"
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -677,10 +645,11 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsHintThatIsNotMap)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - "not a map"
+          hints:
+            - "not a map"
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -698,11 +667,12 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsMissingName)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - colors:
-              - [12, 190, 20]
+          hints:
+            - colors:
+                - [12, 190, 20]
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -720,10 +690,11 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsMissingColors)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - name: "foliage"
+          hints:
+            - name: "foliage"
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
@@ -736,17 +707,18 @@ tileset:
     EXPECT_TRUE(result.error_message.find("missing required 'colors' field") != std::string::npos);
 }
 
-TEST_F(YamlFileProviderTest, PalHintsRejectsColorsNotSequence)
-{
-    const std::string yaml_content = R"(
+const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - name: "foliage"
-            colors: "not a sequence"
+          hints:
+            - name: "foliage"
+              colors: "not a sequence"
 )";
+TEST_F(YamlFileProviderTest, PalHintsRejectsColorsNotSequence)
+{
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
     ProjectTilesetArtifactKeyProvider key_provider{test_root_, &formatter_, &diag_};
@@ -763,12 +735,13 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsInvalidColorLength)
     const std::string yaml_content = R"(
 tileset:
   compile:
-    pal_packing:
-      pal_hints:
+    pals:
+      packing:
         hints:
-          - name: "foliage"
-            colors:
-              - [12, 190]
+          hints:
+            - name: "foliage"
+              colors:
+                - [12, 190]
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
