@@ -113,6 +113,12 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -126,15 +132,6 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     verify_checksums_raw(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] ChainableResult<ConfigValue<PatchTilesMode>>
-    patch_tiles_mode_raw(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] ChainableResult<ConfigValue<PatchPalMode>>
-    patch_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * Infra Config Raw Methods (Tier 1)
@@ -286,6 +283,36 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     extrinsic_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
+     * @brief Gets the full provenance chain for tiles_edit_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<ArtifactEditMode>>
+    tiles_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for pals_edit_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<ArtifactEditMode>>
+    pals_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
      * @brief Gets the full provenance chain for pal_hints_enabled.
      *
      * @details
@@ -329,51 +356,6 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const;
-
-    /**
-     * @brief Gets the full provenance chain for patch_build_enabled.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
-    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
-    patch_build_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const;
-
-    /**
-     * @brief Gets the full provenance chain for patch_tiles_mode.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
-    [[nodiscard]] std::vector<ProvenanceChainLink<PatchTilesMode>>
-    patch_tiles_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
-
-    /**
-     * @brief Gets the full provenance chain for patch_pal_mode.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
-    [[nodiscard]] std::vector<ProvenanceChainLink<PatchPalMode>>
-    patch_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for tiles_pal_mode.

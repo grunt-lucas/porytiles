@@ -69,13 +69,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     }
 
     // 6. Compile the `Tileset`, generating a new modified `Tileset`.
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_build_enabled, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_tiles_mode, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, patch_pal_mode, tileset_name, void);
-    auto maybe_compiled_tileset =
-        patch_build_enabled.value()
-            ? compiler_->compile_patch(*tileset, patch_tiles_mode.value(), patch_pal_mode.value())
-            : compiler_->compile(*tileset);
+    auto maybe_compiled_tileset = compiler_->compile(*tileset);
     if (!maybe_compiled_tileset.has_value()) {
         return ChainableResult<void>{
             FormattableError{"compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},

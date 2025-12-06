@@ -112,6 +112,20 @@ HeaderDefineProvider::extrinsic_transparency(ConfigScopeType /*type*/, const std
     return LayerValue<Rgba32>::not_provided();
 }
 
+LayerValue<ArtifactEditMode>
+HeaderDefineProvider::tiles_edit_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<ArtifactEditMode>::not_provided();
+}
+
+LayerValue<ArtifactEditMode>
+HeaderDefineProvider::pals_edit_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<ArtifactEditMode>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::pal_hints_enabled(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value
@@ -129,27 +143,6 @@ LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/
 {
     // No header_define specified for this config value
     return LayerValue<bool>::not_provided();
-}
-
-LayerValue<bool>
-HeaderDefineProvider::patch_build_enabled(ConfigScopeType /*type*/, const std::string & /*scope*/) const
-{
-    // No header_define specified for this config value
-    return LayerValue<bool>::not_provided();
-}
-
-LayerValue<PatchTilesMode>
-HeaderDefineProvider::patch_tiles_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
-{
-    // No header_define specified for this config value
-    return LayerValue<PatchTilesMode>::not_provided();
-}
-
-LayerValue<PatchPalMode>
-HeaderDefineProvider::patch_pal_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
-{
-    // No header_define specified for this config value
-    return LayerValue<PatchPalMode>::not_provided();
 }
 
 LayerValue<TilesPalMode>

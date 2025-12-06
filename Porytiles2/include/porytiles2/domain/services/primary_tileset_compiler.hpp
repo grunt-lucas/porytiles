@@ -4,8 +4,8 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
-#include "porytiles2/domain/config/patch_mode.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -30,10 +30,9 @@ class PrimaryTilesetCompiler {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_todo_remove(const Tileset &tileset) const;
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
-    compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset) const;
 
   private:
     const DomainConfig *config_;

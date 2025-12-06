@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "porytiles2/domain/config/patch_mode.hpp"
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
@@ -66,6 +66,12 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    pals_edit_mode(ConfigScopeType type, const std::string &scope) const;
+
     [[nodiscard]] virtual LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
@@ -76,13 +82,6 @@ class ConfigProvider {
      */
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
-
-    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const;
-
-    [[nodiscard]] virtual LayerValue<PatchTilesMode>
-    patch_tiles_mode(ConfigScopeType type, const std::string &scope) const;
-
-    [[nodiscard]] virtual LayerValue<PatchPalMode> patch_pal_mode(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * Infra Config

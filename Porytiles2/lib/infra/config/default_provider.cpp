@@ -73,6 +73,18 @@ LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::valid(rgba_magenta, source_info);
 }
 
+LayerValue<ArtifactEditMode>
+DefaultProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, source_info);
+}
+
+LayerValue<ArtifactEditMode>
+DefaultProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, source_info);
+}
+
 LayerValue<bool> DefaultProvider::pal_hints_enabled(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -89,24 +101,6 @@ LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(true, source_info);
-}
-
-LayerValue<bool> DefaultProvider::patch_build_enabled(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<bool>::valid(false, source_info);
-}
-
-LayerValue<PatchTilesMode> DefaultProvider::patch_tiles_mode(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<PatchTilesMode>::valid(PatchTilesMode::fixed, source_info);
-}
-
-LayerValue<PatchPalMode>
-DefaultProvider::patch_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<PatchPalMode>::valid(PatchPalMode::fixed, source_info);
 }
 
 LayerValue<TilesPalMode>

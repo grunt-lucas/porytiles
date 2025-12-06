@@ -9,7 +9,7 @@
 
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
-#include "porytiles2/domain/config/patch_mode.hpp"
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
@@ -34,31 +34,31 @@ namespace {
 using namespace porytiles2;
 
 /**
- * @brief Task encapsulating the compile_patch operation for primary tilesets.
+ * @brief Task encapsulating the compilation operation for primary tilesets.
  *
  * @details
- * Breaks the monolithic compile_patch logic into discrete phases:
+ * Breaks the monolithic compilation logic into discrete phases:
  * - process_porytiles_input() - metatileize, validate, decompose Porytiles layers
  * - process_porymap_input() - triple-layerize, decompile, decompose Porymap data
  * - setup_working_data() - initialize palettes, workspace, and output Porymap component
  * - match_tiles() - main loop matching Porytiles tiles to Porymap tiles/palettes
  * - assemble_output() - finalize output with dual-layer conversion, attributes, exports
  */
-class PatchCompilerTask {
+class CompilerTask {
   public:
-    PatchCompilerTask(
+    CompilerTask(
         const Tileset &tileset,
         const TextFormatter &format,
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
         const DomainConfig &config,
-        const PatchTilesMode tiles_mode,
-        const PatchPalMode pal_mode)
+        const ArtifactEditMode tiles_edit_mode,
+        const ArtifactEditMode pals_edit_mode)
         : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
-          config_{config}, tiles_mode_{tiles_mode}, pal_mode_{pal_mode}, extrinsic_transparency_{},
-          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
-          num_tiles_per_metatile_{}
+          config_{config}, tiles_edit_mode_{tiles_edit_mode}, pals_edit_mode_{pals_edit_mode},
+          extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{},
+          num_tiles_in_primary_{}, num_tiles_per_metatile_{}
     {
     }
 
@@ -82,8 +82,8 @@ class PatchCompilerTask {
     const TilePrinter &tile_printer_;
     const PalettePrinter &pal_printer_;
     const DomainConfig &config_;
-    const PatchTilesMode tiles_mode_;
-    const PatchPalMode pal_mode_;
+    const ArtifactEditMode tiles_edit_mode_;
+    const ArtifactEditMode pals_edit_mode_;
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
@@ -112,7 +112,7 @@ class PatchCompilerTask {
     std::unique_ptr<TilesPngWorkspace> tiles_workspace_{};
 };
 
-ChainableResult<std::unique_ptr<Tileset>> PatchCompilerTask::run()
+ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
@@ -145,7 +145,7 @@ ChainableResult<std::unique_ptr<Tileset>> PatchCompilerTask::run()
     return assemble_output();
 }
 
-ChainableResult<void> PatchCompilerTask::process_porytiles_input()
+ChainableResult<void> CompilerTask::process_porytiles_input()
 {
     LayerImageMetatileizer<Rgba32> metatileizer{};
     MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name()};
@@ -174,7 +174,7 @@ ChainableResult<void> PatchCompilerTask::process_porytiles_input()
     return {};
 }
 
-ChainableResult<void> PatchCompilerTask::process_porymap_input()
+ChainableResult<void> CompilerTask::process_porymap_input()
 {
     LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
     MetatileDecompiler metatile_decompiler{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
@@ -208,9 +208,13 @@ ChainableResult<void> PatchCompilerTask::process_porymap_input()
     return {};
 }
 
-ChainableResult<void> PatchCompilerTask::setup_working_data()
+ChainableResult<void> CompilerTask::setup_working_data()
 {
-    if (pal_mode_ == PatchPalMode::free) {
+    if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        panic("TODO: implement handling for pals patch edit mdoe");
+    }
+
+    if (pals_edit_mode_ == ArtifactEditMode::optimize) {
         /*
          * Create ColorIndexMap from the Porytiles tiles.
          */
@@ -248,7 +252,7 @@ ChainableResult<void> PatchCompilerTask::setup_working_data()
         //     "failed to pack palettes for tileset " + tileset_.name(),
         //     void);
 
-        panic("TODO: implement PatchPalMode::pals_free");
+        panic("TODO: implement pals edit optimize mode");
     }
 
     // TODO: PaletteValidator: throw error if pal isn't size 16
@@ -287,7 +291,7 @@ ChainableResult<void> PatchCompilerTask::setup_working_data()
         porymap_tilemap_entries_.size() == porymap_pixel_rgba_.size(),
         "porymap_tilemap_entries_.size() != porymap_pixel_rgba_.size()");
 
-    // TODO: in tiles:fixed mode, since we're not adding tiles, the capacity should just be the size of tiles.png
+    // TODO: in tiles locked mode, since we're not adding tiles, the capacity should just be the size of tiles.png
     // Create tiles workspace
     tiles_workspace_ =
         std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), num_tiles_in_primary_);
@@ -295,7 +299,7 @@ ChainableResult<void> PatchCompilerTask::setup_working_data()
     return {};
 }
 
-ChainableResult<void> PatchCompilerTask::match_tiles()
+ChainableResult<void> CompilerTask::match_tiles()
 {
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
@@ -350,8 +354,8 @@ ChainableResult<void> PatchCompilerTask::match_tiles()
                     new_porymap_component_->push_back_tilemap_entry(new_entry);
                 }
 
-                // CASE 3a-ii: tile not found and PatchTilesMode::fixed
-                else if (!maybe_tile_index.has_value() && tiles_mode_ == PatchTilesMode::fixed) {
+                // CASE 3a-ii: tile not found and tiles are locked
+                else if (!maybe_tile_index.has_value() && tiles_edit_mode_ == ArtifactEditMode::locked) {
                     matched_all_tiles = false;
                     emit_no_matching_tile_error(i);
                 }
@@ -389,7 +393,7 @@ ChainableResult<void> PatchCompilerTask::match_tiles()
     return {};
 }
 
-void PatchCompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
+void CompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
 {
     constexpr auto tag = "no-matching-tiles";
     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
@@ -408,7 +412,7 @@ void PatchCompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
     // TODO: add note to print out matching pal and print index_pixel generated
 }
 
-void PatchCompilerTask::emit_no_matching_pal_error(
+void CompilerTask::emit_no_matching_pal_error(
     std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches)
 {
     constexpr auto tag = "no-matching-palettes";
@@ -459,7 +463,7 @@ void PatchCompilerTask::emit_no_matching_pal_error(
     diag_.note(tag, closest_n_note);
 }
 
-void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit)
+void CompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit)
 {
     constexpr auto tag = "tile-limit";
     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
@@ -485,7 +489,7 @@ void PatchCompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_
     diag_.note(tag, note_text);
 }
 
-std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
+std::unique_ptr<Tileset> CompilerTask::assemble_output()
 {
     // TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors
     // This would be nice for cases where users add some assets and compile with "tiles/pals:free", but then later
@@ -555,7 +559,7 @@ std::unique_ptr<Tileset> PatchCompilerTask::assemble_output()
 
 namespace porytiles2 {
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_todo_remove(const Tileset &tileset) const
 {
     // Grab configuration values we'll need
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
@@ -655,10 +659,19 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const 
     return new_tileset;
 }
 
-ChainableResult<std::unique_ptr<Tileset>>
-PrimaryTilesetCompiler::compile_patch(const Tileset &tileset, PatchTilesMode tiles_mode, PatchPalMode pal_mode) const
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
 {
-    PatchCompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_, tiles_mode, pal_mode};
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tiles_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, pals_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
+    CompilerTask task{
+        tileset,
+        *format_,
+        *diag_,
+        *tile_printer_,
+        *pal_printer_,
+        *config_,
+        tiles_edit_mode.value(),
+        pals_edit_mode.value()};
     return task.run();
 }
 

@@ -11,14 +11,10 @@
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
-## Start implementing basic palette packing code
-- need basic data structures
-- PalettePacker domain service
-  - we'll need some basic interface to communicate which pal slots are fixed, which are available, etc
-  - maybe a PackablePal type?
-  - input: list of PackablePals built from Porymap and Porytiles pals, list of PaletteHints
-  - output: list of packed palettes
-  - client code of PalettePacker should never see nor deal with internal types, it should be pals in and pals out
+## Palette Packing
+- Implement overload-and-remove
+- Implement classic dfs and bfs
+- Implement a "shotgun" approach strategy
 
 ## Project Structure Refactor
 - domain layer is getting way too crowded
@@ -52,7 +48,7 @@
 ## Identify unit/integration testing gaps and fill them in
 - Palette packing code is currently untested
 
-## Figure out how to remove fmtlib from random placess all over the codebase
+## Figure out how to remove fmtlib from random places all over the codebase
 - Ideally it should be isolated so we could easily swap to a different string formatting library
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`

@@ -131,13 +131,33 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - name: tiles_edit_mode
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    layer: domain
+    default_value: "ArtifactEditMode::optimize"
+    yaml:
+      path: tileset.compile.tiles.edit_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pals_edit_mode
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    layer: domain
+    default_value: "ArtifactEditMode::optimize"
+    yaml:
+      path: tileset.compile.pals.edit_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - name: pal_hints_enabled
     type: bool
     parser: parse_bool
     layer: domain
     default_value: "true"
     yaml:
-      path: tileset.compile.pal_packing.pal_hints.enabled
+      path: tileset.compile.pals.packing.hints.enabled
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -147,7 +167,7 @@ config_values:
     layer: domain
     default_value: "std::vector<PaletteHint>{}"
     yaml:
-      path: tileset.compile.pal_packing.pal_hints.hints
+      path: tileset.compile.pals.packing.hints.hints
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -159,36 +179,6 @@ config_values:
     default_value: "true"
     yaml:
       path: verify_checksums
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - name: patch_build_enabled
-    type: bool
-    parser: parse_bool
-    layer: app
-    default_value: "false"
-    yaml:
-      path: tileset.compile.patch.enabled
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - name: patch_tiles_mode
-    type: PatchTilesMode
-    parser: parse_patch_tiles_mode
-    layer: app
-    default_value: "PatchTilesMode::fixed"
-    yaml:
-      path: tileset.compile.patch.tiles
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - name: patch_pal_mode
-    type: PatchPalMode
-    parser: parse_patch_pal_mode
-    layer: app
-    default_value: "PatchPalMode::fixed"
-    yaml:
-      path: tileset.compile.patch.palettes
     validators: [ ]
     cross_field_validators: [ ]
 

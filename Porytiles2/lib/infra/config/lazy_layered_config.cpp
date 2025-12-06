@@ -201,6 +201,28 @@ LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::s
         key, [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
 }
 
+ChainableResult<ConfigValue<ArtifactEditMode>>
+LazyLayeredConfig::tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<ArtifactEditMode>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.tiles_edit_mode(type, scope); });
+}
+
+ChainableResult<ConfigValue<ArtifactEditMode>>
+LazyLayeredConfig::pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<ArtifactEditMode>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.pals_edit_mode(type, scope); });
+}
+
 ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -232,39 +254,6 @@ LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string 
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<bool>(
         key, [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
-}
-
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::patch_build_enabled_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<bool>(
-        key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_build_enabled(type, scope); });
-}
-
-ChainableResult<ConfigValue<PatchTilesMode>>
-LazyLayeredConfig::patch_tiles_mode_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<PatchTilesMode>(
-        key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_tiles_mode(type, scope); });
-}
-
-ChainableResult<ConfigValue<PatchPalMode>>
-LazyLayeredConfig::patch_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<PatchPalMode>(
-        key, [&type, &scope](const ConfigProvider &provider) { return provider.patch_pal_mode(type, scope); });
 }
 
 ChainableResult<ConfigValue<TilesPalMode>>
@@ -341,6 +330,20 @@ LazyLayeredConfig::extrinsic_transparency_provenance_chain(ConfigScopeType type,
         [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
 }
 
+std::vector<ProvenanceChainLink<ArtifactEditMode>>
+LazyLayeredConfig::tiles_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<ArtifactEditMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tiles_edit_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<ArtifactEditMode>>
+LazyLayeredConfig::pals_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<ArtifactEditMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.pals_edit_mode(type, scope); });
+}
+
 std::vector<ProvenanceChainLink<bool>>
 LazyLayeredConfig::pal_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
@@ -360,27 +363,6 @@ LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const
 {
     return collect_provenance_chain<bool>(
         [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
-}
-
-std::vector<ProvenanceChainLink<bool>>
-LazyLayeredConfig::patch_build_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<bool>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.patch_build_enabled(type, scope); });
-}
-
-std::vector<ProvenanceChainLink<PatchTilesMode>>
-LazyLayeredConfig::patch_tiles_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<PatchTilesMode>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.patch_tiles_mode(type, scope); });
-}
-
-std::vector<ProvenanceChainLink<PatchPalMode>>
-LazyLayeredConfig::patch_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<PatchPalMode>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.patch_pal_mode(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<TilesPalMode>>

@@ -121,7 +121,7 @@ We could support this with some configuration options + Porytiles palettes.
 There are multiple ways it could be done, let's think about which would be the easiest to use.
 
 ### Idea 1
-Primary compilation could specify e.g. `--allow-additional-pals=11,12`
+Primary compilation could specify e.g. `--out-of-band-pals=11,12`
 which would generate meaningful content in pals 11 and 12 and also allow metatiles to reference these pal indexes without error.
 Then, when users compile a secondary tileset paired against this one, it would look at the config and automatically pull in 11,12
 as overrides, and error out if the user tries to specify their own overrides.

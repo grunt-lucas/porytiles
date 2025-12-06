@@ -156,6 +156,30 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         "extrinsic_transparency");
 }
 
+LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<ArtifactEditMode>(
+        format_,
+        paths,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["tiles"]["edit_mode"]; },
+        parse_artifact_edit_mode,
+        "tiles_edit_mode");
+}
+
+LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType type, const std::string &scope) const
+{
+    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    return search_config_files<ArtifactEditMode>(
+        format_,
+        paths,
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["edit_mode"]; },
+        parse_artifact_edit_mode,
+        "pals_edit_mode");
+}
+
 LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
 {
     const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
@@ -163,7 +187,7 @@ LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pal_packing"]["pal_hints"]["enabled"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["packing"]["hints"]["enabled"]; },
         parse_bool,
         "pal_hints_enabled");
 }
@@ -175,7 +199,7 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         format_,
         paths,
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pal_packing"]["pal_hints"]["hints"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["packing"]["hints"]["hints"]; },
         parse_pal_hints,
         "pal_hints");
 }
@@ -190,42 +214,6 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
         [](const YAML::Node &doc) { return doc["verify_checksums"]; },
         parse_bool,
         "verify_checksums");
-}
-
-LayerValue<bool> YamlFileProvider::patch_build_enabled(ConfigScopeType type, const std::string &scope) const
-{
-    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
-    return search_config_files<bool>(
-        format_,
-        paths,
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["enabled"]; },
-        parse_bool,
-        "patch_build_enabled");
-}
-
-LayerValue<PatchTilesMode> YamlFileProvider::patch_tiles_mode(ConfigScopeType type, const std::string &scope) const
-{
-    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
-    return search_config_files<PatchTilesMode>(
-        format_,
-        paths,
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["tiles"]; },
-        parse_patch_tiles_mode,
-        "patch_tiles_mode");
-}
-
-LayerValue<PatchPalMode> YamlFileProvider::patch_pal_mode(ConfigScopeType type, const std::string &scope) const
-{
-    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
-    return search_config_files<PatchPalMode>(
-        format_,
-        paths,
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["patch"]["palettes"]; },
-        parse_patch_pal_mode,
-        "patch_pal_mode");
 }
 
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const

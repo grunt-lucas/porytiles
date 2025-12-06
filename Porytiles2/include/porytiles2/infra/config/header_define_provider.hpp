@@ -95,20 +95,18 @@ class HeaderDefineProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<ArtifactEditMode>
+    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<ArtifactEditMode>
+    pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
     pal_hints(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool> patch_build_enabled(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PatchTilesMode>
-    patch_tiles_mode(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PatchPalMode>
-    patch_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;

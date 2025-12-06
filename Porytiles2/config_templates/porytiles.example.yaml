@@ -26,8 +26,8 @@ tileset:
       # Set edit mode for the tiles artifact.
       # Allowed values:
       # - locked: no changes allowed to tiles.png
-      # - surgical: allow additions to tiles.png in transparent slots
-      # - clobber: current Porytiles1 behavior; clear the whole tile workspace and pack tiles optimally
+      # - patch: allow additions to tiles.png in transparent slots
+      # - optimize: current Porytiles1 behavior; clear the whole tile workspace and pack tiles optimally
       edit_mode: locked
 
       # Set palette mode for output 'tiles.png'
@@ -35,6 +35,7 @@ tileset:
       # - greyscale: greyscale palette mapped to index values: [0, 15] -> [[255,255,255], [0,0,0]] [default]
       # - true-color: 8-bit index value, full output pal stored in PNG, upper 4 bits map into pal for true-color output
       pal_mode: greyscale
+
       # Set tile sharing optimization mode
       # Allowed values:
       # - manual: no automatic optimization, use Porytiles palettes (and/or tiles.override.png) to force shared tiles [default]
@@ -52,8 +53,8 @@ tileset:
       # Set edit mode for the palette artifacts.
       # Allowed values:
       # - locked: no changes allowed to Porymap palettes
-      # - surgical: allow additions to palettes in unused slots (TODO figure out which slots count as "unused")
-      # - clobber: current Porytiles1 behavior; clear the palettes and pack optimally
+      # - patch: allow additions to palettes in unused slots (TODO figure out which slots count as "unused")
+      # - optimize: current Porytiles1 behavior; clear the palettes and pack optimally
       edit_mode: locked
 
       # in edit_mode: locked, if not palette matches, show closest n matches in diagnostic output
@@ -62,7 +63,7 @@ tileset:
       packing:
         algorithm: bfs
         prune: dynamic
-        pal_hints:
+        hints:
           enabled: true
           hints:
             - name: "foliage"

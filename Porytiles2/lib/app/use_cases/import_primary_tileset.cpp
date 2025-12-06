@@ -4,7 +4,6 @@
 #include <string>
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
@@ -81,18 +80,22 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     const auto imported_tileset = std::move(maybe_imported_tileset.value());
 
     // 7. Perform a patch build.
-    auto maybe_recompiled_tileset =
-        compiler_->compile_patch(*imported_tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
-    if (!maybe_recompiled_tileset.has_value()) {
-        // return ChainableResult<void>{
-        //     FormattableError{"patch compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
-        //     maybe_new_tileset};
-        panic("patch re-compilation after import failed: this should never happen right?");
-    }
-    const auto new_tileset = std::move(maybe_recompiled_tileset.value());
+    /*
+     * TODO: bring this back? We moved patch compilation logic to domain layer, so would need some way to temporarily
+     * override user config settings.
+     */
+    // auto maybe_recompiled_tileset =
+    //     compiler_->compile_patch(*imported_tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
+    // if (!maybe_recompiled_tileset.has_value()) {
+    //     // return ChainableResult<void>{
+    //     //     FormattableError{"patch compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+    //     //     maybe_new_tileset};
+    //     panic("patch re-compilation after import failed: this should never happen right?");
+    // }
+    // const auto new_tileset = std::move(maybe_recompiled_tileset.value());
 
     // 8. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
+    if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
     }

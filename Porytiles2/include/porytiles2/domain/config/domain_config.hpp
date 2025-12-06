@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -169,6 +170,22 @@ class DomainConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tiles_edit_mode_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    pals_edit_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = pals_edit_mode_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
     {
@@ -324,6 +341,30 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
+    tiles_edit_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tiles_edit_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
+    tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
+    pals_edit_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = pals_edit_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
+    pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
