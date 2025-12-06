@@ -194,6 +194,12 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     }
 
     if (placed_count != rgba32s_to_place.size()) {
+        /*
+         * TODO: we have a bug:
+         * Suppose I provide an override palette that is completely full, but it contains duplicate colors. The packing
+         * code is currently unable to see the duplicates. So it thinks there are more available colors than there
+         * actually are. So it will overfill the palette, and then we get to this step and hit the panic condition.
+         */
         panic("failed to place all colors in rgba32s_to_place");
     }
 

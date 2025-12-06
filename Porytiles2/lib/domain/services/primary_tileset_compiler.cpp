@@ -18,6 +18,8 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
+#include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -69,7 +71,8 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> process_porytiles_input();
     [[nodiscard]] ChainableResult<void> process_porymap_input();
     [[nodiscard]] ChainableResult<void> setup_working_data();
-    [[nodiscard]] ChainableResult<void> match_tiles();
+    [[nodiscard]] ChainableResult<void> match_tiles_pals_patch_or_locked();
+    [[nodiscard]] ChainableResult<void> match_tiles_pals_optimized();
     void emit_no_matching_tile_error(std::size_t tile_index);
     void emit_no_matching_pal_error(std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
     void emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit);
@@ -140,7 +143,15 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 
     PT_TRY_CALL_PASS_ERR(setup_working_data(), std::unique_ptr<Tileset>);
 
-    PT_TRY_CALL_PASS_ERR(match_tiles(), std::unique_ptr<Tileset>);
+    if (tiles_edit_mode_ == ArtifactEditMode::optimize && pals_edit_mode_ == ArtifactEditMode::optimize) {
+        PT_TRY_CALL_PASS_ERR(match_tiles_pals_optimized(), std::unique_ptr<Tileset>);
+    }
+    else if (tiles_edit_mode_ != ArtifactEditMode::optimize && pals_edit_mode_ != ArtifactEditMode::optimize) {
+        PT_TRY_CALL_PASS_ERR(match_tiles_pals_patch_or_locked(), std::unique_ptr<Tileset>);
+    }
+    else {
+        panic("TODO: impl this case");
+    }
 
     return assemble_output();
 }
@@ -198,7 +209,8 @@ ChainableResult<void> CompilerTask::process_porymap_input()
     /*
      * We don't need to run any validation (including size validation) on porymap_metatiles here. We're going to
      * overwrite them anyway. We only need to check the size of the final tilemap entry vector. Patch builds don't need
-     * to preserve tilemap entries since those cannot be referenced by other tilesets.
+     * to preserve tilemap entries since those cannot be referenced by other tilesets. We can just write a new entry
+     * vector every time.
      */
 
     // Decompose Porymap metatiles and generate canonical versions
@@ -210,18 +222,51 @@ ChainableResult<void> CompilerTask::process_porymap_input()
 
 ChainableResult<void> CompilerTask::setup_working_data()
 {
-    if (pals_edit_mode_ == ArtifactEditMode::patch) {
-        panic("TODO: implement handling for pals patch edit mdoe");
-    }
-
-    if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+    if (pals_edit_mode_ == ArtifactEditMode::locked) {
         /*
-         * Create ColorIndexMap from the Porytiles tiles.
+         * TODO: PaletteValidator: throw error if pal isn't size 16
          */
+        /*
+         * TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
+         */
+        /*
+         * TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a
+         * hard failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should
+         * at least generate a warning in case folks are confused about what slot 0 is for.
+         */
+
+        // Collect primary palettes from existing Porymap component
+        porymap_pals_.reserve(num_pals_in_primary_);
+        for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
+            porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
+        }
+    }
+    else if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        panic("TODO: implement handling for pals ArtifactEditMode::patch");
+    }
+    else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+        /*
+         * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints.
+         */
+        std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
         ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
+        for (const auto &maybe_override_pal : tileset_.porytiles_component().pals()) {
+            if (maybe_override_pal.has_value()) {
+                color_index_map.add_pal(maybe_override_pal.value(), extrinsic_transparency_.value());
+            }
+        }
+        for (const auto &hint : hints) {
+            color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
+        }
 
         /*
-         * TODO: create canonical ShapeTile vectors here once we implement 'tile_sharing:' config option
+         * TODO: we need another error condition check here. It's possible that after adding Porytiles override pals and
+         * hints, we are now over the global color limit. Also, we should have warnings get generated here if any colors
+         * in the hints/overrides did not appear in the layer PNGs.
+         */
+
+        /*
+         * TODO: create canonical ShapeTile vectors here once we implement 'compile.tiles.sharing:' config option
          */
         // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
         //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32>
@@ -233,37 +278,57 @@ ChainableResult<void> CompilerTask::setup_working_data()
         //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
         //     });
 
-        // ClassicDfsStrategy packing_strategy{};
-        // PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
-        //
-        // std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() :
-        // std::vector<PaletteHint>{};
-        //
-        // PT_TRY_ASSIGN_CHAIN_ERR(
-        //     pal_packing,
-        //     pal_packer.pack_tiles(
-        //         porytiles_pixel_rgba_,
-        //         color_index_map,
-        //         extrinsic_transparency_.value(),
-        //         tileset_.porytiles_component().pals(),
-        //         hints,
-        //         num_pals_in_primary_.value(),
-        //         num_pals_total_.value()),
-        //     "failed to pack palettes for tileset " + tileset_.name(),
-        //     void);
+        BestFusionStrategy packing_strategy{&format_, &diag_};
+        PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
+        std::bitset<pal::num_pals> available_pals{0};
+        for (int i = 0; i < num_pals_in_primary_; i++) {
+            // TODO: support out-of-band primary palettes
+            available_pals.set(i, true);
+        }
+        PackingParams packing_params{};
+        packing_params.tiles_ = porytiles_pixel_rgba_;
+        packing_params.color_map_ = color_index_map;
+        packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
+        packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+        packing_params.hints_ = hints;
+        packing_params.available_pals_ = available_pals;
 
-        panic("TODO: implement pals edit optimize mode");
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            pal_packing,
+            pal_packer.pack_tiles(packing_params),
+            "failed to pack palettes for tileset " + tileset_.name(),
+            void);
+
+        for (int i = 0; i < pal::num_pals; i++) {
+            const auto &maybe_packed_pal = pal_packing.pals_.at(i);
+            if (maybe_packed_pal.has_value()) {
+                // Copy over the packed palette
+                porymap_pals_.push_back(maybe_packed_pal.value());
+            }
+            else if (tileset_.porytiles_component().pal_at(i).has_value()) {
+                /*
+                 * TODO: out-of-band override: resolve all wildcards to some default and copy it over
+                 */
+                panic("TODO: implement copy for out-of-band porytiles override pal");
+            }
+            else {
+                /*
+                 * Copy remaining secondary palettes from the original component. The "secondary" pals in a primary
+                 * tileset's folder won't be actually loaded by the game engine. Porymap also doesn't show them -- it
+                 * will grab pals from the relevant secondary set folder. However, we copy them here for consistency. If
+                 * for some reason the user had edited them, we don't want to clobber their edits. Porytiles should be
+                 * surgical where possible.
+                 *
+                 * Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
+                 * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
+                 * them, let's not clobber anything unnecessarily.
+                 */
+                porymap_pals_.push_back(tileset_.porymap_component().pal_at(i));
+            }
+        }
     }
-
-    // TODO: PaletteValidator: throw error if pal isn't size 16
-    // TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
-    // TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a hard
-    // failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should at least
-    // generate a warning in case folks are confused about what slot 0 is for.
-    // Collect primary palettes from existing Porymap component
-    porymap_pals_.reserve(num_pals_in_primary_);
-    for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
-        porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
+    else {
+        panic("unexpected pals ArtifactEditMode");
     }
 
     // Create new Porymap component for output
@@ -277,7 +342,40 @@ ChainableResult<void> CompilerTask::setup_working_data()
     // explicit "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values?
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
-    // Preconditions: all decomposed tile vectors have the same size
+    // Create tiles workspace
+    tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
+        if (tiles_edit_mode == ArtifactEditMode::locked) {
+            /*
+             * TODO: in tiles locked mode, since we're not adding tiles, the capacity should just be the size of
+             * the original tiles.png. Later on, when we export, we'll set "include_trailing_transparent" so if user
+             * originally had transparency at the end (for whatever reason), we won't clobber it.
+             */
+            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+        }
+        else if (tiles_edit_mode == ArtifactEditMode::patch) {
+            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+        }
+        else if (tiles_edit_mode == ArtifactEditMode::optimize) {
+            return std::make_unique<TilesPngWorkspace>(num_tiles_in_primary);
+        }
+        else {
+            panic("unexpected tiles_edit_mode");
+        }
+    }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::match_tiles_pals_patch_or_locked()
+{
+    // Preconditions
+    assert_or_panic(
+        tiles_edit_mode_ != ArtifactEditMode::optimize, "tiles.png edit mode cannot be 'optimize' in this method");
+    assert_or_panic(
+        pals_edit_mode_ != ArtifactEditMode::optimize, "pals edit mode cannot be 'optimize' in this method");
+    /*
+     * TODO: are these even right? E.g. user could be asking for a tiles:locked build but have added new metatiles
+     */
     assert_or_panic(
         porytiles_pixel_rgba_.size() == porymap_pixel_rgba_.size(),
         "porytiles_pixel_rgba_.size() != porymap_pixel_rgba_.size()");
@@ -291,16 +389,6 @@ ChainableResult<void> CompilerTask::setup_working_data()
         porymap_tilemap_entries_.size() == porymap_pixel_rgba_.size(),
         "porymap_tilemap_entries_.size() != porymap_pixel_rgba_.size()");
 
-    // TODO: in tiles locked mode, since we're not adding tiles, the capacity should just be the size of tiles.png
-    // Create tiles workspace
-    tiles_workspace_ =
-        std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), num_tiles_in_primary_);
-
-    return {};
-}
-
-ChainableResult<void> CompilerTask::match_tiles()
-{
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];
@@ -354,13 +442,13 @@ ChainableResult<void> CompilerTask::match_tiles()
                     new_porymap_component_->push_back_tilemap_entry(new_entry);
                 }
 
-                // CASE 3a-ii: tile not found and tiles are locked
+                // CASE 3a-ii: tile not found and tiles.png is locked
                 else if (!maybe_tile_index.has_value() && tiles_edit_mode_ == ArtifactEditMode::locked) {
                     matched_all_tiles = false;
                     emit_no_matching_tile_error(i);
                 }
 
-                // CASE 3a-iii: tile not found and PatchTilesMode::free
+                // CASE 3a-iii: tile not found and tiles.png is not locked (i.e. it's patch)
                 else {
                     if (tiles_workspace_->at_capacity()) {
                         matched_all_tiles = false;
@@ -383,6 +471,75 @@ ChainableResult<void> CompilerTask::match_tiles()
                 matched_all_tiles = false;
                 emit_no_matching_pal_error(i, matches);
             }
+        }
+    }
+
+    if (!matched_all_tiles) {
+        return ChainableResult<void>{FormattableError{"failed to match all Porytiles tiles"}};
+    }
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
+{
+    // Preconditions
+    assert_or_panic(
+        tiles_edit_mode_ == ArtifactEditMode::optimize, "tiles.png edit mode must be 'optimize' in this method");
+    assert_or_panic(pals_edit_mode_ == ArtifactEditMode::optimize, "pals edit mode must be 'optimize' in this method");
+
+    bool matched_all_tiles = true;
+    for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
+        const auto &porytiles_tile = porytiles_pixel_rgba_[i];
+        const auto &porymap_tile = porymap_pixel_rgba_[i];
+        const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba_[i];
+        const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba_[i];
+        const auto &porymap_tilemap_entry = porymap_tilemap_entries_[i];
+
+        // TODO: top_n matches should be configurable
+        // TODO: what if multiple pals match?
+        std::vector<PaletteMatchResult<Rgba32>> matches =
+            match_or_best(porytiles_tile, porymap_pals_, extrinsic_transparency_.value(), 1);
+
+        // CASE 1: found covering pal
+        if (matches.at(0).is_covered) {
+            const auto pal_index = matches.at(0).pal_index;
+            const auto &matched_pal = porymap_pals_.at(pal_index);
+            const auto index_tile =
+                index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
+            CanonicalPixelTile canonical_index_tile{index_tile};
+            const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
+
+            // CASE 1a: tile already present
+            if (maybe_tile_index.has_value()) {
+                const auto tile_index = maybe_tile_index.value();
+                const auto workspace_tile = tiles_workspace_->tile_at(tile_index);
+                const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+                const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+                const TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+                new_porymap_component_->push_back_tilemap_entry(new_entry);
+            }
+            // CASE 1b: tile not found
+            else {
+                if (tiles_workspace_->at_capacity()) {
+                    matched_all_tiles = false;
+                    emit_tile_limit_error(i, tiles_workspace_->capacity());
+                    break;
+                }
+                const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
+                const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
+                const TilemapEntry new_entry{
+                    inserted_index,
+                    pal_index,
+                    static_cast<bool>(canonical_index_tile.h_flip() ^ workspace_tile.h_flip()),
+                    static_cast<bool>(canonical_index_tile.v_flip() ^ workspace_tile.v_flip())};
+                new_porymap_component_->push_back_tilemap_entry(new_entry);
+            }
+        }
+
+        // CASE 2: no covering pal
+        else {
+            panic("this should have failed earlier after packing step");
         }
     }
 
@@ -491,13 +648,15 @@ void CompilerTask::emit_tile_limit_error(std::size_t tile_index, std::size_t til
 
 std::unique_ptr<Tileset> CompilerTask::assemble_output()
 {
-    // TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors
-    // This would be nice for cases where users add some assets and compile with "tiles/pals:free", but then later
-    // decide to remove the assets. We could warn them these assets are unused so that they can optionally remove to
-    // free up space. We could also have a compilation option "force_remove" that forcibly removes unused stuff. This is
-    // obviously less safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the
-    // secondaries No changes here, this is a compilation operation and there should be no writebacks into the input
-    // assets.
+    /*
+     * TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors. This would be
+     * nice for cases where users add some assets and compile with "tiles/pals:patch", but then later decide to remove
+     * the assets. We could warn them these assets are unused so that they can optionally remove to free up space. We
+     * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
+     * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
+     * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
+     * assets are truly unused.
+     */
 
     // No changes here, this is a compilation operation - no writebacks into input assets
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
@@ -516,38 +675,37 @@ std::unique_ptr<Tileset> CompilerTask::assemble_output()
     }
 
     // Copy metatile attributes from original
-    // TODO: write attributes for real
-    for (const auto &attr : tileset_.porymap_component().metatile_attributes_bin()) {
-        new_porymap_component_->push_back_attribute(attr);
+    // TODO: need to copy over metatile behavior (and other firered attrs if relevant)
+    for (const auto &metatile : porytiles_metatiles_) {
+        LayerType layer_type;
+        if (configured_layer_mode == LayerMode::dual) {
+            layer_type = metatile.infer_layer_type(extrinsic_transparency_.value());
+        }
+        else {
+            layer_type = LayerType::normal;
+        }
+        MetatileAttribute new_attr{layer_type, 0};
+        new_porymap_component_->push_back_attribute(new_attr);
     }
 
     // Export tiles in original form
-    // TODO: in tiles:fixed mode, don't ExportTrimMode::trim_trailing_transparent, preserve original exactly as-is
-    new_porymap_component_->tiles_png(
-        tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+    if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        /*
+         * TODO: why is using ExportFlipMode::canonical here bugged? I think it has to do with how we computed the flip
+         * bits in 'match_tiles_pals_optimized'. If we're going to make this configurable, we'll need to check the
+         * config value in the matcher function so we can compute the flip bits correctly.
+         */
+        new_porymap_component_->tiles_png(
+            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+    }
+    else {
+        new_porymap_component_->tiles_png(
+            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent));
+    }
 
-    // Copy primary palettes from our processed porymap_pals vector
-    for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
+    // Copy palettes from our processed porymap_pals vector
+    for (unsigned int i = 0; i < pal::num_pals; i++) {
         new_porymap_component_->set_pal(i, porymap_pals_[i]);
-    }
-
-    /*
-     * Copy remaining secondary palettes from the original component. The "secondary" pals in a primary tileset's folder
-     * won't be actually loaded by the game engine. Porymap also doesn't show them -- it will grab pals from the
-     * relevant secondary set folder. However, we copy them here for consistency. If for some reason the user had edited
-     * them, we don't want to clobber their edits. Porytiles should be surgical where possible.
-     */
-    for (unsigned int i = num_pals_in_primary_; i < num_pals_total_; i++) {
-        new_porymap_component_->set_pal(i, tileset_.porymap_component().pals()[i]);
-    }
-
-    /*
-     * Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
-     * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited them, let's
-     * not clobber anything unnecessarily.
-     */
-    for (unsigned int i = num_pals_total_; i < pal::num_pals; i++) {
-        new_porymap_component_->set_pal(i, tileset_.porymap_component().pals()[i]);
     }
 
     // Create the full Tileset and return

@@ -125,12 +125,12 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
 
     // Helper to assign a tile
     auto assign_tile = [&output, &multiplicity](const PackableTile &tile) -> bool {
-        auto best_idx = find_best_palette(tile, output.pals_, multiplicity);
+        auto maybe_best_idx = find_best_palette(tile, output.pals_, multiplicity);
 
-        if (best_idx.has_value()) {
+        if (maybe_best_idx.has_value()) {
             // Add to existing palette
-            output.pals_[*best_idx].add_tile(tile);
-            output.tile_to_pal_[tile.id()] = output.pals_[best_idx.value()].hardware_index();
+            output.pals_[maybe_best_idx.value()].add_tile(tile);
+            output.tile_to_pal_[tile.id()] = output.pals_[maybe_best_idx.value()].hardware_index();
             return true;
         }
 
