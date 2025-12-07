@@ -22,42 +22,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
      * vanilla game tilesets. OG porytiles used a slightly different greyscale pal, with pure black as index 0 and
      * different step intervals between colors.
      */
-    // const std::vector og_porytiles_greyscale_pal = {
-    //     Rgba32{0, 0, 0, 255},
-    //     Rgba32{16, 16, 16, 255},
-    //     Rgba32{32, 32, 32, 255},
-    //     Rgba32{48, 48, 48, 255},
-    //     Rgba32{64, 64, 64, 255},
-    //     Rgba32{80, 80, 80, 255},
-    //     Rgba32{96, 96, 96, 255},
-    //     Rgba32{112, 112, 112, 255},
-    //     Rgba32{128, 128, 128, 255},
-    //     Rgba32{144, 144, 144, 255},
-    //     Rgba32{160, 160, 160, 255},
-    //     Rgba32{176, 176, 176, 255},
-    //     Rgba32{192, 192, 192, 255},
-    //     Rgba32{208, 208, 208, 255},
-    //     Rgba32{224, 224, 224, 255},
-    //     Rgba32{240, 240, 240, 255},
-    // };
-    const std::vector greyscale_pal = {
-        Rgba32{255, 255, 255, 255},
-        Rgba32{238, 238, 238, 255},
-        Rgba32{222, 222, 222, 255},
-        Rgba32{205, 205, 205, 255},
-        Rgba32{189, 189, 189, 255},
-        Rgba32{172, 172, 172, 255},
-        Rgba32{156, 156, 156, 255},
-        Rgba32{139, 139, 139, 255},
-        Rgba32{115, 115, 115, 255},
-        Rgba32{98, 98, 98, 255},
-        Rgba32{82, 82, 82, 255},
-        Rgba32{65, 65, 65, 255},
-        Rgba32{49, 49, 49, 255},
-        Rgba32{32, 32, 32, 255},
-        Rgba32{16, 16, 16, 255},
-        Rgba32{0, 0, 0, 255},
-    };
+    const auto greyscale_pal = standard_greyscale_pal();
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -42,6 +43,9 @@ class TilePrinter {
 
     [[nodiscard]] virtual std::vector<std::string>
     print_tile(const PixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const = 0;
+
+    [[nodiscard]] virtual std::vector<std::string>
+    print_tile(const PixelTile<IndexPixel> &tile, const Rgba32 &extrinsic_transparency) const = 0;
 
     [[nodiscard]] virtual std::vector<std::string> print_tile_pixel_highlight(
         const PixelTile<Rgba32> &tile,

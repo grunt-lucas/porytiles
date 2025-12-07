@@ -5,6 +5,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -144,6 +145,37 @@ constexpr Rgba32 rgba_magenta{255, 0, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_cyan{0, 255, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_purple{128, 0, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_lime{128, 255, 128, Rgba32::alpha_opaque};
+
+/**
+ * @brief Returns the standard 16-color greyscale palette used for indexed tile output.
+ *
+ * @details
+ * This palette maps index 0 to pure white and index 15 to pure black, which matches vanilla game tilesets. The
+ * intermediate values are evenly spaced greyscale tones.
+ *
+ * @return A vector of 16 Rgba32 colors representing the greyscale palette
+ */
+inline std::vector<Rgba32> standard_greyscale_pal()
+{
+    return {
+        Rgba32{255, 255, 255, 255},
+        Rgba32{238, 238, 238, 255},
+        Rgba32{222, 222, 222, 255},
+        Rgba32{205, 205, 205, 255},
+        Rgba32{189, 189, 189, 255},
+        Rgba32{172, 172, 172, 255},
+        Rgba32{156, 156, 156, 255},
+        Rgba32{139, 139, 139, 255},
+        Rgba32{115, 115, 115, 255},
+        Rgba32{98, 98, 98, 255},
+        Rgba32{82, 82, 82, 255},
+        Rgba32{65, 65, 65, 255},
+        Rgba32{49, 49, 49, 255},
+        Rgba32{32, 32, 32, 255},
+        Rgba32{16, 16, 16, 255},
+        Rgba32{0, 0, 0, 255},
+    };
+}
 
 // std::size_t hash_value(const Rgba32 &obj) {
 //     std::size_t seed = 0x7A22F97A;

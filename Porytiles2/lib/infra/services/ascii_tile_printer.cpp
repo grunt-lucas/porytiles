@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -307,6 +308,47 @@ std::vector<std::string>
 AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const
 {
     return render_tile_with_highlights(tile, {}, extrinsic_transparency, format_);
+}
+
+std::vector<std::string>
+AsciiTilePrinter::print_tile(const PixelTile<IndexPixel> &tile, const Rgba32 &extrinsic_transparency) const
+{
+    const auto greyscale_pal = standard_greyscale_pal();
+
+    std::vector<std::string> result{};
+    std::stringstream ss{};
+
+    // Insert a blank line
+    result.emplace_back();
+
+    for (std::size_t row = 0; row < tile::side_length_pix; row++) {
+        for (std::size_t col = 0; col < tile::side_length_pix; col++) {
+            const auto index_pixel = tile.at(row, col);
+
+            Rgba32 pixel_color{};
+            if (index_pixel.index() < greyscale_pal.size()) {
+                pixel_color = greyscale_pal[index_pixel.index()];
+            }
+            else {
+                /*
+                 * TODO: once we have IndexPixel4 and IndexPixel8, we can remove this fallback and have different
+                 * templates for each type.
+                 */
+                // Fallback for out-of-range indices: use modulo to wrap around
+                pixel_color = greyscale_pal[index_pixel.index() % greyscale_pal.size()];
+            }
+
+            const auto color_style_bg = rgba_to_bg_style(pixel_color);
+            ss << format_->format("{}", FormatParam{"  ", Style::bold | color_style_bg});
+        }
+        result.push_back(ss.str());
+        reset_stream(ss);
+    }
+
+    // Insert a blank line
+    result.emplace_back();
+
+    return result;
 }
 
 std::vector<std::string> AsciiTilePrinter::print_tile_pixel_highlight(

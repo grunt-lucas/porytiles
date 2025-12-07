@@ -77,7 +77,11 @@ class CompilerTask {
     build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
     [[nodiscard]] ChainableResult<void> match_tiles_pals_patch_or_locked();
     [[nodiscard]] ChainableResult<void> match_tiles_pals_optimized();
-    void emit_no_matching_tile_error(std::size_t tile_index);
+    void emit_no_matching_tile_error(
+        std::size_t tile_index,
+        const PixelTile<IndexPixel> &index_tile,
+        unsigned int pal_index,
+        const Palette<Rgba32, pal::max_size> &matched_pal);
     void emit_no_matching_pal_error(std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
     void emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit);
     [[nodiscard]] std::unique_ptr<Tileset> assemble_output();
@@ -515,7 +519,8 @@ ChainableResult<void> CompilerTask::match_tiles_pals_patch_or_locked()
                 // CASE 3a-ii: tile not found and tiles.png is locked
                 else if (!maybe_tile_index.has_value() && tiles_edit_mode_ == ArtifactEditMode::locked) {
                     matched_all_tiles = false;
-                    emit_no_matching_tile_error(i);
+                    // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
+                    emit_no_matching_tile_error(i, index_tile, pal_index, matched_pal);
                 }
 
                 // CASE 3a-iii: tile not found and tiles.png is not locked (i.e. it's patch)
@@ -615,15 +620,19 @@ ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
     return {};
 }
 
-void CompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
+void CompilerTask::emit_no_matching_tile_error(
+    std::size_t tile_index,
+    const PixelTile<IndexPixel> &index_tile,
+    unsigned int pal_index,
+    const Palette<Rgba32, pal::max_size> &matched_pal)
 {
-    constexpr auto tag = "no-matching-tiles";
+    constexpr auto tag = "no-matching-tile";
     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
 
     // Emit error
     std::vector<std::string> no_match_err{};
     no_match_err.emplace_back(format_.format(
-        "{}: no matching tiles found",
+        "{}: no matching tile found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
     std::ranges::copy(
         tile_printer_.print_metatile_tile_highlight(
@@ -631,19 +640,31 @@ void CompilerTask::emit_no_matching_tile_error(std::size_t tile_index)
         std::back_inserter(no_match_err));
     diag_.err(tag, no_match_err);
 
-    // TODO: add note to print out matching pal and print index_pixel generated
+    // Print note showing the palette that matched
+    std::vector<std::string> pal_note{};
+    pal_note.emplace_back(format_.format(
+        "matched palette '{}':", FormatParam{pad_two_digits(pal_index) + std::string{".pal"}, Style::bold}));
+    std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
+    diag_.note(tag, pal_note);
+
+    // Print note showing the generated IndexPixel tile
+    std::vector<std::string> tile_note{};
+    tile_note.emplace_back("generated index tile:");
+    std::ranges::copy(
+        tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()), std::back_inserter(tile_note));
+    diag_.note(tag, tile_note);
 }
 
 void CompilerTask::emit_no_matching_pal_error(
     std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches)
 {
-    constexpr auto tag = "no-matching-palettes";
+    constexpr auto tag = "no-matching-palette";
     auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
 
     // Emit error
     std::vector<std::string> no_match_err{};
     no_match_err.emplace_back(format_.format(
-        "{}: no matching palettes found",
+        "{}: no matching palette found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
     std::ranges::copy(
         tile_printer_.print_metatile_tile_highlight(
