@@ -2,6 +2,7 @@
 
 #include <map>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -175,6 +176,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
     const std::vector<Metatile<Rgba32>> &metatiles, std::size_t count_limit) const
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_in_primary, tileset_scope_, void);
 
     std::map<Rgba32, unsigned int> color_counts;
     for (const auto &metatile : metatiles) {
@@ -194,6 +196,8 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
                 FormatParam{color_counts.size(), Style::bold},
                 FormatParam{count_limit, Style::bold}));
         report_color_counts(color_counts, format_, diag_, global_color_count_violation, pal_printer_);
+        diag_->note(
+            global_color_count_violation, global_color_limit_definition(*format_, count_limit, num_pals_in_primary));
         return FormattableError{
             "{}: found '{}' unique colors, limit is '{}'",
             FormatParam{global_color_count_violation, Style::bold},
@@ -326,28 +330,6 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
     std::size_t color_count_limit = num_pals_in_primary.value() * (pal::max_size - 1);
     const auto global_color_result = validate_global_color_count(metatiles, color_count_limit);
     if (!global_color_result.has_value()) {
-        // Construct note text
-        std::vector<std::string> note_text;
-        note_text.push_back(format_->format(
-            "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
-        note_text.emplace_back("");
-        note_text.emplace_back("Color limit definition:");
-        note_text.push_back(format_->format(
-            "{} * {}:",
-            FormatParam{num_pals_in_primary.name(), Style::bold | Style::yellow},
-            FormatParam{"nontransparent_colors_per_pal", Style::bold}));
-        note_text.push_back(format_->format(
-            "{} * {} = {}",
-            FormatParam{num_pals_in_primary.value(), Style::bold | Style::yellow},
-            FormatParam{(pal::max_size - 1), Style::bold},
-            FormatParam{color_count_limit, Style::bold}));
-        note_text.emplace_back("");
-        std::ranges::copy(num_pals_in_primary.prettify(*format_), std::back_inserter(note_text));
-
-        // Emit note
-        diag_->note(global_color_count_violation, note_text);
-
-        // Append fatal message
         error_messages.push_back(global_color_result.error().join(*format_));
     }
 

@@ -7,11 +7,13 @@
 #include <unordered_set>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
+#include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -71,6 +73,8 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> process_porytiles_input();
     [[nodiscard]] ChainableResult<void> process_porymap_input();
     [[nodiscard]] ChainableResult<void> setup_working_data();
+    [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
+    build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
     [[nodiscard]] ChainableResult<void> match_tiles_pals_patch_or_locked();
     [[nodiscard]] ChainableResult<void> match_tiles_pals_optimized();
     void emit_no_matching_tile_error(std::size_t tile_index);
@@ -222,19 +226,26 @@ ChainableResult<void> CompilerTask::process_porymap_input()
 
 ChainableResult<void> CompilerTask::setup_working_data()
 {
-    if (pals_edit_mode_ == ArtifactEditMode::locked) {
-        /*
-         * TODO: PaletteValidator: throw error if pal isn't size 16
-         */
-        /*
-         * TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
-         */
-        /*
-         * TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a
-         * hard failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should
-         * at least generate a warning in case folks are confused about what slot 0 is for.
-         */
+    std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
+    /*
+     * TODO: PaletteValidator: throw error if pal isn't size 16
+     */
+    /*
+     * TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
+     */
+    /*
+     * TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a
+     * hard failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should
+     * at least generate a warning in case folks are confused about what slot 0 is for.
+     */
+    /*
+     * TODO: PaletteValidator: disallow duplicate colors or extrinsic transparency in palette hints
+     */
+    /*
+     * TODO: PaletteValidator: disallow extrinsic transparency in Porytiles palette overrides
+     */
 
+    if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect primary palettes from existing Porymap component
         porymap_pals_.reserve(num_pals_in_primary_);
         for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
@@ -246,24 +257,19 @@ ChainableResult<void> CompilerTask::setup_working_data()
     }
     else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
         /*
-         * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints.
+         * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. This validates that we
+         * don't exceed the global color count limit.
          */
-        std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
-        // TODO: we need to validate palette hints. We should disallow duplicate colors or extrinsic transparency.
-        ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
-        for (const auto &maybe_override_pal : tileset_.porytiles_component().pals()) {
-            if (maybe_override_pal.has_value()) {
-                color_index_map.add_pal(maybe_override_pal.value(), extrinsic_transparency_.value());
-            }
-        }
-        for (const auto &hint : hints) {
-            color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
-        }
+        const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            color_index_map,
+            build_color_index_map(hints, color_count_limit),
+            "failed to build color index map for tileset " + tileset_.name(),
+            void);
 
         /*
-         * TODO: we need another error condition check here. It's possible that after adding Porytiles override pals and
-         * hints, we are now over the global color limit. Also, we should have warnings get generated here if any colors
-         * in the hints/overrides did not appear in the layer PNGs.
+         * TODO: we should have warnings get generated here if any colors in the hints/overrides did not appear in the
+         * layer PNGs.
          */
 
         /*
@@ -363,6 +369,70 @@ ChainableResult<void> CompilerTask::setup_working_data()
     }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
 
     return {};
+}
+
+ChainableResult<ColorIndexMap<Rgba32>>
+CompilerTask::build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const
+{
+    constexpr auto tag = "global-color-count-violation";
+
+    // Create ColorIndexMap from the Porytiles tiles
+    ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
+
+    // Check color count after initial tile colors are added
+    if (color_index_map.size() > color_count_limit) {
+        panic("color_index_map.size() > count_limit - this should have already been validated by MetatileValidator");
+    }
+
+    // Add override palettes and validate after each
+    for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
+        const auto &maybe_override_pal = tileset_.porytiles_component().pals().at(pal_index);
+        if (!maybe_override_pal.has_value()) {
+            continue;
+        }
+        color_index_map.add_pal(maybe_override_pal.value(), extrinsic_transparency_.value());
+        if (color_index_map.size() > color_count_limit) {
+            diag_.err(
+                tag,
+                format_.format(
+                    "found '{}' global unique colors after adding override palette '{}', limit is '{}'",
+                    FormatParam{color_index_map.size(), Style::bold},
+                    FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},
+                    FormatParam{color_count_limit, Style::bold}));
+            diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
+
+            return FormattableError{
+                "{}: found '{}' unique colors after adding override palette '{}', limit is '{}'",
+                FormatParam{tag, Style::bold},
+                FormatParam{color_index_map.size(), Style::bold},
+                FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},
+                FormatParam{color_count_limit, Style::bold}};
+        }
+    }
+
+    // Add palette hints and validate after each
+    for (const auto &hint : hints) {
+        color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
+        if (color_index_map.size() > color_count_limit) {
+            diag_.err(
+                tag,
+                format_.format(
+                    "found '{}' global unique colors after adding palette hint '{}', limit is '{}'",
+                    FormatParam{color_index_map.size(), Style::bold},
+                    FormatParam{hint.name(), Style::bold},
+                    FormatParam{color_count_limit, Style::bold}));
+            diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
+
+            return FormattableError{
+                "{}: found '{}' unique colors after adding palette hint '{}', limit is '{}'",
+                FormatParam{tag, Style::bold},
+                FormatParam{color_index_map.size(), Style::bold},
+                FormatParam{hint.name(), Style::bold},
+                FormatParam{color_count_limit, Style::bold}};
+        }
+    }
+
+    return color_index_map;
 }
 
 ChainableResult<void> CompilerTask::match_tiles_pals_patch_or_locked()
@@ -492,6 +562,7 @@ ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];
 
+        // TODO: what if multiple pals match?
         std::vector<PaletteMatchResult<Rgba32>> matches =
             match_or_best(porytiles_tile, porymap_pals_, extrinsic_transparency_.value(), 1);
 
