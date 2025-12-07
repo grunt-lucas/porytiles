@@ -13,7 +13,7 @@ using namespace porytiles2;
  */
 struct ColorSetWithOccupancy {
     ColorSet color_set;
-    std::size_t occupied_slots;
+    std::size_t occupied_slots{};
 };
 
 /**
@@ -39,8 +39,9 @@ struct ColorSetWithOccupancy {
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
             /*
-             * TODO: this will throw if a hint contains the extrinsic transparency color. We already have a note to fix
-             * this via a PaletteValidator service, see note in CompilerTask::setup_working_data.
+             * This will throw if a hint contains the extrinsic transparency color, since the ColorIndexMap won't
+             * contain any transparency colors. Callers of the packer service should have used the PaletteValidator
+             * service to validate input palettes and generate good user diagnostics.
              */
             panic("tile color " + to_string(color) + " not found in color index map");
         }
@@ -78,8 +79,9 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
             /*
-             * TODO: this will throw if a prefilled pal contains the extrinsic transparency color. We already have a
-             * note to fix this via a PaletteValidator service, see note in CompilerTask::setup_working_data.
+             * This will throw if a pal contains the extrinsic transparency color, since the ColorIndexMap won't
+             * contain any transparency colors. Callers of the packer service should have used the PaletteValidator
+             * service to validate input palettes and generate good user diagnostics.
              */
             panic("pal color " + to_string(color) + " at slot " + std::to_string(i) + " not in color map");
         }

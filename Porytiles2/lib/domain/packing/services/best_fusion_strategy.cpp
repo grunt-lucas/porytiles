@@ -1,5 +1,6 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
+#include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
@@ -98,31 +99,8 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
 
-    // TODO: move this common prefilled palette setup code somewhere shared
     // Initialize output palettes from prefilled palettes
-    for (const auto &prefilled_pal : input.prefilled_pals_) {
-        // Only set up prefilled palettes for slots that were requested via PalettePool
-        if (pal_pool.is_available(prefilled_pal.hardware_index())) {
-            pal_pool.checkout(prefilled_pal.hardware_index());
-
-            // Calculate effective capacity accounting for "wasted" slots from duplicate colors.
-            // If a prefilled palette has 15 occupied slots but only 14 unique colors, there's 1 wasted slot.
-            const ColorSet fixed_colors = prefilled_pal.fixed_colors();
-            const std::size_t unique_color_count = color_set_count(fixed_colors);
-            const std::size_t occupied_slot_count = prefilled_pal.occupied_slots();
-            const std::size_t wasted_slot_count = occupied_slot_count - unique_color_count;
-            const std::size_t effective_capacity = input.pal_capacity_ - wasted_slot_count;
-
-            PackedPalette pal{prefilled_pal.hardware_index(), effective_capacity};
-            if (unique_color_count > 0) {
-                // Pre-populate with fixed colors using a "system" tile whose id matches the prefilled's hw index
-                PackableTile system_tile{
-                    PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()}, fixed_colors};
-                pal.add_tile(system_tile);
-            }
-            output.pals_.push_back(std::move(pal));
-        }
-    }
+    output.pals_ = initialize_packed_palettes(input.prefilled_pals_, pal_pool, input.pal_capacity_);
 
     // Create additional empty palettes from the rest of the available PalettePool slots
     while (pal_pool.has_available_index()) {
