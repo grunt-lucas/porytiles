@@ -106,7 +106,7 @@ ChainableResult<void> MetatileValidator::validate_alpha_channels(const std::vect
     }
 
     if (hit_error) {
-        return FormattableError{"{}: found invalid alpha channels", FormatParam{alpha_channel_violation, Style::bold}};
+        return FormattableError{"found pixel(s) with invalid alpha channel value"};
     }
 
     return {};
@@ -164,9 +164,7 @@ ChainableResult<void> MetatileValidator::validate_tile_color_count(const std::ve
 
     if (hit_error) {
         return FormattableError{
-            "{}: found tile(s) with more than {} unique non-transparent pixels",
-            FormatParam{tile_color_count_violation, Style::bold},
-            FormatParam{pal::max_size - 1}};
+            "found tile(s) with more than {} unique non-transparent pixels", FormatParam{pal::max_size - 1}};
     }
 
     return {};
@@ -199,8 +197,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
         diag_->note(
             global_color_count_violation, global_color_limit_definition(*format_, count_limit, num_pals_in_primary));
         return FormattableError{
-            "{}: found '{}' unique colors, limit is '{}'",
-            FormatParam{global_color_count_violation, Style::bold},
+            "found '{}' unique colors globally, limit is '{}'",
             FormatParam{color_counts.size(), Style::bold},
             FormatParam{count_limit, Style::bold}};
     }
@@ -210,7 +207,11 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
 ChainableResult<void>
 MetatileValidator::generate_precision_loss_warnings(const std::vector<Metatile<Rgba32>> &metatiles) const
 {
-    // TODO: implement
+    /*
+     * TODO: instead of running this here, let's create a new service called PrecisionLossWarningGenerator that takes
+     * metatiles and Porymap/Porytiles/Hint pals and generates the warnings in one shot from all resources. (We should
+     * skip over Porymap pals if this is a pals:optimize build)
+     */
     (void)metatiles.size();
     return {};
 }
@@ -270,8 +271,7 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
     }
 
     if (hit_error) {
-        return FormattableError{
-            "{}: found metatile(s) with mismatched implied layer mode", FormatParam{layer_mode_violation, Style::bold}};
+        return FormattableError{"found metatile(s) with mismatched implied layer mode"};
     }
 
     return {};
@@ -308,8 +308,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
 
         // Push back error message to fatal chain
         error_messages.push_back(format_->format(
-            "{}: found '{}', limit is '{}'",
-            FormatParam{metatile_limit_exceeded, Style::bold},
+            "found '{}' unique tiles, limit is '{}'",
             FormatParam{metatiles.size(), Style::bold},
             FormatParam{num_metatiles_in_primary, Style::bold}));
     }
