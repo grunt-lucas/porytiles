@@ -1,5 +1,6 @@
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 
+#include <algorithm>
 #include <ranges>
 #include <vector>
 
@@ -82,6 +83,47 @@ ColorPalettePrinter::print_rgba_counts(const std::vector<std::pair<Rgba32, unsig
         const std::string color_text = format_->style(color.to_jasc_str(), color_style);
         lines.push_back(format_->format("{} ➞ {} pixel(s)", FormatParam{color_text}, FormatParam{count}));
     }
+    return lines;
+}
+
+std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
+    const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const
+{
+    std::vector<std::string> lines{};
+
+    for (std::size_t i = 0; i < pal.size(); ++i) {
+        const bool is_highlighted = std::ranges::find(slots, i) != slots.end();
+
+        std::string prefix;
+        if (is_highlighted) {
+            prefix = format_->format("{}", FormatParam{"➞ ", Style::bold | Style::italic | Style::yellow});
+        }
+        else {
+            prefix = "  ";
+        }
+
+        std::string slot_str;
+        if (pal.is_wildcard(i)) {
+            slot_str = format_->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{"<wildcard>"});
+        }
+        else {
+            const Rgba32 color = pal.at(i);
+            const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
+
+            if (is_highlighted) {
+                const std::string color_text =
+                    format_->style(color.to_jasc_str(), Style::bold | Style::italic | Style::yellow | color_style);
+                slot_str = format_->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{color_text});
+            }
+            else {
+                const std::string color_text = format_->style(color.to_jasc_str(), color_style);
+                slot_str = format_->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{color_text});
+            }
+        }
+
+        lines.push_back(slot_str);
+    }
+
     return lines;
 }
 

@@ -26,6 +26,7 @@
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
 #include "porytiles2/domain/services/metatile_validator.hpp"
+#include "porytiles2/domain/services/palette_validator.hpp"
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -231,23 +232,15 @@ ChainableResult<void> CompilerTask::process_porymap_input()
 ChainableResult<void> CompilerTask::setup_working_data()
 {
     std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
-    /*
-     * TODO: PaletteValidator: throw error if pal isn't size 16
-     */
-    /*
-     * TODO: PaletteValidator: throw error if any non-slot-0 pal slot contains the extrinsic transparency color
-     */
-    /*
-     * TODO: PaletteValidator: throw warning if slot 0 doesn't match current extrinsic_transparency. This is not a
-     * hard failure condition, since some advanced users may be using slot 0 for a .pla blend color. But we should
-     * at least generate a warning in case folks are confused about what slot 0 is for.
-     */
-    /*
-     * TODO: PaletteValidator: disallow duplicate colors or extrinsic transparency in palette hints
-     */
-    /*
-     * TODO: PaletteValidator: disallow extrinsic transparency in Porytiles palette overrides
-     */
+
+    // Validate palette overrides, original palettes, and hints
+    PaletteValidator pal_validator{&format_, &diag_, &pal_printer_, &config_, tileset_.name()};
+
+    PT_TRY_CALL_CHAIN_ERR(
+        pal_validator.validate_primary(
+            tileset_.porymap_component().pals(), tileset_.porytiles_component().pals(), hints),
+        "palette validation failed",
+        void);
 
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component

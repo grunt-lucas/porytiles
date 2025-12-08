@@ -27,6 +27,9 @@ class PalettePrinter {
     [[nodiscard]] virtual std::vector<std::string>
     print_rgba_counts(const std::vector<std::pair<Rgba32, unsigned int>> &colors_counts) const = 0;
 
+    [[nodiscard]] virtual std::vector<std::string>
+    print_rgba_palette_with_highlights(const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const = 0;
+
     [[nodiscard]] std::vector<std::string>
     print_rgba_palette_counts(const std::map<Rgba32, unsigned int> &color_counts) const
     {
