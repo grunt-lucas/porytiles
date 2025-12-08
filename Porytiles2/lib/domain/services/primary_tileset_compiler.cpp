@@ -81,7 +81,7 @@ class CompilerTask {
     void emit_no_matching_tile_error(
         std::size_t tile_index,
         const PixelTile<IndexPixel> &index_tile,
-        unsigned int pal_index,
+        std::size_t pal_index,
         const Palette<Rgba32, pal::max_size> &matched_pal);
     void emit_no_matching_pal_error(std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
     void emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit);
@@ -245,7 +245,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
         new_porymap_pals_.reserve(pal::num_pals);
-        for (unsigned int i = 0; i < pal::num_pals; i++) {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
             new_porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
         }
     }
@@ -285,7 +285,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
         BestFusionStrategy packing_strategy{&format_, &diag_};
         PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
         std::bitset<pal::num_pals> available_pals{0};
-        for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
+        for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
             // TODO: support out-of-band primary palettes
             available_pals.set(i, true);
         }
@@ -303,7 +303,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
             "failed to pack palettes for tileset " + tileset_.name(),
             void);
 
-        for (unsigned int i = 0; i < pal::num_pals; i++) {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
             const auto &maybe_packed_pal = pal_packing.pals_.at(i);
             if (maybe_packed_pal.has_value()) {
                 // Copy over the packed palette
@@ -616,7 +616,7 @@ ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
 void CompilerTask::emit_no_matching_tile_error(
     std::size_t tile_index,
     const PixelTile<IndexPixel> &index_tile,
-    unsigned int pal_index,
+    std::size_t pal_index,
     const Palette<Rgba32, pal::max_size> &matched_pal)
 {
     constexpr auto tag = "no-matching-tile";
@@ -780,7 +780,7 @@ std::unique_ptr<Tileset> CompilerTask::assemble_output()
     }
 
     // Copy palettes from our processed porymap_pals vector
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
         new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
     }
 

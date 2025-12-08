@@ -54,7 +54,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset.name(), i);
         if (auto result = writer_->write_porymap_pal_n(pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
@@ -95,7 +95,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for_porytiles_pal_n(tileset.name(), i);
         if (auto result = writer_->write_porytiles_pal_n(pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
@@ -181,7 +181,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             FormattableError{"failed to read tiles.png"}, tiles_png_result};
     }
 
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset->name(), i);
         if (!key_provider_->artifact_exists(pal_key)) {
             diag_->err(
@@ -279,7 +279,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         diag_->note(missing_optional_artifact_tag, "all attributes will receive default or inferred values");
     }
 
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto override_key = key_provider_->key_for_porytiles_pal_n(tileset->name(), i);
         if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read_porytiles_pal_n(*tileset, override_key, i);

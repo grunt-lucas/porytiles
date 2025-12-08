@@ -222,7 +222,7 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldFillCapacityProperly)
     // Insert tiles until at capacity
     for (std::size_t i = 1; i < capacity; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i)});
+        pixel_tile.set(0, 0, IndexPixel{i});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
         std::size_t result = workspace.insert_tile(tile);
@@ -248,7 +248,7 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldFastForwardCursorCorrectly)
     // Insert a few non-transparent tiles
     for (std::size_t i = 0; i < 3; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i + 1)});
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
         std::ignore = workspace.insert_tile(tile);
@@ -391,7 +391,7 @@ TEST(TilesPngWorkspaceTests, AtCapacityShouldReturnTrueWhenFull)
     // Fill workspace
     for (std::size_t i = 1; i < capacity; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i)});
+        pixel_tile.set(0, 0, IndexPixel{i});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
         std::ignore = workspace.insert_tile(tile);
     }
@@ -757,7 +757,7 @@ TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldHandleComplexPatterns)
 
     // Create a diagonal gradient pattern (top-left to bottom-right)
     for (std::size_t i = 0; i < 8; ++i) {
-        original.set(i, i, IndexPixel{static_cast<unsigned int>(i + 1)});
+        original.set(i, i, IndexPixel{i + 1});
     }
 
     // Load into workspace

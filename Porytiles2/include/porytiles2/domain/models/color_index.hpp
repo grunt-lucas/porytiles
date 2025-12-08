@@ -78,11 +78,11 @@ class ColorIndex {
     }
 
     /**
-     * @brief Returns the underlying unsigned integer index value.
+     * @brief Returns the underlying index value.
      *
      * @return The color index value
      */
-    [[nodiscard]] unsigned int index() const
+    [[nodiscard]] std::size_t index() const
     {
         return index_;
     }

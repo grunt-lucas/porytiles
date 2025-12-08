@@ -23,7 +23,7 @@ inline constexpr std::size_t colors_per_pal = 16;
 class PaletteIndex {
   public:
     // NOLINTNEXTLINE(google-explicit-constructor)
-    PaletteIndex(unsigned int value) : value_{value}
+    PaletteIndex(std::size_t value) : value_{value}
     {
         if (value >= colors_per_pal) {
             panic("invalid PaletteIndex value " + std::to_string(value));
@@ -41,7 +41,7 @@ class PaletteIndex {
      * @return A const reference to the stored value
      */
     // NOLINTNEXTLINE
-    operator const unsigned int &() const &
+    operator const std::size_t &() const &
     {
         return value_;
     }
@@ -55,7 +55,7 @@ class PaletteIndex {
      * @return An rvalue reference to the stored value
      */
     // NOLINTNEXTLINE
-    operator unsigned int &&() &&
+    operator std::size_t &&() &&
     {
         return std::move(value_);
     }
@@ -65,7 +65,7 @@ class PaletteIndex {
      *
      * @return A const reference to the stored value
      */
-    [[nodiscard]] const unsigned int &value() const &
+    [[nodiscard]] const std::size_t &value() const &
     {
         return value_;
     }
@@ -75,23 +75,23 @@ class PaletteIndex {
      *
      * @return An rvalue reference to the stored value
      */
-    [[nodiscard]] unsigned int &&value() &&
+    [[nodiscard]] std::size_t &&value() &&
     {
         return std::move(value_);
     }
 
     /**
-     * @brief Returns the underlying unsigned integer index value.
+     * @brief Returns the underlying index value.
      *
      * @return The color index value
      */
-    [[nodiscard]] unsigned int index() const
+    [[nodiscard]] std::size_t index() const
     {
         return value_;
     }
 
   private:
-    unsigned int value_{};
+    std::size_t value_{};
 };
 
 } // namespace porytiles2

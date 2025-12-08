@@ -100,7 +100,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(const std::files
     // Next line of file *must* be the declared size of the palette
     std::getline(stream, line_buf);
     trim_line_ending(line_buf);
-    const auto declared_size_result = parse_int<unsigned int>(line_buf);
+    const auto declared_size_result = parse_int<std::size_t>(line_buf);
     if (!declared_size_result.has_value()) {
         return FormattableError{fmt::format(
             "{}: expected integral value on line 3: {}", path.c_str(), line_buf, declared_size_result.error())};
@@ -112,7 +112,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(const std::files
     }
 
     // Rest of file lines are the colors
-    unsigned int color_index = 0;
+    std::size_t color_index = 0;
     while (std::getline(stream, line_buf)) {
         const auto trimmed_line = trim_line_ending(line_buf);
         const auto color_result = parse_jasc_line(trimmed_line);

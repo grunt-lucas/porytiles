@@ -318,7 +318,7 @@ class Palette {
         std::map<ColorType, PaletteIndex> result{};
         for (std::size_t i = 1; i < size(); i++) {
             if (colors_.at(i).has_value()) {
-                result.emplace(colors_.at(i).value(), PaletteIndex{static_cast<unsigned int>(i)});
+                result.emplace(colors_.at(i).value(), PaletteIndex{i});
             }
         }
         return result;
@@ -339,7 +339,7 @@ class Palette {
         std::map<PaletteIndex, ColorType> result{};
         for (std::size_t i = 1; i < size(); i++) {
             if (colors_.at(i).has_value()) {
-                result.emplace(PaletteIndex{static_cast<unsigned int>(i)}, colors_.at(i).value());
+                result.emplace(PaletteIndex{i}, colors_.at(i).value());
             }
         }
         return result;

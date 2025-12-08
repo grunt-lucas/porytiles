@@ -3,9 +3,6 @@
 // ReSharper disable once CppUnusedIncludeDirective
 #include <compare>
 
-#include "porytiles2/domain/models/palette.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
-
 namespace porytiles2 {
 
 /**
@@ -23,7 +20,7 @@ class IndexPixel {
     IndexPixel() : index_{0} {}
 
     // NOLINTNEXTLINE(google-explicit-constructor)
-    IndexPixel(unsigned int index) : index_{index}
+    IndexPixel(std::size_t index) : index_{index}
     {
         /*
          * Why don't we check this here? Because in true-color output mode, we want to allow up to 8-bit index pixels.
@@ -53,13 +50,13 @@ class IndexPixel {
         return index_ == 0;
     }
 
-    [[nodiscard]] unsigned int index() const
+    [[nodiscard]] std::size_t index() const
     {
         return index_;
     }
 
   private:
-    unsigned int index_;
+    std::size_t index_;
 };
 
 } // namespace porytiles2

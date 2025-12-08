@@ -678,7 +678,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_CorrectColorMappingAllPixels)
 
     // Fill tile with repeating pattern: 0, 1, 2, 3, 0, 1, 2, 3, ...
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        index_tile.set(i, IndexPixel{static_cast<unsigned int>(i % 4)});
+        index_tile.set(i, IndexPixel{i % 4});
     }
 
     // Act: Convert index tile to color tile (extrinsic transparency)
@@ -744,7 +744,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_FullyPopulatedPalette)
     // Create a tile using all palette indices
     PixelTile<IndexPixel> index_tile{};
     for (std::size_t i = 0; i < pal::max_size; ++i) {
-        index_tile.set(i, IndexPixel{static_cast<unsigned int>(i)});
+        index_tile.set(i, IndexPixel{i});
     }
 
     // Act: Convert index tile to color tile

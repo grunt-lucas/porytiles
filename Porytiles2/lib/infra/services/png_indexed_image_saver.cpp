@@ -48,7 +48,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
     // Generic lambda to write indexed PNG with any pixel type
     auto write_image = [&]<typename PixelType>(png::image<PixelType> &img) {
         img.set_palette(png_pal);
-        for (unsigned int pixel_index = 0; pixel_index < image.size(); pixel_index++) {
+        for (std::size_t pixel_index = 0; pixel_index < image.size(); pixel_index++) {
             const auto row = pixel_index / image.width();
             const auto col = pixel_index % image.width();
             img[row][col] = image.at(pixel_index).index();

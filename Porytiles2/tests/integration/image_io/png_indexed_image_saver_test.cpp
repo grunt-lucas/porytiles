@@ -58,7 +58,7 @@ class PngIndexedImageSaverTests : public ::testing::Test {
         for (std::size_t row = 0; row < height; ++row) {
             for (std::size_t col = 0; col < width; ++col) {
                 const auto index = (row + col) % 16;
-                image.set(row, col, IndexPixel{static_cast<unsigned int>(index)});
+                image.set(row, col, IndexPixel{index});
             }
         }
 
@@ -81,7 +81,7 @@ class PngIndexedImageSaverTests : public ::testing::Test {
         for (std::size_t row = 0; row < height; ++row) {
             for (std::size_t col = 0; col < width; ++col) {
                 const auto index = ((row * 16 / height) + (col * 16 / width)) / 2;
-                image.set(row, col, IndexPixel{static_cast<unsigned int>(index % 16)});
+                image.set(row, col, IndexPixel{index % 16});
             }
         }
 
@@ -266,7 +266,7 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleTransparencyCorrectly)
         for (std::size_t col = 0; col < 4; ++col) {
             // Checkerboard pattern with transparency
             const auto index = ((row + col) % 2 == 0) ? 0u : (1u + ((row * col) % 3));
-            image.set(row, col, IndexPixel{static_cast<unsigned int>(index)});
+            image.set(row, col, IndexPixel{index});
         }
     }
 
@@ -349,7 +349,7 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleMaxPaletteSize)
     for (std::size_t row = 0; row < 16; ++row) {
         for (std::size_t col = 0; col < 16; ++col) {
             const auto index = row * 16 + col;
-            image.set(row, col, IndexPixel{static_cast<unsigned int>(index)});
+            image.set(row, col, IndexPixel{index});
         }
     }
 
@@ -383,7 +383,7 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleImageWithoutPalette)
     // Fill with index values
     for (std::size_t row = 0; row < 4; ++row) {
         for (std::size_t col = 0; col < 4; ++col) {
-            image.set(row, col, IndexPixel{static_cast<unsigned int>((row + col) % 16)});
+            image.set(row, col, IndexPixel{(row + col) % 16});
         }
     }
 

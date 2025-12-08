@@ -555,7 +555,7 @@ class Metatile {
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> bottom_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> middle_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
-    unsigned int id_;
+    std::size_t id_;
 };
 
 namespace metatile {

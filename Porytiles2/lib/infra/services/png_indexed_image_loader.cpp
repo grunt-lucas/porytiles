@@ -28,7 +28,7 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
     const auto tilesheet_height = tilesheet_png.get_height();
     const auto tilesheet_size = tilesheet_width * tilesheet_height;
     auto image = std::make_unique<Image<IndexPixel>>(tilesheet_width, tilesheet_height);
-    for (unsigned int pixel_index = 0; pixel_index < tilesheet_size; pixel_index++) {
+    for (std::size_t pixel_index = 0; pixel_index < tilesheet_size; pixel_index++) {
         const auto row = pixel_index / tilesheet_width;
         const auto col = pixel_index % tilesheet_width;
         // TODO: make sure this sets 4-bit pixels only, even if input tiles.png is using true-color (8-bit)

@@ -55,7 +55,7 @@ ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src
         return FormattableError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
     }
 
-    for (unsigned int byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
+    for (std::size_t byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
         TilemapEntry entry{};
         const std::uint16_t lower_byte = data_buf.at(byte_index);
         const std::uint16_t upper_byte = data_buf.at(byte_index + 1);

@@ -240,7 +240,7 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
 
     for (std::size_t i = 0; i < palettes.size(); ++i) {
         auto result = match_tile_to_palette(tile, palettes[i], extrinsic);
-        result.pal_index = static_cast<unsigned int>(i);
+        result.pal_index = i;
 
         if (result.is_covered) {
             complete_matches.push_back(result);

@@ -192,7 +192,7 @@ class TilesetArtifactKeyProvider {
         }
 
         // TODO: warn user if we found Porytiles pals like 1.pal, these won't work they have to be 01.pal
-        for (unsigned int i = 0; i < pal::num_pals; i++) {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
             const auto override_key = key_for_porytiles_pal_n(tileset_name, i);
             if (artifact_exists(override_key)) {
                 result.push_back(override_key);

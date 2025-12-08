@@ -16,7 +16,7 @@ using namespace porytiles2;
 namespace {
 
 // Helper function to create a non-transparent TilemapEntry for testing
-TilemapEntry create_test_entry(unsigned int tile_index, unsigned int pal_index = 0)
+TilemapEntry create_test_entry(std::size_t tile_index, std::size_t pal_index = 0)
 {
     return TilemapEntry{tile_index, pal_index, false, false};
 }
@@ -27,7 +27,7 @@ PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType la
     PorymapTilesetComponent component;
 
     // Add 8 tilemap entries (dual layer metatile)
-    for (unsigned int i = 1; i <= metatile::entries_per_metatile_dual; ++i) {
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_dual; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
 
@@ -43,7 +43,7 @@ PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType 
     PorymapTilesetComponent component;
 
     // Add 12 tilemap entries (triple layer metatile)
-    for (unsigned int i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
 
@@ -207,19 +207,19 @@ TEST_F(LayerModeConverterTests, TripleLayerizeMultipleMetatilesWithDifferentLaye
     PorymapTilesetComponent component;
 
     // Add first metatile with LayerType::normal (tile indices 1-8)
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
     component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
 
     // Add second metatile with LayerType::covered (tile indices 9-16)
-    for (unsigned int i = 9; i <= 16; ++i) {
+    for (std::size_t i = 9; i <= 16; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
     component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
 
     // Add third metatile with LayerType::split (tile indices 17-24)
-    for (unsigned int i = 17; i <= 24; ++i) {
+    for (std::size_t i = 17; i <= 24; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
     component.push_back_attribute(MetatileAttribute{LayerType::split, 0});
@@ -265,7 +265,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPalIndex)
     PorymapTilesetComponent component;
 
     // Add entries with different palette indices
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i, i % 4)); // Use different pal indices
     }
     component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
@@ -286,7 +286,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
     PorymapTilesetComponent component;
 
     // Add entries with flip flags
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         bool hflip = (i % 2 == 0);
         bool vflip = (i % 3 == 0);
         component.push_back_tilemap_entry(TilemapEntry{i, 0, hflip, vflip});
@@ -314,11 +314,11 @@ TEST_F(LayerModeConverterTests, DualLayerizeNormalLayerTypeRemovesTransparentFro
     // Create triple-layer entries (12 entries: 4 transparent + 8 non-transparent)
     std::vector<TilemapEntry> triple_entries;
     // First 4 transparent
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
     // Next 8 non-transparent (tile indices 1-8)
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
 
@@ -343,11 +343,11 @@ TEST_F(LayerModeConverterTests, DualLayerizeCoveredLayerTypeRemovesTransparentFr
     // Create triple-layer entries (12 entries: 8 non-transparent + 4 transparent)
     std::vector<TilemapEntry> triple_entries;
     // First 8 non-transparent (tile indices 1-8)
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
     // Last 4 transparent
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
 
@@ -372,15 +372,15 @@ TEST_F(LayerModeConverterTests, DualLayerizeSplitLayerTypeRemovesTransparentFrom
     // Create triple-layer entries (12 entries: 4 non-transparent + 4 transparent + 4 non-transparent)
     std::vector<TilemapEntry> triple_entries;
     // First 4 non-transparent (tile indices 1-4)
-    for (unsigned int i = 1; i <= 4; ++i) {
+    for (std::size_t i = 1; i <= 4; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
     // Middle 4 transparent
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
     // Last 4 non-transparent (tile indices 5-8)
-    for (unsigned int i = 5; i <= 8; ++i) {
+    for (std::size_t i = 5; i <= 8; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
 
@@ -405,29 +405,29 @@ TEST_F(LayerModeConverterTests, DualLayerizeMultipleMetatilesWithDifferentLayerT
     std::vector<TilemapEntry> triple_entries;
 
     // First metatile (normal): 4 transparent + 8 non-transparent (tile indices 1-8)
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
 
     // Second metatile (covered): 8 non-transparent (tile indices 9-16) + 4 transparent
-    for (unsigned int i = 9; i <= 16; ++i) {
+    for (std::size_t i = 9; i <= 16; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
 
     // Third metatile (split): 4 non-transparent (17-20) + 4 transparent + 4 non-transparent (21-24)
-    for (unsigned int i = 17; i <= 20; ++i) {
+    for (std::size_t i = 17; i <= 20; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
-    for (unsigned int i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
         triple_entries.push_back(TilemapEntry{0, 0, false, false});
     }
-    for (unsigned int i = 21; i <= 24; ++i) {
+    for (std::size_t i = 21; i <= 24; ++i) {
         triple_entries.push_back(create_test_entry(i));
     }
 
@@ -539,19 +539,19 @@ TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
     PorymapTilesetComponent dual_component;
 
     // Add first metatile with LayerType::normal (tile indices 1-8)
-    for (unsigned int i = 1; i <= 8; ++i) {
+    for (std::size_t i = 1; i <= 8; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
     dual_component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
 
     // Add second metatile with LayerType::covered (tile indices 9-16)
-    for (unsigned int i = 9; i <= 16; ++i) {
+    for (std::size_t i = 9; i <= 16; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
     dual_component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
 
     // Add third metatile with LayerType::split (tile indices 17-24)
-    for (unsigned int i = 17; i <= 24; ++i) {
+    for (std::size_t i = 17; i <= 24; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
     dual_component.push_back_attribute(MetatileAttribute{LayerType::split, 0});

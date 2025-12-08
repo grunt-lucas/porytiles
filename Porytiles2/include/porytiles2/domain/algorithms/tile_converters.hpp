@@ -106,8 +106,8 @@ template <SupportsTransparency ColorType, std::size_t N = 0, typename Transparen
     const PixelTile<ColorType> &tile, const Palette<ColorType, N> &palette, TransparencyPredicate is_transparent_pred)
 {
     // Build a color-to-index map for efficient lookup
-    // Note: palette.color_to_index_map() returns PaletteIndex, convert to unsigned int
-    std::map<ColorType, unsigned int> color_to_index;
+    // Note: palette.color_to_index_map() returns PaletteIndex, convert to std::size_t
+    std::map<ColorType, std::size_t> color_to_index;
     for (const auto &[color, pal_idx] : palette.color_to_index_map()) {
         color_to_index[color] = pal_idx.value();
     }
@@ -177,7 +177,7 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
 
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
         const auto &index_pixel = index_tile.at(i);
-        const unsigned int index = index_pixel.index();
+        const std::size_t index = index_pixel.index();
 
         if (index == 0) {
             // Index 0 is the transparent slot

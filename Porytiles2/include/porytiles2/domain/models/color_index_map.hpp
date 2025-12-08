@@ -313,7 +313,7 @@ class ColorIndexMap {
         std::map<PixelType, ColorIndex> pixel_indexes{};
         std::map<ColorIndex, PixelType> index_to_color{};
 
-        unsigned int color_index = 0;
+        std::size_t color_index = 0;
         for (const auto &tile : tiles) {
             for (const auto &pixel : extract_colors(tile)) {
                 if (pixel_indexes.insert({pixel, ColorIndex{color_index}}).second) {
@@ -338,7 +338,7 @@ class ColorIndexMap {
      */
     void add_colors_impl(const std::set<PixelType> &colors)
     {
-        auto color_index = static_cast<unsigned int>(size());
+        auto color_index = size();
         for (const auto &pixel : colors) {
             if (index_map_.insert({pixel, ColorIndex{color_index}}).second) {
                 color_map_.insert({ColorIndex{color_index}, pixel});
@@ -362,7 +362,7 @@ class ColorIndexMap {
     template <std::size_t N, typename TransparencyPredicate>
     void add_colors_from_pal_impl(const Palette<PixelType, N> &pal, TransparencyPredicate is_transparent_pred)
     {
-        auto color_index = static_cast<unsigned int>(size());
+        auto color_index = size();
         for (std::size_t i = 0; i < pal.size(); i++) {
             auto color_opt = pal.at_optional(i);
             if (!color_opt.has_value()) {
